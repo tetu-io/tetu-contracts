@@ -21,7 +21,7 @@ contract RewardToken is ERC20, ERC20PresetMinterPauser, ERC20Capped {
   uint256 public mintingEndTs;
 
   constructor(address _minter)
-  ERC20PresetMinterPauser("BRO Cash", "BRO")
+  ERC20PresetMinterPauser("TETU Reward Token", "TETU")
   ERC20Capped(HARD_CAP) {
     // pause forbidden
     renounceRole(PAUSER_ROLE, _msgSender());

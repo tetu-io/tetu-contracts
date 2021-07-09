@@ -1,7 +1,7 @@
 {
-  "name": "bro_cash",
+  "name": "tetu_contracts",
   "version": "1.0.0",
-  "description": "BRO Cash solidity monorepo",
+  "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
   "directories": {
     "test": "test"
@@ -13,7 +13,7 @@
     "test": "npx hardhat test",
     "coverage": "npm run build && npx --max-old-space-size=4096 hardhat coverage --temp artifacts --max-memory 4096"
   },
-  "author": "BRO Cash team",
+  "author": "TETU team",
   "license": "ISC",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",

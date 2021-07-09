@@ -182,7 +182,7 @@ describe("contract reader tests", function () {
 
   it("vault names", async () => {
     expect((await contractReader.vaultNamesList())[0])
-    .is.eq('PS');
+    .is.eq('TETU_PS');
   });
   it("vault tvls", async () => {
     expect((await contractReader.vaultTvlsList())[0])
@@ -250,7 +250,7 @@ describe("contract reader tests", function () {
     await proxy.upgrade(newLogic.address);
 
     expect((await contractReader.vaultNamesList())[0])
-    .is.eq('PS');
+    .is.eq('TETU_PS');
   });
   it("proxy should not update for non gov", async () => {
     const proxy = await DeployerUtils.connectContract(
@@ -275,7 +275,7 @@ describe("contract reader tests", function () {
     const infos = await contractReader.vaultInfos();
     const info = infos[0];
     console.log('info', info);
-    expect(info.name).is.eq('PS');
+    expect(info.name).is.eq('TETU_PS');
   });
 
   it("user infos", async () => {
@@ -288,14 +288,14 @@ describe("contract reader tests", function () {
   it("vault + user infos", async () => {
     const infos = await contractReader.vaultWithUserInfos(signer.address, {gasLimit: 50000000});
     const info = infos[0];
-    expect(info.vault.name).is.eq('PS');
+    expect(info.vault.name).is.eq('TETU_PS');
   });
 
   it("vault + user infos pages for other user", async () => {
     const infos = await contractReader.connect(signer1).vaultWithUserInfoPages(signer1.address, 0, 1);
     expect(infos.length).is.eq(1);
     const info = infos[0];
-    expect(info.vault.name).is.eq('PS');
+    expect(info.vault.name).is.eq('TETU_PS');
   });
 
   it("vault + user infos pages", async () => {

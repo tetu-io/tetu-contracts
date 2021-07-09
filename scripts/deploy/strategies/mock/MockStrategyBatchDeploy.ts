@@ -32,8 +32,8 @@ async function main() {
   const strategyName = 'MockStrategySelfFarm';
 
   for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
-    const vaultName: string = 'MOCK_SUSHI_BRO_USDC_V' + VERSION + '_' + i;
-    const poolName: string = 'NOOP_SUSHI_BRO_USDC_V' + VERSION + '_' + i;
+    const vaultName: string = 'MOCK_SUSHI_TETU_USDC_V' + VERSION + '_' + i;
+    const poolName: string = 'NOOP_SUSHI_TETU_USDC_V' + VERSION + '_' + i;
     const vaultRewardToken: string = core.psVault;
     const rewardDuration: number = 60 * 60 * 24 * 7; // 1 week
     // *********** DEPLOY MOCK POOL FOR STRATEGY
@@ -48,7 +48,7 @@ async function main() {
 
     await RunHelper.runAndWait(() => pool.initializeSmartVault(
         "V_" + poolName,
-        "b" + poolName,
+        "x" + poolName,
         controller.address,
         noopStrategyUnderlying,
         rewardDuration
@@ -79,7 +79,7 @@ async function main() {
 
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
         "V_" + vaultName,
-        "b" + vaultName,
+        "x" + vaultName,
         controller.address,
         strategyUnderlying,
         rewardDuration

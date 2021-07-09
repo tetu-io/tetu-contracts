@@ -22,7 +22,8 @@ contract LiquidityBalancer is IGovernable, Controllable {
 
   string public constant VERSION = "0";
   uint256 constant internal PRECISION = 10 ** 18;
-  uint256 public updateNumerator = 100; // 0.1 % by default
+  uint256 public targetPriceUpdateNumerator = 100; // 0.1 % by default
+  uint256 public targetTvlUpdateNumerator = 10000; // 10 % by default
   uint256 constant public UPDATE_DENOMINATOR = 100000;
 
   mapping(address => uint256) public priceTargets;
@@ -33,7 +34,8 @@ contract LiquidityBalancer is IGovernable, Controllable {
   event PriceTargetChanged(address token, uint256 target);
   event LpTvlTargetChanged(address lp, uint256 target);
   event RouterChanged(address lp, address router);
-  event NumeratorChanged(uint256 value);
+  event PriceNumeratorChanged(uint256 value);
+  event TvlNumeratorChanged(uint256 value);
   event Swap(address tokenIn, address tokenOut, uint256 amount);
   event LiqAdded(address lp, uint256 amount0, uint256 amount1);
   event LiqRemoved(address lp, uint256 amount);
@@ -69,6 +71,9 @@ contract LiquidityBalancer is IGovernable, Controllable {
         route,
         IERC20(oppositeToken).balanceOf(address(this))
       );
+      // update target price for avoid a tons of rebalancing cycles
+      (,, uint256 price,) = getLpInfo(_lp, _token);
+      priceTargets[_token] = price;
       route.pop();
       route.pop();
       updateLpTvlTarget(_lp);
@@ -173,11 +178,11 @@ contract LiquidityBalancer is IGovernable, Controllable {
   }
 
   function updateLpTvlTarget(address _lp) internal {
-    lpTvlTargets[_lp] += lpTvlTargets[_lp].mul(updateNumerator).div(UPDATE_DENOMINATOR);
+    lpTvlTargets[_lp] += lpTvlTargets[_lp].mul(targetTvlUpdateNumerator).div(UPDATE_DENOMINATOR);
   }
 
   function updatePriceTarget(address _token) internal {
-    priceTargets[_token] += priceTargets[_token].mul(updateNumerator).div(UPDATE_DENOMINATOR);
+    priceTargets[_token] += priceTargets[_token].mul(targetPriceUpdateNumerator).div(UPDATE_DENOMINATOR);
   }
 
   // https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
@@ -333,11 +338,18 @@ contract LiquidityBalancer is IGovernable, Controllable {
     emit RouterChanged(_lp, _router);
   }
 
-  function setUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
+  function setTargetPriceUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
     require(_numerator > 0, "zero not allowed");
     require(_numerator < UPDATE_DENOMINATOR, "should be lower than denominator");
-    updateNumerator = _numerator;
-    emit NumeratorChanged(_numerator);
+    targetPriceUpdateNumerator = _numerator;
+    emit PriceNumeratorChanged(_numerator);
+  }
+
+  function setTargetTvlUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
+    require(_numerator > 0, "zero not allowed");
+    require(_numerator < UPDATE_DENOMINATOR, "should be lower than denominator");
+    targetTvlUpdateNumerator = _numerator;
+    emit TvlNumeratorChanged(_numerator);
   }
 
 }

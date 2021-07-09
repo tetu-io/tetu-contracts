@@ -70,7 +70,7 @@ describe("Fee reward forwarder tests", function () {
     await expect(forwarder.notifyPsPool(MaticAddresses.ZERO_ADDRESS, '1')).rejectedWith('no liq path');
   });
 
-  it("should not notify vault without bPS", async () => {
+  it("should not notify vault without xTETU", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
         't', 'StrategyQuick_WMATIC_WETH', core.controller, MaticAddresses.WMATIC_TOKEN, signer);
     const vault = data[1] as SmartVault;

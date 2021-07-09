@@ -163,8 +163,8 @@ export class DeployerUtils {
 
     //!########### INIT ##############
     await RunHelper.runAndWait(() => psVault.initializeSmartVault(
-        "PS",
-        "bPS",
+        "TETU_PS",
+        "xTETU",
         controller.address,
         rewardToken.address,
         psRewardDuration
@@ -224,7 +224,7 @@ export class DeployerUtils {
 
     await vault.initializeSmartVault(
         "V_" + vaultName,
-        "b" + vaultName,
+        "x" + vaultName,
         controller.address,
         strategyUnderlying,
         rewardDuration

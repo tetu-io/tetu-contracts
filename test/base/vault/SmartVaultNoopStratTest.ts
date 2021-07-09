@@ -216,7 +216,7 @@ describe("SmartVaultNoopStrat", () => {
           vault.address,
           utils.parseUnits("50", 18)
       );
-      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("55011721965020574");
+      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.055);
     });
     it("Active status", async () => {
       await vault.changeActivityStatus(false);
