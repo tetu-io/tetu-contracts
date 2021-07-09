@@ -1,0 +1,99 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity 0.7.6;
+
+import "../base/strategies/NoopStrategy.sol";
+import "../base/interface/ISmartVault.sol";
+
+
+contract MockStrategySelfFarm is StrategyBase {
+
+  string private _platform;
+
+  address[] private rewards;
+  address[] private _assets;
+
+  string public constant VERSION = "0";
+  string public constant STRATEGY_TYPE = "MockStrategy";
+  uint256 private constant BUY_BACK_RATIO = 10000;
+
+  address public pool;
+
+  constructor(
+    address _controller,
+    address _vault,
+    address _pool,
+    address __underlying,
+    address[] memory __assets,
+    string memory __platform,
+    address[] memory __rewards
+  ) StrategyBase(_controller, __underlying, _vault, __rewards, BUY_BACK_RATIO) {
+    pool = _pool;
+    _assets = __assets;
+    _platform = __platform;
+    require(ISmartVault(_pool).underlying() == __underlying, "wrong pool underlying");
+  }
+
+  function rewardPoolBalance() public override view returns (uint256 bal) {
+    bal = ISmartVault(pool).underlyingBalanceWithInvestmentForHolder(address(this));
+  }
+
+  function doHardWork() external onlyNotPausedInvesting override restricted {
+    exitRewardPool();
+    liquidateReward();
+    investAllUnderlying();
+  }
+
+  function depositToPool(uint256 amount) internal override {
+    IERC20(_underlyingToken).approve(pool, 0);
+    IERC20(_underlyingToken).approve(pool, amount);
+    ISmartVault(pool).deposit(amount);
+  }
+
+  function withdrawAndClaimFromPool(uint256) internal override {
+    ISmartVault(pool).exit();
+  }
+
+  function emergencyWithdrawFromPool() internal override {
+    ISmartVault(pool).withdraw(rewardPoolBalance());
+  }
+
+  function liquidateReward() internal override {
+    liquidateRewardDefault();
+  }
+
+  function platform() external override view returns (string memory) {
+    return _platform;
+  }
+
+  function assets() external override view returns (address[] memory) {
+    return _assets;
+  }
+
+  function readyToClaim() external view override returns (uint256[] memory) {
+    address[] memory rts = ISmartVault(pool).rewardTokens();
+    uint256[] memory toClaim = new uint256[](rts.length);
+    for (uint256 i = 0; i < rts.length; i++)
+      toClaim[i] = ISmartVault(pool).earned(rts[i], address(this));
+    return toClaim;
+  }
+
+  function poolTotalAmount() external view override returns (uint256) {
+    return ISmartVault(pool).underlyingBalanceWithInvestment();
+  }
+
+  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
+    address[] memory rts = ISmartVault(pool).rewardTokens();
+    uint256[] memory _rewards = new uint256[](rts.length);
+
+    for (uint256 i = 0; i < rts.length; i++) {
+
+      uint256 rtBalance = IERC20(rts[i]).balanceOf(pool);
+      uint256 time = ISmartVault(pool).periodFinishForToken(rts[i])
+      - ISmartVault(pool).lastUpdateTimeForToken(rts[i]);
+
+      _rewards[i] = rtBalance * (1 weeks * 1e18 / time) / 1e18;
+    }
+
+    return _rewards;
+  }
+}

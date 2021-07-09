@@ -1,0 +1,41 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": [],
+  "rules": {
+    "compiler-version": [
+      "error",
+      "^0.7.6"
+    ],
+    "func-visibility": [
+      "off",
+      {
+        "ignoreConstructors": true
+      }
+    ],
+    "avoid-tx-origin": "off",
+    "not-rely-on-time": "off",
+    "no-empty-blocks": "off",
+    "no-inline-assembly": "off",
+    "avoid-low-level-calls": "off",
+    "avoid-suicide": "error",
+    "code-complexity": [
+      "warn",
+      9
+    ],
+    "function-max-lines": [
+      "warn",
+      50
+    ],
+    "max-line-length": [
+      "error",
+      120
+    ],
+    "constructor-syntax": "warn",
+    "avoid-sha3": "warn",
+    "indent": "off",
+    "bracket-align": "off",
+    "expression-indent": "off",
+    "mark-callable-contracts": "off",
+    "comprehensive-interface": "warn"
+  }
+}
