@@ -104,10 +104,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   modifier updateReward(address account, address rt){
     rewardPerTokenStoredForToken[rt] = rewardPerToken(rt);
     lastUpdateTimeForToken[rt] = lastTimeRewardApplicable(rt);
-    if (account != address(0)) {
-      rewardsForToken[rt][account] = earned(rt, account);
-      userRewardPerTokenPaidForToken[rt][account] = rewardPerTokenStoredForToken[rt];
-    }
+    rewardsForToken[rt][account] = earned(rt, account);
+    userRewardPerTokenPaidForToken[rt][account] = rewardPerTokenStoredForToken[rt];
     _;
   }
 

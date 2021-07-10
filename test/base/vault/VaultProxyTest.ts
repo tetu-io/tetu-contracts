@@ -60,6 +60,10 @@ describe("Vault proxy test", () => {
       await expect(vault.connect(user).scheduleUpgrade(newVault.address))
       .rejectedWith("not controller");
     });
+
+    it("should not proxy update when not scheduled", async () => {
+      await expect(vaultProxy.upgrade()).rejectedWith('Upgrade not scheduled');
+    });
   });
 
 });

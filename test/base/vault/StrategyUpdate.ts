@@ -67,6 +67,40 @@ describe("Vault Strategy update test", () => {
       await expect(vault.setStrategy(strategy.address)).to.be.rejectedWith("not yet")
       expect(await vault.strategy()).not.eq(strategy.address);
     });
+
+    it("should not update with zero address", async () => {
+      await vault.announceStrategyUpdate(MaticAddresses.ZERO_ADDRESS);
+      const upgradeDelay = await vault.strategyUpdateTime();
+      await TimeUtils.advanceBlocksOnTs(upgradeDelay.add(1).toNumber());
+      await expect(vault.setStrategy(MaticAddresses.ZERO_ADDRESS)).to.be.rejectedWith("zero strat")
+    });
+
+    it("should not update with wrong underlying", async () => {
+      const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
+          core.controller.address, MaticAddresses.WETH_TOKEN, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying]) as NoopStrategy;
+      await vault.announceStrategyUpdate(strategy.address);
+      const upgradeDelay = await vault.strategyUpdateTime();
+      await TimeUtils.advanceBlocksOnTs(upgradeDelay.add(1).toNumber());
+      await expect(vault.setStrategy(strategy.address)).rejectedWith('wrong underlying');
+    });
+
+    it("should not update with wrong vault", async () => {
+      const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
+          core.controller.address, underlying, MaticAddresses.ZERO_ADDRESS, [MaticAddresses.ZERO_ADDRESS], [underlying]) as NoopStrategy;
+      await vault.announceStrategyUpdate(strategy.address);
+      const upgradeDelay = await vault.strategyUpdateTime();
+      await TimeUtils.advanceBlocksOnTs(upgradeDelay.add(1).toNumber());
+      await expect(vault.setStrategy(strategy.address)).rejectedWith('wrong strat vault');
+    });
+
+    it("should update the same", async () => {
+      const strategy = await vault.strategy();
+      await vault.announceStrategyUpdate(strategy);
+      const upgradeDelay = await vault.strategyUpdateTime();
+      await TimeUtils.advanceBlocksOnTs(upgradeDelay.add(1).toNumber());
+      await vault.setStrategy(strategy);
+      expect(await vault.strategy()).at.eq(strategy);
+    });
   });
 
 });

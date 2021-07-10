@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import chai from "chai";
-import {Controllable, EvilHackerContract, NoopStrategy, SmartVault} from "../../../typechain";
+import {EvilHackerContract, NoopStrategy, SmartVault} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {VaultUtils} from "../../VaultUtils";
@@ -341,6 +341,78 @@ describe("SmartVaultNoopStrat", () => {
       await strategy.emergencyExit();
       await expect(strategy.doHardWork()).is.rejectedWith('paused');
     });
+
+    it("should not add underlying reward token", async () => {
+      await expect(vault.addRewardToken(underlying)).rejectedWith('rt is underlying');
+    });
+
+    it("should not add exist reward token", async () => {
+      await expect(vault.addRewardToken(vaultRewardToken0)).rejectedWith('rt exist');
+    });
+
+    it("should not remove not exist reward token", async () => {
+      await expect(vault.removeRewardToken(MaticAddresses.QUICK_TOKEN)).rejectedWith('not exist');
+    });
+
+    it("should not remove not finished reward token", async () => {
+      await Erc20Utils.approve(core.rewardToken.address, signer,
+          core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
+      await core.feeRewardForwarder.notifyCustomPool(
+          core.rewardToken.address,
+          vault.address,
+          utils.parseUnits("100", 18)
+      );
+      await expect(vault.removeRewardToken(vaultRewardToken0)).rejectedWith('not finished');
+    });
+
+    it("tests without strategy", async () => {
+      const vault1 = await DeployerUtils.deploySmartVault(signer);
+      await vault1.initializeSmartVault(
+          "NOOP",
+          "tNOOP",
+          core.controller.address,
+          underlying,
+          REWARD_DURATION
+      );
+      expect(await vault1.underlyingBalanceWithInvestment()).is.eq(0);
+      await expect(vault1.doHardWork()).rejectedWith('zero strat')
+    });
+
+    it("should not withdraw when supply is zero", async () => {
+      await expect(vault.withdraw(1)).rejectedWith('no shares');
+    });
+
+    it("should not withdraw zero amount", async () => {
+      await VaultUtils.deposit(signer, vault, BigNumber.from("1"));
+      await expect(vault.withdraw(0)).rejectedWith('zero amount');
+    });
+
+    it("should not deposit zero amount", async () => {
+      await expect(vault.deposit(0)).rejectedWith('zero amount');
+    });
+
+    it("should not deposit for zero address", async () => {
+      await expect(vault.depositFor(1, MaticAddresses.ZERO_ADDRESS)).rejectedWith('zero beneficiary');
+    });
+
+    it("rebalance with zero amount", async () => {
+      await vault.rebalance();
+    });
+
+    it("should not notify with amount overflow", async () => {
+      await expect(vault.notifyTargetRewardAmount(
+          core.rewardToken.address,
+          '115792089237316195423570985008687907853269984665640564039457584007913129639935'
+      )).rejectedWith('amount overflow');
+    });
+
+    it("should not notify with unknown token", async () => {
+      await expect(vault.notifyTargetRewardAmount(
+          MaticAddresses.ZERO_ADDRESS,
+          '1'
+      )).rejectedWith('rt not found');
+    });
+
 
   });
 });

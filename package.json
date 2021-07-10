@@ -11,7 +11,7 @@
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
-    "coverage": "npm run build && npx --max-old-space-size=4096 hardhat coverage --temp artifacts --max-memory 4096"
+    "coverage": "npm run build && npx cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" hardhat coverage --temp artifacts --max-memory 4096"
   },
   "author": "TETU team",
   "license": "ISC",
