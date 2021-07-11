@@ -1,4 +1,4 @@
-import {PriceCalculatorMatic} from "../typechain";
+import {PriceCalculator} from "../typechain";
 import {utils} from "ethers";
 import {Erc20Utils} from "./Erc20Utils";
 import {expect} from "chai";
@@ -6,7 +6,7 @@ import {expect} from "chai";
 export class PriceCalculatorUtils {
 
   public static async getFormattedPrice(
-      calculator: PriceCalculatorMatic,
+      calculator: PriceCalculator,
       token: string,
       outputToken: string
   ): Promise<number> {

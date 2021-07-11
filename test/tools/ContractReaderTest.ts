@@ -9,7 +9,7 @@ import {
   ContractReader,
   FeeRewardForwarder,
   GovernmentUpdatedProxy,
-  PriceCalculatorMatic,
+  PriceCalculator,
   SmartVault
 } from "../../typechain";
 import {MintHelperUtils} from "../MintHelperUtils";
@@ -28,7 +28,7 @@ describe("contract reader tests", function () {
   let signer1: SignerWithAddress;
   let core: CoreContractsWrapper;
   let contractReader: ContractReader;
-  let calculator: PriceCalculatorMatic;
+  let calculator: PriceCalculator;
 
 
   before(async function () {

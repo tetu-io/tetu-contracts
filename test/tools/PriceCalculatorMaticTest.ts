@@ -5,7 +5,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {PriceCalculatorMatic} from "../../typechain";
+import {PriceCalculator} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {Erc20Utils} from "../Erc20Utils";
@@ -19,7 +19,7 @@ describe("Price calculator tests", function () {
   let signer: SignerWithAddress;
   let signer1: SignerWithAddress;
   let core: CoreContractsWrapper;
-  let calculator: PriceCalculatorMatic;
+  let calculator: PriceCalculator;
 
 
   before(async function () {

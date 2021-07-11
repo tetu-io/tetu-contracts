@@ -11,7 +11,7 @@ import {
   MintHelper,
   NoopStrategy,
   NotifyHelper,
-  PriceCalculatorMatic,
+  PriceCalculator,
   RewardToken,
   SmartVault,
   VaultProxy
@@ -24,6 +24,7 @@ import {ToolsAddresses} from "../models/ToolsAddresses";
 import axios from "axios";
 import {Secrets} from "../../secrets";
 import {RunHelper} from "../utils/RunHelper";
+import {MaticAddresses} from "../../test/MaticAddresses";
 
 const hre = require("hardhat");
 
@@ -115,11 +116,43 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
-  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<PriceCalculatorMatic> {
-    const logic = await DeployerUtils.deployContract(signer, "PriceCalculatorMatic");
+  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<PriceCalculator> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator");
     const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
-    const calculator = logic.attach(proxy.address) as PriceCalculatorMatic;
+    const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
+
+    await calculator.addKeyTokens([
+      MaticAddresses.USDC_TOKEN,
+      MaticAddresses.WETH_TOKEN,
+      MaticAddresses.DAI_TOKEN,
+      MaticAddresses.USDT_TOKEN,
+      MaticAddresses.WBTC_TOKEN,
+      MaticAddresses.WMATIC_TOKEN,
+      MaticAddresses.QUICK_TOKEN,
+    ]);
+    await calculator.setDefaultToken(MaticAddresses.USDC_TOKEN);
+    await calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2");
+    await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
+    await calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP");
+
+    expect(await calculator.keyTokensSize()).is.not.eq(0);
+    return calculator;
+  }
+
+  public static async deployPriceCalculatorTestNet(signer: SignerWithAddress, controller: string): Promise<PriceCalculator> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator");
+    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+    const calculator = logic.attach(proxy.address) as PriceCalculator;
+    await calculator.initialize(controller);
+    const mocks = await DeployerUtils.getMockAddresses();
+
+    await calculator.addKeyTokens([
+      mocks.get('usdc') as string
+    ]);
+    await calculator.setDefaultToken(mocks.get('usdc') as string);
+    await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
+
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return calculator;
   }
@@ -186,7 +219,7 @@ export class DeployerUtils {
 
     // need to add after adding bookkeeper
     await RunHelper.runAndWait(() =>
-        controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
+            controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
         true, wait);
 
 

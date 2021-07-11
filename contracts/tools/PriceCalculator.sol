@@ -15,11 +15,12 @@ import "../base/interface/ISmartVault.sol";
 
 pragma solidity 0.7.6;
 
-abstract contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalculator {
+contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalculator {
   using SafeERC20 for IERC20;
   using Address for address;
   using SafeMath for uint256;
 
+  bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
 
@@ -32,16 +33,23 @@ abstract contract PriceCalculator is IGovernable, Initializable, Controllable, I
   //Key tokens are used to find liquidity for any given token on Swap platforms.
   address[] public keyTokens;
 
+  event DefaultTokenChanged(address oldToken, address newToken);
   event KeyTokenAdded(address newKeyToken);
   event KeyTokenRemoved(address keyToken);
   event SwapPlatformAdded(address factoryAddress, string name);
   event SwapPlatformRemoved(address factoryAddress, string name);
 
-  function initializeBase(address _controller) public initializer {
+  constructor() {
+    assert(_DEFAULT_TOKEN_SLOT == bytes32(uint256(keccak256("eip1967.calculator.defaultToken")) - 1));
+  }
+
+  function initialize(address _controller) public initializer {
     Controllable.initializeControllable(_controller);
   }
 
-  function getPriceWithDefaultOutput(address token) external view virtual override returns (uint256);
+  function getPriceWithDefaultOutput(address token) external view override returns (uint256) {
+    return getPrice(token, defaultToken());
+  }
 
   //Main function of the contract. Gives the price of a given token in the defined output token.
   //The contract allows for input tokens to be LP tokens from Uniswap forks.
@@ -317,7 +325,29 @@ abstract contract PriceCalculator is IGovernable, Initializable, Controllable, I
     swapLpNames.pop();
   }
 
+  function defaultToken() public view returns (address value) {
+    bytes32 slot = _DEFAULT_TOKEN_SLOT;
+    assembly {
+      value := sload(slot)
+    }
+  }
+
   // ************* GOVERNANCE ACTIONS ***************
+
+  function setDefaultToken(address _newDefaultToken) public onlyControllerOrGovernance {
+    require(_newDefaultToken != address(0), "zero address");
+    emit DefaultTokenChanged(defaultToken(), _newDefaultToken);
+    bytes32 slot = _DEFAULT_TOKEN_SLOT;
+    assembly {
+      sstore(slot, _newDefaultToken)
+    }
+  }
+
+  function addKeyTokens(address[] memory newTokens) public onlyControllerOrGovernance {
+    for (uint256 i = 0; i < newTokens.length; i++) {
+      addKeyToken(newTokens[i]);
+    }
+  }
 
   function addKeyToken(address newToken) public onlyControllerOrGovernance {
     require((isKeyToken(newToken) == false), "already have");

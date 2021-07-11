@@ -11,9 +11,12 @@ abstract contract Controllable is Initializable {
 
   event UpdateController(address oldValue, address newValue);
 
-  function initializeControllable(address _controller) public initializer {
+  constructor() {
     assert(_CONTROLLER_SLOT == bytes32(uint256(keccak256("eip1967.controllable.controller")) - 1));
     assert(_CREATED_SLOT == bytes32(uint256(keccak256("eip1967.controllable.created")) - 1));
+  }
+
+  function initializeControllable(address _controller) public initializer {
     setController(_controller);
     setCreated(block.timestamp);
   }

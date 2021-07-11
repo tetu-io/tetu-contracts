@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {PriceCalculatorMatic, PriceCalculatorRopsten} from "../../../typechain";
+import {GovernmentUpdatedProxy} from "../../../typechain";
 
 
 async function main() {
@@ -8,24 +8,20 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const net = await ethers.provider.getNetwork();
 
-  let logic;
-  if (net.name === "ropsten") {
-    logic = await DeployerUtils.deployContract(signer, "PriceCalculatorRopsten");
-  } else if (net.name === "matic") {
-    logic = await DeployerUtils.deployContract(signer, "PriceCalculatorMatic");
-  }  else if (net.name === "rinkeby") {
-    logic = await DeployerUtils.deployContract(signer, "PriceCalculatorRinkeby");
+  let proxy: GovernmentUpdatedProxy;
+  if (net.name === "matic") {
+    // @ts-ignore
+    proxy = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller) as GovernmentUpdatedProxy;
   } else {
-    console.log('no calculator for net', net.name);
-    return;
+    // @ts-ignore
+    proxy = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller) as GovernmentUpdatedProxy;
   }
-  const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
-  let contract = logic.attach(proxy.address) as PriceCalculatorMatic;;
-  await contract.initialize(core.controller);
+
+  const logic = await proxy.implementation();
 
   await DeployerUtils.wait(5);
-  await DeployerUtils.verify(logic.address);
-  await DeployerUtils.verifyWithArgs(proxy.address, [logic.address]);
+  await DeployerUtils.verify(logic);
+  await DeployerUtils.verifyWithArgs(proxy.address, [logic]);
   await DeployerUtils.verifyProxy(proxy.address);
 }
 
