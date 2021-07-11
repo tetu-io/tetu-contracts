@@ -1,4 +1,4 @@
-# TETU Finance
+# TETU
 
 TETU is a collaboration between developers and investors around the whole world 
 to create the best DeFi product out there.
@@ -9,7 +9,13 @@ soon
 
 ## Addresses
 
-All addresses you can find in **addresses.ts**
+All addresses you can find in `addresses.ts`
+
+## Installation
+
+Run `npm install`
+
+Remove .exmaple from `secrets.example.ts` and `settings.example.ts` and fill properties.
 
 ##Links
 
