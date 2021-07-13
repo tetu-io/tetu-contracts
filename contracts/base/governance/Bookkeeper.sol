@@ -4,11 +4,13 @@ pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../interface/IGovernable.sol";
 
 contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
+  using SafeMathUpgradeable for uint256;
 
   string public constant VERSION = "0";
 
@@ -81,7 +83,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   }
 
   function registerStrategyEarned(uint256 _targetTokenAmount) external override onlyStrategy {
-    targetTokenEarned[msg.sender] += _targetTokenAmount;
+    targetTokenEarned[msg.sender] = targetTokenEarned[msg.sender].add(_targetTokenAmount);
 
     _lastHardWork[msg.sender] = HardWork(
       msg.sender,
@@ -110,22 +112,22 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   function registerUserAction(address _user, uint256 _amount, bool _deposit)
   external override onlyVault {
     if (vaultUsersBalances[msg.sender][_user] == 0) {
-      vaultUsersQuantity[msg.sender] += 1;
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].add(1);
     }
     if (_deposit) {
-      vaultUsersBalances[msg.sender][_user] += _amount;
+      vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].add(_amount);
     } else {
-      vaultUsersBalances[msg.sender][_user] -= _amount;
+      vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].sub(_amount);
     }
     if (vaultUsersBalances[msg.sender][_user] == 0) {
-      vaultUsersQuantity[msg.sender] -= 1;
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].sub(1);
     }
     emit RegisterUserAction(_user, _amount, _deposit);
   }
 
   function registerUserEarned(address _user, address _vault, address _rt, uint256 _amount)
   external override onlyVault {
-    userEarned[_user][_vault][_rt] += _amount;
+    userEarned[_user][_vault][_rt] = userEarned[_user][_vault][_rt].add(_amount);
     emit RegisterUserEarned(_user, _vault, _rt, _amount);
   }
 

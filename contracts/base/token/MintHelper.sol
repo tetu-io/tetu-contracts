@@ -64,7 +64,7 @@ contract MintHelper is Controllable {
         && sum.add(toFund) < amount) {
         toFund = amount.sub(sum);
       }
-      sum += toFund;
+      sum = sum.add(toFund);
       ERC20PresetMinterPauser(token()).mint(fund, toFund);
     }
     require(sum == amount, "wrong check sum");
@@ -78,7 +78,7 @@ contract MintHelper is Controllable {
     for (uint256 i; i < _funds.length; i++) {
       require(_funds[i] != address(0), "Address should not be 0");
       require(_fractions[i] != 0, "Ratio should not be 0");
-      fractionSum += _fractions[i];
+      fractionSum = fractionSum.add(_fractions[i]);
       operatingFunds[_funds[i]] = _fractions[i];
       operatingFundsList.push(_funds[i]);
     }

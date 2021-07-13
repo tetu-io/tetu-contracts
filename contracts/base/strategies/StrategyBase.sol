@@ -207,10 +207,14 @@ abstract contract StrategyBase is IStrategy, Controllable {
       IERC20(_rewardToken).safeApprove(forwarder, _rewardBalance);
       uint256 targetTokenEarned;
       if (toPsAmount > 0) {
-        targetTokenEarned += IFeeRewardForwarder(forwarder).notifyPsPool(_rewardToken, toPsAmount);
+        targetTokenEarned = targetTokenEarned.add(
+          IFeeRewardForwarder(forwarder).notifyPsPool(_rewardToken, toPsAmount)
+        );
       }
       if (toVaultAmount > 0) {
-        targetTokenEarned += IFeeRewardForwarder(forwarder).notifyCustomPool(_rewardToken, _smartVault, toVaultAmount);
+        targetTokenEarned = targetTokenEarned.add(
+          IFeeRewardForwarder(forwarder).notifyCustomPool(_rewardToken, _smartVault, toVaultAmount)
+        );
       }
       if (targetTokenEarned > 0) {
         IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);

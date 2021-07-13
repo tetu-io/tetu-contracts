@@ -64,7 +64,7 @@ contract RewardToken is ERC20, ERC20PresetMinterPauser, ERC20Capped {
   function startMinting() public onlyAdmin {
     require(mintingStartTs == 0, "minting already started");
     mintingStartTs = block.timestamp;
-    mintingEndTs = mintingStartTs + MINTING_PERIOD;
+    mintingEndTs = mintingStartTs.add(MINTING_PERIOD);
   }
 
   function _beforeTokenTransfer(address from, address to, uint256 amount)

@@ -178,11 +178,15 @@ contract LiquidityBalancer is IGovernable, Controllable {
   }
 
   function updateLpTvlTarget(address _lp) internal {
-    lpTvlTargets[_lp] += lpTvlTargets[_lp].mul(targetTvlUpdateNumerator).div(UPDATE_DENOMINATOR);
+    lpTvlTargets[_lp] = lpTvlTargets[_lp].add(
+      lpTvlTargets[_lp].mul(targetTvlUpdateNumerator).div(UPDATE_DENOMINATOR)
+    );
   }
 
   function updatePriceTarget(address _token) internal {
-    priceTargets[_token] += priceTargets[_token].mul(targetPriceUpdateNumerator).div(UPDATE_DENOMINATOR);
+    priceTargets[_token] = priceTargets[_token].add(
+      priceTargets[_token].mul(targetPriceUpdateNumerator).div(UPDATE_DENOMINATOR)
+    );
   }
 
   // https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens

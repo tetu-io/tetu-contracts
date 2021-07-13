@@ -54,6 +54,8 @@ describe("Vault proxy test", () => {
       await TimeUtils.advanceBlocksOnTs(upgradeDelay.add(1).toNumber());
       await vaultProxy.upgrade();
       expect(await vaultProxy.implementation()).at.eq(newVault.address);
+      expect((await vault.underlying()).toLowerCase()).at.eq(underlying.toLowerCase());
+      expect(await vault.duration()).at.eq(REWARD_DURATION);
     });
     it("should not proxy update", async () => {
       const newVault = await DeployerUtils.deployContract(user, "SmartVault");
