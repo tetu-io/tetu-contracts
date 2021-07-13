@@ -35,7 +35,7 @@ export class Addresses {
         '0xf3cfb67C9e0F0cf041CECB2eb6472BD2D431460c', // calculator
         '0x73B2288b7cceA4b2f27E4e67Ac66741b7856a018', // reader
         '0xc6cF9c053Cc3e025BfA12099a78969Ec523B7E09', // utils
-        '' // rebalancer
+        '0xb3cFc929994acEB2821601b3bB11dc74087aBD6B' // rebalancer
     )]
   ]);
 
