@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: UNLICENSED
 /**
  *Submitted for verification at Etherscan.io on 2020-05-05
 */
