@@ -196,9 +196,9 @@ describe("liquidity balancer tsets", function () {
 
   it("should salvage", async () => {
     const balanceBefore = await Erc20Utils.balanceOf(token, signer.address);
-    await liquidityBalancer.salvage(token);
+    await liquidityBalancer.salvage(token, '123456789');
     const balanceAfter = await Erc20Utils.balanceOf(token, signer.address);
-    expect(+utils.formatUnits(balanceAfter, 18)).is.greaterThan(+utils.formatUnits(balanceBefore, 18));
+    expect(+utils.formatUnits(balanceAfter, 18)).is.eq(+utils.formatUnits(balanceBefore.add('123456789'), 18));
   });
 
   it("should not down with zero values", async () => {

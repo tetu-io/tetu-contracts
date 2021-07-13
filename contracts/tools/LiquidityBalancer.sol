@@ -33,8 +33,9 @@ contract LiquidityBalancer is IGovernable, Controllable {
   string public constant VERSION = "0";
   uint256 constant internal PRECISION = 10 ** 18;
   uint256 public targetPriceUpdateNumerator = 100; // 0.1 % by default
-  uint256 public targetTvlUpdateNumerator = 10000; // 10 % by default
-  uint256 constant public UPDATE_DENOMINATOR = 100000;
+  uint256 public targetTvlUpdateNumerator = 100; // 0.1 % by default
+  uint256 public removeLiqRatioNumerator = 100; // 0.1 % by default
+  uint256 constant public DENOMINATOR = 100000;
 
   mapping(address => uint256) public priceTargets;
   mapping(address => uint256) public lpTvlTargets;
@@ -46,6 +47,7 @@ contract LiquidityBalancer is IGovernable, Controllable {
   event RouterChanged(address lp, address router);
   event PriceNumeratorChanged(uint256 value);
   event TvlNumeratorChanged(uint256 value);
+  event RemLiqNumeratorChanged(uint256 value);
   event Swap(address tokenIn, address tokenOut, uint256 amount);
   event LiqAdded(address lp, uint256 amount0, uint256 amount1);
   event LiqRemoved(address lp, uint256 amount);
@@ -82,6 +84,7 @@ contract LiquidityBalancer is IGovernable, Controllable {
         IERC20(oppositeToken).balanceOf(address(this))
       );
       // update target price for avoid a tons of rebalancing cycles
+      // also it means that we hit our global goal - price and TVL balanced
       (,, uint256 price,) = getLpInfo(_lp, _token);
       priceTargets[_token] = price;
       route.pop();
@@ -143,7 +146,9 @@ contract LiquidityBalancer is IGovernable, Controllable {
     remAmount = Math.min(remAmount, lpBalance);
 
     if (remAmount > 0 && lpBalance >= remAmount && currentTvl > lpTvlTargets[_lp]) {
-      return Math.min(remAmount, lpBalance);
+      uint256 result = Math.min(remAmount, lpBalance);
+      result = result.mul(removeLiqRatioNumerator).div(DENOMINATOR);
+      return result;
     } else {
       return 0;
     }
@@ -189,13 +194,13 @@ contract LiquidityBalancer is IGovernable, Controllable {
 
   function updateLpTvlTarget(address _lp) internal {
     lpTvlTargets[_lp] = lpTvlTargets[_lp].add(
-      lpTvlTargets[_lp].mul(targetTvlUpdateNumerator).div(UPDATE_DENOMINATOR)
+      lpTvlTargets[_lp].mul(targetTvlUpdateNumerator).div(DENOMINATOR)
     );
   }
 
   function updatePriceTarget(address _token) internal {
     priceTargets[_token] = priceTargets[_token].add(
-      priceTargets[_token].mul(targetPriceUpdateNumerator).div(UPDATE_DENOMINATOR)
+      priceTargets[_token].mul(targetPriceUpdateNumerator).div(DENOMINATOR)
     );
   }
 
@@ -321,12 +326,11 @@ contract LiquidityBalancer is IGovernable, Controllable {
 
   // ***************** GOVERNANCE ACTIONS *********************
 
-  function salvage(address _token) public onlyControllerOrGovernance {
+  function salvage(address _token, uint256 amount) public onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
-    if (tokenBalance > 0) {
-      IERC20(_token).safeTransfer(msg.sender, tokenBalance);
-      emit Salvage(_token, tokenBalance);
-    }
+    require(tokenBalance >= amount, "not enough balance");
+    IERC20(_token).safeTransfer(msg.sender, amount);
+    emit Salvage(_token, amount);
   }
 
   // should have PRECISION_DECIMALS
@@ -354,16 +358,23 @@ contract LiquidityBalancer is IGovernable, Controllable {
 
   function setTargetPriceUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
     require(_numerator > 0, "zero not allowed");
-    require(_numerator < UPDATE_DENOMINATOR, "should be lower than denominator");
+    require(_numerator < DENOMINATOR, "should be lower than denominator");
     targetPriceUpdateNumerator = _numerator;
     emit PriceNumeratorChanged(_numerator);
   }
 
   function setTargetTvlUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
     require(_numerator > 0, "zero not allowed");
-    require(_numerator < UPDATE_DENOMINATOR, "should be lower than denominator");
+    require(_numerator < DENOMINATOR, "should be lower than denominator");
     targetTvlUpdateNumerator = _numerator;
     emit TvlNumeratorChanged(_numerator);
+  }
+
+  function setRemoveLiqRatioNumerator(uint256 _numerator) external onlyControllerOrGovernance {
+    require(_numerator > 0, "zero not allowed");
+    require(_numerator <= DENOMINATOR, "should be lower or equal than denominator");
+    removeLiqRatioNumerator = _numerator;
+    emit RemLiqNumeratorChanged(_numerator);
   }
 
 }

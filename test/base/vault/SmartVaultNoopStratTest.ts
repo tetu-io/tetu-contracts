@@ -1,11 +1,6 @@
 import {ethers} from "hardhat";
 import chai from "chai";
-import {
-  EvilHackerContract,
-  HackerContractVaultDelegateCall,
-  NoopStrategy,
-  SmartVault
-} from "../../../typechain";
+import {EvilHackerContract, NoopStrategy, SmartVault} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {VaultUtils} from "../../VaultUtils";
