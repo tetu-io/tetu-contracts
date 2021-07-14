@@ -28,8 +28,8 @@ describe("Price calculator tests", function () {
     signer1 = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer);
     await core.mintHelper.startMinting();
-    calculator = await DeployerUtils
-    .deployPriceCalculatorMatic(signer, core.controller.address);
+    calculator = (await DeployerUtils
+    .deployPriceCalculatorMatic(signer, core.controller.address))[0];
   });
 
   after(async function () {

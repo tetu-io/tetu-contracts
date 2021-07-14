@@ -45,7 +45,7 @@ describe("contract reader tests", function () {
     expect(await proxy.implementation()).is.eq(logic.address);
     await contractReader.initialize(core.controller.address);
 
-    calculator = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address);
+    calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     await contractReader.setPriceCalculator(calculator.address);
 

@@ -8,7 +8,7 @@ async function main() {
 
   const datas = [];
   const core = await DeployerUtils.getCoreAddresses();
-  const mocks = await DeployerUtils.getMockAddresses();
+  const mocks = await DeployerUtils.getTokenAddresses();
   const controller = await DeployerUtils.connectContract(
       signer, 'Controller', core.controller) as Controller;
 
@@ -16,7 +16,7 @@ async function main() {
     const vaultName: string = 'NOOP_MockUSDC_' + i;
     const strategyName: string = 'NoopStrategy';
     const vaultRewardToken: string = core.psVault;
-    const rewardDuration: number = 60 * 60 * 24 * 7; // 1 week
+    const rewardDuration: number = 60 * 60 * 24 * 28; // 1 week
 
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultLogic.address);

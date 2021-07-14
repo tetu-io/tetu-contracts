@@ -29,7 +29,7 @@ describe("Smart vault rewards test", () => {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     await core.mintHelper.startMinting();
 
-    const calculator = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address);
+    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
     const crProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", crLogic.address);
@@ -71,7 +71,7 @@ describe("Smart vault rewards test", () => {
         "tNOOP",
         core.controller.address,
         underlying,
-        60 * 60 * 24 * 7
+        60 * 60 * 24 * 28
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await vault.addRewardToken(rt);

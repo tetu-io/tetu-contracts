@@ -12,7 +12,7 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const net = (await ethers.provider.getNetwork()).name;
   const core = await DeployerUtils.getCoreAddresses();
-  const mocks = await DeployerUtils.getMockAddresses();
+  const mocks = await DeployerUtils.getTokenAddresses();
   const platform = 'SUSHI';
   const underlying = mocks.get('sushi_lp_token_usdc') as string;
   const underlying0 = core.rewardToken;
@@ -35,7 +35,7 @@ async function main() {
     const vaultName: string = 'MOCK_SUSHI_TETU_USDC_V' + VERSION + '_' + i;
     const poolName: string = 'NOOP_SUSHI_TETU_USDC_V' + VERSION + '_' + i;
     const vaultRewardToken: string = core.psVault;
-    const rewardDuration: number = 60 * 60 * 24 * 7; // 1 week
+    const rewardDuration: number = 60 * 60 * 24 * 28; // 1 week
     // *********** DEPLOY MOCK POOL FOR STRATEGY
     const poolLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const poolProxy = await DeployerUtils.deployContract(signer, "VaultProxy", poolLogic.address);

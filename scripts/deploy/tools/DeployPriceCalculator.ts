@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {GovernmentUpdatedProxy} from "../../../typechain";
+import {GovernmentUpdatedProxy, PriceCalculator} from "../../../typechain";
 
 
 async function main() {
@@ -8,21 +8,19 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const net = await ethers.provider.getNetwork();
 
-  let proxy: GovernmentUpdatedProxy;
+  let data: [PriceCalculator, GovernmentUpdatedProxy, PriceCalculator];
   if (net.name === "matic") {
     // @ts-ignore
-    proxy = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller) as GovernmentUpdatedProxy;
+    data = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller);
   } else {
     // @ts-ignore
-    proxy = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller) as GovernmentUpdatedProxy;
+    data = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller);
   }
 
-  const logic = await proxy.implementation();
-
   await DeployerUtils.wait(5);
-  await DeployerUtils.verify(logic);
-  await DeployerUtils.verifyWithArgs(proxy.address, [logic]);
-  await DeployerUtils.verifyProxy(proxy.address);
+  await DeployerUtils.verify(data[2].address);
+  await DeployerUtils.verifyWithArgs(data[1].address, [data[2].address]);
+  await DeployerUtils.verifyProxy(data[1].address);
 }
 
 main()

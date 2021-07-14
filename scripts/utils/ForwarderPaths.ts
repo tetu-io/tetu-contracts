@@ -10,7 +10,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const signer = (await ethers.getSigners())[0];
   const net = (await ethers.provider.getNetwork()).name;
-  const mocks = await DeployerUtils.getMockAddresses();
+  const mocks = await DeployerUtils.getTokenAddresses();
 
   const forwarder = await DeployerUtils.connectContract(signer,
       'FeeRewardForwarder', core.feeRewardForwarder) as FeeRewardForwarder;

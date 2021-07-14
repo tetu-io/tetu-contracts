@@ -12,8 +12,8 @@ import {VaultUtils} from "../VaultUtils";
 export class DoHardWorkLoop {
 
   public static async doHardWorkLoop(info: StrategyInfo, deposit: string, loops: number, loopTime: number) {
-    const calculator = await DeployerUtils
-    .deployPriceCalculatorMatic(info.signer, info.core.controller.address);
+    const calculator = (await DeployerUtils
+    .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
     const vaultForUser = info.vault.connect(info.user);
 
     const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);

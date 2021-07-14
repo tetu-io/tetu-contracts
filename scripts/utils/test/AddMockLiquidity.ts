@@ -10,7 +10,7 @@ import {RunHelper} from "../RunHelper";
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
-  const mocks = await DeployerUtils.getMockAddresses();
+  const mocks = await DeployerUtils.getTokenAddresses();
   const signer = (await ethers.getSigners())[0];
   const base = 1_000;
   let prevMock;
