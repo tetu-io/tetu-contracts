@@ -57,12 +57,18 @@ contract MintHelper is Controllable {
   }
 
   function mint(uint256 amount) external onlyControllerOrGovernance {
+    mintWithCustomDistributor(amount, distributor());
+  }
+
+  /// we will split weekly emission to three parts and use on different networks
+  /// until we don't have a bridge contract we will send non polygon parts to multisig wallet
+  function mintWithCustomDistributor(uint256 amount, address _distributor) public onlyControllerOrGovernance {
     require(amount != 0, "Amount should be greater than 0");
     require(token() != address(0), "Token not init");
 
     // mint the base amount to distributor
     uint256 toDistributor = amount.mul(baseRatio).div(totalRatio);
-    ERC20PresetMinterPauser(token()).mint(distributor(), toDistributor);
+    ERC20PresetMinterPauser(token()).mint(_distributor, toDistributor);
 
     uint256 sum = toDistributor;
     // mint to each fund
