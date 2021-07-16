@@ -1,17 +1,11 @@
 import {ethers} from "hardhat";
 import {writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
-import {
-  Bookkeeper,
-  IMiniChefV2,
-  IOracleMatic,
-  IRewarder,
-  IStrategy,
-  MCv2StrategyFullBuyback
-} from "../../typechain";
+import {Bookkeeper, IMiniChefV2, IOracleMatic, IRewarder, IStrategy} from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {MaticAddresses} from "../../test/MaticAddresses";
+import {Erc20Utils} from "../../test/Erc20Utils";
 
 
 async function main() {
@@ -49,31 +43,38 @@ async function main() {
     const strat = await vaultContract.strategy();
     const stratContract = await DeployerUtils.connectInterface(signer, 'IStrategy', strat) as IStrategy;
 
-    const platform = await stratContract.platform();
+    const rts = await stratContract.rewardTokens();
 
-    let allRewards: number = 0;
-
-    if (platform === 'SUSHI') {
-      const mcStrat = await DeployerUtils.connectInterface(signer, 'MCv2StrategyFullBuyback', strat) as MCv2StrategyFullBuyback;
-      const poolId = await mcStrat.poolID();
-      allRewards = await sushiData(
-          poolId.toNumber(),
-          signer,
-          chef,
-          sushiPerSecond,
-          sushiTotalAllocPoint,
-          sushiPrice,
-          maticPrice
-      );
-    } else {
-      throw Error('Unknown platform ' + platform);
+    let poolWeeklyRewardsAmount: number = 0;
+    for (let i = 0; i < rts.length; i++) {
+      const rewardsData = await stratContract.poolWeeklyRewardsAmount();
+      const rtDec = await Erc20Utils.decimals(rts[i]);
+      poolWeeklyRewardsAmount += +utils.formatUnits(rewardsData[i], rtDec);
     }
 
-    if (allRewards === 0) {
+
+    // const platform = await stratContract.platform();
+    // if (platform === 'SUSHI') {
+    //   const mcStrat = await DeployerUtils.connectInterface(signer, 'MCv2StrategyFullBuyback', strat) as MCv2StrategyFullBuyback;
+    //   const poolId = await mcStrat.poolID();
+    //   poolWeeklyRewardsAmount = await sushiData(
+    //       poolId.toNumber(),
+    //       signer,
+    //       chef,
+    //       sushiPerSecond,
+    //       sushiTotalAllocPoint,
+    //       sushiPrice,
+    //       maticPrice
+    //   );
+    // } else {
+    //   throw Error('Unknown platform ' + platform);
+    // }
+
+    if (poolWeeklyRewardsAmount === 0) {
       throw Error('zero rewards for ' + vault);
     }
 
-    const rewardTokenAmount = allRewards / rewardTokenPrice
+    const rewardTokenAmount = poolWeeklyRewardsAmount / rewardTokenPrice
 
     vaultsToDistribute += vault + ',';
     amountsToDistribute += utils.parseUnits(rewardTokenAmount.toString()).toString() + ',';
