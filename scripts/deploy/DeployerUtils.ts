@@ -11,6 +11,7 @@ import {
   MintHelper,
   NoopStrategy,
   NotifyHelper,
+  PayrollClerk,
   PriceCalculator,
   RewardToken,
   SmartVault,
@@ -159,6 +160,15 @@ export class DeployerUtils {
     const logic = await DeployerUtils.deployContract(signer, "SmartVault");
     const proxy = await DeployerUtils.deployContract(signer, "VaultProxy", logic.address);
     return logic.attach(proxy.address) as SmartVault;
+  }
+
+  public static async deployPayrollClerk(signer: SignerWithAddress, controller: string)
+      : Promise<[PayrollClerk, GovernmentUpdatedProxy, PayrollClerk]> {
+    const logic = await DeployerUtils.deployContract(signer, "PayrollClerk") as PayrollClerk;
+    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const contract = logic.attach(proxy.address) as PayrollClerk;
+    await contract.initialize(controller);
+    return [contract, proxy, logic];
   }
 
   public static async deployAllCoreContracts(

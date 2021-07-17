@@ -230,7 +230,7 @@ describe("contract reader tests", function () {
   });
   it("vaultDurationList", async () => {
     expect((await contractReader.vaultDurationList())[0])
-    .is.eq("604800");
+    .is.eq("2419200");
   });
   it("strategyPlatformList", async () => {
     expect((await contractReader.strategyPlatformList())[0])
