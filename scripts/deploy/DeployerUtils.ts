@@ -11,6 +11,7 @@ import {
   MintHelper,
   NoopStrategy,
   NotifyHelper,
+  PayrollClerk,
   PriceCalculator,
   RewardToken,
   SmartVault,
@@ -116,9 +117,9 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
-  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<PriceCalculator> {
-    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator");
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, GovernmentUpdatedProxy, PriceCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
 
@@ -137,24 +138,22 @@ export class DeployerUtils {
     await calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP");
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
-    return calculator;
+    return [calculator, proxy, logic];
   }
 
-  public static async deployPriceCalculatorTestNet(signer: SignerWithAddress, controller: string): Promise<PriceCalculator> {
-    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator");
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+  public static async deployPriceCalculatorTestNet(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, GovernmentUpdatedProxy, PriceCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
-    const mocks = await DeployerUtils.getMockAddresses();
+    const mocks = await DeployerUtils.getTokenAddresses();
 
     await calculator.addKeyTokens([
       mocks.get('usdc') as string
     ]);
     await calculator.setDefaultToken(mocks.get('usdc') as string);
     await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
-
-    expect(await calculator.keyTokensSize()).is.not.eq(0);
-    return calculator;
+    return [calculator, proxy, logic];
   }
 
   public static async deploySmartVault(signer: SignerWithAddress): Promise<SmartVault> {
@@ -163,9 +162,18 @@ export class DeployerUtils {
     return logic.attach(proxy.address) as SmartVault;
   }
 
+  public static async deployPayrollClerk(signer: SignerWithAddress, controller: string)
+      : Promise<[PayrollClerk, GovernmentUpdatedProxy, PayrollClerk]> {
+    const logic = await DeployerUtils.deployContract(signer, "PayrollClerk") as PayrollClerk;
+    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const contract = logic.attach(proxy.address) as PayrollClerk;
+    await contract.initialize(controller);
+    return [contract, proxy, logic];
+  }
+
   public static async deployAllCoreContracts(
       signer: SignerWithAddress,
-      psRewardDuration: number = 60 * 60 * 24 * 7,
+      psRewardDuration: number = 60 * 60 * 24 * 28,
       wait = false
   ): Promise<CoreContractsWrapper> {
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
@@ -244,7 +252,7 @@ export class DeployerUtils {
       controller: Controller,
       vaultRewardToken: string,
       signer: SignerWithAddress,
-      rewardDuration: number = 60 * 60 * 24 * 7 // 1 week
+      rewardDuration: number = 60 * 60 * 24 * 28 // 4 weeks
   ): Promise<any[]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultLogic.address);
@@ -331,10 +339,10 @@ export class DeployerUtils {
     return tools;
   }
 
-  public static async getMockAddresses(): Promise<Map<string, string>> {
+  public static async getTokenAddresses(): Promise<Map<string, string>> {
     const net = await ethers.provider.getNetwork();
     console.log('network', net.name);
-    const mocks = Addresses.MOCKS.get(net.name);
+    const mocks = Addresses.TOKENS.get(net.name);
     if (!mocks) {
       throw Error('No config for ' + net.name);
     }

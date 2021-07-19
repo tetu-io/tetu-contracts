@@ -5,6 +5,8 @@ import {Erc20Utils} from "../../test/Erc20Utils";
 import {utils} from "ethers";
 import {RunHelper} from "./RunHelper";
 import {RopstenAddresses} from "../../test/RopstenAddresses";
+import {Settings} from "../../settings";
+import {MaticAddresses} from "../../test/MaticAddresses";
 
 
 async function main() {
@@ -13,12 +15,11 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const net = (await ethers.provider.getNetwork()).name;
   const balancer = await DeployerUtils.connectContract(signer, 'LiquidityBalancer', tools.rebalancer) as LiquidityBalancer;
-  // await RunHelper.runAndWait(() => balancer.salvage(core.rewardToken));
-  // return;
   const targetToken = core.rewardToken;
-  const targetPrice = 1;
-  const targetTvl = 1000_000;
-  const targetLpAddress = (await DeployerUtils.getMockAddresses()).get('sushi_lp_token_usdc') as string;
+  const targetPrice = Settings.lbTargetPrice;
+  const targetTvl = Settings.lbTargetTvl;
+  const skipUseless = Settings.lbSkipUseless;
+  const targetLpAddress = (await DeployerUtils.getTokenAddresses()).get('sushi_lp_token_usdc') as string;
   const targetLp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', targetLpAddress) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
   const token1 = await targetLp.token1();
@@ -33,8 +34,10 @@ async function main() {
   }
 
   let router;
-  if (net === 'ropsten') {
+  if (net === 'ropsten' || net === 'rinkeby') {
     router = RopstenAddresses.SUSHI_ROUTER;
+  } else if (net === 'matic') {
+    router = MaticAddresses.SUSHI_ROUTER;
   } else {
     throw Error('Unknown net ' + net);
   }
@@ -45,57 +48,64 @@ async function main() {
   let lastTvl;
   // noinspection InfiniteLoopJS
   while (true) {
-    const lpData = await computePrice(
-        targetLp,
-        targetToken,
-        token0,
-        token0Decimals,
-        token1Decimals
-    );
-    const price = lpData[0];
-    const tvl = lpData[1] * 2;
-    const lpTokenReserve = lpData[2];
-    const balancerTokenBal = +utils.formatUnits(await Erc20Utils.balanceOf(targetToken, balancer.address));
-    const balancerLpBal = +utils.formatUnits(await Erc20Utils.balanceOf(targetLpAddress, balancer.address));
-    const currentPriceTarget = +utils.formatUnits(await balancer.priceTargets(targetToken));
-    const currentTvlTarget = +utils.formatUnits(await balancer.lpTvlTargets(targetLpAddress));
+    if (!Settings.lbFastMod) {
+      const lpData = await computePrice(
+          targetLp,
+          targetToken,
+          token0,
+          token0Decimals,
+          token1Decimals
+      );
+      const price = lpData[0];
+      const tvl = lpData[1] * 2;
+      const lpTokenReserve = lpData[2];
+      const balancerTokenBal = +utils.formatUnits(await Erc20Utils.balanceOf(targetToken, balancer.address));
+      const balancerLpBal = +utils.formatUnits(await Erc20Utils.balanceOf(targetLpAddress, balancer.address));
+      const currentPriceTarget = +utils.formatUnits(await balancer.priceTargets(targetToken));
+      const currentTvlTarget = +utils.formatUnits(await balancer.lpTvlTargets(targetLpAddress));
 
-    if (!lastPrice) {
+      if (!lastPrice) {
+        lastPrice = price;
+      }
+      if (!lastTvl) {
+        lastTvl = tvl;
+      }
+
+      const needToSell = utils.formatUnits(await balancer.needToSell(targetToken, targetLpAddress));
+      console.log('needToSell', needToSell);
+      const needToRemove = utils.formatUnits(await balancer.needToRemove(targetToken, targetLpAddress));
+      console.log('needToRemove', needToRemove);
+
+      console.log(
+          '######################### CURRENT STATS ##############################\n' +
+          '# Price:                    ' + price + ' (' + ((price - lastPrice) / lastPrice * 100) + '%)\n' +
+          '# LP TVL:                   ' + tvl + ' (' + ((tvl - lastTvl) / tvl * 100) + '%)\n' +
+          '# LP Token Reserve:         ' + lpTokenReserve + '\n' +
+          '# Balancer Tokens:          ' + balancerTokenBal + '\n' +
+          '# Balancer LP Tokens:       ' + balancerLpBal + '\n' +
+          '# Price Target:             ' + currentPriceTarget + '\n' +
+          '# TVL Target:               ' + currentTvlTarget + '\n' +
+          '# Sell:                     ' + needToSell + '\n' +
+          '# Remove:                   ' + needToRemove + '\n' +
+          '######################################################################'
+      );
       lastPrice = price;
-    }
-    if (!lastTvl) {
       lastTvl = tvl;
-    }
 
-    const needToSell = utils.formatUnits(await balancer.needToSell(targetToken, targetLpAddress));
-    console.log('needToSell', needToSell);
-    const needToRemove = utils.formatUnits(await balancer.needToRemove(targetToken, targetLpAddress));
-    console.log('needToRemove', needToRemove);
+      if (balancerTokenBal === 0 && balancerLpBal === 0) {
+        console.log('zero balance');
+        if (skipUseless) {
+          continue;
+        }
+      }
 
-    console.log(
-        '######################### CURRENT STATS ##############################\n' +
-        '# Price:                    ' + price + ' (' + ((price - lastPrice) / price * 100) + '%)\n' +
-        '# LP TVL:                   ' + tvl + ' (' + ((tvl - lastTvl) / tvl * 100) + '%)\n' +
-        '# LP Token Reserve:         ' + lpTokenReserve + '\n' +
-        '# Balancer Tokens:          ' + balancerTokenBal + '\n' +
-        '# Balancer LP Tokens:       ' + balancerLpBal + '\n' +
-        '# Price Target:             ' + currentPriceTarget + '\n' +
-        '# TVL Target:               ' + currentTvlTarget + '\n' +
-        '# Sell:                     ' + needToSell + '\n' +
-        '# Remove:                   ' + needToRemove + '\n' +
-        '######################################################################'
-    );
-    lastPrice = price;
-    lastTvl = tvl;
+      if (needToSell === '0.0' && needToRemove === '0.0') {
+        console.log('nothing to do');
+        if (skipUseless) {
+          continue;
+        }
+      }
 
-    if (balancerTokenBal === 0 && balancerLpBal === 0) {
-      console.log('zero balance');
-      continue;
-    }
-
-    if (needToSell === '0.0' && needToRemove === '0.0') {
-      console.log('nothing to do');
-      continue;
     }
 
     await RunHelper.runAndWait(() =>

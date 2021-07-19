@@ -12,7 +12,7 @@ async function main() {
   const BASE_AMOUNT = 1000;
   const core = await DeployerUtils.getCoreAddresses();
   const signer = (await ethers.getSigners())[1];
-  const mocks = await DeployerUtils.getMockAddresses();
+  const mocks = await DeployerUtils.getTokenAddresses();
   const net = (await ethers.provider.getNetwork()).name;
   const targetToken = core.rewardToken;
   const targetLpAddress = mocks.get('sushi_lp_token_usdc') as string;
@@ -29,7 +29,7 @@ async function main() {
   const oppositeTokenDecimals = await Erc20Utils.decimals(oppositeToken);
 
   let router: string;
-  if (net === 'ropsten') {
+  if (net === 'ropsten' || net === 'rinkeby') {
     router = RopstenAddresses.SUSHI_ROUTER;
   } else {
     throw Error('Unknown net ' + net);

@@ -33,7 +33,7 @@ async function startDefaultSingleTokenStrategyTest(
       const user = (await ethers.getSigners())[1];
 
       const core = await DeployerUtils.deployAllCoreContracts(signer);
-      const calculator = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address);
+      const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
       await core.mintHelper.startMinting();
 
       for (let rt of rewardTokens) {

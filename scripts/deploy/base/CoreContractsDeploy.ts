@@ -8,7 +8,7 @@ import {writeFileSync} from "fs";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 7, true);
+  const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, true);
 
   await writeFileSync('./infos.json', JSON.stringify(core), 'utf8');
 

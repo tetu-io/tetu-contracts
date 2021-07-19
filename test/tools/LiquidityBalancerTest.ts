@@ -40,6 +40,13 @@ describe("liquidity balancer tsets", function () {
     await MintHelperUtils.mint(core.mintHelper, "10000000");
     await Erc20Utils.transfer(core.rewardToken.address, signer,
         liquidityBalancer.address, utils.parseUnits("100000").toString());
+
+    await liquidityBalancer.setTargetPriceUpdateNumerator(1000);
+    await liquidityBalancer.setTargetTvlUpdateNumerator(1000);
+    await liquidityBalancer.setRemoveLiqRatioNumerator(1000);
+
+    expect(await liquidityBalancer.isGovernance(signer.address)).is.true;
+
   });
 
   after(async function () {

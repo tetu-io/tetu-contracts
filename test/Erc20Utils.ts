@@ -28,7 +28,7 @@ export class Erc20Utils {
 
   public static async transfer(tokenAddress: string, signer: SignerWithAddress, destination: string, amount: string) {
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    await token.transfer(destination, BigNumber.from(amount))
+    return await token.transfer(destination, BigNumber.from(amount))
   }
 
   public static async wrapMatic(signer: SignerWithAddress, amount: string) {
