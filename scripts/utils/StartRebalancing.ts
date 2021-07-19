@@ -78,7 +78,7 @@ async function main() {
 
       console.log(
           '######################### CURRENT STATS ##############################\n' +
-          '# Price:                    ' + price + ' (' + ((price - lastPrice) / price * 100) + '%)\n' +
+          '# Price:                    ' + price + ' (' + ((price - lastPrice) / lastPrice * 100) + '%)\n' +
           '# LP TVL:                   ' + tvl + ' (' + ((tvl - lastTvl) / tvl * 100) + '%)\n' +
           '# LP Token Reserve:         ' + lpTokenReserve + '\n' +
           '# Balancer Tokens:          ' + balancerTokenBal + '\n' +
