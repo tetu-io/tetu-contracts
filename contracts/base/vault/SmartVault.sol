@@ -124,8 +124,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    * Change the active state marker
    */
-  function changeActivityStatus(bool active) external onlyControllerOrGovernance {
-    _setActive(active);
+  function changeActivityStatus(bool _active) external override onlyControllerOrGovernance {
+    _setActive(_active);
   }
 
   /**

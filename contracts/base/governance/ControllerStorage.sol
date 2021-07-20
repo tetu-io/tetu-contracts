@@ -80,6 +80,15 @@ abstract contract ControllerStorage is Initializable, IController {
     return getAddress("rewardToken");
   }
 
+  function _setFundToken(address _address) internal {
+    emit UpdatedAddressSlot("fundToken", fundToken(), _address);
+    setAddress("fundToken", _address);
+  }
+
+  function fundToken() public override view returns (address) {
+    return getAddress("fundToken");
+  }
+
   function _setNotifyHelper(address _address) internal {
     emit UpdatedAddressSlot("notifyHelper", notifyHelper(), _address);
     setAddress("notifyHelper", _address);
@@ -96,6 +105,15 @@ abstract contract ControllerStorage is Initializable, IController {
 
   function psVault() public override view returns (address) {
     return getAddress("psVault");
+  }
+
+  function _setFund(address _address) internal {
+    emit UpdatedAddressSlot("fund", fund(), _address);
+    setAddress("fund", _address);
+  }
+
+  function fund() public override view returns (address) {
+    return getAddress("fund");
   }
 
   // ----------- INTEGERS ----------
@@ -115,6 +133,24 @@ abstract contract ControllerStorage is Initializable, IController {
 
   function psDenominator() public view override returns (uint256) {
     return getUint256("psDenominator");
+  }
+
+  function _setFundNumerator(uint256 _value) internal {
+    emit UpdatedUint256Slot("fundNumerator", fundNumerator(), _value);
+    setUint256("fundNumerator", _value);
+  }
+
+  function fundNumerator() public view override returns (uint256) {
+    return getUint256("fundNumerator");
+  }
+
+  function _setFundDenominator(uint256 _value) internal {
+    emit UpdatedUint256Slot("fundDenominator", fundDenominator(), _value);
+    setUint256("fundDenominator", _value);
+  }
+
+  function fundDenominator() public view override returns (uint256) {
+    return getUint256("fundDenominator");
   }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************

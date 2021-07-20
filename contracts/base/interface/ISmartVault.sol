@@ -16,6 +16,8 @@ interface ISmartVault {
 
   function setStrategy(address _strategy) external;
 
+  function changeActivityStatus(bool _active) external;
+
   function doHardWork() external;
 
   function notifyTargetRewardAmount(address _rewardToken, uint256 reward) external;

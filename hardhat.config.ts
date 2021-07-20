@@ -47,7 +47,7 @@ export default {
       ],
     },
     matic: {
-      url: "https://polygon-mainnet.infura.io/v3/" + Secrets.infuraKey,
+      url: Secrets.maticRpcUrl,
       chainId: 137,
     },
     mumbai: {

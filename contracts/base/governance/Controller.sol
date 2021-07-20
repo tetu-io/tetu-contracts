@@ -34,7 +34,10 @@ contract Controller is Initializable, Controllable, ControllerStorage {
       msg.sender
     );
 
+    // 100% by default
     setPSNumeratorDenominator(1000, 1000);
+    // 10% by default
+    setFundNumeratorDenominator(100, 1000);
   }
 
   // ************ EVENTS **********************
@@ -108,6 +111,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _setRewardToken(_newValue);
   }
 
+  function setFundToken(address _newValue) external onlyGovernance {
+    require(_newValue != address(0), "zero address");
+    _setFundToken(_newValue);
+  }
+
   function setNotifyHelper(address _newValue) external onlyGovernance {
     require(_newValue != address(0), "zero address");
     rewardDistribution[notifyHelper()] = false;
@@ -118,6 +126,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function setPsVault(address _newValue) external onlyGovernance {
     require(_newValue != address(0), "zero address");
     _setPsVault(_newValue);
+  }
+
+  function setFund(address _newValue) external onlyGovernance {
+    require(_newValue != address(0), "zero address");
+    _setFund(_newValue);
   }
 
   function setRewardDistribution(address[] calldata _newRewardDistribution, bool _flag) external onlyGovernance {
@@ -133,6 +146,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _setPsDenominator(denominator);
   }
 
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernance {
+    require(numerator <= denominator, "invalid values");
+    require(denominator != 0, "cannot divide by 0");
+    _setFundNumerator(numerator);
+    _setFundDenominator(denominator);
+  }
+
+
   function addHardWorker(address _worker) external onlyGovernance {
     require(_worker != address(0), "_worker must be defined");
     hardWorkers[_worker] = true;
@@ -145,14 +166,33 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     emit HardWorkerRemoved(_worker);
   }
 
-  function addToWhiteList(address _target) external onlyGovernance {
+  function addToWhiteListMulti(address[] calldata _targets) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      addToWhiteList(_targets[i]);
+    }
+  }
+
+  function addToWhiteList(address _target) public onlyGovernance {
     whiteList[_target] = true;
     emit AddedToWhiteList(_target);
   }
 
-  function removeFromWhiteList(address _target) external onlyGovernance {
+  function removeFromWhiteListMulti(address[] calldata _targets) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      removeFromWhiteList(_targets[i]);
+    }
+  }
+
+  function removeFromWhiteList(address _target) public onlyGovernance {
     whiteList[_target] = false;
     emit RemovedFromWhiteList(_target);
+  }
+
+  function changeVaultsStatuses(address[] calldata _targets, bool[] calldata _statuses) external onlyGovernance {
+    require(_targets.length == _statuses.length, "wrong arrays");
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).changeActivityStatus(_statuses[i]);
+    }
   }
 
   function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external onlyGovernance {

@@ -2,6 +2,7 @@ import {
   Bookkeeper,
   Controller,
   FeeRewardForwarder,
+  FundKeeper,
   MintHelper,
   NoopStrategy,
   NotifyHelper,
@@ -22,6 +23,8 @@ export class CoreContractsWrapper {
   public psVault: SmartVault;
   public psVaultLogic: string;
   public psEmptyStrategy: NoopStrategy;
+  public fundKeeper: FundKeeper;
+  public fundKeeperLogic: string;
 
   constructor(controller: Controller,
               controllerLogic: string,
@@ -33,7 +36,9 @@ export class CoreContractsWrapper {
               rewardToken: RewardToken,
               psVault: SmartVault,
               psVaultLogic: string,
-              psEmptyStrategy: NoopStrategy
+              psEmptyStrategy: NoopStrategy,
+              fundKeeper: FundKeeper,
+              fundKeeperLogic: string
   ) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;
@@ -46,6 +51,8 @@ export class CoreContractsWrapper {
     this.psVault = psVault;
     this.psVaultLogic = psVaultLogic;
     this.psEmptyStrategy = psEmptyStrategy;
+    this.fundKeeper = fundKeeper;
+    this.fundKeeperLogic = fundKeeperLogic;
   }
 
   public registerInTracer() {

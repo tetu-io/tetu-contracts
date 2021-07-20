@@ -5,6 +5,7 @@ import {
   Bookkeeper,
   Controller,
   FeeRewardForwarder,
+  FundKeeper,
   GovernmentUpdatedProxy,
   IStrategy,
   LiquidityBalancer,
@@ -113,6 +114,14 @@ export class DeployerUtils {
     return bookkeeper;
   }
 
+  public static async deployFundKeeper(signer: SignerWithAddress, controller: string): Promise<[FundKeeper, GovernmentUpdatedProxy, FundKeeper]> {
+    const logic = await DeployerUtils.deployContract(signer, "FundKeeper") as FundKeeper;
+    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const fundKeeper = logic.attach(proxy.address) as FundKeeper;
+    await fundKeeper.initialize(controller);
+    return [fundKeeper, proxy, logic];
+  }
+
   public static async deployLiquidityBalancer(signer: SignerWithAddress, controller: string): Promise<LiquidityBalancer> {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
@@ -187,7 +196,9 @@ export class DeployerUtils {
     const bookkeeperProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", bookkeeperLogic.address);
     const bookkeeper = bookkeeperLogic.attach(bookkeeperProxy.address) as Bookkeeper;
     await bookkeeper.initialize(controller.address);
-    // expect(await bookkeeper.isGovernance(signer.address)).is.true;
+
+    // ********** FUND KEEPER **************
+    const fundKeeperData = await DeployerUtils.deployFundKeeper(signer, controller.address);
 
     // ******* REWARD TOKEN AND SUPPORT CONTRACTS ******
     const notifyHelper = await DeployerUtils.deployContract(signer, "NotifyHelper", controller.address) as NotifyHelper;
@@ -218,6 +229,10 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => controller.setRewardToken(rewardToken.address), true, wait);
     await RunHelper.runAndWait(() => controller.setNotifyHelper(notifyHelper.address), true, wait);
     await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
+    await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
+
+    const tokens = await DeployerUtils.getTokenAddresses()
+    await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
 
     await RunHelper.runAndWait(() => controller.setRewardDistribution(
         [
@@ -242,7 +257,9 @@ export class DeployerUtils {
         rewardToken,
         psVault,
         vaultLogic.address,
-        psEmptyStrategy
+        psEmptyStrategy,
+        fundKeeperData[0],
+        fundKeeperData[2].address
     );
   }
 
