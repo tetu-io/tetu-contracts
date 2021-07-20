@@ -20,7 +20,6 @@ import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
-import "hardhat/console.sol";
 
 contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   using SafeERC20 for IERC20;
@@ -185,9 +184,6 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   function liquidateTokenForTargetToken(address _token, uint256 _amount, address _targetToken)
   internal returns (uint256) {
-    console.log("_targetToken", _targetToken);
-    console.log("_token", _token);
-    console.log("eq", _token == _targetToken);
     if (_token == _targetToken) {
       // this is already the right token
       // move reward to this contract

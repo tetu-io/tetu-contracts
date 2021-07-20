@@ -184,6 +184,8 @@ describe("SmartVaultNoopStrat", () => {
       expect((await vault.periodFinishForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect((await vault.lastUpdateTimeForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
+      expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address))
+      .is.eq(9066108);
 
       // ***************** CLAIM REWARDS ****************
       await Erc20Utils.approve(underlying, signer, vault.address, "1000000");

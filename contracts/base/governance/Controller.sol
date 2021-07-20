@@ -71,6 +71,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _;
   }
 
+  modifier onlyGovernanceOrDao() {
+    require(isGovernance(msg.sender) || isDao(msg.sender), "not governance or dao");
+    _;
+  }
+
   modifier onlyVault() {
     require(vaults[msg.sender], "only exist active vault");
     _;
@@ -87,6 +92,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function setGovernance(address _governance) external onlyGovernance {
     require(_governance != address(0), "zero address");
     _setGovernance(_governance);
+  }
+
+  function setDao(address _dao) external onlyGovernance {
+    require(_dao != address(0), "zero address");
+    _setDao(_dao);
   }
 
   function setFeeRewardForwarder(address _feeRewardForwarder) external onlyGovernance {
@@ -139,14 +149,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     }
   }
 
-  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernance {
+  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernanceOrDao {
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
     _setPsNumerator(numerator);
     _setPsDenominator(denominator);
   }
 
-  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernance {
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernanceOrDao {
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
     _setFundNumerator(numerator);
@@ -166,24 +176,24 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     emit HardWorkerRemoved(_worker);
   }
 
-  function addToWhiteListMulti(address[] calldata _targets) external onlyGovernance {
+  function addToWhiteListMulti(address[] calldata _targets) external onlyGovernanceOrDao {
     for (uint256 i = 0; i < _targets.length; i++) {
       addToWhiteList(_targets[i]);
     }
   }
 
-  function addToWhiteList(address _target) public onlyGovernance {
+  function addToWhiteList(address _target) public onlyGovernanceOrDao {
     whiteList[_target] = true;
     emit AddedToWhiteList(_target);
   }
 
-  function removeFromWhiteListMulti(address[] calldata _targets) external onlyGovernance {
+  function removeFromWhiteListMulti(address[] calldata _targets) external onlyGovernanceOrDao {
     for (uint256 i = 0; i < _targets.length; i++) {
       removeFromWhiteList(_targets[i]);
     }
   }
 
-  function removeFromWhiteList(address _target) public onlyGovernance {
+  function removeFromWhiteList(address _target) public onlyGovernanceOrDao {
     whiteList[_target] = false;
     emit RemovedFromWhiteList(_target);
   }
@@ -254,6 +264,10 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   function isGovernance(address _adr) public view override returns (bool) {
     return governance() == _adr;
+  }
+
+  function isDao(address _adr) public view override returns (bool) {
+    return dao() == _adr;
   }
 
   function isHardWorker(address _adr) public override view returns (bool) {

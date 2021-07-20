@@ -44,6 +44,15 @@ abstract contract ControllerStorage is Initializable, IController {
     return getAddress("governance");
   }
 
+  function _setDao(address _address) internal {
+    emit UpdatedAddressSlot("dao", dao(), _address);
+    setAddress("dao", _address);
+  }
+
+  function dao() public override view returns (address) {
+    return getAddress("dao");
+  }
+
   function _setFeeRewardForwarder(address _address) internal {
     emit UpdatedAddressSlot("feeRewardForwarder", feeRewardForwarder(), _address);
     setAddress("feeRewardForwarder", _address);
