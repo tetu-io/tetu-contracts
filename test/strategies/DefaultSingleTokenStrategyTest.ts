@@ -41,6 +41,10 @@ async function startDefaultSingleTokenStrategyTest(
             [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
             [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
         );
+        await core.feeRewardForwarder.setConversionPath(
+            [rt, MaticAddresses.USDC_TOKEN],
+            [MaticAddresses.getRouterByFactory(factory)]
+        );
       }
 
 

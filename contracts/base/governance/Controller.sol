@@ -34,7 +34,10 @@ contract Controller is Initializable, Controllable, ControllerStorage {
       msg.sender
     );
 
+    // 100% by default
     setPSNumeratorDenominator(1000, 1000);
+    // 10% by default
+    setFundNumeratorDenominator(100, 1000);
   }
 
   // ************ EVENTS **********************
@@ -68,6 +71,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _;
   }
 
+  modifier onlyGovernanceOrDao() {
+    require(isGovernance(msg.sender) || isDao(msg.sender), "not governance or dao");
+    _;
+  }
+
   modifier onlyVault() {
     require(vaults[msg.sender], "only exist active vault");
     _;
@@ -84,6 +92,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function setGovernance(address _governance) external onlyGovernance {
     require(_governance != address(0), "zero address");
     _setGovernance(_governance);
+  }
+
+  function setDao(address _dao) external onlyGovernance {
+    require(_dao != address(0), "zero address");
+    _setDao(_dao);
   }
 
   function setFeeRewardForwarder(address _feeRewardForwarder) external onlyGovernance {
@@ -108,6 +121,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _setRewardToken(_newValue);
   }
 
+  function setFundToken(address _newValue) external onlyGovernance {
+    require(_newValue != address(0), "zero address");
+    _setFundToken(_newValue);
+  }
+
   function setNotifyHelper(address _newValue) external onlyGovernance {
     require(_newValue != address(0), "zero address");
     rewardDistribution[notifyHelper()] = false;
@@ -120,18 +138,31 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _setPsVault(_newValue);
   }
 
+  function setFund(address _newValue) external onlyGovernance {
+    require(_newValue != address(0), "zero address");
+    _setFund(_newValue);
+  }
+
   function setRewardDistribution(address[] calldata _newRewardDistribution, bool _flag) external onlyGovernance {
     for (uint256 i = 0; i < _newRewardDistribution.length; i++) {
       rewardDistribution[_newRewardDistribution[i]] = _flag;
     }
   }
 
-  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernance {
+  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernanceOrDao {
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
     _setPsNumerator(numerator);
     _setPsDenominator(denominator);
   }
+
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernanceOrDao {
+    require(numerator <= denominator, "invalid values");
+    require(denominator != 0, "cannot divide by 0");
+    _setFundNumerator(numerator);
+    _setFundDenominator(denominator);
+  }
+
 
   function addHardWorker(address _worker) external onlyGovernance {
     require(_worker != address(0), "_worker must be defined");
@@ -145,14 +176,33 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     emit HardWorkerRemoved(_worker);
   }
 
-  function addToWhiteList(address _target) external onlyGovernance {
+  function addToWhiteListMulti(address[] calldata _targets) external onlyGovernanceOrDao {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      addToWhiteList(_targets[i]);
+    }
+  }
+
+  function addToWhiteList(address _target) public onlyGovernanceOrDao {
     whiteList[_target] = true;
     emit AddedToWhiteList(_target);
   }
 
-  function removeFromWhiteList(address _target) external onlyGovernance {
+  function removeFromWhiteListMulti(address[] calldata _targets) external onlyGovernanceOrDao {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      removeFromWhiteList(_targets[i]);
+    }
+  }
+
+  function removeFromWhiteList(address _target) public onlyGovernanceOrDao {
     whiteList[_target] = false;
     emit RemovedFromWhiteList(_target);
+  }
+
+  function changeVaultsStatuses(address[] calldata _targets, bool[] calldata _statuses) external onlyGovernance {
+    require(_targets.length == _statuses.length, "wrong arrays");
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).changeActivityStatus(_statuses[i]);
+    }
   }
 
   function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external onlyGovernance {
@@ -214,6 +264,10 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   function isGovernance(address _adr) public view override returns (bool) {
     return governance() == _adr;
+  }
+
+  function isDao(address _adr) public view override returns (bool) {
+    return dao() == _adr;
   }
 
   function isHardWorker(address _adr) public override view returns (bool) {

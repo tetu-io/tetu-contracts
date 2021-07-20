@@ -158,6 +158,11 @@ describe("contract reader tests", function () {
   });
 
   it("ps ppfs apr", async () => {
+    await UniswapUtils.createPairForRewardToken(signer, core.rewardToken.address, core.mintHelper, "10000");
+    await core.feeRewardForwarder.setConversionPath(
+        [core.rewardToken.address, MaticAddresses.USDC_TOKEN],
+        [MaticAddresses.QUICK_ROUTER]
+    );
 
     await MintHelperUtils.mint(core.mintHelper, "100000");
 
@@ -171,13 +176,13 @@ describe("contract reader tests", function () {
 
     await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(10000).and.is.lessThan(12000);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(50000).and.is.lessThan(60000);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(45000).and.is.lessThan(50000);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 30);
 
     await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(300).and.is.lessThan(500);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(2000).and.is.lessThan(3000);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(1800).and.is.lessThan(2000);
   });
 
   it("vault names", async () => {

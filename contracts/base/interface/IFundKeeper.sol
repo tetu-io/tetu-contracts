@@ -12,10 +12,6 @@
 
 pragma solidity 0.7.6;
 
-interface IFeeRewardForwarder {
-  function distribute(uint256 _amount, address _token, address _vault) external returns (uint256);
+interface IFundKeeper {
 
-  function notifyPsPool(address _token, uint256 _amount) external returns (uint256);
-
-  function notifyCustomPool(address _token, address _rewardPool, uint256 _maxBuyback) external returns (uint256);
 }

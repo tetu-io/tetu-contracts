@@ -81,9 +81,35 @@ describe("Bookkeeper tests", function () {
     const strategies = await bookkeeper.strategies();
     expect(vaults.length).is.greaterThanOrEqual(1);
     expect(strategies.length).is.greaterThanOrEqual(1);
+
     await bookkeeper.addVaultAndStrategy(core.psVault.address, await (core.psVault.strategy()));
+
     expect((await bookkeeper.vaults()).length).is.eq(vaults.length, 'existed vault should not be added');
     expect((await bookkeeper.strategies()).length).is.eq(strategies.length, 'existed strategy should not be added');
+  });
+
+  it("add vault and strategy manually", async () => {
+    const vaults = await bookkeeper.vaults();
+    const strategies = await bookkeeper.strategies();
+    expect(vaults.length).is.greaterThanOrEqual(1);
+    expect(strategies.length).is.greaterThanOrEqual(1);
+
+    await bookkeeper.addVaultAndStrategy(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS);
+    expect((await bookkeeper.vaults()).length).is.eq(vaults.length + 1, 'existed vault should not be added');
+    expect((await bookkeeper.strategies()).length).is.eq(strategies.length + 1, 'existed strategy should not be added');
+  });
+
+  it("remove vault and strategy manually", async () => {
+    const vaults = await bookkeeper.vaults();
+    const strategies = await bookkeeper.strategies();
+    expect(vaults.length).is.greaterThanOrEqual(1);
+    expect(strategies.length).is.greaterThanOrEqual(1);
+
+    await bookkeeper.removeFromVaults(0);
+    await bookkeeper.removeFromStrategies(0);
+
+    expect((await bookkeeper.vaults()).length).is.eq(vaults.length - 1, 'existed vault should not be added');
+    expect((await bookkeeper.strategies()).length).is.eq(strategies.length - 1, 'existed strategy should not be added');
   });
 
 });

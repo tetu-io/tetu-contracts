@@ -81,6 +81,10 @@ describe("SmartVaultNoopStrat", () => {
     );
     expect(await Erc20Utils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 
+    await core.feeRewardForwarder.setConversionPath(
+        [core.rewardToken.address, MaticAddresses.USDC_TOKEN],
+        [MaticAddresses.QUICK_ROUTER]
+    );
   });
 
   after(async function () {
@@ -175,11 +179,13 @@ describe("SmartVaultNoopStrat", () => {
           vault.address,
           utils.parseUnits("100", 18)
       );
-      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("27777777777777777");
+      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("25000000000000000");
       expect(await vault.rewardPerToken(vaultRewardToken0)).to.eq(0);
       expect((await vault.periodFinishForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect((await vault.lastUpdateTimeForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
+      expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address))
+      .is.eq(9066108);
 
       // ***************** CLAIM REWARDS ****************
       await Erc20Utils.approve(underlying, signer, vault.address, "1000000");
@@ -210,13 +216,13 @@ describe("SmartVaultNoopStrat", () => {
           vault.address,
           utils.parseUnits("50", 18)
       );
-      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).is.greaterThan(0.04);
+      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).is.greaterThan(0.037);
       await core.feeRewardForwarder.notifyCustomPool(
           core.rewardToken.address,
           vault.address,
           utils.parseUnits("50", 18)
       );
-      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.055);
+      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.049);
     });
     it("Active status", async () => {
       await vault.changeActivityStatus(false);
@@ -254,7 +260,7 @@ describe("SmartVaultNoopStrat", () => {
           vault.address,
           utils.parseUnits("100", 18)
       );
-      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("27777777777777777");
+      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("25000000000000000");
       expect(await vault.rewardPerToken(vaultRewardToken0)).to.eq(0);
       expect((await vault.periodFinishForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect((await vault.lastUpdateTimeForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
@@ -287,8 +293,11 @@ describe("SmartVaultNoopStrat", () => {
       const time = 60;
       const rewards = "100";
 
-      await Erc20Utils.approve(core.rewardToken.address, signer, core.feeRewardForwarder.address, utils.parseUnits(rewards).toString());
-      await core.feeRewardForwarder.notifyCustomPool(core.rewardToken.address, vault.address, utils.parseUnits(rewards));
+      await VaultUtils.deposit(signer, core.psVault, utils.parseUnits(rewards));
+      const xTokenBalance = await Erc20Utils.balanceOf(core.psVault.address, signerAddress);
+
+      await Erc20Utils.approve(core.psVault.address, signer, vault.address, xTokenBalance.toString());
+      await vault.notifyTargetRewardAmount(core.psVault.address, xTokenBalance);
 
       await VaultUtils.deposit(signer, vault, utils.parseUnits("1000", underlyingDec))
 
@@ -312,7 +321,7 @@ describe("SmartVaultNoopStrat", () => {
         expect(toClaim).is.approximately(claimed, claimed * 0.05, 'claimed not enough ' + i);
       }
 
-      expect(claimedTotal).is.approximately(+rewards, claimedTotal * 0.01, 'total claimed not enough');
+      expect(claimedTotal).is.approximately(+utils.formatUnits(xTokenBalance), claimedTotal * 0.01, 'total claimed not enough');
 
       await vault.exit();
     });

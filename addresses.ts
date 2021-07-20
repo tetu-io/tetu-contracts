@@ -31,6 +31,9 @@ export class Addresses {
       ['sushi', '0xEeEDA255Fa41F4700904c9D2F3Bd3B255cF14CdB'],
       ['quick', '0x07d7A8136Ab267d03E5a35b8059aC055E23e471b'],
       ['sushi_lp_token_usdc', '0x719F8fa2b8587c55585a22aB23ABCB1001b06c8e'],
+    ])],
+    ['matic', new Map([
+      ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
     ])]
   ]);
 

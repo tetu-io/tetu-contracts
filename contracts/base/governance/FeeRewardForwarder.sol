@@ -29,6 +29,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   event FeeMovedToGovernance(address governance, address token, uint256 amount);
   event FeeMovedToPs(address ps, address token, uint256 amount);
   event FeeMovedToVault(address vault, address token, uint256 amount);
+  event FeeMovedToFund(address fund, address token, uint256 amount);
 
   // ************ VARIABLES **********************
   string public constant VERSION = "0";
@@ -46,20 +47,27 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     return IController(controller()).psVault();
   }
 
-  // the targeted reward token to convert everything to
+  function fund() public view returns (address) {
+    return IController(controller()).fund();
+  }
+
   function targetToken() public view returns (address) {
     return IController(controller()).rewardToken();
   }
 
-  function hasValidRoute(address _token) public view returns (bool){
-    return routes[_token][targetToken()].length > 1 // we need to convert token to targetToken
-    && routers[_token][targetToken()].length != 0;
+  function fundToken() public view returns (address) {
+    return IController(controller()).fundToken();
+  }
+
+  function hasValidRoute(address _token, address _targetToken) public view returns (bool){
+    return routes[_token][_targetToken].length > 1 // we need to convert token to targetToken
+    && routers[_token][_targetToken].length != 0;
     // and route exist
   }
 
-  function isMultiRouter(address _token) public view returns (bool){
-    require(routers[_token][targetToken()].length != 0, "invalid route");
-    return routers[_token][targetToken()].length > 1;
+  function isMultiRouter(address _token, address _targetToken) public view returns (bool){
+    require(routers[_token][_targetToken].length != 0, "invalid route");
+    return routers[_token][_targetToken].length > 1;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
@@ -74,19 +82,46 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
       _routers.length == 1 || _routers.length == _route.length - 1, "wrong data");
     address from = _route[0];
     address to = _route[_route.length - 1];
-    require(to == targetToken(), "wrong to");
+    require(to == targetToken() || to == fundToken(), "wrong to");
     routes[from][to] = _route;
     routers[from][to] = _routers;
   }
 
   // ***************** EXTERNAL *******************************
 
+  function distribute(uint256 _amount, address _token, address _vault) external override onlyRewardDistribution returns (uint256){
+    require(_amount != 0, "zero amount");
+
+    uint256 profitSharingNumerator = IController(controller()).psNumerator();
+    uint256 profitSharingDenominator = IController(controller()).psDenominator();
+
+    uint256 toPsAmount = _amount.mul(profitSharingNumerator).div(profitSharingDenominator);
+    uint256 toVaultAmount = _amount.sub(toPsAmount);
+
+    uint256 targetTokenDistributed;
+    if (toPsAmount > 0) {
+      targetTokenDistributed = targetTokenDistributed.add(
+        notifyPsPool(_token, toPsAmount)
+      );
+    }
+    if (toVaultAmount > 0) {
+      targetTokenDistributed = targetTokenDistributed.add(
+        notifyCustomPool(_token, _vault, toVaultAmount)
+      );
+    }
+    return targetTokenDistributed;
+  }
+
   // Transfers the funds from the msg.sender to the pool
   // under normal circumstances, msg.sender is the strategy
   function notifyPsPool(address _token, uint256 _amount) public override onlyRewardDistribution returns (uint256) {
     require(targetToken() != address(0), "target token is zero");
 
-    uint256 amountToSend = liquidateTokenForTargetToken(_token, _amount);
+    uint256 toFund = toFundAmount(_amount);
+    sendToFund(_token, toFund);
+    uint256 toPs = _amount.sub(toFund);
+
+    uint256 amountToSend = liquidateTokenForTargetToken(_token, toPs, targetToken());
 
     require(amountToSend > 0, "no liq path");
 
@@ -109,8 +144,12 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     ISmartVault smartVault = ISmartVault(_rewardPool);
     require(smartVault.getRewardTokenIndex(psToken) != uint256(- 1), "psToken not added to vault");
 
+    uint256 toFund = toFundAmount(_amount);
+    sendToFund(_token, toFund);
+    uint256 toVault = _amount.sub(toFund);
+
     // if liquidation path exist liquidate to the target token
-    uint256 targetTokenBalance = liquidateTokenForTargetToken(_token, _amount);
+    uint256 targetTokenBalance = liquidateTokenForTargetToken(_token, toVault, targetToken());
 
     require(targetTokenBalance > 0, "no liq path");
 
@@ -125,43 +164,60 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   //************************* INTERNAL **************************
 
-  function liquidateTokenForTargetToken(address _token, uint256 _amount)
-  internal returns (uint256) {
+  function sendToFund(address _token, uint256 _amount) internal {
+    require(fundToken() != address(0), "fund token is zero");
+    require(fund() != address(0), "fund is zero");
 
-    if (_token == targetToken()) {
+    uint256 amountToSend = liquidateTokenForTargetToken(_token, _amount, fundToken());
+
+    require(amountToSend > 0, "no liq path for fund token");
+
+    IERC20(fundToken()).safeTransfer(fund(), amountToSend);
+    emit FeeMovedToFund(fund(), fundToken(), amountToSend);
+  }
+
+  function toFundAmount(uint256 _amount) internal view returns (uint256) {
+    uint256 fundNumerator = IController(controller()).fundNumerator();
+    uint256 fundDenominator = IController(controller()).fundDenominator();
+    return _amount.mul(fundNumerator).div(fundDenominator);
+  }
+
+  function liquidateTokenForTargetToken(address _token, uint256 _amount, address _targetToken)
+  internal returns (uint256) {
+    if (_token == _targetToken) {
       // this is already the right token
       // move reward to this contract
       IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-      return IERC20(targetToken()).balanceOf(address(this));
-    } else if (hasValidRoute(_token)) {
+      return IERC20(_targetToken).balanceOf(address(this));
+    } else if (hasValidRoute(_token, _targetToken)) {
       // move reward to this contract
       IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
       // get balance for reason we can have manually sent reward tokens
       uint256 balanceToSwap = IERC20(_token).balanceOf(address(this));
       //liquidate depends on routers count
-      if (isMultiRouter(_token)) {
-        liquidateMultiRouter(_token, balanceToSwap);
+      if (isMultiRouter(_token, _targetToken)) {
+        liquidateMultiRouter(_token, balanceToSwap, _targetToken);
       } else {
-        liquidate(_token, balanceToSwap);
+        liquidate(_token, balanceToSwap, _targetToken);
       }
-      return IERC20(targetToken()).balanceOf(address(this));
+      return IERC20(_targetToken).balanceOf(address(this));
     }
     // in case when it is unknown token and we don't have a router
     // don't transfer tokens to this contracts
     return 0;
   }
 
-  function liquidate(address _from, uint256 balanceToSwap) internal {
+  function liquidate(address _from, uint256 balanceToSwap, address _targetToken) internal {
     if (balanceToSwap > 0) {
-      address router = routers[_from][targetToken()][0];
-      swap(router, routes[_from][targetToken()], balanceToSwap);
+      address router = routers[_from][_targetToken][0];
+      swap(router, routes[_from][_targetToken], balanceToSwap);
     }
   }
 
-  function liquidateMultiRouter(address _from, uint256 balanceToSwap) internal {
+  function liquidateMultiRouter(address _from, uint256 balanceToSwap, address _targetToken) internal {
     if (balanceToSwap > 0) {
-      address[] memory _routers = routers[_from][targetToken()];
-      address[] memory _route = routes[_from][targetToken()];
+      address[] memory _routers = routers[_from][_targetToken];
+      address[] memory _route = routes[_from][_targetToken];
       for (uint256 i; i < _routers.length; i++) {
         address router = _routers[i];
         address[] memory route = new address[](2);

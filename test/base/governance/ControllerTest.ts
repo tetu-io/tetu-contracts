@@ -75,9 +75,9 @@ describe("Controller tests", function () {
     await expect(controller.connect(signer1).removeHardWorker(MaticAddresses.USDC_TOKEN)).to.be.rejectedWith("not governance");
   });
   it("should add and remove to whitelist", async () => {
-    await controller.addToWhiteList(MaticAddresses.USDC_TOKEN);
+    await controller.addToWhiteListMulti([MaticAddresses.USDC_TOKEN]);
     expect(await controller.isAllowedUser(MaticAddresses.USDC_TOKEN)).at.eq(true);
-    await controller.removeFromWhiteList(MaticAddresses.USDC_TOKEN);
+    await controller.removeFromWhiteListMulti([MaticAddresses.USDC_TOKEN]);
     expect(await controller.isAllowedUser(MaticAddresses.USDC_TOKEN)).at.eq(false);
     await expect(controller.connect(signer1).addToWhiteList(MaticAddresses.USDC_TOKEN)).to.be.rejectedWith("not governance");
     await expect(controller.connect(signer1).removeFromWhiteList(MaticAddresses.USDC_TOKEN)).to.be.rejectedWith("not governance");
@@ -93,7 +93,7 @@ describe("Controller tests", function () {
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
         controller.address, underlying, vault.address, [MaticAddresses.WMATIC_TOKEN], [underlying]) as NoopStrategy;
-    await controller.addVaultAndStrategy(vault.address, strategy.address);
+    await controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     expect(await controller.isValidVault(vault.address)).at.eq(true);
     expect(await controller.strategies(strategy.address)).at.eq(true);
     expect(await vault.strategy()).at.eq(strategy.address);
@@ -200,5 +200,29 @@ describe("Controller tests", function () {
     await expect(controller.addVaultAndStrategy(core.bookkeeper.address, MaticAddresses.ZERO_ADDRESS)).rejectedWith('new strategy must not be empty');
   });
 
+  it("should not setup zero reward token", async () => {
+    await expect(controller.setRewardToken(MaticAddresses.ZERO_ADDRESS)).rejectedWith('zero address');
+  });
+
+  it("should not setup zero fund token", async () => {
+    await expect(controller.setFundToken(MaticAddresses.ZERO_ADDRESS)).rejectedWith('zero address');
+  });
+
+  it("should not setup zero fund", async () => {
+    await expect(controller.setFund(MaticAddresses.ZERO_ADDRESS)).rejectedWith('zero address');
+  });
+
+  it("should not setup wrong fund rate", async () => {
+    await expect(controller.setFundNumeratorDenominator('100', '99')).rejectedWith('invalid values');
+    await expect(controller.setFundNumeratorDenominator('0', '0')).rejectedWith('cannot divide by 0');
+  });
+
+  it("should not add wrong arrays for vaults and strategies", async () => {
+    await expect(controller.addVaultsAndStrategies([MaticAddresses.ZERO_ADDRESS], [])).rejectedWith('arrays wrong length');
+  });
+
+  it("should not doHardWork for wrong vault", async () => {
+    await expect(controller.doHardWork(MaticAddresses.ZERO_ADDRESS)).rejectedWith('not vault');
+  });
 
 });
