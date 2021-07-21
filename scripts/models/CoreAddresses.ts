@@ -6,6 +6,7 @@ export class CoreAddresses {
   public readonly mintHelper: string;
   public readonly rewardToken: string;
   public readonly psVault: string;
+  public readonly fundKeeper: string;
 
 
   constructor(
@@ -15,7 +16,8 @@ export class CoreAddresses {
       notifyHelper: string,
       mintHelper: string,
       rewardToken: string,
-      psVault: string
+      psVault: string,
+      fundKeeper: string
   ) {
     this.controller = controller;
     this.feeRewardForwarder = feeRewardForwarder;
@@ -24,5 +26,6 @@ export class CoreAddresses {
     this.mintHelper = mintHelper;
     this.rewardToken = rewardToken;
     this.psVault = psVault;
+    this.fundKeeper = fundKeeper;
   }
 }

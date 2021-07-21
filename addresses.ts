@@ -6,12 +6,13 @@ export class Addresses {
   public static CORE = new Map<string, CoreAddresses>([
     ['rinkeby', new CoreAddresses(
         '0xc463E58D71021A5f53C7cf1356Aa2bDB98c603ca', // controller
-        '0xf96e43E1A393dFD12a18e3e0d3Bc2A8A7E90bf46', // forwarder
+        '0x8F400eED3b2eC747010adb992E9d431DD1c0c86A', // forwarder
         '0x744340cF82D0e172E04d9a1B46e1566FE8D00799', // bookkeeper
         '0xD9325C41220035D61F31F2e570A8B36d605DC9F4', // notifier
         '0x0A2CF709a2B5CAd681D871F5E0d92f6031052689', // mint helper
         '0x608B279F1bCdaf54F83ab18f2Df7D097Bd5DAD86', // reward token
-        '0x58471301Bc6Cd23A879278b0229C5bcC4FD5580B' // ps vault
+        '0x58471301Bc6Cd23A879278b0229C5bcC4FD5580B', // ps vault
+        '0x5AB1A453c898a35345798E39962aF85869ba01F0'// fund keeper
     )]
   ]);
 
