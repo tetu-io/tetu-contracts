@@ -36,10 +36,10 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
 
   event RegisterVault(address value);
   event RegisterStrategy(address value);
-  event RegisterStrategyEarned(address strategy, uint256 amount);
-  event RegisterUserAction(address user, uint256 amount, bool deposit);
-  event RegisterUserEarned(address user, address vault, address token, uint256 amount);
-  event RegisterPpfsChange(address vault, uint256 oldValue, uint256 newValue);
+  event RegisterStrategyEarned(address indexed strategy, uint256 amount);
+  event RegisterUserAction(address indexed user, uint256 amount, bool deposit);
+  event RegisterUserEarned(address indexed user, address vault, address token, uint256 amount);
+  event RegisterPpfsChange(address indexed vault, uint256 oldValue, uint256 newValue);
 
   function initialize(address _controller) public initializer {
     Controllable.initializeControllable(_controller);

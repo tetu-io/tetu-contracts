@@ -36,10 +36,10 @@ abstract contract WaultStrategyFullBuyback is StrategyBase {
     address _storage,
     address _underlying,
     address _vault,
-    address[] memory _rewardTokens,
+    address[] memory __rewardTokens,
     address _pool,
     uint256 _poolID
-  ) StrategyBase(_storage, _underlying, _vault, _rewardTokens, BUY_BACK_RATIO) {
+  ) StrategyBase(_storage, _underlying, _vault, __rewardTokens, BUY_BACK_RATIO) {
     require(_pool != address(0), "zero address pool");
     pool = _pool;
     poolID = _poolID;

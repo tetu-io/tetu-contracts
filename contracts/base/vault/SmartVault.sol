@@ -320,6 +320,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   function _withdraw(uint256 numberOfShares) internal updateRewards(msg.sender) {
     require(totalSupply() > 0, "no shares");
     require(numberOfShares > 0, "zero amount");
+
+    userLastWithdrawTs[msg.sender] = block.timestamp;
+
     uint256 totalSupply = totalSupply();
     _burn(msg.sender, numberOfShares);
 
@@ -327,7 +330,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
     try IBookkeeper(IController(controller()).bookkeeper())
     .registerUserAction(msg.sender, numberOfShares, false) {
     } catch {}
-    userLastWithdrawTs[msg.sender] = block.timestamp;
 
     uint256 underlyingAmountToWithdraw = underlyingBalanceWithInvestment()
     .mul(numberOfShares)

@@ -23,8 +23,8 @@ abstract contract ControllerStorage is Initializable, IController {
   mapping(bytes32 => uint256) private uintStorage;
   mapping(bytes32 => address) private addressStorage;
 
-  event UpdatedAddressSlot(string name, address oldValue, address newValue);
-  event UpdatedUint256Slot(string name, uint256 oldValue, uint256 newValue);
+  event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
+  event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
   function initializeControllerStorage(
     address _governance

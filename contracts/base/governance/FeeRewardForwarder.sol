@@ -26,10 +26,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   using SafeMath for uint256;
 
   // ************ EVENTS **********************
-  event FeeMovedToGovernance(address governance, address token, uint256 amount);
-  event FeeMovedToPs(address ps, address token, uint256 amount);
-  event FeeMovedToVault(address vault, address token, uint256 amount);
-  event FeeMovedToFund(address fund, address token, uint256 amount);
+  event FeeMovedToGovernance(address indexed governance, address indexed token, uint256 amount);
+  event FeeMovedToPs(address indexed ps, address indexed token, uint256 amount);
+  event FeeMovedToVault(address indexed vault, address indexed token, uint256 amount);
+  event FeeMovedToFund(address indexed fund, address indexed token, uint256 amount);
 
   // ************ VARIABLES **********************
   string public constant VERSION = "0";

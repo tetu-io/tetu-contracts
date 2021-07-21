@@ -49,12 +49,12 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
   mapping(address => bool) public boostActivated;
 
   event UpdateCalculator(address oldValue, address newValue);
-  event WorkerRateUpdated(address worker, uint256 value);
-  event WorkerNameUpdated(address worker, string value);
-  event WorkerRoleUpdated(address worker, string value);
+  event WorkerRateUpdated(address indexed worker, uint256 value);
+  event WorkerNameUpdated(address indexed worker, string value);
+  event WorkerRoleUpdated(address indexed worker, string value);
   event TokenChanged(address[] tokens, uint256[] ratios);
-  event SalaryPaid(address worker, uint256 usdAmount, uint256 workedHours, uint256 rate);
-  event Salvage(address token, uint256 amount);
+  event SalaryPaid(address indexed worker, uint256 usdAmount, uint256 workedHours, uint256 rate);
+  event Salvage(address indexed token, uint256 amount);
 
   constructor() {
     assert(_CALCULATOR_SLOT == bytes32(uint256(keccak256("eip1967.calculator")) - 1));

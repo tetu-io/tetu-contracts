@@ -25,9 +25,9 @@ contract NoopStrategy is StrategyBase {
     address _controller,
     address _underlying,
     address _vault,
-    address[] memory _rewardTokens,
+    address[] memory __rewardTokens,
     address[] memory __assets
-  ) StrategyBase(_controller, _underlying, _vault, _rewardTokens, BUY_BACK_RATIO) {
+  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, BUY_BACK_RATIO) {
     _assets = __assets;
   }
 

@@ -21,7 +21,7 @@ import "../interface/IFundKeeper.sol";
 contract FundKeeper is Initializable, Controllable, IFundKeeper {
   using SafeERC20 for IERC20;
 
-  event Salvage(address token, uint256 amount);
+  event Salvage(address indexed token, uint256 amount);
 
   function initialize(address _controller) public initializer {
     Controllable.initializeControllable(_controller);

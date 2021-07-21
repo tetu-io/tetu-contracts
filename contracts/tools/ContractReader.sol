@@ -176,9 +176,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
       totalPages++;
     }
 
-    if (page < 0) {
-      page = uint256(0);
-    } else if (page > totalPages) {
+    if (page > totalPages) {
       page = totalPages;
     }
 

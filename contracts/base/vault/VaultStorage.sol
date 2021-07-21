@@ -25,9 +25,9 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   mapping(bytes32 => address) private addressStorage;
   mapping(bytes32 => bool) private boolStorage;
 
-  event UpdatedBoolSlot(string name, bool oldValue, bool newValue);
-  event UpdatedAddressSlot(string name, address oldValue, address newValue);
-  event UpdatedUint256Slot(string name, uint256 oldValue, uint256 newValue);
+  event UpdatedBoolSlot(string indexed name, bool oldValue, bool newValue);
+  event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
+  event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
   function initializeVaultStorage(
     address _underlyingToken,

@@ -49,9 +49,8 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   event AddedToWhiteList(address value);
   event RemovedFromWhiteList(address value);
   event VaultAndStrategyAdded(address vault, address strategy);
-  event Salvaged(address token, uint256 amount);
-  event SalvagedStrategy(address strategy, address token, uint256 amount);
-  event NotifyFee(address underlying, uint256 fee);
+  event Salvaged(address indexed token, uint256 amount);
+  event SalvagedStrategy(address indexed strategy, address indexed token, uint256 amount);
   event SharePriceChangeLog(
     address indexed vault,
     address indexed strategy,

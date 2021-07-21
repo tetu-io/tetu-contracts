@@ -25,7 +25,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   // *********************** EVENTS *******************
   event DistributeLog(
-    address token,
+    address indexed token,
     uint256 profitAmount,
     uint256 toPsAmount,
     uint256 toVaultAmount,
