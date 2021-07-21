@@ -40,6 +40,8 @@ interface IBookkeeper {
 
   function registerUserAction(address _user, uint256 _amount, bool _deposit) external;
 
+  function registerVaultTransfer(address from, address to, uint256 amount) external;
+
   function registerUserEarned(address _user, address _vault, address _rt, uint256 _amount) external;
 
   function registerPpfsChange(address vault, uint256 value) external;

@@ -127,12 +127,43 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
     if (_deposit) {
       vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].add(_amount);
     } else {
-      vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].sub(_amount);
+      // avoid overflow if we missed something
+      // in this unreal case better do nothing
+      if (vaultUsersBalances[msg.sender][_user] >= _amount) {
+        vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].sub(_amount);
+      }
     }
     if (vaultUsersBalances[msg.sender][_user] == 0) {
       vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].sub(1);
     }
     emit RegisterUserAction(_user, _amount, _deposit);
+  }
+
+  function registerVaultTransfer(address from, address to, uint256 amount) external override onlyVault {
+    // in this unreal cases better to do nothing
+    if (vaultUsersBalances[msg.sender][from] < amount || amount == 0) {
+      return;
+    }
+
+    // don't count mint and burn - it should be covered in registerUserAction
+    if (from == address(0) || to == address(0)) {
+      return;
+    }
+
+    // decrease sender balance
+    vaultUsersBalances[msg.sender][from] = vaultUsersBalances[msg.sender][from].sub(amount);
+
+    // if recipient didn't have balance - increase user quantity
+    if (vaultUsersBalances[msg.sender][to] == 0) {
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].add(1);
+    }
+    // increase recipient balance
+    vaultUsersBalances[msg.sender][to] = vaultUsersBalances[msg.sender][to].add(amount);
+
+    // if sender sent all amount decrease user quantity
+    if (vaultUsersBalances[msg.sender][from] == 0) {
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].sub(1);
+    }
   }
 
   function registerUserEarned(address _user, address _vault, address _rt, uint256 _amount)

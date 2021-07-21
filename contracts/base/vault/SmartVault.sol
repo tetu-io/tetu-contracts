@@ -238,6 +238,15 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
     _payReward(rt);
   }
 
+  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+    // register ownership changing
+    // only statistic, no funds affected
+    try IBookkeeper(IController(controller()).bookkeeper())
+    .registerVaultTransfer(from, to, amount) {
+    } catch {}
+    super._beforeTokenTransfer(from, to, amount);
+  }
+
   //**************** UNDERLYING MANAGEMENT FUNCTIONALITY ***********************
 
   function underlyingUnit() public view override returns (uint256) {
