@@ -19,9 +19,17 @@ async function main() {
   await RunHelper.runAndWait(() => forwarder.setConversionPath(sushiRoute, sushiRouters));
   console.log('route set', sushiRoute);
 
+  const [sushiRouteFund, sushiRoutersFund] = sushiRoutesFund(net, mocks);
+  await RunHelper.runAndWait(() => forwarder.setConversionPath(sushiRouteFund, sushiRoutersFund));
+  console.log('route set', sushiRouteFund);
+
   const [quickRoute, quickRouters] = quickRoutes(net, mocks, core.rewardToken);
   await RunHelper.runAndWait(() => forwarder.setConversionPath(quickRoute, quickRouters));
   console.log('route set', quickRoute);
+
+  const [quickRouteFund, quickRoutersFund] = quickRoutesFund(net, mocks);
+  await RunHelper.runAndWait(() => forwarder.setConversionPath(quickRouteFund, quickRoutersFund));
+  console.log('route set', quickRouteFund);
 }
 
 main()
@@ -46,6 +54,21 @@ function sushiRoutes(net: string, mocks: Map<string, string>, rewardToken: strin
   return [route, routers];
 }
 
+function sushiRoutesFund(net: string, mocks: Map<string, string>): [string[], string[]] {
+  let route: string[];
+  let routers: string[];
+  if (net === 'matic') {
+    route = [MaticAddresses.SUSHI_TOKEN, MaticAddresses.USDC_TOKEN];
+    routers = [MaticAddresses.SUSHI_ROUTER];
+  } else if (net === 'rinkeby') {
+    route = [mocks.get('sushi') as string, mocks.get('usdc') as string];
+    routers = [RopstenAddresses.SUSHI_ROUTER];
+  } else {
+    throw Error('unknown net ' + net);
+  }
+  return [route, routers];
+}
+
 function quickRoutes(net: string, mocks: Map<string, string>, rewardToken: string): [string[], string[]] {
   let route: string[];
   let routers: string[];
@@ -55,6 +78,21 @@ function quickRoutes(net: string, mocks: Map<string, string>, rewardToken: strin
   } else if (net === 'rinkeby') {
     route = [mocks.get('quick') as string, mocks.get('usdc') as string, rewardToken];
     routers = [RopstenAddresses.SUSHI_ROUTER, RopstenAddresses.SUSHI_ROUTER];
+  } else {
+    throw Error('unknown net ' + net);
+  }
+  return [route, routers];
+}
+
+function quickRoutesFund(net: string, mocks: Map<string, string>): [string[], string[]] {
+  let route: string[];
+  let routers: string[];
+  if (net === 'matic') {
+    route = [MaticAddresses.QUICK_TOKEN, MaticAddresses.USDC_TOKEN];
+    routers = [MaticAddresses.QUICK_ROUTER];
+  } else if (net === 'rinkeby') {
+    route = [mocks.get('quick') as string, mocks.get('usdc') as string];
+    routers = [RopstenAddresses.SUSHI_ROUTER];
   } else {
     throw Error('unknown net ' + net);
   }
