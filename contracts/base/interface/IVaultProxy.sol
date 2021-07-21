@@ -12,12 +12,10 @@
 
 pragma solidity 0.7.6;
 
-interface IUpgradeSource {
+interface IVaultProxy {
 
-  function scheduleUpgrade(address impl) external;
+  function upgrade() external;
 
-  function finalizeUpgrade() external;
-
-  function shouldUpgrade() external view returns (bool, address);
+  function implementation() external returns (address);
 
 }

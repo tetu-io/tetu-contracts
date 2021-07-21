@@ -21,6 +21,8 @@ import "../interface/ISmartVault.sol";
 import "../interface/IFeeRewardForwarder.sol";
 import "./Controllable.sol";
 import "../interface/IBookkeeper.sol";
+import "../interface/IUpgradeSource.sol";
+import "../interface/IVaultProxy.sol";
 import "./ControllerStorage.sol";
 
 contract Controller is Initializable, Controllable, ControllerStorage {
@@ -202,6 +204,33 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     require(_targets.length == _statuses.length, "wrong arrays");
     for (uint256 i = 0; i < _targets.length; i++) {
       ISmartVault(_targets[i]).changeActivityStatus(_statuses[i]);
+    }
+  }
+
+  function scheduleVaultsUpgrades(address[] calldata _targets, address[] calldata _implementations) external onlyGovernance {
+    require(_targets.length == _implementations.length, "wrong arrays");
+    for (uint256 i = 0; i < _targets.length; i++) {
+      IUpgradeSource(_targets[i]).scheduleUpgrade(_implementations[i]);
+    }
+  }
+
+  function vaultsUpgrades(address[] calldata _targets) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      IVaultProxy(_targets[i]).upgrade();
+    }
+  }
+
+  function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
+    require(_targets.length == _strategies.length, "wrong arrays");
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).announceStrategyUpdate(_strategies[i]);
+    }
+  }
+
+  function setVaultStrategies(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
+    require(_targets.length == _strategies.length, "wrong arrays");
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).setStrategy(_strategies[i]);
     }
   }
 

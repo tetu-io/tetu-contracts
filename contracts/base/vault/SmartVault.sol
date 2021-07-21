@@ -47,6 +47,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   mapping(address => uint256) public override rewardPerTokenStoredForToken;
   mapping(address => mapping(address => uint256)) public override userRewardPerTokenPaidForToken;
   mapping(address => mapping(address => uint256)) public override rewardsForToken;
+  mapping(address => uint256) public override userLastWithdrawTs;
 
   function initializeSmartVault(
     string memory _name,
@@ -326,6 +327,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
     try IBookkeeper(IController(controller()).bookkeeper())
     .registerUserAction(msg.sender, numberOfShares, false) {
     } catch {}
+    userLastWithdrawTs[msg.sender] = block.timestamp;
 
     uint256 underlyingAmountToWithdraw = underlyingBalanceWithInvestment()
     .mul(numberOfShares)
@@ -504,7 +506,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    * Schedules an upgrade for this vault's proxy.
    */
-  function scheduleUpgrade(address impl) public onlyControllerOrGovernance {
+  function scheduleUpgrade(address impl) external override onlyControllerOrGovernance {
     _setNextImplementation(impl);
     _setNextImplementationTimestamp(block.timestamp.add(UPDATE_TIME_LOCK));
   }
@@ -545,7 +547,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    * Indicates that the strategy update will happen in the future
    */
-  function announceStrategyUpdate(address _strategy) public onlyControllerOrGovernance {
+  function announceStrategyUpdate(address _strategy) external override onlyControllerOrGovernance {
     // records a new timestamp
     uint256 when = block.timestamp.add(STRATEGY_TIME_LOCK);
     _setStrategyUpdateTime(when);
@@ -565,7 +567,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
    * Check the strategy time lock, withdraw all to the vault and change the strategy
    * Should be called via controller
    */
-  function setStrategy(address _strategy) public override onlyControllerOrGovernance {
+  function setStrategy(address _strategy) external override onlyControllerOrGovernance {
     require(canUpdateStrategy(_strategy), "not yet");
     require(_strategy != address(0), "zero strat");
     require(IStrategy(_strategy).underlying() == address(underlying()), "wrong underlying");

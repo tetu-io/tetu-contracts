@@ -76,6 +76,8 @@ interface ISmartVault {
 
   function canUpdateStrategy(address _strategy) external view returns (bool);
 
+  function announceStrategyUpdate(address _strategy) external;
+
   function rewardTokens() external view returns (address[] memory);
 
   function periodFinishForToken(address _rt) external view returns (uint256);
@@ -89,4 +91,6 @@ interface ISmartVault {
   function userRewardPerTokenPaidForToken(address _rt, address account) external view returns (uint256);
 
   function rewardsForToken(address _rt, address account) external view returns (uint256);
+
+  function userLastWithdrawTs(address _user) external returns (uint256);
 }

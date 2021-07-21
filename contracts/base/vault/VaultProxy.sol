@@ -14,9 +14,10 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/proxy/UpgradeableProxy.sol";
 import "../interface/IUpgradeSource.sol";
+import "../interface/IVaultProxy.sol";
 
 
-contract VaultProxy is UpgradeableProxy {
+contract VaultProxy is UpgradeableProxy, IVaultProxy {
 
   constructor(address _logic) UpgradeableProxy(_logic, "") {
     _upgradeTo(_logic);
@@ -26,7 +27,7 @@ contract VaultProxy is UpgradeableProxy {
   * The main logic. If the timer has elapsed and there is a schedule upgrade,
   * the governance can upgrade the vault
   */
-  function upgrade() external {
+  function upgrade() external override {
     (bool should, address newImplementation) = IUpgradeSource(address(this)).shouldUpgrade();
     require(should, "Upgrade not scheduled");
     _upgradeTo(newImplementation);
@@ -40,7 +41,7 @@ contract VaultProxy is UpgradeableProxy {
     require(success, "not success");
   }
 
-  function implementation() external view returns (address) {
+  function implementation() external override view returns (address) {
     return _implementation();
   }
 }
