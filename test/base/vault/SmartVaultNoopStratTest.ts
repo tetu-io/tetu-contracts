@@ -109,7 +109,7 @@ describe("SmartVaultNoopStrat", () => {
       await VaultUtils.deposit(signer, vault, BigNumber.from("1000000"));
 
       let balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
-      expect(balanceAfter).is.eq(balanceBefore - (+utils.formatUnits("1000000", 6)));
+      expect(balanceAfter.toFixed(6)).is.eq((balanceBefore - (+utils.formatUnits("1000000", 6))).toFixed(6));
 
       expect(await Erc20Utils.balanceOf(vault.address, signerAddress)).at.eq("1000000");
       expect(await vault.underlyingBalanceInVault()).at.eq("0");

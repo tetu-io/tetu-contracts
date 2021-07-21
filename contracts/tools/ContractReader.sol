@@ -22,7 +22,7 @@ import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IGovernable.sol";
 import "../base/interface/IStrategy.sol";
-import "./IPriceCalculator.sol";
+import "../infrastructure/IPriceCalculator.sol";
 
 contract ContractReader is IGovernable, Initializable, Controllable {
   using SafeMath for uint256;
