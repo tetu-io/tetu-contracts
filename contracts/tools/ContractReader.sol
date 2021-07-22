@@ -461,7 +461,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
 
   function vaultPlatformsList() public view returns (string[] memory) {
     string[] memory result = new string[](vaults().length);
-    for (uint256 i; i < strategies().length; i++) {
+    for (uint256 i; i < vaults().length; i++) {
       result[i] = IStrategy(ISmartVault(vaults()[i]).strategy()).platform();
     }
     return result;

@@ -26,7 +26,6 @@ import "../base/interface/IGovernable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
 import "./IPriceCalculator.sol";
-import "hardhat/console.sol";
 
 contract PayrollClerk is Initializable, IGovernable, Controllable {
   using SafeMath for uint256;
@@ -65,9 +64,6 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
   }
 
   function isGovernance(address _contract) external override view returns (bool) {
-    console.log("gov", IController(controller()).governance());
-    console.log("_contract", _contract);
-    console.log("is gov", _contract == IController(controller()).governance());
     return IController(controller()).isGovernance(_contract);
   }
 
@@ -108,7 +104,6 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
     uint256 hRate = hourlyRate(worker);
     salaryUsd = hRate.mul(_workedHours).mul(1e18)
     .mul(tokenRatios[token]).div(FULL_RATIO);
-    console.log("hRate", hRate);
 
     // return token amount with token decimals
     salaryToken = salaryUsd.mul(1e18).div(tPrice)
@@ -120,15 +115,12 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
     if (boostActivated[worker]) {
       ratio = Math.min(workedHours[worker].div(BUST_STEP).add(1), MAX_BOOST);
     }
-    console.log("ratio", ratio);
-    console.log("workedHours[worker]", workedHours[worker]);
     return Math.min(baseHourlyRates[worker].mul(ratio), MAX_HOURLY_RATE);
   }
 
   /// if a wallet changed we need a way to migration
   function changeWorkerAddress(address oldWallet, address newWallet) external onlyControllerOrGovernance {
     uint256 idx = workerIndex(oldWallet);
-    console.log("idx", idx);
     require(idx != uint256(- 1), "worker not registered");
 
     workerNames[newWallet] = workerNames[oldWallet];
@@ -228,16 +220,13 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
   function checkTokenRatios() internal view {
     uint256 sum;
     for (uint256 i = 0; i < tokens.length; i++) {
-      console.log("tokenRatios[tokens[i]]", tokenRatios[tokens[i]]);
       sum = sum.add(tokenRatios[tokens[i]]);
     }
     require(sum == FULL_RATIO, "invalid token ratios");
   }
 
   function workerIndex(address worker) public view returns (uint256){
-    console.log("workers l", workers.length);
     for (uint256 i = 0; i < workers.length; i++) {
-      console.log("workers[i]", workers[i]);
       if (workers[i] == worker) {
         return i;
       }
