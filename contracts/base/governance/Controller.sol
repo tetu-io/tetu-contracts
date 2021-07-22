@@ -280,7 +280,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Change statuses of given vaults
   /// @param _targets Vault addresses
-  /// @param _statuses Vault statuses
+  /// @param _implementations Vault statuses
   function scheduleVaultsUpgrades(address[] calldata _targets, address[] calldata _implementations) external onlyGovernance {
     require(_targets.length == _implementations.length, "wrong arrays");
     for (uint256 i = 0; i < _targets.length; i++) {
@@ -317,7 +317,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @notice Only Governance can do it. Register pairs Vault/Strategy
-  /// @param _targets Vault addresses
+  /// @param _vaults Vault addresses
   /// @param _strategies Strategy addresses
   function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external onlyGovernance {
     require(_vaults.length == _strategies.length, "arrays wrong length");
@@ -447,14 +447,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @notice Return true if the given address is registered vault
-  /// @param _adr Address for check
+  /// @param _vault Address for check
   /// @return true if it is a registered vault
   function isValidVault(address _vault) public override view returns (bool) {
     return vaults[_vault];
   }
 
   /// @notice Return true if the given address is registered strategy
-  /// @param _adr Address for check
+  /// @param _strategy Address for check
   /// @return true if it is a registered strategy
   function isValidStrategy(address _strategy) public override view returns (bool) {
     return strategies[_strategy];
