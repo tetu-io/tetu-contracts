@@ -34,9 +34,8 @@ contract NotifyHelper is Controllable {
     return IController(controller()).psVault();
   }
 
-  function moveFunds(address _token, address _to) public onlyControllerOrGovernance {
-    require(_to != address(0), "address is zero");
-    IERC20(_token).safeTransfer(_to, IERC20(_token).balanceOf(address(this)));
+  function moveFundsToController(address _token) public onlyControllerOrGovernance {
+    IERC20(_token).safeTransfer(controller(), IERC20(_token).balanceOf(address(this)));
   }
 
   function notifyVaults(uint256[] memory amounts, address[] memory vaults, uint256 sum, address token)
@@ -79,11 +78,11 @@ contract NotifyHelper is Controllable {
 
     // deposit token to PS
     require(token == ISmartVault(psVault()).underlying(), "invalid token");
-    IERC20(token).approve(psVault(), amount);
+    IERC20(token).safeApprove(psVault(), amount);
     ISmartVault(psVault()).deposit(amount);
     uint256 amountToSend = IERC20(psVault()).balanceOf(address(this));
 
-    IERC20(psVault()).approve(vault, amountToSend);
+    IERC20(psVault()).safeApprove(vault, amountToSend);
     ISmartVault(vault).notifyTargetRewardAmount(psVault(), amountToSend);
 
 

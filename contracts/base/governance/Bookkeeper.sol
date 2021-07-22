@@ -20,7 +20,7 @@ import "./Controllable.sol";
 import "../interface/IGovernable.sol";
 
 /// @title Holds more detailed information about all vaults and strategies
-/// @dev Only not critical functional
+/// @dev Only not critical functional. Use with GovernmentUpdatedProxy
 /// @author belbix
 contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   using SafeMathUpgradeable for uint256;

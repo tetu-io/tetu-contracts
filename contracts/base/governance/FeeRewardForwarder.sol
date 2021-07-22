@@ -153,10 +153,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
     require(targetTokenBalance > 0, "no liq path");
 
-    IERC20(targetToken()).approve(psVault(), targetTokenBalance);
+    IERC20(targetToken()).safeApprove(psVault(), targetTokenBalance);
     ISmartVault(psVault()).deposit(targetTokenBalance);
     uint256 amountToSend = IERC20(psToken).balanceOf(address(this));
-    IERC20(psToken).approve(_rewardPool, amountToSend);
+    IERC20(psToken).safeApprove(_rewardPool, amountToSend);
     smartVault.notifyTargetRewardAmount(psToken, amountToSend);
     emit FeeMovedToVault(_rewardPool, psToken, amountToSend);
     return targetTokenBalance;

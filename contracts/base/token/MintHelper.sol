@@ -108,11 +108,4 @@ contract MintHelper is Controllable {
       delete operatingFundsList[i];
     }
   }
-
-  function changeAdmin(address _newAdmin) public onlyControllerOrGovernance {
-    require(token() != address(0), "Token not init");
-    require(_newAdmin != address(0), "Address should not be 0");
-    RewardToken(token()).changeOwner(_newAdmin);
-    emit AdminChanged(_newAdmin);
-  }
 }
