@@ -75,9 +75,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   * Sets the path for swapping tokens to the to address
   */
   function setConversionPath(address[] memory _route, address[] memory _routers)
-  public
-  onlyControllerOrGovernance
-  {
+  external onlyControllerOrGovernance {
     require(
       _routers.length == 1 || _routers.length == _route.length - 1, "wrong data");
     address from = _route[0];
@@ -98,7 +96,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     uint256 toPsAmount = _amount.mul(profitSharingNumerator).div(profitSharingDenominator);
     uint256 toVaultAmount = _amount.sub(toPsAmount);
 
-    uint256 targetTokenDistributed;
+    uint256 targetTokenDistributed = 0;
     if (toPsAmount > 0) {
       targetTokenDistributed = targetTokenDistributed.add(
         notifyPsPool(_token, toPsAmount)
@@ -218,7 +216,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     if (balanceToSwap > 0) {
       address[] memory _routers = routers[_from][_targetToken];
       address[] memory _route = routes[_from][_targetToken];
-      for (uint256 i; i < _routers.length; i++) {
+      for (uint256 i = 0; i < _routers.length; i++) {
         address router = _routers[i];
         address[] memory route = new address[](2);
         route[0] = _route[i];
@@ -235,6 +233,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   function swap(address _router, address[] memory _route, uint256 _amount) internal {
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
+    //slither-disable-next-line unused-return
     IUniswapV2Router02(_router).swapExactTokensForTokens(
       _amount,
       0,

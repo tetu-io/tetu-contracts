@@ -53,7 +53,7 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
     assert(_DEFAULT_TOKEN_SLOT == bytes32(uint256(keccak256("eip1967.calculator.defaultToken")) - 1));
   }
 
-  function initialize(address _controller) public initializer {
+  function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
   }
 
@@ -107,7 +107,7 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
     IUniswapV2Pair pair = IUniswapV2Pair(token);
     string memory name = pair.name();
 
-    for (uint i; i < swapFactories.length; i++) {
+    for (uint256 i = 0; i < swapFactories.length; i++) {
       if (isEqualString(name, swapLpNames[i])) {
         return checkFactory(pair, swapFactories[i]);
       }
@@ -117,6 +117,7 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
 
   /* solhint-disable no-unused-vars */
   function checkFactory(IUniswapV2Pair pair, address compareFactory) public view returns (bool) {
+    //slither-disable-next-line unused-return,variable-scope,uninitialized-local
     try pair.factory{gas : 3000}() returns (address factory) {
       bool check = (factory == compareFactory) ? true : false;
       return check;
@@ -171,10 +172,10 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
   // and a given tokenset (either keyTokens or pricingTokens)
   function getLargestPool(address token, address[] memory usedLps)
   public view returns (address, uint256, address) {
-    uint256 largestLpSize;
-    address largestKeyToken;
-    uint256 largestPlatformIdx;
-    address lpAddress;
+    uint256 largestLpSize = 0;
+    address largestKeyToken = address(0);
+    uint256 largestPlatformIdx = 0;
+    address lpAddress = address(0);
     for (uint256 i = 0; i < keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, keyTokens[i]);
@@ -263,11 +264,11 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
     return false;
   }
 
-  function keyTokensSize() public view returns (uint256) {
+  function keyTokensSize() external view returns (uint256) {
     return keyTokens.length;
   }
 
-  function swapFactoriesSize() public view returns (uint256) {
+  function swapFactoriesSize() external view returns (uint256) {
     return swapFactories.length;
   }
 
@@ -344,7 +345,7 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
 
   // ************* GOVERNANCE ACTIONS ***************
 
-  function setDefaultToken(address _newDefaultToken) public onlyControllerOrGovernance {
+  function setDefaultToken(address _newDefaultToken) external onlyControllerOrGovernance {
     require(_newDefaultToken != address(0), "zero address");
     emit DefaultTokenChanged(defaultToken(), _newDefaultToken);
     bytes32 slot = _DEFAULT_TOKEN_SLOT;
@@ -353,14 +354,14 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
     }
   }
 
-  function addKeyTokens(address[] memory newTokens) public onlyControllerOrGovernance {
+  function addKeyTokens(address[] memory newTokens) external onlyControllerOrGovernance {
     for (uint256 i = 0; i < newTokens.length; i++) {
       addKeyToken(newTokens[i]);
     }
   }
 
   function addKeyToken(address newToken) public onlyControllerOrGovernance {
-    require((isKeyToken(newToken) == false), "already have");
+    require(!isKeyToken(newToken), "already have");
     keyTokens.push(newToken);
     emit KeyTokenAdded(newToken);
   }
@@ -377,8 +378,8 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
     emit KeyTokenRemoved(keyToken);
   }
 
-  function addSwapPlatform(address _factoryAddress, string memory _name) public onlyControllerOrGovernance {
-    for (uint256 i; i < swapFactories.length; i++) {
+  function addSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {
+    for (uint256 i = 0; i < swapFactories.length; i++) {
       require(swapFactories[i] != _factoryAddress, "factory already exist");
       require(!isEqualString(swapLpNames[i], _name), "name already exist");
     }

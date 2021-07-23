@@ -17,7 +17,7 @@ import "../base/interface/ISmartVault.sol";
 
 contract EvilHackerContract {
 
-  function tryDeposit(address vault, uint256 amount) public {
+  function tryDeposit(address vault, uint256 amount) external {
     ISmartVault(vault).deposit(amount);
   }
 

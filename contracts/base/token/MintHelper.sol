@@ -23,9 +23,9 @@ contract MintHelper is Controllable {
 
   string public constant VERSION = "0";
 
-  uint256 public baseRatio = 7000; // 70% always goes to rewards
-  uint256 public fundsRatio = 3000; // 30% goes to different teams and the op fund
-  uint256 public totalRatio = 10000;
+  uint256 constant public BASE_RATIO = 7000; // 70% always goes to rewards
+  uint256 constant public FUNDS_RATIO = 3000; // 30% goes to different teams and the op fund
+  uint256 constant public TOTAL_RATIO = 10000;
 
   mapping(address => uint256) public operatingFunds;
   address[] public operatingFundsList;
@@ -67,14 +67,14 @@ contract MintHelper is Controllable {
     require(token() != address(0), "Token not init");
 
     // mint the base amount to distributor
-    uint256 toDistributor = amount.mul(baseRatio).div(totalRatio);
+    uint256 toDistributor = amount.mul(BASE_RATIO).div(TOTAL_RATIO);
     ERC20PresetMinterPauser(token()).mint(_distributor, toDistributor);
 
     uint256 sum = toDistributor;
     // mint to each fund
-    for (uint256 i; i < operatingFundsList.length; i++) {
+    for (uint256 i = 0; i < operatingFundsList.length; i++) {
       address fund = operatingFundsList[i];
-      uint256 toFund = amount.mul(operatingFunds[fund]).div(totalRatio);
+      uint256 toFund = amount.mul(operatingFunds[fund]).div(TOTAL_RATIO);
       //a little trick to avoid rounding
       if (sum.add(toFund) > amount.sub(operatingFundsList.length).sub(1)
         && sum.add(toFund) < amount) {
@@ -91,19 +91,19 @@ contract MintHelper is Controllable {
     require(_funds.length == _fractions.length, "wrong size");
     clearFunds();
     uint256 fractionSum;
-    for (uint256 i; i < _funds.length; i++) {
+    for (uint256 i = 0; i < _funds.length; i++) {
       require(_funds[i] != address(0), "Address should not be 0");
       require(_fractions[i] != 0, "Ratio should not be 0");
       fractionSum = fractionSum.add(_fractions[i]);
       operatingFunds[_funds[i]] = _fractions[i];
       operatingFundsList.push(_funds[i]);
     }
-    require(fractionSum == fundsRatio, "wrong sum of fraction");
+    require(fractionSum == FUNDS_RATIO, "wrong sum of fraction");
     emit FundsChanged(_funds, _fractions);
   }
 
   function clearFunds() private {
-    for (uint256 i; i < operatingFundsList.length; i++) {
+    for (uint256 i = 0; i < operatingFundsList.length; i++) {
       delete operatingFunds[operatingFundsList[i]];
       delete operatingFundsList[i];
     }

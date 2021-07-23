@@ -246,14 +246,14 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   /// @notice Return info about last doHardWork call for given vault
   /// @param vault Vault address
   /// @return HardWork struct with result
-  function lastHardWork(address vault) public view override returns (HardWork memory) {
+  function lastHardWork(address vault) external view override returns (HardWork memory) {
     return _lastHardWork[vault];
   }
 
   /// @notice Return info about last PricePerFullShare change for given vault
   /// @param vault Vault address
   /// @return PpfsChange struct with result
-  function lastPpfsChange(address vault) public view override returns (PpfsChange memory) {
+  function lastPpfsChange(address vault) external view override returns (PpfsChange memory) {
     return _lastPpfsChange[vault];
   }
 

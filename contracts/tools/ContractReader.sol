@@ -31,7 +31,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
-  function initialize(address _controller) public initializer {
+  function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
   }
 
@@ -81,9 +81,9 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   // HEAVY QUERIES
   //***************************************************************
 
-  function vaultInfos() public view returns (VaultInfo[] memory) {
+  function vaultInfos() external view returns (VaultInfo[] memory) {
     VaultInfo[] memory result = new VaultInfo[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultInfo(vaults()[i]);
     }
     return result;
@@ -120,9 +120,9 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   }
 
   function userInfos(address _user)
-  public view returns (UserInfo[] memory) {
+  external view returns (UserInfo[] memory) {
     UserInfo[] memory result = new UserInfo[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = userInfo(_user, vaults()[i]);
     }
     return result;
@@ -131,7 +131,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   function userInfo(address _user, address _vault) public view returns (UserInfo memory) {
     address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
     uint256[] memory rewards = new uint256[](rewardTokens.length);
-    for (uint256 i; i < rewardTokens.length; i++) {
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
       rewards[i] = ISmartVault(_vault).earned(rewardTokens[i], _user);
     }
     return UserInfo(
@@ -154,9 +154,9 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   }
 
   function vaultWithUserInfos(address _user)
-  public view returns (VaultWithUserInfo[] memory){
+  external view returns (VaultWithUserInfo[] memory){
     VaultWithUserInfo[] memory result = new VaultWithUserInfo[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = VaultWithUserInfo(
         vaultInfo(vaults()[i]),
         userInfo(_user, vaults()[i])
@@ -244,7 +244,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   // normalized precision
   function vaultRewardTokensBal(address _vault) public view returns (uint256[] memory){
     uint256[] memory result = new uint256[](vaultRewardTokens(_vault).length);
-    for (uint256 i; i < vaultRewardTokens(_vault).length; i++) {
+    for (uint256 i = 0; i < vaultRewardTokens(_vault).length; i++) {
       address rt = vaultRewardTokens(_vault)[i];
       result[i] = normalizePrecision(ERC20(rt).balanceOf(_vault), ERC20(rt).decimals());
     }
@@ -254,7 +254,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   // normalized precision
   function vaultRewardTokensBalUsdc(address _vault) public view returns (uint256[] memory){
     uint256[] memory result = new uint256[](vaultRewardTokens(_vault).length);
-    for (uint256 i; i < vaultRewardTokens(_vault).length; i++) {
+    for (uint256 i = 0; i < vaultRewardTokens(_vault).length; i++) {
       address rt = vaultRewardTokens(_vault)[i];
       uint256 rtPrice = getPrice(rt);
       uint256 bal = ERC20(rt).balanceOf(_vault).mul(rtPrice).div(PRECISION);
@@ -267,7 +267,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   function vaultRewardsApr(address _vault) public view returns (uint256[] memory){
     ISmartVault vault = ISmartVault(_vault);
     uint256[] memory result = new uint256[](vault.rewardTokens().length);
-    for (uint256 i; i < vault.rewardTokens().length; i++) {
+    for (uint256 i = 0; i < vault.rewardTokens().length; i++) {
       result[i] = computeRewardApr(_vault, vault.rewardTokens()[i]);
     }
     return result;
@@ -313,7 +313,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
 
   // it is an experimental metric and shows very volatile value
   // normalized precision
-  function vaultPpfsLastApr(address _vault) public view returns (uint256){
+  function vaultPpfsLastApr(address _vault) external view returns (uint256){
     IBookkeeper.PpfsChange memory lastPpfsChange = IBookkeeper(bookkeeper()).lastPpfsChange(_vault);
     // skip fresh vault
     if (lastPpfsChange.time == 0) {
@@ -402,7 +402,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   function userRewards(address _user, address _vault) public view returns (uint256[] memory) {
     address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
     uint256[] memory rewards = new uint256[](rewardTokens.length);
-    for (uint256 i; i < rewardTokens.length; i++) {
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
       rewards[i] = normalizePrecision(
         ISmartVault(_vault).earned(rewardTokens[i], _user),
         ERC20(rewardTokens[i]).decimals()
@@ -415,7 +415,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   function userRewardsUsdc(address _user, address _vault) public view returns (uint256[] memory) {
     address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
     uint256[] memory rewards = new uint256[](rewardTokens.length);
-    for (uint256 i; i < rewardTokens.length; i++) {
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
       uint256 price = getPrice(rewardTokens[i]);
       rewards[i] = normalizePrecision(
         ISmartVault(_vault).earned(rewardTokens[i], _user).mul(price).div(PRECISION),
@@ -427,122 +427,122 @@ contract ContractReader is IGovernable, Initializable, Controllable {
 
   // ************ LISTS ********************
 
-  function vaultUsersList() public view returns (uint256[] memory) {
+  function vaultUsersList() external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultUsers(vaults()[i]);
     }
     return result;
   }
 
-  function vaultNamesList() public view returns (string[] memory) {
+  function vaultNamesList() external view returns (string[] memory) {
     string[] memory names = new string[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       names[i] = vaultName(vaults()[i]);
     }
     return names;
   }
 
-  function vaultTvlsList() public view returns (uint256[] memory) {
+  function vaultTvlsList() external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultTvl(vaults()[i]);
     }
     return result;
   }
 
-  function vaultDecimalsList() public view returns (uint256[] memory) {
+  function vaultDecimalsList() external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultDecimals(vaults()[i]);
     }
     return result;
   }
 
-  function vaultPlatformsList() public view returns (string[] memory) {
+  function vaultPlatformsList() external view returns (string[] memory) {
     string[] memory result = new string[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = IStrategy(ISmartVault(vaults()[i]).strategy()).platform();
     }
     return result;
   }
 
-  function vaultAssetsList() public view returns (address[][] memory) {
+  function vaultAssetsList() external view returns (address[][] memory) {
     address[][] memory result = new address[][](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = IStrategy(ISmartVault(vaults()[i]).strategy()).assets();
     }
     return result;
   }
 
-  function vaultCreatedList() public view returns (uint256[] memory) {
+  function vaultCreatedList() external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultCreated(vaults()[i]);
     }
     return result;
   }
 
-  function vaultActiveList() public view returns (bool[] memory) {
+  function vaultActiveList() external view returns (bool[] memory) {
     bool[] memory result = new bool[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultActive(vaults()[i]);
     }
     return result;
   }
 
-  function vaultDurationList() public view returns (uint256[] memory){
+  function vaultDurationList() external view returns (uint256[] memory){
     uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = vaultDuration(vaults()[i]);
     }
     return result;
   }
 
-  function strategyCreatedList() public view returns (uint256[] memory){
+  function strategyCreatedList() external view returns (uint256[] memory){
     uint256[] memory result = new uint256[](strategies().length);
-    for (uint256 i; i < strategies().length; i++) {
+    for (uint256 i = 0; i < strategies().length; i++) {
       result[i] = strategyCreated(strategies()[i]);
     }
     return result;
   }
 
-  function strategyPlatformList() public view returns (string[] memory){
+  function strategyPlatformList() external view returns (string[] memory){
     string[] memory result = new string[](strategies().length);
-    for (uint256 i; i < strategies().length; i++) {
+    for (uint256 i = 0; i < strategies().length; i++) {
       result[i] = strategyPlatform(strategies()[i]);
     }
     return result;
   }
 
-  function strategyAssetsList() public view returns (address[][] memory){
+  function strategyAssetsList() external view returns (address[][] memory){
     address[][] memory result = new address[][](strategies().length);
-    for (uint256 i; i < strategies().length; i++) {
+    for (uint256 i = 0; i < strategies().length; i++) {
       result[i] = strategyAssets(strategies()[i]);
     }
     return result;
   }
 
-  function strategyRewardTokensList() public view returns (address[][] memory){
+  function strategyRewardTokensList() external view returns (address[][] memory){
     address[][] memory result = new address[][](strategies().length);
-    for (uint256 i; i < strategies().length; i++) {
+    for (uint256 i = 0; i < strategies().length; i++) {
       result[i] = strategyRewardTokens(strategies()[i]);
     }
     return result;
   }
 
-  function strategyPausedInvestingList() public view returns (bool[] memory){
+  function strategyPausedInvestingList() external view returns (bool[] memory){
     bool[] memory result = new bool[](strategies().length);
-    for (uint256 i; i < strategies().length; i++) {
+    for (uint256 i = 0; i < strategies().length; i++) {
       result[i] = strategyPausedInvesting(strategies()[i]);
     }
     return result;
   }
 
 
-  function userRewardsList(address _user, address _rewardToken) public view returns (uint256[] memory) {
+  function userRewardsList(address _user, address _rewardToken) external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i; i < vaults().length; i++) {
+    for (uint256 i = 0; i < vaults().length; i++) {
       result[i] = ISmartVault(vaults()[i]).earned(_rewardToken, _user);
     }
     return result;
@@ -571,6 +571,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
   // normalized precision
   //noinspection NoReturn
   function getPrice(address _token) public view returns (uint256) {
+    //slither-disable-next-line unused-return,variable-scope,uninitialized-local
     try IPriceCalculator(priceCalculator()).getPriceWithDefaultOutput(_token) returns (uint256 price){
       return price;
     } catch {
@@ -584,7 +585,7 @@ contract ContractReader is IGovernable, Initializable, Controllable {
 
   // *********** GOVERNANCE ACTIONS *****************
 
-  function setPriceCalculator(address newValue) public onlyControllerOrGovernance {
+  function setPriceCalculator(address newValue) external onlyControllerOrGovernance {
     tools[keccak256(abi.encodePacked("calculator"))] = newValue;
     emit ToolAddressUpdated(newValue);
   }

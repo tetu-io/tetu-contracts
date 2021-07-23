@@ -58,15 +58,15 @@ describe("Mint helper tests", () => {
     const controller = await DeployerUtils.deployController(signer);
     const newMinter = await DeployerUtils.deployMintHelper(signer, controller.address, [signer.address], [3000]);
     await expect(newMinter.mint('1')).rejectedWith('Token not init');
-    await expect(newMinter.changeAdmin(minter.address)).rejectedWith('Token not init');
+    // await expect(newMinter.changeAdmin(minter.address)).rejectedWith('Token not init');
   });
 
   it("should not set empty funds", async () => {
     await expect(minter.setOperatingFunds([], [])).rejectedWith("empty funds");
   });
 
-  it("should not change admin to zero", async () => {
-    await expect(minter.changeAdmin(MaticAddresses.ZERO_ADDRESS)).rejectedWith('Address should not be 0');
-  });
+  // it("should not change admin to zero", async () => {
+  //   await expect(minter.changeAdmin(MaticAddresses.ZERO_ADDRESS)).rejectedWith('Address should not be 0');
+  // });
 });
 

@@ -128,14 +128,14 @@ describe("Notify Helper test", () => {
     expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("300000000000000000000000");
     await Erc20Utils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, "300000000000000000000000");
     expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("0");
-    await core.notifyHelper.moveFunds(core.rewardToken.address, signer.address);
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1000000000000000000000000");
+    // await core.notifyHelper.moveFunds(core.rewardToken.address, signer.address);
+    // expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1000000000000000000000000");
   });
 
-  it("should not move funds to zero address", async () => {
-    await expect(notifier.moveFunds(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS))
-    .rejectedWith('address is zero');
-  });
+  // it("should not move funds to zero address", async () => {
+  //   await expect(notifier.moveFunds(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS))
+  //   .rejectedWith('address is zero');
+  // });
 
   it("should not notify without balance", async () => {
     await expect(notifier.notifyVaults(['1'], [MaticAddresses.ZERO_ADDRESS], '1', MaticAddresses.USDC_TOKEN))

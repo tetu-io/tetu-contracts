@@ -73,7 +73,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _rewardTokens = __rewardTokens;
     _buyBackRatio = _bbRatio;
 
-    for (uint256 i; i < _rewardTokens.length; i++) {
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
       _unsalvageableTokens[_rewardTokens[i]] = true;
     }
     _unsalvageableTokens[_underlying] = true;
@@ -85,7 +85,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     return _rewardTokens;
   }
 
-  function underlying() public view override returns (address) {
+  function underlying() external view override returns (address) {
     return _underlyingToken;
   }
 
@@ -93,15 +93,15 @@ abstract contract StrategyBase is IStrategy, Controllable {
     return IERC20(_underlyingToken).balanceOf(address(this));
   }
 
-  function vault() public view override returns (address) {
+  function vault() external view override returns (address) {
     return _smartVault;
   }
 
-  function unsalvageableTokens(address token) public override view returns (bool) {
+  function unsalvageableTokens(address token) external override view returns (bool) {
     return _unsalvageableTokens[token];
   }
 
-  function buyBackRatio() public view override returns (uint256) {
+  function buyBackRatio() external view override returns (uint256) {
     return _buyBackRatio;
   }
 
@@ -161,7 +161,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   /*
  *   Withdraws some asset to the vault
  */
-  function withdrawToVault(uint256 amount) public override restricted {
+  function withdrawToVault(uint256 amount) external override restricted {
     // Typically there wouldn't be any amount here
     // however, it is possible because of the emergencyExit
     if (amount > underlyingBalance()) {
@@ -215,7 +215,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
       IERC20(_rewardToken).safeApprove(forwarder, 0);
       IERC20(_rewardToken).safeApprove(forwarder, _rewardBalance);
-      uint256 targetTokenEarned;
+      uint256 targetTokenEarned = 0;
       if (toPsAmount > 0) {
         targetTokenEarned = targetTokenEarned.add(
           IFeeRewardForwarder(forwarder).notifyPsPool(_rewardToken, toPsAmount)
@@ -235,7 +235,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   }
 
   function liquidateRewardDefault() internal {
-    for (uint256 i; i < _rewardTokens.length; i++) {
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
       // it will sell reward token to Target Token and distribute it to SmartVault and PS
       distributeRewards(rewardBalance(i), _rewardTokens[i]);
     }
@@ -246,12 +246,16 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   function rewardPoolBalance() public virtual override view returns (uint256 bal);
 
+  //slither-disable-next-line dead-code
   function depositToPool(uint256 amount) internal virtual;
 
+  //slither-disable-next-line dead-code
   function withdrawAndClaimFromPool(uint256 amount) internal virtual;
 
+  //slither-disable-next-line dead-code
   function emergencyWithdrawFromPool() internal virtual;
 
+  //slither-disable-next-line dead-code
   function liquidateReward() internal virtual;
 
 }

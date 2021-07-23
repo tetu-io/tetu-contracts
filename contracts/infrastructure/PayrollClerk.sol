@@ -59,7 +59,7 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
     assert(_CALCULATOR_SLOT == bytes32(uint256(keccak256("eip1967.calculator")) - 1));
   }
 
-  function initialize(address _controller) public initializer {
+  function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
   }
 

@@ -23,11 +23,11 @@ contract FundKeeper is Initializable, Controllable, IFundKeeper {
 
   event Salvage(address indexed token, uint256 amount);
 
-  function initialize(address _controller) public initializer {
+  function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
   }
 
-  function salvage(address _token, uint256 amount) public onlyControllerOrGovernance {
+  function salvage(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
     IERC20(_token).safeTransfer(msg.sender, amount);

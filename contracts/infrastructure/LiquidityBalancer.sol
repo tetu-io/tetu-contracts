@@ -63,7 +63,7 @@ contract LiquidityBalancer is IGovernable, Controllable {
     _;
   }
 
-  function changeLiquidity(address _token, address _lp) public onlyHardWorkerOrController {
+  function changeLiquidity(address _token, address _lp) external onlyHardWorkerOrController {
     require(priceTargets[_token] != 0, "zero price target");
     require(lpTvlTargets[_lp] != 0, "zero lp tvl target");
 
@@ -211,6 +211,7 @@ contract LiquidityBalancer is IGovernable, Controllable {
     require(bal >= _amount, "not enough balance");
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
+    //slither-disable-next-line unused-return
     IUniswapV2Router02(_router).swapExactTokensForTokens(
       _amount,
       0,
@@ -228,11 +229,11 @@ contract LiquidityBalancer is IGovernable, Controllable {
     uint256 amount0 = IERC20(token).balanceOf(address(this));
     uint256 amount1 = IERC20(oppositeToken).balanceOf(address(this));
 
-    IERC20(token).approve(routerAddress, 0);
-    IERC20(token).approve(routerAddress, amount0);
-    IERC20(oppositeToken).approve(routerAddress, 0);
-    IERC20(oppositeToken).approve(routerAddress, amount1);
-
+    IERC20(token).safeApprove(routerAddress, 0);
+    IERC20(token).safeApprove(routerAddress, amount0);
+    IERC20(oppositeToken).safeApprove(routerAddress, 0);
+    IERC20(oppositeToken).safeApprove(routerAddress, amount1);
+    //slither-disable-next-line unused-return
     router.addLiquidity(
       token,
       oppositeToken,
@@ -253,9 +254,9 @@ contract LiquidityBalancer is IGovernable, Controllable {
     address routerAddress = routers[_lp];
     IUniswapV2Router02 router = IUniswapV2Router02(routerAddress);
 
-    IERC20(_lp).approve(routerAddress, 0);
-    IERC20(_lp).approve(routerAddress, _amount);
-
+    IERC20(_lp).safeApprove(routerAddress, 0);
+    IERC20(_lp).safeApprove(routerAddress, _amount);
+    //slither-disable-next-line unused-return
     router.removeLiquidity(
       token0,
       token1,
@@ -326,7 +327,7 @@ contract LiquidityBalancer is IGovernable, Controllable {
 
   // ***************** GOVERNANCE ACTIONS *********************
 
-  function salvage(address _token, uint256 amount) public onlyControllerOrGovernance {
+  function salvage(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
     IERC20(_token).safeTransfer(msg.sender, amount);

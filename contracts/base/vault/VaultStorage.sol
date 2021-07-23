@@ -140,5 +140,6 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return uintStorage[keccak256(abi.encodePacked(key))];
   }
 
+  //slither-disable-next-line unused-state
   uint256[50] private ______gap;
 }

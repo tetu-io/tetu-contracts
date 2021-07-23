@@ -79,7 +79,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @dev Use it only once after first logic setup
   ///      Initialize Controllable with sender address
   ///      Setup default values for PS and Fund ratio
-  function initialize() public initializer {
+  function initialize() external initializer {
     Controllable.initializeControllable(address(this));
     ControllerStorage.initializeControllerStorage(
       msg.sender
@@ -345,8 +345,8 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Vault can do it. Register Strategy. Vault call it when gov set a strategy
   /// @param _strategy Strategy addresses
-  function addStrategy(address _strategy) public override onlyVault {
-    if (strategies[_strategy] == false) {
+  function addStrategy(address _strategy) external override onlyVault {
+    if (!strategies[_strategy]) {
       strategies[_strategy] = true;
       IBookkeeper(bookkeeper()).addStrategy(_strategy);
     }

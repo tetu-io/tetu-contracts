@@ -85,7 +85,7 @@ abstract contract Controllable is Initializable {
 
   /// @notice Return creation timestamp
   /// @return ts Creation timestamp
-  function created() public view returns (uint256 ts) {
+  function created() external view returns (uint256 ts) {
     bytes32 slot = _CREATED_SLOT;
     assembly {
       ts := sload(slot)

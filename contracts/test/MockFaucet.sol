@@ -14,9 +14,11 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract MockFaucet {
   using SafeMath for uint256;
+  using SafeERC20 for IERC20;
 
   uint256 constant public DELAY = 1 days;
   uint256 constant public PART_NUMERATOR = 10; // 0.1 %
@@ -52,7 +54,7 @@ contract MockFaucet {
       if (toSend == 0) {
         continue;
       }
-      IERC20(tokens[i]).transfer(msg.sender, toSend);
+      IERC20(tokens[i]).safeTransfer(msg.sender, toSend);
     }
   }
 

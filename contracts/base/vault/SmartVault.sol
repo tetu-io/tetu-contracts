@@ -55,7 +55,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
     address _controller,
     address _underlying,
     uint256 _duration
-  ) public initializer {
+  ) external initializer {
     __ERC20_init(_name, _symbol);
 
     Controllable.initializeControllable(_controller);
@@ -142,7 +142,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    * Add a reward token to the internal array
    */
-  function addRewardToken(address rt) public onlyControllerOrGovernance {
+  function addRewardToken(address rt) external onlyControllerOrGovernance {
     require(getRewardTokenIndex(rt) == uint256(- 1), "rt exist");
     require(rt != underlying(), "rt is underlying");
     _rewardTokens.push(rt);
@@ -152,7 +152,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    * Remove reward token. Last token removal is not allowed
    */
-  function removeRewardToken(address rt) public onlyControllerOrGovernance {
+  function removeRewardToken(address rt) external onlyControllerOrGovernance {
     uint256 i = getRewardTokenIndex(rt);
     require(i != uint256(- 1), "not exist");
     require(periodFinishForToken[_rewardTokens[i]] < block.timestamp, "not finished");
@@ -204,7 +204,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
    * assigned to the holder.
    * This facilitates depositing for someone else (using DepositHelper)
    */
-  function depositFor(uint256 amount, address holder) public override onlyAllowedUsers isActive {
+  function depositFor(uint256 amount, address holder) external override onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, holder);
   }
 
@@ -235,7 +235,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    *  Update and Claim rewards for specific token
    */
-  function getReward(address rt) public override updateReward(msg.sender, rt) onlyAllowedUsers {
+  function getReward(address rt) external override updateReward(msg.sender, rt) onlyAllowedUsers {
     _payReward(rt);
   }
 
@@ -433,14 +433,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   /**
    * Return reward token array length
    */
-  function rewardTokens() public view override returns (address[] memory){
+  function rewardTokens() external view override returns (address[] memory){
     return _rewardTokens;
   }
 
   /**
    * Return reward token array length
    */
-  function rewardTokensLength() public view override returns (uint256){
+  function rewardTokensLength() external view override returns (uint256){
     return _rewardTokens.length;
   }
 
@@ -464,7 +464,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
    * (reward + ((periodFinishForToken - block.timestamp) * rewardRateForToken)) / duration
    */
   function notifyTargetRewardAmount(address _rewardToken, uint256 amount)
-  public override
+  external override
   updateRewards(address(0))
   onlyRewardDistribution
   {

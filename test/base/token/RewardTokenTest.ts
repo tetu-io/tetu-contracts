@@ -56,57 +56,57 @@ describe("Reward token contract tests", () => {
     expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
     .at.eq(utils.parseUnits("90", 18));
   });
-  it("Should not mint after change minter", async () => {
-    const newMinter = await DeployerUtils.deployMintHelper(
-        signer, core.controller.address, [signer.address], [3000]
-    );
-    await core.mintHelper.changeAdmin(newMinter.address)
-    await expect(MintHelperUtils.mint(core.mintHelper, "100"))
-    .to.be.rejectedWith("must have minter role to mint");
-  });
-  it("Should not mint without token", async () => {
-    const newMinter = await DeployerUtils.deployMintHelper(
-        signer, core.controller.address, [signer.address], [3000]
-    );
-    await core.mintHelper.changeAdmin(newMinter.address);
-    await core.controller.setRewardToken(newMinter.address);
-    await expect(MintHelperUtils.mint(newMinter, "100"))
-    .to.be.rejectedWith();
-  });
-  it("Mint tokens after admin change", async () => {
-    const newMinter = await DeployerUtils.deployMintHelper(
-        signer, core.controller.address, [signer.address], [3000]
-    );
-    await core.controller.setMintHelper(newMinter.address);
-    await core.mintHelper.changeAdmin(newMinter.address)
-    await MintHelperUtils.mint(newMinter, "100");
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
-    .at.eq(utils.parseUnits("30", 18));
-  });
-  it("Mint tokens to different destinations", async () => {
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.USDC_TOKEN))
-    .at.eq(utils.parseUnits("0", 18));
-    const newMinter = await DeployerUtils.deployMintHelper(
-        signer, core.controller.address,
-        [signer.address, core.psVault.address, MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN],
-        [1003, 953, 547, 497]
-    );
-    await core.controller.setMintHelper(newMinter.address);
-    await core.mintHelper.changeAdmin(newMinter.address);
-    await MintHelperUtils.mint(newMinter, "100");
-
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
-    .at.eq(utils.parseUnits("70", 18));
-
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
-    .at.eq(utils.parseUnits("10.03", 18));
-
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.USDC_TOKEN))
-    .at.eq(utils.parseUnits("5.47", 18));
-
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.WMATIC_TOKEN))
-    .at.eq(utils.parseUnits("4.97", 18));
-  });
+  // it("Should not mint after change minter", async () => {
+  //   const newMinter = await DeployerUtils.deployMintHelper(
+  //       signer, core.controller.address, [signer.address], [3000]
+  //   );
+  //   await core.mintHelper.changeAdmin(newMinter.address)
+  //   await expect(MintHelperUtils.mint(core.mintHelper, "100"))
+  //   .to.be.rejectedWith("must have minter role to mint");
+  // });
+  // it("Should not mint without token", async () => {
+  //   const newMinter = await DeployerUtils.deployMintHelper(
+  //       signer, core.controller.address, [signer.address], [3000]
+  //   );
+  //   await core.mintHelper.changeAdmin(newMinter.address);
+  //   await core.controller.setRewardToken(newMinter.address);
+  //   await expect(MintHelperUtils.mint(newMinter, "100"))
+  //   .to.be.rejectedWith();
+  // });
+  // it("Mint tokens after admin change", async () => {
+  //   const newMinter = await DeployerUtils.deployMintHelper(
+  //       signer, core.controller.address, [signer.address], [3000]
+  //   );
+  //   await core.controller.setMintHelper(newMinter.address);
+  //   await core.mintHelper.changeAdmin(newMinter.address)
+  //   await MintHelperUtils.mint(newMinter, "100");
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+  //   .at.eq(utils.parseUnits("30", 18));
+  // });
+  // it("Mint tokens to different destinations", async () => {
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.USDC_TOKEN))
+  //   .at.eq(utils.parseUnits("0", 18));
+  //   const newMinter = await DeployerUtils.deployMintHelper(
+  //       signer, core.controller.address,
+  //       [signer.address, core.psVault.address, MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN],
+  //       [1003, 953, 547, 497]
+  //   );
+  //   await core.controller.setMintHelper(newMinter.address);
+  //   await core.mintHelper.changeAdmin(newMinter.address);
+  //   await MintHelperUtils.mint(newMinter, "100");
+  //
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
+  //   .at.eq(utils.parseUnits("70", 18));
+  //
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+  //   .at.eq(utils.parseUnits("10.03", 18));
+  //
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.USDC_TOKEN))
+  //   .at.eq(utils.parseUnits("5.47", 18));
+  //
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.WMATIC_TOKEN))
+  //   .at.eq(utils.parseUnits("4.97", 18));
+  // });
   it("Wrong minter deploy", async () => {
     await expect(DeployerUtils.deployMintHelper(
         signer, core.controller.address,
@@ -265,14 +265,14 @@ describe("Reward token contract tests", () => {
     expect(await token.hasRole(minterRole, MaticAddresses.USDC_TOKEN)).is.false;
   });
 
-  it("Should mint after change minter", async () => {
-    const newMinter = await DeployerUtils.deployMintHelper(
-        signer, core.controller.address, [MaticAddresses.QUICK_ROUTER], [3000]
-    );
-    await core.mintHelper.changeAdmin(newMinter.address)
-    await MintHelperUtils.mint(newMinter, "100");
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.QUICK_ROUTER)).is.not.eq(0);
-  });
+  // it("Should mint after change minter", async () => {
+  //   const newMinter = await DeployerUtils.deployMintHelper(
+  //       signer, core.controller.address, [MaticAddresses.QUICK_ROUTER], [3000]
+  //   );
+  //   await core.mintHelper.changeAdmin(newMinter.address)
+  //   await MintHelperUtils.mint(newMinter, "100");
+  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.QUICK_ROUTER)).is.not.eq(0);
+  // });
 
 });
 

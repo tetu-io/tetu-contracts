@@ -34,12 +34,12 @@ contract NotifyHelper is Controllable {
     return IController(controller()).psVault();
   }
 
-  function moveFundsToController(address _token) public onlyControllerOrGovernance {
+  function moveFundsToController(address _token) external onlyControllerOrGovernance {
     IERC20(_token).safeTransfer(controller(), IERC20(_token).balanceOf(address(this)));
   }
 
   function notifyVaults(uint256[] memory amounts, address[] memory vaults, uint256 sum, address token)
-  public onlyControllerOrGovernance {
+  external onlyControllerOrGovernance {
     uint256 tokenBal = IERC20(token).balanceOf(address(this));
     require(sum <= tokenBal, "not enough balance");
     require(amounts.length == vaults.length, "wrong data");
@@ -66,7 +66,7 @@ contract NotifyHelper is Controllable {
   }
 
   function notifyVault(uint256 amount, address vault, address token) internal {
-    IERC20(token).approve(vault, amount);
+    IERC20(token).safeApprove(vault, amount);
     ISmartVault(vault).notifyTargetRewardAmount(token, amount);
     alreadyNotified[vault] = true;
   }

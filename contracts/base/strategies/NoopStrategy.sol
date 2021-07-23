@@ -51,6 +51,7 @@ contract NoopStrategy is StrategyBase {
     //noop
   }
 
+  //slither-disable-next-line dead-code
   function liquidateReward() internal override {
     // noop
   }
