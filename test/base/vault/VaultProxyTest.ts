@@ -2,7 +2,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Controller, SmartVault, VaultProxy} from "../../../typechain";
+import {Controller, SmartVault, TetuProxy} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
@@ -21,7 +21,7 @@ describe("Vault proxy test", () => {
   let user: SignerWithAddress;
   let controller: Controller;
   let vault: SmartVault;
-  let vaultProxy: VaultProxy;
+  let vaultProxy: TetuProxy;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
@@ -30,7 +30,7 @@ describe("Vault proxy test", () => {
     // deploy core contracts
     controller = await DeployerUtils.deployController(signer);
     const vaultPure = await DeployerUtils.deployContract(signer, "SmartVault");
-    vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultPure.address) as VaultProxy;
+    TetuProxy = await DeployerUtils.deployContract(signer, "TetuProxy", vaultPure.address) as TetuProxy;
     vault = vaultPure.attach(vaultProxy.address) as SmartVault;
 
     await vault.initializeSmartVault(

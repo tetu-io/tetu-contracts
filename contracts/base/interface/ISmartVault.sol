@@ -40,19 +40,11 @@ interface ISmartVault {
 
   function strategy() external view returns (address);
 
-  function nextImplementation() external view returns (address);
-
-  function futureStrategy() external view returns (address);
-
   function getRewardTokenIndex(address rt) external view returns (uint256);
 
   function getPricePerFullShare() external view returns (uint256);
 
   function underlyingUnit() external view returns (uint256);
-
-  function nextImplementationTimestamp() external view returns (uint256);
-
-  function strategyUpdateTime() external view returns (uint256);
 
   function duration() external view returns (uint256);
 
@@ -73,10 +65,6 @@ interface ISmartVault {
   function rewardTokensLength() external view returns (uint256);
 
   function active() external view returns (bool);
-
-  function canUpdateStrategy(address _strategy) external view returns (bool);
-
-  function announceStrategyUpdate(address _strategy) external;
 
   function rewardTokens() external view returns (address[] memory);
 

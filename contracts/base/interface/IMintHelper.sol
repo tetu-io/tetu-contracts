@@ -12,8 +12,8 @@
 
 pragma solidity 0.8.4;
 
-interface IFundKeeper {
+interface IMintHelper {
 
-  function salvageToController(address _token, uint256 amount) external;
+  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external;
 
 }

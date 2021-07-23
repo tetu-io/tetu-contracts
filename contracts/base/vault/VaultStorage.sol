@@ -34,8 +34,6 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     uint256 _durationValue
   ) public initializer {
     _setUnderlying(_underlyingToken);
-    _setStrategyUpdateTime(0);
-    _setFutureStrategy(address(0));
     _setDuration(_durationValue);
     _setActive(true);
   }
@@ -58,42 +56,6 @@ abstract contract VaultStorage is Initializable, ISmartVault {
 
   function underlying() public view override returns (address) {
     return getAddress("underlying");
-  }
-
-  function _setNextImplementation(address _address) internal {
-    emit UpdatedAddressSlot("nextImplementation", nextImplementation(), _address);
-    setAddress("nextImplementation", _address);
-  }
-
-  function nextImplementation() public view override returns (address) {
-    return getAddress("nextImplementation");
-  }
-
-  function _setNextImplementationTimestamp(uint256 _value) internal {
-    emit UpdatedUint256Slot("nextImplementationTimestamp", nextImplementationTimestamp(), _value);
-    setUint256("nextImplementationTimestamp", _value);
-  }
-
-  function nextImplementationTimestamp() public view override returns (uint256) {
-    return getUint256("nextImplementationTimestamp");
-  }
-
-  function _setFutureStrategy(address _value) internal {
-    emit UpdatedAddressSlot("futureStrategy", futureStrategy(), _value);
-    setAddress("futureStrategy", _value);
-  }
-
-  function futureStrategy() public view override returns (address) {
-    return getAddress("futureStrategy");
-  }
-
-  function _setStrategyUpdateTime(uint256 _value) internal {
-    emit UpdatedUint256Slot("strategyUpdateTime", strategyUpdateTime(), _value);
-    setUint256("strategyUpdateTime", _value);
-  }
-
-  function strategyUpdateTime() public view override returns (uint256) {
-    return getUint256("strategyUpdateTime");
   }
 
   function _setDuration(uint256 _value) internal {

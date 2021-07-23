@@ -52,7 +52,7 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
   event WorkerRoleUpdated(address indexed worker, string value);
   event TokenChanged(address[] tokens, uint256[] ratios);
   event SalaryPaid(address indexed worker, uint256 usdAmount, uint256 workedHours, uint256 rate);
-  event Salvage(address indexed token, uint256 amount);
+  event TokenMoved(address token, uint256 amount);
 
   constructor() {
     assert(_CALCULATOR_SLOT == bytes32(uint256(keccak256("eip1967.calculator")) - 1));
@@ -233,11 +233,12 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
     return type(uint256).max;
   }
 
-  function salvage(address _token, uint256 amount) external onlyControllerOrGovernance {
+  // move tokens to controller where money will be protected with time lock
+  function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
-    IERC20(_token).safeTransfer(msg.sender, amount);
-    emit Salvage(_token, amount);
+    IERC20(_token).safeTransfer(controller(), amount);
+    emit TokenMoved(_token, amount);
   }
 
   function calculator() public view returns (address adr) {

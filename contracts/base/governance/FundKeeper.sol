@@ -27,10 +27,10 @@ contract FundKeeper is Controllable, IFundKeeper {
     Controllable.initializeControllable(_controller);
   }
 
-  function salvage(address _token, uint256 amount) external override onlyController {
+  function salvageToController(address _token, uint256 amount) external override onlyController {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
-    IERC20(_token).safeTransfer(msg.sender, amount);
+    IERC20(_token).safeTransfer(controller(), amount);
     emit Salvage(_token, amount);
   }
 

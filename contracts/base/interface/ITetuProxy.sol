@@ -12,9 +12,9 @@
 
 pragma solidity 0.8.4;
 
-interface IVaultProxy {
+interface ITetuProxy {
 
-  function upgrade() external;
+  function upgrade(address _newImplementation) external;
 
   function implementation() external returns (address);
 

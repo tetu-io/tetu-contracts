@@ -14,11 +14,12 @@ pragma solidity 0.8.4;
 
 import "../base/interface/IControllable.sol";
 import "./UpgradeableProxy.sol";
+import "./interface/ITetuProxy.sol";
 
 /// @title EIP1967 Upgradable proxy implementation.
 /// @dev Only Controller has access and should implement time-lock for upgrade action.
 /// @author belbix
-contract TetuProxy is UpgradeableProxy {
+contract TetuProxy is UpgradeableProxy, ITetuProxy {
 
   constructor(address _logic) UpgradeableProxy(_logic, "") {
     _upgradeTo(_logic);
@@ -27,7 +28,7 @@ contract TetuProxy is UpgradeableProxy {
   /// @notice Upgrade contract logic
   /// @dev Upgrade allowed only for Controller and should be done only after time-lock period
   /// @param _newImplementation Implementation address
-  function upgrade(address _newImplementation) external {
+  function upgrade(address _newImplementation) external override {
     require(IControllable(address(this)).isController(msg.sender), "forbidden");
     _upgradeTo(_newImplementation);
 
@@ -35,7 +36,7 @@ contract TetuProxy is UpgradeableProxy {
     require(IControllable(address(this)).isController(msg.sender), "wrong impl");
   }
 
-  function implementation() external view returns (address) {
+  function implementation() external override view returns (address) {
     return _implementation();
   }
 }

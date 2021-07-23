@@ -22,9 +22,10 @@ import "../interface/IFeeRewardForwarder.sol";
 import "./Controllable.sol";
 import "../interface/IBookkeeper.sol";
 import "../interface/IUpgradeSource.sol";
-import "../interface/IVaultProxy.sol";
 import "../interface/IFundKeeper.sol";
 import "./ControllerStorage.sol";
+import "../interface/ITetuProxy.sol";
+import "../interface/IMintHelper.sol";
 
 /// @title A central contract for control everything.
 ///        Governance should be a Multi-Sig Wallet
@@ -39,6 +40,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
+  uint256 public constant TIME_LOCK = 48 hours;
 
   /// @dev Allowed contracts for deposit to vaults
   mapping(address => bool) public override whiteList;
@@ -50,6 +52,40 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   mapping(address => bool) public hardWorkers;
   /// @dev Allowed address for reward distributing
   mapping(address => bool) public rewardDistribution;
+  /// @dev Hold schedule for time-locked operations
+  mapping(bytes32 => uint256) public timeLockSchedule;
+
+  /// @dev Type of addresses that require time-lock
+  ///      !!! BE AWARE that enums contains different structure !!!
+  ///      and can't generate the same HASH for different operations
+  enum TimeLockedAddresses {
+    Governance,
+    Dao,
+    FeeRewardForwarder,
+    Bookkeeper,
+    MintHelper,
+    RewardToken,
+    FundToken,
+    PsVault,
+    Fund
+  }
+
+  /// @dev Type of ratios that require time-lock
+  ///      !!! BE AWARE that enums contains different structure !!!
+  ///      and can't generate the same HASH for different operations
+  enum TimeLockedRatios {
+    PsRatio,
+    FundRatio
+  }
+
+  /// @dev Type of token moves that require time-lock
+  ///      !!! BE AWARE that enums contains different structure !!!
+  ///      and can't generate the same HASH for different operations
+  enum TimeLockedTokenMoves {
+    ControllerSalvage,
+    StrategySalvage,
+    FundSalvage
+  }
 
   // ************ EVENTS **********************
 
@@ -77,6 +113,20 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     uint256 newSharePrice,
     uint256 timestamp
   );
+  /// @notice Address change was announced
+  event AddressChangeAnnounce(TimeLockedAddresses opCode, address newAddress);
+  /// @notice Ratio change was announced
+  event RatioChangeAnnounced(TimeLockedRatios opCode, uint256 numerator, uint256 denominator);
+  /// @notice Token movement was announced
+  event TokenMoveAnnounced(TimeLockedTokenMoves opCode, address target, address token, uint256 amount);
+  /// @notice Proxy Upgrade was announced
+  event ProxyUpgradeAnnounced(address _contract, address _implementation);
+  /// @notice Mint was announced
+  event MintAnnounced(uint256 totalAmount, address _distributor, address _otherNetworkFund);
+  /// @notice Announce was closed
+  event AnnounceClosed(bytes32 opHash);
+  /// @notice Strategy Upgrade was announced
+  event StrategyUpgradeAnnounced(address _contract, address _implementation);
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -118,25 +168,215 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _;
   }
 
+  /// @dev Operation should be announced (exist in timeLockSchedule map) or new value
+  modifier timeLock(bytes32 opHash, bool isEmptyValue) {
+    // empty values setup without time-lock
+    if (!isEmptyValue) {
+      require(timeLockSchedule[opHash] > 0, "not announced");
+      require(timeLockSchedule[opHash] < block.timestamp, "too early");
+    }
+    _;
+    // clear announce after update
+    timeLockSchedule[opHash] = 0;
+  }
+
   // ************ GOVERNANCE ACTIONS **************************
+
+  // ------------------ ANNOUNCES ----------------------------
+
+  /// @notice Only Governance can do it.
+  ///         Announce address change. You will able to setup new address after 48h
+  /// @param opCode Operation code from the list
+  ///                 0 - Governance
+  ///                 1 - Dao
+  ///                 2 - FeeRewardForwarder
+  ///                 3 - Bookkeeper
+  ///                 4 - MintHelper
+  ///                 5 - RewardToken
+  ///                 6 - FundToken
+  ///                 7 - PsVault
+  ///                 8 - Fund
+  /// @param newAddress New address
+  function announceAddressChange(TimeLockedAddresses opCode, address newAddress) external onlyGovernance {
+    require(newAddress != address(0), "zero address");
+    timeLockSchedule[keccak256(abi.encode(opCode, newAddress))] = block.timestamp.add(TIME_LOCK);
+    emit AddressChangeAnnounce(opCode, newAddress);
+  }
+
+  /// @notice Only Governance or DAO can do it.
+  ///         Announce ratio change. You will able to setup new ratio after 48h
+  /// @param opCode Operation code from the list
+  ///                 0 - PsRatio
+  ///                 1 - FundRatio
+  /// @param numerator New numerator
+  /// @param denominator New denominator
+  function announceRatioChange(TimeLockedRatios opCode, uint256 numerator, uint256 denominator) external onlyGovernanceOrDao {
+    require(numerator <= denominator, "invalid values");
+    require(denominator != 0, "cannot divide by 0");
+    timeLockSchedule[keccak256(abi.encode(opCode, numerator, denominator))] = block.timestamp.add(TIME_LOCK);
+    emit RatioChangeAnnounced(opCode, numerator, denominator);
+  }
+
+  /// @notice Only Governance can do it. Announce token salvage. You will able to salvage after 48h
+  /// @param opCode Operation code from the list
+  ///                 0 - ControllerSalvage
+  ///                 1 - StrategySalvage
+  ///                 2 - FundSalvage
+  /// @param target Target address
+  /// @param token Token that you want to salvage
+  /// @param amount Amount that you want to salvage
+  function announceTokenMove(TimeLockedTokenMoves opCode, address target, address token, uint256 amount)
+  external onlyGovernance {
+    require(target != address(0), "zero target");
+    require(token != address(0), "zero token");
+    require(amount != 0, "zero amount");
+    timeLockSchedule[keccak256(abi.encode(opCode, target, token, amount))] = block.timestamp.add(TIME_LOCK);
+    emit TokenMoveAnnounced(opCode, target, token, amount);
+  }
+
+  /// @notice Only Governance can do it. Announce Batch Proxy upgrade
+  /// @param _contracts Array of Proxy contract addresses for upgrade
+  /// @param _implementations Array of New implementation addresses
+  function announceTetuProxyUpgradeBatch(address[] calldata _contracts, address[] calldata _implementations)
+  external onlyGovernance {
+    require(_contracts.length == _implementations.length, "wrong arrays");
+    for (uint256 i = 0; i < _contracts.length; i++) {
+      announceTetuProxyUpgrade(_contracts[i], _implementations[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Announce Proxy upgrade
+  /// @param _contract Proxy contract address for upgrade
+  /// @param _implementation New implementation address
+  function announceTetuProxyUpgrade(address _contract, address _implementation) public onlyGovernance {
+    require(_contract != address(0), "zero contract");
+    require(_implementation != address(0), "zero implementation");
+    bytes32 opHash = keccak256(abi.encode("tetuProxyUpgrade", _contract, _implementation));
+    timeLockSchedule[opHash] = block.timestamp.add(TIME_LOCK);
+    emit ProxyUpgradeAnnounced(_contract, _implementation);
+  }
+
+  /// @notice Only Governance can do it. Announce weekly mint
+  /// @param totalAmount Total amount to mint.
+  ///                    33% will go to current network, 67% to FundKeeper for other networks
+  /// @param _distributor Distributor address, usually NotifyHelper
+  /// @param _otherNetworkFund Fund address, usually FundKeeper
+  function announceMint(uint256 totalAmount, address _distributor, address _otherNetworkFund) external onlyGovernance {
+    require(totalAmount != 0, "zero amount");
+    require(_distributor != address(0), "zero distributor");
+    require(_otherNetworkFund != address(0), "zero fund");
+    bytes32 opHash = keccak256(abi.encode("announceMint", totalAmount, _distributor, _otherNetworkFund));
+    timeLockSchedule[opHash] = block.timestamp.add(TIME_LOCK);
+    emit MintAnnounced(totalAmount, _distributor, _otherNetworkFund);
+  }
+
+  /// @notice Close any announce. Use in emergency case.
+  /// @param opHash keccak256(abi.encode()) code with attributes.
+  function closeAnnounce(bytes32 opHash) external onlyGovernance {
+    timeLockSchedule[opHash] = 0;
+    emit AnnounceClosed(opHash);
+  }
+
+  /// @notice Only Governance can do it. Announce strategy update for given vaults
+  /// @param _targets Vault addresses
+  /// @param _strategies Strategy addresses
+  function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
+    require(_targets.length == _strategies.length, "wrong arrays");
+    for (uint256 i = 0; i < _targets.length; i++) {
+      bytes32 opHash = keccak256(abi.encode("strategyUpgrade", _targets[i], _strategies[i]));
+      timeLockSchedule[opHash] = block.timestamp.add(TIME_LOCK);
+      emit StrategyUpgradeAnnounced(_targets[i], _strategies[i]);
+    }
+  }
+  //  ---------------------- TIME-LOCK ACTIONS --------------------------
+
+  /// @notice Only Governance can do it. Set announced strategies for given vaults
+  /// @param _vaults Vault addresses
+  /// @param _strategies Strategy addresses
+  function setVaultStrategyBatch(address[] calldata _vaults, address[] calldata _strategies) external onlyGovernance {
+    require(_vaults.length == _strategies.length, "wrong arrays");
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      setVaultStrategy(_vaults[i], _strategies[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Set announced strategy for given vault
+  /// @param _target Vault address
+  /// @param _strategy Strategy address
+  function setVaultStrategy(address _target, address _strategy) public
+  onlyGovernance timeLock(
+    keccak256(abi.encode("strategyUpgrade", _target, _strategy)),
+    ISmartVault(_target).strategy() == address(0)
+  ) {
+    ISmartVault(_target).setStrategy(_strategy);
+  }
+
+  /// @notice Only Governance can do it. Upgrade batch announced proxies
+  /// @param _contracts Array of Proxy contract addresses for upgrade
+  /// @param _implementations Array of New implementation addresses
+  function upgradeTetuProxyBatch(address[] calldata _contracts, address[] calldata _implementations)
+  external onlyGovernance {
+    require(_contracts.length == _implementations.length, "wrong arrays");
+    for (uint256 i = 0; i < _contracts.length; i++) {
+      upgradeTetuProxy(_contracts[i], _implementations[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Upgrade announced proxy
+  /// @param _contract Proxy contract address for upgrade
+  /// @param _implementation New implementation address
+  function upgradeTetuProxy(address _contract, address _implementation) public
+  onlyGovernance timeLock(
+    keccak256(abi.encode("tetuProxyUpgrade", _contract, _implementation)),
+    false
+  ) {
+    ITetuProxy(_contract).upgrade(_implementation);
+  }
+
+  /// @notice Only Governance can do it. Call announced mint
+  /// @param totalAmount Total amount to mint.
+  ///                    33% will go to current network, 67% to FundKeeper for other networks
+  /// @param _distributor Distributor address, usually NotifyHelper
+  /// @param _otherNetworkFund Fund address, usually FundKeeper
+  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode("announceMint", totalAmount, _distributor, _otherNetworkFund)),
+    false
+  ) {
+    IMintHelper(mintHelper()).mintAndDistribute(totalAmount, _distributor, _otherNetworkFund);
+  }
+
+  //  ---------------------- TIME-LOCK ADDRESS CHANGE --------------------------
 
   /// @notice Only Governance can do it. Change governance address.
   /// @param _governance New governance address
-  function setGovernance(address _governance) external onlyGovernance {
+  function setGovernance(address _governance) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.Governance, _governance)),
+    governance() == address(0)
+  ) {
     require(_governance != address(0), "zero address");
     _setGovernance(_governance);
   }
 
   /// @notice Only Governance can do it. Change DAO address.
   /// @param _dao New DAO address
-  function setDao(address _dao) external onlyGovernance {
+  function setDao(address _dao) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.Dao, _dao)),
+    dao() == address(0)
+  ) {
     require(_dao != address(0), "zero address");
     _setDao(_dao);
   }
 
   /// @notice Only Governance can do it. Change FeeRewardForwarder address.
   /// @param _feeRewardForwarder New FeeRewardForwarder address
-  function setFeeRewardForwarder(address _feeRewardForwarder) external onlyGovernance {
+  function setFeeRewardForwarder(address _feeRewardForwarder) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.FeeRewardForwarder, _feeRewardForwarder)),
+    feeRewardForwarder() == address(0)
+  ) {
     require(_feeRewardForwarder != address(0), "zero address");
     rewardDistribution[feeRewardForwarder()] = false;
     _setFeeRewardForwarder(_feeRewardForwarder);
@@ -145,60 +385,81 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Change Bookkeeper address.
   /// @param _bookkeeper New Bookkeeper address
-  function setBookkeeper(address _bookkeeper) external onlyGovernance {
+  function setBookkeeper(address _bookkeeper) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.Bookkeeper, _bookkeeper)),
+    bookkeeper() == address(0)
+  ) {
     require(_bookkeeper != address(0), "zero address");
     _setBookkeeper(_bookkeeper);
   }
 
   /// @notice Only Governance can do it. Change MintHelper address.
   /// @param _newValue New MintHelper address
-  function setMintHelper(address _newValue) external onlyGovernance {
+  function setMintHelper(address _newValue) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.MintHelper, _newValue)),
+    mintHelper() == address(0)
+  ) {
     require(_newValue != address(0), "zero address");
     _setMintHelper(_newValue);
   }
 
   /// @notice Only Governance can do it. Change RewardToken(TETU) address.
   /// @param _newValue New RewardToken address
-  function setRewardToken(address _newValue) external onlyGovernance {
+  function setRewardToken(address _newValue) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.RewardToken, _newValue)),
+    rewardToken() == address(0)
+  ) {
     require(_newValue != address(0), "zero address");
     _setRewardToken(_newValue);
   }
 
   /// @notice Only Governance can do it. Change FundToken(USDC by default) address.
   /// @param _newValue New FundToken address
-  function setFundToken(address _newValue) external onlyGovernance {
+  function setFundToken(address _newValue) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.FundToken, _newValue)),
+    fundToken() == address(0)
+  ) {
     require(_newValue != address(0), "zero address");
     _setFundToken(_newValue);
   }
 
   /// @notice Only Governance can do it. Change ProfitSharing vault address.
   /// @param _newValue New ProfitSharing vault address
-  function setPsVault(address _newValue) external onlyGovernance {
+  function setPsVault(address _newValue) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.PsVault, _newValue)),
+    psVault() == address(0)
+  ) {
     require(_newValue != address(0), "zero address");
     _setPsVault(_newValue);
   }
 
   /// @notice Only Governance can do it. Change FundKeeper address.
   /// @param _newValue New FundKeeper address
-  function setFund(address _newValue) external onlyGovernance {
+  function setFund(address _newValue) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedAddresses.Fund, _newValue)),
+    fund() == address(0)
+  ) {
     require(_newValue != address(0), "zero address");
     _setFund(_newValue);
   }
 
-  /// @notice Only Governance can do it. Add/Remove Reward Distributor address
-  /// @param _newRewardDistribution Reward Distributor's addresses
-  /// @param _flag Reward Distributor's flags - true active, false deactivated
-  function setRewardDistribution(address[] calldata _newRewardDistribution, bool _flag) external onlyGovernance {
-    for (uint256 i = 0; i < _newRewardDistribution.length; i++) {
-      rewardDistribution[_newRewardDistribution[i]] = _flag;
-    }
-  }
+  // ------------------ TIME-LOCK RATIO CHANGE -------------------
 
   /// @notice Only Governance or DAO can do it. Change Profit Sharing fee ratio.
   ///         numerator/denominator = ratio
   /// @param numerator Ratio numerator. Should be less than denominator
   /// @param denominator Ratio denominator. Should be greater than zero
-  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernanceOrDao {
+  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public
+  onlyGovernanceOrDao timeLock(
+    keccak256(abi.encode(TimeLockedRatios.PsRatio, numerator, denominator)),
+    psNumerator() == 0 && psDenominator() == 0
+  ) {
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
     _setPsNumerator(numerator);
@@ -209,11 +470,69 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ///         numerator/denominator = ratio
   /// @param numerator Ratio numerator. Should be less than denominator
   /// @param denominator Ratio denominator. Should be greater than zero
-  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public onlyGovernanceOrDao {
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public
+  onlyGovernanceOrDao timeLock(
+    keccak256(abi.encode(TimeLockedRatios.FundRatio, numerator, denominator)),
+    fundNumerator() == 0 && fundDenominator() == 0
+  ) {
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
     _setFundNumerator(numerator);
     _setFundDenominator(denominator);
+  }
+
+  // ------------------ TIME-LOCK SALVAGE -------------------
+
+  /// @notice Only Governance can do it. Transfer token from this contract to governance address
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvage(address _token, uint256 _amount) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedTokenMoves.ControllerSalvage, address(this), _token, _amount)),
+    false
+  ) {
+    IERC20(_token).safeTransfer(governance(), _amount);
+    emit Salvaged(_token, _amount);
+  }
+
+  /// @notice Only Governance can do it. Transfer token from strategy to governance address
+  /// @param _strategy Strategy address
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvageStrategy(address _strategy, address _token, uint256 _amount) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedTokenMoves.StrategySalvage, _strategy, _token, _amount)),
+    false
+  ) {
+    // the strategy is responsible for maintaining the list of
+    // salvagable tokens, to make sure that governance cannot come
+    // in and take away the coins
+    IStrategy(_strategy).salvage(governance(), _token, _amount);
+    emit SalvagedStrategy(_strategy, _token, _amount);
+  }
+
+  /// @notice Only Governance can do it. Transfer token from FundKeeper to controller
+  /// @param _fund FundKeeper address
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvageFund(address _fund, address _token, uint256 _amount) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(TimeLockedTokenMoves.FundSalvage, _fund, _token, _amount)),
+    false
+  ) {
+    IFundKeeper(_fund).salvageToController(_token, _amount);
+    emit SalvagedFund(_fund, _token, _amount);
+  }
+
+  // ---------------- NO TIME_LOCK --------------------------
+
+  /// @notice Only Governance can do it. Add/Remove Reward Distributor address
+  /// @param _newRewardDistribution Reward Distributor's addresses
+  /// @param _flag Reward Distributor's flags - true active, false deactivated
+  function setRewardDistribution(address[] calldata _newRewardDistribution, bool _flag) external onlyGovernance {
+    for (uint256 i = 0; i < _newRewardDistribution.length; i++) {
+      rewardDistribution[_newRewardDistribution[i]] = _flag;
+    }
   }
 
   /// @notice Only Governance can do it. Add HardWorker address.
@@ -272,44 +591,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     }
   }
 
-  /// @notice Only Governance can do it. Change statuses of given vaults
-  /// @param _targets Vault addresses
-  /// @param _implementations Vault statuses
-  function scheduleVaultsUpgrades(address[] calldata _targets, address[] calldata _implementations) external onlyGovernance {
-    require(_targets.length == _implementations.length, "wrong arrays");
-    for (uint256 i = 0; i < _targets.length; i++) {
-      IUpgradeSource(_targets[i]).scheduleUpgrade(_implementations[i]);
-    }
-  }
-
-  /// @notice Only Governance can do it. Upgrade vaults scheduled for upgrade
-  /// @param _targets Vault addresses
-  function vaultsUpgrades(address[] calldata _targets) external onlyGovernance {
-    for (uint256 i = 0; i < _targets.length; i++) {
-      IVaultProxy(_targets[i]).upgrade();
-    }
-  }
-
-  /// @notice Only Governance can do it. Announce strategy update for given vaults
-  /// @param _targets Vault addresses
-  /// @param _strategies Strategy addresses
-  function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
-    require(_targets.length == _strategies.length, "wrong arrays");
-    for (uint256 i = 0; i < _targets.length; i++) {
-      ISmartVault(_targets[i]).announceStrategyUpdate(_strategies[i]);
-    }
-  }
-
-  /// @notice Only Governance can do it. Set announced strategies for given vaults
-  /// @param _targets Vault addresses
-  /// @param _strategies Strategy addresses
-  function setVaultStrategies(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
-    require(_targets.length == _strategies.length, "wrong arrays");
-    for (uint256 i = 0; i < _targets.length; i++) {
-      ISmartVault(_targets[i]).setStrategy(_strategies[i]);
-    }
-  }
-
   /// @notice Only Governance can do it. Register pairs Vault/Strategy
   /// @param _vaults Vault addresses
   /// @param _strategies Strategy addresses
@@ -333,7 +614,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     IBookkeeper(bookkeeper()).addVault(_vault);
 
     // adding happens while setting
-    ISmartVault(_vault).setStrategy(_strategy);
+    setVaultStrategy(_vault, _strategy);
     emit VaultAndStrategyAdded(_vault, _strategy);
   }
 
@@ -359,35 +640,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
       ISmartVault(_vault).getPricePerFullShare(),
       block.timestamp
     );
-  }
-
-  /// @notice Only Governance can do it. Transfer token from this contract to governance address
-  /// @param _token Token address
-  /// @param _amount Token amount
-  function salvage(address _token, uint256 _amount) external onlyGovernance {
-    IERC20(_token).safeTransfer(governance(), _amount);
-    emit Salvaged(_token, _amount);
-  }
-
-  /// @notice Only Governance can do it. Transfer token from strategy to governance address
-  /// @param _strategy Strategy address
-  /// @param _token Token address
-  /// @param _amount Token amount
-  function salvageStrategy(address _strategy, address _token, uint256 _amount) external onlyGovernance {
-    // the strategy is responsible for maintaining the list of
-    // salvagable tokens, to make sure that governance cannot come
-    // in and take away the coins
-    IStrategy(_strategy).salvage(governance(), _token, _amount);
-    emit SalvagedStrategy(_strategy, _token, _amount);
-  }
-
-  /// @notice Only Governance can do it. Transfer token from FundKeeper to controller
-  /// @param _fund FundKeeper address
-  /// @param _token Token address
-  /// @param _amount Token amount
-  function salvageFund(address _fund, address _token, uint256 _amount) external onlyGovernance {
-    IFundKeeper(_fund).salvage(_token, _amount);
-    emit SalvagedFund(_fund, _token, _amount);
   }
 
   // ***************** EXTERNAL *******************************

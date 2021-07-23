@@ -51,7 +51,7 @@ contract LiquidityBalancer is IGovernable, Controllable {
   event Swap(address tokenIn, address tokenOut, uint256 amount);
   event LiqAdded(address lp, uint256 amount0, uint256 amount1);
   event LiqRemoved(address lp, uint256 amount);
-  event Salvage(address token, uint256 amount);
+  event TokenMoved(address token, uint256 amount);
 
   constructor(address _controller) {
     Controllable.initializeControllable(_controller);
@@ -327,11 +327,12 @@ contract LiquidityBalancer is IGovernable, Controllable {
 
   // ***************** GOVERNANCE ACTIONS *********************
 
-  function salvage(address _token, uint256 amount) external onlyControllerOrGovernance {
+  // move tokens to controller where money will be protected with time lock
+  function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
-    IERC20(_token).safeTransfer(msg.sender, amount);
-    emit Salvage(_token, amount);
+    IERC20(_token).safeTransfer(controller(), amount);
+    emit TokenMoved(_token, amount);
   }
 
   // should have PRECISION_DECIMALS

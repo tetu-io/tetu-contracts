@@ -26,6 +26,8 @@ contract NotifyHelper is Controllable {
 
   mapping(address => bool) private alreadyNotified;
 
+  event TokenMoved(address token, uint256 amount);
+
   constructor(address _controller) {
     Controllable.initializeControllable(_controller);
   }
@@ -34,8 +36,12 @@ contract NotifyHelper is Controllable {
     return IController(controller()).psVault();
   }
 
-  function moveFundsToController(address _token) external onlyControllerOrGovernance {
-    IERC20(_token).safeTransfer(controller(), IERC20(_token).balanceOf(address(this)));
+  // move tokens to controller where money will be protected with time lock
+  function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
+    uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
+    require(tokenBalance >= amount, "not enough balance");
+    IERC20(_token).safeTransfer(controller(), amount);
+    emit TokenMoved(_token, amount);
   }
 
   function notifyVaults(uint256[] memory amounts, address[] memory vaults, uint256 sum, address token)

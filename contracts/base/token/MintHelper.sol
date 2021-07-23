@@ -17,8 +17,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../governance/Controllable.sol";
 import "./RewardToken.sol";
+import "../interface/IMintHelper.sol";
 
-contract MintHelper is Controllable {
+contract MintHelper is Controllable, IMintHelper {
   using SafeMath for uint256;
 
   string public constant VERSION = "0";
@@ -57,7 +58,8 @@ contract MintHelper is Controllable {
 
   /// @dev We will split weekly emission to two parts and use second part on other networks
   ///      Until we create a bridge contract we will send non polygon parts to FundKeeper contract
-  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external onlyController {
+  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund)
+  external override onlyController {
     require(totalAmount != 0, "Amount should be greater than 0");
     require(token() != address(0), "Token not init");
 

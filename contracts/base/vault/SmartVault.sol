@@ -27,14 +27,13 @@ import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
 
-contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSource, Controllable {
+contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMathUpgradeable for uint256;
 
   // ************* CONSTANTS ********************
   string public constant VERSION = "0";
-  uint256 public constant UPDATE_TIME_LOCK = 48 hours;
-  uint256 public constant STRATEGY_TIME_LOCK = 48 hours;
+  uint256 public constant TIME_LOCK = 48 hours;
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -503,90 +502,28 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
     }
   }
 
-  //**************** VAULT UPDATE FUNCTIONALITY ***********************
-
-  /**
-   * Schedules an upgrade for this vault's proxy.
-   */
-  function scheduleUpgrade(address impl) external override onlyControllerOrGovernance {
-    _setNextImplementation(impl);
-    _setNextImplementationTimestamp(block.timestamp.add(UPDATE_TIME_LOCK));
-  }
-
-  /**
-   *  Finalizes (or cancels) the vault update by resetting the data
-   */
-  function finalizeUpgrade() external override onlyControllerOrGovernance {
-    _setNextImplementation(address(0));
-    _setNextImplementationTimestamp(0);
-  }
-
-  /**
-   * Return ready state for the vault update and next implementation address
-   * Use it in a proxy contract for checking availability to update this contract
-   */
-  function shouldUpgrade() external view override returns (bool, address) {
-    return (
-    nextImplementationTimestamp() != 0
-    && block.timestamp > nextImplementationTimestamp()
-    && nextImplementation() != address(0),
-    nextImplementation()
-    );
-  }
-
   //**************** STRATEGY UPDATE FUNCTIONALITY ***********************
-
-  /**
-   * Return ready state for the strategy update
-   */
-  function canUpdateStrategy(address _strategy) public view override returns (bool) {
-    return strategy() == address(0) // no strategy was set yet
-    || (_strategy == futureStrategy() // or the timelock has passed
-    && block.timestamp > strategyUpdateTime()
-    && strategyUpdateTime() > 0);
-  }
-
-  /**
-   * Indicates that the strategy update will happen in the future
-   */
-  function announceStrategyUpdate(address _strategy) external override onlyControllerOrGovernance {
-    // records a new timestamp
-    uint256 when = block.timestamp.add(STRATEGY_TIME_LOCK);
-    _setStrategyUpdateTime(when);
-    _setFutureStrategy(_strategy);
-    emit StrategyAnnounced(_strategy, when);
-  }
-
-  /**
-   * Finalizes (or cancels) the strategy update by resetting the data
-   */
-  function finalizeStrategyUpdate() public onlyControllerOrGovernance {
-    _setStrategyUpdateTime(0);
-    _setFutureStrategy(address(0));
-  }
 
   /**
    * Check the strategy time lock, withdraw all to the vault and change the strategy
    * Should be called via controller
    */
-  function setStrategy(address _strategy) external override onlyControllerOrGovernance {
-    require(canUpdateStrategy(_strategy), "not yet");
+  function setStrategy(address _strategy) external override onlyController {
     require(_strategy != address(0), "zero strat");
     require(IStrategy(_strategy).underlying() == address(underlying()), "wrong underlying");
     require(IStrategy(_strategy).vault() == address(this), "wrong strat vault");
 
     emit StrategyChanged(_strategy, strategy());
-    if (address(_strategy) != address(strategy())) {
-      if (address(strategy()) != address(0)) {// if the original strategy (no underscore) is defined
+    if (_strategy != strategy()) {
+      if (strategy() != address(0)) {// if the original strategy (no underscore) is defined
         IERC20Upgradeable(underlying()).safeApprove(address(strategy()), 0);
         IStrategy(strategy()).withdrawAllToVault();
       }
       _setStrategy(_strategy);
       IERC20Upgradeable(underlying()).safeApprove(address(strategy()), 0);
-      IERC20Upgradeable(underlying()).safeApprove(address(strategy()),type(uint256).max);
+      IERC20Upgradeable(underlying()).safeApprove(address(strategy()), type(uint256).max);
+      IController(controller()).addStrategy(_strategy);
     }
-    IController(controller()).addStrategy(_strategy);
-    finalizeStrategyUpdate();
   }
 
 }

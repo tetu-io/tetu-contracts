@@ -54,7 +54,7 @@ export class DeployerUtils {
   }
 
   public static async connectVault(address: string, signer: SignerWithAddress): Promise<SmartVault> {
-    const proxy = await DeployerUtils.connectContract(signer, "VaultProxy", address) as VaultProxy;
+    const proxy = await DeployerUtils.connectContract(signer, "TetuProxy", address) as TetuProxy;
     const logicAddress = await proxy.implementation();
     const logic = await DeployerUtils.connectContract(signer, "SmartVault", logicAddress) as SmartVault;
     return logic.attach(proxy.address);
@@ -167,7 +167,7 @@ export class DeployerUtils {
 
   public static async deploySmartVault(signer: SignerWithAddress): Promise<SmartVault> {
     const logic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const proxy = await DeployerUtils.deployContract(signer, "VaultProxy", logic.address);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxy", logic.address);
     return logic.attach(proxy.address) as SmartVault;
   }
 
@@ -208,7 +208,7 @@ export class DeployerUtils {
 
     // ****** PS ********
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultLogic.address);
+    const TetuProxy = await DeployerUtils.deployContract(signer, "TetuProxy", vaultLogic.address);
     const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     const psEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
         controller.address, rewardToken.address, psVault.address, [], [rewardToken.address]) as NoopStrategy;
@@ -272,7 +272,7 @@ export class DeployerUtils {
       rewardDuration: number = 60 * 60 * 24 * 28 // 4 weeks
   ): Promise<any[]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultLogic.address);
+    const TetuProxy = await DeployerUtils.deployContract(signer, "TetuProxy", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     const strategy = await DeployerUtils.deployContract(signer, strategyName,
