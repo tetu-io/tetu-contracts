@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 interface ICurveRegistry {
   function get_coins(address _pool) external view returns (address[8] memory);

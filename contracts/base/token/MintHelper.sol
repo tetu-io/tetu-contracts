@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -23,7 +23,12 @@ contract MintHelper is Controllable {
 
   string public constant VERSION = "0";
 
-  uint256 constant public BASE_RATIO = 7000; // 70% always goes to rewards
+  // NETWORK RATIOS
+  uint256 constant public FIRST_NETWORK_RATIO = 33; // 33% goes to rewards for first network
+  uint256 constant public TOTAL_NETWORK_RATIO = 100; // 67% goes to rewards for other networks
+
+  // DISTRIBUTION RATIOS
+  uint256 constant public BASE_RATIO = 7000; // 70% goes to rewards
   uint256 constant public FUNDS_RATIO = 3000; // 30% goes to different teams and the op fund
   uint256 constant public TOTAL_RATIO = 10000;
 
@@ -50,16 +55,22 @@ contract MintHelper is Controllable {
     return IController(controller()).rewardToken();
   }
 
-  function startMinting() external onlyControllerOrGovernance {
-    require(RewardToken(token()).mintingStartTs() == 0, "already started");
-    RewardToken(token()).startMinting();
-  }
-
-  /// we will split weekly emission to three parts and use on different networks
-  /// until we don't have a bridge contract we will send non polygon parts to multisig wallet
-  function mint(uint256 amount, address _distributor) external onlyControllerOrGovernance {
-    require(amount != 0, "Amount should be greater than 0");
+  /// @dev We will split weekly emission to two parts and use second part on other networks
+  ///      Until we create a bridge contract we will send non polygon parts to FundKeeper contract
+  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external onlyController {
+    require(totalAmount != 0, "Amount should be greater than 0");
     require(token() != address(0), "Token not init");
+
+    // we should start minting in the same time with mint for keep vesting schedule timing
+    if (RewardToken(token()).mintingStartTs() == 0) {
+      RewardToken(token()).startMinting();
+    }
+
+    uint256 amount = totalAmount.mul(FIRST_NETWORK_RATIO).div(TOTAL_NETWORK_RATIO);
+
+    // move part of tokens to FundKeeper for future vesting
+    uint256 fundAmount = totalAmount.sub(amount);
+    ERC20PresetMinterPauser(token()).mint(_otherNetworkFund, fundAmount);
 
     // mint the base amount to distributor
     uint256 toDistributor = amount.mul(BASE_RATIO).div(TOTAL_RATIO);

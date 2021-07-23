@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 interface IMooniFactory {
   function isPool(address token) external view returns(bool);

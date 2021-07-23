@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 interface IController {
 
@@ -31,8 +31,6 @@ interface IController {
   function rewardToken() external view returns (address);
 
   function fundToken() external view returns (address);
-
-  function notifyHelper() external view returns (address);
 
   function psVault() external view returns (address);
 

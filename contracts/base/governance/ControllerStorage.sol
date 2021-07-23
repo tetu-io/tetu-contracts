@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IController.sol";
@@ -96,15 +96,6 @@ abstract contract ControllerStorage is Initializable, IController {
 
   function fundToken() public override view returns (address) {
     return getAddress("fundToken");
-  }
-
-  function _setNotifyHelper(address _address) internal {
-    emit UpdatedAddressSlot("notifyHelper", notifyHelper(), _address);
-    setAddress("notifyHelper", _address);
-  }
-
-  function notifyHelper() public override view returns (address) {
-    return getAddress("notifyHelper");
   }
 
   function _setPsVault(address _address) internal {

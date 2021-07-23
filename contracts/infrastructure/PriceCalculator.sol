@@ -23,7 +23,7 @@ import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "./IPriceCalculator.sol";
 import "../base/interface/ISmartVault.sol";
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalculator {
   using SafeERC20 for IERC20;

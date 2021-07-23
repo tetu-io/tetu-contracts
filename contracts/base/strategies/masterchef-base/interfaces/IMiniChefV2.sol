@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 import "./IRewarder.sol";
 

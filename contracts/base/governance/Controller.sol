@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -23,6 +23,7 @@ import "./Controllable.sol";
 import "../interface/IBookkeeper.sol";
 import "../interface/IUpgradeSource.sol";
 import "../interface/IVaultProxy.sol";
+import "../interface/IFundKeeper.sol";
 import "./ControllerStorage.sol";
 
 /// @title A central contract for control everything.
@@ -168,15 +169,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function setFundToken(address _newValue) external onlyGovernance {
     require(_newValue != address(0), "zero address");
     _setFundToken(_newValue);
-  }
-
-  /// @notice Only Governance can do it. Change NotifyHelper address.
-  /// @param _newValue New NotifyHelper address
-  function setNotifyHelper(address _newValue) external onlyGovernance {
-    require(_newValue != address(0), "zero address");
-    rewardDistribution[notifyHelper()] = false;
-    _setNotifyHelper(_newValue);
-    rewardDistribution[notifyHelper()] = true;
   }
 
   /// @notice Only Governance can do it. Change ProfitSharing vault address.
@@ -395,7 +387,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @param _amount Token amount
   function salvageFund(address _fund, address _token, uint256 _amount) external onlyGovernance {
     IFundKeeper(_fund).salvage(_token, _amount);
-    emit SalvagedStrategy(_strategy, _token, _amount);
+    emit SalvagedFund(_fund, _token, _amount);
   }
 
   // ***************** EXTERNAL *******************************

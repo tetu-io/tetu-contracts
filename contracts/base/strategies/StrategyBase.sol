@@ -9,7 +9,7 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
-pragma solidity 0.8.6;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -144,7 +144,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
  * Note that they cannot come in take away coins that are used and defined in the strategy itself
  */
   function salvage(address recipient, address token, uint256 amount)
-  external override onlyControllerOrGovernance {
+  external override onlyController {
     // To make sure that governance cannot come in and take away the coins
     require(!_unsalvageableTokens[token], "not salvageable");
     IERC20(token).safeTransfer(recipient, amount);
