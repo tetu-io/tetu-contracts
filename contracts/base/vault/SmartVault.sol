@@ -10,11 +10,11 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts-upgradeable/math/MathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
@@ -33,8 +33,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
 
   // ************* CONSTANTS ********************
   string public constant VERSION = "0";
-  uint256 public constant UPDATE_TIME_LOCK = 24 hours;
-  uint256 public constant STRATEGY_TIME_LOCK = 24 hours;
+  uint256 public constant UPDATE_TIME_LOCK = 48 hours;
+  uint256 public constant STRATEGY_TIME_LOCK = 48 hours;
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -143,7 +143,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
    * Add a reward token to the internal array
    */
   function addRewardToken(address rt) external onlyControllerOrGovernance {
-    require(getRewardTokenIndex(rt) == uint256(- 1), "rt exist");
+    require(getRewardTokenIndex(rt) == type(uint256).max, "rt exist");
     require(rt != underlying(), "rt is underlying");
     _rewardTokens.push(rt);
     emit AddedRewardToken(rt);
@@ -154,7 +154,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
    */
   function removeRewardToken(address rt) external onlyControllerOrGovernance {
     uint256 i = getRewardTokenIndex(rt);
-    require(i != uint256(- 1), "not exist");
+    require(i != type(uint256).max, "not exist");
     require(periodFinishForToken[_rewardTokens[i]] < block.timestamp, "not finished");
     require(_rewardTokens.length > 1, "last rt");
     uint256 lastIndex = _rewardTokens.length - 1;
@@ -454,7 +454,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
       if (_rewardTokens[i] == rt)
         return i;
     }
-    return uint256(- 1);
+    return type(uint256).max;
   }
 
   /**
@@ -469,9 +469,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
   onlyRewardDistribution
   {
     // overflow fix according to https://sips.synthetix.io/sips/sip-77
-    require(amount < uint(- 1) / 1e18, "amount overflow");
+    require(amount < type(uint256).max / 1e18, "amount overflow");
     uint256 i = getRewardTokenIndex(_rewardToken);
-    require(i != uint256(- 1), "rt not found");
+    require(i != type(uint256).max, "rt not found");
 
     IERC20Upgradeable(_rewardToken).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -583,7 +583,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, IUpgradeSo
       }
       _setStrategy(_strategy);
       IERC20Upgradeable(underlying()).safeApprove(address(strategy()), 0);
-      IERC20Upgradeable(underlying()).safeApprove(address(strategy()), uint256(~0));
+      IERC20Upgradeable(underlying()).safeApprove(address(strategy()),type(uint256).max);
     }
     IController(controller()).addStrategy(_strategy);
     finalizeStrategyUpdate();

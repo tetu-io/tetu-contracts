@@ -10,11 +10,11 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interface/IStrategy.sol";
 import "../interface/ISmartVault.sol";
@@ -27,7 +27,7 @@ import "./ControllerStorage.sol";
 
 /// @title A central contract for control everything.
 ///        Governance should be a Multi-Sig Wallet
-/// @dev Use with GovernmentUpdatedProxy
+/// @dev Use with TetuProxy
 /// @author belbix
 contract Controller is Initializable, Controllable, ControllerStorage {
   using SafeERC20 for IERC20;
@@ -66,6 +66,8 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   event Salvaged(address indexed token, uint256 amount);
   /// @notice Tokens moved from Strategy contract to Governance
   event SalvagedStrategy(address indexed strategy, address indexed token, uint256 amount);
+  /// @notice Tokens moved from Fund contract to Controller
+  event SalvagedFund(address indexed fund, address indexed token, uint256 amount);
   /// @notice DoHardWork completed and PricePerFullShare changed
   event SharePriceChangeLog(
     address indexed vault,
@@ -375,7 +377,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     emit Salvaged(_token, _amount);
   }
 
-  /// @notice Only Governance can do it. Transfer token strategy to governance address
+  /// @notice Only Governance can do it. Transfer token from strategy to governance address
   /// @param _strategy Strategy address
   /// @param _token Token address
   /// @param _amount Token amount
@@ -384,6 +386,15 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     // salvagable tokens, to make sure that governance cannot come
     // in and take away the coins
     IStrategy(_strategy).salvage(governance(), _token, _amount);
+    emit SalvagedStrategy(_strategy, _token, _amount);
+  }
+
+  /// @notice Only Governance can do it. Transfer token from FundKeeper to controller
+  /// @param _fund FundKeeper address
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvageFund(address _fund, address _token, uint256 _amount) external onlyGovernance {
+    IFundKeeper(_fund).salvage(_token, _amount);
     emit SalvagedStrategy(_strategy, _token, _amount);
   }
 

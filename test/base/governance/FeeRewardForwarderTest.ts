@@ -59,7 +59,7 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not notify ps with zero target token", async () => {
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
-    const controllerProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", controllerLogic.address);
+    const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxy", controllerLogic.address);
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);

@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {GovernmentUpdatedProxy, PriceCalculator} from "../../../typechain";
+import {TetuProxy, PriceCalculator} from "../../../typechain";
 
 
 async function main() {
@@ -8,7 +8,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const net = await ethers.provider.getNetwork();
 
-  let data: [PriceCalculator, GovernmentUpdatedProxy, PriceCalculator];
+  let data: [PriceCalculator, TetuProxy, PriceCalculator];
   if (net.name === "matic") {
     // @ts-ignore
     data = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller);

@@ -12,8 +12,7 @@
 
 pragma solidity 0.8.6;
 
-interface IFundKeeper {
+interface IControllable {
 
-  function salvage(address _token, uint256 amount) external;
-
+  function isController(address _contract) external view returns (bool);
 }

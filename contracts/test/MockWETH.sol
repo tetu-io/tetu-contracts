@@ -10,13 +10,12 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 contract MockWETH is ERC20PresetMinterPauser {
 
   constructor() ERC20PresetMinterPauser("WETH", "WETH")  {
-    _setupDecimals(18);
   }
 }

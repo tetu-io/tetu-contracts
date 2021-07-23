@@ -32,7 +32,7 @@ describe("Smart vault rewards test", () => {
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
-    const crProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", crLogic.address);
+    const crProxy = await DeployerUtils.deployContract(signer, "TetuProxy", crLogic.address);
     contractReader = crLogic.attach(crProxy.address) as ContractReader;
 
     await contractReader.initialize(core.controller.address);

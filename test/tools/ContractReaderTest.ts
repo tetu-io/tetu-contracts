@@ -8,7 +8,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {
   ContractReader,
   FeeRewardForwarder,
-  GovernmentUpdatedProxy,
+  TetuProxy,
   PriceCalculator,
   SmartVault
 } from "../../typechain";
@@ -40,7 +40,7 @@ describe("contract reader tests", function () {
     await core.mintHelper.startMinting();
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     const proxy = await DeployerUtils.deployContract(
-        signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+        signer, "TetuProxy", logic.address) as TetuProxy;
     contractReader = logic.attach(proxy.address) as ContractReader;
     expect(await proxy.implementation()).is.eq(logic.address);
     await contractReader.initialize(core.controller.address);
@@ -250,7 +250,7 @@ describe("contract reader tests", function () {
   });
   it("proxy update", async () => {
     const proxy = await DeployerUtils.connectContract(
-        signer, 'GovernmentUpdatedProxy', contractReader.address) as GovernmentUpdatedProxy;
+        signer, 'TetuProxy', contractReader.address) as TetuProxy;
     const newLogic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     await proxy.upgrade(newLogic.address);
 
@@ -259,19 +259,19 @@ describe("contract reader tests", function () {
   });
   it("proxy should not update for non gov", async () => {
     const proxy = await DeployerUtils.connectContract(
-        signer1, 'GovernmentUpdatedProxy', contractReader.address) as GovernmentUpdatedProxy;
+        signer1, 'TetuProxy', contractReader.address) as TetuProxy;
     const newLogic = await DeployerUtils.deployContract(signer1, "ContractReader") as ContractReader;
     await expect(proxy.upgrade(newLogic.address)).is.rejectedWith("forbidden");
   });
   it("should not update proxy with wrong contract", async () => {
     const proxy = await DeployerUtils.connectContract(
-        signer, 'GovernmentUpdatedProxy', contractReader.address) as GovernmentUpdatedProxy;
+        signer, 'TetuProxy', contractReader.address) as TetuProxy;
     await expect(proxy.upgrade(core.mintHelper.address))
         .rejected;
   });
   it("should not update proxy with wrong contract", async () => {
     const proxy = await DeployerUtils.connectContract(
-        signer, 'GovernmentUpdatedProxy', contractReader.address) as GovernmentUpdatedProxy;
+        signer, 'TetuProxy', contractReader.address) as TetuProxy;
     await expect(proxy.upgrade(core.bookkeeper.address))
         .rejected;
   });

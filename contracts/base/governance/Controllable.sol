@@ -10,16 +10,17 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IController.sol";
+import "../interface/IControllable.sol";
 
 /// @title Implement basic functionality for any contract that require strict control
 /// @dev Can be used with upgradeable pattern.
 ///      Require call initializeControllable() in any case.
 /// @author belbix
-abstract contract Controllable is Initializable {
+abstract contract Controllable is Initializable, IControllable {
   bytes32 internal constant _CONTROLLER_SLOT = 0x5165972ef41194f06c5007493031d0b927c20741adcb74403b954009fd2c3617;
   bytes32 internal constant _CREATED_SLOT = 0x6f55f470bdc9cb5f04223fd822021061668e4dccb43e8727b295106dc9769c8a;
 
@@ -40,7 +41,17 @@ abstract contract Controllable is Initializable {
     setCreated(block.timestamp);
   }
 
+  function isController(address _contract) external override view returns (bool) {
+    return _contract == controller();
+  }
+
   // ************ MODIFIERS **********************
+
+  /// @dev Allow operation only for Controller
+  modifier onlyController() {
+    require(controller() == msg.sender, "not controller");
+    _;
+  }
 
   /// @dev Allow operation only for Controller or Governance
   modifier onlyControllerOrGovernance() {

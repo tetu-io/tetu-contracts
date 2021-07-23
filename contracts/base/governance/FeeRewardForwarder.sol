@@ -10,11 +10,11 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../interface/ISmartVault.sol";
 import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
@@ -140,7 +140,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
     address psToken = psVault();
     ISmartVault smartVault = ISmartVault(_rewardPool);
-    require(smartVault.getRewardTokenIndex(psToken) != uint256(- 1), "psToken not added to vault");
+    require(smartVault.getRewardTokenIndex(psToken) != type(uint256).max, "psToken not added to vault");
 
     uint256 toFund = toFundAmount(_amount);
     sendToFund(_token, toFund);

@@ -10,11 +10,11 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts/proxy/UpgradeableProxy.sol";
 import "../interface/IUpgradeSource.sol";
 import "../interface/IVaultProxy.sol";
+import ".././UpgradeableProxy.sol";
 
 
 contract VaultProxy is UpgradeableProxy, IVaultProxy {

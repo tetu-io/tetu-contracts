@@ -10,24 +10,29 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts/proxy/UpgradeableProxy.sol";
-import "../base/interface/IGovernable.sol";
+import "../base/interface/IControllable.sol";
+import "./UpgradeableProxy.sol";
 
-
-contract GovernmentUpdatedProxy is UpgradeableProxy {
+/// @title EIP1967 Upgradable proxy implementation.
+/// @dev Only Controller has access and should implement time-lock for upgrade action.
+/// @author belbix
+contract TetuProxy is UpgradeableProxy {
 
   constructor(address _logic) UpgradeableProxy(_logic, "") {
     _upgradeTo(_logic);
   }
 
+  /// @notice Upgrade contract logic
+  /// @dev Upgrade allowed only for Controller and should be done only after time-lock period
+  /// @param _newImplementation Implementation address
   function upgrade(address _newImplementation) external {
-    require(IGovernable(address(this)).isGovernance(msg.sender), "forbidden");
+    require(IControllable(address(this)).isController(msg.sender), "forbidden");
     _upgradeTo(_newImplementation);
 
     // the new contract must have the same ABI and you must have the power to change it again
-    require(IGovernable(address(this)).isGovernance(msg.sender), "wrong impl");
+    require(IControllable(address(this)).isController(msg.sender), "wrong impl");
   }
 
   function implementation() external view returns (address) {

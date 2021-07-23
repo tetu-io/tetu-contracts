@@ -10,7 +10,7 @@ async function main() {
   const tokens = await DeployerUtils.getTokenAddresses();
 
   const logic = await DeployerUtils.deployContract(signer, "FundKeeper");
-  const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+  const proxy = await DeployerUtils.deployContract(signer, "TetuProxy", logic.address);
   const fundKeeper = logic.attach(proxy.address) as FundKeeper;
   await fundKeeper.initialize(core.controller);
 

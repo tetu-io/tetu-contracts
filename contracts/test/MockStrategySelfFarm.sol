@@ -9,11 +9,11 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
 import "../base/strategies/NoopStrategy.sol";
 import "../base/interface/ISmartVault.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 contract MockStrategySelfFarm is StrategyBase {

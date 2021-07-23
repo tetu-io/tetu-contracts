@@ -4,7 +4,7 @@
   "rules": {
     "compiler-version": [
       "error",
-      "^0.7.6"
+      "^0.8.6"
     ],
     "func-visibility": [
       "off",

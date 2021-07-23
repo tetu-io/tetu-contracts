@@ -10,11 +10,11 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../governance/Controllable.sol";
 import "./RewardToken.sol";
 
@@ -34,17 +34,16 @@ contract MintHelper is Controllable {
   event FundsChanged(address[] funds, uint256[] fractions);
   event AdminChanged(address newAdmin);
 
-  constructor(
+  /// @notice Initialize contract after setup it as proxy implementation
+  /// @dev Use it only once after first logic setup
+  /// @param _controller Controller address
+  function initialize(
     address _controller,
     address[] memory _funds,
     uint256[] memory _fundsFractions
-  ) {
+  ) external initializer {
     Controllable.initializeControllable(_controller);
     setOperatingFunds(_funds, _fundsFractions);
-  }
-
-  function distributor() public view returns (address){
-    return IController(controller()).notifyHelper();
   }
 
   function token() public view returns (address) {
@@ -56,13 +55,9 @@ contract MintHelper is Controllable {
     RewardToken(token()).startMinting();
   }
 
-  function mint(uint256 amount) external onlyControllerOrGovernance {
-    mintWithCustomDistributor(amount, distributor());
-  }
-
   /// we will split weekly emission to three parts and use on different networks
   /// until we don't have a bridge contract we will send non polygon parts to multisig wallet
-  function mintWithCustomDistributor(uint256 amount, address _distributor) public onlyControllerOrGovernance {
+  function mint(uint256 amount, address _distributor) external onlyControllerOrGovernance {
     require(amount != 0, "Amount should be greater than 0");
     require(token() != address(0), "Token not init");
 

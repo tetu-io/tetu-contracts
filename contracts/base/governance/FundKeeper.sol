@@ -10,15 +10,15 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Controllable.sol";
 import "../interface/IFundKeeper.sol";
 
 /// currently it is just upgradable contract that holds money for further implementations
-contract FundKeeper is Initializable, Controllable, IFundKeeper {
+contract FundKeeper is Controllable, IFundKeeper {
   using SafeERC20 for IERC20;
 
   event Salvage(address indexed token, uint256 amount);
@@ -27,7 +27,7 @@ contract FundKeeper is Initializable, Controllable, IFundKeeper {
     Controllable.initializeControllable(_controller);
   }
 
-  function salvage(address _token, uint256 amount) external onlyControllerOrGovernance {
+  function salvage(address _token, uint256 amount) external override onlyController {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
     IERC20(_token).safeTransfer(msg.sender, amount);

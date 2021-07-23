@@ -10,17 +10,16 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.6;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../interface/IGovernable.sol";
 
 /// @title Holds more detailed information about all vaults and strategies
-/// @dev Only not critical functional. Use with GovernmentUpdatedProxy
+/// @dev Only not critical functional. Use with TetuProxy
 /// @author belbix
 contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   using SafeMathUpgradeable for uint256;
@@ -85,12 +84,6 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   /// @dev Only registered vault allowed
   modifier onlyVault() {
     require(IController(controller()).vaults(msg.sender), "only exist vault");
-    _;
-  }
-
-  /// @dev Only controller allowed
-  modifier onlyController() {
-    require(controller() == msg.sender, "not controller");
     _;
   }
 
