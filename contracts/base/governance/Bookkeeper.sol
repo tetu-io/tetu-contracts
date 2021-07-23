@@ -105,7 +105,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
 
   /// @notice Add Vault if it is not exist. Only Controller sender allowed
   /// @param _vault Vault address
-  function addVault(address _vault) public override onlyController {
+  function addVault(address _vault) public override onlyControllerOrGovernance {
     if (!isVaultExist(_vault)) {
       _vaults.push(_vault);
       emit RegisterVault(_vault);
@@ -114,7 +114,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
 
   /// @notice Add Strategy if it is not exist. Only Controller sender allowed
   /// @param _strategy Strategy address
-  function addStrategy(address _strategy) public override onlyController {
+  function addStrategy(address _strategy) public override onlyControllerOrGovernance {
     if (!isStrategyExist(_strategy)) {
       _strategies.push(_strategy);
       emit RegisterStrategy(_strategy);
