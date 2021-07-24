@@ -1,12 +1,13 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, SmartVault, TetuProxy} from "../../typechain";
+import {Bookkeeper, Controller, SmartVault} from "../../typechain";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
+  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
   const bookkeeper = await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper;
   const vaults = await bookkeeper.vaults();
 
@@ -15,8 +16,7 @@ async function main() {
     const logic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
     newVaultLogics.push(logic.address);
     console.log('new logic', logic.address, vault);
-    const currentVault = await DeployerUtils.connectVault(vault, signer) as SmartVault;
-    await currentVault.scheduleUpgrade(logic.address);
+    await controller.announceTetuProxyUpgrade(vault, logic.address);
   }
 
   await DeployerUtils.wait(5);

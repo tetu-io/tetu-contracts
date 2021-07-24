@@ -36,6 +36,8 @@ interface IController {
 
   function fund() external view returns (address);
 
+  function announcer() external view returns (address);
+
   function whiteList(address _target) external view returns (bool);
 
   function vaults(address _target) external view returns (bool);
@@ -63,4 +65,17 @@ interface IController {
   function isValidVault(address _vault) external view returns (bool);
 
   function isValidStrategy(address _strategy) external view returns (bool);
+
+  // ************ DAO ACTIONS *************
+  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) external;
+
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) external;
+
+  function addToWhiteListMulti(address[] calldata _targets) external;
+
+  function addToWhiteList(address _target) external;
+
+  function removeFromWhiteListMulti(address[] calldata _targets) external;
+
+  function removeFromWhiteList(address _target) external;
 }

@@ -1,4 +1,5 @@
 import {
+  Announcer,
   Bookkeeper,
   Controller,
   FeeRewardForwarder,
@@ -25,6 +26,8 @@ export class CoreContractsWrapper {
   public psEmptyStrategy: NoopStrategy;
   public fundKeeper: FundKeeper;
   public fundKeeperLogic: string;
+  public announcer: Announcer;
+  public announcerLogic: string;
 
   constructor(controller: Controller,
               controllerLogic: string,
@@ -38,7 +41,9 @@ export class CoreContractsWrapper {
               psVaultLogic: string,
               psEmptyStrategy: NoopStrategy,
               fundKeeper: FundKeeper,
-              fundKeeperLogic: string
+              fundKeeperLogic: string,
+              announcer: FundKeeper,
+              announcerLogic: string
   ) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;
@@ -53,6 +58,8 @@ export class CoreContractsWrapper {
     this.psEmptyStrategy = psEmptyStrategy;
     this.fundKeeper = fundKeeper;
     this.fundKeeperLogic = fundKeeperLogic;
+    this.announcer = announcer;
+    this.announcerLogic = announcerLogic;
   }
 
   public registerInTracer() {

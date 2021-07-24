@@ -1,12 +1,13 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, SmartVault} from "../../typechain";
+import {Bookkeeper, Controller, SmartVault} from "../../typechain";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
+  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
   const bookkeeper = await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper;
   const vaults = await bookkeeper.vaults();
 
