@@ -16,12 +16,11 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
-import "../interface/IGovernable.sol";
 
 /// @title Holds more detailed information about all vaults and strategies
 /// @dev Only not critical functional. Use with TetuProxy
 /// @author belbix
-contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
+contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   using SafeMathUpgradeable for uint256;
 
   /// @notice Version of the contract
@@ -213,13 +212,6 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable, IGovernable {
   external override onlyVault {
     userEarned[_user][_vault][_rt] = userEarned[_user][_vault][_rt].add(_amount);
     emit RegisterUserEarned(_user, _vault, _rt, _amount);
-  }
-
-  /// @notice Return true is given address is setup as governance in Controller
-  /// @param _contract Address for check
-  /// @return true if given address is governance
-  function isGovernance(address _contract) external override view returns (bool) {
-    return IController(controller()).isGovernance(_contract);
   }
 
   /// @notice Return vaults array

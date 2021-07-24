@@ -2,7 +2,6 @@
 
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {ContractReader} from "../../../typechain";
 import {writeFileSync} from "fs";
 
 
@@ -19,6 +18,12 @@ async function main() {
   await DeployerUtils.wait(1);
   await DeployerUtils.verifyWithArgs(core.controller.address, [core.controllerLogic]);
   await DeployerUtils.verifyProxy(core.controller.address);
+
+  // announcer
+  await DeployerUtils.verify(core.announcerLogic);
+  await DeployerUtils.wait(1);
+  await DeployerUtils.verifyWithArgs(core.announcer.address, [core.announcerLogic]);
+  await DeployerUtils.verifyProxy(core.announcer.address);
 
   // forwarder
   await DeployerUtils.verifyWithArgs(core.feeRewardForwarder.address, [core.controller.address]);

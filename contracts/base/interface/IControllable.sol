@@ -15,4 +15,6 @@ pragma solidity 0.8.4;
 interface IControllable {
 
   function isController(address _contract) external view returns (bool);
+
+  function isGovernance(address _contract) external view returns (bool);
 }

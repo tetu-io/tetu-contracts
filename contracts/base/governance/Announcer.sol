@@ -72,17 +72,20 @@ contract Announcer is Controllable, IAnnouncer {
     // setup multi opCodes
     multiOpCodes[TimeLockOpCodes.TetuProxyUpdate] = true;
     multiOpCodes[TimeLockOpCodes.StrategyUpgrade] = true;
+
+    // placeholder for index 0
+    timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, address(0), new address[](0), new uint256[](0)));
   }
 
   /// @dev Operations allowed only for Governance address
   modifier onlyGovernance() {
-    require(IController(controller()).isGovernance(msg.sender), "not governance");
+    require(isGovernance(msg.sender), "not governance");
     _;
   }
 
   /// @dev Operations allowed for Governance or Dao addresses
   modifier onlyGovernanceOrDao() {
-    require(IController(controller()).isGovernance(msg.sender)
+    require(isGovernance(msg.sender)
       || IController(controller()).isDao(msg.sender), "not governance or dao");
     _;
   }
@@ -106,9 +109,9 @@ contract Announcer is Controllable, IAnnouncer {
     timeLockInfos.pop();
 
     if (multiOpCodes[opCode]) {
-      multiTimeLockIndexes[opCode][target] = type(uint256).max;
+      multiTimeLockIndexes[opCode][target] = 0;
     } else {
-      timeLockIndexes[opCode] = type(uint256).max;
+      timeLockIndexes[opCode] = 0;
     }
   }
 
@@ -134,7 +137,7 @@ contract Announcer is Controllable, IAnnouncer {
   ///                 8 - Fund
   /// @param newAddress New address
   function announceAddressChange(TimeLockOpCodes opCode, address oldAddress, address newAddress) external onlyGovernance {
-    require(timeLockIndexes[opCode] == type(uint256).max, "already announced");
+    require(timeLockIndexes[opCode] == 0, "already announced");
     require(newAddress != address(0), "zero address");
     timeLockSchedule[keccak256(abi.encode(opCode, newAddress))] = block.timestamp + TIME_LOCK;
 
@@ -154,7 +157,7 @@ contract Announcer is Controllable, IAnnouncer {
   /// @param numerator New numerator
   /// @param denominator New denominator
   function announceRatioChange(TimeLockOpCodes opCode, uint256 numerator, uint256 denominator) external override onlyGovernanceOrDao {
-    require(timeLockIndexes[opCode] == type(uint256).max, "already announced");
+    require(timeLockIndexes[opCode] == 0, "already announced");
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
     timeLockSchedule[keccak256(abi.encode(opCode, numerator, denominator))] = block.timestamp + TIME_LOCK;
@@ -178,7 +181,7 @@ contract Announcer is Controllable, IAnnouncer {
   /// @param amount Amount that you want to salvage
   function announceTokenMove(TimeLockOpCodes opCode, address target, address token, uint256 amount)
   external onlyGovernance {
-    require(timeLockIndexes[opCode] == type(uint256).max, "already announced");
+    require(timeLockIndexes[opCode] == 0, "already announced");
     require(target != address(0), "zero target");
     require(token != address(0), "zero token");
     require(amount != 0, "zero amount");
@@ -202,7 +205,7 @@ contract Announcer is Controllable, IAnnouncer {
   function announceMint(uint256 totalAmount, address _distributor, address _otherNetworkFund) external onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.Mint;
 
-    require(timeLockIndexes[opCode] == type(uint256).max, "already announced");
+    require(timeLockIndexes[opCode] == 0, "already announced");
     require(totalAmount != 0, "zero amount");
     require(_distributor != address(0), "zero distributor");
     require(_otherNetworkFund != address(0), "zero fund");
@@ -238,7 +241,7 @@ contract Announcer is Controllable, IAnnouncer {
   function announceTetuProxyUpgrade(address _contract, address _implementation) public onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.TetuProxyUpdate;
 
-    require(multiTimeLockIndexes[opCode][_contract] == type(uint256).max, "already announced");
+    require(multiTimeLockIndexes[opCode][_contract] == 0, "already announced");
     require(_contract != address(0), "zero contract");
     require(_implementation != address(0), "zero implementation");
 
@@ -260,7 +263,7 @@ contract Announcer is Controllable, IAnnouncer {
     TimeLockOpCodes opCode = TimeLockOpCodes.StrategyUpgrade;
     require(_targets.length == _strategies.length, "wrong arrays");
     for (uint256 i = 0; i < _targets.length; i++) {
-      require(multiTimeLockIndexes[opCode][_targets[i]] == type(uint256).max, "already announced");
+      require(multiTimeLockIndexes[opCode][_targets[i]] == 0, "already announced");
       bytes32 opHash = keccak256(abi.encode(opCode, _targets[i], _strategies[i]));
       timeLockSchedule[opHash] = block.timestamp + TIME_LOCK;
 

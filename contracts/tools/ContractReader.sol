@@ -19,11 +19,10 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../base/governance/Controllable.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
-import "../base/interface/IGovernable.sol";
 import "../base/interface/IStrategy.sol";
 import "../infrastructure/IPriceCalculator.sol";
 
-contract ContractReader is IGovernable, Initializable, Controllable {
+contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
   string public constant VERSION = "0";
@@ -553,10 +552,6 @@ contract ContractReader is IGovernable, Initializable, Controllable {
 
   function strategies() public view returns (address[] memory){
     return IBookkeeper(bookkeeper()).strategies();
-  }
-
-  function isGovernance(address _contract) external override view returns (bool) {
-    return IController(controller()).isGovernance(_contract);
   }
 
   function priceCalculator() public view returns (address) {

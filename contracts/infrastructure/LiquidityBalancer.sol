@@ -21,11 +21,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../base/governance/Controllable.sol";
-import "../base/interface/IGovernable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
 
-contract LiquidityBalancer is IGovernable, Controllable {
+contract LiquidityBalancer is Controllable {
   using SafeERC20 for IERC20;
   using Address for address;
   using SafeMath for uint256;
@@ -317,12 +316,6 @@ contract LiquidityBalancer is IGovernable, Controllable {
       z = 1;
     }
     return z;
-  }
-
-  // ************** VIEWS ********************
-
-  function isGovernance(address _contract) external override view returns (bool) {
-    return IController(controller()).isGovernance(_contract);
   }
 
   // ***************** GOVERNANCE ACTIONS *********************

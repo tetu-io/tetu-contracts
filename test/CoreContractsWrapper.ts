@@ -42,7 +42,7 @@ export class CoreContractsWrapper {
               psEmptyStrategy: NoopStrategy,
               fundKeeper: FundKeeper,
               fundKeeperLogic: string,
-              announcer: FundKeeper,
+              announcer: Announcer,
               announcerLogic: string
   ) {
     this.controller = controller;

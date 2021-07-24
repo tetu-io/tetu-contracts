@@ -38,7 +38,7 @@ async function main() {
     const rewardDuration: number = 60 * 60 * 24 * 28; // 1 week
     // *********** DEPLOY MOCK POOL FOR STRATEGY
     const poolLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const poolProxy = await DeployerUtils.deployContract(signer, "TetuProxy", poolLogic.address);
+    const poolProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", poolLogic.address);
     const pool = poolLogic.attach(poolProxy.address) as SmartVault;
 
     const noopStrategy = await DeployerUtils.deployContract(signer, 'NoopStrategy',
@@ -69,7 +69,7 @@ async function main() {
 
     // *********** DEPLOY VAULT
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxy", vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     const strategy = await DeployerUtils.deployContract(signer, strategyName,

@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {ContractReader, TetuProxy} from "../../../typechain";
+import {ContractReader, TetuProxyGov} from "../../../typechain";
 import {VaultInfoModel} from "../../models/VaultInfoModel";
 import {UserInfoModel} from "../../models/UserInfoModel";
 import {writeFileSync} from 'fs';
@@ -12,8 +12,7 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const signer = (await ethers.getSigners())[0];
 
-  const proxy = await DeployerUtils.connectContract(signer,
-      "TetuProxy", tools.reader) as TetuProxy;
+  const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.reader) as TetuProxyGov;
   const logicAddress = await proxy.implementation();
   const logic = await DeployerUtils.connectContract(signer, "ContractReader", logicAddress) as ContractReader;
   const contractReader = logic.attach(proxy.address);

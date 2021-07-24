@@ -54,8 +54,6 @@ interface IController {
 
   function isAllowedUser(address _adr) external view returns (bool);
 
-  function isGovernance(address _adr) external view returns (bool);
-
   function isDao(address _adr) external view returns (bool);
 
   function isHardWorker(address _adr) external view returns (bool);

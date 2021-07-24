@@ -48,7 +48,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   modifier restricted() {
     require(msg.sender == _smartVault
     || msg.sender == address(controller())
-      || IController(controller()).isGovernance(msg.sender),
+      || isGovernance(msg.sender),
       "forbidden");
     _;
   }

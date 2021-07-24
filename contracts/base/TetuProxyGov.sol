@@ -17,23 +17,23 @@ import "./UpgradeableProxy.sol";
 import "./interface/ITetuProxy.sol";
 
 /// @title EIP1967 Upgradable proxy implementation.
-/// @dev Only Controller has access and should implement time-lock for upgrade action.
+/// @dev Only Governance Wallet has access.
+///      This Proxy should be used for non critical contracts only!
 /// @author belbix
-contract TetuProxy is UpgradeableProxy, ITetuProxy {
+contract TetuProxyGov is UpgradeableProxy, ITetuProxy {
 
   constructor(address _logic) UpgradeableProxy(_logic, "") {
-    _upgradeTo(_logic);
   }
 
   /// @notice Upgrade contract logic
-  /// @dev Upgrade allowed only for Controller and should be done only after time-lock period
+  /// @dev Upgrade allowed only for Governance. No time-lock period
   /// @param _newImplementation Implementation address
   function upgrade(address _newImplementation) external override {
-    require(IControllable(address(this)).isController(msg.sender), "forbidden");
+    require(IControllable(address(this)).isGovernance(msg.sender), "forbidden");
     _upgradeTo(_newImplementation);
 
     // the new contract must have the same ABI and you must have the power to change it again
-    require(IControllable(address(this)).isController(msg.sender), "wrong impl");
+    require(IControllable(address(this)).isGovernance(msg.sender), "wrong impl");
   }
 
   function implementation() external override view returns (address) {

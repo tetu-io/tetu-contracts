@@ -41,8 +41,15 @@ abstract contract Controllable is Initializable, IControllable {
     setCreated(block.timestamp);
   }
 
-  function isController(address _contract) external override view returns (bool) {
-    return _contract == controller();
+  function isController(address _adr) public override view returns (bool) {
+    return _adr == controller();
+  }
+
+  /// @notice Return true is given address is setup as governance in Controller
+  /// @param _adr Address for check
+  /// @return true if given address is governance
+  function isGovernance(address _adr) public override view returns (bool) {
+    return IController(controller()).governance() == _adr;
   }
 
   // ************ MODIFIERS **********************
@@ -55,7 +62,7 @@ abstract contract Controllable is Initializable, IControllable {
 
   /// @dev Allow operation only for Controller or Governance
   modifier onlyControllerOrGovernance() {
-    require(controller() == msg.sender || IController(controller()).isGovernance(msg.sender), "not controller or gov");
+    require(isController(msg.sender) || isGovernance(msg.sender), "not controller or gov");
     _;
   }
 

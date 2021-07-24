@@ -17,26 +17,28 @@ interface IAnnouncer {
   /// @dev Time lock operation codes
   enum TimeLockOpCodes {
     // TimeLockedAddresses
-    Governance,
-    Dao,
-    FeeRewardForwarder,
-    Bookkeeper,
-    MintHelper,
-    RewardToken,
-    FundToken,
-    PsVault,
-    Fund,
+    Governance, // 0
+    Dao, // 1
+    FeeRewardForwarder, // 2
+    Bookkeeper, // 3
+    MintHelper, // 4
+    RewardToken, // 5
+    FundToken, // 6
+    PsVault, // 7
+    Fund, // 8
     // TimeLockedRatios
-    PsRatio,
-    FundRatio,
+    PsRatio, // 9
+    FundRatio, // 10
     // TimeLockedTokenMoves
-    ControllerSalvage,
-    StrategySalvage,
-    FundSalvage,
-    TetuProxyUpdate,
-    StrategyUpgrade,
-    Mint,
-    Announcer
+    ControllerSalvage, // 11
+    StrategySalvage, // 12
+    FundSalvage, // 13
+    // Other
+    TetuProxyUpdate, // 14
+    StrategyUpgrade, // 15
+    Mint, // 16
+    Announcer, // 17
+    ZeroPlaceholder //18
   }
 
   /// @dev Holder for human readable info

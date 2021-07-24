@@ -21,12 +21,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../base/governance/Controllable.sol";
-import "../base/interface/IGovernable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
 import "./IPriceCalculator.sol";
 
-contract PayrollClerk is Initializable, IGovernable, Controllable {
+contract PayrollClerk is Initializable, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -60,10 +59,6 @@ contract PayrollClerk is Initializable, IGovernable, Controllable {
 
   function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
-  }
-
-  function isGovernance(address _contract) external override view returns (bool) {
-    return IController(controller()).isGovernance(_contract);
   }
 
   function allWorkers() external view returns (address[] memory) {

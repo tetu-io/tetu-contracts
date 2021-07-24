@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../base/interface/IGovernable.sol";
 import "../base/governance/Controllable.sol";
 import "../third_party/uniswap/IUniswapV2Factory.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
@@ -25,7 +24,7 @@ import "../base/interface/ISmartVault.sol";
 
 pragma solidity 0.8.4;
 
-contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalculator {
+contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using SafeERC20 for IERC20;
   using Address for address;
   using SafeMath for uint256;
@@ -270,10 +269,6 @@ contract PriceCalculator is IGovernable, Initializable, Controllable, IPriceCalc
 
   function swapFactoriesSize() external view returns (uint256) {
     return swapFactories.length;
-  }
-
-  function isGovernance(address _contract) external override view returns (bool) {
-    return IController(controller()).isGovernance(_contract);
   }
 
   // ************* INTERNAL *****************

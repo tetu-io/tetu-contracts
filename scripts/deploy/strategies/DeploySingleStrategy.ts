@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
-import {Controller, IStrategy} from "../../../typechain";
+import {Announcer, IStrategy} from "../../../typechain";
 
 
 async function main() {
@@ -14,8 +14,8 @@ async function main() {
   const strategy = await DeployerUtils.deployContract(signer, 'MockStrategyQuickSushiRopsten',
       core.controller, vault.address, poolAddress) as IStrategy;
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  await controller.announceStrategyUpgrades([vault.address], [strategy.address]);
+  const announcer = await DeployerUtils.connectContract(signer, "Announcer", core.announcer) as Announcer;
+  await announcer.announceStrategyUpgrades([vault.address], [strategy.address]);
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(strategy.address);

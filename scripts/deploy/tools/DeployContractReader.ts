@@ -9,7 +9,7 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const logic = await DeployerUtils.deployContract(signer, "ContractReader");
-  const proxy = await DeployerUtils.deployContract(signer, "TetuProxy", logic.address);
+  const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address);
   const contractReader = logic.attach(proxy.address) as ContractReader;
 
   await contractReader.initialize(core.controller);

@@ -115,8 +115,8 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @dev Operations allowed for Governance or HardWorker addresses
   modifier onlyHardWorkerOrGovernance() {
-    require(IController(controller()).isHardWorker(msg.sender)
-      || IController(controller()).isGovernance(msg.sender), "only hardworker");
+    require(isHardWorker(msg.sender)
+      || isGovernance(msg.sender), "only hardworker");
     _;
   }
 
@@ -540,13 +540,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   // ***************** EXTERNAL *******************************
-
-  /// @notice Return true if the given address is governance
-  /// @param _adr Address for check
-  /// @return true if it is a governance address
-  function isGovernance(address _adr) public view override returns (bool) {
-    return governance() == _adr;
-  }
 
   /// @notice Return true if the given address is DAO
   /// @param _adr Address for check
