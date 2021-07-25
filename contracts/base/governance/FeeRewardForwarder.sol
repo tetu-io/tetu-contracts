@@ -76,8 +76,8 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   */
   function setConversionPath(address[] memory _route, address[] memory _routers)
   external onlyControllerOrGovernance {
-    require(
-      _routers.length == 1 || _routers.length == _route.length - 1, "wrong data");
+    require(_routers.length == 1 ||
+      (_route.length != 0 && _routers.length == _route.length.sub(1)), "wrong data");
     address from = _route[0];
     address to = _route[_route.length - 1];
     require(to == targetToken() || to == fundToken(), "wrong to");

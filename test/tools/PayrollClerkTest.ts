@@ -35,8 +35,7 @@ describe("Payroll Clerk tests", function () {
 
     await clerk.setCalculator(calculator.address);
 
-    await core.mintHelper.startMinting();
-    await UniswapUtils.createPairForRewardToken(signer, core.rewardToken.address, core.mintHelper, "10000");
+    await UniswapUtils.createPairForRewardToken(signer, core, "10000");
   });
 
   after(async function () {
@@ -57,7 +56,7 @@ describe("Payroll Clerk tests", function () {
     expect(await clerk.workerIndex(signer.address)).is.eq(0);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
-    await MintHelperUtils.mint(core.mintHelper, "10000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '10000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000").toString());
 
     const balance = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
@@ -86,7 +85,7 @@ describe("Payroll Clerk tests", function () {
     expect(await clerk.isGovernance(signer.address)).is.eq(true);
     await clerk.changeTokens([core.rewardToken.address, MaticAddresses.WMATIC_TOKEN], [50, 50]);
 
-    await MintHelperUtils.mint(core.mintHelper, "10000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '10000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000").toString());
 
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000'));
@@ -110,7 +109,7 @@ describe("Payroll Clerk tests", function () {
     await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
-    await MintHelperUtils.mint(core.mintHelper, "10000000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
 
     const balance = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
@@ -147,7 +146,7 @@ describe("Payroll Clerk tests", function () {
     await clerk.switchBoost(signer.address, false);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
-    await MintHelperUtils.mint(core.mintHelper, "10000000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
 
     const balance = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
@@ -179,11 +178,11 @@ describe("Payroll Clerk tests", function () {
   });
 
   it("should salvage token", async () => {
-    await MintHelperUtils.mint(core.mintHelper, "10000000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
     const bal = await Erc20Utils.balanceOf(core.rewardToken.address, clerk.address);
     expect(bal.isZero()).is.false;
-    await clerk.salvage(core.rewardToken.address, bal);
+    await clerk.moveTokensToController(core.rewardToken.address, bal);
     expect((await Erc20Utils.balanceOf(core.rewardToken.address, clerk.address)).isZero()).is.true;
   });
 

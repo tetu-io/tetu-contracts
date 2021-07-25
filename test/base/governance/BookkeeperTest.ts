@@ -120,8 +120,7 @@ describe("Bookkeeper tests", function () {
     const vault = core.psVault;
 
     // ********** USER1 deposit
-    await core.mintHelper.startMinting();
-    await MintHelperUtils.mint(core.mintHelper, '100000');
+    await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address);
     await VaultUtils.deposit(signer, vault, BigNumber.from('1000'));
 
     let user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)

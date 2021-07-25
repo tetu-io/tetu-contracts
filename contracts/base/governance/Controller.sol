@@ -213,7 +213,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     governance() == address(0),
     address(0)
   ) {
-    require(_governance != address(0), "zero address");
     _setGovernance(_governance);
   }
 
@@ -226,7 +225,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     dao() == address(0),
     address(0)
   ) {
-    require(_dao != address(0), "zero address");
     _setDao(_dao);
   }
 
@@ -239,7 +237,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     feeRewardForwarder() == address(0),
     address(0)
   ) {
-    require(_feeRewardForwarder != address(0), "zero address");
     rewardDistribution[feeRewardForwarder()] = false;
     _setFeeRewardForwarder(_feeRewardForwarder);
     rewardDistribution[feeRewardForwarder()] = true;
@@ -254,7 +251,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     bookkeeper() == address(0),
     address(0)
   ) {
-    require(_bookkeeper != address(0), "zero address");
     _setBookkeeper(_bookkeeper);
   }
 
@@ -267,7 +263,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     mintHelper() == address(0),
     address(0)
   ) {
-    require(_newValue != address(0), "zero address");
     _setMintHelper(_newValue);
 
     // for reduce the chance of DoS check new implementation
@@ -283,7 +278,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     rewardToken() == address(0),
     address(0)
   ) {
-    require(_newValue != address(0), "zero address");
     _setRewardToken(_newValue);
   }
 
@@ -296,7 +290,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     fundToken() == address(0),
     address(0)
   ) {
-    require(_newValue != address(0), "zero address");
     _setFundToken(_newValue);
   }
 
@@ -309,7 +302,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     psVault() == address(0),
     address(0)
   ) {
-    require(_newValue != address(0), "zero address");
     _setPsVault(_newValue);
   }
 
@@ -322,7 +314,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     fund() == address(0),
     address(0)
   ) {
-    require(_newValue != address(0), "zero address");
     _setFund(_newValue);
   }
 
@@ -330,7 +321,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ///         Has dedicated time-lock logic for avoiding collisions.
   /// @param _newValue New Announcer address
   function setAnnouncer(address _newValue) external onlyGovernance {
-    require(_newValue != address(0), "zero address");
     bytes32 opHash = keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Announcer, _newValue));
     if (announcer() != address(0)) {
       require(IAnnouncer(announcer()).timeLockSchedule(opHash) > 0, "not announced");
@@ -358,8 +348,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     psNumerator() == 0 && psDenominator() == 0,
     address(0)
   ) {
-    require(numerator <= denominator, "invalid values");
-    require(denominator != 0, "cannot divide by 0");
     _setPsNumerator(numerator);
     _setPsDenominator(denominator);
   }
@@ -375,8 +363,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     fundNumerator() == 0 && fundDenominator() == 0,
     address(0)
   ) {
-    require(numerator <= denominator, "invalid values");
-    require(denominator != 0, "cannot divide by 0");
     _setFundNumerator(numerator);
     _setFundDenominator(denominator);
   }
@@ -494,6 +480,26 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     require(_targets.length == _statuses.length, "wrong arrays");
     for (uint256 i = 0; i < _targets.length; i++) {
       ISmartVault(_targets[i]).changeActivityStatus(_statuses[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Add reward token for given vaults
+  /// @param _vaults Vault addresses
+  /// @param _rts Reward tokens
+  function addRewardTokens(address[] calldata _vaults, address[] calldata _rts) external onlyGovernance {
+    require(_vaults.length == _rts.length, "wrong arrays");
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      ISmartVault(_vaults[i]).addRewardToken(_rts[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Remove reward token for given vaults
+  /// @param _vaults Vault addresses
+  /// @param _rts Reward tokens
+  function removeRewardTokens(address[] calldata _vaults, address[] calldata _rts) external onlyGovernance {
+    require(_vaults.length == _rts.length, "wrong arrays");
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      ISmartVault(_vaults[i]).removeRewardToken(_rts[i]);
     }
   }
 

@@ -496,4 +496,8 @@ describe("Announcer tests", function () {
     expect(await controller.announcer()).is.eq(newAnnouncer.address);
   });
 
+  it("should not mint zero amount", async () => {
+    await expect(core.announcer.announceMint(0, core.notifyHelper.address, core.fundKeeper.address)).rejectedWith('zero amount');
+  });
+
 });

@@ -27,11 +27,6 @@ export class VaultUtils {
     expect(await vault.underlyingUnit()).to.eq(1000000);
     expect(await vault.duration()).to.eq(duration);
     expect(await vault.active()).to.eq(true);
-    // update stats
-    expect(await vault.nextImplementation()).to.eq(MaticAddresses.ZERO_ADDRESS);
-    expect(await vault.nextImplementationTimestamp()).to.eq(0);
-    expect(await vault.futureStrategy()).to.eq(MaticAddresses.ZERO_ADDRESS);
-    expect(await vault.strategyUpdateTime()).to.eq(0);
     // vault stats
     expect(await vault.underlyingBalanceInVault()).to.eq(0);
     expect(await vault.underlyingBalanceWithInvestment()).to.eq(0);

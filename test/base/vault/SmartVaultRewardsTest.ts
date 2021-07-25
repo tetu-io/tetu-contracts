@@ -27,12 +27,11 @@ describe("Smart vault rewards test", () => {
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     core = await DeployerUtils.deployAllCoreContracts(signer);
-    await core.mintHelper.startMinting();
 
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
-    const crProxy = await DeployerUtils.deployContract(signer, "TetuProxy", crLogic.address);
+    const crProxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", crLogic.address);
     contractReader = crLogic.attach(crProxy.address) as ContractReader;
 
     await contractReader.initialize(core.controller.address);

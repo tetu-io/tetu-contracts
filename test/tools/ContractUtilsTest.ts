@@ -12,7 +12,6 @@ chai.use(chaiAsPromised);
 
 describe("Contract utils tests", function () {
   let snapshot: string;
-  let snapshotForEach: string;
   let signer: SignerWithAddress;
   let utils: ContractUtils;
 

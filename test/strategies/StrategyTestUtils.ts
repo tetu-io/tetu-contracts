@@ -36,7 +36,7 @@ export class StrategyTestUtils {
 
 
     const rewardTokenLp = await UniswapUtils.createPairForRewardToken(
-        signer, core.rewardToken.address, core.mintHelper, "1000000"
+        signer, core, "1000000"
     );
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
@@ -96,6 +96,8 @@ export class StrategyTestUtils {
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
     console.log('new ps ratio', newNum, den)
+    await info.core.announcer.announceRatioChange(9, newNum, den);
+    await TimeUtils.advanceBlocksOnTs(1);
     await info.core.controller.setPSNumeratorDenominator(newNum, den);
 
     const vaultForUser = info.vault.connect(info.user);

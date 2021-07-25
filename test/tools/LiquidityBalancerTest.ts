@@ -30,14 +30,13 @@ describe("liquidity balancer tsets", function () {
     signer = (await ethers.getSigners())[0];
     user = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer);
-    await core.mintHelper.startMinting();
 
     token = core.rewardToken.address;
 
     liquidityBalancer = await DeployerUtils.deployLiquidityBalancer(
         signer, core.controller.address) as LiquidityBalancer;
 
-    await MintHelperUtils.mint(core.mintHelper, "10000000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '10000000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer,
         liquidityBalancer.address, utils.parseUnits("100000").toString());
 
@@ -70,8 +69,7 @@ describe("liquidity balancer tsets", function () {
         MaticAddresses.QUICK_ROUTER
     );
 
-    const lp = await UniswapUtils.createPairForRewardToken(
-        signer, token, core.mintHelper, "1000");
+    const lp = await UniswapUtils.createPairForRewardToken(signer, core, "1000");
 
     const lpInfo = await UniswapUtils.getLpInfo(lp, signer, token);
     const tokenStacked = lpInfo[0];
@@ -126,8 +124,7 @@ describe("liquidity balancer tsets", function () {
         MaticAddresses.QUICK_ROUTER
     );
 
-    const lp = await UniswapUtils.createPairForRewardToken(
-        signer, token, core.mintHelper, "1000");
+    const lp = await UniswapUtils.createPairForRewardToken(signer, core, "1000");
 
     // buy TargetToken for USDC
     await UniswapUtils.swapExactTokensForTokens(
@@ -202,15 +199,15 @@ describe("liquidity balancer tsets", function () {
   });
 
   it("should salvage", async () => {
-    const balanceBefore = await Erc20Utils.balanceOf(token, signer.address);
-    await liquidityBalancer.salvage(token, '123456789');
-    const balanceAfter = await Erc20Utils.balanceOf(token, signer.address);
+    const balanceBefore = await Erc20Utils.balanceOf(token, core.controller.address);
+    await liquidityBalancer.moveTokensToController(token, '123456789');
+    const balanceAfter = await Erc20Utils.balanceOf(token, core.controller.address);
     expect(+utils.formatUnits(balanceAfter, 18)).is.eq(+utils.formatUnits(balanceBefore.add('123456789'), 18));
   });
 
   it("should not down with zero values", async () => {
     const lp = await UniswapUtils.createPairForRewardToken(
-        signer, token, core.mintHelper, "1000");
+        signer, core, "1000");
     await liquidityBalancer.setTargetPrice(token, utils.parseUnits("1"));
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits("1"));
     await liquidityBalancer.changeLiquidity(token, lp);

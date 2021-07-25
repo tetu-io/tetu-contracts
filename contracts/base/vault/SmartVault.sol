@@ -33,7 +33,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   // ************* CONSTANTS ********************
   string public constant VERSION = "0";
-  uint256 public constant TIME_LOCK = 48 hours;
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -141,7 +140,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /**
    * Add a reward token to the internal array
    */
-  function addRewardToken(address rt) external onlyControllerOrGovernance {
+  function addRewardToken(address rt) external override onlyControllerOrGovernance {
     require(getRewardTokenIndex(rt) == type(uint256).max, "rt exist");
     require(rt != underlying(), "rt is underlying");
     _rewardTokens.push(rt);
@@ -151,7 +150,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /**
    * Remove reward token. Last token removal is not allowed
    */
-  function removeRewardToken(address rt) external onlyControllerOrGovernance {
+  function removeRewardToken(address rt) external override onlyControllerOrGovernance {
     uint256 i = getRewardTokenIndex(rt);
     require(i != type(uint256).max, "not exist");
     require(periodFinishForToken[_rewardTokens[i]] < block.timestamp, "not finished");
