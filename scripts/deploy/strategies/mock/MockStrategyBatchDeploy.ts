@@ -1,10 +1,17 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {Controller, ERC20PresetMinterPauser, IStrategy, SmartVault} from "../../../../typechain";
+import {
+  Controller,
+  ERC20PresetMinterPauser,
+  IStrategy,
+  IUniswapV2Factory,
+  SmartVault
+} from "../../../../typechain";
 import {utils} from "ethers";
 import {Erc20Utils} from "../../../../test/Erc20Utils";
 import {RunHelper} from "../../../utils/RunHelper";
 import {Settings} from "../../../../settings";
+import {RopstenAddresses} from "../../../../test/RopstenAddresses";
 
 
 async function main() {
@@ -14,9 +21,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const mocks = await DeployerUtils.getTokenAddresses();
   const platform = 'SUSHI';
-  const underlying = mocks.get('sushi_lp_token_usdc') as string;
-  const underlying0 = core.rewardToken;
-  const underlying1 = mocks.get('usdc') as string;
+
   const poolReward = mocks.get('quick') as string;
   const poolRewardAmountN = '10000';
   const vaultSecondReward = mocks.get('weth') as string
@@ -29,11 +34,43 @@ async function main() {
   const controller = await DeployerUtils.connectContract(
       signer, 'Controller', core.controller) as Controller;
 
+  const possibleTokens = [
+    mocks.get('quick') as string,
+    mocks.get('sushi') as string,
+    mocks.get('usdc') as string,
+    mocks.get('weth') as string,
+    core.rewardToken
+  ];
+
   const strategyName = 'MockStrategySelfFarm';
 
+  const underlyingByIdx = new Map<number, string[]>();
+
+  const sushiFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', RopstenAddresses.SUSHI_FACTORY) as IUniswapV2Factory;
+
   for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
-    const vaultName: string = 'MOCK_SUSHI_TETU_USDC_V' + VERSION + '_' + i;
-    const poolName: string = 'NOOP_SUSHI_TETU_USDC_V' + VERSION + '_' + i;
+    const t1Rand = Math.floor(Math.random() * (possibleTokens.length - 1));
+    let t2Rand = t1Rand + 1;
+    if (t2Rand > possibleTokens.length - 1) {
+      t2Rand = 0;
+    }
+
+    const underlying0 = possibleTokens[t1Rand];
+    const underlying1 = possibleTokens[t2Rand];
+    console.log('underlying0', underlying0, t1Rand);
+    console.log('underlying1', underlying1, t2Rand);
+
+    const underlying = await sushiFactory.getPair(underlying0, underlying1);
+    if (!underlying) {
+      throw Error('not found pair');
+    }
+
+    underlyingByIdx.set(i, [underlying0, underlying1, underlying]);
+
+    const undName0 = await Erc20Utils.tokenSymbol(underlying0);
+    const undName1 = await Erc20Utils.tokenSymbol(underlying1);
+    const vaultName: string = `MOCK_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
+    const poolName: string = `NOOP_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
     const vaultRewardToken: string = core.psVault;
     const rewardDuration: number = 60 * 60 * 24 * 28; // 1 week
     // *********** DEPLOY MOCK POOL FOR STRATEGY
@@ -108,7 +145,8 @@ async function main() {
 
   await DeployerUtils.wait(5);
 
-  for (let i = 0; i < datas.length; i++) {
+  for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
+    const undrData = underlyingByIdx.get(i) as string[];
     const data = datas[i];
     const vaultLogic = data[0];
     const vaultProxy = data[1];
@@ -119,10 +157,13 @@ async function main() {
     await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
     await DeployerUtils.verifyWithArgs(strategy.address,
-        [controller.address, vaultProxy.address, pool.address, underlying, [underlying0, underlying1], platform, [poolReward]]);
+        [controller.address, vaultProxy.address, pool.address, undrData[2],
+          [undrData[0], undrData[1]],
+          platform, [poolReward]]);
   }
 
-  for (let i = 0; i < datasPools.length; i++) {
+  for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
+    const undrData = underlyingByIdx.get(i) as string[];
     const data = datasPools[i];
     const vaultLogic = data[0];
     const vaultProxy = data[1];
@@ -132,7 +173,9 @@ async function main() {
     await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
     await DeployerUtils.verifyWithArgs(strategy.address,
-        [controller.address, underlying, vaultProxy.address, [], [underlying0, underlying1]]);
+        [controller.address, undrData[2], vaultProxy.address, [],
+          [undrData[0], undrData[1]]
+        ]);
   }
 
 
