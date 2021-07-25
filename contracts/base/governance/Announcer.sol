@@ -27,7 +27,6 @@ import "./ControllerStorage.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
-import "hardhat/console.sol";
 
 /// @title Contract for holding scheduling for time-lock actions
 /// @dev Use with TetuProxy
@@ -232,11 +231,9 @@ contract Announcer is Controllable, IAnnouncer {
     intValues[0] = totalAmount;
 
     address mintHelper = IController(controller()).mintHelper();
-    console.log("_timeLockInfos.length", _timeLockInfos.length);
 
     _timeLockInfos.push(TimeLockInfo(opCode, mintHelper, adrValues, intValues));
     timeLockIndexes[opCode] = _timeLockInfos.length - 1;
-    console.log("timeLockIndexes[opCode]", timeLockIndexes[opCode]);
 
     emit MintAnnounced(totalAmount, _distributor, _otherNetworkFund);
   }

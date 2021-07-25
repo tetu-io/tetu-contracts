@@ -36,6 +36,7 @@ contract RewardToken is ERC20Burnable, ERC20Capped {
   constructor(address _owner)
   ERC20("TETU Reward Token", "TETU")
   ERC20Capped(HARD_CAP) {
+    require(_owner != address(0), "zero address");
     owner = _owner;
   }
 
