@@ -191,4 +191,12 @@ describe("Notify Helper test", () => {
     ).rejectedWith('Duplicate pool');
   });
 
+  it("should move tokens", async () => {
+    const amount = utils.parseUnits('1000', 6);
+    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString());
+    await notifier.moveTokensToController(MaticAddresses.USDC_TOKEN, amount);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, core.controller.address))
+    .is.eq(amount);
+  });
+
 });

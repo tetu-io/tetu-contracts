@@ -24,6 +24,8 @@ import "../base/interface/ISmartVault.sol";
 
 pragma solidity 0.8.4;
 
+/// @title Calculate current price for token using data from swap platforms
+/// @author belbix
 contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using SafeERC20 for IERC20;
   using Address for address;

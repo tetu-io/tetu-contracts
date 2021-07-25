@@ -37,6 +37,8 @@ interface IBookkeeper {
 
   function registerStrategyEarned(uint256 _targetTokenAmount) external;
 
+  function registerFundKeeperEarned(address _token, uint256 _fundTokenAmount) external;
+
   function registerUserAction(address _user, uint256 _amount, bool _deposit) external;
 
   function registerVaultTransfer(address from, address to, uint256 amount) external;

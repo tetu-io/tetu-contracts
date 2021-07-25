@@ -18,11 +18,13 @@ import "../base/governance/Controllable.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IController.sol";
 
+/// @title Disperse weekly rewards to vaults
+/// @author belbix
 contract NotifyHelper is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
 
   mapping(address => bool) private alreadyNotified;
 

@@ -15,8 +15,9 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IController.sol";
 
-// Eternal storage + getters and setters pattern
-// If you will change a key value it will require setup it again
+/// @title Eternal storage + getters and setters pattern
+/// @dev If you will change a key value it will require setup it again
+/// @author belbix
 abstract contract ControllerStorage is Initializable, IController {
 
   // don't change names or ordering!
@@ -26,6 +27,9 @@ abstract contract ControllerStorage is Initializable, IController {
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
   event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
+  /// @notice Initialize contract after setup it as proxy implementation
+  /// @dev Use it only once after first logic setup
+  /// @param _governance Governance address
   function initializeControllerStorage(
     address _governance
   ) public initializer {
@@ -40,6 +44,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("governance", _address);
   }
 
+  /// @notice Return governance address
+  /// @return Governance address
   function governance() public override view returns (address) {
     return getAddress("governance");
   }
@@ -49,6 +55,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("dao", _address);
   }
 
+  /// @notice Return DAO address
+  /// @return DAO address
   function dao() public override view returns (address) {
     return getAddress("dao");
   }
@@ -58,6 +66,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("feeRewardForwarder", _address);
   }
 
+  /// @notice Return FeeRewardForwarder address
+  /// @return FeeRewardForwarder address
   function feeRewardForwarder() public override view returns (address) {
     return getAddress("feeRewardForwarder");
   }
@@ -67,6 +77,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("bookkeeper", _address);
   }
 
+  /// @notice Return Bookkeeper address
+  /// @return Bookkeeper address
   function bookkeeper() public override view returns (address) {
     return getAddress("bookkeeper");
   }
@@ -76,6 +88,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("mintHelper", _address);
   }
 
+  /// @notice Return MintHelper address
+  /// @return MintHelper address
   function mintHelper() public override view returns (address) {
     return getAddress("mintHelper");
   }
@@ -85,6 +99,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("rewardToken", _address);
   }
 
+  /// @notice Return TETU address
+  /// @return TETU address
   function rewardToken() public override view returns (address) {
     return getAddress("rewardToken");
   }
@@ -94,6 +110,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("fundToken", _address);
   }
 
+  /// @notice Return a token address used for FundKeeper
+  /// @return FundKeeper's main token address
   function fundToken() public override view returns (address) {
     return getAddress("fundToken");
   }
@@ -103,6 +121,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("psVault", _address);
   }
 
+  /// @notice Return Profit Sharing pool address
+  /// @return Profit Sharing pool address
   function psVault() public override view returns (address) {
     return getAddress("psVault");
   }
@@ -112,6 +132,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("fund", _address);
   }
 
+  /// @notice Return FundKeeper address
+  /// @return FundKeeper address
   function fund() public override view returns (address) {
     return getAddress("fund");
   }
@@ -121,6 +143,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setAddress("announcer", _address);
   }
 
+  /// @notice Return Announcer address
+  /// @return Announcer address
   function announcer() public override view returns (address) {
     return getAddress("announcer");
   }
@@ -131,6 +155,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setUint256("psNumerator", _value);
   }
 
+  /// @notice Return Profit Sharing pool ratio's numerator
+  /// @return Profit Sharing pool ratio numerator
   function psNumerator() public view override returns (uint256) {
     return getUint256("psNumerator");
   }
@@ -140,6 +166,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setUint256("psDenominator", _value);
   }
 
+  /// @notice Return Profit Sharing pool ratio's denominator
+  /// @return Profit Sharing pool ratio denominator
   function psDenominator() public view override returns (uint256) {
     return getUint256("psDenominator");
   }
@@ -149,6 +177,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setUint256("fundNumerator", _value);
   }
 
+  /// @notice Return FundKeeper ratio's numerator
+  /// @return FundKeeper ratio numerator
   function fundNumerator() public view override returns (uint256) {
     return getUint256("fundNumerator");
   }
@@ -158,6 +188,8 @@ abstract contract ControllerStorage is Initializable, IController {
     setUint256("fundDenominator", _value);
   }
 
+  /// @notice Return FundKeeper ratio's denominator
+  /// @return FundKeeper ratio denominator
   function fundDenominator() public view override returns (uint256) {
     return getUint256("fundDenominator");
   }

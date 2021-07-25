@@ -24,12 +24,17 @@ import "../base/governance/Controllable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
 
+/// @title LiquidityBalancer sells a portion of the available amount of
+///        TETU Tokens when the price hits the target price and immediately
+///        adds equilibrated amount of both tokens to liquidity.
+///        After each sale the target price increases.
+/// @author belbix
 contract LiquidityBalancer is Controllable {
   using SafeERC20 for IERC20;
   using Address for address;
   using SafeMath for uint256;
 
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 constant internal PRECISION = 10 ** 18;
   uint256 public targetPriceUpdateNumerator = 100; // 0.1 % by default
   uint256 public targetTvlUpdateNumerator = 100; // 0.1 % by default

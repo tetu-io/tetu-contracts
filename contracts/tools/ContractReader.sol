@@ -22,10 +22,12 @@ import "../base/interface/ISmartVault.sol";
 import "../base/interface/IStrategy.sol";
 import "../infrastructure/IPriceCalculator.sol";
 
+/// @title View data reader for using on website UI and other integrations
+/// @author belbix
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 

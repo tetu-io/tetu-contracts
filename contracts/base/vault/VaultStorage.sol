@@ -15,9 +15,10 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/ISmartVault.sol";
 
-// Eternal storage + getters and setters pattern
-// If you will change a key value it will require setup it again
-// Implements IVault interface for reducing code base
+/// @title Eternal storage + getters and setters pattern
+/// @dev If you will change a key value it will require setup it again
+///      Implements IVault interface for reducing code base
+/// @author belbix
 abstract contract VaultStorage is Initializable, ISmartVault {
 
   // don't change names or ordering!

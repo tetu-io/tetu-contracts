@@ -18,13 +18,15 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IWexPolyMaster.sol";
 import "../StrategyBase.sol";
 
+/// @title Abstract contract for Wault strategy implementation
+/// @author belbix
 abstract contract WaultStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
   string public constant STRATEGY_TYPE = "mcv2StrategyFullBuyback";
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 private constant BUY_BACK_RATIO = 10000; // for non full buyback need to implement liquidation
 
   // masterchef rewards pool

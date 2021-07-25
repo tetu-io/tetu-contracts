@@ -25,6 +25,8 @@ import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
 import "./IPriceCalculator.sol";
 
+/// @title Disperse salary to workers
+/// @author belbix
 contract PayrollClerk is Initializable, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;

@@ -19,10 +19,13 @@ import "../governance/Controllable.sol";
 import "./RewardToken.sol";
 import "../interface/IMintHelper.sol";
 
+/// @title Contract for interacting with RewardToken(TETU) contract. Owner of TETU.
+/// @dev Use with TetuProxy
+/// @author belbix
 contract MintHelper is Controllable, IMintHelper {
   using SafeMath for uint256;
 
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
 
   // NETWORK RATIOS
   uint256 constant public FIRST_NETWORK_RATIO = 33; // 33% goes to rewards for first network

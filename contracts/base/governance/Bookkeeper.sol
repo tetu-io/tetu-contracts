@@ -17,7 +17,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 
-/// @title Holds more detailed information about all vaults and strategies
+/// @title Contract for holding statistical info and doesn't affect any funds.
 /// @dev Only not critical functional. Use with TetuProxy
 /// @author belbix
 contract Bookkeeper is IBookkeeper, Initializable, Controllable {
@@ -43,6 +43,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   mapping(address => uint256) public override vaultUsersQuantity;
   /// @dev Hold last price per full share change for given user
   mapping(address => PpfsChange) private _lastPpfsChange;
+  mapping(address => uint256) public fundKeeperEarned;
 
   /// @notice Vault added
   event RegisterVault(address value);
@@ -54,6 +55,8 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   event RemoveStrategy(address value);
   /// @notice Strategy earned this TETU amount during doHardWork call
   event RegisterStrategyEarned(address indexed strategy, uint256 amount);
+  /// @notice FundKeeper earned this USDC amount during doHardWork call
+  event RegisterFundKeeperEarned(address indexed token, uint256 amount);
   /// @notice User deposit/withdraw action
   event RegisterUserAction(address indexed user, uint256 amount, bool deposit);
   /// @notice User claim reward
@@ -125,6 +128,13 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
       _targetTokenAmount
     );
     emit RegisterStrategyEarned(msg.sender, _targetTokenAmount);
+  }
+
+  /// @notice Only FeeRewardForwarder action. Save Fund Token earned value for given token
+  /// @param _fundTokenAmount Earned amount
+  function registerFundKeeperEarned(address _token, uint256 _fundTokenAmount) external override onlyFeeRewardForwarder {
+    fundKeeperEarned[_token] = fundKeeperEarned[_token].add(_fundTokenAmount);
+    emit RegisterFundKeeperEarned(_token, _fundTokenAmount);
   }
 
   /// @notice FeeRewardForwarder action.

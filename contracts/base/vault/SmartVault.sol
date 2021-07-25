@@ -27,12 +27,16 @@ import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
 
+/// @title Smart Vault is a combination of implementations drawn from Synthetix pool
+///        for their innovative reward vesting and Yearn vault for their share price model
+/// @dev Use with TetuProxy
+/// @author belbix
 contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMathUpgradeable for uint256;
 
   // ************* CONSTANTS ********************
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -84,9 +88,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   // *************** MODIFIERS ***************************
 
-  /**
-   *  Strategy should not be a zero address
-   */
+
+  /// @dev Strategy should not be a zero address
   modifier whenStrategyDefined() {
     require(address(strategy()) != address(0), "zero strat");
     _;
@@ -120,26 +123,19 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   // ************ GOVERNANCE ACTIONS ******************
 
-  /**
-   * Change the active state marker
-   */
+  /// @notice Change the active state marker
   function changeActivityStatus(bool _active) external override onlyControllerOrGovernance {
     _setActive(_active);
   }
 
-  /**
-   * Chooses the best strategy and re-invests. If the strategy did not change, it just calls
-   * doHardWork on the current strategy. Call this through controller to claim hard rewards.
-   */
+  /// @notice Call DoHardWork process
   function doHardWork() external whenStrategyDefined onlyControllerOrGovernance isActive override {
     uint256 sharePriceBeforeHardWork = getPricePerFullShare();
     IStrategy(strategy()).doHardWork();
     require(sharePriceBeforeHardWork <= getPricePerFullShare(), "ppfs decreased");
   }
 
-  /**
-   * Add a reward token to the internal array
-   */
+  /// @notice Add a reward token to the internal array
   function addRewardToken(address rt) external override onlyControllerOrGovernance {
     require(getRewardTokenIndex(rt) == type(uint256).max, "rt exist");
     require(rt != underlying(), "rt is underlying");
@@ -147,9 +143,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     emit AddedRewardToken(rt);
   }
 
-  /**
-   * Remove reward token. Last token removal is not allowed
-   */
+  /// @notice Remove reward token. Last token removal is not allowed
   function removeRewardToken(address rt) external override onlyControllerOrGovernance {
     uint256 i = getRewardTokenIndex(rt);
     require(i != type(uint256).max, "not exist");
@@ -163,76 +157,57 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     emit RemovedRewardToken(rt);
   }
 
-  /**
-   * Withdraw all from strategy to the vault and invest again
-   */
+  /// @notice Withdraw all from strategy to the vault and invest again
   function rebalance() external onlyControllerOrGovernance {
     withdrawAllToVault();
     invest();
   }
 
-  /**
-   * Withdraw all from strategy to the vault
-   */
+  /// @notice Withdraw all from strategy to the vault
   function withdrawAllToVault() public onlyControllerOrGovernance whenStrategyDefined {
     IStrategy(strategy()).withdrawAllToVault();
   }
 
   //****************** USER ACTIONS ********************
 
-  /**
-   * Allows for depositing the underlying asset in exchange for shares.
-   * Approval is assumed.
-   */
+  /// @notice Allows for depositing the underlying asset in exchange for shares.
+  ///         Approval is assumed.
   function deposit(uint256 amount) external override onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, msg.sender);
   }
 
-  /**
-   * Allows for depositing the underlying asset in exchange for shares.
-   * Approval is assumed. Immediately invests the asset to the strategy
-   */
+  /// @notice Allows for depositing the underlying asset in exchange for shares.
+  ///         Approval is assumed. Immediately invests the asset to the strategy
   function depositAndInvest(uint256 amount) external override onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, msg.sender);
     invest();
   }
 
-  /**
-   * Allows for depositing the underlying asset in exchange for shares
-   * assigned to the holder.
-   * This facilitates depositing for someone else (using DepositHelper)
-   */
+  /// @notice Allows for depositing the underlying asset in exchange for shares assigned to the holder.
+  ///         This facilitates depositing for someone else
   function depositFor(uint256 amount, address holder) external override onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, holder);
   }
 
-  /**
-   * Withdraw shares partially without touching rewards
-   */
+  /// @notice Withdraw shares partially without touching rewards
   function withdraw(uint256 numberOfShares) external override onlyAllowedUsers {
     _withdraw(numberOfShares);
   }
 
-  /**
-   * Withdraw all and claim rewards
-   */
+  /// @notice Withdraw all and claim rewards
   function exit() external override onlyAllowedUsers {
     _withdraw(balanceOf(msg.sender));
     getAllRewards();
   }
 
-  /**
-   * Update and Claim all rewards
-   */
+  /// @notice Update and Claim all rewards
   function getAllRewards() public override updateRewards(msg.sender) onlyAllowedUsers {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       _payReward(_rewardTokens[i]);
     }
   }
 
-  /**
-   *  Update and Claim rewards for specific token
-   */
+  /// @notice Update and Claim rewards for specific token
   function getReward(address rt) external override updateReward(msg.sender, rt) onlyAllowedUsers {
     _payReward(rt);
   }
@@ -252,16 +227,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     return 10 ** uint256(ERC20Upgradeable(address(underlying())).decimals());
   }
 
-  /*
-   * Returns the cash balance across all users in this contract.
-   */
+  /// @notice Returns the cash balance across all users in this contract.
   function underlyingBalanceInVault() public view override returns (uint256) {
     return IERC20Upgradeable(underlying()).balanceOf(address(this));
   }
 
-  /* Returns the current underlying (e.g., DAI's) balance together with
-   * the invested amount (if DAI is invested elsewhere by the strategy).
-   */
+  /// @notice Returns the current underlying (e.g., DAI's) balance together with
+  ///         the invested amount (if DAI is invested elsewhere by the strategy).
   function underlyingBalanceWithInvestment() public view override returns (uint256) {
     if (address(strategy()) == address(0)) {
       // initial state, when not set
@@ -271,10 +243,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     .add(IStrategy(strategy()).investedUnderlyingBalance());
   }
 
-  /**
-   * Get the user's share (in underlying)
-   * underlyingBalanceWithInvestment() * balanceOf(holder) / totalSupply()
-   */
+  /// @notice Get the user's share (in underlying)
+  ///         underlyingBalanceWithInvestment() * balanceOf(holder) / totalSupply()
   function underlyingBalanceWithInvestmentForHolder(address holder)
   external view override returns (uint256) {
     if (totalSupply() == 0) {
@@ -285,20 +255,16 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     .div(totalSupply());
   }
 
-  /**
-   * Price per full share (PPFS)
-   * Vaults with 100% buybacks have a value of 1 constantly
-   * (underlyingUnit() * underlyingBalanceWithInvestment()) / totalSupply()
-   */
+  /// @notice Price per full share (PPFS)
+  ///         Vaults with 100% buybacks have a value of 1 constantly
+  ///         (underlyingUnit() * underlyingBalanceWithInvestment()) / totalSupply()
   function getPricePerFullShare() public view override returns (uint256) {
     return totalSupply() == 0
     ? underlyingUnit()
     : underlyingUnit().mul(underlyingBalanceWithInvestment()).div(totalSupply());
   }
 
-  /**
-   * Return amount of the underlying asset ready to invest to the strategy
-   */
+  /// @notice Return amount of the underlying asset ready to invest to the strategy
   function availableToInvestOut() public view override returns (uint256) {
     uint256 wantInvestInTotal = underlyingBalanceWithInvestment();
     uint256 alreadyInvested = IStrategy(strategy()).investedUnderlyingBalance();
@@ -311,10 +277,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     }
   }
 
-  /**
-   * Burn shares, withdraw underlying from strategy
-   * and send back to the user the underlying asset
-   */
+  /// @notice Burn shares, withdraw underlying from strategy
+  ///         and send back to the user the underlying asset
   function _withdraw(uint256 numberOfShares) internal updateRewards(msg.sender) {
     require(totalSupply() > 0, "no shares");
     require(numberOfShares > 0, "zero amount");
@@ -352,10 +316,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     emit Withdraw(msg.sender, underlyingAmountToWithdraw);
   }
 
-  /**
-   * Mint shares and transfer underlying from user to the vault
-   * New shares = (invested amount * total supply) / underlyingBalanceWithInvestment()
-   */
+  /// @notice Mint shares and transfer underlying from user to the vault
+  ///         New shares = (invested amount * total supply) / underlyingBalanceWithInvestment()
   function _deposit(uint256 amount, address sender, address beneficiary) internal updateRewards(sender) {
     require(amount > 0, "zero amount");
     require(beneficiary != address(0), "zero beneficiary");
@@ -374,9 +336,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     emit Deposit(beneficiary, amount);
   }
 
-  /**
-   * Transfer underlying to the strategy
-   */
+  /// @notice Transfer underlying to the strategy
   function invest() internal whenStrategyDefined {
     uint256 availableAmount = availableToInvestOut();
     if (availableAmount > 0) {
@@ -388,12 +348,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   //**************** REWARDS FUNCTIONALITY ***********************
 
-  /**
-   *  Return earned rewards for specific token and account
-   *  Accurate value returns only after updateRewards call
-   *  ((balanceOf(account)
-   *    * (rewardPerToken - userRewardPerTokenPaidForToken)) / 10**18) + rewardsForToken
-   */
+  /// @notice  Return earned rewards for specific token and account
+  ///          Accurate value returns only after updateRewards call
+  ///          ((balanceOf(account)
+  ///            * (rewardPerToken - userRewardPerTokenPaidForToken)) / 10**18) + rewardsForToken
   function earned(address rt, address account) public view override returns (uint256) {
     return
     balanceOf(account)
@@ -403,10 +361,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /**
-   * Return reward per token ratio by reward token address
-   * rewardPerTokenStoredForToken + (
-   * (lastTimeRewardApplicable - lastUpdateTimeForToken) * rewardRateForToken * 10**18 / totalSupply)
+   *
+   *
+   *
    */
+  /// @notice Return reward per token ratio by reward token address
+  ///                rewardPerTokenStoredForToken + (
+  ///                (lastTimeRewardApplicable - lastUpdateTimeForToken)
+  ///                 * rewardRateForToken * 10**18 / totalSupply)
   function rewardPerToken(address rt) public view override returns (uint256) {
     if (totalSupply() == 0) {
       return rewardPerTokenStoredForToken[rt];
@@ -421,32 +383,24 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     );
   }
 
-  /**
-   * Return periodFinishForToken or block.timestamp by reward token address
-   */
+  /// @notice Return periodFinishForToken or block.timestamp by reward token address
   function lastTimeRewardApplicable(address rt) public view override returns (uint256) {
     return MathUpgradeable.min(block.timestamp, periodFinishForToken[rt]);
   }
 
-  /**
-   * Return reward token array length
-   */
+  /// @notice Return reward token array length
   function rewardTokens() external view override returns (address[] memory){
     return _rewardTokens;
   }
 
-  /**
-   * Return reward token array length
-   */
+  /// @notice Return reward token array length
   function rewardTokensLength() external view override returns (uint256){
     return _rewardTokens.length;
   }
 
-  /**
-   * Return reward token index
-   * If the return value is MAX_UINT256, it means that
-   * the specified reward token is not in the list
-   */
+  /// @notice Return reward token index
+  ///         If the return value is MAX_UINT256, it means that
+  ///         the specified reward token is not in the list
   function getRewardTokenIndex(address rt) public override view returns (uint256) {
     for (uint i = 0; i < _rewardTokens.length; i++) {
       if (_rewardTokens[i] == rt)
@@ -455,12 +409,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     return type(uint256).max;
   }
 
-  /**
-   * Update rewardRateForToken
-   * If period ended: reward / duration
-   * else add leftover to the reward amount and refresh the period
-   * (reward + ((periodFinishForToken - block.timestamp) * rewardRateForToken)) / duration
-   */
+  /// @notice Update rewardRateForToken
+  ///         If period ended: reward / duration
+  ///         else add leftover to the reward amount and refresh the period
+  ///         (reward + ((periodFinishForToken - block.timestamp) * rewardRateForToken)) / duration
   function notifyTargetRewardAmount(address _rewardToken, uint256 amount)
   external override
   updateRewards(address(0))
@@ -485,9 +437,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     emit RewardAdded(_rewardToken, amount);
   }
 
-  /**
-   * Transfer earned rewards to caller
-   */
+  /// @notice Transfer earned rewards to caller
   function _payReward(address rt) internal {
     uint256 reward = earned(rt, msg.sender);
     if (reward > 0 && IERC20Upgradeable(rt).balanceOf(address(this)) >= reward) {
@@ -503,10 +453,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   //**************** STRATEGY UPDATE FUNCTIONALITY ***********************
 
-  /**
-   * Check the strategy time lock, withdraw all to the vault and change the strategy
-   * Should be called via controller
-   */
+  /// @notice Check the strategy time lock, withdraw all to the vault and change the strategy
+  ///         Should be called via controller
   function setStrategy(address _strategy) external override onlyController {
     require(_strategy != address(0), "zero strat");
     require(IStrategy(_strategy).underlying() == address(underlying()), "wrong underlying");

@@ -18,13 +18,15 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "./interfaces/SNXRewardInterface.sol";
 
+/// @title Abstract contract for Synthetix strategy implementation
+/// @author belbix
 abstract contract SNXStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
   string public constant STRATEGY_TYPE = "snxStrategyFullBuyback";
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 private constant BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
 
   SNXRewardInterface public rewardPool;

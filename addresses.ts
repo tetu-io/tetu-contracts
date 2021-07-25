@@ -5,15 +5,15 @@ export class Addresses {
 
   public static CORE = new Map<string, CoreAddresses>([
     ['ropsten', new CoreAddresses(
-        '0x8f527486B877B556992dcE0BEc1964C91363bAb5', // controller
-        '0xD7c22191808a6eDd2E90Eca5B8630Cb2Eb9e5B8F', // announcer
-        '0x2a3fF2fEA5ad4B0abb4D096141CE8Ef77deEE6D3', // forwarder
-        '0x52bd9D4e6965Ccc1bb63Ef7e913d591f69AcD992', // bookkeeper
-        '0xe9a02A2703F88974963655f804F33e5cD731a822', // notifier
-        '0x799B421CD759eB608a9c994066287E6D2Fe5AcE7', // mint helper
-        '0xBee129D03df2CDBa03073a86877FDbd0699C70C6', // reward token
-        '0xcBf41541EbEc92578b371C3770EB333d160a43F1', // ps vault
-        '0x7F4AA3a90f4c0752C943FC5cC8c24030182A7880',// fund keeper
+        '0x6f36a3dAfC7ec9d3F7195cf871D9dC65746b22a3', // controller
+        '0xb3Cf6c1c9B363803C08f7DE7aED4bD547Ab87abc', // announcer
+        '0x0A903BBC774C27e380CfF463DdE434A17Be85F6c', // forwarder
+        '0xb8B11F28E8fd87f1f9B3D9dcEc0cA2ae71F797bD', // bookkeeper
+        '0xbE037f3e0278dE5d4cc33B1418dB23AC298AB5a4', // notifier
+        '0xaa1c3380eA9A6fCaf70026682E57eA0F76e2F3b5', // mint helper
+        '0x613d44e4a6B2b719150F9AF165abBE364A11B22E', // reward token
+        '0x239fF904F9B26A64123b3b34cd9D3BCE97EE84F6', // ps vault
+        '0x6E53aa96340e051755726e6931641BbFa95C0fab',// fund keeper
     )],
     ['rinkeby', new CoreAddresses(
         '0xc463E58D71021A5f53C7cf1356Aa2bDB98c603ca', // controller
@@ -30,10 +30,10 @@ export class Addresses {
 
   public static TOOLS = new Map<string, ToolsAddresses>([
     ['ropsten', new ToolsAddresses(
-        '0x86eE90ADbbFe1f8e909206666cFd79C0e1E980b1', // calculator
-        '0xB4EDd163B2D3bb548F933Dc1bdDBca6ba99cFF4a', // reader
-        '0x8a7E79fD1ec1697E0b509F433c61bd2021E0bC9e', // utils
-        '0x1BDA954af65231525563D88dF5c55fE261042e5E' // rebalancer
+        '0xfE4E83D68719e32c299dC91945667BdDAfA4c890', // calculator
+        '0xA6aBd3B087ABABD069D4a28F7970232c1e8d379A', // reader
+        '0x860336F91F04282dbfd0094AfED8F838D8Ea8747', // utils
+        '0x1D1A2146c515A9BF8Acd908762ae658E0A58b92e' // rebalancer
     )],
     ['rinkeby', new ToolsAddresses(
         '0xF71BdC833C2EB68222E161F4918998d4e5cd3Ee9', // calculator

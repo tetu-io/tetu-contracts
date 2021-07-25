@@ -17,7 +17,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-
+/// @title TETU token contract. Has strict weekly emission algorithm
+/// @dev Use with TetuProxy
+/// @author belbix
 contract RewardToken is ERC20Burnable, ERC20Capped {
   using SafeMath for uint256;
 

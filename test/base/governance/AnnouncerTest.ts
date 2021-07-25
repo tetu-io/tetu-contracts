@@ -57,6 +57,9 @@ describe("Announcer tests", function () {
     await announcer.announceRatioChange(opCode, num, den);
     await announcer.announceAddressChange(1, signer1.address);
 
+    expect(await announcer.timeLockInfosLength()).is.eq(4);
+    expect((await announcer.timeLockInfos()).length).is.eq(4);
+
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(2);
 

@@ -17,7 +17,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Controllable.sol";
 import "../interface/IFundKeeper.sol";
 
-/// currently it is just upgradable contract that holds money for further implementations
+/// @title Upgradable contract that holds money for further implementations
+/// @dev Use with TetuProxy
+/// @author belbix
 contract FundKeeper is Controllable, IFundKeeper {
   using SafeERC20 for IERC20;
 
@@ -27,6 +29,7 @@ contract FundKeeper is Controllable, IFundKeeper {
     Controllable.initializeControllable(_controller);
   }
 
+  /// @notice Move tokens to controller where money will be protected with time lock
   function withdrawToController(address _token, uint256 amount) external override onlyController {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");

@@ -21,59 +21,93 @@ import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 
+/// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
+///        and send them to Profit Sharing pool, FundKeeper and vaults
+///        After swap TETU tokens are deposited to the Profit Share pool and give xTETU tokens.
+///        These tokens send to Vault as a reward for vesting (4 weeks).
+///        If external rewards have a destination Profit Share pool
+///        it is just sent to the contract as TETU tokens increasing share price.
+/// @author belbix
 contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
   // ************ EVENTS **********************
-  event FeeMovedToGovernance(address indexed governance, address indexed token, uint256 amount);
+  /// @notice Fee distributed to Profit Sharing pool
   event FeeMovedToPs(address indexed ps, address indexed token, uint256 amount);
+  /// @notice Fee distributed to vault
   event FeeMovedToVault(address indexed vault, address indexed token, uint256 amount);
+  /// @notice Fee distributed to FundKeeper
   event FeeMovedToFund(address indexed fund, address indexed token, uint256 amount);
 
   // ************ VARIABLES **********************
-  string public constant VERSION = "0";
+  /// @notice Version of the contract
+  /// @dev Should be incremented when contract changed
+  string public constant VERSION = "1.0.0";
 
+  /// @notice Routes for token liquidations
   mapping(address => mapping(address => address[])) public routes;
+  /// @notice Routers for token liquidations
   mapping(address => mapping(address => address[])) public routers;
 
+  /// @notice Contract constructor
+  /// @param _controller Controller address
   constructor(address _controller) {
     Controllable.initializeControllable(_controller);
   }
 
   // ***************** VIEW ************************
 
+  /// @notice Return Profit Sharing pool address
+  /// @return Profit Sharing pool address
   function psVault() public view returns (address) {
     return IController(controller()).psVault();
   }
 
+  /// @notice Return FundKeeper address
+  /// @return FundKeeper address
   function fund() public view returns (address) {
     return IController(controller()).fund();
   }
 
+  /// @notice Return Target token (TETU) address
+  /// @return Target token (TETU) address
   function targetToken() public view returns (address) {
     return IController(controller()).rewardToken();
   }
 
+  /// @notice Return a token address used for FundKeeper (USDC by default)
+  /// @return FundKeeper's main token address (USDC by default)
   function fundToken() public view returns (address) {
     return IController(controller()).fundToken();
   }
 
+  /// @notice Check a rout path and return true if valid
+  /// @param _token Start token
+  /// @param _targetToken Final token
+  /// @return True if all fine
   function hasValidRoute(address _token, address _targetToken) public view returns (bool){
     return routes[_token][_targetToken].length > 1 // we need to convert token to targetToken
     && routers[_token][_targetToken].length != 0;
     // and route exist
   }
 
+  /// @notice Check a rout path and return true if it has multiple routers
+  /// @param _token Start token
+  /// @param _targetToken Final token
+  /// @return True if more than 1 router
   function isMultiRouter(address _token, address _targetToken) public view returns (bool){
     require(routers[_token][_targetToken].length != 0, "invalid route");
     return routers[_token][_targetToken].length > 1;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
-  /**
-  * Sets the path for swapping tokens to the to address
-  */
+
+  /// @notice Only Governance or Controller can call it.
+  ///         Sets the path for swapping tokens to the Target/Fund token address
+  /// @param _route Array with tokens that need to swap where first
+  ///               is external project reward and final is Target/Fund token
+  /// @param _routers Swap platform routers. 1 for each swap operation in the route
   function setConversionPath(address[] memory _route, address[] memory _routers)
   external onlyControllerOrGovernance {
     require(_routers.length == 1 ||
@@ -87,6 +121,12 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   // ***************** EXTERNAL *******************************
 
+  /// @notice Only Reward Distributor or Governance or Controller can call it.
+  ///         Distribute rewards for given vault, move fees to PS and Fund
+  /// @param _amount Amount of tokens for distribute
+  /// @param _token Token for distribute
+  /// @param _vault Target vault
+  /// @return Amount of distributed Target(TETU) tokens
   function distribute(uint256 _amount, address _token, address _vault) external override onlyRewardDistribution returns (uint256){
     require(_amount != 0, "zero amount");
 
@@ -110,8 +150,11 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     return targetTokenDistributed;
   }
 
-  // Transfers the funds from the msg.sender to the pool
-  // under normal circumstances, msg.sender is the strategy
+  /// @notice Liquidate the token amount and send to the Profit Sharing pool.
+  ///         Under normal circumstances, sender is the strategy
+  /// @param _token Token for liquidation
+  /// @param _amount Amount of token for liquidation
+  /// @return Amount of distributed Target(TETU) tokens
   function notifyPsPool(address _token, uint256 _amount) public override onlyRewardDistribution returns (uint256) {
     require(targetToken() != address(0), "target token is zero");
 
@@ -131,9 +174,12 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     return amountToSend;
   }
 
-  /**
-  * Notifies a given _rewardPool with _maxBuyback by converting it into Target Token
-  */
+  /// @notice Liquidate the token amount and send to the given vault.
+  ///         Under normal circumstances, sender is the strategy
+  /// @param _token Token for liquidation
+  /// @param _amount Amount of token for liquidation
+  /// @param _rewardPool Vault address
+  /// @return Amount of distributed Target(TETU) tokens
   function notifyCustomPool(address _token, address _rewardPool, uint256 _amount)
   public override onlyRewardDistribution returns (uint256) {
     require(targetToken() != address(0), "target token is zero");
@@ -171,6 +217,9 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     require(amountToSend > 0, "no liq path for fund token");
 
     IERC20(fundToken()).safeTransfer(fund(), amountToSend);
+
+    IBookkeeper(IController(controller()).bookkeeper())
+    .registerFundKeeperEarned(fundToken(), amountToSend);
     emit FeeMovedToFund(fund(), fundToken(), amountToSend);
   }
 
@@ -227,9 +276,9 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     }
   }
 
-  // https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-  // this function can get INSUFFICIENT_INPUT_AMOUNT if we have too low amount of reward
-  // it is fine and should rollback the doHardWork call
+  /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
+  ///      this function can get INSUFFICIENT_INPUT_AMOUNT if we have too low amount of reward
+  ///      it is fine and should rollback the doHardWork call
   function swap(address _router, address[] memory _route, uint256 _amount) internal {
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);

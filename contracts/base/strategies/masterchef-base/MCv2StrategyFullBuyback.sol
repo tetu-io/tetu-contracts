@@ -18,18 +18,20 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IMiniChefV2.sol";
 import "../StrategyBase.sol";
 
+/// @title Abstract contract for MasterChef strategy implementation
+/// @author belbix
 abstract contract MCv2StrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
   string public constant STRATEGY_TYPE = "mcv2StrategyFullBuyback";
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 private constant BUY_BACK_RATIO = 10000; // for non full buyback need to implement liquidation
 
-  // masterchef rewards pool
+  /// @notice MasterChef rewards pool
   address public mcRewardPool;
-  // masterchef rewards pool ID
+  /// @notice MasterChef rewards pool ID
   uint256 public poolID;
 
   constructor(

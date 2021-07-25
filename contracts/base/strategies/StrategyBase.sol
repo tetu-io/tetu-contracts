@@ -19,6 +19,8 @@ import "../governance/Controllable.sol";
 import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 
+/// @title Abstract contract for base strategy functionality
+/// @author belbix
 abstract contract StrategyBase is IStrategy, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
@@ -36,9 +38,9 @@ abstract contract StrategyBase is IStrategy, Controllable {
   address internal _underlyingToken;
   address internal _smartVault;
   mapping(address => bool) internal _unsalvageableTokens;
-  // we always use 100% buybacks but keep this variable to further possible changes
+  /// @dev we always use 100% buybacks but keep this variable to further possible changes
   uint256 internal _buyBackRatio;
-  // When this flag is true, the strategy will not be able to invest. But users should be able to withdraw.
+  /// @dev When this flag is true, the strategy will not be able to invest. But users should be able to withdraw.
   bool public override pausedInvesting = false;
   address[] internal _rewardTokens;
 
@@ -53,8 +55,8 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _;
   }
 
-  // This is only used in `investAllUnderlying()`
-  // The user can still freely withdraw from the strategy
+  /// @dev This is only used in `investAllUnderlying()`
+  ///      The user can still freely withdraw from the strategy
   modifier onlyNotPausedInvesting() {
     require(!pausedInvesting, "paused");
     _;
@@ -109,9 +111,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     return IERC20(_rewardTokens[rewardTokenIdx]).balanceOf(address(this));
   }
 
-  /*
-   * Return underlying balance + balance in the reward pool
-   */
+  /// @notice Return underlying balance + balance in the reward pool
   function investedUnderlyingBalance() external override view returns (uint256) {
     // Adding the amount locked in the reward pool and the amount that is somehow in this contract
     // both are in the units of "underlying"
@@ -122,27 +122,23 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   //******************** GOVERNANCE *******************
 
-  /*
- *   In case there are some issues discovered about the pool or underlying asset
- *   Governance can exit the pool properly
- *   The function is only used for emergency to exit the pool
- */
+
+  /// @dev In case there are some issues discovered about the pool or underlying asset
+  ///      Governance can exit the pool properly
+  ///      The function is only used for emergency to exit the pool
   function emergencyExit() external override onlyControllerOrGovernance {
     emergencyExitRewardPool();
     pausedInvesting = true;
   }
 
-  /*
-*   Resumes the ability to invest into the underlying reward pools
-*/
+
+  /// @notice Resumes the ability to invest into the underlying reward pools
   function continueInvesting() external override onlyControllerOrGovernance {
     pausedInvesting = false;
   }
 
-  /*
- * Governance or Controller can claim coins that are somehow transferred into the contract
- * Note that they cannot come in take away coins that are used and defined in the strategy itself
- */
+  /// @notice Governance or Controller can claim coins that are somehow transferred into the contract
+  ///         Note that they cannot come in take away coins that are used and defined in the strategy itself
   function salvage(address recipient, address token, uint256 amount)
   external override onlyController {
     // To make sure that governance cannot come in and take away the coins
@@ -150,17 +146,13 @@ abstract contract StrategyBase is IStrategy, Controllable {
     IERC20(token).safeTransfer(recipient, amount);
   }
 
-  /*
- *   Withdraws all the asset to the vault
- */
+  /// @notice Withdraws all the asset to the vault
   function withdrawAllToVault() external override restricted {
     exitRewardPool();
     IERC20(_underlyingToken).safeTransfer(_smartVault, underlyingBalance());
   }
 
-  /*
- *   Withdraws some asset to the vault
- */
+  /// @notice Withdraws some asset to the vault
   function withdrawToVault(uint256 amount) external override restricted {
     // Typically there wouldn't be any amount here
     // however, it is possible because of the emergencyExit
@@ -175,9 +167,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     IERC20(_underlyingToken).safeTransfer(_smartVault, amount);
   }
 
-  /*
-   *   Stakes everything the strategy holds into the reward pool
-   */
+  /// @notice Stakes everything the strategy holds into the reward pool
   function investAllUnderlying() public override restricted onlyNotPausedInvesting {
     // this check is needed, because most of the SNX reward pools will revert if
     // you try to stake(0).

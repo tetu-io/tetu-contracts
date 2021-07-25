@@ -22,7 +22,7 @@ import "./interface/ITetuProxy.sol";
 /// @author belbix
 contract TetuProxyGov is UpgradeableProxy, ITetuProxy {
 
-  constructor(address _logic) UpgradeableProxy(_logic, "") {
+  constructor(address _logic) UpgradeableProxy(_logic) {
   }
 
   /// @notice Upgrade contract logic
