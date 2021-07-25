@@ -16,4 +16,6 @@ interface IMintHelper {
 
   function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external;
 
+  function operatingFundsList(uint256 idx) external returns (address);
+
 }

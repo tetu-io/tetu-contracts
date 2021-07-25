@@ -59,7 +59,7 @@ export default {
     ropsten: {
       url: "https://ropsten.infura.io/v3/" + Secrets.infuraKey,
       chainId: 3,
-      gas: 8000000,
+      gas: 8_000_000,
       accounts: [
         Secrets.ropstenPrivateKey,
         Secrets.ropstenPrivateKey2,
@@ -69,7 +69,7 @@ export default {
     rinkeby: {
       url: "https://rinkeby.infura.io/v3/" + Secrets.infuraKey,
       chainId: 4,
-      gas: 8000000,
+      gas: 8_000_000,
       accounts: [
         Secrets.ropstenPrivateKey,
         Secrets.ropstenPrivateKey2,

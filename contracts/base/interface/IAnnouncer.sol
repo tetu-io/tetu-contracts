@@ -53,6 +53,8 @@ interface IAnnouncer {
 
   function timeLockSchedule(bytes32 opHash) external returns (uint256);
 
+  function timeLockInfo(uint256 idx) external returns (TimeLockInfo memory);
+
   // ************ DAO ACTIONS *************
   function announceRatioChange(TimeLockOpCodes opCode, uint256 numerator, uint256 denominator) external;
 

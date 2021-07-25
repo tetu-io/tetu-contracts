@@ -27,6 +27,7 @@ import "./ControllerStorage.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
+import "hardhat/console.sol";
 
 /// @title Contract for holding scheduling for time-lock actions
 /// @dev Use with TetuProxy
@@ -36,12 +37,12 @@ contract Announcer is Controllable, IAnnouncer {
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
-  uint256 public constant TIME_LOCK = 48 hours;
+  bytes32 internal constant _TIME_LOCK_SLOT = 0x244FE7C39AF244D294615908664E79A2F65DD3F4D5C387AF1D52197F465D1C2E;
 
   /// @dev Hold schedule for time-locked operations
   mapping(bytes32 => uint256) public override timeLockSchedule;
   /// @dev Hold values for upgrade
-  TimeLockInfo[] public timeLockInfos;
+  TimeLockInfo[] private _timeLockInfos;
   /// @dev Hold indexes for upgrade info
   mapping(TimeLockOpCodes => uint256) public timeLockIndexes;
   /// @dev Hold indexes for upgrade info by address
@@ -64,17 +65,29 @@ contract Announcer is Controllable, IAnnouncer {
   /// @notice Strategy Upgrade was announced
   event StrategyUpgradeAnnounced(address _contract, address _implementation);
 
+  constructor() {
+    require(_TIME_LOCK_SLOT == bytes32(uint256(keccak256("eip1967.announcer.timeLock")) - 1), "wrong timeLock");
+  }
+
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
   /// @param _controller Controller address
-  function initialize(address _controller) external initializer {
+  /// @param _timeLock TimeLock period
+  function initialize(address _controller, uint256 _timeLock) external initializer {
     Controllable.initializeControllable(_controller);
+
+    // fill timeLock
+    bytes32 slot = _TIME_LOCK_SLOT;
+    assembly {
+      sstore(slot, _timeLock)
+    }
+
     // setup multi opCodes
     multiOpCodes[TimeLockOpCodes.TetuProxyUpdate] = true;
     multiOpCodes[TimeLockOpCodes.StrategyUpgrade] = true;
 
     // placeholder for index 0
-    timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, address(0), new address[](0), new uint256[](0)));
+    _timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, address(0), new address[](0), new uint256[](0)));
   }
 
   /// @dev Operations allowed only for Governance address
@@ -90,41 +103,40 @@ contract Announcer is Controllable, IAnnouncer {
     _;
   }
 
-  /// @notice Only controller can use it. Clear announce after successful call time-locked function
-  /// @param opHash Generated keccak256 opHash
-  /// @param opCode TimeLockOpCodes uint8 value
-  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyController {
-    timeLockSchedule[opHash] = 0;
-    uint256 idx = 0;
-    if (multiOpCodes[opCode]) {
-      idx = multiTimeLockIndexes[opCode][target];
-    } else {
-      idx = timeLockIndexes[opCode];
-    }
-    require(idx != type(uint256).max, "index not found");
+  // ************** VIEW ********************
 
-    for (uint256 i = idx; i < timeLockInfos.length - 1; i++) {
-      timeLockInfos[i] = timeLockInfos[i + 1];
-    }
-    timeLockInfos.pop();
-
-    if (multiOpCodes[opCode]) {
-      multiTimeLockIndexes[opCode][target] = 0;
-    } else {
-      timeLockIndexes[opCode] = 0;
+  /// @notice Return time-lock period (in seconds) saved in the contract slot
+  /// @return result TimeLock period
+  function timeLock() public view returns (uint256 result) {
+    bytes32 slot = _TIME_LOCK_SLOT;
+    assembly {
+      result := sload(slot)
     }
   }
 
   /// @notice Length of the the array of all undone announced actions
   /// @return Array length
   function timeLockInfosLength() external view returns (uint256) {
-    return timeLockInfos.length;
+    return _timeLockInfos.length;
   }
 
-  // ------------------ ANNOUNCES ----------------------------
+  /// @notice Return an array with information about announced time-locks
+  /// @return Array of TimeLock information
+  function timeLockInfos() external view returns (TimeLockInfo[] memory) {
+    return _timeLockInfos;
+  }
+
+  /// @notice Return information about announced time-locks for given index
+  /// @param idx Index of time lock info
+  /// @return TimeLock information
+  function timeLockInfo(uint256 idx) external override view returns (TimeLockInfo memory) {
+    return _timeLockInfos[idx];
+  }
+
+  // ************** ANNOUNCES **************
 
   /// @notice Only Governance can do it.
-  ///         Announce address change. You will able to setup new address after 48h
+  ///         Announce address change. You will able to setup new address after Time-lock period
   /// @param opCode Operation code from the list
   ///                 0 - Governance
   ///                 1 - Dao
@@ -136,21 +148,21 @@ contract Announcer is Controllable, IAnnouncer {
   ///                 7 - PsVault
   ///                 8 - Fund
   /// @param newAddress New address
-  function announceAddressChange(TimeLockOpCodes opCode, address oldAddress, address newAddress) external onlyGovernance {
+  function announceAddressChange(TimeLockOpCodes opCode, address newAddress) external onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
     require(newAddress != address(0), "zero address");
-    timeLockSchedule[keccak256(abi.encode(opCode, newAddress))] = block.timestamp + TIME_LOCK;
+    timeLockSchedule[keccak256(abi.encode(opCode, newAddress))] = block.timestamp + timeLock();
 
     address[] memory values = new address[](1);
     values[0] = newAddress;
-    timeLockInfos.push(TimeLockInfo(opCode, oldAddress, values, new uint256[](0)));
-    timeLockIndexes[opCode] = (timeLockInfos.length - 1);
+    _timeLockInfos.push(TimeLockInfo(opCode, controller(), values, new uint256[](0)));
+    timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit AddressChangeAnnounce(opCode, newAddress);
   }
 
   /// @notice Only Governance or DAO can do it.
-  ///         Announce ratio change. You will able to setup new ratio after 48h
+  ///         Announce ratio change. You will able to setup new ratio after Time-lock period
   /// @param opCode Operation code from the list
   ///                 9 - PsRatio
   ///                 10 - FundRatio
@@ -160,18 +172,18 @@ contract Announcer is Controllable, IAnnouncer {
     require(timeLockIndexes[opCode] == 0, "already announced");
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
-    timeLockSchedule[keccak256(abi.encode(opCode, numerator, denominator))] = block.timestamp + TIME_LOCK;
+    timeLockSchedule[keccak256(abi.encode(opCode, numerator, denominator))] = block.timestamp + timeLock();
 
     uint256[] memory values = new uint256[](2);
     values[0] = numerator;
     values[1] = denominator;
-    timeLockInfos.push(TimeLockInfo(opCode, controller(), new address[](0), values));
-    timeLockIndexes[opCode] = (timeLockInfos.length - 1);
+    _timeLockInfos.push(TimeLockInfo(opCode, controller(), new address[](0), values));
+    timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit RatioChangeAnnounced(opCode, numerator, denominator);
   }
 
-  /// @notice Only Governance can do it. Announce token salvage. You will able to salvage after 48h
+  /// @notice Only Governance can do it. Announce token salvage. You will able to salvage after Time-lock period
   /// @param opCode Operation code from the list
   ///                 11 - ControllerSalvage
   ///                 12 - StrategySalvage
@@ -185,19 +197,19 @@ contract Announcer is Controllable, IAnnouncer {
     require(target != address(0), "zero target");
     require(token != address(0), "zero token");
     require(amount != 0, "zero amount");
-    timeLockSchedule[keccak256(abi.encode(opCode, target, token, amount))] = block.timestamp + TIME_LOCK;
+    timeLockSchedule[keccak256(abi.encode(opCode, target, token, amount))] = block.timestamp + timeLock();
 
     address[] memory adrValues = new address[](1);
     adrValues[0] = token;
     uint256[] memory intValues = new uint256[](1);
     intValues[0] = amount;
-    timeLockInfos.push(TimeLockInfo(opCode, target, adrValues, intValues));
-    timeLockIndexes[opCode] = (timeLockInfos.length - 1);
+    _timeLockInfos.push(TimeLockInfo(opCode, target, adrValues, intValues));
+    timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit TokenMoveAnnounced(opCode, target, token, amount);
   }
 
-  /// @notice Only Governance can do it. Announce weekly mint
+  /// @notice Only Governance can do it. Announce weekly mint. You will able to mint after Time-lock period
   /// @param totalAmount Total amount to mint.
   ///                    33% will go to current network, 67% to FundKeeper for other networks
   /// @param _distributor Distributor address, usually NotifyHelper
@@ -211,15 +223,20 @@ contract Announcer is Controllable, IAnnouncer {
     require(_otherNetworkFund != address(0), "zero fund");
 
     bytes32 opHash = keccak256(abi.encode(opCode, totalAmount, _distributor, _otherNetworkFund));
-    timeLockSchedule[opHash] = block.timestamp + TIME_LOCK;
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
 
-    address[] memory adrValues = new address[](1);
+    address[] memory adrValues = new address[](2);
     adrValues[0] = _distributor;
     adrValues[1] = _otherNetworkFund;
     uint256[] memory intValues = new uint256[](1);
     intValues[0] = totalAmount;
-    timeLockInfos.push(TimeLockInfo(opCode, IController(controller()).mintHelper(), adrValues, intValues));
-    timeLockIndexes[opCode] = (timeLockInfos.length - 1);
+
+    address mintHelper = IController(controller()).mintHelper();
+    console.log("_timeLockInfos.length", _timeLockInfos.length);
+
+    _timeLockInfos.push(TimeLockInfo(opCode, mintHelper, adrValues, intValues));
+    timeLockIndexes[opCode] = _timeLockInfos.length - 1;
+    console.log("timeLockIndexes[opCode]", timeLockIndexes[opCode]);
 
     emit MintAnnounced(totalAmount, _distributor, _otherNetworkFund);
   }
@@ -235,7 +252,7 @@ contract Announcer is Controllable, IAnnouncer {
     }
   }
 
-  /// @notice Only Governance can do it. Announce Proxy upgrade
+  /// @notice Only Governance can do it. Announce Proxy upgrade. You will able to mint after Time-lock period
   /// @param _contract Proxy contract address for upgrade
   /// @param _implementation New implementation address
   function announceTetuProxyUpgrade(address _contract, address _implementation) public onlyGovernance {
@@ -246,17 +263,18 @@ contract Announcer is Controllable, IAnnouncer {
     require(_implementation != address(0), "zero implementation");
 
     bytes32 opHash = keccak256(abi.encode(opCode, _contract, _implementation));
-    timeLockSchedule[opHash] = block.timestamp + TIME_LOCK;
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
 
     address[] memory values = new address[](1);
     values[0] = _implementation;
-    timeLockInfos.push(TimeLockInfo(opCode, _contract, values, new uint256[](0)));
-    multiTimeLockIndexes[opCode][_contract] = (timeLockInfos.length - 1);
+    _timeLockInfos.push(TimeLockInfo(opCode, _contract, values, new uint256[](0)));
+    multiTimeLockIndexes[opCode][_contract] = (_timeLockInfos.length - 1);
 
     emit ProxyUpgradeAnnounced(_contract, _implementation);
   }
 
   /// @notice Only Governance can do it. Announce strategy update for given vaults
+  ///         You will able to mint after Time-lock period
   /// @param _targets Vault addresses
   /// @param _strategies Strategy addresses
   function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
@@ -265,12 +283,12 @@ contract Announcer is Controllable, IAnnouncer {
     for (uint256 i = 0; i < _targets.length; i++) {
       require(multiTimeLockIndexes[opCode][_targets[i]] == 0, "already announced");
       bytes32 opHash = keccak256(abi.encode(opCode, _targets[i], _strategies[i]));
-      timeLockSchedule[opHash] = block.timestamp + TIME_LOCK;
+      timeLockSchedule[opHash] = block.timestamp + timeLock();
 
       address[] memory values = new address[](1);
       values[0] = _strategies[i];
-      timeLockInfos.push(TimeLockInfo(opCode, _targets[i], values, new uint256[](0)));
-      multiTimeLockIndexes[opCode][_targets[i]] = (timeLockInfos.length - 1);
+      _timeLockInfos.push(TimeLockInfo(opCode, _targets[i], values, new uint256[](0)));
+      multiTimeLockIndexes[opCode][_targets[i]] = (_timeLockInfos.length - 1);
 
       emit StrategyUpgradeAnnounced(_targets[i], _strategies[i]);
     }
@@ -283,6 +301,31 @@ contract Announcer is Controllable, IAnnouncer {
   function closeAnnounce(TimeLockOpCodes opCode, bytes32 opHash, address target) external onlyGovernance {
     clearAnnounce(opHash, opCode, target);
     emit AnnounceClosed(opHash);
+  }
+
+  /// @notice Only controller can use it. Clear announce after successful call time-locked function
+  /// @param opHash Generated keccak256 opHash
+  /// @param opCode TimeLockOpCodes uint8 value
+  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyController {
+    timeLockSchedule[opHash] = 0;
+    uint256 idx = 0;
+    if (multiOpCodes[opCode]) {
+      idx = multiTimeLockIndexes[opCode][target];
+    } else {
+      idx = timeLockIndexes[opCode];
+    }
+    require(idx != type(uint256).max, "index not found");
+
+    for (uint256 i = idx; i < _timeLockInfos.length - 1; i++) {
+      _timeLockInfos[i] = _timeLockInfos[i + 1];
+    }
+    _timeLockInfos.pop();
+
+    if (multiOpCodes[opCode]) {
+      multiTimeLockIndexes[opCode][target] = 0;
+    } else {
+      timeLockIndexes[opCode] = 0;
+    }
   }
 
 }

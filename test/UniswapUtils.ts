@@ -5,7 +5,6 @@ import {BigNumber, utils} from "ethers";
 import {Erc20Utils} from "./Erc20Utils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {expect} from "chai";
-import {MintHelperUtils} from "./MintHelperUtils";
 import {RunHelper} from "../scripts/utils/RunHelper";
 
 export class UniswapUtils {
@@ -136,7 +135,6 @@ export class UniswapUtils {
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
-    await MintHelperUtils.mint(mintHelper, BigNumber.from(amount).mul(4).toString());
     const tokenBal = await Erc20Utils.balanceOf(rewardTokenAddress, signer.address);
     console.log('Token minted', usdcBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);

@@ -34,7 +34,7 @@ contract MintHelper is Controllable, IMintHelper {
   uint256 constant public TOTAL_RATIO = 10000;
 
   mapping(address => uint256) public operatingFunds;
-  address[] public operatingFundsList;
+  address[] public override operatingFundsList;
 
 
   event FundsChanged(address[] funds, uint256[] fractions);

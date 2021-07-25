@@ -20,6 +20,7 @@ export class CoreContractsWrapper {
   public bookkeeperLogic: string;
   public notifyHelper: NotifyHelper
   public mintHelper: MintHelper;
+  public mintHelperLogic: string;
   public rewardToken: RewardToken;
   public psVault: SmartVault;
   public psVaultLogic: string;
@@ -36,6 +37,7 @@ export class CoreContractsWrapper {
               bookkeeperLogic: string,
               notifyHelper: NotifyHelper,
               mintHelper: MintHelper,
+              mintHelperLogic: string,
               rewardToken: RewardToken,
               psVault: SmartVault,
               psVaultLogic: string,
@@ -52,6 +54,7 @@ export class CoreContractsWrapper {
     this.bookkeeperLogic = bookkeeperLogic;
     this.notifyHelper = notifyHelper;
     this.mintHelper = mintHelper;
+    this.mintHelperLogic = mintHelperLogic;
     this.rewardToken = rewardToken;
     this.psVault = psVault;
     this.psVaultLogic = psVaultLogic;

@@ -94,11 +94,12 @@ export class DeployerUtils {
     return contract;
   }
 
-  public static async deployAnnouncer(signer: SignerWithAddress, controller: string): Promise<[Announcer, TetuProxyControlled, Announcer]> {
+  public static async deployAnnouncer(signer: SignerWithAddress, controller: string, timeLock: number)
+      : Promise<[Announcer, TetuProxyControlled, Announcer]> {
     const logic = await DeployerUtils.deployContract(signer, "Announcer") as Announcer;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as Announcer;
-    await contract.initialize(controller);
+    await contract.initialize(controller, timeLock);
     return [contract, proxy, logic];
   }
 
@@ -112,8 +113,13 @@ export class DeployerUtils {
       controllerAddress: string,
       funds: string[],
       fractions: number[]
-  ): Promise<MintHelper> {
-    return await DeployerUtils.deployContract(signer, "MintHelper", controllerAddress, funds, fractions) as MintHelper;
+  ): Promise<[MintHelper, TetuProxyControlled, MintHelper]> {
+    const logic = await DeployerUtils.deployContract(signer, "MintHelper") as MintHelper;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as MintHelper;
+    await contract.initialize(controllerAddress, funds, fractions);
+
+    return [contract, proxy, logic];
   }
 
   public static async deployBookkeeper(signer: SignerWithAddress, controller: string): Promise<Bookkeeper> {
@@ -193,6 +199,7 @@ export class DeployerUtils {
   public static async deployAllCoreContracts(
       signer: SignerWithAddress,
       psRewardDuration: number = 60 * 60 * 24 * 28,
+      timeLock: number = 60 * 60 * 48,
       wait = false
   ): Promise<CoreContractsWrapper> {
     // ************** CONTROLLER **********
@@ -202,7 +209,7 @@ export class DeployerUtils {
     await controller.initialize();
 
     // ************ ANNOUNCER **********
-    const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address);
+    const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, timeLock);
 
     // ********* FEE FORWARDER *********
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
@@ -218,8 +225,8 @@ export class DeployerUtils {
 
     // ******* REWARD TOKEN AND SUPPORT CONTRACTS ******
     const notifyHelper = await DeployerUtils.deployContract(signer, "NotifyHelper", controller.address) as NotifyHelper;
-    const mintHelper = await DeployerUtils.deployMintHelper(signer, controller.address, [signer.address], [3000]);
-    const rewardToken = await DeployerUtils.deployContract(signer, "RewardToken", mintHelper.address) as RewardToken;
+    const mintHelperData = await DeployerUtils.deployMintHelper(signer, controller.address, [signer.address], [3000]);
+    const rewardToken = await DeployerUtils.deployContract(signer, "RewardToken", mintHelperData[0].address) as RewardToken;
 
 
     // ****** PS ********
@@ -241,15 +248,18 @@ export class DeployerUtils {
     // ******* SETUP CONTROLLER ********
     await RunHelper.runAndWait(() => controller.setFeeRewardForwarder(feeRewardForwarder.address), true, wait);
     await RunHelper.runAndWait(() => controller.setBookkeeper(bookkeeper.address), true, wait);
-    await RunHelper.runAndWait(() => controller.setMintHelper(mintHelper.address), true, wait);
+    await RunHelper.runAndWait(() => controller.setMintHelper(mintHelperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setRewardToken(rewardToken.address), true, wait);
     await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
     await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
 
-    const tokens = await DeployerUtils.getTokenAddresses()
-    await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
-
+    try {
+      const tokens = await DeployerUtils.getTokenAddresses()
+      await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
+    } catch (e) {
+      console.error('USDC token not defined for network, need to setup Fund token later');
+    }
     await RunHelper.runAndWait(() => controller.setRewardDistribution(
         [
           feeRewardForwarder.address,
@@ -269,7 +279,8 @@ export class DeployerUtils {
         bookkeeper,
         bookkeeperLogic.address,
         notifyHelper,
-        mintHelper,
+        mintHelperData[0],
+        mintHelperData[2].address,
         rewardToken,
         psVault,
         vaultLogic.address,
@@ -388,6 +399,16 @@ export class DeployerUtils {
     try {
       await hre.run("verify:verify", {
         address: address, constructorArguments: args
+      })
+    } catch (e) {
+      console.log('error verify', e);
+    }
+  }
+
+  public static async verifyWithContractName(address: string, contractPath: string) {
+    try {
+      await hre.run("verify:verify", {
+        address: address, contract: contractPath
       })
     } catch (e) {
       console.log('error verify', e);

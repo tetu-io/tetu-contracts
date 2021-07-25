@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Announcer, Controller, RewardToken} from "../../typechain";
-import {BigNumber, utils} from "ethers";
+import {utils} from "ethers";
 import {RunHelper} from "./RunHelper";
 
 
@@ -21,7 +21,7 @@ async function main() {
     let toMint = (await token.maxTotalSupplyForCurrentBlock()).sub(await token.totalSupply());
     if (toMint.isZero()) {
       // first week
-      toMint = BigNumber.from('');
+      toMint = utils.parseUnits('129746126');
     }
 
     console.log('To mint', utils.formatUnits(toMint, 18));
@@ -30,19 +30,19 @@ async function main() {
     console.log('Mint announced', annIdx)
     const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
 
-    const annInfo = await announcer.timeLockInfos(annIdx);
+    const annInfo = await announcer.timeLockInfo(annIdx);
     console.log('annInfo', annInfo);
 
     if (annInfo.opCode != 16) {
       throw Error('Wrong opcode!');
     }
-    //todo strange behavior of model
 
-    // const amount;
-    // const distibutor = annInfo.adrValues;
-    // const fund;
 
-    // controller.mintAndDistribute()
+    const amount = annInfo.numValues[0];
+    const distributor = annInfo.adrValues[0];
+    const fund = annInfo.adrValues[1];
+
+    await RunHelper.runAndWait(() => controller.mintAndDistribute(amount, distributor, fund));
 
   }
 }

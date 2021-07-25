@@ -269,6 +269,9 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ) {
     require(_newValue != address(0), "zero address");
     _setMintHelper(_newValue);
+
+    // for reduce the chance of DoS check new implementation
+    require(IMintHelper(mintHelper()).operatingFundsList(0) != address(0), "wrong impl");
   }
 
   /// @notice Only Governance can do it. Change RewardToken(TETU) address.
@@ -324,16 +327,22 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @notice Only Governance can do it. Change Announcer address.
+  ///         Has dedicated time-lock logic for avoiding collisions.
   /// @param _newValue New Announcer address
-  function setAnnouncer(address _newValue) external
-  onlyGovernance timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Announcer, _newValue)),
-    IAnnouncer.TimeLockOpCodes.Announcer,
-    announcer() == address(0),
-    address(0)
-  ) {
+  function setAnnouncer(address _newValue) external onlyGovernance {
     require(_newValue != address(0), "zero address");
+    bytes32 opHash = keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Announcer, _newValue));
+    if (announcer() != address(0)) {
+      require(IAnnouncer(announcer()).timeLockSchedule(opHash) > 0, "not announced");
+      require(IAnnouncer(announcer()).timeLockSchedule(opHash) < block.timestamp, "too early");
+    }
+
     _setAnnouncer(_newValue);
+    // clear announce after update not necessary
+
+    // check new announcer implementation for reducing the chance of DoS
+    IAnnouncer.TimeLockInfo memory info = IAnnouncer(announcer()).timeLockInfo(0);
+    require(info.opCode == IAnnouncer.TimeLockOpCodes.ZeroPlaceholder, "wrong implementation");
   }
 
   // ------------------ TIME-LOCK RATIO CHANGE -------------------
