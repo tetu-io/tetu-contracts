@@ -10,19 +10,22 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20Capped.sol";
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
-
-contract RewardToken is ERC20, ERC20PresetMinterPauser, ERC20Capped {
+/// @title TETU token contract. Has strict weekly emission algorithm
+/// @dev Use with TetuProxy
+/// @author belbix
+contract RewardToken is ERC20Burnable, ERC20Capped {
   using SafeMath for uint256;
 
   uint256 internal constant SCALE = 1e18;
   uint256 internal constant HALF_SCALE = 5e17;
+  address public immutable owner;
 
   uint256 public constant HARD_CAP = 1 * (10 ** 9) * SCALE; // 1 billion
   uint256 public constant MINTING_PERIOD = 126227808; // 4 years
@@ -30,55 +33,32 @@ contract RewardToken is ERC20, ERC20PresetMinterPauser, ERC20Capped {
   uint256 public mintingStartTs;
   uint256 public mintingEndTs;
 
-  constructor(address _minter)
-  ERC20PresetMinterPauser("TETU Reward Token", "TETU")
+  constructor(address _owner)
+  ERC20("TETU Reward Token", "TETU")
   ERC20Capped(HARD_CAP) {
-    // pause forbidden
-    renounceRole(PAUSER_ROLE, _msgSender());
-
-    changeOwner(_minter);
+    owner = _owner;
   }
 
-  // ************* ACCESS *****************
-  modifier onlyAdmin() {
-    require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "not admin");
+  modifier onlyOwner() {
+    require(msg.sender == owner, "not owner");
     _;
   }
 
-  function changeOwner(address _newOwner) public onlyAdmin {
-    changeMinter(_newOwner);
-    changeAdmin(_newOwner);
-  }
-
-  function changeAdmin(address _newAdmin) internal onlyAdmin {
-    _setupRole(DEFAULT_ADMIN_ROLE, _newAdmin);
-    // avoid a case when we can lost the admin power
-    if (_newAdmin != msg.sender) {
-      renounceRole(DEFAULT_ADMIN_ROLE, _msgSender());
-    }
-  }
-
-  function changeMinter(address _newMinter) internal onlyAdmin {
-    for (uint256 i = 0; i < getRoleMemberCount(MINTER_ROLE); i++) {
-      revokeRole(MINTER_ROLE, getRoleMember(MINTER_ROLE, i));
-    }
-    _setupRole(MINTER_ROLE, _newMinter);
-  }
-
-  function grantRole(bytes32 role, address account) public override {
-    // grantRole forbidden, only one owner allowed
-  }
-
-  // ***************** MINTING *************************
-
-  function startMinting() public onlyAdmin {
+  function startMinting() external onlyOwner {
     require(mintingStartTs == 0, "minting already started");
     mintingStartTs = block.timestamp;
     mintingEndTs = mintingStartTs.add(MINTING_PERIOD);
   }
 
-  function _beforeTokenTransfer(address from, address to, uint256 amount)
-  internal override(ERC20, ERC20PresetMinterPauser, ERC20Capped) {
+  function mint(address to, uint256 amount) external onlyOwner {
+    _mint(to, amount);
+  }
+
+  function _mint(address account, uint256 amount) internal override(ERC20, ERC20Capped) {
+    super._mint(account, amount);
+  }
+
+  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
     if (from == address(0)) {// it is mint
       require(mintingStartTs != 0, "minting not started");
       require(totalSupply().add(amount) <= maxTotalSupplyForCurrentBlock(), "limit exceeded");
@@ -119,7 +99,6 @@ contract RewardToken is ERC20, ERC20PresetMinterPauser, ERC20Capped {
   /*********************************************
   *              PRB-MATH                      *
   *   https://github.com/hifi-finance/prb-math *
-  * Lib has 0.8 sol version but our code is 0.7*
   **********************************************/
 
   /// @notice Calculates the binary logarithm of x.
@@ -178,6 +157,7 @@ contract RewardToken is ERC20, ERC20PresetMinterPauser, ERC20Capped {
   ///      Wikipedia article https://en.wikipedia.org/wiki/Find_first_set
   /// @param x The uint256 number for which to find the index of the most significant bit.
   /// @return msb The index of the most significant bit as an uint256.
+  //noinspection NoReturn
   function mostSignificantBit(uint256 x) internal pure returns (uint256 msb) {
     if (x >= 2 ** 128) {
       x >>= 128;

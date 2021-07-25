@@ -8,7 +8,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
 
   const logic = await DeployerUtils.deployContract(signer, "Bookkeeper");
-  const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+  const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
   const bookkeeper = logic.attach(proxy.address) as Bookkeeper;
   await bookkeeper.initialize(core.controller);
 

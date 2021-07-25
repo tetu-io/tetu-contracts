@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, GovernmentUpdatedProxy} from "../../typechain";
+import {Bookkeeper, ContractReader, TetuProxyGov} from "../../typechain";
 
 
 async function main() {
@@ -10,7 +10,7 @@ async function main() {
 
   const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
 
-  const proxy = await DeployerUtils.connectContract(signer, "GovernmentUpdatedProxy", tools.reader) as GovernmentUpdatedProxy;
+  const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.reader) as TetuProxyGov;
   await proxy.upgrade(logic.address);
 
   // const reader = logic.attach(proxy.address);

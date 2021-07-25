@@ -1,5 +1,6 @@
 export class CoreAddresses {
   public readonly controller: string;
+  public readonly announcer: string;
   public readonly feeRewardForwarder: string;
   public readonly bookkeeper: string;
   public readonly notifyHelper: string;
@@ -11,6 +12,7 @@ export class CoreAddresses {
 
   constructor(
       controller: string,
+      announcer: string,
       feeRewardForwarder: string,
       bookkeeper: string,
       notifyHelper: string,
@@ -20,6 +22,7 @@ export class CoreAddresses {
       fundKeeper: string
   ) {
     this.controller = controller;
+    this.announcer = announcer;
     this.feeRewardForwarder = feeRewardForwarder;
     this.bookkeeper = bookkeeper;
     this.notifyHelper = notifyHelper;

@@ -45,7 +45,7 @@ function sushiRoutes(net: string, mocks: Map<string, string>, rewardToken: strin
   if (net === 'matic') {
     route = [MaticAddresses.SUSHI_TOKEN, MaticAddresses.USDC_TOKEN, rewardToken];
     routers = [MaticAddresses.SUSHI_ROUTER, MaticAddresses.SUSHI_ROUTER];
-  } else if (net === 'rinkeby') {
+  } else if (net === 'rinkeby' || net === 'ropsten') {
     route = [mocks.get('sushi') as string, mocks.get('usdc') as string, rewardToken];
     routers = [RopstenAddresses.SUSHI_ROUTER, RopstenAddresses.SUSHI_ROUTER];
   } else {
@@ -60,7 +60,7 @@ function sushiRoutesFund(net: string, mocks: Map<string, string>): [string[], st
   if (net === 'matic') {
     route = [MaticAddresses.SUSHI_TOKEN, MaticAddresses.USDC_TOKEN];
     routers = [MaticAddresses.SUSHI_ROUTER];
-  } else if (net === 'rinkeby') {
+  } else if (net === 'rinkeby' || net === 'ropsten') {
     route = [mocks.get('sushi') as string, mocks.get('usdc') as string];
     routers = [RopstenAddresses.SUSHI_ROUTER];
   } else {
@@ -75,7 +75,7 @@ function quickRoutes(net: string, mocks: Map<string, string>, rewardToken: strin
   if (net === 'matic') {
     route = [MaticAddresses.QUICK_TOKEN, MaticAddresses.USDC_TOKEN, rewardToken];
     routers = [MaticAddresses.QUICK_ROUTER, MaticAddresses.SUSHI_ROUTER];
-  } else if (net === 'rinkeby') {
+  } else if (net === 'rinkeby' || net === 'ropsten') {
     route = [mocks.get('quick') as string, mocks.get('usdc') as string, rewardToken];
     routers = [RopstenAddresses.SUSHI_ROUTER, RopstenAddresses.SUSHI_ROUTER];
   } else {
@@ -90,7 +90,7 @@ function quickRoutesFund(net: string, mocks: Map<string, string>): [string[], st
   if (net === 'matic') {
     route = [MaticAddresses.QUICK_TOKEN, MaticAddresses.USDC_TOKEN];
     routers = [MaticAddresses.QUICK_ROUTER];
-  } else if (net === 'rinkeby') {
+  } else if (net === 'rinkeby' || net === 'ropsten') {
     route = [mocks.get('quick') as string, mocks.get('usdc') as string];
     routers = [RopstenAddresses.SUSHI_ROUTER];
   } else {

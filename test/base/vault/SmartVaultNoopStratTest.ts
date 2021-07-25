@@ -37,7 +37,6 @@ describe("SmartVaultNoopStrat", () => {
     signerAddress = signer.address;
 
     core = await DeployerUtils.deployAllCoreContracts(signer);
-    await core.mintHelper.startMinting();
     vaultRewardToken0 = core.psVault.address;
     vault = await DeployerUtils.deploySmartVault(signer);
 
@@ -68,8 +67,8 @@ describe("SmartVaultNoopStrat", () => {
     await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER,
         MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
 
-    await MintHelperUtils.mint(core.mintHelper, "1000");
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("300", 18));
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
     const lpAddress = await UniswapUtils.addLiquidity(
         signer,
         core.rewardToken.address,
@@ -109,7 +108,7 @@ describe("SmartVaultNoopStrat", () => {
       await VaultUtils.deposit(signer, vault, BigNumber.from("1000000"));
 
       let balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
-      expect(balanceAfter).is.eq(balanceBefore - (+utils.formatUnits("1000000", 6)));
+      expect(balanceAfter.toFixed(6)).is.eq((balanceBefore - (+utils.formatUnits("1000000", 6))).toFixed(6));
 
       expect(await Erc20Utils.balanceOf(vault.address, signerAddress)).at.eq("1000000");
       expect(await vault.underlyingBalanceInVault()).at.eq("0");
@@ -208,7 +207,7 @@ describe("SmartVaultNoopStrat", () => {
       expect(+utils.formatUnits(rewardBalance, 18)).at.greaterThanOrEqual(+utils.formatUnits(rewards, 18));
 
       // *********** notify again
-      await expect(MintHelperUtils.mint(core.mintHelper, "1000"));
+      await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
       await Erc20Utils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await core.feeRewardForwarder.notifyCustomPool(
@@ -216,33 +215,17 @@ describe("SmartVaultNoopStrat", () => {
           vault.address,
           utils.parseUnits("50", 18)
       );
-      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).is.greaterThan(0.037);
+      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).is.greaterThan(0.01);
       await core.feeRewardForwarder.notifyCustomPool(
           core.rewardToken.address,
           vault.address,
           utils.parseUnits("50", 18)
       );
-      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.049);
+      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.02);
     });
     it("Active status", async () => {
       await vault.changeActivityStatus(false);
       await expect(vault.doHardWork()).to.be.rejectedWith("not active");
-    });
-    it("salvage strategy", async () => {
-      const strategy = await core.psVault.strategy()
-      expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, strategy)).is.eq("0");
-      await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, strategy, "1");
-      expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, strategy)).is.eq("1");
-      expect(await core.controller.salvageStrategy(strategy, MaticAddresses.USDC_TOKEN, 1))
-      .is.not.eq("0");
-    });
-    it("should not salvage strategy", async () => {
-      const strategy = await core.psVault.strategy()
-      expect(await Erc20Utils.balanceOf(core.rewardToken.address, strategy)).is.eq("0");
-      await Erc20Utils.transfer(core.rewardToken.address, signer, strategy, "1");
-      expect(await Erc20Utils.balanceOf(core.rewardToken.address, strategy)).is.eq("1");
-      await expect(core.controller.salvageStrategy(strategy, core.rewardToken.address, 1))
-      .rejectedWith("not salvageable");
     });
     it("investedUnderlyingBalance with zero pool", async () => {
       expect(await core.psEmptyStrategy.investedUnderlyingBalance()).is.eq("0");
@@ -250,6 +233,9 @@ describe("SmartVaultNoopStrat", () => {
     it("dummy noop tests", async () => {
       await core.psEmptyStrategy.emergencyExit();
       await core.psEmptyStrategy.withdrawAllToVault();
+      await core.psEmptyStrategy.readyToClaim();
+      await core.psEmptyStrategy.poolTotalAmount();
+      await core.psEmptyStrategy.poolWeeklyRewardsAmount();
     });
 
     it("Add reward to the vault and exit", async () => {

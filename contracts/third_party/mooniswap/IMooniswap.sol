@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 interface IMooniswap {
   function getBalanceForRemoval(address token) external view returns(uint256);

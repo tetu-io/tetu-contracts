@@ -34,9 +34,8 @@ async function startDefaultLpStrategyTest(
       const signer = (await ethers.getSigners())[0];
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.deployAllCoreContracts(signer);
+      const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
-      await core.mintHelper.startMinting();
 
       for (let rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(

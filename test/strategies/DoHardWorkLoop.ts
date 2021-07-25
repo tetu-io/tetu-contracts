@@ -34,6 +34,8 @@ export class DoHardWorkLoop {
         const den = (await info.core.controller.psDenominator()).toNumber();
         const newNum = +(den / i).toFixed()
         console.log('new ps ratio', newNum, den)
+        await info.core.announcer.announceRatioChange(9, newNum, den);
+        await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
         await info.core.controller.setPSNumeratorDenominator(newNum, den);
       }
       const loopStart = await StrategyTestUtils.getBlockTime();

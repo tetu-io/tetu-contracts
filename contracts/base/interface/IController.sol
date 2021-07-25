@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 interface IController {
 
@@ -32,11 +32,11 @@ interface IController {
 
   function fundToken() external view returns (address);
 
-  function notifyHelper() external view returns (address);
-
   function psVault() external view returns (address);
 
   function fund() external view returns (address);
+
+  function announcer() external view returns (address);
 
   function whiteList(address _target) external view returns (bool);
 
@@ -54,8 +54,6 @@ interface IController {
 
   function isAllowedUser(address _adr) external view returns (bool);
 
-  function isGovernance(address _adr) external view returns (bool);
-
   function isDao(address _adr) external view returns (bool);
 
   function isHardWorker(address _adr) external view returns (bool);
@@ -65,4 +63,17 @@ interface IController {
   function isValidVault(address _vault) external view returns (bool);
 
   function isValidStrategy(address _strategy) external view returns (bool);
+
+  // ************ DAO ACTIONS *************
+  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) external;
+
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) external;
+
+  function addToWhiteListMulti(address[] calldata _targets) external;
+
+  function addToWhiteList(address _target) external;
+
+  function removeFromWhiteListMulti(address[] calldata _targets) external;
+
+  function removeFromWhiteList(address _target) external;
 }

@@ -27,7 +27,6 @@ describe("Price calculator tests", function () {
     signer = (await ethers.getSigners())[0];
     signer1 = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer);
-    await core.mintHelper.startMinting();
     calculator = (await DeployerUtils
     .deployPriceCalculatorMatic(signer, core.controller.address))[0];
   });

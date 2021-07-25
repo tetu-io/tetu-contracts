@@ -10,16 +10,17 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+/// @title Utility contract for using on website UI and other integrations
+/// @author belbix
 contract ContractUtils {
 
   // ********************* ERC20 UTILS ************************************
 
-  function erc20Names(address[] memory tokens) public view returns (string[] memory) {
+  function erc20Names(address[] memory tokens) external view returns (string[] memory) {
     string[] memory result = new string[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
       result[i] = ERC20(tokens[i]).name();
@@ -27,7 +28,7 @@ contract ContractUtils {
     return result;
   }
 
-  function erc20Symbols(address[] memory tokens) public view returns (string[] memory) {
+  function erc20Symbols(address[] memory tokens) external view returns (string[] memory) {
     string[] memory result = new string[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
       result[i] = ERC20(tokens[i]).symbol();
@@ -35,7 +36,7 @@ contract ContractUtils {
     return result;
   }
 
-  function erc20Decimals(address[] memory tokens) public view returns (uint8[] memory) {
+  function erc20Decimals(address[] memory tokens) external view returns (uint8[] memory) {
     uint8[] memory result = new uint8[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
       result[i] = ERC20(tokens[i]).decimals();
@@ -43,7 +44,7 @@ contract ContractUtils {
     return result;
   }
 
-  function erc20Balances(address[] memory tokens, address adr) public view returns (uint256[] memory) {
+  function erc20Balances(address[] memory tokens, address adr) external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
       result[i] = ERC20(tokens[i]).balanceOf(adr);
@@ -51,7 +52,7 @@ contract ContractUtils {
     return result;
   }
 
-  function erc20TotalSupply(address[] memory tokens) public view returns (uint256[] memory) {
+  function erc20TotalSupply(address[] memory tokens) external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
       result[i] = ERC20(tokens[i]).totalSupply();

@@ -32,8 +32,7 @@ describe("Fee reward forwarder tests", function () {
     forwarder = core.feeRewardForwarder;
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
-    await core.mintHelper.startMinting();
-    await UniswapUtils.createPairForRewardToken(signer, core.rewardToken.address, core.mintHelper, '100000');
+    await UniswapUtils.createPairForRewardToken(signer, core, '100000');
   });
 
   after(async function () {
@@ -49,8 +48,11 @@ describe("Fee reward forwarder tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("should not setup wrong conv path", async () => {
+  it("should not setup empty conv path", async () => {
     await expect(forwarder.setConversionPath([], [])).rejectedWith('wrong data');
+  });
+
+  it("should not setup wrong conv path", async () => {
     await expect(forwarder.setConversionPath([MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS],
         [MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS])).rejectedWith('wrong data');
     await expect(forwarder.setConversionPath([MaticAddresses.ZERO_ADDRESS,
@@ -59,7 +61,7 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not notify ps with zero target token", async () => {
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
-    const controllerProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", controllerLogic.address);
+    const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", controllerLogic.address);
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);

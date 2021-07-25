@@ -10,7 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 interface ISmartVault {
 
@@ -40,19 +40,11 @@ interface ISmartVault {
 
   function strategy() external view returns (address);
 
-  function nextImplementation() external view returns (address);
-
-  function futureStrategy() external view returns (address);
-
   function getRewardTokenIndex(address rt) external view returns (uint256);
 
   function getPricePerFullShare() external view returns (uint256);
 
   function underlyingUnit() external view returns (uint256);
-
-  function nextImplementationTimestamp() external view returns (uint256);
-
-  function strategyUpdateTime() external view returns (uint256);
 
   function duration() external view returns (uint256);
 
@@ -74,8 +66,6 @@ interface ISmartVault {
 
   function active() external view returns (bool);
 
-  function canUpdateStrategy(address _strategy) external view returns (bool);
-
   function rewardTokens() external view returns (address[] memory);
 
   function periodFinishForToken(address _rt) external view returns (uint256);
@@ -89,4 +79,10 @@ interface ISmartVault {
   function userRewardPerTokenPaidForToken(address _rt, address account) external view returns (uint256);
 
   function rewardsForToken(address _rt, address account) external view returns (uint256);
+
+  function userLastWithdrawTs(address _user) external returns (uint256);
+
+  function addRewardToken(address rt) external;
+
+  function removeRewardToken(address rt) external;
 }

@@ -1,12 +1,13 @@
 import {ethers} from "hardhat";
 import {MaticAddresses} from "./MaticAddresses";
-import {IUniswapV2Factory, IUniswapV2Pair, IUniswapV2Router02, MintHelper} from "../typechain";
+import {IUniswapV2Factory, IUniswapV2Pair, IUniswapV2Router02} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {Erc20Utils} from "./Erc20Utils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {expect} from "chai";
-import {MintHelperUtils} from "./MintHelperUtils";
 import {RunHelper} from "../scripts/utils/RunHelper";
+import {MintHelperUtils} from "./MintHelperUtils";
+import {CoreContractsWrapper} from "./CoreContractsWrapper";
 
 export class UniswapUtils {
   private static deadline = "1000000000000";
@@ -122,8 +123,7 @@ export class UniswapUtils {
 
   public static async createPairForRewardToken(
       signer: SignerWithAddress,
-      rewardTokenAddress: string,
-      mintHelper: MintHelper,
+      core: CoreContractsWrapper,
       amount: string
   ) {
     await UniswapUtils.swapNETWORK_COINForExactTokens(
@@ -132,13 +132,16 @@ export class UniswapUtils {
         utils.parseUnits(amount, 6).toString(),
         MaticAddresses.QUICK_ROUTER
     );
+    const rewardTokenAddress = core.rewardToken.address;
+
     const usdcBal = await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
-    await MintHelperUtils.mint(mintHelper, BigNumber.from(amount).mul(4).toString());
+    await MintHelperUtils.mint(core.controller, core.announcer, amount, signer.address);
+
     const tokenBal = await Erc20Utils.balanceOf(rewardTokenAddress, signer.address);
-    console.log('Token minted', usdcBal.toString());
+    console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
     return await UniswapUtils.addLiquidity(

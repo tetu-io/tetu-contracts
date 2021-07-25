@@ -10,14 +10,14 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 import "../base/interface/ISmartVault.sol";
 
 
 contract EvilHackerContract {
 
-  function tryDeposit(address vault, uint256 amount) public {
+  function tryDeposit(address vault, uint256 amount) external {
     ISmartVault(vault).deposit(amount);
   }
 

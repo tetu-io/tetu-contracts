@@ -1,4 +1,5 @@
 import {
+  Announcer,
   Bookkeeper,
   Controller,
   FeeRewardForwarder,
@@ -19,12 +20,15 @@ export class CoreContractsWrapper {
   public bookkeeperLogic: string;
   public notifyHelper: NotifyHelper
   public mintHelper: MintHelper;
+  public mintHelperLogic: string;
   public rewardToken: RewardToken;
   public psVault: SmartVault;
   public psVaultLogic: string;
   public psEmptyStrategy: NoopStrategy;
   public fundKeeper: FundKeeper;
   public fundKeeperLogic: string;
+  public announcer: Announcer;
+  public announcerLogic: string;
 
   constructor(controller: Controller,
               controllerLogic: string,
@@ -33,12 +37,15 @@ export class CoreContractsWrapper {
               bookkeeperLogic: string,
               notifyHelper: NotifyHelper,
               mintHelper: MintHelper,
+              mintHelperLogic: string,
               rewardToken: RewardToken,
               psVault: SmartVault,
               psVaultLogic: string,
               psEmptyStrategy: NoopStrategy,
               fundKeeper: FundKeeper,
-              fundKeeperLogic: string
+              fundKeeperLogic: string,
+              announcer: Announcer,
+              announcerLogic: string
   ) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;
@@ -47,12 +54,15 @@ export class CoreContractsWrapper {
     this.bookkeeperLogic = bookkeeperLogic;
     this.notifyHelper = notifyHelper;
     this.mintHelper = mintHelper;
+    this.mintHelperLogic = mintHelperLogic;
     this.rewardToken = rewardToken;
     this.psVault = psVault;
     this.psVaultLogic = psVaultLogic;
     this.psEmptyStrategy = psEmptyStrategy;
     this.fundKeeper = fundKeeper;
     this.fundKeeperLogic = fundKeeperLogic;
+    this.announcer = announcer;
+    this.announcerLogic = announcerLogic;
   }
 
   public registerInTracer() {

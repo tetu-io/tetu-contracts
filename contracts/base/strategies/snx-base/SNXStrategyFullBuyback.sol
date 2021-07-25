@@ -10,21 +10,23 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/math/Math.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "./interfaces/SNXRewardInterface.sol";
 
+/// @title Abstract contract for Synthetix strategy implementation
+/// @author belbix
 abstract contract SNXStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
   string public constant STRATEGY_TYPE = "snxStrategyFullBuyback";
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 private constant BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
 
   SNXRewardInterface public rewardPool;
@@ -33,9 +35,9 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
     address _controller,
     address _underlying,
     address _vault,
-    address[] memory _rewardTokens,
+    address[] memory __rewardTokens,
     address _rewardPool
-  ) StrategyBase(_controller, _underlying, _vault, _rewardTokens, BUY_BACK_RATIO) {
+  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, BUY_BACK_RATIO) {
     require(_rewardPool != address(0), "zero address pool");
     rewardPool = SNXRewardInterface(_rewardPool);
   }

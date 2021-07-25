@@ -8,6 +8,10 @@ import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
+import {VaultUtils} from "../../VaultUtils";
+import {BigNumber} from "ethers";
+import {Erc20Utils} from "../../Erc20Utils";
+import {MintHelperUtils} from "../../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -110,6 +114,58 @@ describe("Bookkeeper tests", function () {
 
     expect((await bookkeeper.vaults()).length).is.eq(vaults.length - 1, 'existed vault should not be added');
     expect((await bookkeeper.strategies()).length).is.eq(strategies.length - 1, 'existed strategy should not be added');
+  });
+
+  it("user count should work correctly", async () => {
+    const vault = core.psVault;
+
+    // ********** USER1 deposit
+    await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address);
+    await VaultUtils.deposit(signer, vault, BigNumber.from('1000'));
+
+    let user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
+    let vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
+
+    expect(user1Bal).eq(1000);
+    expect(vaultUsers).eq(1);
+
+    // ******** USER1 transfer to USER2
+    await Erc20Utils.transfer(vault.address, signer, signer1.address, '500');
+
+    user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
+    let user2Bal = await bookkeeper.vaultUsersBalances(vault.address, signer1.address)
+    vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
+
+
+    expect(user1Bal).eq(500);
+    expect(user2Bal).eq(500);
+    expect(vaultUsers).eq(2);
+
+    // ******** USER1 exit
+    await vault.exit();
+
+    user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
+    user2Bal = await bookkeeper.vaultUsersBalances(vault.address, signer1.address)
+    vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
+
+
+    expect(user1Bal).eq(0);
+    expect(user2Bal).eq(500);
+    expect(vaultUsers).eq(1);
+
+    // *********** USER2 exit
+
+    await vault.connect(signer1).exit();
+
+    user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
+    user2Bal = await bookkeeper.vaultUsersBalances(vault.address, signer1.address)
+    vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
+
+
+    expect(user1Bal).eq(0);
+    expect(user2Bal).eq(0);
+    expect(vaultUsers).eq(0);
+
   });
 
 });

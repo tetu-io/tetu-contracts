@@ -7,7 +7,7 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
-  const controllerProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", controllerLogic.address);
+  const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", controllerLogic.address);
   const controller = controllerLogic.attach(controllerProxy.address) as Controller;
   await controller.initialize();
 

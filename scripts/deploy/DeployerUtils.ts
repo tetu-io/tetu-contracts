@@ -2,12 +2,13 @@ import {ethers} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Contract, ContractFactory, utils} from "ethers";
 import {
+  Announcer,
   Bookkeeper,
   Controller,
   FeeRewardForwarder,
   FundKeeper,
-  GovernmentUpdatedProxy,
   IStrategy,
+  ITetuProxy,
   LiquidityBalancer,
   MintHelper,
   NoopStrategy,
@@ -16,7 +17,8 @@ import {
   PriceCalculator,
   RewardToken,
   SmartVault,
-  VaultProxy
+  TetuProxyControlled,
+  TetuProxyGov,
 } from "../../typechain";
 import {expect} from "chai";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
@@ -54,15 +56,15 @@ export class DeployerUtils {
   }
 
   public static async connectVault(address: string, signer: SignerWithAddress): Promise<SmartVault> {
-    const proxy = await DeployerUtils.connectContract(signer, "VaultProxy", address) as VaultProxy;
+    const proxy = await DeployerUtils.connectContract(signer, "TetuProxyControlled", address) as TetuProxyControlled;
     const logicAddress = await proxy.implementation();
     const logic = await DeployerUtils.connectContract(signer, "SmartVault", logicAddress) as SmartVault;
     return logic.attach(proxy.address);
   }
 
   public static async connectProxy(address: string, signer: SignerWithAddress, name: string): Promise<any> {
-    const proxy = await DeployerUtils.connectContract(signer, "GovernmentUpdatedProxy", address) as GovernmentUpdatedProxy;
-    const logicAddress = await proxy.implementation();
+    const proxy = await DeployerUtils.connectContract(signer, "ITetuProxy", address) as ITetuProxy;
+    const logicAddress = await proxy.callStatic.implementation();
     const logic = await DeployerUtils.connectContract(signer, name, logicAddress);
     return logic.attach(proxy.address);
   }
@@ -86,10 +88,19 @@ export class DeployerUtils {
 
   public static async deployController(signer: SignerWithAddress): Promise<Controller> {
     const logic = await DeployerUtils.deployContract(signer, "Controller");
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     const contract = logic.attach(proxy.address) as Controller;
     await contract.initialize();
     return contract;
+  }
+
+  public static async deployAnnouncer(signer: SignerWithAddress, controller: string, timeLock: number)
+      : Promise<[Announcer, TetuProxyControlled, Announcer]> {
+    const logic = await DeployerUtils.deployContract(signer, "Announcer") as Announcer;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as Announcer;
+    await contract.initialize(controller, timeLock);
+    return [contract, proxy, logic];
   }
 
   public static async deployFeeForwarder(signer: SignerWithAddress, controllerAddress: string): Promise<FeeRewardForwarder> {
@@ -102,21 +113,26 @@ export class DeployerUtils {
       controllerAddress: string,
       funds: string[],
       fractions: number[]
-  ): Promise<MintHelper> {
-    return await DeployerUtils.deployContract(signer, "MintHelper", controllerAddress, funds, fractions) as MintHelper;
+  ): Promise<[MintHelper, TetuProxyControlled, MintHelper]> {
+    const logic = await DeployerUtils.deployContract(signer, "MintHelper") as MintHelper;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as MintHelper;
+    await contract.initialize(controllerAddress, funds, fractions);
+
+    return [contract, proxy, logic];
   }
 
   public static async deployBookkeeper(signer: SignerWithAddress, controller: string): Promise<Bookkeeper> {
     const logic = await DeployerUtils.deployContract(signer, "Bookkeeper");
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     const bookkeeper = logic.attach(proxy.address) as Bookkeeper;
     await bookkeeper.initialize(controller);
     return bookkeeper;
   }
 
-  public static async deployFundKeeper(signer: SignerWithAddress, controller: string): Promise<[FundKeeper, GovernmentUpdatedProxy, FundKeeper]> {
+  public static async deployFundKeeper(signer: SignerWithAddress, controller: string): Promise<[FundKeeper, TetuProxyControlled, FundKeeper]> {
     const logic = await DeployerUtils.deployContract(signer, "FundKeeper") as FundKeeper;
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
     const fundKeeper = logic.attach(proxy.address) as FundKeeper;
     await fundKeeper.initialize(controller);
     return [fundKeeper, proxy, logic];
@@ -126,9 +142,9 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
-  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, GovernmentUpdatedProxy, PriceCalculator]> {
+  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
 
@@ -150,9 +166,9 @@ export class DeployerUtils {
     return [calculator, proxy, logic];
   }
 
-  public static async deployPriceCalculatorTestNet(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, GovernmentUpdatedProxy, PriceCalculator]> {
+  public static async deployPriceCalculatorTestNet(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
     const mocks = await DeployerUtils.getTokenAddresses();
@@ -167,14 +183,14 @@ export class DeployerUtils {
 
   public static async deploySmartVault(signer: SignerWithAddress): Promise<SmartVault> {
     const logic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const proxy = await DeployerUtils.deployContract(signer, "VaultProxy", logic.address);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as SmartVault;
   }
 
   public static async deployPayrollClerk(signer: SignerWithAddress, controller: string)
-      : Promise<[PayrollClerk, GovernmentUpdatedProxy, PayrollClerk]> {
+      : Promise<[PayrollClerk, TetuProxyGov, PayrollClerk]> {
     const logic = await DeployerUtils.deployContract(signer, "PayrollClerk") as PayrollClerk;
-    const proxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", logic.address) as GovernmentUpdatedProxy;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as PayrollClerk;
     await contract.initialize(controller);
     return [contract, proxy, logic];
@@ -183,17 +199,24 @@ export class DeployerUtils {
   public static async deployAllCoreContracts(
       signer: SignerWithAddress,
       psRewardDuration: number = 60 * 60 * 24 * 28,
+      timeLock: number = 60 * 60 * 48,
       wait = false
   ): Promise<CoreContractsWrapper> {
+    // ************** CONTROLLER **********
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
-    const controllerProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", controllerLogic.address);
+    const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", controllerLogic.address);
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
+
+    // ************ ANNOUNCER **********
+    const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, timeLock);
+
+    // ********* FEE FORWARDER *********
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
 
     // ********** BOOKKEEPER **********
     const bookkeeperLogic = await DeployerUtils.deployContract(signer, "Bookkeeper");
-    const bookkeeperProxy = await DeployerUtils.deployContract(signer, "GovernmentUpdatedProxy", bookkeeperLogic.address);
+    const bookkeeperProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", bookkeeperLogic.address);
     const bookkeeper = bookkeeperLogic.attach(bookkeeperProxy.address) as Bookkeeper;
     await bookkeeper.initialize(controller.address);
 
@@ -202,13 +225,13 @@ export class DeployerUtils {
 
     // ******* REWARD TOKEN AND SUPPORT CONTRACTS ******
     const notifyHelper = await DeployerUtils.deployContract(signer, "NotifyHelper", controller.address) as NotifyHelper;
-    const mintHelper = await DeployerUtils.deployMintHelper(signer, controller.address, [signer.address], [3000]);
-    const rewardToken = await DeployerUtils.deployContract(signer, "RewardToken", mintHelper.address) as RewardToken;
+    const mintHelperData = await DeployerUtils.deployMintHelper(signer, controller.address, [signer.address], [3000]);
+    const rewardToken = await DeployerUtils.deployContract(signer, "RewardToken", mintHelperData[0].address) as RewardToken;
 
 
     // ****** PS ********
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     const psEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
         controller.address, rewardToken.address, psVault.address, [], [rewardToken.address]) as NoopStrategy;
@@ -225,15 +248,18 @@ export class DeployerUtils {
     // ******* SETUP CONTROLLER ********
     await RunHelper.runAndWait(() => controller.setFeeRewardForwarder(feeRewardForwarder.address), true, wait);
     await RunHelper.runAndWait(() => controller.setBookkeeper(bookkeeper.address), true, wait);
-    await RunHelper.runAndWait(() => controller.setMintHelper(mintHelper.address), true, wait);
+    await RunHelper.runAndWait(() => controller.setMintHelper(mintHelperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setRewardToken(rewardToken.address), true, wait);
-    await RunHelper.runAndWait(() => controller.setNotifyHelper(notifyHelper.address), true, wait);
     await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
     await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
+    await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
 
-    const tokens = await DeployerUtils.getTokenAddresses()
-    await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
-
+    try {
+      const tokens = await DeployerUtils.getTokenAddresses()
+      await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
+    } catch (e) {
+      console.error('USDC token not defined for network, need to setup Fund token later');
+    }
     await RunHelper.runAndWait(() => controller.setRewardDistribution(
         [
           feeRewardForwarder.address,
@@ -253,13 +279,16 @@ export class DeployerUtils {
         bookkeeper,
         bookkeeperLogic.address,
         notifyHelper,
-        mintHelper,
+        mintHelperData[0],
+        mintHelperData[2].address,
         rewardToken,
         psVault,
         vaultLogic.address,
         psEmptyStrategy,
         fundKeeperData[0],
-        fundKeeperData[2].address
+        fundKeeperData[2].address,
+        announcerData[0],
+        announcerData[2].address
     );
   }
 
@@ -272,7 +301,7 @@ export class DeployerUtils {
       rewardDuration: number = 60 * 60 * 24 * 28 // 4 weeks
   ): Promise<any[]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "VaultProxy", vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     const strategy = await DeployerUtils.deployContract(signer, strategyName,
@@ -370,6 +399,16 @@ export class DeployerUtils {
     try {
       await hre.run("verify:verify", {
         address: address, constructorArguments: args
+      })
+    } catch (e) {
+      console.log('error verify', e);
+    }
+  }
+
+  public static async verifyWithContractName(address: string, contractPath: string) {
+    try {
+      await hre.run("verify:verify", {
+        address: address, contract: contractPath
       })
     } catch (e) {
       console.log('error verify', e);

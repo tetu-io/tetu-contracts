@@ -31,8 +31,8 @@ describe("Notify Helper test", () => {
 
     core = await DeployerUtils.deployAllCoreContracts(signer);
     notifier = core.notifyHelper;
-    await core.mintHelper.startMinting();
-    await expect(MintHelperUtils.mint(core.mintHelper, "1000000"));
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', core.notifyHelper.address);
 
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
@@ -124,18 +124,18 @@ describe("Notify Helper test", () => {
   });
 
   it("check main stats", async () => {
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address)).is.eq("700000000000000000000000");
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("300000000000000000000000");
-    await Erc20Utils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, "300000000000000000000000");
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address)).is.eq("901000000000000000000000");
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1099000000000000000000000");
+    await Erc20Utils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, "1099000000000000000000000");
     expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("0");
-    await core.notifyHelper.moveFunds(core.rewardToken.address, signer.address);
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1000000000000000000000000");
+    // await core.notifyHelper.moveFunds(core.rewardToken.address, signer.address);
+    // expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1000000000000000000000000");
   });
 
-  it("should not move funds to zero address", async () => {
-    await expect(notifier.moveFunds(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS))
-    .rejectedWith('address is zero');
-  });
+  // it("should not move funds to zero address", async () => {
+  //   await expect(notifier.moveFunds(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS))
+  //   .rejectedWith('address is zero');
+  // });
 
   it("should not notify without balance", async () => {
     await expect(notifier.notifyVaults(['1'], [MaticAddresses.ZERO_ADDRESS], '1', MaticAddresses.USDC_TOKEN))
@@ -189,6 +189,14 @@ describe("Notify Helper test", () => {
         amount,
         rt)
     ).rejectedWith('Duplicate pool');
+  });
+
+  it("should move tokens", async () => {
+    const amount = utils.parseUnits('1000', 6);
+    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString());
+    await notifier.moveTokensToController(MaticAddresses.USDC_TOKEN, amount);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, core.controller.address))
+    .is.eq(amount);
   });
 
 });

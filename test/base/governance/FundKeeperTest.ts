@@ -47,18 +47,27 @@ describe("Fund Keeper tests", function () {
 
   it("salvage tokens", async () => {
     await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
-    const bal = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
 
-    await fundKeeper.salvage(MaticAddresses.WMATIC_TOKEN, '1000')
+    await core.announcer.announceTokenMove(13, core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000');
+    await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
+    await core.controller.fundKeeperTokenMove(core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000')
 
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address))
-    .is.eq(bal.add('1000'));
+    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address))
+    .is.eq('1000');
   });
 
   it("should not salvage more than balance", async () => {
     await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
 
-    await expect(fundKeeper.salvage(MaticAddresses.WMATIC_TOKEN, '1001')).rejectedWith('not enough balance');
+    const opCode = 13;
+    const amount = 1001;
+    const contract = core.fundKeeper.address;
+
+    await core.announcer.announceTokenMove(opCode, contract, MaticAddresses.WMATIC_TOKEN, amount);
+
+    await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
+
+    await expect(core.controller.fundKeeperTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount)).rejectedWith("not enough balance");
   });
 
 

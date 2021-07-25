@@ -9,20 +9,20 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 import "../base/strategies/NoopStrategy.sol";
 import "../base/interface/ISmartVault.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 contract MockStrategySelfFarm is StrategyBase {
+  using SafeERC20 for IERC20;
 
   string private _platform;
-
-  address[] private rewards;
   address[] private _assets;
 
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   string public constant STRATEGY_TYPE = "MockStrategy";
   uint256 private constant BUY_BACK_RATIO = 10000;
 
@@ -37,6 +37,8 @@ contract MockStrategySelfFarm is StrategyBase {
     string memory __platform,
     address[] memory __rewards
   ) StrategyBase(_controller, __underlying, _vault, __rewards, BUY_BACK_RATIO) {
+    require(_pool != address(0), "zero address");
+    require(__assets.length != 0, "empty assets");
     pool = _pool;
     _assets = __assets;
     _platform = __platform;
@@ -54,8 +56,8 @@ contract MockStrategySelfFarm is StrategyBase {
   }
 
   function depositToPool(uint256 amount) internal override {
-    IERC20(_underlyingToken).approve(pool, 0);
-    IERC20(_underlyingToken).approve(pool, amount);
+    IERC20(_underlyingToken).safeApprove(pool, 0);
+    IERC20(_underlyingToken).safeApprove(pool, amount);
     ISmartVault(pool).deposit(amount);
   }
 

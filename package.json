@@ -11,7 +11,8 @@
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
-    "coverage": "npm run build && npx cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" hardhat coverage --temp artifacts --max-memory 4096"
+    "coverage": "npm run build && npx cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" hardhat coverage --temp artifacts --max-memory 4096",
+    "slither": "npm run build && slither ."
   },
   "author": "TETU team",
   "license": "ISC",
@@ -21,9 +22,9 @@
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "3.4.0-solc-0.7",
-    "@openzeppelin/contracts-upgradeable": "3.4.0-solc-0.7-2",
-    "@openzeppelin/hardhat-upgrades": "1.8.2",
+    "@openzeppelin/contracts": "4.2.0",
+    "@openzeppelin/contracts-upgradeable": "4.2.0",
+    "@openzeppelin/hardhat-upgrades": "^1.9.0",
     "@tenderly/hardhat-tenderly": "^1.0.12",
     "@typechain/ethers-v5": "^7.0.0",
     "@typechain/hardhat": "^2.0.0",
@@ -40,16 +41,17 @@
     "ethers": "^5.2.0",
     "hardhat-contract-sizer": "^2.0.3",
     "hardhat-deploy": "^0.7.10",
+    "hardhat-etherscan-abi": "^0.1.1",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-tracer": "^1.0.0-alpha.6",
     "hardhat-typechain": "^0.3.5",
     "mocha": "^8.4.0",
+    "solc-0.8.4": "npm:solc@^0.8.4",
     "solidity-coverage": "^0.7.16",
     "ts-generator": "^0.1.1",
     "ts-node": "^10.0.0",
     "typechain": "^5.0.0",
-    "typescript": "^4.3.2",
-    "hardhat-etherscan-abi": "^0.1.1"
+    "typescript": "^4.3.2"
   },
   "dependencies": {
     "hardhat": "^2.3.0",

@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {Controller, NotifyHelper} from "../../../typechain";
+import {NotifyHelper} from "../../../typechain";
 
 
 async function main() {
@@ -8,9 +8,6 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
 
   const notifyHelper = await DeployerUtils.deployContract(signer, "NotifyHelper", core.controller) as NotifyHelper;
-
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  await controller.setNotifyHelper(notifyHelper.address);
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verifyWithArgs(notifyHelper.address, [core.controller]);

@@ -2,15 +2,31 @@
 
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {ContractReader} from "../../../typechain";
 import {writeFileSync} from "fs";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, true);
+  const net = (await ethers.provider.getNetwork()).name;
 
-  await writeFileSync('./infos.json', JSON.stringify(core), 'utf8');
+  let timeLock = 60 * 60 * 48;
+  if (net === 'rinkeby' || net === 'ropsten' || net === 'mumbai') {
+    timeLock = 1;
+  }
+
+  const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, timeLock, true);
+
+  await writeFileSync('./core_addresses.txt',
+      core.controller.address + ', // controller\n' +
+      core.announcer.address + ', // announcer\n' +
+      core.feeRewardForwarder.address + ', // feeRewardForwarder\n' +
+      core.bookkeeper.address + ', // bookkeeper\n' +
+      core.notifyHelper.address + ', // notifyHelper\n' +
+      core.mintHelper.address + ', // mintHelper\n' +
+      core.rewardToken.address + ', // rewardToken\n' +
+      core.psVault.address + ', // psVault\n' +
+      core.fundKeeper.address + ', // fundKeeper\n'
+      , 'utf8');
 
   await DeployerUtils.wait(5);
 
@@ -19,6 +35,12 @@ async function main() {
   await DeployerUtils.wait(1);
   await DeployerUtils.verifyWithArgs(core.controller.address, [core.controllerLogic]);
   await DeployerUtils.verifyProxy(core.controller.address);
+
+  // announcer
+  await DeployerUtils.verify(core.announcerLogic);
+  await DeployerUtils.wait(1);
+  await DeployerUtils.verifyWithArgs(core.announcer.address, [core.announcerLogic]);
+  await DeployerUtils.verifyProxy(core.announcer.address);
 
   // forwarder
   await DeployerUtils.verifyWithArgs(core.feeRewardForwarder.address, [core.controller.address]);
@@ -33,8 +55,10 @@ async function main() {
   await DeployerUtils.verifyWithArgs(core.notifyHelper.address, [core.controller.address]);
 
   // minter
-  await DeployerUtils.verifyWithArgs(core.mintHelper.address,
-      [core.controller.address, [signer.address], [3000]]);
+  await DeployerUtils.verify(core.mintHelperLogic);
+  await DeployerUtils.wait(1);
+  await DeployerUtils.verifyWithArgs(core.mintHelper.address, [core.mintHelperLogic]);
+  await DeployerUtils.verifyProxy(core.mintHelper.address);
 
   // reward token
   await DeployerUtils.verifyWithArgs(core.rewardToken.address, [core.mintHelper.address]);

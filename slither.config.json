@@ -1,0 +1,6 @@
+{
+  "detectors_to_exclude": "naming-convention,low-level-calls,assembly,reentrancy-events,reentrancy-benign,divide-before-multiply,reentrancy-eth,reentrancy-no-eth,reentrancy-unlimited-gas,incorrect-equality,costly-loop,timestamp,similar-names,too-many-digits,calls-loop",
+  "disable_color": true,
+  "filter_paths": "node_modules",
+  "ignore_compile": true
+}
