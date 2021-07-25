@@ -10,9 +10,12 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
-interface IGovernable {
+interface ITetuProxy {
 
-  function isGovernance(address _contract) external view returns (bool);
+  function upgrade(address _newImplementation) external;
+
+  function implementation() external returns (address);
+
 }

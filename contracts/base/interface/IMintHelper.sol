@@ -12,12 +12,10 @@
 
 pragma solidity 0.8.4;
 
-interface IUpgradeSource {
+interface IMintHelper {
 
-  function scheduleUpgrade(address impl) external;
+  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external;
 
-  function finalizeUpgrade() external;
-
-  function shouldUpgrade() external view returns (bool, address);
+  function operatingFundsList(uint256 idx) external returns (address);
 
 }

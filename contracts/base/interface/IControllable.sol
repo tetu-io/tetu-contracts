@@ -12,12 +12,9 @@
 
 pragma solidity 0.8.4;
 
-interface IUpgradeSource {
+interface IControllable {
 
-  function scheduleUpgrade(address impl) external;
+  function isController(address _contract) external view returns (bool);
 
-  function finalizeUpgrade() external;
-
-  function shouldUpgrade() external view returns (bool, address);
-
+  function isGovernance(address _contract) external view returns (bool);
 }

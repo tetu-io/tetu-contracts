@@ -10,14 +10,15 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/ISmartVault.sol";
 
-// Eternal storage + getters and setters pattern
-// If you will change a key value it will require setup it again
-// Implements IVault interface for reducing code base
+/// @title Eternal storage + getters and setters pattern
+/// @dev If you will change a key value it will require setup it again
+///      Implements IVault interface for reducing code base
+/// @author belbix
 abstract contract VaultStorage is Initializable, ISmartVault {
 
   // don't change names or ordering!
@@ -25,17 +26,15 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   mapping(bytes32 => address) private addressStorage;
   mapping(bytes32 => bool) private boolStorage;
 
-  event UpdatedBoolSlot(string name, bool oldValue, bool newValue);
-  event UpdatedAddressSlot(string name, address oldValue, address newValue);
-  event UpdatedUint256Slot(string name, uint256 oldValue, uint256 newValue);
+  event UpdatedBoolSlot(string indexed name, bool oldValue, bool newValue);
+  event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
+  event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
   function initializeVaultStorage(
     address _underlyingToken,
     uint256 _durationValue
   ) public initializer {
     _setUnderlying(_underlyingToken);
-    _setStrategyUpdateTime(0);
-    _setFutureStrategy(address(0));
     _setDuration(_durationValue);
     _setActive(true);
   }
@@ -58,42 +57,6 @@ abstract contract VaultStorage is Initializable, ISmartVault {
 
   function underlying() public view override returns (address) {
     return getAddress("underlying");
-  }
-
-  function _setNextImplementation(address _address) internal {
-    emit UpdatedAddressSlot("nextImplementation", nextImplementation(), _address);
-    setAddress("nextImplementation", _address);
-  }
-
-  function nextImplementation() public view override returns (address) {
-    return getAddress("nextImplementation");
-  }
-
-  function _setNextImplementationTimestamp(uint256 _value) internal {
-    emit UpdatedUint256Slot("nextImplementationTimestamp", nextImplementationTimestamp(), _value);
-    setUint256("nextImplementationTimestamp", _value);
-  }
-
-  function nextImplementationTimestamp() public view override returns (uint256) {
-    return getUint256("nextImplementationTimestamp");
-  }
-
-  function _setFutureStrategy(address _value) internal {
-    emit UpdatedAddressSlot("futureStrategy", futureStrategy(), _value);
-    setAddress("futureStrategy", _value);
-  }
-
-  function futureStrategy() public view override returns (address) {
-    return getAddress("futureStrategy");
-  }
-
-  function _setStrategyUpdateTime(uint256 _value) internal {
-    emit UpdatedUint256Slot("strategyUpdateTime", strategyUpdateTime(), _value);
-    setUint256("strategyUpdateTime", _value);
-  }
-
-  function strategyUpdateTime() public view override returns (uint256) {
-    return getUint256("strategyUpdateTime");
   }
 
   function _setDuration(uint256 _value) internal {
@@ -140,5 +103,6 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return uintStorage[keccak256(abi.encodePacked(key))];
   }
 
+  //slither-disable-next-line unused-state
   uint256[50] private ______gap;
 }

@@ -12,12 +12,8 @@
 
 pragma solidity 0.8.4;
 
-interface IUpgradeSource {
+interface IFundKeeper {
 
-  function scheduleUpgrade(address impl) external;
-
-  function finalizeUpgrade() external;
-
-  function shouldUpgrade() external view returns (bool, address);
+  function withdrawToController(address _token, uint256 amount) external;
 
 }

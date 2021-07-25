@@ -10,36 +10,38 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/math/Math.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IMiniChefV2.sol";
 import "../StrategyBase.sol";
 
+/// @title Abstract contract for MasterChef strategy implementation
+/// @author belbix
 abstract contract MCv2StrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
   string public constant STRATEGY_TYPE = "mcv2StrategyFullBuyback";
-  string public constant VERSION = "0";
+  string public constant VERSION = "1.0.0";
   uint256 private constant BUY_BACK_RATIO = 10000; // for non full buyback need to implement liquidation
 
-  // masterchef rewards pool
+  /// @notice MasterChef rewards pool
   address public mcRewardPool;
-  // masterchef rewards pool ID
+  /// @notice MasterChef rewards pool ID
   uint256 public poolID;
 
   constructor(
     address _storage,
     address _underlying,
     address _vault,
-    address[] memory _rewardTokens,
+    address[] memory __rewardTokens,
     address _mcRewardPool,
     uint256 _poolID
-  ) StrategyBase(_storage, _underlying, _vault, _rewardTokens, BUY_BACK_RATIO) {
+  ) StrategyBase(_storage, _underlying, _vault, __rewardTokens, BUY_BACK_RATIO) {
     require(_mcRewardPool != address(0), "zero address pool");
     mcRewardPool = _mcRewardPool;
     poolID = _poolID;
@@ -73,7 +75,7 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     }
 
     uint256 accumulatedSushi = bal * accSushiPerShare / 1e12;
-    if (accumulatedSushi - debt < 0) {
+    if (accumulatedSushi < debt) {
       toClaim[0] = 0;
     } else {
       toClaim[0] = accumulatedSushi - debt;
@@ -141,7 +143,7 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     (uint256 bal, uint256 debt) = IMiniChefV2(mcRewardPool).userInfo(poolID, address(this));
     (uint256 accSushiPerShare, ,) = IMiniChefV2(mcRewardPool).poolInfo(poolID);
     uint256 accumulatedSushi = bal * accSushiPerShare / 1e12;
-    if (accumulatedSushi - debt < 0) {
+    if (accumulatedSushi < debt) {
       // sushi has a bug with rounding, in some cases we can't withdrawAndHarvest
       IMiniChefV2(mcRewardPool).emergencyWithdraw(poolID, address(this));
     } else {
