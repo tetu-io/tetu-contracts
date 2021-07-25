@@ -183,14 +183,14 @@ contract Announcer is Controllable, IAnnouncer {
     emit RatioChangeAnnounced(opCode, numerator, denominator);
   }
 
-  /// @notice Only Governance can do it. Announce token salvage. You will able to salvage after Time-lock period
+  /// @notice Only Governance can do it. Announce token movement. You will able to transfer after Time-lock period
   /// @param opCode Operation code from the list
-  ///                 11 - ControllerSalvage
-  ///                 12 - StrategySalvage
-  ///                 13 - FundSalvage
+  ///                 11 - ControllerTokenMove
+  ///                 12 - StrategyTokenMove
+  ///                 13 - FundTokenMove
   /// @param target Target address
-  /// @param token Token that you want to salvage
-  /// @param amount Amount that you want to salvage
+  /// @param token Token that you want to move
+  /// @param amount Amount that you want to move
   function announceTokenMove(TimeLockOpCodes opCode, address target, address token, uint256 amount)
   external onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
@@ -306,7 +306,7 @@ contract Announcer is Controllable, IAnnouncer {
   /// @notice Only controller can use it. Clear announce after successful call time-locked function
   /// @param opHash Generated keccak256 opHash
   /// @param opCode TimeLockOpCodes uint8 value
-  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyController {
+  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControllerOrGovernance {
     timeLockSchedule[opHash] = 0;
     uint256 idx = 0;
     if (multiOpCodes[opCode]) {

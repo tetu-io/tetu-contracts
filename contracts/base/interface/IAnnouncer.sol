@@ -30,9 +30,9 @@ interface IAnnouncer {
     PsRatio, // 9
     FundRatio, // 10
     // TimeLockedTokenMoves
-    ControllerSalvage, // 11
-    StrategySalvage, // 12
-    FundSalvage, // 13
+    ControllerTokenMove, // 11
+    StrategyTokenMove, // 12
+    FundTokenMove, // 13
     // Other
     TetuProxyUpdate, // 14
     StrategyUpgrade, // 15

@@ -66,11 +66,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Vault and Strategy pair registered
   event VaultAndStrategyAdded(address vault, address strategy);
   /// @notice Tokens moved from Controller contract to Governance
-  event Salvaged(address indexed token, uint256 amount);
+  event ControllerTokenMoved(address indexed token, uint256 amount);
   /// @notice Tokens moved from Strategy contract to Governance
-  event SalvagedStrategy(address indexed strategy, address indexed token, uint256 amount);
+  event StrategyTokenMoved(address indexed strategy, address indexed token, uint256 amount);
   /// @notice Tokens moved from Fund contract to Controller
-  event SalvagedFund(address indexed fund, address indexed token, uint256 amount);
+  event FundKeeperTokenMoved(address indexed fund, address indexed token, uint256 amount);
   /// @notice DoHardWork completed and PricePerFullShare changed
   event SharePriceChangeLog(
     address indexed vault,
@@ -372,25 +372,25 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Only Governance can do it. Transfer token from this contract to governance address
   /// @param _token Token address
   /// @param _amount Token amount
-  function salvage(address _token, uint256 _amount) external
+  function controllerTokenMove(address _token, uint256 _amount) external
   onlyGovernance timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.ControllerSalvage, address(this), _token, _amount)),
-    IAnnouncer.TimeLockOpCodes.ControllerSalvage,
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.ControllerTokenMove, address(this), _token, _amount)),
+    IAnnouncer.TimeLockOpCodes.ControllerTokenMove,
     false,
     address(0)
   ) {
     IERC20(_token).safeTransfer(governance(), _amount);
-    emit Salvaged(_token, _amount);
+    emit ControllerTokenMoved(_token, _amount);
   }
 
   /// @notice Only Governance can do it. Transfer token from strategy to governance address
   /// @param _strategy Strategy address
   /// @param _token Token address
   /// @param _amount Token amount
-  function salvageStrategy(address _strategy, address _token, uint256 _amount) external
+  function strategyTokenMove(address _strategy, address _token, uint256 _amount) external
   onlyGovernance timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategySalvage, _strategy, _token, _amount)),
-    IAnnouncer.TimeLockOpCodes.StrategySalvage,
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyTokenMove, _strategy, _token, _amount)),
+    IAnnouncer.TimeLockOpCodes.StrategyTokenMove,
     false,
     address(0)
   ) {
@@ -398,22 +398,22 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     // salvagable tokens, to make sure that governance cannot come
     // in and take away the coins
     IStrategy(_strategy).salvage(governance(), _token, _amount);
-    emit SalvagedStrategy(_strategy, _token, _amount);
+    emit StrategyTokenMoved(_strategy, _token, _amount);
   }
 
   /// @notice Only Governance can do it. Transfer token from FundKeeper to controller
   /// @param _fund FundKeeper address
   /// @param _token Token address
   /// @param _amount Token amount
-  function salvageFund(address _fund, address _token, uint256 _amount) external
+  function fundKeeperTokenMove(address _fund, address _token, uint256 _amount) external
   onlyGovernance timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundSalvage, _fund, _token, _amount)),
-    IAnnouncer.TimeLockOpCodes.FundSalvage,
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundTokenMove, _fund, _token, _amount)),
+    IAnnouncer.TimeLockOpCodes.FundTokenMove,
     false,
     address(0)
   ) {
-    IFundKeeper(_fund).salvageToController(_token, _amount);
-    emit SalvagedFund(_fund, _token, _amount);
+    IFundKeeper(_fund).withdrawToController(_token, _amount);
+    emit FundKeeperTokenMoved(_fund, _token, _amount);
   }
 
   // ---------------- NO TIME_LOCK --------------------------
@@ -485,21 +485,19 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Add reward token for given vaults
   /// @param _vaults Vault addresses
-  /// @param _rts Reward tokens
-  function addRewardTokens(address[] calldata _vaults, address[] calldata _rts) external onlyGovernance {
-    require(_vaults.length == _rts.length, "wrong arrays");
+  /// @param _rt Reward token
+  function addRewardTokens(address[] calldata _vaults, address _rt) external onlyGovernance {
     for (uint256 i = 0; i < _vaults.length; i++) {
-      ISmartVault(_vaults[i]).addRewardToken(_rts[i]);
+      ISmartVault(_vaults[i]).addRewardToken(_rt);
     }
   }
 
   /// @notice Only Governance can do it. Remove reward token for given vaults
   /// @param _vaults Vault addresses
-  /// @param _rts Reward tokens
-  function removeRewardTokens(address[] calldata _vaults, address[] calldata _rts) external onlyGovernance {
-    require(_vaults.length == _rts.length, "wrong arrays");
+  /// @param _rt Reward token
+  function removeRewardTokens(address[] calldata _vaults, address _rt) external onlyGovernance {
     for (uint256 i = 0; i < _vaults.length; i++) {
-      ISmartVault(_vaults[i]).removeRewardToken(_rts[i]);
+      ISmartVault(_vaults[i]).removeRewardToken(_rt);
     }
   }
 

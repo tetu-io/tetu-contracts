@@ -48,6 +48,33 @@ describe("Announcer tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
+  it("should close announce", async () => {
+    const opCode = 9;
+    const num = 7;
+    const den = 56;
+
+    await announcer.announceAddressChange(0, signer1.address);
+    await announcer.announceRatioChange(opCode, num, den);
+    await announcer.announceAddressChange(1, signer1.address);
+
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(2);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(core.controller.address);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(2);
+    expect(info.numValues[0]).is.eq(num);
+    expect(info.numValues[1]).is.eq(den);
+
+    const opHash = web3.utils.keccak256(web3.utils.encodePacked(opCode, num, den) as string);
+    expect(await announcer.timeLockSchedule(opHash)).is.not.eq(0);
+
+    await announcer.closeAnnounce(opCode, opHash, MaticAddresses.ZERO_ADDRESS);
+    expect(await announcer.timeLockIndexes(opCode)).is.eq(0);
+    expect(await announcer.timeLockSchedule(opHash)).is.eq(0);
+  });
+
   it("should change gov with time-lock", async () => {
     const opCode = 0;
     await announcer.announceAddressChange(opCode, signer1.address);
@@ -309,7 +336,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.salvage(MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.controllerTokenMove(MaticAddresses.WMATIC_TOKEN, amount);
 
     const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const balControllerAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
@@ -342,7 +369,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.salvageStrategy(contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.strategyTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount);
 
     const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const balContractAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
@@ -375,7 +402,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.salvageFund(contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.fundKeeperTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount);
 
     const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
     const balContractAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);

@@ -50,7 +50,7 @@ describe("Fund Keeper tests", function () {
 
     await core.announcer.announceTokenMove(13, core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000');
     await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
-    await core.controller.salvageFund(core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000')
+    await core.controller.fundKeeperTokenMove(core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000')
 
     expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address))
     .is.eq('1000');
@@ -67,7 +67,7 @@ describe("Fund Keeper tests", function () {
 
     await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
 
-    await expect(core.controller.salvageFund(contract, MaticAddresses.WMATIC_TOKEN, amount)).rejectedWith("not enough balance");
+    await expect(core.controller.fundKeeperTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount)).rejectedWith("not enough balance");
   });
 
 

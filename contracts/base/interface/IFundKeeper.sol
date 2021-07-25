@@ -14,6 +14,6 @@ pragma solidity 0.8.4;
 
 interface IFundKeeper {
 
-  function salvageToController(address _token, uint256 amount) external;
+  function withdrawToController(address _token, uint256 amount) external;
 
 }

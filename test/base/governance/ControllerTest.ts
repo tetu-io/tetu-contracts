@@ -7,8 +7,6 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
-import {Erc20Utils} from "../../Erc20Utils";
-import {utils} from "ethers";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 
 const {expect} = chai;
@@ -135,7 +133,7 @@ describe("Controller tests", function () {
   // });
 
   it("should not salvage", async () => {
-    await expect(controller.connect(signer1).salvage(MaticAddresses.USDC_TOKEN, 100))
+    await expect(controller.connect(signer1).controllerTokenMove(MaticAddresses.USDC_TOKEN, 100))
     .to.be.rejectedWith("not governance");
   });
   it("created", async () => {
@@ -217,6 +215,20 @@ describe("Controller tests", function () {
 
   it("should not doHardWork for wrong vault", async () => {
     await expect(controller.doHardWork(MaticAddresses.ZERO_ADDRESS)).rejectedWith('not vault');
+  });
+
+  it("should change vault statuses", async () => {
+    await controller.changeVaultsStatuses([core.psVault.address], [false]);
+    expect(await core.psVault.active()).is.false;
+  });
+
+  it("should change reward tokens", async () => {
+    expect((await core.psVault.rewardTokens()).length).is.eq(0);
+    await controller.addRewardTokens([core.psVault.address], MaticAddresses.WMATIC_TOKEN);
+    await controller.addRewardTokens([core.psVault.address], MaticAddresses.USDC_TOKEN);
+    expect((await core.psVault.rewardTokens())[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    await controller.removeRewardTokens([core.psVault.address], MaticAddresses.WMATIC_TOKEN);
+    expect((await core.psVault.rewardTokens()).length).is.eq(1);
   });
 
 });
