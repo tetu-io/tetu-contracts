@@ -14,24 +14,24 @@ pragma solidity 0.8.4;
 
 import "../../../base/strategies/masterchef-base/WaultStrategyFullBuyback.sol";
 
-contract StrategyWault_WEXpoly is WaultStrategyFullBuyback {
+contract StrategyWaultSingle is WaultStrategyFullBuyback {
 
-  // WEXpoly
-  address private constant _UNDERLYING = address(0x4c4BF319237D98a30A929A96112EfFa8DA3510EB);
-  // WexPolyMaster
   address public constant WEX_POLY_MASTER = address(0xC8Bd86E5a132Ac0bf10134e270De06A8Ba317BFe);
   string private constant _PLATFORM = "WAULT";
   // rewards
   address private constant WEXpoly = address(0x4c4BF319237D98a30A929A96112EfFa8DA3510EB);
   address[] private poolRewards = [WEXpoly];
-  address[] private _assets = [_UNDERLYING];
+  address[] private _assets;
 
   constructor(
     address _controller,
-    address _vault
-  ) WaultStrategyFullBuyback(_controller, _UNDERLYING, _vault, poolRewards, WEX_POLY_MASTER, 1) {
+    address _vault,
+    address _underlying,
+    uint256 _poolId
+  ) WaultStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, WEX_POLY_MASTER, _poolId) {
+    require(_underlying != address(0), "zero underlying");
+    _assets.push(_underlying);
   }
-
 
   function platform() external override pure returns (string memory) {
     return _PLATFORM;

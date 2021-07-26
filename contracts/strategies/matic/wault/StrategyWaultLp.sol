@@ -13,15 +13,9 @@ pragma solidity 0.8.4;
 
 
 import "../../../base/strategies/masterchef-base/WaultStrategyFullBuyback.sol";
+import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 
-contract StrategyWault_WMATIC_WEXpoly is WaultStrategyFullBuyback {
-
-  // WAULT_WMATIC_WEXpoly
-  address private constant _UNDERLYING = address(0xC46991072C7eAC184F7bd69d3122cd1750300b27);
-  // WMATIC
-  address private constant TOKEN0 = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
-  // WEXpoly
-  address private constant TOKEN1 = address(0x4c4BF319237D98a30A929A96112EfFa8DA3510EB);
+contract StrategyWaultLp is WaultStrategyFullBuyback {
 
   // WexPolyMaster
   address public constant WEX_POLY_MASTER = address(0xC8Bd86E5a132Ac0bf10134e270De06A8Ba317BFe);
@@ -29,12 +23,28 @@ contract StrategyWault_WMATIC_WEXpoly is WaultStrategyFullBuyback {
   // rewards
   address private constant WEXpoly = address(0x4c4BF319237D98a30A929A96112EfFa8DA3510EB);
   address[] private poolRewards = [WEXpoly];
-  address[] private _assets = [TOKEN0, TOKEN1];
+  address[] private _assets;
 
   constructor(
     address _controller,
-    address _vault
-  ) WaultStrategyFullBuyback(_controller, _UNDERLYING, _vault, poolRewards, WEX_POLY_MASTER, 2) {
+    address _vault,
+    address _underlying,
+    address _token0,
+    address _token1,
+    uint256 _poolId
+  ) WaultStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, WEX_POLY_MASTER, _poolId) {
+    require(_underlying != address(0), "zero underlying");
+    require(_token0 != address(0), "zero token0");
+    require(_token1 != address(0), "zero token1");
+    require(_token0 != _token1, "same tokens");
+
+    _assets.push(_token0);
+    _assets.push(_token1);
+
+    address token0 = IUniswapV2Pair(_underlying).token0();
+    address token1 = IUniswapV2Pair(_underlying).token1();
+    require(_token0 == token0 || _token0 == token1, "wrong token0");
+    require(_token1 == token0 || _token1 == token1, "wrong token1");
   }
 
 

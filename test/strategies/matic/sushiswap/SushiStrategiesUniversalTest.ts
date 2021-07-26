@@ -17,23 +17,35 @@ describe('Universal Sushi tests', async () => {
 
   infos.forEach(info => {
     const strat = info.split(',');
-    if (+strat[7] <= 0 || strat[0] === 'idx') {
-      console.log('skip', strat[0]);
+
+    const idx = strat[0];
+    const lp_name = strat[1];
+    const lp_address = strat[2];
+    const token0 = strat[3];
+    const token0_name = strat[4];
+    const token1 = strat[5];
+    const token1_name = strat[6];
+    const alloc = strat[7];
+
+    if (+alloc <= 0 || idx === 'idx') {
+      console.log('skip', idx);
       return;
     }
     if (Settings.onlyOneSushiStrategyTest && +strat[0] !== Settings.onlyOneSushiStrategyTest) {
       return;
     }
 
-    console.log('strat', strat[0], strat[1]);
-    const strategyName = 'StrategySushi_' + strat[4] + '_' + strat[6];
+    console.log('strat', idx, lp_name);
 
     startDefaultLpStrategyTest(
-        strategyName,
+        'StrategySushiSwapLp',
         MaticAddresses.SUSHI_FACTORY,
-        strat[2].toLowerCase(),
-        strat[3],
-        strat[5],
+        lp_address.toLowerCase(),
+        token0,
+        token0_name,
+        token1,
+        token1_name,
+        idx,
         [MaticAddresses.SUSHI_TOKEN, MaticAddresses.WMATIC_TOKEN]
     );
   });

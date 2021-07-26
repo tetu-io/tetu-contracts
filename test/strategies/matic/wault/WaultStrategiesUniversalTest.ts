@@ -18,31 +18,47 @@ describe('Universal Wault tests', async () => {
 
   infos.forEach(info => {
     const strat = info.split(',');
-    if (+strat[7] <= 0 || strat[0] === 'idx' || strat[0] === '0') {
-      console.log('skip', strat[0]);
+
+    const idx = strat[0];
+    const lp_name = strat[1];
+    const lp_address = strat[2];
+    const token0 = strat[3];
+    const token0_name = strat[4];
+    const token1 = strat[5];
+    const token1_name = strat[6];
+    const alloc = strat[7];
+
+    if (+alloc <= 0 || idx === 'idx' || idx === '0') {
+      console.log('skip', idx);
       return;
     }
     if (Settings.onlyOneWaultStrategyTest && +strat[0] !== Settings.onlyOneWaultStrategyTest) {
       return;
     }
 
-    console.log('strat', strat[0], strat[1]);
-    const strategyName = 'StrategyWault_' + strat[4] + (strat[6] ? '_' + strat[6] : '');
+    console.log('strat', idx, lp_name);
 
-    if(strat[6]) {
+
+    if (strat[6]) {
       startDefaultLpStrategyTest(
-          strategyName,
+          'StrategyWaultLp',
           MaticAddresses.WAULT_FACTORY,
-          strat[2].toLowerCase(),
-          strat[3],
-          strat[5],
+          lp_address.toLowerCase(),
+          token0,
+          token0_name,
+          token1,
+          token1_name,
+          idx,
           [MaticAddresses.WEXpoly_TOKEN]
       );
     } else {
       startDefaultSingleTokenStrategyTest(
-          strategyName,
+          'StrategyWaultSingle',
           MaticAddresses.WAULT_FACTORY,
-          strat[2].toLowerCase(),
+          lp_address.toLowerCase(),
+          token0,
+          token0_name,
+          idx,
           [MaticAddresses.WEXpoly_TOKEN]
       );
     }

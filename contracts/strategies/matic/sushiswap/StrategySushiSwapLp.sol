@@ -13,15 +13,9 @@ pragma solidity 0.8.4;
 
 
 import "../../../base/strategies/masterchef-base/MCv2StrategyFullBuyback.sol";
+import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 
-contract StrategySushi_USDC_WETH is MCv2StrategyFullBuyback {
-
-  // SUSHI_USDC_WETH
-  address private constant _UNDERLYING = address(0x34965ba0ac2451A34a0471F04CCa3F990b8dea27);
-  // USDC
-  address private constant TOKEN0 = address(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
-// WETH
-  address private constant TOKEN1 = address(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619);
+contract StrategySushiSwapLp is MCv2StrategyFullBuyback {
 
   // SUSHI_MASTER_CHEF
   address public constant _MASTER_CHEF_REWARD_POOL = address(0x0769fd68dFb93167989C6f7254cd0D766Fb2841F);
@@ -30,12 +24,28 @@ contract StrategySushi_USDC_WETH is MCv2StrategyFullBuyback {
   address private constant SUSHI = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
   address[] private sushiPoolRewards = [SUSHI, WMATIC];
-  address[] private _assets = [TOKEN0, TOKEN1];
+  address[] private _assets;
 
   constructor(
     address _controller,
-    address _vault
-  ) MCv2StrategyFullBuyback(_controller, _UNDERLYING, _vault, sushiPoolRewards, _MASTER_CHEF_REWARD_POOL, 1) {
+    address _vault,
+    address _underlying,
+    address _token0,
+    address _token1,
+    uint256 _poolId
+  ) MCv2StrategyFullBuyback(_controller, _underlying, _vault, sushiPoolRewards, _MASTER_CHEF_REWARD_POOL, _poolId) {
+    require(_underlying != address(0), "zero underlying");
+    require(_token0 != address(0), "zero token0");
+    require(_token1 != address(0), "zero token1");
+    require(_token0 != _token1, "same tokens");
+
+    _assets.push(_token0);
+    _assets.push(_token1);
+
+    address token0 = IUniswapV2Pair(_underlying).token0();
+    address token1 = IUniswapV2Pair(_underlying).token1();
+    require(_token0 == token0 || _token0 == token1, "wrong token0");
+    require(_token1 == token0 || _token1 == token1, "wrong token1");
   }
 
 

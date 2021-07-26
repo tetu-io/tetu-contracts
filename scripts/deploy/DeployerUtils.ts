@@ -34,6 +34,8 @@ const hre = require("hardhat");
 
 export class DeployerUtils {
 
+  // ************ CONTRACT CONNECTION **************************
+
   public static async connectContract<T extends ContractFactory>(
       signer: SignerWithAddress,
       name: string,
@@ -68,6 +70,8 @@ export class DeployerUtils {
     const logic = await DeployerUtils.connectContract(signer, name, logicAddress);
     return logic.attach(proxy.address);
   }
+
+  // ************ CONTRACT DEPLOY **************************
 
   public static async deployContract<T extends ContractFactory>(
       signer: SignerWithAddress,
@@ -294,7 +298,7 @@ export class DeployerUtils {
 
   public static async deployAndInitVaultAndStrategy<T>(
       vaultName: string,
-      strategyName: string,
+      strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
       controller: Controller,
       vaultRewardToken: string,
       signer: SignerWithAddress,
@@ -304,13 +308,12 @@ export class DeployerUtils {
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
-    const strategy = await DeployerUtils.deployContract(signer, strategyName,
-        controller.address, vault.address) as IStrategy;
+    const strategy = await strategyDeployer(vault.address);
 
     const strategyUnderlying = await strategy.underlying();
 
     await vault.initializeSmartVault(
-        "V_" + vaultName,
+        "TETU_" + vaultName,
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
@@ -320,40 +323,10 @@ export class DeployerUtils {
 
     await controller.addVaultAndStrategy(vault.address, strategy.address);
 
-    // await DeployerUtils.wait(1);
-    // expect(await vault.underlying()).is.eq(strategyUnderlying);
-
     return [vaultLogic, vault, strategy];
   }
 
-  public static async newStratDeploy(
-      signer: SignerWithAddress,
-      vaultName: string,
-      strategyName: string
-  ) {
-    const core = await DeployerUtils.getCoreAddresses();
-
-    const controller = await DeployerUtils.connectContract(
-        signer, 'Controller', core.controller) as Controller;
-
-    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        vaultName,
-        strategyName,
-        controller,
-        core.psVault,
-        signer
-    );
-
-    const vaultLogic = data[0];
-    const vaultProxy = data[1];
-    const strategy = data[2];
-
-    await DeployerUtils.wait(5);
-    await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
-    await DeployerUtils.verifyProxy(vaultProxy.address);
-    await DeployerUtils.verifyWithArgs(strategy.address, [core.controller, core.psVault]);
-  }
+  // ************** VERIFY **********************
 
   public static async verify(address: string) {
     try {
@@ -362,6 +335,62 @@ export class DeployerUtils {
       })
     } catch (e) {
       console.log('error verify', e);
+    }
+  }
+
+  public static async verifyWithArgs(address: string, args: any[]) {
+    try {
+      await hre.run("verify:verify", {
+        address: address, constructorArguments: args
+      })
+    } catch (e) {
+      console.log('error verify', e);
+    }
+  }
+
+  public static async verifyWithContractName(address: string, contractPath: string) {
+    try {
+      await hre.run("verify:verify", {
+        address: address, contract: contractPath
+      })
+    } catch (e) {
+      console.log('error verify', e);
+    }
+  }
+
+
+  public static async verifyProxy(adr: string) {
+    try {
+
+      // const resp =
+      await axios.post(
+          (await DeployerUtils.getNetworkScanUrl()) +
+          `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
+          `address=${adr}`);
+      // console.log("proxy verify resp", resp);
+    } catch (e) {
+      console.log('error proxy verify', adr, e);
+    }
+  }
+
+  // ************** ADDRESSES **********************
+
+  public static async getNetworkScanUrl(): Promise<string> {
+    const net = (await ethers.provider.getNetwork());
+    if (net.name === 'ropsten') {
+      return 'https://api-ropsten.etherscan.io/api';
+    } else if (net.name === 'kovan') {
+      return 'https://api-kovan.etherscan.io/api';
+    } else if (net.name === 'rinkeby') {
+      return 'https://api-rinkeby.etherscan.io/api';
+    } else if (net.name === 'ethereum') {
+      return 'https://api.etherscan.io/api';
+    } else if (net.name === 'matic') {
+      return 'https://api.polygonscan.com/api'
+    } else if (net.chainId === 80001) {
+      return 'https://api-testnet.polygonscan.com/api'
+    } else {
+      throw Error('network not found ' + net);
     }
   }
 
@@ -395,24 +424,10 @@ export class DeployerUtils {
     return mocks;
   }
 
-  public static async verifyWithArgs(address: string, args: any[]) {
-    try {
-      await hre.run("verify:verify", {
-        address: address, constructorArguments: args
-      })
-    } catch (e) {
-      console.log('error verify', e);
-    }
-  }
+  // ****************** WAIT ******************
 
-  public static async verifyWithContractName(address: string, contractPath: string) {
-    try {
-      await hre.run("verify:verify", {
-        address: address, contract: contractPath
-      })
-    } catch (e) {
-      console.log('error verify', e);
-    }
+  public static delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   public static async wait(blocks: number) {
@@ -426,41 +441,5 @@ export class DeployerUtils {
     }
   }
 
-  public static delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  public static async verifyProxy(adr: string) {
-    try {
-
-      // const resp =
-      await axios.post(
-          (await DeployerUtils.getNetworkScanUrl()) +
-          `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
-          `address=${adr}`);
-      // console.log("proxy verify resp", resp);
-    } catch (e) {
-      console.log('error proxy verify', adr, e);
-    }
-  }
-
-  public static async getNetworkScanUrl(): Promise<string> {
-    const net = (await ethers.provider.getNetwork());
-    if (net.name === 'ropsten') {
-      return 'https://api-ropsten.etherscan.io/api';
-    } else if (net.name === 'kovan') {
-      return 'https://api-kovan.etherscan.io/api';
-    } else if (net.name === 'rinkeby') {
-      return 'https://api-rinkeby.etherscan.io/api';
-    } else if (net.name === 'ethereum') {
-      return 'https://api.etherscan.io/api';
-    } else if (net.name === 'matic') {
-      return 'https://api.polygonscan.com/api'
-    } else if (net.chainId === 80001) {
-      return 'https://api-testnet.polygonscan.com/api'
-    } else {
-      throw Error('network not found ' + net);
-    }
-  }
 
 }
