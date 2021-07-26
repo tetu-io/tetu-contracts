@@ -208,6 +208,9 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   //************************* INTERNAL **************************
 
+  /// @dev Sell given token for FunTOken and send to FundKeeper
+  /// @param _token Token address
+  /// @param _amount Token amount
   function sendToFund(address _token, uint256 _amount) internal {
     require(fundToken() != address(0), "fund token is zero");
     require(fund() != address(0), "fund is zero");
@@ -223,12 +226,20 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     emit FeeMovedToFund(fund(), fundToken(), amountToSend);
   }
 
+  /// @dev Compute amount for FundKeeper based on Fund ratio from Controller
+  /// @param _amount 100% Amount
+  /// @return Percent of total amount
   function toFundAmount(uint256 _amount) internal view returns (uint256) {
     uint256 fundNumerator = IController(controller()).fundNumerator();
     uint256 fundDenominator = IController(controller()).fundDenominator();
     return _amount.mul(fundNumerator).div(fundDenominator);
   }
 
+  /// @dev Sell given token for given Target token (TETU or Fund token)
+  /// @param _token Token for liquidation
+  /// @param _amount Amount for liquidation
+  /// @param _targetToken Target token (TETU or Fund token)
+  /// @return Target token balance after liquidation
   function liquidateTokenForTargetToken(address _token, uint256 _amount, address _targetToken)
   internal returns (uint256) {
     if (_token == _targetToken) {
@@ -254,6 +265,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     return 0;
   }
 
+  /// @dev Choose liquidation path for `_from` token to `_targetToken` and make swap
+  /// @param _from Start token
+  /// @param balanceToSwap Amount for swapping
+  /// @param _targetToken Final destination for swap
   function liquidate(address _from, uint256 balanceToSwap, address _targetToken) internal {
     if (balanceToSwap > 0) {
       address router = routers[_from][_targetToken][0];
@@ -261,6 +276,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     }
   }
 
+  /// @dev Choose liquidation path for `_from` token to `_targetToken` and make swap for each router
+  /// @param _from Start token
+  /// @param balanceToSwap Amount for swapping
+  /// @param _targetToken Final destination for swap
   function liquidateMultiRouter(address _from, uint256 balanceToSwap, address _targetToken) internal {
     if (balanceToSwap > 0) {
       address[] memory _routers = routers[_from][_targetToken];
@@ -279,6 +298,9 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
   ///      this function can get INSUFFICIENT_INPUT_AMOUNT if we have too low amount of reward
   ///      it is fine and should rollback the doHardWork call
+  /// @param _router Uniswap router address
+  /// @param _route Path for swap
+  /// @param _amount Amount for swap
   function swap(address _router, address[] memory _route, uint256 _amount) internal {
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
