@@ -23,18 +23,24 @@ import "../interface/IFundKeeper.sol";
 contract FundKeeper is Controllable, IFundKeeper {
   using SafeERC20 for IERC20;
 
-  event Salvage(address indexed token, uint256 amount);
+  /// @notice Governance moved token to Controller
+  event TokenWithdrawn(address indexed token, uint256 amount);
 
+  /// @notice Initialize contract after setup it as proxy implementation
+  /// @dev Use it only once after first logic setup
+  /// @param _controller Controller address
   function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
   }
 
   /// @notice Move tokens to controller where money will be protected with time lock
+  /// @param _token Token address
+  /// @param amount Token amount
   function withdrawToController(address _token, uint256 amount) external override onlyController {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
     IERC20(_token).safeTransfer(controller(), amount);
-    emit Salvage(_token, amount);
+    emit TokenWithdrawn(_token, amount);
   }
 
 }

@@ -25,15 +25,6 @@ abstract contract StrategyBase is IStrategy, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  // *********************** EVENTS *******************
-  event DistributeLog(
-    address indexed token,
-    uint256 profitAmount,
-    uint256 toPsAmount,
-    uint256 toVaultAmount,
-    uint256 timestamp)
-  ;
-
   //************************ VARIABLES **************************
   address internal _underlyingToken;
   address internal _smartVault;
@@ -47,6 +38,8 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   //************************ MODIFIERS **************************
 
+  /// @dev Only for linked Vault or Governance/Controller.
+  ///      Use for functions that should have strict access.
   modifier restricted() {
     require(msg.sender == _smartVault
     || msg.sender == address(controller())
@@ -62,6 +55,12 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _;
   }
 
+  /// @notice Contract constructor using on Base Strategy implementation
+  /// @param _controller Controller address
+  /// @param _underlying Underlying token address
+  /// @param _vault SmartVault address that will provide liquidity
+  /// @param __rewardTokens Reward tokens that the strategy will farm
+  /// @param _bbRatio Buy back ratio
   constructor(
     address _controller,
     address _underlying,
@@ -75,6 +74,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _rewardTokens = __rewardTokens;
     _buyBackRatio = _bbRatio;
 
+    // prohibit the movement of tokens that are used in the main logic
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       _unsalvageableTokens[_rewardTokens[i]] = true;
     }
@@ -83,35 +83,50 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   // *************** VIEWS ****************
 
+  /// @notice Reward tokens of external project
+  /// @return Reward tokens array
   function rewardTokens() public view override returns (address[] memory) {
     return _rewardTokens;
   }
 
+  /// @notice Strategy underlying, the same in the Vault
+  /// @return Strategy underlying token
   function underlying() external view override returns (address) {
     return _underlyingToken;
   }
 
+  /// @notice Underlying balance of this contract
+  /// @return Balance of underlying token
   function underlyingBalance() public view override returns (uint256) {
     return IERC20(_underlyingToken).balanceOf(address(this));
   }
 
+  /// @notice SmartVault address linked to this strategy
+  /// @return Vault address
   function vault() external view override returns (address) {
     return _smartVault;
   }
 
+  /// @notice Return true for tokens that governance can't touch
+  /// @return True if given token unsalvageable
   function unsalvageableTokens(address token) external override view returns (bool) {
     return _unsalvageableTokens[token];
   }
 
+  /// @notice Strategy buy back ratio. Currently stubbed to 100%
+  /// @return Buy back ratio
   function buyBackRatio() external view override returns (uint256) {
     return _buyBackRatio;
   }
 
+  /// @notice Balance of given token on this contract
+  /// @return Balance of given token
   function rewardBalance(uint256 rewardTokenIdx) public view returns (uint256) {
     return IERC20(_rewardTokens[rewardTokenIdx]).balanceOf(address(this));
   }
 
   /// @notice Return underlying balance + balance in the reward pool
+  /// @return Sum of underlying balances
   function investedUnderlyingBalance() external override view returns (uint256) {
     // Adding the amount locked in the reward pool and the amount that is somehow in this contract
     // both are in the units of "underlying"
@@ -123,9 +138,10 @@ abstract contract StrategyBase is IStrategy, Controllable {
   //******************** GOVERNANCE *******************
 
 
-  /// @dev In case there are some issues discovered about the pool or underlying asset
-  ///      Governance can exit the pool properly
-  ///      The function is only used for emergency to exit the pool
+  /// @notice In case there are some issues discovered about the pool or underlying asset
+  ///         Governance can exit the pool properly
+  ///         The function is only used for emergency to exit the pool
+  ///         Pause investing
   function emergencyExit() external override onlyControllerOrGovernance {
     emergencyExitRewardPool();
     pausedInvesting = true;
@@ -137,8 +153,11 @@ abstract contract StrategyBase is IStrategy, Controllable {
     pausedInvesting = false;
   }
 
-  /// @notice Governance or Controller can claim coins that are somehow transferred into the contract
+  /// @notice Controller can claim coins that are somehow transferred into the contract
   ///         Note that they cannot come in take away coins that are used and defined in the strategy itself
+  /// @param recipient Recipient address
+  /// @param recipient Token address
+  /// @param recipient Token amount
   function salvage(address recipient, address token, uint256 amount)
   external override onlyController {
     // To make sure that governance cannot come in and take away the coins
@@ -153,6 +172,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   }
 
   /// @notice Withdraws some asset to the vault
+  /// @param amount Asset amount
   function withdrawToVault(uint256 amount) external override restricted {
     // Typically there wouldn't be any amount here
     // however, it is possible because of the emergencyExit
@@ -178,6 +198,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   // ***************** INTERNAL ************************
 
+  /// @dev Withdraw everything from external pool
   function exitRewardPool() internal {
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
@@ -185,6 +206,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     }
   }
 
+  /// @dev Withdraw everything from external pool without caring about rewards
   function emergencyExitRewardPool() internal {
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
@@ -192,47 +214,25 @@ abstract contract StrategyBase is IStrategy, Controllable {
     }
   }
 
-  function distributeRewards(uint256 _rewardBalance, address _rewardToken) internal {
-    if (_rewardBalance > 0) {
-
-      uint256 profitSharingNumerator = IController(controller()).psNumerator();
-      uint256 profitSharingDenominator = IController(controller()).psDenominator();
-
-      uint256 toPsAmount = _rewardBalance.mul(profitSharingNumerator).div(profitSharingDenominator);
-      uint256 toVaultAmount = _rewardBalance.sub(toPsAmount);
-      address forwarder = IController(controller()).feeRewardForwarder();
-      emit DistributeLog(_rewardToken, _rewardBalance, toPsAmount, toVaultAmount, block.timestamp);
-
-      IERC20(_rewardToken).safeApprove(forwarder, 0);
-      IERC20(_rewardToken).safeApprove(forwarder, _rewardBalance);
-      uint256 targetTokenEarned = 0;
-      if (toPsAmount > 0) {
-        targetTokenEarned = targetTokenEarned.add(
-          IFeeRewardForwarder(forwarder).notifyPsPool(_rewardToken, toPsAmount)
-        );
-      }
-      if (toVaultAmount > 0) {
-        targetTokenEarned = targetTokenEarned.add(
-          IFeeRewardForwarder(forwarder).notifyCustomPool(_rewardToken, _smartVault, toVaultAmount)
-        );
-      }
+  /// @dev Default implementation of liquidation process
+  ///      Send all profit to FeeRewardForwarder
+  function liquidateRewardDefault() internal {
+    address forwarder = IController(controller()).feeRewardForwarder();
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      address rt = _rewardTokens[i];
+      IERC20(rt).safeApprove(forwarder, 0);
+      IERC20(rt).safeApprove(forwarder, amount);
+      // it will sell reward token to Target Token and distribute it to SmartVault and PS
+      uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault);
       if (targetTokenEarned > 0) {
         IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
       }
-    } else {
-      emit DistributeLog(_rewardToken, 0, 0, 0, block.timestamp);
-    }
-  }
-
-  function liquidateRewardDefault() internal {
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      // it will sell reward token to Target Token and distribute it to SmartVault and PS
-      distributeRewards(rewardBalance(i), _rewardTokens[i]);
     }
   }
 
   //******************** VIRTUAL *********************
-  function doHardWork() external virtual override;
+  // This functions should be implemented in the strategy contract
 
   function rewardPoolBalance() public virtual override view returns (uint256 bal);
 

@@ -117,6 +117,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Only Strategy action. Save TETU earned values
+  /// @dev It should represent 100% of earned rewards including all fees.
   /// @param _targetTokenAmount Earned amount
   function registerStrategyEarned(uint256 _targetTokenAmount) external override onlyStrategy {
     targetTokenEarned[msg.sender] = targetTokenEarned[msg.sender].add(_targetTokenAmount);

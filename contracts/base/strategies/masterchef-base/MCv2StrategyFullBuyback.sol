@@ -25,23 +25,35 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
-  string public constant STRATEGY_TYPE = "mcv2StrategyFullBuyback";
+  /// @notice Strategy type for statistical purposes
+  string public constant STRATEGY_NAME = "MCv2StrategyFullBuyback";
+  /// @notice Version of the contract
+  /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
-  uint256 private constant BUY_BACK_RATIO = 10000; // for non full buyback need to implement liquidation
+  /// @dev Placeholder, for non full buyback need to implement liquidation
+  uint256 private constant _BUY_BACK_RATIO = 10000;
 
   /// @notice MasterChef rewards pool
   address public mcRewardPool;
   /// @notice MasterChef rewards pool ID
   uint256 public poolID;
 
+  /// @notice Contract constructor using on strategy implementation
+  /// @dev The implementation should check each parameter
+  /// @param _controller Controller address
+  /// @param _underlying Underlying token address
+  /// @param _vault SmartVault address that will provide liquidity
+  /// @param __rewardTokens Reward tokens that the strategy will farm
+  /// @param _mcRewardPool MasterChef pool address
+  /// @param _poolID Pool id
   constructor(
-    address _storage,
+    address _controller,
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
     address _mcRewardPool,
     uint256 _poolID
-  ) StrategyBase(_storage, _underlying, _vault, __rewardTokens, BUY_BACK_RATIO) {
+  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_mcRewardPool != address(0), "zero address pool");
     mcRewardPool = _mcRewardPool;
     poolID = _poolID;
@@ -52,10 +64,15 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
 
   // ************* VIEWS *******************
 
+  /// @notice Strategy balance in the Master Chef pool
+  /// @return bal Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint256 bal) {
     (bal,) = IMiniChefV2(mcRewardPool).userInfo(poolID, address(this));
   }
 
+  /// @notice Return approximately amount of reward tokens ready to claim in Master Chef pool
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Array with amounts ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory toClaim = new uint256[](2);
     (uint256 bal, uint256 debt) = IMiniChefV2(mcRewardPool).userInfo(poolID, address(this));
@@ -90,10 +107,16 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     return toClaim;
   }
 
+  /// @notice TVL of the underlying in the Master Chef pool
+  /// @dev Only for statistic
+  /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return IERC20(_underlyingToken).balanceOf(mcRewardPool);
   }
 
+  /// @notice Calculate approximately weekly reward amounts for each reward tokens
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Array of weekly reward amounts, 0 - SUSHI, 1 - WMATIC
   function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](2);
     rewards[0] = computeSushiWeeklyPoolReward();
@@ -101,6 +124,9 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     return rewards;
   }
 
+  /// @notice Calculate approximately weekly reward amounts for SUSHI
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Weekly reward amount of SUSHI
   function computeSushiWeeklyPoolReward() public view returns (uint256) {
     (, uint256 lastRewardTime, uint256 allocPoint)
     = IMiniChefV2(mcRewardPool).poolInfo(poolID);
@@ -111,6 +137,9 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     return sushiReward * (1 weeks / time);
   }
 
+  /// @notice Calculate approximately weekly reward amounts for WMATIC
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Weekly reward amount of WMATIC
   function computeMaticWeeklyPoolReward() public view returns (uint256) {
     IRewarder rewarder = IMiniChefV2(mcRewardPool).rewarder(poolID);
     (, uint256 lastRewardTime, uint256 allocPoint)
@@ -125,6 +154,7 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
 
   // ************ GOVERNANCE ACTIONS **************************
 
+  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
     exitRewardPool();
     liquidateReward();
@@ -133,12 +163,16 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
+  /// @dev Deposit underlying to Master Chef pool
+  /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
     IERC20(_underlyingToken).safeApprove(mcRewardPool, 0);
     IERC20(_underlyingToken).safeApprove(mcRewardPool, amount);
     IMiniChefV2(mcRewardPool).deposit(poolID, amount, address(this));
   }
 
+  /// @dev Deposit underlying to Master Chef pool
+  /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
     (uint256 bal, uint256 debt) = IMiniChefV2(mcRewardPool).userInfo(poolID, address(this));
     (uint256 accSushiPerShare, ,) = IMiniChefV2(mcRewardPool).poolInfo(poolID);
@@ -151,10 +185,13 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     }
   }
 
+  /// @dev Exit from external project without caring about rewards
+  ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
     IMiniChefV2(mcRewardPool).emergencyWithdraw(poolID, address(this));
   }
 
+  /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
     liquidateRewardDefault();
   }

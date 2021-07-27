@@ -123,10 +123,11 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   /// @notice Only Reward Distributor or Governance or Controller can call it.
   ///         Distribute rewards for given vault, move fees to PS and Fund
+  ///         Under normal circumstances, sender is the strategy
   /// @param _amount Amount of tokens for distribute
   /// @param _token Token for distribute
   /// @param _vault Target vault
-  /// @return Amount of distributed Target(TETU) tokens
+  /// @return Amount of distributed Target(TETU) tokens + FundKeeper fee (approx)
   function distribute(uint256 _amount, address _token, address _vault) external override onlyRewardDistribution returns (uint256){
     require(_amount != 0, "zero amount");
 
@@ -147,7 +148,8 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
         notifyCustomPool(_token, _vault, toVaultAmount)
       );
     }
-    return targetTokenDistributed;
+
+    return plusFundAmountToDistributedAmount(targetTokenDistributed);
   }
 
   /// @notice Liquidate the token amount and send to the Profit Sharing pool.
@@ -212,6 +214,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @param _token Token address
   /// @param _amount Token amount
   function sendToFund(address _token, uint256 _amount) internal {
+    // no actions if we don't have a fee for fund
+    if (_amount == 0) {
+      return;
+    }
     require(fundToken() != address(0), "fund token is zero");
     require(fund() != address(0), "fund is zero");
 
@@ -233,6 +239,16 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     uint256 fundNumerator = IController(controller()).fundNumerator();
     uint256 fundDenominator = IController(controller()).fundDenominator();
     return _amount.mul(fundNumerator).div(fundDenominator);
+  }
+
+  /// @dev Compute Approximate Total amount normalized to TETU token
+  /// @param _amount Amount of TETU token distributed to PS and Vault
+  /// @return Approximate Total amount normalized to TETU token
+  function plusFundAmountToDistributedAmount(uint256 _amount) internal view returns (uint256) {
+    uint256 fundNumerator = IController(controller()).fundNumerator();
+    uint256 fundDenominator = IController(controller()).fundDenominator();
+    uint256 toDistributeNumerator = fundDenominator.sub(fundNumerator);
+    return _amount.mul(toDistributeNumerator).div(fundDenominator);
   }
 
   /// @dev Sell given token for given Target token (TETU or Fund token)
