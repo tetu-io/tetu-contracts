@@ -65,7 +65,7 @@ export class DeployerUtils {
   }
 
   public static async connectProxy(address: string, signer: SignerWithAddress, name: string): Promise<any> {
-    const proxy = await DeployerUtils.connectContract(signer, "ITetuProxy", address) as ITetuProxy;
+    const proxy = await DeployerUtils.connectInterface(signer, "ITetuProxy", address) as ITetuProxy;
     const logicAddress = await proxy.callStatic.implementation();
     const logic = await DeployerUtils.connectContract(signer, name, logicAddress);
     return logic.attach(proxy.address);
@@ -302,7 +302,8 @@ export class DeployerUtils {
       controller: Controller,
       vaultRewardToken: string,
       signer: SignerWithAddress,
-      rewardDuration: number = 60 * 60 * 24 * 28 // 4 weeks
+      rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+      wait = false
   ): Promise<any[]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
@@ -312,16 +313,16 @@ export class DeployerUtils {
 
     const strategyUnderlying = await strategy.underlying();
 
-    await vault.initializeSmartVault(
+    await RunHelper.runAndWait(() => vault.initializeSmartVault(
         "TETU_" + vaultName,
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
         rewardDuration
-    );
-    await vault.addRewardToken(vaultRewardToken);
+    ), true, wait);
+    await RunHelper.runAndWait(() => vault.addRewardToken(vaultRewardToken), true, wait);
 
-    await controller.addVaultAndStrategy(vault.address, strategy.address);
+    await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
 
     return [vaultLogic, vault, strategy];
   }

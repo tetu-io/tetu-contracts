@@ -1,15 +1,14 @@
 import {DeployerUtils} from "../../DeployerUtils";
 import {ethers} from "hardhat";
-import {MockFaucet} from "../../../../typechain/MockFaucet";
 import {RunHelper} from "../../../utils/RunHelper";
 import {Erc20Utils} from "../../../../test/Erc20Utils";
+import {MockFaucet} from "../../../../typechain";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const mocks = await DeployerUtils.getTokenAddresses();
   const contract = await DeployerUtils.deployContract(signer, "MockFaucet") as MockFaucet;
-
 
   for (let mockName of Array.from(mocks.keys())) {
     const mock = mocks.get(mockName) as string;

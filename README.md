@@ -17,10 +17,10 @@ Run `npm install`
 
 Remove .exmaple from `secrets.example.ts` and `settings.example.ts` and fill properties.
 
-##Links
+## Links
 
-Docs: https://docs.bro.cash
+Docs: https://docs.tetu.io/
 
 Discord: https://discord.gg/DSUKVEYuax
 
-Twitter: https://twitter.com/bro_cash_token
+Twitter: https://twitter.com/tetu_io

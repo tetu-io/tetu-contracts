@@ -18,8 +18,11 @@ async function main() {
 
   for (let mockName of Array.from(mocks.keys())) {
     const mock = mocks.get(mockName) as string;
-    if(!mock) {
+    if (!mock) {
       console.log('empty mock', mockName);
+      continue;
+    }
+    if (mockName === 'sushi_lp_token_usdc') {
       continue;
     }
     const decimals = await Erc20Utils.decimals(mock);

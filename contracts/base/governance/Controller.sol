@@ -116,7 +116,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @dev Operations allowed for Governance or HardWorker addresses
   modifier onlyHardWorkerOrGovernance() {
     require(isHardWorker(msg.sender)
-      || isGovernance(msg.sender), "only hardworker");
+      || isGovernance(msg.sender), "only hardworker or governance");
     _;
   }
 

@@ -48,7 +48,9 @@ async function main() {
         ) as Promise<IStrategy>,
         controller,
         core.psVault,
-        signer
+        signer,
+        60 * 60 * 24 * 28,
+        true
     );
     data.push([
       core.controller,

@@ -18,14 +18,14 @@ async function main() {
 
   if (annIdx.isZero()) {
     console.log('Announce Mint');
-    let toMint = (await token.maxTotalSupplyForCurrentBlock()).sub(await token.totalSupply());
-    if (toMint.isZero()) {
-      // first week
-      toMint = utils.parseUnits('129746126');
-    }
+    // let toMint = (await token.maxTotalSupplyForCurrentBlock()).sub(await token.totalSupply());
+    // if (toMint.isZero()) {
+    //   // first week
+    //   toMint = utils.parseUnits('129746126');
+    // }
 
-    console.log('To mint', utils.formatUnits(toMint, 18));
-    await RunHelper.runAndWait(() => announcer.announceMint(toMint, core.notifyHelper, core.fundKeeper));
+    // console.log('To mint', utils.formatUnits(toMint, 18));
+    await RunHelper.runAndWait(() => announcer.announceMint(0, core.notifyHelper, core.fundKeeper, true));
   } else {
     console.log('Mint announced', annIdx)
     const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
@@ -42,7 +42,7 @@ async function main() {
     const distributor = annInfo.adrValues[0];
     const fund = annInfo.adrValues[1];
 
-    await RunHelper.runAndWait(() => controller.mintAndDistribute(amount, distributor, fund));
+    await RunHelper.runAndWait(() => controller.mintAndDistribute(0, distributor, fund, true));
 
   }
 }

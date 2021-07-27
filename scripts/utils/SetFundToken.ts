@@ -2,7 +2,6 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Announcer, Controller} from "../../typechain";
 import {RunHelper} from "./RunHelper";
-import {MaticAddresses} from "../../test/MaticAddresses";
 
 
 async function main() {
@@ -20,7 +19,7 @@ async function main() {
   if (annIdx.isZero()) {
     console.log('Announce change Fund token');
 
-    await RunHelper.runAndWait(() => announcer.announceAddressChange(opCode, MaticAddresses.ZERO_ADDRESS, tokens.get('usdc') as string));
+    await RunHelper.runAndWait(() => announcer.announceAddressChange(opCode, tokens.get('usdc') as string));
   } else {
     console.log('change Fund token announced', annIdx)
     const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
