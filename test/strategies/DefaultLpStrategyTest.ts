@@ -10,6 +10,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {Erc20Utils} from "../Erc20Utils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
+import {IStrategy} from "../../typechain";
 
 
 const {expect} = chai;
@@ -20,11 +21,14 @@ async function startDefaultLpStrategyTest(
     factory: string,
     underlying: string,
     token0: string,
+    token0Name: string,
     token1: string,
+    token1Name: string,
+    platformPoolIdentifier: string,
     rewardTokens: string[]
 ) {
 
-  describe(strategyName + "Test", async function () {
+  describe(strategyName + " " + token0Name + " " + token1Name + " Test", async function () {
     let snapshotBefore: string;
     let snapshot: string;
     let strategyInfo: StrategyInfo;
@@ -53,7 +57,17 @@ async function startDefaultLpStrategyTest(
       const data = await StrategyTestUtils.deploy(
           signer,
           core,
-          strategyName,
+          token0Name + "_" + token1Name,
+          vaultAddress => DeployerUtils.deployContract(
+              signer,
+              strategyName,
+              core.controller.address,
+              vaultAddress,
+              underlying,
+              token0,
+              token1,
+              platformPoolIdentifier
+          ) as Promise<IStrategy>,
           underlying
       );
 

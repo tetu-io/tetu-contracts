@@ -192,14 +192,20 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ///                    33% will go to current network, 67% to FundKeeper for other networks
   /// @param _distributor Distributor address, usually NotifyHelper
   /// @param _otherNetworkFund Fund address, usually FundKeeper
-  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external
+  /// @param mintAllAvailable if true instead of amount will be used maxTotalSupplyForCurrentBlock - totalSupply
+  function mintAndDistribute(
+    uint256 totalAmount,
+    address _distributor,
+    address _otherNetworkFund,
+    bool mintAllAvailable
+  ) external
   onlyGovernance timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Mint, totalAmount, _distributor, _otherNetworkFund)),
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Mint, totalAmount, _distributor, _otherNetworkFund, mintAllAvailable)),
     IAnnouncer.TimeLockOpCodes.Mint,
     false,
     address(0)
   ) {
-    IMintHelper(mintHelper()).mintAndDistribute(totalAmount, _distributor, _otherNetworkFund);
+    IMintHelper(mintHelper()).mintAndDistribute(totalAmount, _distributor, _otherNetworkFund, mintAllAvailable);
   }
 
   //  ---------------------- TIME-LOCK ADDRESS CHANGE --------------------------
@@ -266,7 +272,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _setMintHelper(_newValue);
 
     // for reduce the chance of DoS check new implementation
-    require(IMintHelper(mintHelper()).operatingFundsList(0) != address(0), "wrong impl");
+    require(IMintHelper(mintHelper()).devFundsList(0) != address(0), "wrong impl");
   }
 
   /// @notice Only Governance can do it. Change RewardToken(TETU) address.

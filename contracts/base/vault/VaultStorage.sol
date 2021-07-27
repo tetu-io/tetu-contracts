@@ -26,10 +26,17 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   mapping(bytes32 => address) private addressStorage;
   mapping(bytes32 => bool) private boolStorage;
 
+  /// @notice Boolean value changed the variable with `name`
   event UpdatedBoolSlot(string indexed name, bool oldValue, bool newValue);
+  /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
+  /// @notice Value changed the variable with `name`
   event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
+  /// @notice Initialize contract after setup it as proxy implementation
+  /// @dev Use it only once after first logic setup
+  /// @param _underlyingToken Vault underlying token
+  /// @param _durationValue Reward vesting period
   function initializeVaultStorage(
     address _underlyingToken,
     uint256 _durationValue
@@ -46,6 +53,7 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     setAddress("strategy", _address);
   }
 
+  /// @notice Current strategy that vault use for farming
   function strategy() public override view returns (address) {
     return getAddress("strategy");
   }
@@ -55,6 +63,7 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     setAddress("underlying", _address);
   }
 
+  /// @notice Vault underlying
   function underlying() public view override returns (address) {
     return getAddress("underlying");
   }
@@ -64,6 +73,7 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     setUint256("duration", _value);
   }
 
+  /// @notice Rewards vesting period
   function duration() public view override returns (uint256) {
     return getUint256("duration");
   }
@@ -73,6 +83,7 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     setBoolean("active", _value);
   }
 
+  /// @notice Vault status
   function active() public view override returns (bool) {
     return getBoolean("active");
   }

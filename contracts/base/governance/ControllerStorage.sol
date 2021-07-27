@@ -24,7 +24,9 @@ abstract contract ControllerStorage is Initializable, IController {
   mapping(bytes32 => uint256) private uintStorage;
   mapping(bytes32 => address) private addressStorage;
 
+  /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
+  /// @notice Value changed the variable with `name`
   event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
   /// @notice Initialize contract after setup it as proxy implementation

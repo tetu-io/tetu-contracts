@@ -15,24 +15,41 @@ describe('Universal Quick tests', async () => {
   }
   const infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
 
+  const strategyName = 'StrategyQuickSwapLp';
+
   infos.forEach(info => {
     const strat = info.split(',');
-    if (+strat[9] <= 0 || !strat[3] || strat[0] === 'idx') {
-      console.log('skip', strat[0]);
+
+    const ids = strat[0];
+    const lp_name = strat[1];
+    const lp_address = strat[2];
+    const token0 = strat[3];
+    const token0_name = strat[4];
+    const token1 = strat[5];
+    const token1_name = strat[6];
+    const pool = strat[7];
+    const rewardAmount = strat[8];
+    const duration = strat[9];
+
+    if (+duration <= 0 || !token0 || ids === 'idx') {
+      console.log('skip', ids);
       return;
     }
     if (Settings.onlyOneQuickStrategyTest && +strat[0] !== Settings.onlyOneQuickStrategyTest) {
       return;
     }
-    console.log('strat', strat[0], strat[1]);
-    const strategyName = 'StrategyQuick_' + strat[4] + '_' + strat[6];
+    console.log('strat', ids, lp_name);
+
 
     startDefaultLpStrategyTest(
         strategyName,
         MaticAddresses.QUICK_FACTORY,
-        strat[2].toLowerCase(),
-        strat[3],
-        strat[5],
+        lp_address.toLowerCase(),
+        token0,
+        token0_name,
+        token1,
+        token1_name,
+        pool,
         [MaticAddresses.QUICK_TOKEN]
     );
   });

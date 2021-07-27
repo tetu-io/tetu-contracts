@@ -9,7 +9,7 @@ import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {StrategyInfo} from "./StrategyInfo";
-import {ethers, tracer} from "hardhat";
+import {ethers} from "hardhat";
 import {VaultUtils} from "../VaultUtils";
 
 export class StrategyTestUtils {
@@ -19,13 +19,14 @@ export class StrategyTestUtils {
   public static async deploy(
       signer: SignerWithAddress,
       core: CoreContractsWrapper,
-      strategyName: string,
+      vaultName: string,
+      strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
       underlying: string
   ): Promise<any[]> {
 
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        'VaultFor' + strategyName,
-        strategyName,
+        vaultName,
+        strategyDeployer,
         core.controller,
         core.psVault.address,
         signer
@@ -42,54 +43,7 @@ export class StrategyTestUtils {
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying);
 
-    if (tracer) {
-      tracer.nameTags[vault.address] = 'VaultFor' + strategyName;
-      tracer.nameTags[strategy.address] = strategyName;
-      tracer.nameTags[rewardTokenLp] = 'rewardTokenLp';
-    }
-
     return [vault, strategy, rewardTokenLp];
-  }
-
-  public static async doHardWorkWithoutLiqPath(info: StrategyInfo, deposit: string) {
-    const den = (await info.core.controller.psDenominator()).toNumber();
-    const newNum = +(den / 2).toFixed()
-    console.log('new ps ratio', newNum, den)
-    await info.core.controller.setPSNumeratorDenominator(newNum, den);
-
-    const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
-    console.log('userUnderlyingBalance', userUnderlyingBalance.toString());
-    console.log("deposit", deposit);
-    await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
-
-    await StrategyTestUtils.checkStrategyBalances(info.strategy, info.vault, BigNumber.from(deposit));
-    const rewardBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
-
-    const balancesBefore = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
-
-    await TimeUtils.advanceBlocksOnTs(60 * 60); // 1 hour
-    await info.vault.doHardWork();
-    await TimeUtils.advanceBlocksOnTs(60 * 60); // 1 hour
-
-    await info.vault.connect(info.user).getAllRewards();
-    const rewardBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
-    expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
-    .is.eq("0", "should not have earned iToken rewards");
-
-    const balancesAfter = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
-
-    StrategyTestUtils.checkBalances(balancesBefore, balancesAfter);
-
-    await StrategyTestUtils.checkStrategyBalances(info.strategy, info.vault, BigNumber.from(deposit));
-
-    console.log("exit", deposit);
-    await StrategyTestUtils.exit(
-        info.vault.connect(info.user),
-        info.user.address,
-        deposit,
-        info.underlying,
-        userUnderlyingBalance
-    );
   }
 
   public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string) {

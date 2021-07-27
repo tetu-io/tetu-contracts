@@ -11,6 +11,7 @@ import {MintHelperUtils} from "../../MintHelperUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 import {NotifyHelper} from "../../../typechain/NotifyHelper";
+import {IStrategy} from "../../../typechain";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -38,9 +39,16 @@ describe("Notify Helper test", () => {
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
 
     for (let i = 0; i < 2; i++) {
-      const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-          "QUICK_WMATIC_WETH_" + i,
-          "StrategyQuick_WMATIC_WETH",
+      await DeployerUtils.deployAndInitVaultAndStrategy(
+          't',
+          vaultAddress => DeployerUtils.deployContract(
+              signer,
+              'StrategyWaultSingle',
+              core.controller.address,
+              vaultAddress,
+              MaticAddresses.WEXpoly_TOKEN,
+              1
+          ) as Promise<IStrategy>,
           core.controller,
           core.psVault.address,
           signer

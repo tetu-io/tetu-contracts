@@ -2,7 +2,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Controller, FeeRewardForwarder, SmartVault} from "../../../typechain";
+import {Controller, FeeRewardForwarder, IStrategy, SmartVault} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
@@ -74,14 +74,38 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not notify vault without xTETU", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        't', 'StrategyQuick_WMATIC_WETH', core.controller, MaticAddresses.WMATIC_TOKEN, signer);
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyWaultSingle',
+            core.controller.address,
+            vaultAddress,
+            MaticAddresses.WEXpoly_TOKEN,
+            1
+        ) as Promise<IStrategy>,
+        core.controller,
+        MaticAddresses.WMATIC_TOKEN,
+        signer
+    );
     const vault = data[1] as SmartVault;
     await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('psToken not added to vault');
   });
 
   it("should not notify vault without liq path", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        't', 'StrategyQuick_WMATIC_WETH', core.controller, MaticAddresses.WMATIC_TOKEN, signer);
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyWaultSingle',
+            core.controller.address,
+            vaultAddress,
+            MaticAddresses.WEXpoly_TOKEN,
+            1
+        ) as Promise<IStrategy>,
+        core.controller,
+        MaticAddresses.WMATIC_TOKEN,
+        signer
+    );
     const vault = data[1] as SmartVault;
     vault.addRewardToken(core.psVault.address);
     await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('no liq path');
@@ -89,7 +113,19 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not notify vault without liq path", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        't', 'StrategyQuick_WMATIC_WETH', core.controller, MaticAddresses.WMATIC_TOKEN, signer);
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyWaultSingle',
+            core.controller.address,
+            vaultAddress,
+            MaticAddresses.WEXpoly_TOKEN,
+            1
+        ) as Promise<IStrategy>,
+        core.controller,
+        MaticAddresses.WMATIC_TOKEN,
+        signer
+    );
     const vault = data[1] as SmartVault;
     vault.addRewardToken(core.psVault.address);
     await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('no liq path');

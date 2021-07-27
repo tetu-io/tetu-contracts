@@ -8,9 +8,10 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {
   ContractReader,
   FeeRewardForwarder,
-  TetuProxyGov,
+  IStrategy,
   PriceCalculator,
-  SmartVault
+  SmartVault,
+  TetuProxyGov
 } from "../../typechain";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {Erc20Utils} from "../Erc20Utils";
@@ -50,10 +51,17 @@ describe("contract reader tests", function () {
 
     for (let i = 0; i < 3; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(
-          "QUICK_WMATIC_WETH_" + i,
-          "StrategyQuick_WMATIC_WETH",
+          "WAULT_WEX_" + i,
+          vaultAddress => DeployerUtils.deployContract(
+              signer,
+              'StrategyWaultSingle',
+              core.controller.address,
+              vaultAddress,
+              MaticAddresses.WEXpoly_TOKEN,
+              1
+          ) as Promise<IStrategy>,
           core.controller,
-          core.psVault.address,
+          MaticAddresses.WMATIC_TOKEN,
           signer
       );
     }
@@ -304,8 +312,8 @@ describe("contract reader tests", function () {
   it("vault + user infos pages", async () => {
     const infos = await contractReader.vaultWithUserInfoPages(signer.address, 1, 2);
     expect(infos.length).is.eq(2);
-    expect(infos[0].vault.name).is.eq('V_QUICK_WMATIC_WETH_1');
-    expect(infos[1].vault.name).is.eq('V_QUICK_WMATIC_WETH_2');
+    expect(infos[0].vault.name).is.eq('TETU_WAULT_WEX_1');
+    expect(infos[1].vault.name).is.eq('TETU_WAULT_WEX_2');
   });
 
   it("vault + user infos all pages by one", async () => {

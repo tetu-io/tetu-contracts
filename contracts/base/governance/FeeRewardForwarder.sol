@@ -123,10 +123,11 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   /// @notice Only Reward Distributor or Governance or Controller can call it.
   ///         Distribute rewards for given vault, move fees to PS and Fund
+  ///         Under normal circumstances, sender is the strategy
   /// @param _amount Amount of tokens for distribute
   /// @param _token Token for distribute
   /// @param _vault Target vault
-  /// @return Amount of distributed Target(TETU) tokens
+  /// @return Amount of distributed Target(TETU) tokens + FundKeeper fee (approx)
   function distribute(uint256 _amount, address _token, address _vault) external override onlyRewardDistribution returns (uint256){
     require(_amount != 0, "zero amount");
 
@@ -147,7 +148,8 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
         notifyCustomPool(_token, _vault, toVaultAmount)
       );
     }
-    return targetTokenDistributed;
+
+    return plusFundAmountToDistributedAmount(targetTokenDistributed);
   }
 
   /// @notice Liquidate the token amount and send to the Profit Sharing pool.
@@ -208,7 +210,14 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
   //************************* INTERNAL **************************
 
+  /// @dev Sell given token for FunTOken and send to FundKeeper
+  /// @param _token Token address
+  /// @param _amount Token amount
   function sendToFund(address _token, uint256 _amount) internal {
+    // no actions if we don't have a fee for fund
+    if (_amount == 0) {
+      return;
+    }
     require(fundToken() != address(0), "fund token is zero");
     require(fund() != address(0), "fund is zero");
 
@@ -223,12 +232,30 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     emit FeeMovedToFund(fund(), fundToken(), amountToSend);
   }
 
+  /// @dev Compute amount for FundKeeper based on Fund ratio from Controller
+  /// @param _amount 100% Amount
+  /// @return Percent of total amount
   function toFundAmount(uint256 _amount) internal view returns (uint256) {
     uint256 fundNumerator = IController(controller()).fundNumerator();
     uint256 fundDenominator = IController(controller()).fundDenominator();
     return _amount.mul(fundNumerator).div(fundDenominator);
   }
 
+  /// @dev Compute Approximate Total amount normalized to TETU token
+  /// @param _amount Amount of TETU token distributed to PS and Vault
+  /// @return Approximate Total amount normalized to TETU token
+  function plusFundAmountToDistributedAmount(uint256 _amount) internal view returns (uint256) {
+    uint256 fundNumerator = IController(controller()).fundNumerator();
+    uint256 fundDenominator = IController(controller()).fundDenominator();
+    uint256 toDistributeNumerator = fundDenominator.sub(fundNumerator);
+    return _amount.mul(toDistributeNumerator).div(fundDenominator);
+  }
+
+  /// @dev Sell given token for given Target token (TETU or Fund token)
+  /// @param _token Token for liquidation
+  /// @param _amount Amount for liquidation
+  /// @param _targetToken Target token (TETU or Fund token)
+  /// @return Target token balance after liquidation
   function liquidateTokenForTargetToken(address _token, uint256 _amount, address _targetToken)
   internal returns (uint256) {
     if (_token == _targetToken) {
@@ -254,6 +281,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     return 0;
   }
 
+  /// @dev Choose liquidation path for `_from` token to `_targetToken` and make swap
+  /// @param _from Start token
+  /// @param balanceToSwap Amount for swapping
+  /// @param _targetToken Final destination for swap
   function liquidate(address _from, uint256 balanceToSwap, address _targetToken) internal {
     if (balanceToSwap > 0) {
       address router = routers[_from][_targetToken][0];
@@ -261,6 +292,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     }
   }
 
+  /// @dev Choose liquidation path for `_from` token to `_targetToken` and make swap for each router
+  /// @param _from Start token
+  /// @param balanceToSwap Amount for swapping
+  /// @param _targetToken Final destination for swap
   function liquidateMultiRouter(address _from, uint256 balanceToSwap, address _targetToken) internal {
     if (balanceToSwap > 0) {
       address[] memory _routers = routers[_from][_targetToken];
@@ -279,6 +314,9 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
   ///      this function can get INSUFFICIENT_INPUT_AMOUNT if we have too low amount of reward
   ///      it is fine and should rollback the doHardWork call
+  /// @param _router Uniswap router address
+  /// @param _route Path for swap
+  /// @param _amount Amount for swap
   function swap(address _router, address[] memory _route, uint256 _amount) internal {
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);

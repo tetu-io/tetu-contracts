@@ -471,7 +471,7 @@ describe("Announcer tests", function () {
     const balanceFund = await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
 
     const toMint = 10_000;
-    await announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address);
+    await announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
@@ -487,7 +487,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address);
+    await controller.mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
 
     const curNetAmount = toMint * 0.33;
     const forVaults = curNetAmount * 0.7;
@@ -527,7 +527,8 @@ describe("Announcer tests", function () {
   });
 
   it("should not mint zero amount", async () => {
-    await expect(core.announcer.announceMint(0, core.notifyHelper.address, core.fundKeeper.address)).rejectedWith('zero amount');
+    await expect(core.announcer.announceMint(0, core.notifyHelper.address, core.fundKeeper.address, false))
+    .rejectedWith('zero amount');
   });
 
 });

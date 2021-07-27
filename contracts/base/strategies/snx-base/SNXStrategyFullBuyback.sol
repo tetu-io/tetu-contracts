@@ -25,39 +25,62 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
-  string public constant STRATEGY_TYPE = "snxStrategyFullBuyback";
+  /// @notice Strategy type for statistical purposes
+  string public constant STRATEGY_NAME = "SNXStrategyFullBuyback";
+  /// @notice Version of the contract
+  /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
-  uint256 private constant BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
+  /// @dev Placeholder, for non full buyback need to implement liquidation
+  uint256 private constant _BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
 
+  /// @notice Synthetix like poll with rewards
   SNXRewardInterface public rewardPool;
 
+  /// @notice Contract constructor using on strategy implementation
+  /// @dev The implementation should check each parameter
+  /// @param _controller Controller address
+  /// @param _underlying Underlying token address
+  /// @param _vault SmartVault address that will provide liquidity
+  /// @param __rewardTokens Reward tokens that the strategy will farm
+  /// @param _rewardPool Synthetix pool address
   constructor(
     address _controller,
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
     address _rewardPool
-  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, BUY_BACK_RATIO) {
+  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_rewardPool != address(0), "zero address pool");
     rewardPool = SNXRewardInterface(_rewardPool);
   }
 
   // ************* VIEWS *******************
 
+  /// @notice Strategy balance in the Synthetix pool
+  /// @return Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint256) {
     return rewardPool.balanceOf(address(this));
   }
 
+  /// @notice Return approximately amount of reward tokens ready to claim in the Synthetix pool
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Array with amounts ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory toClaim = new uint256[](1);
     toClaim[0] = rewardPool.earned(address(this));
     return toClaim;
   }
 
+  /// @notice TVL of the underlying in the Synthetix pool
+  /// @dev Only for statistic
+  /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return rewardPool.totalSupply();
   }
 
+  /// @notice Calculate approximately weekly reward amounts for each reward tokens
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Array of weekly reward amounts
   function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
 
@@ -70,6 +93,7 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
 
   // ************ GOVERNANCE ACTIONS **************************
 
+  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
     rewardPool.getReward();
     liquidateReward();
@@ -78,20 +102,27 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
+  /// @dev Deposit underlying to the Synthetix pool
+  /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
     IERC20(_underlyingToken).safeApprove(address(rewardPool), 0);
     IERC20(_underlyingToken).safeApprove(address(rewardPool), amount);
     rewardPool.stake(amount);
   }
 
+  /// @dev Deposit underlying to the Synthetix pool
+  /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
     rewardPool.withdraw(amount);
   }
 
+  /// @dev Exit from external project without caring about rewards
+  ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
     rewardPool.exit();
   }
 
+  /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
     liquidateRewardDefault();
   }

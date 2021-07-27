@@ -27,7 +27,6 @@ import "./ControllerStorage.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
-import "hardhat/console.sol";
 
 /// @title Contract for holding scheduling for time-lock actions
 /// @dev Use with TetuProxy
@@ -214,15 +213,20 @@ contract Announcer is Controllable, IAnnouncer {
   ///                    33% will go to current network, 67% to FundKeeper for other networks
   /// @param _distributor Distributor address, usually NotifyHelper
   /// @param _otherNetworkFund Fund address, usually FundKeeper
-  function announceMint(uint256 totalAmount, address _distributor, address _otherNetworkFund) external onlyGovernance {
+  function announceMint(
+    uint256 totalAmount,
+    address _distributor,
+    address _otherNetworkFund,
+    bool mintAllAvailable
+  ) external onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.Mint;
 
     require(timeLockIndexes[opCode] == 0, "already announced");
-    require(totalAmount != 0, "zero amount");
+    require(totalAmount != 0 || mintAllAvailable, "zero amount");
     require(_distributor != address(0), "zero distributor");
     require(_otherNetworkFund != address(0), "zero fund");
 
-    bytes32 opHash = keccak256(abi.encode(opCode, totalAmount, _distributor, _otherNetworkFund));
+    bytes32 opHash = keccak256(abi.encode(opCode, totalAmount, _distributor, _otherNetworkFund, mintAllAvailable));
     timeLockSchedule[opHash] = block.timestamp + timeLock();
 
     address[] memory adrValues = new address[](2);
@@ -232,11 +236,9 @@ contract Announcer is Controllable, IAnnouncer {
     intValues[0] = totalAmount;
 
     address mintHelper = IController(controller()).mintHelper();
-    console.log("_timeLockInfos.length", _timeLockInfos.length);
 
     _timeLockInfos.push(TimeLockInfo(opCode, mintHelper, adrValues, intValues));
     timeLockIndexes[opCode] = _timeLockInfos.length - 1;
-    console.log("timeLockIndexes[opCode]", timeLockIndexes[opCode]);
 
     emit MintAnnounced(totalAmount, _distributor, _otherNetworkFund);
   }
