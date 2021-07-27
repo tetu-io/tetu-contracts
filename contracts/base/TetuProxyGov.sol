@@ -36,6 +36,7 @@ contract TetuProxyGov is UpgradeableProxy, ITetuProxy {
     require(IControllable(address(this)).isGovernance(msg.sender), "wrong impl");
   }
 
+  /// @notice Return current logic implementation
   function implementation() external override view returns (address) {
     return _implementation();
   }

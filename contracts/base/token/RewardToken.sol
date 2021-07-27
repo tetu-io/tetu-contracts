@@ -25,14 +25,21 @@ contract RewardToken is ERC20Burnable, ERC20Capped {
 
   uint256 internal constant SCALE = 1e18;
   uint256 internal constant HALF_SCALE = 5e17;
+  /// @notice Immutable owner of the contract
   address public immutable owner;
 
-  uint256 public constant HARD_CAP = 1 * (10 ** 9) * SCALE; // 1 billion
-  uint256 public constant MINTING_PERIOD = 126227808; // 4 years
+  /// @notice Maximum total supply -  1 billion
+  uint256 public constant HARD_CAP = 1 * (10 ** 9) * SCALE;
+  /// @notice Vesting period - 4 years
+  uint256 public constant MINTING_PERIOD = 126227808;
 
+  /// @notice Start date of minting
   uint256 public mintingStartTs;
+  /// @notice End date of minting
   uint256 public mintingEndTs;
 
+  /// @notice Contract constructor
+  /// @param _owner Owner address, MintHelper by default
   constructor(address _owner)
   ERC20("TETU Reward Token", "TETU")
   ERC20Capped(HARD_CAP) {
@@ -40,25 +47,33 @@ contract RewardToken is ERC20Burnable, ERC20Capped {
     owner = _owner;
   }
 
+  /// @dev Strict access only for owner
   modifier onlyOwner() {
     require(msg.sender == owner, "not owner");
     _;
   }
 
+  /// @notice Strat vesting period
   function startMinting() external onlyOwner {
     require(mintingStartTs == 0, "minting already started");
     mintingStartTs = block.timestamp;
     mintingEndTs = mintingStartTs.add(MINTING_PERIOD);
   }
 
+  /// @notice Mint given amount for given address
+  /// @param to Mint destination
+  /// @param amount Amount of mint
   function mint(address to, uint256 amount) external onlyOwner {
     _mint(to, amount);
   }
 
+  /// @dev Override function ERC20 implementation
   function _mint(address account, uint256 amount) internal override(ERC20, ERC20Capped) {
     super._mint(account, amount);
   }
 
+  /// @dev This function will check each transfer and if it is a mint
+  ///      will check that totalSupply will be not higher than maxTotalSupplyForCurrentBlock
   function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
     if (from == address(0)) {// it is mint
       require(mintingStartTs != 0, "minting not started");
@@ -67,6 +82,8 @@ contract RewardToken is ERC20Burnable, ERC20Capped {
     super._beforeTokenTransfer(from, to, amount);
   }
 
+  /// @notice Return quantity of weeks since minting started
+  /// @return Quantity of weeks
   function currentWeek() public view returns (uint256){
     if (mintingStartTs == 0) {// not started yet
       return 0;
@@ -74,6 +91,9 @@ contract RewardToken is ERC20Burnable, ERC20Capped {
     return block.timestamp.sub(mintingStartTs).div(1 weeks).add(1);
   }
 
+  /// @notice Return maximum Total Supply for the current week.
+  ///         The contract can't mint more than this value
+  /// @return Maximum allowed supply
   function maxTotalSupplyForCurrentBlock() public view returns (uint256){
     uint256 allWeeks = MINTING_PERIOD / 1 weeks;
 

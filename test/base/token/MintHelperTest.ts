@@ -56,15 +56,15 @@ describe("Mint helper tests", () => {
     await controller.setMintHelper(newMinter.address);
     await controller.setAnnouncer(announcer.address);
 
-    await announcer.announceMint(1, signer.address, signer.address);
+    await announcer.announceMint(1, signer.address, signer.address, false);
 
     await TimeUtils.advanceBlocksOnTs(1);
 
-    await expect(controller.mintAndDistribute(1, signer.address, signer.address)).rejectedWith('Token not init');
+    await expect(controller.mintAndDistribute(1, signer.address, signer.address, false)).rejectedWith('Token not init');
   });
 
   it("should not set empty funds", async () => {
-    await expect(minter.setOperatingFunds([], [])).rejectedWith("empty funds");
+    await expect(minter.setDevFunds([], [])).rejectedWith("empty funds");
   });
 
   it("Mint tokens", async () => {
@@ -77,40 +77,6 @@ describe("Mint helper tests", () => {
     .at.eq(utils.parseUnits("9919.8", 18));
   });
 
-  // it("Mint tokens after admin change", async () => {
-  //   const newMinter = await DeployerUtils.deployMintHelper(
-  //       signer, core.controller.address, [signer.address], [3000]
-  //   );
-  //   await core.controller.setMintHelper(newMinter.address);
-  //   await core.mintHelper.changeAdmin(newMinter.address)
-  //   await MintHelperUtils.mint(newMinter, "100");
-  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
-  //   .at.eq(utils.parseUnits("30", 18));
-  // });
-  // it("Mint tokens to different destinations", async () => {
-  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.USDC_TOKEN))
-  //   .at.eq(utils.parseUnits("0", 18));
-  //   const newMinter = await DeployerUtils.deployMintHelper(
-  //       signer, core.controller.address,
-  //       [signer.address, core.psVault.address, MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN],
-  //       [1003, 953, 547, 497]
-  //   );
-  //   await core.controller.setMintHelper(newMinter.address);
-  //   await core.mintHelper.changeAdmin(newMinter.address);
-  //   await MintHelperUtils.mint(newMinter, "100");
-  //
-  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
-  //   .at.eq(utils.parseUnits("70", 18));
-  //
-  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
-  //   .at.eq(utils.parseUnits("10.03", 18));
-  //
-  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.USDC_TOKEN))
-  //   .at.eq(utils.parseUnits("5.47", 18));
-  //
-  //   expect(await Erc20Utils.balanceOf(core.rewardToken.address, MaticAddresses.WMATIC_TOKEN))
-  //   .at.eq(utils.parseUnits("4.97", 18));
-  // });
   it("Wrong minter deploy", async () => {
     await expect(DeployerUtils.deployMintHelper(
         signer, core.controller.address,
@@ -140,17 +106,17 @@ describe("Mint helper tests", () => {
 
     const toMint = maxTotalAmount.sub(totalAmount).add(1);
 
-    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address);
+    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address, false);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
-    await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address))
+    await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address, false))
     .rejectedWith("limit exceeded")
   });
 
   it("Should not mint more than max emission per week for first mint", async () => {
     const toMint = utils.parseUnits('10000000000');
-    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address);
+    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address, false);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
-    await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address))
+    await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address, false))
     .rejectedWith("ERC20Capped: cap exceeded")
   });
   it("Should mint max emission per week", async () => {
@@ -267,6 +233,30 @@ describe("Mint helper tests", () => {
     const token = await DeployerUtils.deployContract(signer, 'RewardToken', signer.address) as RewardToken;
     expect(await token.currentWeek()).is.eq(0);
     expect(await token.maxTotalSupplyForCurrentBlock()).is.eq(0);
+  });
+
+  it("change dev funds", async () => {
+    await minter.setDevFunds([MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], [1000, 2000]);
+
+    expect(await minter.devFundsLength()).is.eq(2);
+    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    expect((await minter.devFundsList(1)).toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN);
+
+    await minter.setDevFunds([MaticAddresses.WMATIC_TOKEN], [3000]);
+
+    expect(await minter.devFundsLength()).is.eq(1);
+    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+  });
+
+  it("mint all available emission", async () => {
+    const amount = '0';
+    const destination = signer.address;
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq(0);
+    await core.announcer.announceMint(utils.parseUnits(amount), destination, destination, true);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await core.controller.mintAndDistribute(utils.parseUnits(amount), destination, destination, true);
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq('129746127000000000000000000');
   });
 
 });

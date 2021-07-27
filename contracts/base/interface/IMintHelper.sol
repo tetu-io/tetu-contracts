@@ -14,8 +14,13 @@ pragma solidity 0.8.4;
 
 interface IMintHelper {
 
-  function mintAndDistribute(uint256 totalAmount, address _distributor, address _otherNetworkFund) external;
+  function mintAndDistribute(
+    uint256 totalAmount,
+    address _distributor,
+    address _otherNetworkFund,
+    bool mintAllAvailable
+  ) external;
 
-  function operatingFundsList(uint256 idx) external returns (address);
+  function devFundsList(uint256 idx) external returns (address);
 
 }

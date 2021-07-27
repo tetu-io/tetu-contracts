@@ -95,11 +95,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _;
   }
 
+  /// @dev Allowed only for active strategy
   modifier isActive() {
     require(active(), "not active");
     _;
   }
 
+  /// @dev Use it for any underlying movements
   modifier updateRewards(address account) {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       address rt = _rewardTokens[i];
@@ -113,6 +115,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _;
   }
 
+  /// @dev Use it for any underlying movements
   modifier updateReward(address account, address rt){
     rewardPerTokenStoredForToken[rt] = rewardPerToken(rt);
     lastUpdateTimeForToken[rt] = lastTimeRewardApplicable(rt);
@@ -124,6 +127,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************ GOVERNANCE ACTIONS ******************
 
   /// @notice Change the active state marker
+  /// @param _active Status true - active, false - deactivated
   function changeActivityStatus(bool _active) external override onlyControllerOrGovernance {
     _setActive(_active);
   }
@@ -136,6 +140,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /// @notice Add a reward token to the internal array
+  /// @param rt Reward token address
   function addRewardToken(address rt) external override onlyControllerOrGovernance {
     require(getRewardTokenIndex(rt) == type(uint256).max, "rt exist");
     require(rt != underlying(), "rt is underlying");
@@ -144,6 +149,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /// @notice Remove reward token. Last token removal is not allowed
+  /// @param rt Reward token address
   function removeRewardToken(address rt) external override onlyControllerOrGovernance {
     uint256 i = getRewardTokenIndex(rt);
     require(i != type(uint256).max, "not exist");
@@ -212,6 +218,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _payReward(rt);
   }
 
+  /// @dev Store statistical information to Bookkeeper when token transferred
   function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
     // register ownership changing
     // only statistic, no funds affected
@@ -223,6 +230,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   //**************** UNDERLYING MANAGEMENT FUNCTIONALITY ***********************
 
+  /// @notice Return underlying precision units
   function underlyingUnit() public view override returns (uint256) {
     return 10 ** uint256(ERC20Upgradeable(address(underlying())).decimals());
   }
