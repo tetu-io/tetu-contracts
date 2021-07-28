@@ -49,6 +49,9 @@ export default {
     matic: {
       url: Secrets.maticRpcUrl,
       chainId: 137,
+      accounts: [
+        Secrets.maticPrivateKey
+      ],
     },
     mumbai: {
       url: "https://polygon-mumbai.infura.io/v3/" + Secrets.infuraKey,

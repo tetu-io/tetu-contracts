@@ -22,16 +22,18 @@ export class Addresses {
         '0x2a8c76ba7624F466C1095D1cC9a4cC4e9615AC14', // calculator
         '0x2bcFb955d2F2803Ff6f78d3F228305Cf76D1554C', // reader
         '0x7aa7a174Fc6c514abEA2B8fcb92665275764F016', // utils
-        '0x56A0e1A340DdA4078C76C8EB974893CAbfCc3f9F' // rebalancer
+        '0x56A0e1A340DdA4078C76C8EB974893CAbfCc3f9F', // rebalancer
+        '', // payrollClerk
+        '0xE08a4d6aFC2f3bB5F95ceC1e4D88559d837C08F2', // mockFaucet
     )]
   ]);
 
   public static TOKENS = new Map<string, Map<string, string>>([
     ['rinkeby', new Map([
-      ['usdc', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],
-      ['weth', '0x45128E1511C48Ed4A50FE1E1548B293Fd9901cad'],
-      ['sushi', '0xa85682167bA1da84bccadEf0C737b63c14196803'],
-      ['quick', '0x65741ef7bF896E9146125E289C0858552659B66b'],
+      ['quick', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],
+      ['sushi', '0x45128E1511C48Ed4A50FE1E1548B293Fd9901cad'],
+      ['usdc', '0xa85682167bA1da84bccadEf0C737b63c14196803'],
+      ['weth', '0x65741ef7bF896E9146125E289C0858552659B66b'],
       ['sushi_lp_token_usdc', '0x02436A8Ce8E92Fe980166b5edd8C844DC2EaC2ee'],
     ])],
     ['matic', new Map([
