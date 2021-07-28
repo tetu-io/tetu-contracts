@@ -552,8 +552,16 @@ contract ContractReader is Initializable, Controllable {
     return IBookkeeper(bookkeeper()).vaults();
   }
 
+  function vaultsLength() public view returns (uint256){
+    return IBookkeeper(bookkeeper()).vaults().length;
+  }
+
   function strategies() public view returns (address[] memory){
     return IBookkeeper(bookkeeper()).strategies();
+  }
+
+  function strategiesLength() public view returns (uint256){
+    return IBookkeeper(bookkeeper()).strategies().length;
   }
 
   function priceCalculator() public view returns (address) {

@@ -1,11 +1,11 @@
 # TETU
 
-TETU is a collaboration between developers and investors around the whole world 
-to create the best DeFi product out there.
+TETU is a collaboration between developers and investors around the whole world to create the best
+DeFi product out there.
 
 ## Audits
 
-soon 
+[DeFiYield.App 28 July 2021](audits/DeFiYieldApp_28Jul2021.pdf)
 
 ## Addresses
 

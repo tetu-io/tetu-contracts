@@ -29,7 +29,7 @@ async function main() {
 
     if (+alloc <= 0 || idx === 'idx') {
       console.log('skip', idx);
-      return;
+      continue;
     }
 
     console.log('strat', idx, lp_name);

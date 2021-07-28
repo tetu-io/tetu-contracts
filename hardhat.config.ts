@@ -49,6 +49,7 @@ export default {
     matic: {
       url: Secrets.maticRpcUrl,
       chainId: 137,
+      gas: 8_000_000,
       accounts: [
         Secrets.maticPrivateKey
       ],

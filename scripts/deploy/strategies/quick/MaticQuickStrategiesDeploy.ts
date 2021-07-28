@@ -29,7 +29,7 @@ async function main() {
 
     if (+duration <= 0 || !token0 || ids === 'idx') {
       console.log('skip', ids);
-      return;
+      continue;
     }
 
     console.log('strat', ids, lp_name);
