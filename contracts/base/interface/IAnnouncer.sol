@@ -44,6 +44,7 @@ interface IAnnouncer {
   /// @dev Holder for human readable info
   struct TimeLockInfo {
     TimeLockOpCodes opCode;
+    bytes32 opHash;
     address target;
     address[] adrValues;
     uint256[] numValues;
