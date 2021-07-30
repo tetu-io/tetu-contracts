@@ -233,6 +233,13 @@ describe("contract reader tests", function () {
     expect(infos[1].vault.name).is.eq('TETU_WAULT_WEX_2');
   });
 
+  it("vault + user infos pages light", async () => {
+    const infos = await contractReader.vaultWithUserInfoPagesLight(signer.address, 1, 2);
+    expect(infos.length).is.eq(2);
+    expect(infos[0].vault.underlying.toLowerCase()).is.eq(MaticAddresses.WEXpoly_TOKEN);
+    expect(infos[1].vault.underlying.toLowerCase()).is.eq(MaticAddresses.WEXpoly_TOKEN);
+  });
+
   it("vault + user infos all pages by one", async () => {
     const vaults = await contractReader.vaults();
     for (let i = 0; i < vaults.length; i++) {
@@ -253,200 +260,200 @@ describe("contract reader tests", function () {
     }
   });
 
-  it("deploy all and check", async () => {
-    let infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
-    const deployed = [];
-
-    for (let info of infos) {
-      const strat = info.split(',');
-
-      const ids = strat[0];
-      const lp_name = strat[1];
-      const lp_address = strat[2];
-      const token0 = strat[3];
-      const token0_name = strat[4];
-      const token1 = strat[5];
-      const token1_name = strat[6];
-      const pool = strat[7];
-      const duration = strat[9];
-
-      if (+duration <= 0 || !token0 || ids === 'idx') {
-        console.log('skip', ids);
-        continue;
-      }
-
-      const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
-
-      console.log('strat', ids, lp_name);
-
-      const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-          vaultNameWithoutPrefix,
-          vaultAddress => DeployerUtils.deployContract(
-              signer,
-              'StrategyQuickSwapLp',
-              core.controller,
-              vaultAddress,
-              lp_address,
-              token0,
-              token1,
-              pool
-          ) as Promise<IStrategy>,
-          core.controller,
-          core.psVault.address,
-          signer,
-          60 * 60 * 24 * 28,
-          false
-      );
-      data.push([
-        core.controller,
-        data[1].address,
-        lp_address,
-        token0,
-        token1,
-        pool
-      ]);
-      deployed.push(data);
-    }
-
-    infos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
-
-
-    for (let info of infos) {
-      const strat = info.split(',');
-
-      const idx = strat[0];
-      const lp_name = strat[1];
-      const lp_address = strat[2];
-      const token0 = strat[3];
-      const token0_name = strat[4];
-      const token1 = strat[5];
-      const token1_name = strat[6];
-      const alloc = strat[7];
-
-      if (+alloc <= 0 || idx === 'idx' || !idx) {
-        console.log('skip', idx);
-        continue;
-      }
-
-      const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
-      console.log('strat', idx, lp_name);
-
-      const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-          vaultNameWithoutPrefix,
-          vaultAddress => DeployerUtils.deployContract(
-              signer,
-              'StrategySushiSwapLp',
-              core.controller,
-              vaultAddress,
-              lp_address,
-              token0,
-              token1,
-              idx
-          ) as Promise<IStrategy>,
-          core.controller,
-          core.psVault.address,
-          signer,
-          60 * 60 * 24 * 28,
-          false
-      );
-      data.push([
-        core.controller,
-        data[1].address,
-        lp_address,
-        token0,
-        token1,
-        idx
-      ]);
-      deployed.push(data);
-    }
-
-    infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
-
-    for (let info of infos) {
-      const strat = info.split(',');
-
-      const idx = strat[0];
-      const lp_name = strat[1];
-      const lp_address = strat[2];
-      const token0 = strat[3];
-      const token0_name = strat[4];
-      const token1 = strat[5];
-      const token1_name = strat[6];
-      const alloc = strat[7];
-
-      if (+alloc <= 0 || idx === 'idx' || idx == '0' || !lp_name) {
-        console.log('skip', idx);
-        continue;
-      }
-
-      let vaultNameWithoutPrefix: string;
-      if (token1) {
-        vaultNameWithoutPrefix = `WAULT_${token0_name}_${token1_name}`;
-      } else {
-        vaultNameWithoutPrefix = `WAULT_${token0_name}`;
-      }
-
-      console.log('strat', idx, lp_name);
-
-      let data: any[];
-      if (token1) {
-        data = await DeployerUtils.deployAndInitVaultAndStrategy(
-            vaultNameWithoutPrefix,
-            vaultAddress => DeployerUtils.deployContract(
-                signer,
-                'StrategyWaultLp',
-                core.controller,
-                vaultAddress,
-                lp_address,
-                token0,
-                token1,
-                idx
-            ) as Promise<IStrategy>,
-            core.controller,
-            core.psVault.address,
-            signer,
-            60 * 60 * 24 * 28,
-            false
-        );
-        data.push([
-          core.controller,
-          data[1].address,
-          lp_address,
-          token0,
-          token1,
-          idx
-        ]);
-      } else {
-        data = await DeployerUtils.deployAndInitVaultAndStrategy(
-            vaultNameWithoutPrefix,
-            vaultAddress => DeployerUtils.deployContract(
-                signer,
-                'StrategyWaultSingle',
-                core.controller,
-                vaultAddress,
-                lp_address,
-                idx
-            ) as Promise<IStrategy>,
-            core.controller,
-            core.psVault.address,
-            signer,
-            60 * 60 * 24 * 28,
-            false
-        );
-        data.push([
-          core.controller,
-          data[1].address,
-          lp_address,
-          token0,
-          token1,
-          idx
-        ]);
-      }
-
-      deployed.push(data);
-    }
-
-  });
+  // it("deploy all and check", async () => {
+  //   let infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
+  //   const deployed = [];
+  //
+  //   for (let info of infos) {
+  //     const strat = info.split(',');
+  //
+  //     const ids = strat[0];
+  //     const lp_name = strat[1];
+  //     const lp_address = strat[2];
+  //     const token0 = strat[3];
+  //     const token0_name = strat[4];
+  //     const token1 = strat[5];
+  //     const token1_name = strat[6];
+  //     const pool = strat[7];
+  //     const duration = strat[9];
+  //
+  //     if (+duration <= 0 || !token0 || ids === 'idx') {
+  //       console.log('skip', ids);
+  //       continue;
+  //     }
+  //
+  //     const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
+  //
+  //     console.log('strat', ids, lp_name);
+  //
+  //     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
+  //         vaultNameWithoutPrefix,
+  //         vaultAddress => DeployerUtils.deployContract(
+  //             signer,
+  //             'StrategyQuickSwapLp',
+  //             core.controller,
+  //             vaultAddress,
+  //             lp_address,
+  //             token0,
+  //             token1,
+  //             pool
+  //         ) as Promise<IStrategy>,
+  //         core.controller,
+  //         core.psVault.address,
+  //         signer,
+  //         60 * 60 * 24 * 28,
+  //         false
+  //     );
+  //     data.push([
+  //       core.controller,
+  //       data[1].address,
+  //       lp_address,
+  //       token0,
+  //       token1,
+  //       pool
+  //     ]);
+  //     deployed.push(data);
+  //   }
+  //
+  //   infos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
+  //
+  //
+  //   for (let info of infos) {
+  //     const strat = info.split(',');
+  //
+  //     const idx = strat[0];
+  //     const lp_name = strat[1];
+  //     const lp_address = strat[2];
+  //     const token0 = strat[3];
+  //     const token0_name = strat[4];
+  //     const token1 = strat[5];
+  //     const token1_name = strat[6];
+  //     const alloc = strat[7];
+  //
+  //     if (+alloc <= 0 || idx === 'idx' || !idx) {
+  //       console.log('skip', idx);
+  //       continue;
+  //     }
+  //
+  //     const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
+  //     console.log('strat', idx, lp_name);
+  //
+  //     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
+  //         vaultNameWithoutPrefix,
+  //         vaultAddress => DeployerUtils.deployContract(
+  //             signer,
+  //             'StrategySushiSwapLp',
+  //             core.controller,
+  //             vaultAddress,
+  //             lp_address,
+  //             token0,
+  //             token1,
+  //             idx
+  //         ) as Promise<IStrategy>,
+  //         core.controller,
+  //         core.psVault.address,
+  //         signer,
+  //         60 * 60 * 24 * 28,
+  //         false
+  //     );
+  //     data.push([
+  //       core.controller,
+  //       data[1].address,
+  //       lp_address,
+  //       token0,
+  //       token1,
+  //       idx
+  //     ]);
+  //     deployed.push(data);
+  //   }
+  //
+  //   infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+  //
+  //   for (let info of infos) {
+  //     const strat = info.split(',');
+  //
+  //     const idx = strat[0];
+  //     const lp_name = strat[1];
+  //     const lp_address = strat[2];
+  //     const token0 = strat[3];
+  //     const token0_name = strat[4];
+  //     const token1 = strat[5];
+  //     const token1_name = strat[6];
+  //     const alloc = strat[7];
+  //
+  //     if (+alloc <= 0 || idx === 'idx' || idx == '0' || !lp_name) {
+  //       console.log('skip', idx);
+  //       continue;
+  //     }
+  //
+  //     let vaultNameWithoutPrefix: string;
+  //     if (token1) {
+  //       vaultNameWithoutPrefix = `WAULT_${token0_name}_${token1_name}`;
+  //     } else {
+  //       vaultNameWithoutPrefix = `WAULT_${token0_name}`;
+  //     }
+  //
+  //     console.log('strat', idx, lp_name);
+  //
+  //     let data: any[];
+  //     if (token1) {
+  //       data = await DeployerUtils.deployAndInitVaultAndStrategy(
+  //           vaultNameWithoutPrefix,
+  //           vaultAddress => DeployerUtils.deployContract(
+  //               signer,
+  //               'StrategyWaultLp',
+  //               core.controller,
+  //               vaultAddress,
+  //               lp_address,
+  //               token0,
+  //               token1,
+  //               idx
+  //           ) as Promise<IStrategy>,
+  //           core.controller,
+  //           core.psVault.address,
+  //           signer,
+  //           60 * 60 * 24 * 28,
+  //           false
+  //       );
+  //       data.push([
+  //         core.controller,
+  //         data[1].address,
+  //         lp_address,
+  //         token0,
+  //         token1,
+  //         idx
+  //       ]);
+  //     } else {
+  //       data = await DeployerUtils.deployAndInitVaultAndStrategy(
+  //           vaultNameWithoutPrefix,
+  //           vaultAddress => DeployerUtils.deployContract(
+  //               signer,
+  //               'StrategyWaultSingle',
+  //               core.controller,
+  //               vaultAddress,
+  //               lp_address,
+  //               idx
+  //           ) as Promise<IStrategy>,
+  //           core.controller,
+  //           core.psVault.address,
+  //           signer,
+  //           60 * 60 * 24 * 28,
+  //           false
+  //       );
+  //       data.push([
+  //         core.controller,
+  //         data[1].address,
+  //         lp_address,
+  //         token0,
+  //         token1,
+  //         idx
+  //       ]);
+  //     }
+  //
+  //     deployed.push(data);
+  //   }
+  //
+  // });
 
   it("check exist deployment", async () => {
     const core = await DeployerUtils.getCoreAddresses();

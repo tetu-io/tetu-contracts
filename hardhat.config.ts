@@ -54,7 +54,7 @@ export default {
       url: Secrets.maticRpcUrl,
       chainId: 137,
       gas: 8_000_000,
-      gasPrice: 5_000_000_000,
+      gasPrice: 6_000_000_000,
       // gasMultiplier: 2,
       accounts: [
         Secrets.maticPrivateKey

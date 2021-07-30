@@ -19,7 +19,7 @@ import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 /// @author belbix
 contract StrategyQuickSwapLp is SNXStrategyFullBuyback {
 
-  string private constant _PLATFORM = "QUICK";
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.QUICK;
   address private constant QUICK_REWARD_TOKEN = address(0x831753DD7087CaC61aB5644b308642cc1c33Dc13);
   address[] private quickPoolRewards = [QUICK_REWARD_TOKEN];
   address[] private _assets;
@@ -48,7 +48,7 @@ contract StrategyQuickSwapLp is SNXStrategyFullBuyback {
     require(_token1 == token0 || _token1 == token1, "wrong token1");
   }
 
-  function platform() external override pure returns (string memory) {
+  function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;
   }
 

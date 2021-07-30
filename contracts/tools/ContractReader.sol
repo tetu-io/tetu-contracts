@@ -64,6 +64,21 @@ contract ContractReader is Initializable, Controllable {
     uint256 earned;
   }
 
+  struct VaultInfoLight {
+    address addr;
+    uint256 created;
+    bool active;
+    uint256 tvl;
+    uint256 tvlUsdc;
+    address underlying;
+    address[] rewardTokens;
+    uint256[] rewardsApr;
+    uint256 ppfsApr;
+    string platform;
+    address[] assets;
+    uint256 earned;
+  }
+
   struct UserInfo {
     address wallet;
     address vault;
@@ -75,11 +90,23 @@ contract ContractReader is Initializable, Controllable {
     address[] rewardTokens;
     uint256[] rewards;
     uint256[] rewardsUsdc;
+    uint256[] rewardsEarned;
+  }
+
+  struct UserInfoLight {
+    uint256 depositedUnderlying;
+    uint256 depositedUnderlyingUsdc;
+    uint256 depositedShare;
   }
 
   struct VaultWithUserInfo {
     VaultInfo vault;
     UserInfo user;
+  }
+
+  struct VaultWithUserInfoLight {
+    VaultInfoLight vault;
+    UserInfoLight user;
   }
 
   // **************************************************************
@@ -116,11 +143,49 @@ contract ContractReader is Initializable, Controllable {
     return v;
   }
 
+  function vaultInfoLight(address vault) public view returns (VaultInfoLight memory) {
+    address strategy = ISmartVault(vault).strategy();
+    VaultInfoLight memory v = VaultInfoLight(
+      vault,
+      vaultCreated(vault),
+      vaultActive(vault),
+      vaultTvl(vault),
+      vaultTvlUsdc(vault),
+      vaultUnderlying(vault),
+      vaultRewardTokens(vault),
+      vaultRewardsApr(vault),
+      vaultPpfsApr(vault),
+      strategyPlatform(strategy),
+      strategyAssets(strategy),
+      strategyEarned(strategy)
+    );
+
+    return v;
+  }
+
+  function vaultInfos(address[] memory _vaults)
+  external view returns (VaultInfo[] memory){
+    VaultInfo[] memory result = new VaultInfo[](_vaults.length);
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result[i] = vaultInfo(_vaults[i]);
+    }
+    return result;
+  }
+
+  function vaultInfosLight(address[] memory _vaults)
+  external view returns (VaultInfoLight[] memory){
+    VaultInfoLight[] memory result = new VaultInfoLight[](_vaults.length);
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result[i] = vaultInfoLight(_vaults[i]);
+    }
+    return result;
+  }
+
   function userInfo(address _user, address _vault) public view returns (UserInfo memory) {
     address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
-    uint256[] memory rewards = new uint256[](rewardTokens.length);
+    uint256[] memory rewardsEarned = new uint256[](rewardTokens.length);
     for (uint256 i = 0; i < rewardTokens.length; i++) {
-      rewards[i] = ISmartVault(_vault).earned(rewardTokens[i], _user);
+      rewardsEarned[i] = ISmartVault(_vault).earned(rewardTokens[i], _user);
     }
     return UserInfo(
       _user,
@@ -132,9 +197,28 @@ contract ContractReader is Initializable, Controllable {
       userDepositedShare(_user, _vault),
       rewardTokens,
       userRewards(_user, _vault),
-      userRewardsUsdc(_user, _vault)
+      userRewardsUsdc(_user, _vault),
+      rewardsEarned
     );
   }
+
+  function userInfoLight(address _user, address _vault) public view returns (UserInfoLight memory) {
+    return UserInfoLight(
+      userDepositedUnderlying(_user, _vault),
+      userDepositedUnderlyingUsdc(_user, _vault),
+      userDepositedShare(_user, _vault)
+    );
+  }
+
+  function userInfosLight(address _user, address[] memory _vaults)
+  external view returns (UserInfoLight[] memory) {
+    UserInfoLight[] memory result = new UserInfoLight[](_vaults.length);
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result[i] = userInfoLight(_user, _vaults[i]);
+    }
+    return result;
+  }
+
 
   function vaultWithUserInfos(address _user, address[] memory _vaults)
   external view returns (VaultWithUserInfo[] memory){
@@ -148,8 +232,20 @@ contract ContractReader is Initializable, Controllable {
     return result;
   }
 
+  function vaultWithUserInfosLight(address _user, address[] memory _vaults)
+  external view returns (VaultWithUserInfoLight[] memory){
+    VaultWithUserInfoLight[] memory result = new VaultWithUserInfoLight[](_vaults.length);
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result[i] = VaultWithUserInfoLight(
+        vaultInfoLight(_vaults[i]),
+        userInfoLight(_user, _vaults[i])
+      );
+    }
+    return result;
+  }
+
   function vaultWithUserInfoPages(address _user, uint256 page, uint256 pageSize)
-  public view returns (VaultWithUserInfo[] memory){
+  external view returns (VaultWithUserInfo[] memory){
 
     uint256 size = vaults().length;
     require(size > 0, "empty vaults");
@@ -170,6 +266,33 @@ contract ContractReader is Initializable, Controllable {
       result[i - start] = VaultWithUserInfo(
         vaultInfo(vaults()[i]),
         userInfo(_user, vaults()[i])
+      );
+    }
+    return result;
+  }
+
+  function vaultWithUserInfoPagesLight(address _user, uint256 page, uint256 pageSize)
+  external view returns (VaultWithUserInfoLight[] memory){
+
+    uint256 size = vaults().length;
+    require(size > 0, "empty vaults");
+
+    uint256 totalPages = size / pageSize;
+    if (totalPages * pageSize < size) {
+      totalPages++;
+    }
+
+    if (page > totalPages) {
+      page = totalPages;
+    }
+
+    uint256 start = Math.min(page * pageSize, size - 1);
+    uint256 end = Math.min((start + pageSize), size);
+    VaultWithUserInfoLight[] memory result = new VaultWithUserInfoLight[](end - start);
+    for (uint256 i = start; i < end; i++) {
+      result[i - start] = VaultWithUserInfoLight(
+        vaultInfoLight(vaults()[i]),
+        userInfoLight(_user, vaults()[i])
       );
     }
     return result;
@@ -326,8 +449,12 @@ contract ContractReader is Initializable, Controllable {
     return Controllable(_strategy).created();
   }
 
-  function strategyPlatform(address _strategy) public view returns (string memory){
+  function strategyPlatform(address _strategy) public view returns (IStrategy.Platform){
     return IStrategy(_strategy).platform();
+  }
+
+  function strategyPlatformStub(address) public pure returns (string memory){
+    return "0";
   }
 
   function strategyAssets(address _strategy) public view returns (address[] memory){

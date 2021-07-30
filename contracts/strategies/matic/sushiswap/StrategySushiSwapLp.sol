@@ -19,7 +19,7 @@ contract StrategySushiSwapLp is MCv2StrategyFullBuyback {
 
   // SUSHI_MASTER_CHEF
   address public constant _MASTER_CHEF_REWARD_POOL = address(0x0769fd68dFb93167989C6f7254cd0D766Fb2841F);
-  string private constant _PLATFORM = "SUSHI";
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.SUSHI;
   // rewards
   address private constant SUSHI = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -49,7 +49,7 @@ contract StrategySushiSwapLp is MCv2StrategyFullBuyback {
   }
 
 
-  function platform() external override pure returns (string memory) {
+  function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;
   }
 
