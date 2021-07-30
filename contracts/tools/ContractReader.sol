@@ -57,7 +57,7 @@ contract ContractReader is Initializable, Controllable {
     // strategy
     address strategy;
     uint256 strategyCreated;
-    string platform;
+    IStrategy.Platform platform;
     address[] assets;
     address[] strategyRewards;
     bool strategyOnPause;
@@ -74,7 +74,7 @@ contract ContractReader is Initializable, Controllable {
     address[] rewardTokens;
     uint256[] rewardsApr;
     uint256 ppfsApr;
-    string platform;
+    IStrategy.Platform platform;
     address[] assets;
     uint256 earned;
   }

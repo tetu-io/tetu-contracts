@@ -213,7 +213,7 @@ export class StrategyTestUtils {
     expect(await info.strategy.unsalvageableTokens(info.underlying)).is.true;
     expect(await info.strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.false;
     expect(await info.strategy.buyBackRatio()).is.eq("10000");
-    expect(await info.strategy.platform()).is.not.empty;
+    expect(await info.strategy.platform()).is.not.eq(0);
     expect(await info.strategy.assets()).is.not.empty;
     expect(await info.strategy.poolTotalAmount()).is.not.eq('0');
     expect(await info.strategy.poolWeeklyRewardsAmount()).is.not.eq('0');
