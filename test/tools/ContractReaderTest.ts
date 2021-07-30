@@ -18,6 +18,7 @@ import {Erc20Utils} from "../Erc20Utils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
+import {readFileSync} from "fs";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -65,14 +66,6 @@ describe("contract reader tests", function () {
           signer
       );
     }
-
-    // // create lp for price feed
-    // await UniswapUtils.createPairForRewardToken(
-    //     signer, core.rewardToken.address, core.mintHelper, "987000");
-    //
-    // const rewardTokenPrice = await calculator.getPriceWithDefaultOutput(core.rewardToken.address);
-    // console.log('rewardTokenPrice', utils.formatUnits(rewardTokenPrice, 18), core.rewardToken.address);
-    // expect(rewardTokenPrice.toString()).is.not.eq("0");
   });
 
   after(async function () {
@@ -191,77 +184,15 @@ describe("contract reader tests", function () {
     expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(400).and.is.lessThan(1000);
   });
 
-  it("vault names", async () => {
-    expect((await contractReader.vaultNamesList())[0])
-    .is.eq('TETU_PS');
-  });
-  it("vault tvls", async () => {
-    expect((await contractReader.vaultTvlsList())[0])
-    .is.eq(0);
-  });
-  it("vault decimals", async () => {
-    expect((await contractReader.vaultDecimalsList())[0])
-    .is.eq(18);
-  });
-  it("vault platforms", async () => {
-    expect((await contractReader.vaultPlatformsList())[0])
-    .is.eq("NOOP");
-  });
-  it("vault assets", async () => {
-    expect((await contractReader.vaultAssetsList())[0].length)
-    .is.eq(1);
-  });
-  it("vault created", async () => {
-    expect((await contractReader.vaultCreatedList())[0])
-        .is.not.empty;
-  });
-  it("vault active", async () => {
-    expect((await contractReader.vaultActiveList())[0])
-        .is.true;
-  });
-  it("strategy created", async () => {
-    expect((await contractReader.strategyCreatedList())[0])
-        .is.not.empty;
-  });
-  it("strategy strategyAssetsList", async () => {
-    expect((await contractReader.strategyAssetsList())[0].length)
-    .is.eq(1);
-  });
-  it("vault user list", async () => {
-    expect((await contractReader.vaultUsersList())[0])
-    .is.eq(0);
-  });
-  it("strategy strategyRewardTokensList", async () => {
-    expect((await contractReader.strategyRewardTokensList())[0].length)
-    .is.eq(0);
-  });
-  it("strategy strategyPausedInvestingList", async () => {
-    expect((await contractReader.strategyPausedInvestingList())[0])
-        .is.false;
-  });
-  it("vaultDurationList", async () => {
-    expect((await contractReader.vaultDurationList())[0])
-    .is.eq("2419200");
-  });
-  it("strategyPlatformList", async () => {
-    expect((await contractReader.strategyPlatformList())[0])
-    .is.eq("NOOP");
-  });
-  it("user userRewardsList", async () => {
-    const strategy = (await core.bookkeeper.strategies())[1];
-    const rt = (await contractReader.strategyRewardTokens(strategy))[0];
-    console.log('strat and rt', strategy, rt);
-    expect((await contractReader.userRewardsList(signer.address, rt))[0])
-    .is.eq("0");
-  });
+
   it("proxy update", async () => {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     const newLogic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     await proxy.upgrade(newLogic.address);
 
-    expect((await contractReader.vaultNamesList())[0])
-    .is.eq('TETU_PS');
+    expect((await contractReader.vaults())[0])
+    .is.eq(core.psVault.address);
   });
   it("proxy should not update for non gov", async () => {
     const proxy = await DeployerUtils.connectContract(
@@ -282,22 +213,8 @@ describe("contract reader tests", function () {
         .rejected;
   });
 
-  it("vault infos", async () => {
-    const infos = await contractReader.vaultInfos();
-    const info = infos[0];
-    console.log('info', info);
-    expect(info.name).is.eq('TETU_PS');
-  });
-
-  it("user infos", async () => {
-    const infos = await contractReader.userInfos(signer.address);
-    const info = infos[0];
-    console.log('info', info);
-    expect(info.vault).is.eq(core.psVault.address);
-  });
-
   it("vault + user infos", async () => {
-    const infos = await contractReader.vaultWithUserInfos(signer.address, {gasLimit: 50000000});
+    const infos = await contractReader.vaultWithUserInfos(signer.address, [core.psVault.address]);
     const info = infos[0];
     expect(info.vault.name).is.eq('TETU_PS');
   });
@@ -334,6 +251,211 @@ describe("contract reader tests", function () {
     for (let i = 0; i < vaults.length; i++) {
       expect(infos[i].vault.addr).is.eq(vaults[i]);
     }
+  });
+
+  it("deploy all and check", async () => {
+    let infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
+    const deployed = [];
+
+    for (let info of infos) {
+      const strat = info.split(',');
+
+      const ids = strat[0];
+      const lp_name = strat[1];
+      const lp_address = strat[2];
+      const token0 = strat[3];
+      const token0_name = strat[4];
+      const token1 = strat[5];
+      const token1_name = strat[6];
+      const pool = strat[7];
+      const duration = strat[9];
+
+      if (+duration <= 0 || !token0 || ids === 'idx') {
+        console.log('skip', ids);
+        continue;
+      }
+
+      const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
+
+      console.log('strat', ids, lp_name);
+
+      const data = await DeployerUtils.deployAndInitVaultAndStrategy(
+          vaultNameWithoutPrefix,
+          vaultAddress => DeployerUtils.deployContract(
+              signer,
+              'StrategyQuickSwapLp',
+              core.controller,
+              vaultAddress,
+              lp_address,
+              token0,
+              token1,
+              pool
+          ) as Promise<IStrategy>,
+          core.controller,
+          core.psVault.address,
+          signer,
+          60 * 60 * 24 * 28,
+          false
+      );
+      data.push([
+        core.controller,
+        data[1].address,
+        lp_address,
+        token0,
+        token1,
+        pool
+      ]);
+      deployed.push(data);
+    }
+
+    infos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
+
+
+    for (let info of infos) {
+      const strat = info.split(',');
+
+      const idx = strat[0];
+      const lp_name = strat[1];
+      const lp_address = strat[2];
+      const token0 = strat[3];
+      const token0_name = strat[4];
+      const token1 = strat[5];
+      const token1_name = strat[6];
+      const alloc = strat[7];
+
+      if (+alloc <= 0 || idx === 'idx' || !idx) {
+        console.log('skip', idx);
+        continue;
+      }
+
+      const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
+      console.log('strat', idx, lp_name);
+
+      const data = await DeployerUtils.deployAndInitVaultAndStrategy(
+          vaultNameWithoutPrefix,
+          vaultAddress => DeployerUtils.deployContract(
+              signer,
+              'StrategySushiSwapLp',
+              core.controller,
+              vaultAddress,
+              lp_address,
+              token0,
+              token1,
+              idx
+          ) as Promise<IStrategy>,
+          core.controller,
+          core.psVault.address,
+          signer,
+          60 * 60 * 24 * 28,
+          false
+      );
+      data.push([
+        core.controller,
+        data[1].address,
+        lp_address,
+        token0,
+        token1,
+        idx
+      ]);
+      deployed.push(data);
+    }
+
+    infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+
+    for (let info of infos) {
+      const strat = info.split(',');
+
+      const idx = strat[0];
+      const lp_name = strat[1];
+      const lp_address = strat[2];
+      const token0 = strat[3];
+      const token0_name = strat[4];
+      const token1 = strat[5];
+      const token1_name = strat[6];
+      const alloc = strat[7];
+
+      if (+alloc <= 0 || idx === 'idx' || idx == '0' || !lp_name) {
+        console.log('skip', idx);
+        continue;
+      }
+
+      let vaultNameWithoutPrefix: string;
+      if (token1) {
+        vaultNameWithoutPrefix = `WAULT_${token0_name}_${token1_name}`;
+      } else {
+        vaultNameWithoutPrefix = `WAULT_${token0_name}`;
+      }
+
+      console.log('strat', idx, lp_name);
+
+      let data: any[];
+      if (token1) {
+        data = await DeployerUtils.deployAndInitVaultAndStrategy(
+            vaultNameWithoutPrefix,
+            vaultAddress => DeployerUtils.deployContract(
+                signer,
+                'StrategyWaultLp',
+                core.controller,
+                vaultAddress,
+                lp_address,
+                token0,
+                token1,
+                idx
+            ) as Promise<IStrategy>,
+            core.controller,
+            core.psVault.address,
+            signer,
+            60 * 60 * 24 * 28,
+            false
+        );
+        data.push([
+          core.controller,
+          data[1].address,
+          lp_address,
+          token0,
+          token1,
+          idx
+        ]);
+      } else {
+        data = await DeployerUtils.deployAndInitVaultAndStrategy(
+            vaultNameWithoutPrefix,
+            vaultAddress => DeployerUtils.deployContract(
+                signer,
+                'StrategyWaultSingle',
+                core.controller,
+                vaultAddress,
+                lp_address,
+                idx
+            ) as Promise<IStrategy>,
+            core.controller,
+            core.psVault.address,
+            signer,
+            60 * 60 * 24 * 28,
+            false
+        );
+        data.push([
+          core.controller,
+          data[1].address,
+          lp_address,
+          token0,
+          token1,
+          idx
+        ]);
+      }
+
+      deployed.push(data);
+    }
+
+  });
+
+  it("check exist deployment", async () => {
+    const core = await DeployerUtils.getCoreAddresses();
+    const tools = await DeployerUtils.getToolsAddresses();
+
+    const cReader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
+
+    const info = await cReader.vaultWithUserInfos(signer.address, ['0x890Ab3306A67f8f8d1eB23b52681c84D9b2cEa41']);
+    expect(info[0].vault.name).is.eq('TETU_QUICK_QUICK_PolyDoge');
   });
 
 

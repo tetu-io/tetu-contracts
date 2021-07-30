@@ -121,8 +121,7 @@ async function startDefaultLpStrategyTest(
           token1Opposite,
           utils.parseUnits(amountForSell0.toFixed(dec0), dec0),
           utils.parseUnits(amountForSell1.toFixed(dec1), dec1)
-      )
-      ;
+      );
       console.log('############## Preparations completed ##################');
     });
 

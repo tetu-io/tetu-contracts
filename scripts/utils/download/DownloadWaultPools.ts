@@ -3,7 +3,7 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {ERC20, IOracleMatic, IWaultSwapPair, IWexPolyMaster} from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
-import {writeFileSync} from "fs";
+import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {Addresses} from "../../../addresses";
 
@@ -77,6 +77,9 @@ async function main() {
     infos += data + '\n';
   }
 
+  mkdir('./tmp', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
 
   // console.log('data', data);
   await writeFileSync('./tmp/wault_pools.csv', infos, 'utf8');

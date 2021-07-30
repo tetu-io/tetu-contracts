@@ -33,7 +33,7 @@ export class Erc20Utils {
 
   public static async wrapMatic(signer: SignerWithAddress, amount: string) {
     const token = await ethers.getContractAt("IWmatic", MaticAddresses.WMATIC_TOKEN, signer) as IWmatic;
-    await token.deposit({value: utils.parseUnits(amount, 18).toString()})
+    return await token.deposit({value: utils.parseUnits(amount, 18).toString()})
   }
 
   public static async decimals(tokenAddress: string): Promise<number> {

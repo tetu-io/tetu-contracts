@@ -29,9 +29,9 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault. Can have another length than strategies.
-  address[] private _vaults;
+  address[] public _vaults;
   /// @dev Add when Controller register strategy. Can have another length than vaults.
-  address[] private _strategies;
+  address[] public _strategies;
   /// @inheritdoc IBookkeeper
   mapping(address => uint256) public override targetTokenEarned;
   mapping(address => HardWork) private _lastHardWork;
@@ -232,11 +232,23 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     return _vaults;
   }
 
+  /// @notice Return vaults array length
+  /// @return Length of Array of all registered vaults
+  function vaultsLength() external override view returns (uint256) {
+    return _vaults.length;
+  }
+
   /// @notice Return strategy array
   /// @dev This function should not use in any critical logics because DoS possible
   /// @return Array of all registered strategies
   function strategies() external override view returns (address[] memory) {
     return _strategies;
+  }
+
+  /// @notice Return strategies array length
+  /// @return Length of Array of all registered strategies
+  function strategiesLength() external override view returns (uint256) {
+    return _strategies.length;
   }
 
   /// @notice Return info about last doHardWork call for given vault

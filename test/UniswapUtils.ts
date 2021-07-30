@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {MaticAddresses} from "./MaticAddresses";
-import {IUniswapV2Factory, IUniswapV2Pair, IUniswapV2Router02} from "../typechain";
+import {IUniswapV2Factory, IUniswapV2Pair, IUniswapV2Router02, PriceCalculator} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {Erc20Utils} from "./Erc20Utils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -160,33 +160,31 @@ export class UniswapUtils {
       router: string,
       token: string,
       amountForSell: BigNumber,
-      oppositeToken: string = MaticAddresses.WMATIC_TOKEN
+      oppositeToken: string = MaticAddresses.WMATIC_TOKEN,
+      wait = false
   ) {
     const dec = await Erc20Utils.decimals(token);
     const symbol = await Erc20Utils.tokenSymbol(token);
     const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(token, signer.address), dec);
     console.log('try to buy', symbol, amountForSell.toString(), 'balance', balanceBefore);
     if (token === MaticAddresses.WMATIC_TOKEN) {
-      await Erc20Utils.wrapMatic(signer, utils.formatUnits(amountForSell, 18));
+      return await RunHelper.runAndWait(() =>
+              Erc20Utils.wrapMatic(signer, utils.formatUnits(amountForSell, 18)),
+          true, wait);
     } else {
       const oppositeTokenDec = await Erc20Utils.decimals(oppositeToken);
       const oppositeTokenBal = +utils.formatUnits(await Erc20Utils.balanceOf(oppositeToken, signer.address), oppositeTokenDec);
       if (oppositeTokenBal === 0) {
         throw Error('Need to refuel signer with ' + await Erc20Utils.tokenSymbol(oppositeToken) + ' ' + oppositeTokenBal);
       }
-      await UniswapUtils.swapExactTokensForTokens(
+      return await RunHelper.runAndWait(() => UniswapUtils.swapExactTokensForTokens(
           signer,
           [oppositeToken, token],
           amountForSell.toString(),
           signer.address,
           router
-      );
+      ), true, wait);
     }
-    const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(token, signer.address), dec);
-    console.log('bought', symbol, balanceAfter - balanceBefore);
-
-    expect(+utils.parseUnits(balanceAfter.toFixed(dec), dec))
-    .is.greaterThan(+utils.parseUnits(balanceBefore.toFixed(dec), dec), 'token not bought');
   }
 
   public static async buyTokensAndAddLiq(
@@ -199,16 +197,17 @@ export class UniswapUtils {
       token1: string,
       token1Opposite: string,
       amountForSell0: BigNumber,
-      amountForSell1: BigNumber
+      amountForSell1: BigNumber,
+      wait = false
   ) {
 
     const token0Bal = await Erc20Utils.balanceOf(token0, signer.address);
     const token1Bal = await Erc20Utils.balanceOf(token1, signer.address);
     if (token0Bal.isZero()) {
-      await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(factory0), token0, amountForSell0, token0Opposite);
+      await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(factory0), token0, amountForSell0, token0Opposite, wait);
     }
     if (token1Bal.isZero()) {
-      await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(factory1), token1, amountForSell1, token1Opposite);
+      await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(factory1), token1, amountForSell1, token1Opposite, wait);
     }
 
     const factory = await UniswapUtils.connectFactory(targetFactory, signer);
@@ -223,7 +222,8 @@ export class UniswapUtils {
         (await Erc20Utils.balanceOf(token0, signer.address)).toString(),
         (await Erc20Utils.balanceOf(token1, signer.address)).toString(),
         targetFactory,
-        MaticAddresses.getRouterByFactory(targetFactory)
+        MaticAddresses.getRouterByFactory(targetFactory),
+        wait
     );
 
     const lpBalanceAfter = await Erc20Utils.balanceOf(lpToken, signer.address);
@@ -235,6 +235,17 @@ export class UniswapUtils {
 
   public static async wrapMatic(signer: SignerWithAddress) {
     await Erc20Utils.wrapMatic(signer, utils.formatUnits(utils.parseUnits('10000000'))); // 10m wmatic
+  }
+
+  public static async amountForSell(
+      usdAmount: number,
+      tokenAddress: string,
+      priceCalculator: PriceCalculator
+  ) {
+    const dec = await Erc20Utils.decimals(tokenAddress);
+    const price = await priceCalculator.getPriceWithDefaultOutput(tokenAddress);
+    const D18 = BigNumber.from('1000000000000000000');
+    return BigNumber.from(usdAmount).mul(D18).mul(BigNumber.from(1).pow(dec)).div(price)
   }
 
   public static async buyAllBigTokens(

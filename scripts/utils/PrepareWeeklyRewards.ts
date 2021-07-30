@@ -1,74 +1,73 @@
 import {ethers} from "hardhat";
-import {writeFileSync} from "fs";
+import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
-import {Bookkeeper, IMiniChefV2, IOracleMatic, IRewarder, IStrategy} from "../../typechain";
+import {
+  Bookkeeper,
+  ContractReader,
+  IMiniChefV2,
+  IRewarder,
+  IStrategy,
+  PriceCalculator
+} from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {MaticAddresses} from "../../test/MaticAddresses";
 import {Erc20Utils} from "../../test/Erc20Utils";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
-  const chef = await DeployerUtils.connectInterface(signer, 'IMiniChefV2', MaticAddresses.SUSHI_MINISHEFV2) as IMiniChefV2;
+  const tools = await DeployerUtils.getToolsAddresses();
   const bookkeeper = await DeployerUtils.connectContract(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
-  const oracle = await DeployerUtils.connectInterface(signer, 'IOracleMatic', '0xb8c898e946a1e82f244c7fcaa1f6bd4de028d559') as IOracleMatic;
+  const cReader = await DeployerUtils.connectContract(
+      signer, "ContractReader", tools.reader) as ContractReader;
+  const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
   // TODO price from oracle
-  const rewardTokenPrice = 0.1;
+  const rewardTokenPrice = 0.25;
   const vaults = await bookkeeper.vaults();
-
-
-  // ************** SUSHI STATS ****************
-  const sushiPerSecond = await chef.sushiPerSecond();
-  const sushiTotalAllocPoint = await chef.totalAllocPoint();
-  const sushiPrice = await oracle.getPrice(MaticAddresses.SUSHI_TOKEN);
-  console.log('sushi price', utils.formatUnits(sushiPrice));
-  const maticPrice = await oracle.getPrice(MaticAddresses.WMATIC_TOKEN);
-  console.log('maticPrice', utils.formatUnits(maticPrice));
-
+  const prices = new Map<string, number>();
 
   // *********** RESULT VARS ***********
+  let vaultNames = '';
   let vaultsToDistribute = '';
   let amountsToDistribute = '';
   let sum = BigNumber.from(0);
 
   for (let vault of vaults) {
-    const vaultContract = await DeployerUtils.connectVault(vault, signer);
-
-    if (!(await vaultContract.active()) || vault === core.psVault) {
+    let vInfo;
+    try {
+      vInfo = await cReader.vaultInfo(vault);
+    } catch (e) {
+      console.error('error fetch vInfo', vault);
+      return;
+    }
+    if (!vInfo.active || vault === core.psVault) {
+      console.log('skip', vInfo.name);
       continue;
     }
 
-    const strat = await vaultContract.strategy();
+    console.log('vault', vInfo.name);
+
+    const strat = vInfo.strategy;
     const stratContract = await DeployerUtils.connectInterface(signer, 'IStrategy', strat) as IStrategy;
 
-    const rts = await stratContract.rewardTokens();
+    const rts = vInfo.strategyRewards;
 
     let poolWeeklyRewardsAmount: number = 0;
     for (let i = 0; i < rts.length; i++) {
+      const rt = rts[i];
       const rewardsData = await stratContract.poolWeeklyRewardsAmount();
-      const rtDec = await Erc20Utils.decimals(rts[i]);
-      poolWeeklyRewardsAmount += +utils.formatUnits(rewardsData[i], rtDec);
+      const rtDec = await Erc20Utils.decimals(rt);
+
+      if (!prices.has(rt)) {
+        const rtPrice = await calculator.getPriceWithDefaultOutput(rt);
+        prices.set(rt, +utils.formatUnits(rtPrice));
+        console.log('rt price', rt, rtPrice);
+      }
+
+      poolWeeklyRewardsAmount += +utils.formatUnits(rewardsData[i], rtDec) * (prices.get(rt) as number);
     }
 
-
-    // const platform = await stratContract.platform();
-    // if (platform === 'SUSHI') {
-    //   const mcStrat = await DeployerUtils.connectInterface(signer, 'MCv2StrategyFullBuyback', strat) as MCv2StrategyFullBuyback;
-    //   const poolId = await mcStrat.poolID();
-    //   poolWeeklyRewardsAmount = await sushiData(
-    //       poolId.toNumber(),
-    //       signer,
-    //       chef,
-    //       sushiPerSecond,
-    //       sushiTotalAllocPoint,
-    //       sushiPrice,
-    //       maticPrice
-    //   );
-    // } else {
-    //   throw Error('Unknown platform ' + platform);
-    // }
 
     if (poolWeeklyRewardsAmount === 0) {
       throw Error('zero rewards for ' + vault);
@@ -76,17 +75,26 @@ async function main() {
 
     const rewardTokenAmount = poolWeeklyRewardsAmount / rewardTokenPrice
 
+    vaultNames += vInfo.name + ',';
     vaultsToDistribute += vault + ',';
     amountsToDistribute += utils.parseUnits(rewardTokenAmount.toString()).toString() + ',';
     sum = sum.add(utils.parseUnits(rewardTokenAmount.toString()));
 
-
   }
+  vaultNames = vaultNames.substr(0, vaultNames.length - 1);
+  vaultsToDistribute = vaultsToDistribute.substr(0, vaultsToDistribute.length - 1);
+  amountsToDistribute = amountsToDistribute.substr(0, amountsToDistribute.length - 1);
+
+  mkdir('./tmp', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
+
+  console.log('vaultNames', vaultNames);
   console.log('vaults', vaultsToDistribute);
   console.log('amounts', amountsToDistribute);
   console.log('sum', sum);
   await writeFileSync('./tmp/to_distribute.txt',
-      vaultsToDistribute + '\n' + amountsToDistribute + '\n' + sum
+      vaultNames + '\n' + vaultsToDistribute + '\n' + amountsToDistribute + '\n' + sum
       , 'utf8');
   console.log('done');
 }

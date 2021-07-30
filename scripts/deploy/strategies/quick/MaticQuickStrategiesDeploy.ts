@@ -1,18 +1,30 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {readFileSync} from "fs";
-import {Controller, IStrategy} from "../../../../typechain";
+import {ContractReader, Controller, IStrategy} from "../../../../typechain";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
 
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
 
   const infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
 
   const deployed = [];
+  const vaultNames = new Set<string>();
+
+  const cReader = await DeployerUtils.connectContract(
+      signer, "ContractReader", tools.reader) as ContractReader;
+
+  const deployedVaultAddresses = await cReader.vaults();
+  console.log('all vaults size', deployedVaultAddresses.length);
+
+  for (let vAdr of deployedVaultAddresses) {
+    vaultNames.add(await cReader.vaultName(vAdr));
+  }
 
   for (let info of infos) {
     const strat = info.split(',');
@@ -32,10 +44,17 @@ async function main() {
       continue;
     }
 
+    const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
+
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
+      continue;
+    }
+
     console.log('strat', ids, lp_name);
 
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        `QUICK_${token0_name}_${token1_name}`,
+        vaultNameWithoutPrefix,
         vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyQuickSwapLp',

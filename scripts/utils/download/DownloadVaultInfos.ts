@@ -3,7 +3,7 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ContractReader, TetuProxyGov} from "../../../typechain";
 import {VaultInfoModel} from "../../models/VaultInfoModel";
 import {UserInfoModel} from "../../models/UserInfoModel";
-import {writeFileSync} from 'fs';
+import {mkdir, writeFileSync} from 'fs';
 import {InfoModel} from "../../models/InfoModel";
 
 
@@ -30,6 +30,11 @@ async function main() {
         userInfo(info.user),
     ));
   }
+
+  mkdir('./tmp', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
+
   const data = JSON.stringify(infosParsed);
   // console.log('data', data);
   await writeFileSync('./tmp/infos.json', data, 'utf8');

@@ -49,7 +49,11 @@ interface IBookkeeper {
 
   function vaults() external view returns (address[] memory);
 
+  function vaultsLength() external view returns (uint256);
+
   function strategies() external view returns (address[] memory);
+
+  function strategiesLength() external view returns (uint256);
 
   function lastPpfsChange(address vault) external view returns (PpfsChange memory);
 

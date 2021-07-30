@@ -77,17 +77,14 @@ contract ContractReader is Initializable, Controllable {
     uint256[] rewardsUsdc;
   }
 
+  struct VaultWithUserInfo {
+    VaultInfo vault;
+    UserInfo user;
+  }
+
   // **************************************************************
   // HEAVY QUERIES
   //***************************************************************
-
-  function vaultInfos() external view returns (VaultInfo[] memory) {
-    VaultInfo[] memory result = new VaultInfo[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultInfo(vaults()[i]);
-    }
-    return result;
-  }
 
   function vaultInfo(address vault) public view returns (VaultInfo memory) {
     address strategy = ISmartVault(vault).strategy();
@@ -119,15 +116,6 @@ contract ContractReader is Initializable, Controllable {
     return v;
   }
 
-  function userInfos(address _user)
-  external view returns (UserInfo[] memory) {
-    UserInfo[] memory result = new UserInfo[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = userInfo(_user, vaults()[i]);
-    }
-    return result;
-  }
-
   function userInfo(address _user, address _vault) public view returns (UserInfo memory) {
     address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
     uint256[] memory rewards = new uint256[](rewardTokens.length);
@@ -148,18 +136,13 @@ contract ContractReader is Initializable, Controllable {
     );
   }
 
-  struct VaultWithUserInfo {
-    VaultInfo vault;
-    UserInfo user;
-  }
-
-  function vaultWithUserInfos(address _user)
+  function vaultWithUserInfos(address _user, address[] memory _vaults)
   external view returns (VaultWithUserInfo[] memory){
-    VaultWithUserInfo[] memory result = new VaultWithUserInfo[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
+    VaultWithUserInfo[] memory result = new VaultWithUserInfo[](_vaults.length);
+    for (uint256 i = 0; i < _vaults.length; i++) {
       result[i] = VaultWithUserInfo(
-        vaultInfo(vaults()[i]),
-        userInfo(_user, vaults()[i])
+        vaultInfo(_vaults[i]),
+        userInfo(_user, _vaults[i])
       );
     }
     return result;
@@ -355,12 +338,12 @@ contract ContractReader is Initializable, Controllable {
     return IStrategy(_strategy).rewardTokens();
   }
 
-  function strategyPausedInvesting(address _strategy) internal view returns (bool){
+  function strategyPausedInvesting(address _strategy) public view returns (bool){
     return IStrategy(_strategy).pausedInvesting();
   }
 
   // normalized precision
-  function strategyEarned(address _strategy) internal view returns (uint256){
+  function strategyEarned(address _strategy) public view returns (uint256){
     address targetToken = IController(controller()).rewardToken();
     return normalizePrecision(
       IBookkeeper(bookkeeper()).targetTokenEarned(_strategy),
@@ -423,129 +406,6 @@ contract ContractReader is Initializable, Controllable {
       );
     }
     return rewards;
-  }
-
-  // ************ LISTS ********************
-
-  function vaultUsersList() external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultUsers(vaults()[i]);
-    }
-    return result;
-  }
-
-  function vaultNamesList() external view returns (string[] memory) {
-    string[] memory names = new string[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      names[i] = vaultName(vaults()[i]);
-    }
-    return names;
-  }
-
-  function vaultTvlsList() external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultTvl(vaults()[i]);
-    }
-    return result;
-  }
-
-  function vaultDecimalsList() external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultDecimals(vaults()[i]);
-    }
-    return result;
-  }
-
-  function vaultPlatformsList() external view returns (string[] memory) {
-    string[] memory result = new string[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = IStrategy(ISmartVault(vaults()[i]).strategy()).platform();
-    }
-    return result;
-  }
-
-  function vaultAssetsList() external view returns (address[][] memory) {
-    address[][] memory result = new address[][](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = IStrategy(ISmartVault(vaults()[i]).strategy()).assets();
-    }
-    return result;
-  }
-
-  function vaultCreatedList() external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultCreated(vaults()[i]);
-    }
-    return result;
-  }
-
-  function vaultActiveList() external view returns (bool[] memory) {
-    bool[] memory result = new bool[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultActive(vaults()[i]);
-    }
-    return result;
-  }
-
-  function vaultDurationList() external view returns (uint256[] memory){
-    uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = vaultDuration(vaults()[i]);
-    }
-    return result;
-  }
-
-  function strategyCreatedList() external view returns (uint256[] memory){
-    uint256[] memory result = new uint256[](strategies().length);
-    for (uint256 i = 0; i < strategies().length; i++) {
-      result[i] = strategyCreated(strategies()[i]);
-    }
-    return result;
-  }
-
-  function strategyPlatformList() external view returns (string[] memory){
-    string[] memory result = new string[](strategies().length);
-    for (uint256 i = 0; i < strategies().length; i++) {
-      result[i] = strategyPlatform(strategies()[i]);
-    }
-    return result;
-  }
-
-  function strategyAssetsList() external view returns (address[][] memory){
-    address[][] memory result = new address[][](strategies().length);
-    for (uint256 i = 0; i < strategies().length; i++) {
-      result[i] = strategyAssets(strategies()[i]);
-    }
-    return result;
-  }
-
-  function strategyRewardTokensList() external view returns (address[][] memory){
-    address[][] memory result = new address[][](strategies().length);
-    for (uint256 i = 0; i < strategies().length; i++) {
-      result[i] = strategyRewardTokens(strategies()[i]);
-    }
-    return result;
-  }
-
-  function strategyPausedInvestingList() external view returns (bool[] memory){
-    bool[] memory result = new bool[](strategies().length);
-    for (uint256 i = 0; i < strategies().length; i++) {
-      result[i] = strategyPausedInvesting(strategies()[i]);
-    }
-    return result;
-  }
-
-
-  function userRewardsList(address _user, address _rewardToken) external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](vaults().length);
-    for (uint256 i = 0; i < vaults().length; i++) {
-      result[i] = ISmartVault(vaults()[i]).earned(_rewardToken, _user);
-    }
-    return result;
   }
 
   function vaults() public view returns (address[] memory){

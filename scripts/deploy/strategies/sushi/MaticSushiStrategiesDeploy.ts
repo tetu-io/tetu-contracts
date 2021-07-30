@@ -1,19 +1,30 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {Controller, IStrategy} from "../../../../typechain";
+import {ContractReader, Controller, IStrategy} from "../../../../typechain";
 import {readFileSync} from "fs";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
 
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
 
   const infos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
 
   const deployed = [];
+  const vaultNames = new Set<string>();
+
+  const cReader = await DeployerUtils.connectContract(
+      signer, "ContractReader", tools.reader) as ContractReader;
+
+  const deployedVaultAddresses = await cReader.vaults();
+  console.log('all vaults size', deployedVaultAddresses.length);
+
+  for (let vAdr of deployedVaultAddresses) {
+    vaultNames.add(await cReader.vaultName(vAdr));
+  }
 
   for (let info of infos) {
     const strat = info.split(',');
@@ -27,15 +38,22 @@ async function main() {
     const token1_name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx') {
+    if (+alloc <= 0 || idx === 'idx' || !idx) {
       console.log('skip', idx);
+      continue;
+    }
+
+    const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
+
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
     console.log('strat', idx, lp_name);
 
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        `SUSHI_${token0_name}_${token1_name}`,
+        vaultNameWithoutPrefix,
         vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategySushiSwapLp',
@@ -70,7 +88,6 @@ async function main() {
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);
     await DeployerUtils.verifyWithArgs(data[2].address, data[3]);
-
   }
 }
 

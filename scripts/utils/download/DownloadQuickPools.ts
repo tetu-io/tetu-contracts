@@ -7,7 +7,7 @@ import {
   SNXRewardInterface
 } from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
-import {writeFileSync} from "fs";
+import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {utils} from "ethers";
 import {Addresses} from "../../../addresses";
@@ -92,6 +92,10 @@ async function main() {
     console.log(data);
     infos += data + '\n';
   }
+
+  mkdir('./tmp', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
 
   await writeFileSync('./tmp/quick_pools.csv', infos, 'utf8');
   console.log('done');

@@ -43,6 +43,10 @@ export default {
         {
           privateKey: "2fa47ef2cc8a29842081ce03948d4039538a320068cad021036ffd8accec879d", // random account
           balance: "1000000000000000000000000000",
+        },
+        {
+          privateKey: Secrets.mumbaiPrivateKey,
+          balance: "1000000000000000000000000000",
         }
       ],
     },
@@ -50,6 +54,8 @@ export default {
       url: Secrets.maticRpcUrl,
       chainId: 137,
       gas: 8_000_000,
+      gasPrice: 5_000_000_000,
+      // gasMultiplier: 2,
       accounts: [
         Secrets.maticPrivateKey
       ],
