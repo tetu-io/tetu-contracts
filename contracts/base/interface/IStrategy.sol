@@ -15,11 +15,11 @@ pragma solidity 0.8.4;
 interface IStrategy {
 
   enum Platform {
-    UNKNOWN,
-    TETU,
-    QUICK,
-    SUSHI,
-    WAULT
+    UNKNOWN, // 0
+    TETU, // 1
+    QUICK, // 2
+    SUSHI, // 3
+    WAULT // 4
   }
 
   // *************** GOVERNANCE ACTIONS **************

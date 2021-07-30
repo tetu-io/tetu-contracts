@@ -20,7 +20,7 @@ async function main() {
   const net = (await ethers.provider.getNetwork()).name;
   const core = await DeployerUtils.getCoreAddresses();
   const mocks = await DeployerUtils.getTokenAddresses();
-  const platform = 'SUSHI';
+  const platform = 3; // sushi
 
   const poolReward = mocks.get('quick') as string;
   const poolRewardAmountN = '10000';

@@ -5,7 +5,7 @@ import {ethers} from "hardhat";
 import {writeFileSync} from "fs";
 
 
-async function main() {
+export default async function main() {
   const signer = (await ethers.getSigners())[0];
   const net = (await ethers.provider.getNetwork()).name;
 
@@ -70,6 +70,8 @@ async function main() {
   await DeployerUtils.verifyProxy(core.psVault.address);
   await DeployerUtils.verifyWithArgs(core.psEmptyStrategy.address,
       [core.controller.address, core.rewardToken.address, core.psVault.address, [], [core.rewardToken.address]]);
+
+  return core;
 }
 
 main()

@@ -7,13 +7,14 @@ async function main() {
   const outputPath = 'tmp/assets/matic/';
   const quickInfos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
   const sushiInfos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
+  const waultInfos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
 
   mkdir(outputPath, {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   const assets = new Map<string, string>([
-      ['0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a'.toLowerCase(),'SUSHI']
+    ['0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a'.toLowerCase(), 'SUSHI']
   ]);
   const absent = new Map<string, string>();
 
@@ -47,6 +48,24 @@ async function main() {
 
     assets.set(token0.toLowerCase(), token0Name);
     assets.set(token1.toLowerCase(), token1Name);
+  }
+
+  for (let info of waultInfos) {
+    const strat = info.split(',');
+    if (+strat[7] <= 0 || strat[0] === 'idx' || strat[0] == '0' || !strat[1]) {
+      console.log('skip', strat[0]);
+      continue;
+    }
+    // console.log('strat', strat[0], strat[1]);
+    const token0 = strat[3];
+    const token0Name = strat[4];
+    const token1 = strat[5];
+    const token1Name = strat[6];
+
+    assets.set(token0.toLowerCase(), token0Name);
+    if (token1) {
+      assets.set(token1.toLowerCase(), token1Name);
+    }
   }
 
   for (let address of Array.from(assets.keys())) {

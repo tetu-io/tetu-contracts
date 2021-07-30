@@ -80,6 +80,7 @@ export default {
       url: "https://rinkeby.infura.io/v3/" + Secrets.infuraKey,
       chainId: 4,
       gas: 8_000_000,
+      gasPrice: 1_100_000_000,
       accounts: [
         Secrets.ropstenPrivateKey,
         Secrets.ropstenPrivateKey2,
