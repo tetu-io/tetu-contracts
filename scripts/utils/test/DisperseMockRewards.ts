@@ -20,6 +20,7 @@ async function main() {
   const vaultsPerRt = new Map<string, string[]>();
   const allAmounts: Map<string, BigNumber[]> = new Map<string, BigNumber[]>();
   let allSum: Map<string, BigNumber> = new Map<string, BigNumber>();
+  let i = 0;
   for (let vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
 
@@ -39,11 +40,11 @@ async function main() {
       const rtDecimals = await Erc20Utils.decimals(rt);
 
       const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", rt) as ERC20PresetMinterPauser;
-      await mockContract.mint(signer.address, utils.parseUnits("10000", rtDecimals));
+      await mockContract.mint(signer.address, utils.parseUnits("100000", rtDecimals));
 
       const availableAmount = +(+utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals)).toFixed();
       console.log("availableAmount", availableAmount)
-      const amountN = (availableAmount / vaults.length / 1000).toFixed();
+      const amountN = (availableAmount / vaults.length / 2).toFixed();
       console.log("amountN", amountN)
 
 
@@ -70,21 +71,29 @@ async function main() {
       }
       v.push(vault);
     }
+    i++;
+
+    if (i >= 50 || i === vaults.length - 1) {
+      for (let rt of Array.from(allSum.keys())) {
+        const rtDecimals = await Erc20Utils.decimals(rt);
+        const amounts = allAmounts.get(rt) as BigNumber[];
+        const sum = allSum.get(rt) as BigNumber;
+        const vlts = vaultsPerRt.get(rt) as string[];
+
+        const bal = utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals)
+        console.log("notify", rt, amounts.length, vlts.length, bal, utils.formatUnits(sum, rtDecimals));
+
+        await Erc20Utils.transfer(rt, signer, notifyHelper.address, sum.toString());
+        await RunHelper.runAndWait(() => notifyHelper.notifyVaults(amounts, vlts, sum, rt));
+      }
+      i = 0;
+      allSum.clear();
+      allAmounts.clear();
+      vaultsPerRt.clear();
+    }
 
   }
 
-  for (let rt of Array.from(allSum.keys())) {
-    const rtDecimals = await Erc20Utils.decimals(rt);
-    const amounts = allAmounts.get(rt) as BigNumber[];
-    const sum = allSum.get(rt) as BigNumber;
-    const vlts = vaultsPerRt.get(rt) as string[];
-
-    const bal = utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals)
-    console.log("notify", rt, amounts.length, vlts.length, bal, utils.formatUnits(sum, rtDecimals));
-
-    await Erc20Utils.transfer(rt, signer, notifyHelper.address, sum.toString());
-    await RunHelper.runAndWait(() => notifyHelper.notifyVaults(amounts, vlts, sum, rt));
-  }
 }
 
 main()
