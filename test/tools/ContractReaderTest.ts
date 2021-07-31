@@ -455,15 +455,15 @@ describe("contract reader tests", function () {
   //
   // });
 
-  it("check exist deployment", async () => {
-    const core = await DeployerUtils.getCoreAddresses();
-    const tools = await DeployerUtils.getToolsAddresses();
-
-    const cReader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
-
-    const info = await cReader.vaultWithUserInfos(signer.address, ['0x890Ab3306A67f8f8d1eB23b52681c84D9b2cEa41']);
-    expect(info[0].vault.name).is.eq('TETU_QUICK_QUICK_PolyDoge');
-  });
+  // it("check exist deployment", async () => {
+  //   const core = await DeployerUtils.getCoreAddresses();
+  //   const tools = await DeployerUtils.getToolsAddresses();
+  //
+  //   const cReader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
+  //
+  //   const info = await cReader.vaultWithUserInfos(signer.address, ['0x890Ab3306A67f8f8d1eB23b52681c84D9b2cEa41']);
+  //   expect(info[0].vault.name).is.eq('TETU_QUICK_QUICK_PolyDoge');
+  // });
 
 
 });

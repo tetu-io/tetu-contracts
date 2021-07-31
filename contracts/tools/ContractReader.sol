@@ -298,6 +298,33 @@ contract ContractReader is Initializable, Controllable {
     return result;
   }
 
+  function tetuTokenValues() external view returns (uint256[] memory){
+    uint256 price = getPrice(IController(controller()).rewardToken());
+    uint256 mCap = ERC20(IController(controller()).rewardToken()).totalSupply()
+    .mul(price).div(1e18);
+
+    uint256[] memory result = new uint256[](2);
+    result[0] = price;
+    result[1] = mCap;
+    return result;
+  }
+
+  function totalTvlUsdc(address[] memory _vaults) external view returns (uint256) {
+    uint256 result = 0;
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result += vaultTvlUsdc(_vaults[i]);
+    }
+    return result;
+  }
+
+  function totalTetuBoughBack(address[] memory _vaults) external view returns (uint256) {
+    uint256 result = 0;
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result += strategyEarned(ISmartVault(_vaults[i]).strategy());
+    }
+    return result;
+  }
+
 
   // ********************** FIELDS ***********************
 
@@ -451,10 +478,6 @@ contract ContractReader is Initializable, Controllable {
 
   function strategyPlatform(address _strategy) public view returns (IStrategy.Platform){
     return IStrategy(_strategy).platform();
-  }
-
-  function strategyPlatformStub(address) public pure returns (string memory){
-    return "0";
   }
 
   function strategyAssets(address _strategy) public view returns (address[] memory){
