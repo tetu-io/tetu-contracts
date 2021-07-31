@@ -12,7 +12,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const mocks = await DeployerUtils.getTokenAddresses();
   const signer = (await ethers.getSigners())[0];
-  const base = 1_000;
+  const base = 100_000;
   let prevMock;
   let prevMockName;
 

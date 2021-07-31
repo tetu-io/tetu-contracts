@@ -22,17 +22,21 @@ async function main() {
   const cReader = await DeployerUtils.connectContract(
       signer, "ContractReader", tools.reader) as ContractReader;
   const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
-  // TODO price from oracle
-  const rewardTokenPrice = 0.25;
+
+  const rewardTokenPrice = 0.17;
   const vaults = await bookkeeper.vaults();
   const prices = new Map<string, number>();
+
+  mkdir('./tmp', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
 
   // *********** RESULT VARS ***********
   let vaultNames = '';
   let vaultsToDistribute = '';
   let amountsToDistribute = '';
   let sum = BigNumber.from(0);
-
+  let i = 0;
   for (let vault of vaults) {
     let vInfo;
     try {
@@ -80,23 +84,20 @@ async function main() {
     amountsToDistribute += utils.parseUnits(rewardTokenAmount.toString()).toString() + ',';
     sum = sum.add(utils.parseUnits(rewardTokenAmount.toString()));
 
+    if (i >= 50 || i === vaults.length - 1) {
+      vaultNames = vaultNames.substr(0, vaultNames.length - 1);
+      vaultsToDistribute = vaultsToDistribute.substr(0, vaultsToDistribute.length - 1);
+      amountsToDistribute = amountsToDistribute.substr(0, amountsToDistribute.length - 1);
+
+      console.log('sum', sum);
+      await writeFileSync(`./tmp/to_distribute_${i}.txt`,
+          vaultNames + '\n' + vaultsToDistribute + '\n' + amountsToDistribute + '\n' + sum
+          , 'utf8');
+
+    }
+
   }
-  vaultNames = vaultNames.substr(0, vaultNames.length - 1);
-  vaultsToDistribute = vaultsToDistribute.substr(0, vaultsToDistribute.length - 1);
-  amountsToDistribute = amountsToDistribute.substr(0, amountsToDistribute.length - 1);
 
-  mkdir('./tmp', {recursive: true}, (err) => {
-    if (err) throw err;
-  });
-
-  console.log('vaultNames', vaultNames);
-  console.log('vaults', vaultsToDistribute);
-  console.log('amounts', amountsToDistribute);
-  console.log('sum', sum);
-  await writeFileSync('./tmp/to_distribute.txt',
-      vaultNames + '\n' + vaultsToDistribute + '\n' + amountsToDistribute + '\n' + sum
-      , 'utf8');
-  console.log('done');
 }
 
 main()

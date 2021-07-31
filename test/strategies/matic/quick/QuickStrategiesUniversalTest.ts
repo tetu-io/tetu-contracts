@@ -32,10 +32,11 @@ describe('Universal Quick tests', async () => {
     const duration = strat[9];
 
     if (+duration <= 0 || !token0 || ids === 'idx') {
-      console.log('skip', ids);
+      console.log('skip', ids, duration);
       return;
     }
-    if (Settings.onlyOneQuickStrategyTest && +strat[0] !== Settings.onlyOneQuickStrategyTest) {
+    if (Settings.onlyOneQuickStrategyTest && +ids !== Settings.onlyOneQuickStrategyTest) {
+      console.log('only one strat', ids, Settings.onlyOneQuickStrategyTest);
       return;
     }
     console.log('strat', ids, lp_name);

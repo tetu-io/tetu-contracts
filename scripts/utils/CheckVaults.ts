@@ -14,9 +14,22 @@ async function main() {
   const cReader = await DeployerUtils.connectContract(
       signer, "ContractReader", tools.reader) as ContractReader;
 
-
   const vaults = await bookkeeper.vaults();
   console.log('vaults ', vaults.length);
+
+  const i = await cReader.vaultWithUserInfos(signer.address, ['0x890Ab3306A67f8f8d1eB23b52681c84D9b2cEa41'], {gasLimit: 100_000_000});
+  console.log('i', i[0].vault.name);
+
+  const vInfos = await cReader.vaultWithUserInfoPagesLight(signer.address, 0, 11, {gasLimit: 100_000_000});
+  console.log('light is ok');
+
+  const batch = 20;
+  await cReader.vaultInfosLight(vaults.slice(0, batch), {gasLimit: 100_000_000});
+  console.log('v ok');
+  await cReader.userInfosLight(signer.address, vaults.slice(0, batch), {gasLimit: 100_000_000});
+  console.log('u ok');
+  await cReader.vaultWithUserInfosLight(signer.address, vaults.slice(0, Math.floor(batch / 2)), {gasLimit: 100_000_000});
+  console.log('uv ok');
 
   for (let vault of vaults) {
     let vInfoWithUser;

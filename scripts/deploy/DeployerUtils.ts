@@ -1,4 +1,4 @@
-import {ethers} from "hardhat";
+import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Contract, ContractFactory, utils} from "ethers";
 import {
@@ -80,6 +80,10 @@ export class DeployerUtils {
   ) {
     console.log(`Deploying ${name}`);
     console.log("Account balance:", utils.formatUnits(await signer.getBalance(), 18));
+
+    const gasPrice = await web3.eth.getGasPrice();
+    console.log("Gas price:", gasPrice);
+
     const factory = (await ethers.getContractFactory(
         name,
         signer

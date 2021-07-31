@@ -80,9 +80,9 @@ contract NoopStrategy is StrategyBase {
   }
 
   /// @dev Platform name for statistical purposes
-  /// @return Platform name
-  function platform() external override pure returns (string memory) {
-    return "NOOP";
+  /// @return Platform enum index
+  function platform() external override pure returns (Platform) {
+    return Platform.TETU;
   }
 
   /// @dev Single Tokens that need to have for investing. Using for statistical purposes

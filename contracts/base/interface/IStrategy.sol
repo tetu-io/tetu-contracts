@@ -14,6 +14,14 @@ pragma solidity 0.8.4;
 
 interface IStrategy {
 
+  enum Platform {
+    UNKNOWN, // 0
+    TETU, // 1
+    QUICK, // 2
+    SUSHI, // 3
+    WAULT // 4
+  }
+
   // *************** GOVERNANCE ACTIONS **************
   function withdrawAllToVault() external;
 
@@ -46,7 +54,7 @@ interface IStrategy {
 
   function investedUnderlyingBalance() external view returns (uint256);
 
-  function platform() external view returns (string memory);
+  function platform() external view returns (Platform);
 
   function assets() external view returns (address[] memory);
 

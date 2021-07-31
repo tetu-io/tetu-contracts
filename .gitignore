@@ -17,7 +17,6 @@ secrets.ts
 .tenderly
 arguments-*.js
 sh
-docs
 tmp
 settings.ts
 token_addresses.txt

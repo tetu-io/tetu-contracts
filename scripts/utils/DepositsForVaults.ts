@@ -60,11 +60,11 @@ async function main() {
       const assets = vInfo.assets;
       let factory;
 
-      if (vInfo.platform === 'SUSHI') {
+      if (vInfo.platform === 3) {
         factory = MaticAddresses.SUSHI_FACTORY;
-      } else if (vInfo.platform === 'QUICK') {
+      } else if (vInfo.platform === 2) {
         factory = MaticAddresses.QUICK_FACTORY;
-      } else if (vInfo.platform === 'WAULT') {
+      } else if (vInfo.platform === 4) {
         factory = MaticAddresses.WAULT_FACTORY;
       } else {
         console.log('unknown platform ' + vInfo.platform);

@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract MockStrategySelfFarm is StrategyBase {
   using SafeERC20 for IERC20;
 
-  string private _platform;
+  IStrategy.Platform private _platform;
   address[] private _assets;
 
   string public constant VERSION = "1.0.0";
@@ -34,7 +34,7 @@ contract MockStrategySelfFarm is StrategyBase {
     address _pool,
     address __underlying,
     address[] memory __assets,
-    string memory __platform,
+    IStrategy.Platform __platform,
     address[] memory __rewards
   ) StrategyBase(_controller, __underlying, _vault, __rewards, BUY_BACK_RATIO) {
     require(_pool != address(0), "zero address");
@@ -73,7 +73,7 @@ contract MockStrategySelfFarm is StrategyBase {
     liquidateRewardDefault();
   }
 
-  function platform() external override view returns (string memory) {
+  function platform() external override view returns (IStrategy.Platform) {
     return _platform;
   }
 

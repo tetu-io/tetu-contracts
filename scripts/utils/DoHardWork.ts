@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, Controller, IStrategy} from "../../typechain";
+import {Bookkeeper, Controller, IStrategy, PriceCalculator} from "../../typechain";
 import {utils} from "ethers";
 import {Erc20Utils} from "../../test/Erc20Utils";
 import {RunHelper} from "./RunHelper";
@@ -8,10 +8,12 @@ import {RunHelper} from "./RunHelper";
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
   const signer = (await ethers.getSigners())[0];
 
   const controller = await DeployerUtils.connectProxy(core.controller, signer, "Controller") as Controller;
   const bookkeeper = await DeployerUtils.connectProxy(core.bookkeeper, signer, "Bookkeeper") as Bookkeeper;
+  const calculator = await DeployerUtils.connectProxy(tools.calculator, signer, "PriceCalculator") as PriceCalculator;
   const ps = await DeployerUtils.connectVault(core.psVault, signer);
 
   const vaults = await bookkeeper.vaults();
@@ -26,7 +28,7 @@ async function main() {
       const vaultName = await vaultContract.name();
 
       // const platform = await
-      if (!(await vaultContract.active()) || platform === 'NOOP') {
+      if (!(await vaultContract.active()) || platform <= 1) {
         continue;
       }
       const readyToClaim = await stratContr.readyToClaim();
@@ -38,12 +40,13 @@ async function main() {
         const rtDec = await Erc20Utils.decimals(rts[i]);
         const toClaim = readyToClaim[i];
 
-        // todo price oracle
-        toClaimUsd += +utils.formatUnits(toClaim, rtDec);
+        const rtPrice = await calculator.getPriceWithDefaultOutput(rts[i]);
+
+        toClaimUsd += +utils.formatUnits(toClaim.mul(rtPrice), rtDec + 18);
       }
 
-      if (platform === 'NOOP' || toClaimUsd <= 0) {
-        console.log('no rewards', vaultName, platform);
+      if (platform <= 1 || toClaimUsd <= 1) {
+        console.log('no rewards', vaultName, platform, toClaimUsd);
         continue;
       }
 

@@ -17,7 +17,7 @@ import "../../../base/strategies/masterchef-base/WaultStrategyFullBuyback.sol";
 contract StrategyWaultSingle is WaultStrategyFullBuyback {
 
   address public constant WEX_POLY_MASTER = address(0xC8Bd86E5a132Ac0bf10134e270De06A8Ba317BFe);
-  string private constant _PLATFORM = "WAULT";
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.WAULT;
   // rewards
   address private constant WEXpoly = address(0x4c4BF319237D98a30A929A96112EfFa8DA3510EB);
   address[] private poolRewards = [WEXpoly];
@@ -33,7 +33,7 @@ contract StrategyWaultSingle is WaultStrategyFullBuyback {
     _assets.push(_underlying);
   }
 
-  function platform() external override pure returns (string memory) {
+  function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;
   }
 

@@ -86,7 +86,7 @@ contract Announcer is Controllable, IAnnouncer {
     multiOpCodes[TimeLockOpCodes.StrategyUpgrade] = true;
 
     // placeholder for index 0
-    _timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, address(0), new address[](0), new uint256[](0)));
+    _timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, 0, address(0), new address[](0), new uint256[](0)));
   }
 
   /// @dev Operations allowed only for Governance address
@@ -150,11 +150,12 @@ contract Announcer is Controllable, IAnnouncer {
   function announceAddressChange(TimeLockOpCodes opCode, address newAddress) external onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
     require(newAddress != address(0), "zero address");
-    timeLockSchedule[keccak256(abi.encode(opCode, newAddress))] = block.timestamp + timeLock();
+    bytes32 opHash = keccak256(abi.encode(opCode, newAddress));
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
 
     address[] memory values = new address[](1);
     values[0] = newAddress;
-    _timeLockInfos.push(TimeLockInfo(opCode, controller(), values, new uint256[](0)));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, controller(), values, new uint256[](0)));
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit AddressChangeAnnounce(opCode, newAddress);
@@ -171,12 +172,13 @@ contract Announcer is Controllable, IAnnouncer {
     require(timeLockIndexes[opCode] == 0, "already announced");
     require(numerator <= denominator, "invalid values");
     require(denominator != 0, "cannot divide by 0");
-    timeLockSchedule[keccak256(abi.encode(opCode, numerator, denominator))] = block.timestamp + timeLock();
+    bytes32 opHash = keccak256(abi.encode(opCode, numerator, denominator));
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
 
     uint256[] memory values = new uint256[](2);
     values[0] = numerator;
     values[1] = denominator;
-    _timeLockInfos.push(TimeLockInfo(opCode, controller(), new address[](0), values));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, controller(), new address[](0), values));
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit RatioChangeAnnounced(opCode, numerator, denominator);
@@ -196,13 +198,14 @@ contract Announcer is Controllable, IAnnouncer {
     require(target != address(0), "zero target");
     require(token != address(0), "zero token");
     require(amount != 0, "zero amount");
-    timeLockSchedule[keccak256(abi.encode(opCode, target, token, amount))] = block.timestamp + timeLock();
+    bytes32 opHash = keccak256(abi.encode(opCode, target, token, amount));
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
 
     address[] memory adrValues = new address[](1);
     adrValues[0] = token;
     uint256[] memory intValues = new uint256[](1);
     intValues[0] = amount;
-    _timeLockInfos.push(TimeLockInfo(opCode, target, adrValues, intValues));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, target, adrValues, intValues));
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit TokenMoveAnnounced(opCode, target, token, amount);
@@ -237,7 +240,7 @@ contract Announcer is Controllable, IAnnouncer {
 
     address mintHelper = IController(controller()).mintHelper();
 
-    _timeLockInfos.push(TimeLockInfo(opCode, mintHelper, adrValues, intValues));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, mintHelper, adrValues, intValues));
     timeLockIndexes[opCode] = _timeLockInfos.length - 1;
 
     emit MintAnnounced(totalAmount, _distributor, _otherNetworkFund);
@@ -269,7 +272,7 @@ contract Announcer is Controllable, IAnnouncer {
 
     address[] memory values = new address[](1);
     values[0] = _implementation;
-    _timeLockInfos.push(TimeLockInfo(opCode, _contract, values, new uint256[](0)));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, _contract, values, new uint256[](0)));
     multiTimeLockIndexes[opCode][_contract] = (_timeLockInfos.length - 1);
 
     emit ProxyUpgradeAnnounced(_contract, _implementation);
@@ -289,7 +292,7 @@ contract Announcer is Controllable, IAnnouncer {
 
       address[] memory values = new address[](1);
       values[0] = _strategies[i];
-      _timeLockInfos.push(TimeLockInfo(opCode, _targets[i], values, new uint256[](0)));
+      _timeLockInfos.push(TimeLockInfo(opCode, opHash, _targets[i], values, new uint256[](0)));
       multiTimeLockIndexes[opCode][_targets[i]] = (_timeLockInfos.length - 1);
 
       emit StrategyUpgradeAnnounced(_targets[i], _strategies[i]);
