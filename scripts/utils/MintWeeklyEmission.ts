@@ -1,7 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Announcer, Controller, RewardToken} from "../../typechain";
-import {utils} from "ethers";
 import {RunHelper} from "./RunHelper";
 
 
@@ -37,12 +36,19 @@ async function main() {
       throw Error('Wrong opcode!');
     }
 
+    const ts = (await announcer.timeLockSchedule(annInfo.opHash)).toNumber();
+    console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
+
+    if (Date.now() / 1000 < ts) {
+      console.log('not yet', (ts - (Date.now() / 1000)) / 60 / 60)
+      return;
+    }
 
     const amount = annInfo.numValues[0];
     const distributor = annInfo.adrValues[0];
     const fund = annInfo.adrValues[1];
-
-    await RunHelper.runAndWait(() => controller.mintAndDistribute(0, distributor, fund, true));
+    return;
+    // await RunHelper.runAndWait(() => controller.mintAndDistribute(0, distributor, fund, true));
 
   }
 }

@@ -71,6 +71,12 @@ export default async function main() {
   await DeployerUtils.verifyWithArgs(core.psEmptyStrategy.address,
       [core.controller.address, core.rewardToken.address, core.psVault.address, [], [core.rewardToken.address]]);
 
+  // fundKeeper
+  await DeployerUtils.verify(core.fundKeeperLogic);
+  await DeployerUtils.wait(1);
+  await DeployerUtils.verifyWithArgs(core.fundKeeper.address, [core.fundKeeperLogic]);
+  await DeployerUtils.verifyProxy(core.fundKeeper.address);
+
   return core;
 }
 

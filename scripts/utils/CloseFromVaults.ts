@@ -28,13 +28,16 @@ async function main() {
     const vInfo = vInfoWithUser[0].vault
     const uInfo = vInfoWithUser[0].user
 
-    if (uInfo.depositedUnderlying.isZero()) {
+    if (!uInfo.depositedUnderlying.isZero()) {
+      console.log('close from', vInfo.name);
+      const vaultContract = await DeployerUtils.connectVault(vault, signer);
+      await RunHelper.runAndWait(() => vaultContract.exit());
+    } else {
       console.log('zero deposit', vInfo.name);
-      continue;
     }
 
-    const vaultContract = await DeployerUtils.connectVault(vault, signer);
-    await RunHelper.runAndWait(() => vaultContract.exit());
+
+
   }
 }
 

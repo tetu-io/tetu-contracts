@@ -132,17 +132,25 @@ async function main() {
         const amountForSell1 = baseAmount / price1;
         console.log('amountForSell0', amountForSell0, 'amountForSell1', amountForSell1);
 
-        await UniswapUtils.buyTokensAndAddLiq(
+        const token0Bal = await Erc20Utils.balanceOf(token0, signer.address);
+        const token1Bal = await Erc20Utils.balanceOf(token1, signer.address);
+        if (token0Bal.isZero()) {
+          await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(token0OppositeFactory), token0,
+              utils.parseUnits(amountForSell0.toFixed(dec0), dec0).div(100), token0Opposite, true);
+        }
+        if (token1Bal.isZero()) {
+          await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(token1OppositeFactory), token1,
+              utils.parseUnits(amountForSell1.toFixed(dec1), dec1).div(100), token1Opposite, true);
+        }
+
+        await UniswapUtils.addLiquidity(
             signer,
-            token0OppositeFactory,
-            token1OppositeFactory,
-            factory,
             token0,
-            token0Opposite,
             token1,
-            token1Opposite,
-            utils.parseUnits(amountForSell0.toFixed(dec0), dec0).div(100),
-            utils.parseUnits(amountForSell1.toFixed(dec1), dec1).div(100),
+            (await Erc20Utils.balanceOf(token0, signer.address)).div(100).toString(),
+            (await Erc20Utils.balanceOf(token1, signer.address)).div(100).toString(),
+            factory,
+            MaticAddresses.getRouterByFactory(factory),
             true
         );
 

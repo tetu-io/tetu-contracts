@@ -5,15 +5,15 @@ export class Addresses {
 
   public static CORE = new Map<string, CoreAddresses>([
     ['matic', new CoreAddresses(
-        '1111111111111111111111111111111', // controller
-        '1111111111111111111111111111111', // announcer
-        '1111111111111111111111111111111', // forwarder
-        '1111111111111111111111111111111', // bookkeeper
-        '1111111111111111111111111111111', // notifier
-        '1111111111111111111111111111111', // mint helper
-        '1111111111111111111111111111111', // tetu token
-        '1111111111111111111111111111111', // ps vault
-        '1111111111111111111111111111111',// fund keeper
+        '0x6678814c273d5088114B6E40cC49C8DB04F9bC29', // controller
+        '0x286c02C93f3CF48BB759A93756779A1C78bCF833', // announcer
+        '0xd055b086180cB6dac888792C9307970Ed10CF137', // forwarder
+        '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F', // bookkeeper
+        '0x099C314F792e1F91f53765Fc64AaDCcf4dCf1538', // notifier
+        '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // mint helper
+        '0x255707B70BF90aa112006E1b07B9AeA6De021424', // tetu token
+        '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
+        '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2',// fund keeper
     )],
     ['rinkeby', new CoreAddresses(
         '0x00aEC86D06B4336bCA967b42724E3596d3622313', // controller
@@ -30,10 +30,10 @@ export class Addresses {
 
   public static TOOLS = new Map<string, ToolsAddresses>([
     ['matic', new ToolsAddresses(
-        '111111111111111111111111111111', // calculator
-        '111111111111111111111111111111', // reader
-        '111111111111111111111111111111', // utils
-        '111111111111111111111111111111', // rebalancer
+        '0x0B62ad43837A69Ad60289EEea7C6e907e759F6E8', // calculator
+        '0xCa9C8Fba773caafe19E6140eC0A7a54d996030Da', // reader
+        '0xdfB765935D7f4e38641457c431F89d20Db571674', // utils
+        '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
         '', // payrollClerk
         '', // mockFaucet
     )],
@@ -50,7 +50,7 @@ export class Addresses {
   public static TOKENS = new Map<string, Map<string, string>>([
     ['matic', new Map([
       ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
-      ['sushi_lp_token_usdc', '1111111111111111111111111'],
+      ['sushi_lp_token_usdc', '0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9'],
     ])],
     ['rinkeby', new Map([
       ['quick', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],

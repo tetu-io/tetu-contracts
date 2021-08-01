@@ -45,7 +45,7 @@ export default {
           balance: "1000000000000000000000000000",
         },
         {
-          privateKey: Secrets.mumbaiPrivateKey,
+          privateKey: Secrets.maticPrivateKey,
           balance: "1000000000000000000000000000",
         }
       ],
@@ -130,7 +130,7 @@ export default {
     gasPrice: 21
   },
   tenderly: {
-    project: "",
-    username: "",
+    project: "https://dashboard.tenderly.co/tetu/tetu-contracts",
+    username: "belbix",
   },
 };

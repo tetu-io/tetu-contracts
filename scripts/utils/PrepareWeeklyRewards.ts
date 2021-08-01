@@ -23,7 +23,7 @@ async function main() {
       signer, "ContractReader", tools.reader) as ContractReader;
   const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
-  const rewardTokenPrice = 0.17;
+  const rewardTokenPrice = 0.18;
   const vaults = await bookkeeper.vaults();
   const prices = new Map<string, number>();
 

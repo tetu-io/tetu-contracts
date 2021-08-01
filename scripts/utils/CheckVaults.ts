@@ -17,7 +17,7 @@ async function main() {
   const vaults = await bookkeeper.vaults();
   console.log('vaults ', vaults.length);
 
-  const i = await cReader.vaultWithUserInfos(signer.address, ['0x890Ab3306A67f8f8d1eB23b52681c84D9b2cEa41'], {gasLimit: 100_000_000});
+  const i = await cReader.vaultWithUserInfos(signer.address, ['0x1B8A847b8e46F803AD6750a26C06b8bC1f0032ea'], {gasLimit: 100_000_000});
   console.log('i', i[0].vault.name);
 
   const vInfos = await cReader.vaultWithUserInfoPagesLight(signer.address, 0, 11, {gasLimit: 100_000_000});
