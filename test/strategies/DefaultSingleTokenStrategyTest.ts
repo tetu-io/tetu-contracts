@@ -6,15 +6,18 @@ import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
-import {UniswapUtils} from "../UniswapUtils";
 import {Erc20Utils} from "../Erc20Utils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
-import {utils} from "ethers";
-import {IStrategy} from "../../typechain";
+import {IStrategy, PriceCalculator} from "../../typechain";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
+
+type BuyTokensFunction = {
+  (user: SignerWithAddress, underlying:string, calculator: PriceCalculator): void;
+};
 
 async function startDefaultSingleTokenStrategyTest(
     strategyName: string,
@@ -23,7 +26,10 @@ async function startDefaultSingleTokenStrategyTest(
     token: string,
     tokenName: string,
     platformPoolIdentifier: string,
-    rewardTokens: string[]
+    rewardTokens: string[],
+    buyUnderliying: BuyTokensFunction,
+    loopTime: number = 60,
+    toClaimCalcFunc: any
 ) {
 
   describe(strategyName + " " + tokenName + "Test", async function () {
@@ -49,7 +55,6 @@ async function startDefaultSingleTokenStrategyTest(
             [MaticAddresses.getRouterByFactory(factory)]
         );
       }
-
 
       const data = await StrategyTestUtils.deploy(
           signer,
@@ -81,23 +86,7 @@ async function startDefaultSingleTokenStrategyTest(
           calculator
       );
 
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
-
-      //************** add funds for investing ************
-      const baseAmount = 10_000;
-      await UniswapUtils.buyAllBigTokens(user);
-      const name = await Erc20Utils.tokenSymbol(tokenOpposite);
-      const dec = await Erc20Utils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
-
-      await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-          underlying, utils.parseUnits(amountForSell.toString(), dec), tokenOpposite);
+      await buyUnderliying(user, underlying, calculator);
       console.log('############## Preparations completed ##################');
     });
 
@@ -113,14 +102,10 @@ async function startDefaultSingleTokenStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-
-    // it("do hard work without liq path", async () => {
-    //   await StrategyTestUtils.doHardWorkWithoutLiqPath(strategyInfo,
-    //       (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString());
-    // });
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString()
+          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          toClaimCalcFunc
       );
     });
     it("emergency exit", async () => {
@@ -134,7 +119,7 @@ async function startDefaultSingleTokenStrategyTest(
           strategyInfo,
           (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           3,
-          60
+          loopTime
       );
     });
 

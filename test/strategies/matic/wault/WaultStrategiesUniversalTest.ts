@@ -5,10 +5,35 @@ import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
 import {Settings} from "../../../../settings";
 import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrategyTest";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { PriceCalculator } from "../../../../typechain";
+import { UniswapUtils } from "../../../UniswapUtils";
+import { Erc20Utils } from "../../../Erc20Utils";
+import { utils } from "ethers";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
+
+async function buyUnderliyingFunc(user: SignerWithAddress, underlying:string, calculator: PriceCalculator){
+  const largest = (await calculator.getLargestPool(underlying, []));
+  const tokenOpposite = largest[0];
+  const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
+  console.log('largest', largest);
+
+  //************** add funds for investing ************
+  const baseAmount = 10_000;
+  await UniswapUtils.buyAllBigTokens(user);
+  const name = await Erc20Utils.tokenSymbol(tokenOpposite);
+  const dec = await Erc20Utils.decimals(tokenOpposite);
+  const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
+  console.log('tokenOpposite Price', price, name);
+  const amountForSell = baseAmount / price;
+  console.log('amountForSell', amountForSell);
+
+  await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
+      underlying, utils.parseUnits(amountForSell.toString(), dec), tokenOpposite);
+}
 
 describe('Universal Wault tests', async () => {
   if (Settings.disableStrategyTests) {
@@ -59,7 +84,10 @@ describe('Universal Wault tests', async () => {
           token0,
           token0_name,
           idx,
-          [MaticAddresses.WEXpoly_TOKEN]
+          [MaticAddresses.WEXpoly_TOKEN],
+          buyUnderliyingFunc,
+          60,
+          null
       );
     }
   });

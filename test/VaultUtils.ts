@@ -61,7 +61,8 @@ export class VaultUtils {
     const underlying = await vaultForUser.underlying();
     const dec = await Erc20Utils.decimals(underlying);
     const bal = await Erc20Utils.balanceOf(underlying, user.address);
-    console.log('balance', utils.formatUnits(bal, dec), bal.toString());
+    const tokenName = await Erc20Utils.tokenName(underlying);
+    console.log('balance', utils.formatUnits(bal, dec), bal.toString(), tokenName);
     expect(+utils.formatUnits(bal, dec))
     .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
 

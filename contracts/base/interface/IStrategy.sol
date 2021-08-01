@@ -19,7 +19,8 @@ interface IStrategy {
     TETU, // 1
     QUICK, // 2
     SUSHI, // 3
-    WAULT // 4
+    WAULT, // 4
+    CURVE // 5
   }
 
   // *************** GOVERNANCE ACTIONS **************
