@@ -68,6 +68,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   //In case of LP token, the underlying tokens will be found and valued to get the price.
   // Output token should exist int the keyTokenList
   function getPrice(address token, address outputToken) public view override returns (uint256) {
+
     if (token == outputToken) {
       return (10 ** PRECISION_DECIMALS);
     }

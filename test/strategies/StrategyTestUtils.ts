@@ -3,7 +3,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {IStrategy, SmartVault} from "../../typechain";
+import {Gauge, IStrategy, SmartVault} from "../../typechain";
 import {Erc20Utils} from "../Erc20Utils";
 import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
@@ -40,14 +40,13 @@ export class StrategyTestUtils {
     const rewardTokenLp = await UniswapUtils.createPairForRewardToken(
         signer, core, "1000000"
     );
-
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying);
 
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string) {
+  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc:any = null) {
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
     console.log('new ps ratio', newNum, den)
@@ -71,6 +70,10 @@ export class StrategyTestUtils {
 
     // *********** TIME MACHINE GO BRRRRR***********
     await TimeUtils.advanceBlocksOnTs(60 * 60); // 1 hour
+
+    if (toClaimCalcFunc != null){
+      await toClaimCalcFunc(info.strategy);
+    }
 
     const targetTokenPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(info.core.rewardToken.address));
     console.log('targetTokenPrice', targetTokenPrice);

@@ -40,7 +40,7 @@ export class DoHardWorkLoop {
       }
       const loopStart = await StrategyTestUtils.getBlockTime();
       const balancesBefore = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
-      // console.log('balancesBefore', balancesBefore[0].toString());
+      console.log('balancesBefore', balancesBefore[0].toString());
 
       const psRate = await VaultUtils.profitSharingRatio(info.core.controller);
       console.log('psRate', psRate);
@@ -50,7 +50,7 @@ export class DoHardWorkLoop {
       await info.vault.doHardWork();
 
       const balancesAfter = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
-      // console.log('balancesAfter', balancesAfter[0].toString(), balancesAfter[0].sub(balancesBefore[0]).toString());
+      console.log('balancesAfter', balancesAfter[0].toString(), balancesAfter[0].sub(balancesBefore[0]).toString());
 
       // ##### CHECK STRAT EARNED #########
       const earnedPure = await info.core.bookkeeper.targetTokenEarned(info.strategy.address);
