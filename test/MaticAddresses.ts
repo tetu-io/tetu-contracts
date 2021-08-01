@@ -37,6 +37,10 @@ export class MaticAddresses {
   public static ICE_TOKEN = "0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef".toLowerCase(); // iron ice
   public static COSMIC_TOKEN = "0xa5Eb60CA85898f8b26e18fF7c7E43623ccbA772C".toLowerCase();
   public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
+  public static AM3CRV_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171".toLowerCase();
+  public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
+
+  // public static dQUICK_TOKEN = "".toLowerCase();
 
   //iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
@@ -101,6 +105,13 @@ export class MaticAddresses {
   // near future.
   // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
   public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
+
+
+  // curve
+  public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
+  public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
+  public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
+  public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
