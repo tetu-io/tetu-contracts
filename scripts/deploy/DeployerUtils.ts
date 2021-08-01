@@ -183,6 +183,10 @@ export class DeployerUtils {
     await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
     await calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP");
 
+    // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
+    await calculator.modifyReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
+    await calculator.modifyReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
   }

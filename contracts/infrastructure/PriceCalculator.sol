@@ -36,6 +36,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
 
+  mapping(address => address) replacementTokens;
+
   // Addresses for factories and registries for different DEX platforms.
   // Functions will be added to allow to alter these when needed.
   address[] public swapFactories;
@@ -50,6 +52,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   event KeyTokenRemoved(address keyToken);
   event SwapPlatformAdded(address factoryAddress, string name);
   event SwapPlatformRemoved(address factoryAddress, string name);
+  event ReplacementTokenUpdated(address token, address replacementToken);
 
   constructor() {
     assert(_DEFAULT_TOKEN_SLOT == bytes32(uint256(keccak256("eip1967.calculator.defaultToken")) - 1));
@@ -57,6 +60,13 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
+  }
+
+  function modifyReplacementTokens(address _inputToken, address _replacementToken)
+  external onlyControllerOrGovernance
+  {
+    replacementTokens[_inputToken] = _replacementToken;
+    emit ReplacementTokenUpdated(_inputToken, _replacementToken);
   }
 
   function getPriceWithDefaultOutput(address token) external view override returns (uint256) {
@@ -68,6 +78,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   //In case of LP token, the underlying tokens will be found and valued to get the price.
   // Output token should exist int the keyTokenList
   function getPrice(address token, address outputToken) public view override returns (uint256) {
+
     if (token == outputToken) {
       return (10 ** PRECISION_DECIMALS);
     }
@@ -80,6 +91,14 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       token = ISmartVault(token).underlying();
       rateDenominator = 10 ** ERC20(token).decimals();
     }
+
+    // if the token exists in the mapping, we'll swap it for the replacement
+    // example amBTC/renBTC pool -> wtcb
+    if (replacementTokens[token] != address(0)) {
+      token = replacementTokens[token];
+    }
+
+
     uint256 price;
     if (isSwapPlatform(token)) {
       address[2] memory tokens;

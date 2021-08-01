@@ -34,6 +34,9 @@ export class MaticAddresses {
   public static miMATIC_TOKEN = "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1".toLowerCase();
   public static WEXpoly_TOKEN = "0x4c4BF319237D98a30A929A96112EfFa8DA3510EB".toLowerCase();
   public static PEAR_TOKEN = "0xc8bcb58caEf1bE972C0B638B1dD8B0748Fdc8A44".toLowerCase();
+  public static AM3CRV_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171".toLowerCase();
+  public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
+
   // public static dQUICK_TOKEN = "".toLowerCase();
 
   //quick
@@ -77,6 +80,13 @@ export class MaticAddresses {
   public static WAULT_FACTORY = "0xa98ea6356A316b44Bf710D5f9b6b4eA0081409Ef".toLowerCase();
   public static WAULT_ROUTER = "0x3a1D87f206D12415f5b0A33E786967680AAb4f6d".toLowerCase();
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
+
+
+  // curve
+  public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
+  public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
+  public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
+  public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {

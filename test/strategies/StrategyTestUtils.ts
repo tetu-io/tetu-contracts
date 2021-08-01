@@ -3,7 +3,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {IStrategy, SmartVault} from "../../typechain";
+import {Announcer, Controller,IStrategy, PriceCalculator, RewardToken, SmartVault} from "../../typechain";
 import {Erc20Utils} from "../Erc20Utils";
 import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
@@ -40,14 +40,13 @@ export class StrategyTestUtils {
     const rewardTokenLp = await UniswapUtils.createPairForRewardToken(
         signer, core, "1000000"
     );
-
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying);
 
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string) {
+  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc:any = null) {
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
     console.log('new ps ratio', newNum, den)
@@ -71,6 +70,10 @@ export class StrategyTestUtils {
 
     // *********** TIME MACHINE GO BRRRRR***********
     await TimeUtils.advanceBlocksOnTs(60 * 60); // 1 hour
+
+    if (toClaimCalcFunc != null){
+      await toClaimCalcFunc(info.strategy);
+    }
 
     const targetTokenPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(info.core.rewardToken.address));
     console.log('targetTokenPrice', targetTokenPrice);
@@ -225,6 +228,54 @@ export class StrategyTestUtils {
     const block = await ethers.provider.getBlockNumber();
     console.log('block', block);
     return (await ethers.provider.getBlock(block))?.timestamp;
+  }
+
+  public static async deployStrategy(
+      strategyName: string,
+      signer:SignerWithAddress,
+      coreContracts: CoreContractsWrapper,
+      underlying: string,
+      underlyingName: string){
+
+    return StrategyTestUtils.deploy(
+        signer,
+        coreContracts,
+        underlyingName,
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            strategyName,
+            coreContracts.controller.address,
+            underlying,
+            vaultAddress
+        ) as Promise<IStrategy>,
+        underlying
+    );
+  }
+
+  public static async updatePSRatio(announcer:Announcer, controller:Controller,numenator:number, denumenatior: number) {
+    console.log('new ps ratio', numenator, denumenatior.toFixed())
+    await announcer.announceRatioChange(9, numenator, denumenatior);
+    await TimeUtils.advanceBlocksOnTs(1);
+    await controller.setPSNumeratorDenominator(numenator, denumenatior);
+  }
+
+
+  public static async calculateTotalToClaim(calculator: PriceCalculator, strategy: IStrategy, rewardToken:RewardToken){
+    const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rewardToken.address));
+    console.log('targetTokenPrice', targetTokenPrice);
+    const toClaim = await strategy.readyToClaim();
+    const rts = await strategy.rewardTokens();
+    let totalToClaim = 0;
+    
+    for (let i = 0; i < toClaim.length; i++) {
+      const rt = rts[i];
+      const rtDec = await Erc20Utils.decimals(rt);
+      const rtPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rt));
+      const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
+      console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);
+      totalToClaim += rtAmount;
+    }
+    return totalToClaim
   }
 
 }

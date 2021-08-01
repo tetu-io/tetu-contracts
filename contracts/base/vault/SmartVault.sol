@@ -25,6 +25,7 @@ import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
 
+
 /// @title Smart Vault is a combination of implementations drawn from Synthetix pool
 ///        for their innovative reward vesting and Yearn vault for their share price model
 /// @dev Use with TetuProxy
@@ -272,8 +273,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       // initial state, when not set
       return underlyingBalanceInVault();
     }
-    return underlyingBalanceInVault()
-    .add(IStrategy(strategy()).investedUnderlyingBalance());
+    return underlyingBalanceInVault().add(IStrategy(strategy()).investedUnderlyingBalance());
   }
 
   /// @notice Get the user's share (in underlying)
@@ -301,6 +301,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function availableToInvestOut() public view override returns (uint256) {
     uint256 wantInvestInTotal = underlyingBalanceWithInvestment();
     uint256 alreadyInvested = IStrategy(strategy()).investedUnderlyingBalance();
+
     if (alreadyInvested >= wantInvestInTotal) {
       return 0;
     } else {
@@ -365,13 +366,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // only statistic, no funds affected
     IBookkeeper(IController(controller()).bookkeeper())
     .registerUserAction(beneficiary, toMint, true);
-
     emit Deposit(beneficiary, amount);
   }
 
   /// @notice Transfer underlying to the strategy
   function invest() internal whenStrategyDefined {
     uint256 availableAmount = availableToInvestOut();
+
     if (availableAmount > 0) {
       IERC20Upgradeable(underlying()).safeTransfer(address(strategy()), availableAmount);
       IStrategy(strategy()).investAllUnderlying();
