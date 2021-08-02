@@ -23,8 +23,9 @@ async function main() {
       signer, "ContractReader", tools.reader) as ContractReader;
   const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
-  const rewardTokenPrice = 0.18;
-  const vaults = await bookkeeper.vaults();
+  const tetuLpAmount = 4_000_000;
+  const rewardTokenAmount = 29_971_355 - tetuLpAmount;
+  const vaults = await bookkeeper.vaults({gasLimit: 100_000_000});
   const prices = new Map<string, number>();
 
   mkdir('./tmp', {recursive: true}, (err) => {
@@ -32,11 +33,8 @@ async function main() {
   });
 
   // *********** RESULT VARS ***********
-  let vaultNames = '';
-  let vaultsToDistribute = '';
-  let amountsToDistribute = '';
-  let sum = BigNumber.from(0);
-  let i = 0;
+  const poolRewardsUsdc = new Map<string, number>();
+  let poolRewardsUsdcTotal = 0;
   for (let vault of vaults) {
     let vInfo;
     try {
@@ -57,39 +55,67 @@ async function main() {
 
     const rts = vInfo.strategyRewards;
 
-    let poolWeeklyRewardsAmount: number = 0;
+    let poolWeeklyRewardsAmountUsdc: number = 0;
     for (let i = 0; i < rts.length; i++) {
       const rt = rts[i];
       const rewardsData = await stratContract.poolWeeklyRewardsAmount();
       const rtDec = await Erc20Utils.decimals(rt);
 
       if (!prices.has(rt)) {
-        const rtPrice = await calculator.getPriceWithDefaultOutput(rt);
-        prices.set(rt, +utils.formatUnits(rtPrice));
-        console.log('rt price', rt, rtPrice);
+        try {
+          const rtPrice = await calculator.getPriceWithDefaultOutput(rt);
+          prices.set(rt, +utils.formatUnits(rtPrice));
+          console.log('rt price', rt, rtPrice);
+        } catch (e) {
+          console.log('error fetch price for ', rt);
+          return;
+        }
       }
 
-      poolWeeklyRewardsAmount += +utils.formatUnits(rewardsData[i], rtDec) * (prices.get(rt) as number);
+      poolWeeklyRewardsAmountUsdc += +utils.formatUnits(rewardsData[i], rtDec) * (prices.get(rt) as number);
     }
 
-
-    if (poolWeeklyRewardsAmount === 0) {
+    if (poolWeeklyRewardsAmountUsdc === 0) {
       throw Error('zero rewards for ' + vault);
     }
 
-    const rewardTokenAmount = poolWeeklyRewardsAmount / rewardTokenPrice
+    poolRewardsUsdc.set(vInfo.name + "|" + vault, poolWeeklyRewardsAmountUsdc);
+    poolRewardsUsdcTotal += poolWeeklyRewardsAmountUsdc;
+  }
 
-    vaultNames += vInfo.name + ',';
-    vaultsToDistribute += vault + ',';
-    amountsToDistribute += utils.parseUnits(rewardTokenAmount.toString()).toString() + ',';
-    sum = sum.add(utils.parseUnits(rewardTokenAmount.toString()));
 
-    if (i >= 50 || i === vaults.length - 1) {
+  let vaultNames = '';
+  let vaultsToDistribute = '';
+  let amountsToDistribute = '';
+  let sum = BigNumber.from(0);
+  let i = 0;
+
+  let poolRatioTotal = 0;
+  for (let vKey of Array.from(poolRewardsUsdc.keys())) {
+
+    const rewUsdc = poolRewardsUsdc.get(vKey) as number;
+
+    const poolRatio = rewUsdc / poolRewardsUsdcTotal;
+    poolRatioTotal += poolRatio;
+    const tetuAmount = rewardTokenAmount * poolRatio;
+    console.log('ratio', poolRatio.toFixed(4), rewUsdc.toFixed(), poolRewardsUsdcTotal.toFixed(), tetuAmount.toFixed());
+
+
+    const vName = vKey.split('|')[0];
+    const vAdr = vKey.split('|')[1];
+
+    vaultNames += vName + ',';
+    vaultsToDistribute += vAdr + ',';
+    amountsToDistribute += utils.parseUnits(tetuAmount.toString()).toString() + ',';
+    sum = sum.add(utils.parseUnits(tetuAmount.toString()));
+
+    i++;
+    if (i % 50 === 0 || i === vaults.length - 1) {
       vaultNames = vaultNames.substr(0, vaultNames.length - 1);
       vaultsToDistribute = vaultsToDistribute.substr(0, vaultsToDistribute.length - 1);
       amountsToDistribute = amountsToDistribute.substr(0, amountsToDistribute.length - 1);
 
-      console.log('sum', sum);
+      console.log('sum', utils.formatUnits(sum), `./tmp/to_distribute_${i}.txt`, poolRatioTotal);
       await writeFileSync(`./tmp/to_distribute_${i}.txt`,
           vaultNames + '\n' + vaultsToDistribute + '\n' + amountsToDistribute + '\n' + sum
           , 'utf8');
