@@ -4,20 +4,15 @@ import {IUniswapV2Pair, LiquidityBalancer} from "../../typechain";
 import {Erc20Utils} from "../../test/Erc20Utils";
 import {utils} from "ethers";
 import {RunHelper} from "./RunHelper";
-import {RopstenAddresses} from "../../test/RopstenAddresses";
 import {Settings} from "../../settings";
-import {MaticAddresses} from "../../test/MaticAddresses";
 
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const signer = (await ethers.getSigners())[0];
   const tools = await DeployerUtils.getToolsAddresses();
-  const net = (await ethers.provider.getNetwork()).name;
   const balancer = await DeployerUtils.connectContract(signer, 'LiquidityBalancer', tools.rebalancer) as LiquidityBalancer;
   const targetToken = core.rewardToken;
-  const targetPrice = Settings.lbTargetPrice;
-  const targetTvl = Settings.lbTargetTvl;
   const skipUseless = Settings.lbSkipUseless;
   const targetLpAddress = (await DeployerUtils.getTokenAddresses()).get('sushi_lp_token_usdc') as string;
   const targetLp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', targetLpAddress) as IUniswapV2Pair;
@@ -26,23 +21,6 @@ async function main() {
   const token0Decimals = await Erc20Utils.decimals(token0);
   const token1Decimals = await Erc20Utils.decimals(token1);
 
-  if (+utils.formatUnits(await balancer.priceTargets(targetToken)) === 0) {
-    await balancer.setTargetPrice(targetToken, utils.parseUnits(targetPrice + ''));
-  }
-  if (+utils.formatUnits(await balancer.lpTvlTargets(targetLpAddress)) === 0) {
-    await balancer.setTargetLpTvl(targetLpAddress, utils.parseUnits(targetTvl + ''));
-  }
-
-  let router;
-  if (net === 'ropsten' || net === 'rinkeby') {
-    router = RopstenAddresses.SUSHI_ROUTER;
-  } else if (net === 'matic') {
-    router = MaticAddresses.SUSHI_ROUTER;
-  } else {
-    throw Error('Unknown net ' + net);
-  }
-
-  await balancer.setRouter(targetLpAddress, router);
 
   let lastPrice;
   let lastTvl;

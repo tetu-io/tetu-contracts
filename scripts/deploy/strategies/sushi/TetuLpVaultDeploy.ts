@@ -18,7 +18,6 @@ async function main() {
 
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
 
-  const deployed = [];
   const vaultNames = new Set<string>();
 
   const cReader = await DeployerUtils.connectContract(
@@ -47,6 +46,8 @@ async function main() {
       core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken]) as NoopStrategy;
 
   const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
+
+  console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
 
   if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
     console.log('Strategy already exist', vaultNameWithoutPrefix);

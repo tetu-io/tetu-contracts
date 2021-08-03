@@ -28,8 +28,13 @@ async function main() {
   console.log('vaults ', vaults.length);
 
   for (let vault of vaults) {
-
-    const vInfoWithUser = await cReader.vaultWithUserInfos(signer.address, [vault]);
+    let vInfoWithUser;
+    try {
+      vInfoWithUser = await cReader.vaultWithUserInfos(signer.address, [vault]);
+    } catch (e) {
+      console.log('error fetch vault info for', vault, e);
+      continue;
+    }
     const vInfo = vInfoWithUser[0].vault
     const uInfo = vInfoWithUser[0].user
 
@@ -72,6 +77,7 @@ async function main() {
       }
 
       if (assets.length === 1) {
+        continue; // TODO fix
         const tokenToBuy = assets[0];
         const tokenToBuyName = await Erc20Utils.tokenSymbol(tokenToBuy);
         console.log('try to buy', tokenToBuyName);
@@ -120,35 +126,41 @@ async function main() {
         }
 
         const baseAmount = 1;
-        const name0 = await Erc20Utils.tokenSymbol(token0Opposite);
-        const name1 = await Erc20Utils.tokenSymbol(token1Opposite);
-        const dec0 = await Erc20Utils.decimals(token0Opposite);
-        const dec1 = await Erc20Utils.decimals(token1Opposite);
-        const price0 = parseFloat(utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token0Opposite)));
-        console.log('token0Opposite Price', price0, name0);
-        const price1 = parseFloat(utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token1Opposite)));
-        console.log('token1Opposite Price', price1, name1);
-        const amountForSell0 = baseAmount / price0;
-        const amountForSell1 = baseAmount / price1;
-        console.log('amountForSell0', amountForSell0, 'amountForSell1', amountForSell1);
+        let token0Bal = await Erc20Utils.balanceOf(token0, signer.address);
+        let token1Bal = await Erc20Utils.balanceOf(token1, signer.address);
 
-        const token0Bal = await Erc20Utils.balanceOf(token0, signer.address);
-        const token1Bal = await Erc20Utils.balanceOf(token1, signer.address);
         if (token0Bal.isZero()) {
+          const name0 = await Erc20Utils.tokenSymbol(token0Opposite);
+          const dec0 = await Erc20Utils.decimals(token0Opposite);
+          const price0 = parseFloat(utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token0Opposite)));
+          console.log('token0Opposite Price', price0, name0);
+          const amountForSell0 = baseAmount / price0;
+          console.log('amountForSell0', amountForSell0);
+
           await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(token0OppositeFactory), token0,
               utils.parseUnits(amountForSell0.toFixed(dec0), dec0).div(100), token0Opposite, true);
+          token0Bal = await Erc20Utils.balanceOf(token0, signer.address)
         }
+
         if (token1Bal.isZero()) {
+          const name1 = await Erc20Utils.tokenSymbol(token1Opposite);
+          const dec1 = await Erc20Utils.decimals(token1Opposite);
+          const price1 = parseFloat(utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token1Opposite)));
+          console.log('token1Opposite Price', price1, name1);
+          const amountForSell1 = baseAmount / price1;
+          console.log('amountForSell1', amountForSell1);
+
           await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(token1OppositeFactory), token1,
               utils.parseUnits(amountForSell1.toFixed(dec1), dec1).div(100), token1Opposite, true);
+          token1Bal = await Erc20Utils.balanceOf(token1, signer.address);
         }
 
         await UniswapUtils.addLiquidity(
             signer,
             token0,
             token1,
-            (await Erc20Utils.balanceOf(token0, signer.address)).div(100).toString(),
-            (await Erc20Utils.balanceOf(token1, signer.address)).div(100).toString(),
+            (token0Bal).div(10).toString(),
+            (token1Bal).div(10).toString(),
             factory,
             MaticAddresses.getRouterByFactory(factory),
             true

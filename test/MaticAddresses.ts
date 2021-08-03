@@ -38,6 +38,7 @@ export class MaticAddresses {
   //quick
   public static QUICK_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff".toLowerCase();
   public static QUICK_FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32".toLowerCase();
+  public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
   public static QUICK_WMATIC_USDC = "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827".toLowerCase();
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();

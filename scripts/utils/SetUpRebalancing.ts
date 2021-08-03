@@ -1,10 +1,11 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {IUniswapV2Pair, LiquidityBalancer} from "../../typechain";
+import {LiquidityBalancer} from "../../typechain";
 import {utils} from "ethers";
 import {RopstenAddresses} from "../../test/RopstenAddresses";
 import {Settings} from "../../settings";
 import {MaticAddresses} from "../../test/MaticAddresses";
+import {RunHelper} from "./RunHelper";
 
 
 async function main() {
@@ -19,13 +20,15 @@ async function main() {
   const targetLpAddress = (await DeployerUtils.getTokenAddresses()).get('sushi_lp_token_usdc') as string;
 
   if (+utils.formatUnits(await balancer.priceTargets(targetToken)) === 0) {
-    await balancer.setTargetPrice(targetToken, utils.parseUnits(targetPrice + ''));
+    console.info('set target price', targetPrice);
+    await RunHelper.runAndWait(() => balancer.setTargetPrice(targetToken, utils.parseUnits(targetPrice + '')));
   }
   if (+utils.formatUnits(await balancer.lpTvlTargets(targetLpAddress)) === 0) {
-    await balancer.setTargetLpTvl(targetLpAddress, utils.parseUnits(targetTvl + ''));
+    console.info('set target tvl', targetTvl);
+    await RunHelper.runAndWait(() => balancer.setTargetLpTvl(targetLpAddress, utils.parseUnits(targetTvl + '')));
   }
 
-  let router;
+  let router: string;
   if (net === 'ropsten' || net === 'rinkeby') {
     router = RopstenAddresses.SUSHI_ROUTER;
   } else if (net === 'matic') {
@@ -34,7 +37,7 @@ async function main() {
     throw Error('Unknown net ' + net);
   }
 
-  await balancer.setRouter(targetLpAddress, router);
+  await RunHelper.runAndWait(() => balancer.setRouter(targetLpAddress, router));
 
 
 }

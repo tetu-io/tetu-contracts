@@ -64,6 +64,14 @@ export class UniswapUtils {
       _router: string,
       wait = false
   ): Promise<string> {
+    const t0Dec = await Erc20Utils.decimals(tokenA);
+    const t1Dec = await Erc20Utils.decimals(tokenB);
+    const bal0 = await Erc20Utils.balanceOf(tokenA, sender.address);
+    const bal1 = await Erc20Utils.balanceOf(tokenB, sender.address);
+    expect(+utils.formatUnits(bal0, t0Dec))
+    .is.greaterThanOrEqual(+utils.formatUnits(amountA, t0Dec), 'not enough bal for token A ' + tokenA);
+    expect(+utils.formatUnits(bal1, t1Dec))
+    .is.greaterThanOrEqual(+utils.formatUnits(amountB, t1Dec), 'not enough bal for token B ' + tokenB);
     const router = await UniswapUtils.connectRouter(_router, sender);
     await RunHelper.runAndWait(() => Erc20Utils.approve(tokenA, sender, router.address, amountA), true, wait);
     await RunHelper.runAndWait(() => Erc20Utils.approve(tokenB, sender, router.address, amountB), true, wait);

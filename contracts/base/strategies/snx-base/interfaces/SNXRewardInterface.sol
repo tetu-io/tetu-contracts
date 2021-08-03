@@ -31,4 +31,6 @@ interface SNXRewardInterface {
 
   function lastUpdateTime() external view returns (uint256);
 
+  function rewardRate() external view returns (uint256);
+
 }

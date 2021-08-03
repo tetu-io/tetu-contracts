@@ -18,7 +18,7 @@ const exclude = new Set<string>([]);
 async function main() {
   const signer = (await ethers.getSigners())[0];
 
-  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactory', '0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f') as IStakingRewardsFactory;
+  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactory', MaticAddresses.QUICK_STAKING_FACTORY) as IStakingRewardsFactory;
   console.log('rewardsToken', await factory.rewardsToken());
 
   const oracle = await DeployerUtils.connectInterface(signer, 'IOracleMatic', Addresses.ORACLE) as IOracleMatic;
@@ -54,26 +54,36 @@ async function main() {
     }
 
     const info = await factory.stakingRewardsInfoByStakingToken(lp);
+    // factory doesn't hold duration, suppose that it is a week
+    const durationSec = 60 * 60 * 24 * 7;
 
     const poolContract = await DeployerUtils.connectInterface(signer, 'SNXRewardInterface', info[0]) as SNXRewardInterface;
+
+    const rewardRate = await poolContract.rewardRate();
+    const notifiedAmount = rewardRate.mul(durationSec);
+    const notifiedAmountN = +utils.formatUnits(notifiedAmount);
+
+    let durationDays = (durationSec) / 60 / 60 / 24;
+    const weekDurationRatio = 7 / durationDays;
+    let notifiedAmountUsd = notifiedAmountN * +utils.formatUnits(quickPrice);
+
     const finish = (await poolContract.periodFinish()).toNumber();
     const currentTime = Math.floor(Date.now() / 1000);
-    const duration = (finish - currentTime) / 60 / 60 / 24;
-    console.log('duration', duration)
-    const weekDurationRatio = 7 / duration;
-    console.log('weekDurationRatio', weekDurationRatio)
-    const rtBal = +utils.formatUnits(await Erc20Utils.balanceOf(MaticAddresses.QUICK_TOKEN, poolContract.address));
-    let rtBalUsd = rtBal * +utils.formatUnits(quickPrice);
 
-    if (duration <= 0) {
-      rtBalUsd = 0;
+    if (finish < currentTime) {
+      durationDays = 0
+      notifiedAmountUsd = 0;
     }
+
+    console.log('duration', durationDays);
+    console.log('weekDurationRatio', weekDurationRatio);
+    console.log('notifiedAmount', notifiedAmountN);
 
     const tvl = await poolContract.totalSupply();
     const underlyingPrice = await oracle.getPrice(lp);
     const tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
 
-    const apr = ((rtBalUsd / tvlUsd) / duration) * 365 * 100
+    const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100
 
     const data = i + ',' +
         'QUICK_' + token0Name + '_' + token1Name + ',' +
@@ -83,9 +93,9 @@ async function main() {
         token1 + ',' +
         token1Name + ',' +
         info[0] + ',' +
-        rtBal.toFixed(2) + ',' +
-        duration.toFixed(2) + ',' +
-        (rtBalUsd * weekDurationRatio).toFixed(2) + ',' +
+        notifiedAmountUsd.toFixed(2) + ',' +
+        durationDays.toFixed(2) + ',' +
+        (notifiedAmountUsd * weekDurationRatio).toFixed(2) + ',' +
         tvlUsd.toFixed(2) + ',' +
         apr.toFixed(2)
     ;

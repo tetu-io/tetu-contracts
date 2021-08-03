@@ -30,6 +30,19 @@ async function main() {
   const [quickRouteFund, quickRoutersFund] = quickRoutesFund(net, mocks);
   await RunHelper.runAndWait(() => forwarder.setConversionPath(quickRouteFund, quickRoutersFund));
   console.log('route set', quickRouteFund);
+
+  if (net === 'matic') {
+
+    const [waultRoute, waultRouters] = waultRoutes(net, mocks, core.rewardToken);
+    await RunHelper.runAndWait(() => forwarder.setConversionPath(waultRoute, waultRouters));
+    console.log('route set', waultRoute);
+
+    const [waultRouteFund, waultRoutersFund] = waultRoutesFund(net, mocks);
+    await RunHelper.runAndWait(() => forwarder.setConversionPath(waultRouteFund, waultRoutersFund));
+    console.log('route set', waultRouteFund);
+
+  }
+
 }
 
 main()
@@ -93,6 +106,33 @@ function quickRoutesFund(net: string, mocks: Map<string, string>): [string[], st
   } else if (net === 'rinkeby' || net === 'ropsten') {
     route = [mocks.get('quick') as string, mocks.get('usdc') as string];
     routers = [RopstenAddresses.SUSHI_ROUTER];
+  } else {
+    throw Error('unknown net ' + net);
+  }
+  return [route, routers];
+}
+
+function waultRoutes(net: string, mocks: Map<string, string>, rewardToken: string): [string[], string[]] {
+  let route: string[];
+  let routers: string[];
+  if (net === 'matic') {
+    route = [MaticAddresses.WEXpoly_TOKEN, MaticAddresses.USDC_TOKEN, rewardToken];
+    routers = [MaticAddresses.WAULT_ROUTER, MaticAddresses.SUSHI_ROUTER];
+  } else if (net === 'rinkeby' || net === 'ropsten') {
+    route = [mocks.get('quick') as string, mocks.get('usdc') as string, rewardToken];
+    routers = [RopstenAddresses.SUSHI_ROUTER, RopstenAddresses.SUSHI_ROUTER];
+  } else {
+    throw Error('unknown net ' + net);
+  }
+  return [route, routers];
+}
+
+function waultRoutesFund(net: string, mocks: Map<string, string>): [string[], string[]] {
+  let route: string[];
+  let routers: string[];
+  if (net === 'matic') {
+    route = [MaticAddresses.WEXpoly_TOKEN, MaticAddresses.USDC_TOKEN];
+    routers = [MaticAddresses.WAULT_ROUTER];
   } else {
     throw Error('unknown net ' + net);
   }
