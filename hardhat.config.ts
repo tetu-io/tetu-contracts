@@ -52,6 +52,7 @@ export default {
     },
     matic: {
       url: Secrets.maticRpcUrl,
+      timeout: 99999,
       chainId: 137,
       gas: 8_000_000,
       gasPrice: 6_000_000_000,

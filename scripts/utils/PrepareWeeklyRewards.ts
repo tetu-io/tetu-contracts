@@ -29,7 +29,7 @@ async function main() {
   const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
   const quickStakingFactory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactory', MaticAddresses.QUICK_STAKING_FACTORY) as IStakingRewardsFactory;
 
-  const batch = 50;
+  const batch = 1000;
   const tetuLpAmount = 4_000_000;
   const rewardTokenAmount = 29_971_355 - tetuLpAmount;
   const vaults = await bookkeeper.vaults({gasLimit: 100_000_000});
@@ -88,9 +88,6 @@ async function main() {
 
   }
 
-  // **************** ADD TETU_LP ********************
-
-
   // *************** BUILD DATA **********************
 
 
@@ -125,7 +122,7 @@ async function main() {
         + '\n'
 
     i++;
-    if (i % batch === 0 || i === vaults.length - 1) {
+    if (i % batch === 0 || i === Array.from(poolRewardsUsdc.keys()).length) {
       vaultsToDistribute = vaultsToDistribute.substr(0, vaultsToDistribute.length - 1);
       amountsToDistribute = amountsToDistribute.substr(0, amountsToDistribute.length - 1);
 
@@ -136,6 +133,9 @@ async function main() {
           + amountsToDistribute + '\n'
           + sum
           , 'utf8');
+      vaultsToDistribute = '';
+      amountsToDistribute = '';
+      sum = BigNumber.from(0);
     }
 
   }
@@ -168,7 +168,7 @@ async function defaultPoolWeeklyRewardsAmountUsdc(
     const rt = rts[i];
     let rewardsData: BigNumber[];
     try {
-      rewardsData = await stratContract.poolWeeklyRewardsAmount();
+      rewardsData = await stratContract.poolWeeklyRewardsAmount({gasLimit: 100_000_000});
     } catch (e) {
       console.error('error fetch stratContract.poolWeeklyRewardsAmount()', e);
       throw Error('error fetch stratContract.poolWeeklyRewardsAmount()');
@@ -180,7 +180,7 @@ async function defaultPoolWeeklyRewardsAmountUsdc(
       try {
         const rtPrice = await calculator.getPriceWithDefaultOutput(rt);
         prices.set(rt, +utils.formatUnits(rtPrice));
-        console.log('rt price', rt, rtPrice);
+        console.log('rt price', rt, prices.get(rt));
       } catch (e) {
         throw Error('error fetch price for ' + rt);
       }
