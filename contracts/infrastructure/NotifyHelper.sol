@@ -24,9 +24,10 @@ contract NotifyHelper is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
-  mapping(address => bool) private alreadyNotified;
+  mapping(address => bool) public alreadyNotified;
+  address[] public alreadyNotifiedList;
 
   event TokenMoved(address token, uint256 amount);
 
@@ -36,6 +37,10 @@ contract NotifyHelper is Controllable {
 
   function psVault() public view returns (address) {
     return IController(controller()).psVault();
+  }
+
+  function alreadyNotifiedListLength() external view returns (uint256) {
+    return alreadyNotifiedList.length;
   }
 
   // move tokens to controller where money will be protected with time lock
@@ -52,11 +57,6 @@ contract NotifyHelper is Controllable {
     require(sum <= tokenBal, "not enough balance");
     require(amounts.length == vaults.length, "wrong data");
 
-    // clear notified statuses
-    for (uint i = 0; i < vaults.length; i++) {
-      alreadyNotified[vaults[i]] = false;
-    }
-
     uint256 check = 0;
     for (uint i = 0; i < vaults.length; i++) {
       require(amounts[i] > 0, "Notify zero");
@@ -68,6 +68,10 @@ contract NotifyHelper is Controllable {
       } else {
         notifyVault(amounts[i], vaults[i], token);
       }
+
+      alreadyNotified[vaults[i]] = true;
+      alreadyNotifiedList.push(vaults[i]);
+
       check = check.add(amounts[i]);
     }
     require(sum == check, "Wrong check sum");
@@ -76,7 +80,6 @@ contract NotifyHelper is Controllable {
   function notifyVault(uint256 amount, address vault, address token) internal {
     IERC20(token).safeApprove(vault, amount);
     ISmartVault(vault).notifyTargetRewardAmount(token, amount);
-    alreadyNotified[vault] = true;
   }
 
   function notifyVaultWithPsToken(uint256 amount, address vault) internal {
@@ -92,8 +95,14 @@ contract NotifyHelper is Controllable {
 
     IERC20(psVault()).safeApprove(vault, amountToSend);
     ISmartVault(vault).notifyTargetRewardAmount(psVault(), amountToSend);
+  }
 
-
-    alreadyNotified[vault] = true;
+  /// @notice Clear statuses. Need to use after full cycle of reward distribution
+  function clearNotifiedStatuses() external onlyControllerOrGovernance {
+    for (uint256 i = alreadyNotifiedList.length; i > 0; i--) {
+      delete alreadyNotified[alreadyNotifiedList[i - 1]];
+      delete alreadyNotifiedList[i - 1];
+      alreadyNotifiedList.pop();
+    }
   }
 }

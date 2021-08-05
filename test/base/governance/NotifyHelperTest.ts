@@ -199,6 +199,49 @@ describe("Notify Helper test", () => {
     ).rejectedWith('Duplicate pool');
   });
 
+  it("should not notify with duplicate vault with different tx", async () => {
+    const allVaults: string[] = await core.bookkeeper.vaults();
+    const rtDecimals = 18;
+    const rt = core.rewardToken.address;
+    const amount = utils.parseUnits('500', rtDecimals);
+    await Erc20Utils.transfer(rt, signer, notifier.address, amount.toString())
+    await notifier.notifyVaults(
+        [utils.parseUnits('250', rtDecimals), utils.parseUnits('250', rtDecimals)],
+        [allVaults[1], allVaults[2]],
+        amount,
+        rt);
+
+    await expect(notifier.notifyVaults(
+        [utils.parseUnits('250', rtDecimals)],
+        [allVaults[1]],
+        utils.parseUnits('250', rtDecimals),
+        rt)
+    ).rejectedWith('Duplicate pool');
+  });
+
+  it("should notify with duplicate vault with different tx after clear", async () => {
+    const allVaults: string[] = await core.bookkeeper.vaults();
+    const rtDecimals = 18;
+    const rt = core.rewardToken.address;
+    const amount = utils.parseUnits('500', rtDecimals);
+    await Erc20Utils.transfer(rt, signer, notifier.address, amount.toString())
+    await notifier.notifyVaults(
+        [utils.parseUnits('250', rtDecimals), utils.parseUnits('250', rtDecimals)],
+        [allVaults[1], allVaults[2]],
+        amount,
+        rt);
+
+    await notifier.clearNotifiedStatuses();
+
+    expect((await notifier.alreadyNotifiedListLength())).is.eq(0);
+
+    await notifier.notifyVaults(
+        [utils.parseUnits('250', rtDecimals)],
+        [allVaults[1]],
+        utils.parseUnits('250', rtDecimals),
+        rt);
+  });
+
   it("should move tokens", async () => {
     const amount = utils.parseUnits('1000', 6);
     await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString());
