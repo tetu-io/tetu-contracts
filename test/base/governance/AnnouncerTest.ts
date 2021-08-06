@@ -58,7 +58,6 @@ describe("Announcer tests", function () {
     await announcer.announceAddressChange(1, signer1.address);
 
     expect(await announcer.timeLockInfosLength()).is.eq(4);
-    expect((await announcer.timeLockInfos()).length).is.eq(4);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(2);
@@ -529,6 +528,175 @@ describe("Announcer tests", function () {
   it("should not mint zero amount", async () => {
     await expect(core.announcer.announceMint(0, core.notifyHelper.address, core.fundKeeper.address, false))
     .rejectedWith('zero amount');
+  });
+
+  it("should make multiple time-lock changes", async () => {
+    const opCodeMint = 16;
+    const opCodeGovChange = 0;
+
+    // mint
+    const toMint = 10_000;
+    let balanceSigner = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
+    let balanceNotifier = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    let balanceFund = await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
+
+    await announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+    await announcer.announceAddressChange(opCodeGovChange, signer1.address);
+
+    const indexMint = await announcer.timeLockIndexes(opCodeMint);
+    expect(indexMint).is.eq(1);
+
+    const infoMint = await announcer.timeLockInfo(indexMint);
+
+    expect(infoMint.target).is.eq(core.mintHelper.address);
+    expect(infoMint.adrValues.length).is.eq(2);
+    expect(infoMint.adrValues[0]).is.eq(core.notifyHelper.address);
+    expect(infoMint.adrValues[1]).is.eq(core.fundKeeper.address);
+    expect(infoMint.numValues.length).is.eq(1);
+    expect(infoMint.numValues[0]).is.eq(toMint);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await controller.mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+
+    let curNetAmount = toMint * 0.33;
+    let forVaults = curNetAmount * 0.7;
+    let forDev = curNetAmount * 0.3;
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
+    .is.eq(balanceNotifier.add(forVaults));
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
+    .is.eq(balanceFund.add(toMint - curNetAmount));
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    .is.eq(balanceSigner.add(forDev));
+
+    console.log('mint first completed');
+
+    await announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+
+    // set governance
+    const indexGovChange = await announcer.timeLockIndexes(opCodeGovChange);
+    console.log('indexGovChange', indexGovChange);
+    expect(indexGovChange).is.eq(2);
+
+    const infoGovChange = await announcer.timeLockInfo(indexGovChange);
+    expect(infoGovChange.opCode).is.eq(opCodeGovChange);
+    expect(infoGovChange.target).is.eq(core.controller.address);
+    expect(infoGovChange.adrValues.length).is.eq(1);
+    expect(infoGovChange.adrValues[0]).is.eq(signer1.address);
+    expect(infoGovChange.numValues.length).is.eq(0);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    console.log('set gov');
+    await controller.setGovernance(signer1.address);
+
+    expect(await controller.governance()).is.eq(signer1.address);
+
+    console.log('gov change completed')
+
+
+    // announcer.closeAnnounce(opCodeMint, )
+
+
+    //mint 2
+    balanceSigner = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
+    balanceNotifier = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    balanceFund = await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
+
+    const index = await announcer.timeLockIndexes(opCodeMint);
+    expect(index).is.eq(3);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(core.mintHelper.address);
+    expect(info.adrValues.length).is.eq(2);
+    expect(info.adrValues[0]).is.eq(core.notifyHelper.address);
+    expect(info.adrValues[1]).is.eq(core.fundKeeper.address);
+    expect(info.numValues.length).is.eq(1);
+    expect(info.numValues[0]).is.eq(toMint);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await controller.connect(signer1).mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+
+    curNetAmount = toMint * 0.33;
+    forVaults = curNetAmount * 0.7;
+    forDev = curNetAmount * 0.3;
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
+    .is.eq(balanceNotifier.add(forVaults));
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
+    .is.eq(balanceFund.add(toMint - curNetAmount));
+
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    .is.eq(balanceSigner.add(forDev));
+  });
+
+  it("should make multiple time-lock changes 2", async () => {
+    const opCodeMint = 16;
+    const opCodeGovChange = 0;
+    const not = '0x099C314F792e1F91f53765Fc64AaDCcf4dCf1538';
+    const fk = '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2';
+
+    // mint
+    await announcer.announceMint(0, not, fk, true);
+    await announcer.announceAddressChange(opCodeGovChange, signer1.address);
+
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await controller.mintAndDistribute(0, not, fk, true);
+    console.log('mint first completed');
+
+    await announcer.announceMint(0, not, fk, true);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    console.log('set gov');
+    await controller.setGovernance(signer1.address);
+
+    expect(await controller.governance()).is.eq(signer1.address);
+
+    console.log('gov change completed');
+
+
+    await announcer.connect(signer1).closeAnnounce(opCodeMint, '0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33', MaticAddresses.ZERO_ADDRESS);
+
+    //*************** CHANGE ANNOUNCER
+    const changeAnnouncer = 17;
+
+    const newAnnouncer = (await DeployerUtils.deployAnnouncer(signer, core.controller.address, 1))[0];
+
+    await announcer.connect(signer1).announceAddressChange(changeAnnouncer, newAnnouncer.address);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await controller.connect(signer1).setAnnouncer(newAnnouncer.address);
+
+    expect(await controller.announcer()).is.eq(newAnnouncer.address);
+
+    // ******************
+
+    await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
+
+    //mint 2
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
+    await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
+
+    await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
+
+    //mint 3
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
+    await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
+
+    await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
+
+    //mint 4
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
+    await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
   });
 
 });

@@ -35,7 +35,7 @@ contract Announcer is Controllable, IAnnouncer {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   bytes32 internal constant _TIME_LOCK_SLOT = 0x244FE7C39AF244D294615908664E79A2F65DD3F4D5C387AF1D52197F465D1C2E;
 
   /// @dev Hold schedule for time-locked operations
@@ -117,12 +117,6 @@ contract Announcer is Controllable, IAnnouncer {
   /// @return Array length
   function timeLockInfosLength() external view returns (uint256) {
     return _timeLockInfos.length;
-  }
-
-  /// @notice Return an array with information about announced time-locks
-  /// @return Array of TimeLock information
-  function timeLockInfos() external view returns (TimeLockInfo[] memory) {
-    return _timeLockInfos;
   }
 
   /// @notice Return information about announced time-locks for given index
@@ -313,19 +307,6 @@ contract Announcer is Controllable, IAnnouncer {
   /// @param opCode TimeLockOpCodes uint8 value
   function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControllerOrGovernance {
     timeLockSchedule[opHash] = 0;
-    uint256 idx = 0;
-    if (multiOpCodes[opCode]) {
-      idx = multiTimeLockIndexes[opCode][target];
-    } else {
-      idx = timeLockIndexes[opCode];
-    }
-    require(idx != type(uint256).max, "index not found");
-
-    for (uint256 i = idx; i < _timeLockInfos.length - 1; i++) {
-      _timeLockInfos[i] = _timeLockInfos[i + 1];
-    }
-    _timeLockInfos.pop();
-
     if (multiOpCodes[opCode]) {
       multiTimeLockIndexes[opCode][target] = 0;
     } else {

@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Announcer, Bookkeeper, ContractReader} from "../../typechain";
+import {Announcer} from "../../typechain";
 
 
 async function main() {
@@ -10,12 +10,17 @@ async function main() {
   const announcer = await DeployerUtils.connectContract(
       signer, "Announcer", core.announcer) as Announcer;
 
-  const timeLockInfos = await announcer.timeLockInfos();
+  const timeLockInfosLength = (await announcer.timeLockInfosLength()).toNumber();
 
-  for (let timeLockInfo of timeLockInfos) {
-    console.info('timeLockInfo', timeLockInfo.opCode);
+  for (let i = 0; i < timeLockInfosLength; i++) {
+    const timeLockInfo = await announcer.timeLockInfo(i);
+    if (timeLockInfo.opCode === 18) {
+      continue;
+    }
+    console.info('timeLockInfo', timeLockInfo.opCode, timeLockInfo);
 
-    const ts = (await announcer.timeLockSchedule(timeLockInfo.opHash)).toNumber();
+    // const ts = (await announcer.timeLockSchedule(timeLockInfo.opHash)).toNumber();
+    const ts = 1628208427;
     console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
   }
 
