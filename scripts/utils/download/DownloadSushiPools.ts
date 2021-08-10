@@ -25,32 +25,6 @@ async function main() {
   const maticPrice = await oracle.getPrice(MaticAddresses.WMATIC_TOKEN);
   console.log('maticPrice', utils.formatUnits(maticPrice));
 
-  const addEvent = web3.eth.abi.encodeEventSignature({
-    name: 'LogPoolAddition',
-    type: 'event',
-    inputs: [{
-      type: 'uint256',
-      name: 'pid'
-    }, {
-      type: 'uint256',
-      name: 'allocPoint'
-    }]
-  });
-
-  const setEvent = web3.eth.abi.encodeEventSignature({
-    name: 'LogSetPool',
-    type: 'event',
-    inputs: [{
-      type: 'uint256',
-      name: 'pid'
-    }, {
-      type: 'uint256',
-      name: 'allocPoint'
-    }]
-  });
-  console.log('addEvent', addEvent);
-  console.log('setEvent', setEvent);
-
   let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, sushiWeekRewardUsd, maticWeekRewardUsd, weekRewardUsd, tvlUsd, apr \n';
   for (let i = 0; i < poolLength; i++) {
     const lp = await chef.lpToken(i);

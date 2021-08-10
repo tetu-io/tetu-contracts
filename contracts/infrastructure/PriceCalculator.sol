@@ -172,7 +172,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   // Gives the LP with largest liquidity for a given token
   // and a given tokenset (either keyTokens or pricingTokens)
   function getLargestPool(address token, address[] memory usedLps)
-  public view returns (address, uint256, address) {
+  public override view returns (address, uint256, address) {
     uint256 largestLpSize = 0;
     address largestKeyToken = address(0);
     uint256 largestPlatformIdx = 0;

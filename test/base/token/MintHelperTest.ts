@@ -246,6 +246,12 @@ describe("Mint helper tests", () => {
 
     expect(await minter.devFundsLength()).is.eq(1);
     expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+
+    await minter.setDevFunds([MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], [1000, 2000]);
+
+    expect(await minter.devFundsLength()).is.eq(2);
+    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    expect((await minter.devFundsList(1)).toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN);
   });
 
   it("mint all available emission", async () => {

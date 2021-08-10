@@ -32,7 +32,7 @@ export class Addresses {
     ['matic', new ToolsAddresses(
         '0x0B62ad43837A69Ad60289EEea7C6e907e759F6E8', // calculator
         '0xCa9C8Fba773caafe19E6140eC0A7a54d996030Da', // reader
-        '0xdfB765935D7f4e38641457c431F89d20Db571674', // utils
+        '0x0D4D9e9E43e97f31C81a75415C4307c4b58AbF59', // utils
         '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
         '', // payrollClerk
         '', // mockFaucet

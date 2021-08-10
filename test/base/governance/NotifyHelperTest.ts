@@ -219,7 +219,7 @@ describe("Notify Helper test", () => {
     ).rejectedWith('Duplicate pool');
   });
 
-  it("should notify with duplicate vault with different tx after clear", async () => {
+  it("should notify vaults again with different tx after clear", async () => {
     const allVaults: string[] = await core.bookkeeper.vaults();
     const rtDecimals = 18;
     const rt = core.rewardToken.address;

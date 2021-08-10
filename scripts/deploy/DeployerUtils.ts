@@ -19,6 +19,7 @@ import {
   SmartVault,
   TetuProxyControlled,
   TetuProxyGov,
+  ZapIntoVault,
 } from "../../typechain";
 import {expect} from "chai";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
@@ -201,6 +202,18 @@ export class DeployerUtils {
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as PayrollClerk;
     await contract.initialize(controller);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployZapIntoVault(
+      signer: SignerWithAddress,
+      controllerAddress: string
+  ): Promise<[ZapIntoVault, TetuProxyControlled, ZapIntoVault]> {
+    const logic = await DeployerUtils.deployContract(signer, "ZapIntoVault") as ZapIntoVault;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const contract = logic.attach(proxy.address) as ZapIntoVault;
+    await contract.initialize(controllerAddress);
+
     return [contract, proxy, logic];
   }
 

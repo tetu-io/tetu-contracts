@@ -12,12 +12,10 @@
 
 pragma solidity 0.8.4;
 
-interface IPriceCalculator {
+interface IMultiSwap {
 
-  function getPrice(address token, address outputToken) external view returns (uint256);
+  function findLpsForSwaps(address _tokenIn, address _tokenOut) external view returns (address[] memory);
 
-  function getPriceWithDefaultOutput(address token) external view returns (uint256);
-
-  function getLargestPool(address token, address[] memory usedLps) external view returns (address, uint256, address);
+  function multiSwap(address[] memory lps, address tokenIn, address tokenOut, uint256 amount, uint256 slippageTolerance) external;
 
 }

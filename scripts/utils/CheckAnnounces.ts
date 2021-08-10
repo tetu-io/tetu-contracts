@@ -19,8 +19,7 @@ async function main() {
     }
     console.info('timeLockInfo', timeLockInfo.opCode, timeLockInfo);
 
-    // const ts = (await announcer.timeLockSchedule(timeLockInfo.opHash)).toNumber();
-    const ts = 1628208427;
+    const ts = (await announcer.timeLockSchedule(timeLockInfo.opHash)).toNumber();
     console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
   }
 
