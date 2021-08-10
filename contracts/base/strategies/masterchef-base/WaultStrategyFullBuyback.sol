@@ -130,7 +130,7 @@ abstract contract WaultStrategyFullBuyback is StrategyBase {
     IWexPolyMaster(pool).deposit(poolID, amount, false);
   }
 
-  /// @dev Deposit underlying to WexPolyMaster pool
+  /// @dev Withdraw underlying from WexPolyMaster pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
     IWexPolyMaster(pool).withdraw(poolID, amount, true);
