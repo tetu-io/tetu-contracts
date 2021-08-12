@@ -32,12 +32,8 @@ describe("Multi swap tests", function () {
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
-    multiSwap = await DeployerUtils.deployContract(signer, 'MultiSwap', core.controller.address, calculator.address) as MultiSwap;
+    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
-
-    await multiSwap.setRouterForFactory(MaticAddresses.QUICK_FACTORY, MaticAddresses.QUICK_ROUTER);
-    await multiSwap.setRouterForFactory(MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
-    await multiSwap.setRouterForFactory(MaticAddresses.WAULT_FACTORY, MaticAddresses.WAULT_ROUTER);
 
     await UniswapUtils.buyAllBigTokens(signer);
   });
@@ -92,7 +88,6 @@ describe("Multi swap tests", function () {
     }
 
   });
-
 
 });
 

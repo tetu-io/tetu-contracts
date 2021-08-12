@@ -36,6 +36,8 @@ export class Addresses {
         '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
         '', // payrollClerk
         '', // mockFaucet
+        '0x4fB6839468eb785DbA7fb02FCb4feE5dB57c5b70', // multiSwap
+        '', // zapContract
     )],
     ['rinkeby', new ToolsAddresses(
         '0x720297240ea63ce4dcc4588D726C0979EB53ee67', // calculator
@@ -44,6 +46,8 @@ export class Addresses {
         '0xDe3A5aC324c271C2F915b82C489A7b316714C442', // rebalancer
         '', // payrollClerk
         '0xE08a4d6aFC2f3bB5F95ceC1e4D88559d837C08F2', // mockFaucet
+        '', // multiSwap
+        '', // zapContract
     )]
   ]);
 

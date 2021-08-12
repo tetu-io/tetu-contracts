@@ -38,9 +38,19 @@ contract MultiSwap is Controllable, IMultiSwap {
   event CalculatorUpdated(address oldValue, address newValue);
   event RouterUpdated(address factory, address router);
 
-  constructor(address _controller, address _calculator) {
+  constructor(
+    address _controller,
+    address _calculator,
+    address[] memory _factories,
+    address[] memory _routers
+  ) {
+    require(_calculator != address(0), "MS: zero calculator address");
+    require(_factories.length == _routers.length, "MS: wrong arrays");
     Controllable.initializeControllable(_controller);
-    setCalculator(_calculator);
+    calculator = IPriceCalculator(_calculator);
+    for (uint256 i = 0; i < _factories.length; i++) {
+      factoryToRouter[_factories[i]] = _routers[i];
+    }
   }
 
   // ******************* VIEWS *****************************
@@ -233,11 +243,13 @@ contract MultiSwap is Controllable, IMultiSwap {
 
   // ************************* GOV ACTIONS *******************
 
+  /// @dev Only controller or governance can do it. Set Uni router for factory address
   function setRouterForFactory(address factory, address router) external onlyControllerOrGovernance {
     factoryToRouter[factory] = router;
     emit RouterUpdated(factory, router);
   }
 
+  /// @dev Only controller or governance can do it. Set PriceCalculator address.
   function setCalculator(address _newValue) public onlyControllerOrGovernance {
     require(_newValue != address(0), "MC: zero address");
     emit CalculatorUpdated(address(calculator), _newValue);

@@ -12,6 +12,7 @@ import {
   ITetuProxy,
   LiquidityBalancer,
   MintHelper,
+  MultiSwap,
   NoopStrategy,
   NotifyHelper,
   PayrollClerk,
@@ -218,14 +219,36 @@ export class DeployerUtils {
 
   public static async deployZapContract(
       signer: SignerWithAddress,
-      controllerAddress: string
+      controllerAddress: string,
+      multiSwap: string
   ): Promise<[ZapContract, TetuProxyControlled, ZapContract]> {
     const logic = await DeployerUtils.deployContract(signer, "ZapContract") as ZapContract;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as ZapContract;
-    await contract.initialize(controllerAddress);
+    await contract.initialize(controllerAddress, multiSwap);
 
     return [contract, proxy, logic];
+  }
+
+  public static async deployMultiSwap(
+      signer: SignerWithAddress,
+      controllerAddress: string,
+      calculatorAddress: string
+  ): Promise<MultiSwap> {
+    return await DeployerUtils.deployContract(signer, "MultiSwap",
+        controllerAddress,
+        calculatorAddress,
+        [
+          MaticAddresses.QUICK_FACTORY,
+          MaticAddresses.SUSHI_FACTORY,
+          MaticAddresses.WAULT_FACTORY
+        ],
+        [
+          MaticAddresses.QUICK_ROUTER,
+          MaticAddresses.SUSHI_ROUTER,
+          MaticAddresses.WAULT_ROUTER
+        ]
+    ) as MultiSwap;
   }
 
   public static async deployAllCoreContracts(

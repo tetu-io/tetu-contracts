@@ -42,17 +42,11 @@ describe("Zap contract tests", function () {
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
-    multiSwap = await DeployerUtils.deployContract(signer, 'MultiSwap', core.controller.address, calculator.address) as MultiSwap;
-    zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address))[0];
+    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address))[0];
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
     await core.controller.addToWhiteList(zapContract.address);
-
-    await zapContract.setMultiSwap(multiSwap.address);
-
-    await multiSwap.setRouterForFactory(MaticAddresses.QUICK_FACTORY, MaticAddresses.QUICK_ROUTER);
-    await multiSwap.setRouterForFactory(MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
-    await multiSwap.setRouterForFactory(MaticAddresses.WAULT_FACTORY, MaticAddresses.WAULT_ROUTER);
 
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));

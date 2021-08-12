@@ -51,8 +51,14 @@ contract ZapContract is Controllable {
     assert(_MULTI_SWAP_SLOT == bytes32(uint256(keccak256("eip1967.multiSwap")) - 1));
   }
 
-  function initialize(address _controller) external initializer {
+  function initialize(address _controller, address _multiSwap) external initializer {
+    require(_multiSwap != address(0), "ZC: zero multiSwap address");
     Controllable.initializeControllable(_controller);
+
+    bytes32 slot = _MULTI_SWAP_SLOT;
+    assembly {
+      sstore(slot, _multiSwap)
+    }
   }
 
   // ******************* VIEWS *****************************
@@ -69,10 +75,17 @@ contract ZapContract is Controllable {
 
   // ******************** USERS ACTIONS *********************
 
-  /// @dev Approval for token is assumed.
-  ///      Add liquidity and deposit to given vault
-  ///      Token should be declared as keyToken from priceCalculator
-  ///      Slippage tolerance is a number from 0 to 100 that reflect is a percent of acceptable slippage
+  /// @notice Approval for token is assumed.
+  ///      Add liquidity and deposit to given vault with Uin pair underlying
+  ///      TokenIn should be declared as a keyToken in the PriceCalculator
+  /// @param _vault A target vault for deposit
+  /// @param _tokenIn This token will be swapped to required token for adding liquidity
+  /// @param _asset0 Token address required for adding liquidity
+  /// @param _asset0Route Pair addresses for buying asset0
+  /// @param _asset1 Token address required for adding liquidity
+  /// @param _asset1Route Pair addresses for buying asset1
+  /// @param _tokenInAmount Amount of token for deposit
+  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapIntoLp(
     address _vault,
     address _tokenIn,
@@ -83,12 +96,11 @@ contract ZapContract is Controllable {
     uint256 _tokenInAmount,
     uint256 slippageTolerance
   ) external {
-    require(_tokenInAmount > 1, "not enough amount");
+    require(_tokenInAmount > 1, "ZC: not enough amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
-
-    require(_asset0 == lp.token0() || _asset0 == lp.token1(), "asset 0 not exist in lp tokens");
-    require(_asset1 == lp.token0() || _asset1 == lp.token1(), "asset 1 not exist in lp tokens");
+    require(_asset0 == lp.token0() || _asset0 == lp.token1(), "ZC: asset 0 not exist in lp tokens");
+    require(_asset1 == lp.token0() || _asset1 == lp.token1(), "ZC: asset 1 not exist in lp tokens");
 
     // transfer only require amount
     IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _tokenInAmount.div(2).mul(2));
@@ -125,12 +137,20 @@ contract ZapContract is Controllable {
       )
     );
 
-    require(liquidity != 0, "zero liq");
-
+    require(liquidity != 0, "ZC: zero liq");
     depositToVault(_vault, liquidity, address(lp));
-
   }
 
+  /// @notice Approval for share token is assumed.
+  ///      Withdraw from given vault underlying, remove liquidity and sell tokens for given tokenOut
+  /// @param _vault A target vault for withdraw
+  /// @param _tokenOut This token will be a target for swaps
+  /// @param _asset0 Token address required selling removed assets
+  /// @param _asset0Route Pair addresses for selling asset0
+  /// @param _asset1 Token address required selling removed assets
+  /// @param _asset1Route Pair addresses for selling asset1
+  /// @param _shareTokenAmount Amount of share token for withdraw
+  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapOutLp(
     address _vault,
     address _tokenOut,
@@ -141,12 +161,11 @@ contract ZapContract is Controllable {
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
   ) external {
-    require(_shareTokenAmount != 0, "zero amount");
+    require(_shareTokenAmount != 0, "ZC: zero amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
-
-    require(_asset0 == lp.token0() || _asset0 == lp.token1(), "asset 0 not exist in lp token");
-    require(_asset1 == lp.token0() || _asset1 == lp.token1(), "asset 1 not exist in lp token");
+    require(_asset0 == lp.token0() || _asset0 == lp.token1(), "ZC: asset 0 not exist in lp token");
+    require(_asset1 == lp.token0() || _asset1 == lp.token1(), "ZC: asset 1 not exist in lp token");
 
     IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
 
@@ -218,11 +237,11 @@ contract ZapContract is Controllable {
     );
 
     // send back change if exist
-    sendBackAssets(zapInfo);
+    sendBackChange(zapInfo);
     return liquidity;
   }
 
-  function sendBackAssets(ZapInfo memory zapInfo) internal {
+  function sendBackChange(ZapInfo memory zapInfo) internal {
     uint256 bal0 = IERC20(zapInfo.asset0).balanceOf(address(this));
     uint256 bal1 = IERC20(zapInfo.asset1).balanceOf(address(this));
     if (bal0 != 0) {
@@ -277,15 +296,15 @@ contract ZapContract is Controllable {
     multiSwap().multiSwap(_lpRoute, _tokenIn, _tokenOut, _tokenInAmount, slippageTolerance);
   }
 
-  /// @dev Deposit into vault, check the result and send share token to msg.sender
+  /// @dev Deposit into the vault, check the result and send share token to msg.sender
   function depositToVault(address _vault, uint256 _amount, address _underlying) internal {
-    require(ISmartVault(_vault).underlying() == _underlying, "wrong lp for vault");
+    require(ISmartVault(_vault).underlying() == _underlying, "ZC: wrong lp for vault");
 
     IERC20(_underlying).safeApprove(_vault, _amount);
     ISmartVault(_vault).deposit(_amount);
 
     uint256 shareBalance = IERC20(_vault).balanceOf(address(this));
-    require(shareBalance != 0, "zero shareBalance");
+    require(shareBalance != 0, "ZC: zero shareBalance");
 
     IERC20(_vault).safeTransfer(msg.sender, shareBalance);
   }
@@ -295,7 +314,7 @@ contract ZapContract is Controllable {
     ISmartVault(_vault).withdraw(_amount);
 
     uint256 underlyingBalance = IERC20(_underlying).balanceOf(address(this));
-    require(underlyingBalance != 0, "zero underlying balance");
+    require(underlyingBalance != 0, "ZC: zero underlying balance");
     return underlyingBalance;
   }
 
@@ -303,7 +322,7 @@ contract ZapContract is Controllable {
 
   /// @dev Set MultiSwap contract address
   function setMultiSwap(address _newValue) external onlyControllerOrGovernance {
-    require(_newValue != address(0), "zero address");
+    require(_newValue != address(0), "ZC: zero address");
     emit UpdateMultiSwap(address(multiSwap()), _newValue);
     bytes32 slot = _MULTI_SWAP_SLOT;
     assembly {
