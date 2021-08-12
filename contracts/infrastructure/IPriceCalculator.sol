@@ -20,4 +20,6 @@ interface IPriceCalculator {
 
   function getLargestPool(address token, address[] memory usedLps) external view returns (address, uint256, address);
 
+  function getPriceFromLp(address lpAddress, address token) external view returns (uint256);
+
 }

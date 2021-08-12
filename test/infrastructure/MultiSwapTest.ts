@@ -3,20 +3,14 @@ import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
-import {
-  IUniswapV2Pair,
-  IUniswapV2Router02,
-  MultiSwap,
-  PriceCalculator,
-  ZapIntoVault
-} from "../../typechain";
+import {ContractReader, IUniswapV2Pair, MultiSwap, PriceCalculator} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {Erc20Utils} from "../Erc20Utils";
-import {MultiSwapUtils} from "../MultiSwapUtils";
+import {Addresses} from "../../addresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -27,8 +21,8 @@ describe("Multi swap tests", function () {
   let signer: SignerWithAddress;
   let core: CoreContractsWrapper;
   let calculator: PriceCalculator;
-  let zapIntoVault: ZapIntoVault;
   let multiSwap: MultiSwap;
+  let cReader: ContractReader;
 
   before(async function () {
     this.timeout(1200000);
@@ -39,16 +33,13 @@ describe("Multi swap tests", function () {
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
     multiSwap = await DeployerUtils.deployContract(signer, 'MultiSwap', core.controller.address, calculator.address) as MultiSwap;
-    zapIntoVault = (await DeployerUtils.deployZapIntoVault(signer, core.controller.address))[0];
-
-    await zapIntoVault.setMultiSwap(multiSwap.address);
+    cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
     await multiSwap.setRouterForFactory(MaticAddresses.QUICK_FACTORY, MaticAddresses.QUICK_ROUTER);
     await multiSwap.setRouterForFactory(MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
     await multiSwap.setRouterForFactory(MaticAddresses.WAULT_FACTORY, MaticAddresses.WAULT_ROUTER);
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+    await UniswapUtils.buyAllBigTokens(signer);
   });
 
   after(async function () {
@@ -63,27 +54,72 @@ describe("Multi swap tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("should swap tokens with route QI", async () => {
+  it("should swap tokens with route usdc to QI", async () => {
     await tryToSwap(signer, multiSwap, MaticAddresses.USDC_TOKEN, MaticAddresses.QI_TOKEN);
   });
 
-  it("should swap tokens with route WEX", async () => {
+  it("should swap tokens with route usdc to WEX", async () => {
     await tryToSwap(signer, multiSwap, MaticAddresses.USDC_TOKEN, MaticAddresses.WEXpoly_TOKEN);
+  });
+
+  it("should swap tokens with route btc to qi", async () => {
+    await tryToSwap(signer, multiSwap, MaticAddresses.WBTC_TOKEN, MaticAddresses.QI_TOKEN, '0.1');
+  });
+
+  it("should swap tokens with route usdc to eth", async () => {
+    await tryToSwap(signer, multiSwap, MaticAddresses.USDC_TOKEN, MaticAddresses.WETH_TOKEN);
+  });
+
+  it.skip("should be able to buy all assets", async () => {
+
+    const contractReader = await DeployerUtils.connectInterface(
+        signer, 'ContractReader',
+        Addresses.TOOLS.get('matic')?.reader as string
+    ) as ContractReader;
+
+    const strategies = await contractReader.strategies();
+
+    for (let strategy of strategies) {
+
+      const assets = await cReader.strategyAssets(strategy);
+
+      for (let asset of assets) {
+        if (asset.toLowerCase() === MaticAddresses.USDC_TOKEN) {
+          continue;
+        }
+        await tryToSwap(signer, multiSwap, MaticAddresses.USDC_TOKEN, asset, '10');
+      }
+    }
+
   });
 
 
 });
 
-async function tryToSwap(signer: SignerWithAddress, multiSwap: MultiSwap, tokenIn: string, tokenOut: string) {
-
+async function tryToSwap(signer: SignerWithAddress, multiSwap: MultiSwap, tokenIn: string, tokenOut: string, amountRaw = '1000') {
   const tokenInDec = await Erc20Utils.decimals(tokenIn);
 
-  const amount = utils.parseUnits('1000', tokenInDec);
+  const amount = utils.parseUnits(amountRaw, tokenInDec);
 
   expect(+utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec))
   .is.greaterThan(+utils.formatUnits(amount, tokenInDec));
 
-  await MultiSwapUtils.multiSwap(signer, multiSwap, tokenIn, tokenOut, amount, 5);
+  const lps = await multiSwap.findLpsForSwaps(tokenIn, tokenOut);
+
+  console.log('===== PATH =======', await Erc20Utils.tokenSymbol(tokenIn), '=>', await Erc20Utils.tokenSymbol(tokenOut))
+  for (let lp of lps) {
+    const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
+    const t0 = await lpCtr.token0();
+    const t1 = await lpCtr.token1();
+    console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+  }
+  console.log('============')
+
+  await Erc20Utils.approve(tokenIn, signer, multiSwap.address, amount.toString())
+  await multiSwap.multiSwap(lps, tokenIn, tokenOut, amount, 9);
+
+  const bal = await Erc20Utils.balanceOf(tokenOut, signer.address);
+  expect(bal).is.not.eq(0);
 
   expect(await Erc20Utils.balanceOf(tokenOut, signer.address)).is.not.eq(0);
 }

@@ -24,6 +24,7 @@ export default {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: 137,
+      timeout: 99999,
       forking: {
         url: Secrets.maticRpcUrl,
       },

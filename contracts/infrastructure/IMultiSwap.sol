@@ -16,6 +16,8 @@ interface IMultiSwap {
 
   function findLpsForSwaps(address _tokenIn, address _tokenOut) external view returns (address[] memory);
 
+  function routerForPair(address pair) external view returns (address);
+
   function multiSwap(address[] memory lps, address tokenIn, address tokenOut, uint256 amount, uint256 slippageTolerance) external;
 
 }

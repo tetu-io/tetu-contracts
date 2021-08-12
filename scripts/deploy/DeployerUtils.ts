@@ -4,6 +4,7 @@ import {Contract, ContractFactory, utils} from "ethers";
 import {
   Announcer,
   Bookkeeper,
+  ContractReader,
   Controller,
   FeeRewardForwarder,
   FundKeeper,
@@ -19,7 +20,7 @@ import {
   SmartVault,
   TetuProxyControlled,
   TetuProxyGov,
-  ZapIntoVault,
+  ZapContract,
 } from "../../typechain";
 import {expect} from "chai";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
@@ -205,13 +206,23 @@ export class DeployerUtils {
     return [contract, proxy, logic];
   }
 
-  public static async deployZapIntoVault(
+  public static async deployContractReader(signer: SignerWithAddress, controller: string, calculator: string)
+      : Promise<[ContractReader, TetuProxyGov, ContractReader]> {
+    const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const contract = logic.attach(proxy.address) as ContractReader;
+    await contract.initialize(controller);
+    await contract.setPriceCalculator(calculator);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployZapContract(
       signer: SignerWithAddress,
       controllerAddress: string
-  ): Promise<[ZapIntoVault, TetuProxyControlled, ZapIntoVault]> {
-    const logic = await DeployerUtils.deployContract(signer, "ZapIntoVault") as ZapIntoVault;
+  ): Promise<[ZapContract, TetuProxyControlled, ZapContract]> {
+    const logic = await DeployerUtils.deployContract(signer, "ZapContract") as ZapContract;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
-    const contract = logic.attach(proxy.address) as ZapIntoVault;
+    const contract = logic.attach(proxy.address) as ZapContract;
     await contract.initialize(controllerAddress);
 
     return [contract, proxy, logic];
