@@ -27,7 +27,7 @@ contract MultiSwap is Controllable, IMultiSwap {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint256 constant public MAX_ROUTES = 10;
 
   mapping(address => address) public factoryToRouter;
@@ -160,7 +160,7 @@ contract MultiSwap is Controllable, IMultiSwap {
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
-    require(amount == IERC20(tokenIn).balanceOf(address(this)),
+    require(amount <= IERC20(tokenIn).balanceOf(address(this)),
       "MS: transfer fees forbidden for input Token");
 
     address[] memory route = new address[](2);
@@ -202,7 +202,7 @@ contract MultiSwap is Controllable, IMultiSwap {
     IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
-    require(tokenOutBalance == IERC20(tokenOut).balanceOf(address(this)),
+    require(tokenOutBalance <= IERC20(tokenOut).balanceOf(msg.sender),
       "MS: transfer fees forbidden for output Token");
   }
 

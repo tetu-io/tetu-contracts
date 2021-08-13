@@ -297,7 +297,7 @@ describe("Zap contract tests", function () {
     //   num++;
     // }
 
-    for (let i = 41; i < vaults.length; i++) {
+    for (let i = 0; i < vaults.length; i++) {
       const vault = vaults[i];
       console.log(i, await contractReader.vaultName(vault));
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
