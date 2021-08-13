@@ -36,8 +36,8 @@ export class Addresses {
         '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
         '', // payrollClerk
         '', // mockFaucet
-        '0x5FE28a00739E30A7E9b3f868E4Dd76CbC5b29427', // multiSwap
-        '0x54fE4A2fFc3Ff466b411255D46427C5C4E2fAB50', // zapContract
+        '0x960Ed11661C6CeFd3657d83eE13bdb85Eb89052C', // multiSwap
+        '0xfc1FB0C9686A8E735A303a6e031A7c7f68eD30cf', // zapContract
     )],
     ['rinkeby', new ToolsAddresses(
         '0x720297240ea63ce4dcc4588D726C0979EB53ee67', // calculator
