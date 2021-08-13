@@ -169,10 +169,11 @@ contract ZapContract is Controllable {
 
     IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
 
-    uint256 lpBalance = withdrawFromVault(_vault, _shareTokenAmount, address(lp));
+    uint256 lpBalance = exitFromVault(_vault, address(lp));
 
     IUniswapV2Router02 router = IUniswapV2Router02(multiSwap().routerForPair(address(lp)));
 
+    IERC20(address(lp)).safeApprove(address(router), 0);
     IERC20(address(lp)).safeApprove(address(router), lpBalance);
     // without care about slippage
     router.removeLiquidity(
@@ -223,7 +224,9 @@ contract ZapContract is Controllable {
 
     IUniswapV2Router02 router = IUniswapV2Router02(multiSwap().routerForPair(zapInfo.lp));
 
+    IERC20(zapInfo.asset0).safeApprove(address(router), 0);
     IERC20(zapInfo.asset0).safeApprove(address(router), asset0Amount);
+    IERC20(zapInfo.asset1).safeApprove(address(router), 0);
     IERC20(zapInfo.asset1).safeApprove(address(router), asset1Amount);
     (,, uint256 liquidity) = router.addLiquidity(
       zapInfo.asset0,
@@ -292,6 +295,8 @@ contract ZapContract is Controllable {
       // no actions if we already have required token
       return;
     }
+    require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
+    IERC20(_tokenIn).safeApprove(address(multiSwap()), 0);
     IERC20(_tokenIn).safeApprove(address(multiSwap()), _tokenInAmount);
     multiSwap().multiSwap(_lpRoute, _tokenIn, _tokenOut, _tokenInAmount, slippageTolerance);
   }
@@ -300,6 +305,7 @@ contract ZapContract is Controllable {
   function depositToVault(address _vault, uint256 _amount, address _underlying) internal {
     require(ISmartVault(_vault).underlying() == _underlying, "ZC: wrong lp for vault");
 
+    IERC20(_underlying).safeApprove(_vault, 0);
     IERC20(_underlying).safeApprove(_vault, _amount);
     ISmartVault(_vault).deposit(_amount);
 
@@ -310,8 +316,8 @@ contract ZapContract is Controllable {
   }
 
   /// @dev Withdraw from vault and check the result
-  function withdrawFromVault(address _vault, uint256 _amount, address _underlying) internal returns (uint256){
-    ISmartVault(_vault).withdraw(_amount);
+  function exitFromVault(address _vault, address _underlying) internal returns (uint256){
+    ISmartVault(_vault).exit();
 
     uint256 underlyingBalance = IERC20(_underlying).balanceOf(address(this));
     require(underlyingBalance != 0, "ZC: zero underlying balance");

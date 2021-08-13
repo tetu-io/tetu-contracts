@@ -18,9 +18,14 @@ import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {Erc20Utils} from "../Erc20Utils";
+import {Addresses} from "../../addresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
+
+const exclude = new Set<string>([
+  '0x21d97B1adcD2A36756a6E0Aa1BAC3Cf6c0943c0E'.toLowerCase(), // wex pear - has transfer fee
+]);
 
 describe("Zap contract tests", function () {
   let snapshot: string;
@@ -33,6 +38,7 @@ describe("Zap contract tests", function () {
   let cReader: ContractReader;
   let grtEthVault: SmartVault;
   let btcWexVault: SmartVault;
+  let wexPearVault: SmartVault;
 
   before(async function () {
     this.timeout(1200000);
@@ -76,10 +82,27 @@ describe("Zap contract tests", function () {
             'StrategyWaultLp',
             core.controller.address,
             vaultAddress,
-            '0xaE183DB956FAf760Aa29bFcfDa4BDDdB02fbdd0E', // grt weth
+            '0xaE183DB956FAf760Aa29bFcfDa4BDDdB02fbdd0E', // btc wex lp
             MaticAddresses.WBTC_TOKEN,
             MaticAddresses.WEXpoly_TOKEN,
             24
+        ) as Promise<IStrategy>,
+        core.controller,
+        core.psVault.address,
+        signer
+    ))[1];
+
+    wexPearVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyWaultLp',
+            core.controller.address,
+            vaultAddress,
+            '0xcF35da701ffD92027f798fF7D28B4CB3b424111d', // pear wex lp
+            MaticAddresses.PEAR_TOKEN,
+            MaticAddresses.WEXpoly_TOKEN,
+            26
         ) as Promise<IStrategy>,
         core.controller,
         core.psVault.address,
@@ -117,7 +140,7 @@ describe("Zap contract tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("should zap grtEthVault", async () => {
+  it("should zap grtEthVault twice", async () => {
     // remove all usdc
     await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, MaticAddresses.SUSHI_ROUTER,
         (await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address))
@@ -168,6 +191,53 @@ describe("Zap contract tests", function () {
 
     expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
     expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
+
+    //! ---------------------------------
+
+    await zapIntoVaultWithLp(
+        signer,
+        multiSwap,
+        zapContract,
+        cReader,
+        v,
+        MaticAddresses.USDC_TOKEN,
+        '500'
+    );
+
+    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, multiSwap.address)).is.eq(0);
+
+    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, multiSwap.address)).is.eq(0);
+
+    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
+
+    expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+
+    console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
+
+    const amountShare2 = await Erc20Utils.balanceOf(v, signer.address);
+
+    await zapOutVaultWithLp(
+        signer,
+        multiSwap,
+        zapContract,
+        cReader,
+        v,
+        MaticAddresses.USDC_TOKEN,
+        amountShare2.toString()
+    );
+
+    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, multiSwap.address)).is.eq(0);
+
+    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, multiSwap.address)).is.eq(0);
+
+    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
   });
 
   it("should zap btcWexVault", async () => {
@@ -201,29 +271,69 @@ describe("Zap contract tests", function () {
     );
   });
 
-  // it.skip("should be able to invest to all vaults with 2 assets", async () => {
-  //
-  //   const contractReader = await DeployerUtils.connectInterface(
-  //       signer, 'ContractReader',
-  //       Addresses.TOOLS.get('matic')?.reader as string
-  //   ) as ContractReader;
-  //
-  //   const vaults = await contractReader.vaults();
-  //
-  //   for (let vault of vaults) {
-  //
-  //     await zapIntoVaultWithLp(
-  //         signer,
-  //         multiSwap,
-  //         zapContract,
-  //         contractReader,
-  //         vault,
-  //         MaticAddresses.USDC_TOKEN
-  //     );
-  //
-  //   }
-  //
-  // });
+  it("should be able to invest to all vaults with 2 assets", async () => {
+
+    const deployedZap = await DeployerUtils.connectInterface(
+        signer, 'ZapContract',
+        Addresses.TOOLS.get('matic')?.zapContract as string
+    ) as ZapContract;
+
+    const deployedMultiSwap = await DeployerUtils.connectInterface(
+        signer, 'MultiSwap',
+        Addresses.TOOLS.get('matic')?.multiSwap as string
+    ) as MultiSwap;
+
+    const contractReader = await DeployerUtils.connectInterface(
+        signer, 'ContractReader',
+        Addresses.TOOLS.get('matic')?.reader as string
+    ) as ContractReader;
+
+    const vaults = await contractReader.vaults();
+    console.log('vaults', vaults.length);
+
+    // let num = 0;
+    // for (let v of vaults) {
+    //   console.log(num, await contractReader.vaultName(v));
+    //   num++;
+    // }
+
+    for (let i = 41; i < vaults.length; i++) {
+      const vault = vaults[i];
+      console.log(i, await contractReader.vaultName(vault));
+      const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+      if ((await contractReader.strategyAssets(await vCtr.strategy())).length !== 2
+          || exclude.has(vault.toLowerCase())) {
+        continue;
+      }
+
+      await zapIntoVaultWithLp(
+          signer,
+          deployedMultiSwap,
+          deployedZap,
+          contractReader,
+          vault,
+          MaticAddresses.USDC_TOKEN,
+          '10'
+      );
+
+
+      console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
+
+      const amountShare = await Erc20Utils.balanceOf(vault, signer.address);
+
+      await zapOutVaultWithLp(
+          signer,
+          deployedMultiSwap,
+          deployedZap,
+          contractReader,
+          vault,
+          MaticAddresses.USDC_TOKEN,
+          amountShare.toString()
+      );
+
+    }
+
+  });
 
 
 });

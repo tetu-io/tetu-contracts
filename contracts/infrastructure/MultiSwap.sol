@@ -158,13 +158,16 @@ contract MultiSwap is Controllable, IMultiSwap {
     require(tokenIn != tokenOut, "MC: same in/out");
 
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
+    // some tokens have a burn/fee mechanic for transfers so amount can be changed
+    // we are recommend to use manual swapping for this kind of tokens
+    require(amount == IERC20(tokenIn).balanceOf(address(this)),
+      "MS: transfer fees forbidden for input Token");
 
     address[] memory route = new address[](2);
     route[0] = tokenIn;
 
     for (uint256 i = 0; i < lps.length; i++) {
       IUniswapV2Pair lp = IUniswapV2Pair(lps[i]);
-
 
       if (lp.token0() == route[0]) {
         route[1] = lp.token1();
@@ -195,7 +198,12 @@ contract MultiSwap is Controllable, IMultiSwap {
     }
 
     uint256 tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
+    require(tokenOutBalance != 0, "MS: zero token out amount");
     IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+    // some tokens have a burn/fee mechanic for transfers so amount can be changed
+    // we are recommend to use manual swapping for this kind of tokens
+    require(tokenOutBalance == IERC20(tokenOut).balanceOf(address(this)),
+      "MS: transfer fees forbidden for output Token");
   }
 
   // ******************* INTERNAL ***************************
@@ -230,6 +238,7 @@ contract MultiSwap is Controllable, IMultiSwap {
     uint256 amountOutMin
   )
   internal returns (uint256[] memory){
+    require(_amount <= IERC20(_route[0]).balanceOf(address(this)), "MS: not enough balance for swap");
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
     return IUniswapV2Router02(_router).swapExactTokensForTokens(

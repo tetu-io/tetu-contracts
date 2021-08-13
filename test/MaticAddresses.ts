@@ -33,6 +33,7 @@ export class MaticAddresses {
   public static QI_TOKEN = "0x580A84C73811E1839F75d86d75d88cCa0c241fF4".toLowerCase();
   public static miMATIC_TOKEN = "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1".toLowerCase();
   public static WEXpoly_TOKEN = "0x4c4BF319237D98a30A929A96112EfFa8DA3510EB".toLowerCase();
+  public static PEAR_TOKEN = "0xc8bcb58caEf1bE972C0B638B1dD8B0748Fdc8A44".toLowerCase();
   // public static dQUICK_TOKEN = "".toLowerCase();
 
   //quick
