@@ -214,31 +214,23 @@ contract ZapContract is Controllable {
     uint256 asset0Amount = IERC20(zapInfo.asset0).balanceOf(address(this));
     uint256 asset1Amount = IERC20(zapInfo.asset1).balanceOf(address(this));
 
-    uint256 asset0AmountMin = asset0Amount.sub(
-      asset0Amount.mul(zapInfo.slippageTolerance).div(100)
-    );
-
-    uint256 asset1AmountMin = asset1Amount.sub(
-      asset1Amount.mul(zapInfo.slippageTolerance).div(100)
-    );
-
     IUniswapV2Router02 router = IUniswapV2Router02(multiSwap().routerForPair(zapInfo.lp));
 
     IERC20(zapInfo.asset0).safeApprove(address(router), 0);
     IERC20(zapInfo.asset0).safeApprove(address(router), asset0Amount);
     IERC20(zapInfo.asset1).safeApprove(address(router), 0);
     IERC20(zapInfo.asset1).safeApprove(address(router), asset1Amount);
+    // without care about min amounts
     (,, uint256 liquidity) = router.addLiquidity(
       zapInfo.asset0,
       zapInfo.asset1,
       asset0Amount,
       asset1Amount,
-      asset0AmountMin,
-      asset1AmountMin,
+      1,
+      1,
       address(this),
       block.timestamp
     );
-
     // send back change if exist
     sendBackChange(zapInfo);
     return liquidity;
@@ -334,6 +326,13 @@ contract ZapContract is Controllable {
     assembly {
       sstore(slot, _newValue)
     }
+  }
+
+  /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvage(address _token, uint256 _amount) external onlyControllerOrGovernance {
+    IERC20(_token).safeTransfer(msg.sender, _amount);
   }
 
 }

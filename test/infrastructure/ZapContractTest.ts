@@ -37,6 +37,7 @@ describe("Zap contract tests", function () {
   let multiSwap: MultiSwap;
   let cReader: ContractReader;
   let grtEthVault: SmartVault;
+  let wmaticEthVault: SmartVault;
   let btcWexVault: SmartVault;
   let wexPearVault: SmartVault;
 
@@ -56,6 +57,7 @@ describe("Zap contract tests", function () {
 
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WETH_TOKEN, utils.parseUnits('5000000')); // ~500eth
 
 
     grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
@@ -69,6 +71,23 @@ describe("Zap contract tests", function () {
             MaticAddresses.GRT_TOKEN,
             MaticAddresses.WETH_TOKEN,
             16
+        ) as Promise<IStrategy>,
+        core.controller,
+        core.psVault.address,
+        signer
+    ))[1];
+
+    wmaticEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategySushiSwapLp',
+            core.controller.address,
+            vaultAddress,
+            '0xc4e595acDD7d12feC385E5dA5D43160e8A0bAC0E', // SUSHI_WMATIC_WETH
+            MaticAddresses.WMATIC_TOKEN,
+            MaticAddresses.WETH_TOKEN,
+            0
         ) as Promise<IStrategy>,
         core.controller,
         core.psVault.address,
@@ -140,138 +159,112 @@ describe("Zap contract tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("should zap grtEthVault twice", async () => {
-    // remove all usdc
-    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, MaticAddresses.SUSHI_ROUTER,
-        (await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address))
-        .sub(utils.parseUnits('1000', 6)).toString());
-
-    const v = grtEthVault.address;
-    const underlying = await grtEthVault.underlying();
-    await zapIntoVaultWithLp(
+  it("should zap grtEthVault twice with eth", async () => {
+    await vaultLpTest(
         signer,
+        cReader,
         multiSwap,
         zapContract,
-        cReader,
-        v,
-        MaticAddresses.USDC_TOKEN
+        grtEthVault.address,
+        MaticAddresses.WETH_TOKEN,
+        '0.1',
+        1
     );
 
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
-
-    console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
-
-    const amountShare = await Erc20Utils.balanceOf(v, signer.address);
-
-    await zapOutVaultWithLp(
+    await vaultLpTest(
         signer,
+        cReader,
         multiSwap,
         zapContract,
-        cReader,
-        v,
-        MaticAddresses.USDC_TOKEN,
-        amountShare.toString()
-    );
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
-
-    //! ---------------------------------
-
-    await zapIntoVaultWithLp(
-        signer,
-        multiSwap,
-        zapContract,
-        cReader,
-        v,
-        MaticAddresses.USDC_TOKEN,
-        '500'
-    );
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
-
-    console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
-
-    const amountShare2 = await Erc20Utils.balanceOf(v, signer.address);
-
-    await zapOutVaultWithLp(
-        signer,
-        multiSwap,
-        zapContract,
-        cReader,
-        v,
-        MaticAddresses.USDC_TOKEN,
-        amountShare2.toString()
-    );
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WETH_TOKEN, multiSwap.address)).is.eq(0);
-
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.GRT_TOKEN, multiSwap.address)).is.eq(0);
-  });
-
-  it("should zap btcWexVault", async () => {
-    // remove all usdc
-    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, MaticAddresses.SUSHI_ROUTER,
-        (await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address))
-        .sub(utils.parseUnits('1000', 6)).toString());
-
-    const v = btcWexVault.address;
-    await zapIntoVaultWithLp(
-        signer,
-        multiSwap,
-        zapContract,
-        cReader,
-        v,
-        MaticAddresses.USDC_TOKEN
-    );
-
-    console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
-
-    const amountShare = await Erc20Utils.balanceOf(v, signer.address);
-
-    await zapOutVaultWithLp(
-        signer,
-        multiSwap,
-        zapContract,
-        cReader,
-        v,
-        MaticAddresses.USDC_TOKEN,
-        amountShare.toString()
+        grtEthVault.address,
+        MaticAddresses.WETH_TOKEN,
+        '0.05',
+        1
     );
   });
 
-  it("should be able to invest to all vaults with 2 assets", async () => {
+  it("should zap wmaticEthVault with eth", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        wmaticEthVault.address,
+        MaticAddresses.WETH_TOKEN,
+        '0.1',
+        1
+    );
+  });
+
+  it("should zap wmaticEthVault with btc", async () => {
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'), MaticAddresses.WETH_TOKEN);
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        wmaticEthVault.address,
+        MaticAddresses.WBTC_TOKEN,
+        '0.001',
+        1
+    );
+  });
+
+  it("should zap btcWexVault with btc", async () => {
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'), MaticAddresses.WETH_TOKEN);
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        btcWexVault.address,
+        MaticAddresses.WBTC_TOKEN,
+        '0.001',
+        2
+    );
+  });
+
+  it("should zap btcWexVault with usdt", async () => {
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('1000000'));
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        btcWexVault.address,
+        MaticAddresses.USDT_TOKEN,
+        '1000',
+        2
+    );
+  });
+
+  it("should zap btcWexVault with wmatic", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        btcWexVault.address,
+        MaticAddresses.WMATIC_TOKEN,
+        '1000',
+        2
+    );
+  });
+
+  it("should zap btcWexVault with usdc", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        btcWexVault.address,
+        MaticAddresses.USDC_TOKEN,
+        '1000',
+        2
+    );
+  });
+
+  it.skip("should be able to invest to all vaults with 2 assets", async () => {
 
     const deployedZap = await DeployerUtils.connectInterface(
         signer, 'ZapContract',
@@ -312,8 +305,9 @@ describe("Zap contract tests", function () {
           deployedZap,
           contractReader,
           vault,
-          MaticAddresses.USDC_TOKEN,
-          '10'
+          MaticAddresses.WETH_TOKEN,
+          '0.001',
+          9
       );
 
 
@@ -327,8 +321,9 @@ describe("Zap contract tests", function () {
           deployedZap,
           contractReader,
           vault,
-          MaticAddresses.USDC_TOKEN,
-          amountShare.toString()
+          MaticAddresses.WETH_TOKEN,
+          amountShare.toString(),
+          9
       );
 
     }
@@ -345,7 +340,8 @@ async function zapIntoVaultWithLp(
     cReader: ContractReader,
     vault: string,
     tokenIn: string,
-    amountRaw = '1000'
+    amountRaw = '1000',
+    slippage: number
 ) {
   const tokenInDec = await Erc20Utils.decimals(tokenIn);
   const amount = utils.parseUnits(amountRaw, tokenInDec);
@@ -363,7 +359,10 @@ async function zapIntoVaultWithLp(
   const tokensOutLps = [];
 
   for (let asset of assets) {
-    const lps = await multiSwap.findLpsForSwaps(tokenIn, asset);
+    let lps: string[] = [];
+    if (tokenIn.toLowerCase() !== asset.toLowerCase()) {
+      lps = await multiSwap.findLpsForSwaps(tokenIn, asset);
+    }
 
     console.log('============')
     for (let lp of lps) {
@@ -387,7 +386,7 @@ async function zapIntoVaultWithLp(
       tokensOut[1],
       tokensOutLps[1],
       amount,
-      9
+      slippage
   );
 
 
@@ -404,7 +403,8 @@ async function zapOutVaultWithLp(
     cReader: ContractReader,
     vault: string,
     tokenOut: string,
-    amountShare: string
+    amountShare: string,
+    slippage: number
 ) {
   const tokenOutDec = await Erc20Utils.decimals(tokenOut);
   const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tokenOut, signer.address), tokenOutDec)
@@ -418,7 +418,10 @@ async function zapOutVaultWithLp(
   const assetsLpRoute = [];
 
   for (let asset of assets) {
-    const lps = [...await multiSwap.findLpsForSwaps(tokenOut, asset)].reverse();
+    let lps: string[] = [];
+    if (tokenOut.toLowerCase() !== asset.toLowerCase()) {
+      lps = [...await multiSwap.findLpsForSwaps(tokenOut, asset)].reverse();
+    }
 
     console.log('============')
     for (let lp of lps) {
@@ -441,10 +444,92 @@ async function zapOutVaultWithLp(
       assets[1],
       assetsLpRoute[1],
       amountShare,
-      9
+      slippage
   );
 
   const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tokenOut, signer.address), tokenOutDec);
   console.log('balance after REMOVE', balanceAfter);
   expect(balanceAfter).is.greaterThan(balanceBefore);
+}
+
+async function vaultLpTest(
+    signer: SignerWithAddress,
+    cReader: ContractReader,
+    multiSwap: MultiSwap,
+    zapContract: ZapContract,
+    vaultAddress: string,
+    inputToken: string,
+    amount: string,
+    slippage: number
+) {
+  const dec = await Erc20Utils.decimals(inputToken);
+  const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
+  const underlying = await vCtr.underlying();
+
+  const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair;
+
+  const token0 = await lpCtr.token0();
+  const token1 = await lpCtr.token1();
+
+  const tokenInDec = await Erc20Utils.decimals(inputToken);
+  await Erc20Utils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
+      (await Erc20Utils.balanceOf(inputToken, signer.address))
+      .sub(utils.parseUnits(amount, tokenInDec)).toString());
+
+  const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(inputToken, signer.address), dec);
+
+  await zapIntoVaultWithLp(
+      signer,
+      multiSwap,
+      zapContract,
+      cReader,
+      vaultAddress,
+      inputToken,
+      amount,
+      slippage
+  );
+
+  expect(await Erc20Utils.balanceOf(inputToken, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
+
+  expect(await Erc20Utils.balanceOf(token0, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(token0, multiSwap.address)).is.eq(0);
+
+  expect(await Erc20Utils.balanceOf(token1, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(token1, multiSwap.address)).is.eq(0);
+
+  expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+
+  console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
+
+  const amountShare = await Erc20Utils.balanceOf(vaultAddress, signer.address);
+
+  await zapOutVaultWithLp(
+      signer,
+      multiSwap,
+      zapContract,
+      cReader,
+      vaultAddress,
+      inputToken,
+      amountShare.toString(),
+      slippage
+  );
+
+  expect(await Erc20Utils.balanceOf(inputToken, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
+
+  expect(await Erc20Utils.balanceOf(token0, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(token0, multiSwap.address)).is.eq(0);
+
+  expect(await Erc20Utils.balanceOf(token1, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(token1, multiSwap.address)).is.eq(0);
+
+  expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
+  expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+
+  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(inputToken, signer.address), dec);
+  console.log(balanceBefore, balanceAfter, balanceAfter * ((100 - slippage) / 100));
+  expect(balanceAfter)
+  .is.greaterThan(balanceBefore * ((100 - slippage) / 100));
 }

@@ -265,4 +265,11 @@ contract MultiSwap is Controllable, IMultiSwap {
     calculator = IPriceCalculator(_newValue);
   }
 
+  /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvage(address _token, uint256 _amount) external onlyControllerOrGovernance {
+    IERC20(_token).safeTransfer(msg.sender, _amount);
+  }
+
 }
