@@ -36,7 +36,7 @@ export class Addresses {
         '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
         '', // payrollClerk
         '', // mockFaucet
-        '0x5768239d111cC7150B2cAEc40A6990fB79956465', // multiSwap
+        '0x0eF2A66AA4Feb5F2Ebc51183e36148513762402a', // multiSwap
         '0xF7bACcd56FaCDa5a70e80176c41FE96B9C11D03d', // zapContract
     )],
     ['rinkeby', new ToolsAddresses(
