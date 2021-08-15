@@ -25,6 +25,7 @@ chai.use(chaiAsPromised);
 
 const exclude = new Set<string>([
   '0x21d97B1adcD2A36756a6E0Aa1BAC3Cf6c0943c0E'.toLowerCase(), // wex pear - has transfer fee
+  '0xa281C7B40A9634BCD16B4aAbFcCE84c8F63Aedd0'.toLowerCase(), // frax fxs - too high slippage
 ]);
 
 describe("Zap contract tests", function () {
@@ -50,7 +51,7 @@ describe("Zap contract tests", function () {
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
     multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
-    zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address))[0];
+    zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
     await core.controller.addToWhiteList(zapContract.address);
@@ -299,33 +300,19 @@ describe("Zap contract tests", function () {
         continue;
       }
 
-      await zapIntoVaultWithLp(
+      // await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10'));
+      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10'));
+
+      await vaultLpTest(
           signer,
+          contractReader,
           deployedMultiSwap,
           deployedZap,
-          contractReader,
           vault,
-          MaticAddresses.WETH_TOKEN,
-          '0.001',
-          9
+          MaticAddresses.WMATIC_TOKEN,
+          '10',
+          3
       );
-
-
-      console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
-
-      const amountShare = await Erc20Utils.balanceOf(vault, signer.address);
-
-      await zapOutVaultWithLp(
-          signer,
-          deployedMultiSwap,
-          deployedZap,
-          contractReader,
-          vault,
-          MaticAddresses.WETH_TOKEN,
-          amountShare.toString(),
-          9
-      );
-
     }
 
   });

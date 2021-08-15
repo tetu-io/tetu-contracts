@@ -221,13 +221,8 @@ export class DeployerUtils {
       signer: SignerWithAddress,
       controllerAddress: string,
       multiSwap: string
-  ): Promise<[ZapContract, TetuProxyControlled, ZapContract]> {
-    const logic = await DeployerUtils.deployContract(signer, "ZapContract") as ZapContract;
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
-    const contract = logic.attach(proxy.address) as ZapContract;
-    await contract.initialize(controllerAddress, multiSwap);
-
-    return [contract, proxy, logic];
+  ): Promise<ZapContract> {
+    return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
   }
 
   public static async deployMultiSwap(

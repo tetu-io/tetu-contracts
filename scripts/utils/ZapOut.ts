@@ -9,6 +9,7 @@ import {RunHelper} from "./RunHelper";
 
 const exclude = new Set<string>([
   '0x21d97B1adcD2A36756a6E0Aa1BAC3Cf6c0943c0E'.toLowerCase(), // wex pear - has transfer fee
+  '0xa281C7B40A9634BCD16B4aAbFcCE84c8F63Aedd0'.toLowerCase(), // frax fxs - too high slippage
 ]);
 
 async function main() {

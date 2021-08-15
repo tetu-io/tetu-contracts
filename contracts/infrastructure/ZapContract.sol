@@ -23,16 +23,16 @@ import "../third_party/uniswap/IUniswapV2Router02.sol";
 import "./IPriceCalculator.sol";
 import "./IMultiSwap.sol";
 
-/// @title Dedicated solution for interacting with vaults.
+/// @title Dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults
-/// @dev Use with ProxyGov
 /// @author belbix
 contract ZapContract is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.0.0";
-  bytes32 internal constant _MULTI_SWAP_SLOT = 0x268C7387BB3D6C63B06B7390ECC1422F60B0BA31459D23A25507C9F998F216E3;
+  string public constant VERSION = "1.1.0";
+
+  IMultiSwap public multiSwap;
 
   event UpdateMultiSwap(address oldValue, address newValue);
 
@@ -47,30 +47,10 @@ contract ZapContract is Controllable {
     uint256 slippageTolerance;
   }
 
-  constructor() {
-    assert(_MULTI_SWAP_SLOT == bytes32(uint256(keccak256("eip1967.multiSwap")) - 1));
-  }
-
-  function initialize(address _controller, address _multiSwap) external initializer {
+  constructor(address _controller, address _multiSwap) {
     require(_multiSwap != address(0), "ZC: zero multiSwap address");
     Controllable.initializeControllable(_controller);
-
-    bytes32 slot = _MULTI_SWAP_SLOT;
-    assembly {
-      sstore(slot, _multiSwap)
-    }
-  }
-
-  // ******************* VIEWS *****************************
-
-  /// @dev Return address of MultiSwap contract
-  function multiSwap() public view returns (IMultiSwap) {
-    bytes32 slot = _MULTI_SWAP_SLOT;
-    address adr;
-    assembly {
-      adr := sload(slot)
-    }
-    return IMultiSwap(adr);
+    multiSwap = IMultiSwap(_multiSwap);
   }
 
   // ******************** USERS ACTIONS *********************
@@ -171,7 +151,7 @@ contract ZapContract is Controllable {
 
     uint256 lpBalance = exitFromVault(_vault, address(lp));
 
-    IUniswapV2Router02 router = IUniswapV2Router02(multiSwap().routerForPair(address(lp)));
+    IUniswapV2Router02 router = IUniswapV2Router02(multiSwap.routerForPair(address(lp)));
 
     IERC20(address(lp)).safeApprove(address(router), 0);
     IERC20(address(lp)).safeApprove(address(router), lpBalance);
@@ -214,7 +194,7 @@ contract ZapContract is Controllable {
     uint256 asset0Amount = IERC20(zapInfo.asset0).balanceOf(address(this));
     uint256 asset1Amount = IERC20(zapInfo.asset1).balanceOf(address(this));
 
-    IUniswapV2Router02 router = IUniswapV2Router02(multiSwap().routerForPair(zapInfo.lp));
+    IUniswapV2Router02 router = IUniswapV2Router02(multiSwap.routerForPair(zapInfo.lp));
 
     IERC20(zapInfo.asset0).safeApprove(address(router), 0);
     IERC20(zapInfo.asset0).safeApprove(address(router), asset0Amount);
@@ -288,9 +268,9 @@ contract ZapContract is Controllable {
       return;
     }
     require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
-    IERC20(_tokenIn).safeApprove(address(multiSwap()), 0);
-    IERC20(_tokenIn).safeApprove(address(multiSwap()), _tokenInAmount);
-    multiSwap().multiSwap(_lpRoute, _tokenIn, _tokenOut, _tokenInAmount, slippageTolerance);
+    IERC20(_tokenIn).safeApprove(address(multiSwap), 0);
+    IERC20(_tokenIn).safeApprove(address(multiSwap), _tokenInAmount);
+    multiSwap.multiSwap(_lpRoute, _tokenIn, _tokenOut, _tokenInAmount, slippageTolerance);
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender
@@ -321,11 +301,8 @@ contract ZapContract is Controllable {
   /// @dev Set MultiSwap contract address
   function setMultiSwap(address _newValue) external onlyControllerOrGovernance {
     require(_newValue != address(0), "ZC: zero address");
-    emit UpdateMultiSwap(address(multiSwap()), _newValue);
-    bytes32 slot = _MULTI_SWAP_SLOT;
-    assembly {
-      sstore(slot, _newValue)
-    }
+    emit UpdateMultiSwap(address(multiSwap), _newValue);
+    multiSwap = IMultiSwap(_newValue);
   }
 
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
