@@ -24,6 +24,7 @@ export default {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: 137,
+      timeout: 99999,
       forking: {
         url: Secrets.maticRpcUrl,
       },
@@ -60,6 +61,7 @@ export default {
       accounts: [
         Secrets.maticPrivateKey,
         "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e", // random account
+        Secrets.maticPrivateKey2,
       ],
     },
     mumbai: {

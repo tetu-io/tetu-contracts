@@ -31,6 +31,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using Address for address;
   using SafeMath for uint256;
 
+  string public constant VERSION = "1.0.1";
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -157,7 +158,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       return 0;
     }
 
-    require(deep <= DEPTH, "too deep");
+    require(deep <= DEPTH, "PC: too deep");
 
     (address keyToken,, address lpAddress) = getLargestPool(token, usedLps);
     require(lpAddress != address(0), toAsciiString(token));
@@ -172,7 +173,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   // Gives the LP with largest liquidity for a given token
   // and a given tokenset (either keyTokens or pricingTokens)
   function getLargestPool(address token, address[] memory usedLps)
-  public view returns (address, uint256, address) {
+  public override view returns (address, uint256, address) {
     uint256 largestLpSize = 0;
     address largestKeyToken = address(0);
     uint256 largestPlatformIdx = 0;
@@ -214,7 +215,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   //Generic function giving the price of a given token vs another given token on Swap platform.
-  function getPriceFromLp(address lpAddress, address token) public view returns (uint256) {
+  function getPriceFromLp(address lpAddress, address token) public override view returns (uint256) {
     IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
     address token0 = pair.token0();
     address token1 = pair.token1();
@@ -230,10 +231,12 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       return reserve1
       .mul(10 ** PRECISION_DECIMALS)
       .div(reserve0);
-    } else {
+    } else if (token == token1) {
       return reserve0
       .mul(10 ** PRECISION_DECIMALS)
       .div(reserve1);
+    } else {
+      revert("PC: token not in lp");
     }
   }
 
@@ -307,7 +310,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function removeFromKeyTokens(uint256 index) internal {
-    require(index < keyTokens.length, "wrong index");
+    require(index < keyTokens.length, "PC: wrong index");
 
     for (uint256 i = index; i < keyTokens.length - 1; i++) {
       keyTokens[i] = keyTokens[i + 1];
@@ -316,7 +319,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function removeFromSwapFactories(uint index) internal {
-    require(index < swapFactories.length, "wrong index");
+    require(index < swapFactories.length, "PC: wrong index");
 
     for (uint i = index; i < swapFactories.length - 1; i++) {
       swapFactories[i] = swapFactories[i + 1];
@@ -325,7 +328,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function removeFromSwapNames(uint index) internal {
-    require(index < swapLpNames.length, "wrong index");
+    require(index < swapLpNames.length, "PC: wrong index");
 
     for (uint i = index; i < swapLpNames.length - 1; i++) {
       swapLpNames[i] = swapLpNames[i + 1];
@@ -343,7 +346,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   // ************* GOVERNANCE ACTIONS ***************
 
   function setDefaultToken(address _newDefaultToken) external onlyControllerOrGovernance {
-    require(_newDefaultToken != address(0), "zero address");
+    require(_newDefaultToken != address(0), "PC: zero address");
     emit DefaultTokenChanged(defaultToken(), _newDefaultToken);
     bytes32 slot = _DEFAULT_TOKEN_SLOT;
     assembly {
@@ -358,13 +361,13 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function addKeyToken(address newToken) public onlyControllerOrGovernance {
-    require(!isKeyToken(newToken), "already have");
+    require(!isKeyToken(newToken), "PC: already have");
     keyTokens.push(newToken);
     emit KeyTokenAdded(newToken);
   }
 
   function removeKeyToken(address keyToken) external onlyControllerOrGovernance {
-    require(isKeyToken(keyToken), "not key");
+    require(isKeyToken(keyToken), "PC: not key");
     uint256 i;
     for (i = 0; i < keyTokens.length; i++) {
       if (keyToken == keyTokens[i]) {
@@ -377,8 +380,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   function addSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {
     for (uint256 i = 0; i < swapFactories.length; i++) {
-      require(swapFactories[i] != _factoryAddress, "factory already exist");
-      require(!isEqualString(swapLpNames[i], _name), "name already exist");
+      require(swapFactories[i] != _factoryAddress, "PC: factory already exist");
+      require(!isEqualString(swapLpNames[i], _name), "PC: name already exist");
     }
     swapFactories.push(_factoryAddress);
     swapLpNames.push(_name);
@@ -386,8 +389,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function removeSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {
-    require(isSwapFactoryToken(_factoryAddress), "swap not exist");
-    require(isSwapName(_name), "name not exist");
+    require(isSwapFactoryToken(_factoryAddress), "PC: swap not exist");
+    require(isSwapName(_name), "PC: name not exist");
     uint256 i;
     for (i = 0; i < swapFactories.length; i++) {
       if (_factoryAddress == swapFactories[i]) {

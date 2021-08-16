@@ -31,6 +31,7 @@ contract PayrollClerk is Initializable, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
+  string public constant VERSION = "1.0.0";
   uint256 constant FULL_RATIO = 100;
   uint256 constant BUST_STEP = 300;
   uint256 constant MAX_HOURLY_RATE = 200;

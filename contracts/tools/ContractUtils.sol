@@ -52,6 +52,14 @@ contract ContractUtils {
     return result;
   }
 
+  function erc20BalancesForAddresses(address token, address[] memory _addresses) external view returns (uint256[] memory) {
+    uint256[] memory result = new uint256[](_addresses.length);
+    for (uint i = 0; i < _addresses.length; i++) {
+      result[i] = ERC20(token).balanceOf(_addresses[i]);
+    }
+    return result;
+  }
+
   function erc20TotalSupply(address[] memory tokens) external view returns (uint256[] memory) {
     uint256[] memory result = new uint256[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {

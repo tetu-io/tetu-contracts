@@ -4,6 +4,7 @@ import {Contract, ContractFactory, utils} from "ethers";
 import {
   Announcer,
   Bookkeeper,
+  ContractReader,
   Controller,
   FeeRewardForwarder,
   FundKeeper,
@@ -11,6 +12,7 @@ import {
   ITetuProxy,
   LiquidityBalancer,
   MintHelper,
+  MultiSwap,
   NoopStrategy,
   NotifyHelper,
   PayrollClerk,
@@ -19,6 +21,7 @@ import {
   SmartVault,
   TetuProxyControlled,
   TetuProxyGov,
+  ZapContract,
 } from "../../typechain";
 import {expect} from "chai";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
@@ -202,6 +205,45 @@ export class DeployerUtils {
     const contract = logic.attach(proxy.address) as PayrollClerk;
     await contract.initialize(controller);
     return [contract, proxy, logic];
+  }
+
+  public static async deployContractReader(signer: SignerWithAddress, controller: string, calculator: string)
+      : Promise<[ContractReader, TetuProxyGov, ContractReader]> {
+    const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const contract = logic.attach(proxy.address) as ContractReader;
+    await contract.initialize(controller);
+    await contract.setPriceCalculator(calculator);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployZapContract(
+      signer: SignerWithAddress,
+      controllerAddress: string,
+      multiSwap: string
+  ): Promise<ZapContract> {
+    return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
+  }
+
+  public static async deployMultiSwap(
+      signer: SignerWithAddress,
+      controllerAddress: string,
+      calculatorAddress: string
+  ): Promise<MultiSwap> {
+    return await DeployerUtils.deployContract(signer, "MultiSwap",
+        controllerAddress,
+        calculatorAddress,
+        [
+          MaticAddresses.QUICK_FACTORY,
+          MaticAddresses.SUSHI_FACTORY,
+          MaticAddresses.WAULT_FACTORY
+        ],
+        [
+          MaticAddresses.QUICK_ROUTER,
+          MaticAddresses.SUSHI_ROUTER,
+          MaticAddresses.WAULT_ROUTER
+        ]
+    ) as MultiSwap;
   }
 
   public static async deployAllCoreContracts(

@@ -1,8 +1,9 @@
 import {ethers, web3} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, PriceCalculator} from "../../typechain";
+import {Bookkeeper, ContractReader, ContractUtils, SmartVault} from "../../typechain";
 import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 
 const EVENT_DEPOSIT = '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c';
@@ -17,8 +18,6 @@ async function main() {
   const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
   const cReader = await DeployerUtils.connectContract(
       signer, "ContractReader", tools.reader) as ContractReader;
-  const priceCalculator = await DeployerUtils.connectContract(
-      signer, "PriceCalculator", tools.calculator) as PriceCalculator;
 
   mkdir('./tmp/stats', {recursive: true}, (err) => {
     if (err) throw err;
@@ -31,7 +30,10 @@ async function main() {
   const currentBlock = await web3.eth.getBlockNumber();
   console.log('current block', currentBlock);
 
+
   let data = '';
+  const usersTotal = new Set<string>();
+
   for (let vault of vaults) {
 
     try {
@@ -81,6 +83,7 @@ async function main() {
               }],
             log.data,
             log.topics.slice(1));
+        usersTotal.add(logDecoded.beneficiary);
         users.set(logDecoded.beneficiary, '0');
       }
       console.log('users', users.size);
@@ -101,6 +104,8 @@ async function main() {
 
   }
 
+  data += await collectPs(usersTotal, core.psVault, vaults, signer, tools.utils);
+
   await writeFileSync(`./tmp/stats/to_claim.txt`, data, 'utf8');
 }
 
@@ -111,3 +116,59 @@ main()
   console.error(error);
   process.exit(1);
 });
+
+
+async function collectPs(
+    usersTotal: Set<string>,
+    psAdr: string,
+    vaults: string[],
+    signer: SignerWithAddress,
+    utilsAdr: string
+): Promise<string> {
+
+  let data = '';
+  const exclude = new Set<string>(vaults);
+
+  const contractUtils = await DeployerUtils.connectInterface(signer, 'ContractUtils', utilsAdr) as ContractUtils;
+  const psContr = await DeployerUtils.connectInterface(signer, 'SmartVault', psAdr) as SmartVault;
+
+  const ppfs = +utils.formatUnits(await psContr.getPricePerFullShare());
+
+  const usersBatches = [];
+  const batchSize = 150;
+  let i = 0;
+  let batch = [];
+  for (let user of Array.from(usersTotal.keys())) {
+    if (exclude.has(user) || !user || !psAdr) {
+      continue;
+    }
+
+    batch.push(user);
+
+    i++;
+    if (i % batchSize === 0 || i === usersTotal.size) {
+      usersBatches.push(batch);
+      batch = [];
+      i = 0;
+    }
+  }
+
+  for (let batch of usersBatches) {
+
+    const balances = await contractUtils.erc20BalancesForAddresses(psAdr, batch);
+
+    for (let i = 0; i < balances.length; i++) {
+
+      const toClaim = +utils.formatUnits(balances[i]);
+      if (toClaim > 0) {
+        data += `TETU_PS,${psAdr},${batch[i]},${toClaim * ppfs}\n`;
+      }
+    }
+
+  }
+
+
+  await writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, 'utf8');
+
+  return data;
+}

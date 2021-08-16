@@ -325,6 +325,22 @@ contract ContractReader is Initializable, Controllable {
     return result;
   }
 
+  function totalUsers(address[] memory _vaults) external view returns (uint256) {
+    uint256 result = 0;
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result += vaultUsers(_vaults[i]);
+    }
+    return result;
+  }
+
+  function totalUsersForAllVaults() external view returns (uint256) {
+    address[] memory _vaults = vaults();
+    uint256 result = 0;
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      result += vaultUsers(_vaults[i]);
+    }
+    return result;
+  }
 
   // ********************** FIELDS ***********************
 
