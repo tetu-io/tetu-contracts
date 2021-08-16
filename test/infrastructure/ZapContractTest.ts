@@ -235,7 +235,7 @@ describe("Zap contract tests", function () {
         btcWexVault.address,
         MaticAddresses.USDT_TOKEN,
         '1000',
-        2
+        3
     );
   });
 
@@ -261,7 +261,7 @@ describe("Zap contract tests", function () {
         btcWexVault.address,
         MaticAddresses.USDC_TOKEN,
         '1000',
-        2
+        3
     );
   });
 
