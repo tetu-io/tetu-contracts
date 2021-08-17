@@ -161,12 +161,13 @@ describe("Zap contract tests", function () {
   });
 
   it("salvage tokens", async () => {
+    const bal = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const amount = utils.parseUnits('1');
     await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, zapContract.address, amount.toString());
     expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, zapContract.address)).is.eq(amount);
     await zapContract.salvage(MaticAddresses.WMATIC_TOKEN, amount);
     expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address)).is.eq(amount);
+    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address)).is.eq(bal);
   });
 
   it("should zap grtEthVault twice with eth", async () => {
