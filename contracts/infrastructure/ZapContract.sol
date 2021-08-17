@@ -149,7 +149,7 @@ contract ZapContract is Controllable {
 
     IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
 
-    uint256 lpBalance = exitFromVault(_vault, address(lp));
+    uint256 lpBalance = withdrawFromVault(_vault, address(lp), _shareTokenAmount);
 
     IUniswapV2Router02 router = IUniswapV2Router02(multiSwap.routerForPair(address(lp)));
 
@@ -288,8 +288,8 @@ contract ZapContract is Controllable {
   }
 
   /// @dev Withdraw from vault and check the result
-  function exitFromVault(address _vault, address _underlying) internal returns (uint256){
-    ISmartVault(_vault).exit();
+  function withdrawFromVault(address _vault, address _underlying, uint256 _amount) internal returns (uint256){
+    ISmartVault(_vault).withdraw(_amount);
 
     uint256 underlyingBalance = IERC20(_underlying).balanceOf(address(this));
     require(underlyingBalance != 0, "ZC: zero underlying balance");

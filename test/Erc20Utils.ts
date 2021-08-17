@@ -17,6 +17,7 @@ export class Erc20Utils {
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
+    console.log('approve', await Erc20Utils.tokenSymbol(tokenAddress), amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
     return await token.approve(spender, BigNumber.from(amount));
   }
@@ -27,6 +28,7 @@ export class Erc20Utils {
   }
 
   public static async transfer(tokenAddress: string, signer: SignerWithAddress, destination: string, amount: string) {
+    console.log('transfer', await Erc20Utils.tokenSymbol(tokenAddress), amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
     return await token.transfer(destination, BigNumber.from(amount))
   }
