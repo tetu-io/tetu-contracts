@@ -76,6 +76,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   event StrategyAnnounced(address newStrategy, uint256 time);
   event StrategyChanged(address newStrategy, address oldStrategy);
   event RewardAdded(address rewardToken, uint256 reward);
+  event RewardMovedToController(address rewardToken, uint256 amount);
   event Staked(address indexed user, uint256 amount);
   event Withdrawn(address indexed user, uint256 amount);
   event RewardPaid(address indexed user, address rewardToken, uint256 reward);
@@ -552,6 +553,25 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
         uint256 leftover = remaining.mul(rewardRateForToken[_rewardToken]);
         rewardRateForToken[_rewardToken] = _amount.add(leftover).div(remaining);
       }
+    }
+  }
+
+  /// @notice Disable strategy and move rewards to controller
+  function stop() external override onlyVaultController {
+    IStrategy(strategy()).withdrawAllToVault();
+    _setActive(false);
+
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      address rt = _rewardTokens[i];
+      periodFinishForToken[rt] = block.timestamp;
+      rewardRateForToken[rt] = 0;
+      lastUpdateTimeForToken[rt] = 0;
+      rewardPerTokenStoredForToken[rt] = 0;
+      uint256 amount = IERC20Upgradeable(rt).balanceOf(address(this));
+      if (amount != 0) {
+        IERC20Upgradeable(rt).safeTransfer(controller(), amount);
+      }
+      emit RewardMovedToController(rt, amount);
     }
   }
 

@@ -66,7 +66,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Vault and Strategy pair registered
   event VaultAndStrategyAdded(address vault, address strategy);
   /// @notice Tokens moved from Controller contract to Governance
-  event ControllerTokenMoved(address indexed token, uint256 amount);
+  event ControllerTokenMoved(address indexed recipient, address indexed token, uint256 amount);
   /// @notice Tokens moved from Strategy contract to Governance
   event StrategyTokenMoved(address indexed strategy, address indexed token, uint256 amount);
   /// @notice Tokens moved from Fund contract to Controller
@@ -388,17 +388,18 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   // ------------------ TIME-LOCK SALVAGE -------------------
 
   /// @notice Only Governance can do it. Transfer token from this contract to governance address
+  /// @param _recipient Recipient address
   /// @param _token Token address
   /// @param _amount Token amount
-  function controllerTokenMove(address _token, uint256 _amount) external
+  function controllerTokenMove(address _recipient, address _token, uint256 _amount) external
   onlyGovernance timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.ControllerTokenMove, address(this), _token, _amount)),
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.ControllerTokenMove, _recipient, _token, _amount)),
     IAnnouncer.TimeLockOpCodes.ControllerTokenMove,
     false,
     address(0)
   ) {
-    IERC20(_token).safeTransfer(governance(), _amount);
-    emit ControllerTokenMoved(_token, _amount);
+    IERC20(_token).safeTransfer(_recipient, _amount);
+    emit ControllerTokenMoved(_recipient, _token, _amount);
   }
 
   /// @notice Only Governance can do it. Transfer token from strategy to governance address

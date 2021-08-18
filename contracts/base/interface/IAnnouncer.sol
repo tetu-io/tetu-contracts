@@ -41,7 +41,8 @@ interface IAnnouncer {
     ZeroPlaceholder, //18
     VaultController, //19
     RewardBoostDuration, //20
-    RewardRatioWithoutBoost //21
+    RewardRatioWithoutBoost, //21
+    VaultStop //22
   }
 
   /// @dev Holder for human readable info

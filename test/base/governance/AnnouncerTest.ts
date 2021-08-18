@@ -344,13 +344,13 @@ describe("Announcer tests", function () {
     const balUser = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const balController = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
 
-    await announcer.announceTokenMove(opCode, core.controller.address, MaticAddresses.WMATIC_TOKEN, amount);
+    await announcer.announceTokenMove(opCode, signer.address, MaticAddresses.WMATIC_TOKEN, amount);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
 
     const info = await announcer.timeLockInfo(index);
-    expect(info.target).is.eq(core.controller.address);
+    expect(info.target).is.eq(signer.address);
     expect(info.adrValues.length).is.eq(1);
     expect(info.adrValues[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
     expect(info.numValues.length).is.eq(1);
@@ -358,7 +358,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.controllerTokenMove(MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.controllerTokenMove(signer.address, MaticAddresses.WMATIC_TOKEN, amount);
 
     const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const balControllerAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
@@ -405,7 +405,6 @@ describe("Announcer tests", function () {
     const amount = 1;
 
     await announcer.announceUintChange(opCode, amount);
-
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
 
@@ -525,6 +524,28 @@ describe("Announcer tests", function () {
     await controller.setVaultStrategyBatch([target], [newImpl.address]);
 
     expect(await core.psVault.strategy()).is.eq(newImpl.address);
+  });
+
+  it("should stop vault with time-lock", async () => {
+    const opCode = 22;
+
+    const target = core.psVault.address;
+
+    await announcer.announceVaultStopBatch([target]);
+    console.log('1');
+    const index = await announcer.multiTimeLockIndexes(opCode, target);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(target);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(0);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+    console.log('2');
+    await core.vaultController.stopVaultsBatch([target]);
+    console.log('3');
+    expect(await core.psVault.active()).is.eq(false);
   });
 
   it("should mint with time-lock", async () => {

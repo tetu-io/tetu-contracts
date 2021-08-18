@@ -65,6 +65,8 @@ contract Announcer is Controllable, IAnnouncer {
   event AnnounceClosed(bytes32 opHash);
   /// @notice Strategy Upgrade was announced
   event StrategyUpgradeAnnounced(address _contract, address _implementation);
+  /// @notice Vault stop action announced
+  event VaultStop(address _contract);
 
   constructor() {
     require(_TIME_LOCK_SLOT == bytes32(uint256(keccak256("eip1967.announcer.timeLock")) - 1), "wrong timeLock");
@@ -86,6 +88,7 @@ contract Announcer is Controllable, IAnnouncer {
     // setup multi opCodes
     multiOpCodes[TimeLockOpCodes.TetuProxyUpdate] = true;
     multiOpCodes[TimeLockOpCodes.StrategyUpgrade] = true;
+    multiOpCodes[TimeLockOpCodes.VaultStop] = true;
 
     // placeholder for index 0
     _timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, 0, address(0), new address[](0), new uint256[](0)));
@@ -101,6 +104,17 @@ contract Announcer is Controllable, IAnnouncer {
   modifier onlyGovernanceOrDao() {
     require(isGovernance(msg.sender)
       || IController(controller()).isDao(msg.sender), "not governance or dao");
+    _;
+  }
+
+  /// @dev Operations allowed for Governance or Dao addresses
+  modifier onlyControlMembers() {
+    require(
+      isGovernance(msg.sender)
+      || isController(msg.sender)
+      || IController(controller()).isDao(msg.sender)
+      || IController(controller()).vaultController() == msg.sender
+    , "not control member");
     _;
   }
 
@@ -295,7 +309,6 @@ contract Announcer is Controllable, IAnnouncer {
   }
 
   /// @notice Only Governance can do it. Announce strategy update for given vaults
-  ///         You will able to mint after Time-lock period
   /// @param _targets Vault addresses
   /// @param _strategies Strategy addresses
   function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
@@ -315,6 +328,22 @@ contract Announcer is Controllable, IAnnouncer {
     }
   }
 
+  /// @notice Only Governance can do it. Announce the stop vault action
+  /// @param _vaults Vault addresses
+  function announceVaultStopBatch(address[] calldata _vaults) external onlyGovernance {
+    TimeLockOpCodes opCode = TimeLockOpCodes.VaultStop;
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      require(multiTimeLockIndexes[opCode][_vaults[i]] == 0, "already announced");
+      bytes32 opHash = keccak256(abi.encode(opCode, _vaults[i]));
+      timeLockSchedule[opHash] = block.timestamp + timeLock();
+
+      _timeLockInfos.push(TimeLockInfo(opCode, opHash, _vaults[i], new address[](0), new uint256[](0)));
+      multiTimeLockIndexes[opCode][_vaults[i]] = (_timeLockInfos.length - 1);
+
+      emit VaultStop(_vaults[i]);
+    }
+  }
+
   /// @notice Close any announce. Use in emergency case.
   /// @param opCode TimeLockOpCodes uint8 value
   /// @param opHash keccak256(abi.encode()) code with attributes.
@@ -327,7 +356,7 @@ contract Announcer is Controllable, IAnnouncer {
   /// @notice Only controller can use it. Clear announce after successful call time-locked function
   /// @param opHash Generated keccak256 opHash
   /// @param opCode TimeLockOpCodes uint8 value
-  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControllerOrGovernance {
+  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControlMembers {
     timeLockSchedule[opHash] = 0;
     if (multiOpCodes[opCode]) {
       multiTimeLockIndexes[opCode][target] = 0;

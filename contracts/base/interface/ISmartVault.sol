@@ -89,4 +89,6 @@ interface ISmartVault {
   function addRewardToken(address rt) external;
 
   function removeRewardToken(address rt) external;
+
+  function stop() external;
 }

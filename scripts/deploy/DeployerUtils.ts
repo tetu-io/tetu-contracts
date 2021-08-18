@@ -271,7 +271,7 @@ export class DeployerUtils {
     // ************ ANNOUNCER **********
     const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, timeLock);
 
-    // ************ ANNOUNCER **********
+    // ************ VAULT CONTROLLER **********
     const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
 
     // ********* FEE FORWARDER *********

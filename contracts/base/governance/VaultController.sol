@@ -92,6 +92,26 @@ contract VaultController is Initializable, Controllable, VaultControllerStorage 
     _setRewardRatioWithoutBoost(ratio);
   }
 
+  /// @notice Only Governance can do it. Stop vaults and move reward tokens to controller
+  /// @param _vaults Vault addresses
+  function stopVaultsBatch(address[] calldata _vaults) external onlyGovernance {
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      stopVault(_vaults[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Stop vault and move reward tokens to controller
+  /// @param _vault Vault address
+  function stopVault(address _vault) public
+  onlyGovernance timeLock(
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.VaultStop, _vault)),
+    IAnnouncer.TimeLockOpCodes.VaultStop,
+    false,
+    _vault
+  ) {
+    ISmartVault(_vault).stop();
+  }
+
   // ---------------- NO TIME_LOCK --------------------------
 
   /// @notice Only Governance can do it. Change statuses of given vaults
