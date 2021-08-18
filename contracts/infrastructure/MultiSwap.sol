@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../base/governance/Controllable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
@@ -23,7 +24,7 @@ import "./IMultiSwap.sol";
 
 /// @title Contract for complex swaps across multiple platforms
 /// @author belbix
-contract MultiSwap is Controllable, IMultiSwap {
+contract MultiSwap is Controllable, IMultiSwap, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -146,7 +147,7 @@ contract MultiSwap is Controllable, IMultiSwap {
     address tokenOut,
     uint256 amount,
     uint256 slippageTolerance
-  ) external override {
+  ) external override nonReentrant {
     require(lps.length > 0, "MC: zero lp");
     require(tokenIn != address(0), "MC: zero tokenIn");
     require(tokenOut != address(0), "MC: zero tokenOut");

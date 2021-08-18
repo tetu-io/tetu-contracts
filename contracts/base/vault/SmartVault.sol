@@ -17,6 +17,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../interface/IStrategy.sol";
 import "../interface/ISmartVault.sol";
@@ -32,7 +33,7 @@ import "../interface/IBookkeeper.sol";
 ///        for their innovative reward vesting and Yearn vault for their share price model
 /// @dev Use with TetuProxy
 /// @author belbix
-contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllable {
+contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllable, ReentrancyGuard {
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using SafeMathUpgradeable for uint256;
 
@@ -186,30 +187,30 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Allows for depositing the underlying asset in exchange for shares.
   ///         Approval is assumed.
-  function deposit(uint256 amount) external override onlyAllowedUsers isActive {
+  function deposit(uint256 amount) external override nonReentrant onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, msg.sender);
   }
 
   /// @notice Allows for depositing the underlying asset in exchange for shares.
   ///         Approval is assumed. Immediately invests the asset to the strategy
-  function depositAndInvest(uint256 amount) external override onlyAllowedUsers isActive {
+  function depositAndInvest(uint256 amount) external override nonReentrant onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, msg.sender);
     invest();
   }
 
   /// @notice Allows for depositing the underlying asset in exchange for shares assigned to the holder.
   ///         This facilitates depositing for someone else
-  function depositFor(uint256 amount, address holder) external override onlyAllowedUsers isActive {
+  function depositFor(uint256 amount, address holder) external override nonReentrant onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, holder);
   }
 
   /// @notice Withdraw shares partially without touching rewards
-  function withdraw(uint256 numberOfShares) external override onlyAllowedUsers {
+  function withdraw(uint256 numberOfShares) external override nonReentrant onlyAllowedUsers {
     _withdraw(numberOfShares);
   }
 
   /// @notice Withdraw all and claim rewards
-  function exit() external override onlyAllowedUsers {
+  function exit() external override nonReentrant onlyAllowedUsers {
     _withdraw(balanceOf(msg.sender));
     getAllRewards();
   }

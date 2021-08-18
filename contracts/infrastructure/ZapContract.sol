@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../base/governance/Controllable.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IStrategy.sol";
@@ -26,13 +27,14 @@ import "./IMultiSwap.sol";
 /// @title Dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults
 /// @author belbix
-contract ZapContract is Controllable {
+contract ZapContract is Controllable, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   string public constant VERSION = "1.1.0";
 
   IMultiSwap public multiSwap;
+  mapping(address => uint256) calls;
 
   struct ZapInfo {
     address lp;
@@ -49,6 +51,12 @@ contract ZapContract is Controllable {
     require(_multiSwap != address(0), "ZC: zero multiSwap address");
     Controllable.initializeControllable(_controller);
     multiSwap = IMultiSwap(_multiSwap);
+  }
+
+  modifier onlyOneCallPerBlock() {
+    require(calls[msg.sender] < block.number, "ZC: call in the same block forbidden");
+    _;
+    calls[msg.sender] = block.number;
   }
 
   // ******************** USERS ACTIONS *********************
@@ -73,7 +81,7 @@ contract ZapContract is Controllable {
     address[] memory _asset1Route,
     uint256 _tokenInAmount,
     uint256 slippageTolerance
-  ) external {
+  ) external nonReentrant onlyOneCallPerBlock {
     require(_tokenInAmount > 1, "ZC: not enough amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
@@ -138,7 +146,7 @@ contract ZapContract is Controllable {
     address[] memory _asset1Route,
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
-  ) external {
+  ) external nonReentrant onlyOneCallPerBlock {
     require(_shareTokenAmount != 0, "ZC: zero amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
