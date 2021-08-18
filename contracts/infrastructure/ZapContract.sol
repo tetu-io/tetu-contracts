@@ -34,8 +34,6 @@ contract ZapContract is Controllable {
 
   IMultiSwap public multiSwap;
 
-  event UpdateMultiSwap(address oldValue, address newValue);
-
   struct ZapInfo {
     address lp;
     address tokenIn;
@@ -297,13 +295,6 @@ contract ZapContract is Controllable {
   }
 
   // ************************* GOV ACTIONS *******************
-
-  /// @dev Set MultiSwap contract address
-  function setMultiSwap(address _newValue) external onlyControllerOrGovernance {
-    require(_newValue != address(0), "ZC: zero address");
-    emit UpdateMultiSwap(address(multiSwap), _newValue);
-    multiSwap = IMultiSwap(_newValue);
-  }
 
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
   /// @param _token Token address

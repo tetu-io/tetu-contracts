@@ -106,7 +106,7 @@ describe("Controller tests", function () {
   });
 
   it("should not salvage", async () => {
-    await expect(controller.connect(signer1).controllerTokenMove(MaticAddresses.USDC_TOKEN, 100))
+    await expect(controller.connect(signer1).controllerTokenMove(signer.address, MaticAddresses.USDC_TOKEN, 100))
     .to.be.rejectedWith("not governance");
   });
   it("created", async () => {
@@ -119,7 +119,7 @@ describe("Controller tests", function () {
 
   it("should not setup exist strategy", async () => {
     const strat = await core.psVault.strategy();
-    controller.addStrategy(strat);
+    await expect(controller.addStrategy(strat)).rejectedWith('only exist active vault');
   });
 
   it("should not set gov without announce", async () => {
