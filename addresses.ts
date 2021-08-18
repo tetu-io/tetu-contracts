@@ -14,6 +14,7 @@ export class Addresses {
         '0x255707B70BF90aa112006E1b07B9AeA6De021424', // tetu token
         '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
         '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2',// fund keeper
+        '',// vault controller
     )],
     ['rinkeby', new CoreAddresses(
         '0x00aEC86D06B4336bCA967b42724E3596d3622313', // controller
@@ -25,6 +26,7 @@ export class Addresses {
         '0xB1F4691CA07c2202B43d874ac6F508c5b00F82bA', // tetu token
         '0x97f7540eb87e4cd54dd49BEB2ad0BEfCf3fDeFFE', // ps vault
         '0xa49d2Df50F51eb433C7233106e5E3bE98f77998F',// fund keeper
+        '',// vault controller
     )]
   ]);
 

@@ -5,7 +5,8 @@ import {
   Controller,
   IUniswapV2Pair,
   NoopStrategy,
-  SmartVault
+  SmartVault,
+  VaultController
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {Erc20Utils} from "../../../../test/Erc20Utils";
@@ -17,6 +18,7 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
+  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
 
   const vaultNames = new Set<string>();
 
@@ -62,7 +64,7 @@ async function main() {
       60 * 60 * 24 * 28
   );
 
-  await tetuLpVault.addRewardToken(core.psVault);
+  await vaultController.addRewardTokens([tetuLpVault.address], core.psVault);
 
   await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
 

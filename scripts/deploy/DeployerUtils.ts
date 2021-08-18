@@ -21,6 +21,7 @@ import {
   SmartVault,
   TetuProxyControlled,
   TetuProxyGov,
+  VaultController,
   ZapContract,
 } from "../../typechain";
 import {expect} from "chai";
@@ -111,6 +112,15 @@ export class DeployerUtils {
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as Announcer;
     await contract.initialize(controller, timeLock);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployVaultController(signer: SignerWithAddress, controller: string)
+      : Promise<[VaultController, TetuProxyControlled, VaultController]> {
+    const logic = await DeployerUtils.deployContract(signer, "VaultController") as VaultController;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as VaultController;
+    await contract.initialize(controller);
     return [contract, proxy, logic];
   }
 
@@ -261,6 +271,9 @@ export class DeployerUtils {
     // ************ ANNOUNCER **********
     const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, timeLock);
 
+    // ************ ANNOUNCER **********
+    const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
+
     // ********* FEE FORWARDER *********
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
 
@@ -303,6 +316,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
     await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
+    await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address), true, wait);
 
     try {
       const tokens = await DeployerUtils.getTokenAddresses()
@@ -338,7 +352,9 @@ export class DeployerUtils {
         fundKeeperData[0],
         fundKeeperData[2].address,
         announcerData[0],
-        announcerData[2].address
+        announcerData[2].address,
+        vaultControllerData[0],
+        vaultControllerData[2].address
     );
   }
 
@@ -346,6 +362,7 @@ export class DeployerUtils {
       vaultName: string,
       strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
       controller: Controller,
+      vaultController: VaultController,
       vaultRewardToken: string,
       signer: SignerWithAddress,
       rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
@@ -366,7 +383,7 @@ export class DeployerUtils {
         strategyUnderlying,
         rewardDuration
     ), true, wait);
-    await RunHelper.runAndWait(() => vault.addRewardToken(vaultRewardToken), true, wait);
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address],vaultRewardToken), true, wait);
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
 

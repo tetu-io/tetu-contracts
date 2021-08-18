@@ -51,6 +51,8 @@ contract Announcer is Controllable, IAnnouncer {
 
   /// @notice Address change was announced
   event AddressChangeAnnounce(TimeLockOpCodes opCode, address newAddress);
+  /// @notice Uint256 change was announced
+  event UintChangeAnnounce(TimeLockOpCodes opCode, uint256 newValue);
   /// @notice Ratio change was announced
   event RatioChangeAnnounced(TimeLockOpCodes opCode, uint256 numerator, uint256 denominator);
   /// @notice Token movement was announced
@@ -140,6 +142,7 @@ contract Announcer is Controllable, IAnnouncer {
   ///                 6 - FundToken
   ///                 7 - PsVault
   ///                 8 - Fund
+  ///                 19 - VaultController
   /// @param newAddress New address
   function announceAddressChange(TimeLockOpCodes opCode, address newAddress) external onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
@@ -153,6 +156,25 @@ contract Announcer is Controllable, IAnnouncer {
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit AddressChangeAnnounce(opCode, newAddress);
+  }
+
+  /// @notice Only Governance can do it.
+  ///         Announce some single uint256 change. You will able to setup new value after Time-lock period
+  /// @param opCode Operation code from the list
+  ///                 20 - RewardBoostDuration
+  ///                 21 - RewardRatioWithoutBoost
+  /// @param newValue New value
+  function announceUintChange(TimeLockOpCodes opCode, uint256 newValue) external onlyGovernance {
+    require(timeLockIndexes[opCode] == 0, "already announced");
+    bytes32 opHash = keccak256(abi.encode(opCode, newValue));
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
+
+    uint256[] memory values = new uint256[](1);
+    values[0] = newValue;
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, address(0), new address[](0), values));
+    timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
+
+    emit UintChangeAnnounce(opCode, newValue);
   }
 
   /// @notice Only Governance or DAO can do it.

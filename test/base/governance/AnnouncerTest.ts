@@ -261,6 +261,26 @@ describe("Announcer tests", function () {
     expect(await controller.fund()).is.eq(signer1.address);
   });
 
+  it("should change vault controller with time-lock", async () => {
+    const opCode = 19;
+    await announcer.announceAddressChange(opCode, signer1.address);
+
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(core.controller.address);
+    expect(info.adrValues.length).is.eq(1);
+    expect(info.adrValues[0]).is.eq(signer1.address);
+    expect(info.numValues.length).is.eq(0);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await controller.setVaultController(signer1.address);
+
+    expect(await controller.vaultController()).is.eq(signer1.address);
+  });
+
   it("should change ps ratio with time-lock", async () => {
     const opCode = 9;
     const num = 7;
@@ -378,6 +398,50 @@ describe("Announcer tests", function () {
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balContractAfter).is.eq(balContract.sub(amount));
+  });
+
+  it("should set reward boost duration", async () => {
+    const opCode = 20;
+    const amount = 1;
+
+    await announcer.announceUintChange(opCode, amount);
+
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(1);
+    expect(info.numValues[0]).is.eq(amount);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await core.vaultController.setRewardBoostDuration(amount);
+
+    expect(await core.vaultController.rewardBoostDuration()).is.eq(amount);
+  });
+
+  it("should set RewardRatioWithoutBoost", async () => {
+    const opCode = 21;
+    const amount = 1;
+
+    await announcer.announceUintChange(opCode, amount);
+
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(1);
+    expect(info.numValues[0]).is.eq(amount);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await core.vaultController.setRewardRatioWithoutBoost(amount);
+
+    expect(await core.vaultController.rewardRatioWithoutBoost()).is.eq(amount);
   });
 
   it("should fund token salvage with time-lock", async () => {

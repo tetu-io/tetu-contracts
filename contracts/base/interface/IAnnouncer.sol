@@ -38,7 +38,10 @@ interface IAnnouncer {
     StrategyUpgrade, // 15
     Mint, // 16
     Announcer, // 17
-    ZeroPlaceholder //18
+    ZeroPlaceholder, //18
+    VaultController, //19
+    RewardBoostDuration, //20
+    RewardRatioWithoutBoost //21
   }
 
   /// @dev Holder for human readable info

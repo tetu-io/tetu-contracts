@@ -23,6 +23,7 @@ import "../interface/ISmartVault.sol";
 import "../interface/IController.sol";
 import "../interface/IUpgradeSource.sol";
 import "../interface/ISmartVault.sol";
+import "../interface/IVaultController.sol";
 import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
@@ -36,7 +37,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   using SafeMathUpgradeable for uint256;
 
   // ************* CONSTANTS ********************
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -50,6 +51,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   mapping(address => mapping(address => uint256)) public override userRewardPerTokenPaidForToken;
   mapping(address => mapping(address => uint256)) public override rewardsForToken;
   mapping(address => uint256) public override userLastWithdrawTs;
+  mapping(address => uint256) public override userBoostTs;
 
   function initializeSmartVault(
     string memory _name,
@@ -88,6 +90,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   // *************** MODIFIERS ***************************
 
+  /// @dev Allow operation only for VaultController
+  modifier onlyVaultController() {
+    require(IController(controller()).vaultController() == msg.sender, "not vault controller");
+    _;
+  }
 
   /// @dev Strategy should not be a zero address
   modifier whenStrategyDefined() {
@@ -128,7 +135,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Change the active state marker
   /// @param _active Status true - active, false - deactivated
-  function changeActivityStatus(bool _active) external override onlyControllerOrGovernance {
+  function changeActivityStatus(bool _active) external override onlyVaultController {
     _setActive(_active);
   }
 
@@ -141,7 +148,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Add a reward token to the internal array
   /// @param rt Reward token address
-  function addRewardToken(address rt) external override onlyControllerOrGovernance {
+  function addRewardToken(address rt) external override onlyVaultController {
     require(getRewardTokenIndex(rt) == type(uint256).max, "rt exist");
     require(rt != underlying(), "rt is underlying");
     _rewardTokens.push(rt);
@@ -150,7 +157,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Remove reward token. Last token removal is not allowed
   /// @param rt Reward token address
-  function removeRewardToken(address rt) external override onlyControllerOrGovernance {
+  function removeRewardToken(address rt) external override onlyVaultController {
     uint256 i = getRewardTokenIndex(rt);
     require(i != type(uint256).max, "not exist");
     require(periodFinishForToken[_rewardTokens[i]] < block.timestamp, "not finished");
@@ -218,8 +225,28 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _payReward(rt);
   }
 
-  /// @dev Store statistical information to Bookkeeper when token transferred
-  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+  /// @dev Update userBoostTs
+  ///      Store statistical information to Bookkeeper when token transferred
+  function _beforeTokenTransfer(address from, address to, uint256 amount)
+  internal override updateRewards(from) updateRewards(to) {
+
+    // mint - assuming it is deposit action
+    if (from == address(0)) {
+      // new deposit
+      if (userBoostTs[to] == 0) {
+        userBoostTs[to] = block.timestamp;
+      }
+    } else if (to == address(0)) {
+      // burn - assuming it is withdraw action
+      // no action required
+    } else {
+      // regular transfer
+      // if recipient didn't have deposit - start boost time
+      if (userBoostTs[to] == 0) {
+        userBoostTs[to] = block.timestamp;
+      }
+    }
+
     // register ownership changing
     // only statistic, no funds affected
     try IBookkeeper(IController(controller()).bookkeeper())
@@ -356,10 +383,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   //**************** REWARDS FUNCTIONALITY ***********************
 
-  /// @notice  Return earned rewards for specific token and account
-  ///          Accurate value returns only after updateRewards call
-  ///          ((balanceOf(account)
-  ///            * (rewardPerToken - userRewardPerTokenPaidForToken)) / 10**18) + rewardsForToken
+  function _vaultController() internal view returns (IVaultController){
+    return IVaultController(IController(controller()).vaultController());
+  }
+
+  /// @notice Return earned rewards for specific token and account (with 100% boost)
+  ///         Accurate value returns only after updateRewards call
+  ///         ((balanceOf(account)
+  ///           * (rewardPerToken - userRewardPerTokenPaidForToken)) / 10**18) + rewardsForToken
   function earned(address rt, address account) public view override returns (uint256) {
     return
     balanceOf(account)
@@ -368,11 +399,28 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     .add(rewardsForToken[rt][account]);
   }
 
-  /**
-   *
-   *
-   *
-   */
+  /// @notice Return amount ready to claim, calculated with actual boost
+  ///         Accurate value returns only after updateRewards call
+  function earnedWithBoost(address rt, address account) external view override returns (uint256) {
+    uint256 reward = earned(rt, account);
+    uint256 boostStart = userBoostTs[account];
+    // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
+    if (boostStart != 0 && boostStart < block.timestamp) {
+      uint256 currentBoostDuration = block.timestamp.sub(boostStart);
+      // not 100% boost
+      uint256 boostDuration = _vaultController().rewardBoostDuration();
+      uint256 rewardRatioWithoutBoost = _vaultController().rewardRatioWithoutBoost();
+      if (currentBoostDuration < boostDuration) {
+        uint256 rewardWithoutBoost = reward.mul(rewardRatioWithoutBoost).div(100);
+        // calculate boosted part of rewards
+        reward = rewardWithoutBoost.add(
+          reward.sub(rewardWithoutBoost).mul(currentBoostDuration).div(boostDuration)
+        );
+      }
+    }
+    return reward;
+  }
+
   /// @notice Return reward per token ratio by reward token address
   ///                rewardPerTokenStoredForToken + (
   ///                (lastTimeRewardApplicable - lastUpdateTimeForToken)
@@ -442,6 +490,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     }
     lastUpdateTimeForToken[_rewardToken] = block.timestamp;
     periodFinishForToken[_rewardToken] = block.timestamp.add(duration());
+
+    // Ensure the provided reward amount is not more than the balance in the contract.
+    // This keeps the reward rate in the right range, preventing overflows due to
+    // very high values of rewardRate in the earned and rewardsPerToken functions;
+    // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
+    uint balance = IERC20Upgradeable(_rewardToken).balanceOf(address(this));
+    require(rewardRateForToken[_rewardToken] <= balance.div(duration()), "Provided reward too high");
     emit RewardAdded(_rewardToken, amount);
   }
 
@@ -449,6 +504,30 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function _payReward(address rt) internal {
     uint256 reward = earned(rt, msg.sender);
     if (reward > 0 && IERC20Upgradeable(rt).balanceOf(address(this)) >= reward) {
+
+      // calculate boosted amount
+      uint256 boostStart = userBoostTs[msg.sender];
+      // refresh boost
+      userBoostTs[msg.sender] = block.timestamp;
+      // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
+      if (boostStart != 0 && boostStart < block.timestamp) {
+        uint256 currentBoostDuration = block.timestamp.sub(boostStart);
+        // not 100% boost
+        uint256 boostDuration = _vaultController().rewardBoostDuration();
+        uint256 rewardRatioWithoutBoost = _vaultController().rewardRatioWithoutBoost();
+        if (currentBoostDuration < boostDuration) {
+          uint256 rewardWithoutBoost = reward.mul(rewardRatioWithoutBoost).div(100);
+          // calculate boosted part of rewards
+          uint256 toClaim = rewardWithoutBoost.add(
+            reward.sub(rewardWithoutBoost).mul(currentBoostDuration).div(boostDuration)
+          );
+          uint256 change = reward.sub(toClaim);
+          reward = toClaim;
+
+          notifyRewardWithoutPeriodChange(change, rt);
+        }
+      }
+
       rewardsForToken[rt][msg.sender] = 0;
       IERC20Upgradeable(rt).safeTransfer(msg.sender, reward);
       // only statistic, should not affect reward claim process
@@ -456,6 +535,23 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       .registerUserEarned(msg.sender, address(this), rt, reward) {
       } catch {}
       emit RewardPaid(msg.sender, rt, reward);
+    }
+  }
+
+  /// @dev Add reward amount without changing reward duration
+  function notifyRewardWithoutPeriodChange(uint256 _amount, address _rewardToken) internal {
+    if (_amount > 1 && _amount < type(uint256).max / 1e18) {
+      rewardPerTokenStoredForToken[_rewardToken] = rewardPerToken(_rewardToken);
+      lastUpdateTimeForToken[_rewardToken] = lastTimeRewardApplicable(_rewardToken);
+      if (block.timestamp >= periodFinishForToken[_rewardToken]) {
+        // if vesting ended transfer the change to the controller
+        // otherwise we will have possible infinity rewards duration
+        IERC20Upgradeable(_rewardToken).safeTransfer(controller(), _amount);
+      } else {
+        uint256 remaining = periodFinishForToken[_rewardToken].sub(block.timestamp);
+        uint256 leftover = remaining.mul(rewardRateForToken[_rewardToken]);
+        rewardRateForToken[_rewardToken] = _amount.add(leftover).div(remaining);
+      }
     }
   }
 

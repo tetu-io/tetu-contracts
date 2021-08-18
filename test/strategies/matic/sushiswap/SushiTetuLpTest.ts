@@ -7,7 +7,8 @@ import {
   Controller,
   IUniswapV2Pair,
   NoopStrategy,
-  SmartVault
+  SmartVault,
+  VaultController
 } from "../../../../typechain";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {ethers} from "hardhat";
@@ -31,6 +32,7 @@ describe.skip('TETU LP test', async () => {
   let tetuLp: string;
   let tetuLpEmptyStrategy: NoopStrategy;
   let bookkeeper: Bookkeeper;
+  let vaultController: VaultController;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
@@ -39,6 +41,7 @@ describe.skip('TETU LP test', async () => {
 
     const announcer = await DeployerUtils.connectInterface(signer, 'Announcer', core.announcer) as Announcer;
     const controller = await DeployerUtils.connectInterface(signer, 'Controller', core.controller) as Controller;
+    vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
     bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
     psVault = await DeployerUtils.connectInterface(signer, 'SmartVault', core.psVault) as SmartVault;
 
@@ -84,7 +87,7 @@ describe.skip('TETU LP test', async () => {
         60 * 60 * 24 * 28
     );
 
-    await tetuLpVault.addRewardToken(core.psVault);
+    await vaultController.addRewardTokens([tetuLpVault.address], core.psVault);
 
     await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
   });
@@ -124,9 +127,9 @@ describe.skip('TETU LP test', async () => {
     expect(await bookkeeper.vaultUsersQuantity(tetuLpVault.address)).at.eq("1");
 
     // ************** GOV ACTIONS *******************************
-    await tetuLpVault.addRewardToken(MaticAddresses.WMATIC_TOKEN);
-    await tetuLpVault.removeRewardToken(MaticAddresses.WMATIC_TOKEN);
-    await expect(tetuLpVault.removeRewardToken(psVault.address)).rejectedWith('last rt');
+    await vaultController.addRewardTokens([tetuLpVault.address], MaticAddresses.WMATIC_TOKEN);
+    await vaultController.removeRewardTokens([tetuLpVault.address], MaticAddresses.WMATIC_TOKEN);
+    await expect(vaultController.removeRewardTokens([tetuLpVault.address], psVault.address)).rejectedWith('last rt');
 
     expect(await tetuLpVault.rewardTokensLength()).at.eq(1);
     await tetuLpVault.doHardWork();

@@ -40,7 +40,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   /// @dev Allowed contracts for deposit to vaults
   mapping(address => bool) public override whiteList;
@@ -341,6 +341,18 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     require(info.opCode == IAnnouncer.TimeLockOpCodes.ZeroPlaceholder, "wrong implementation");
   }
 
+  /// @notice Only Governance can do it. Change FundKeeper address.
+  /// @param _newValue New FundKeeper address
+  function setVaultController(address _newValue) external
+  onlyGovernance timeLock(
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.VaultController, _newValue)),
+    IAnnouncer.TimeLockOpCodes.VaultController,
+    vaultController() == address(0),
+    address(0)
+  ) {
+    _setVaultController(_newValue);
+  }
+
   // ------------------ TIME-LOCK RATIO CHANGE -------------------
 
   /// @notice Only Governance or DAO can do it. Change Profit Sharing fee ratio.
@@ -477,34 +489,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function removeFromWhiteList(address _target) public override onlyGovernanceOrDao {
     whiteList[_target] = false;
     emit RemovedFromWhiteList(_target);
-  }
-
-  /// @notice Only Governance can do it. Change statuses of given vaults
-  /// @param _targets Vault addresses
-  /// @param _statuses Vault statuses
-  function changeVaultsStatuses(address[] calldata _targets, bool[] calldata _statuses) external onlyGovernance {
-    require(_targets.length == _statuses.length, "wrong arrays");
-    for (uint256 i = 0; i < _targets.length; i++) {
-      ISmartVault(_targets[i]).changeActivityStatus(_statuses[i]);
-    }
-  }
-
-  /// @notice Only Governance can do it. Add reward token for given vaults
-  /// @param _vaults Vault addresses
-  /// @param _rt Reward token
-  function addRewardTokens(address[] calldata _vaults, address _rt) external onlyGovernance {
-    for (uint256 i = 0; i < _vaults.length; i++) {
-      ISmartVault(_vaults[i]).addRewardToken(_rt);
-    }
-  }
-
-  /// @notice Only Governance can do it. Remove reward token for given vaults
-  /// @param _vaults Vault addresses
-  /// @param _rt Reward token
-  function removeRewardTokens(address[] calldata _vaults, address _rt) external onlyGovernance {
-    for (uint256 i = 0; i < _vaults.length; i++) {
-      ISmartVault(_vaults[i]).removeRewardToken(_rt);
-    }
   }
 
   /// @notice Only Governance can do it. Register pairs Vault/Strategy

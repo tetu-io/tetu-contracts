@@ -74,6 +74,7 @@ describe("Zap contract tests", function () {
             16
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         core.psVault.address,
         signer
     ))[1];
@@ -91,6 +92,7 @@ describe("Zap contract tests", function () {
             0
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         core.psVault.address,
         signer
     ))[1];
@@ -108,6 +110,7 @@ describe("Zap contract tests", function () {
             24
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         core.psVault.address,
         signer
     ))[1];
@@ -125,6 +128,7 @@ describe("Zap contract tests", function () {
             26
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         core.psVault.address,
         signer
     ))[1];
@@ -142,6 +146,7 @@ describe("Zap contract tests", function () {
             16
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         core.psVault.address,
         signer
     ))[1];
