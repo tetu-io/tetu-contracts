@@ -6,10 +6,12 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {BigNumber} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {VaultUtils} from "../VaultUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {MaticAddresses} from "../MaticAddresses";
+import {UniswapUtils} from "../UniswapUtils";
+import {Erc20Utils} from "../Erc20Utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -130,63 +132,86 @@ describe("Controller tests", function () {
 
 
   it("upgrade proxy v 1-0-0", async () => {
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
 
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV1_0_0");
 
     const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
-    const psVault1 = vaultLogic.attach(vaultProxy1.address) as SmartVault;
+    const vault = vaultLogic.attach(vaultProxy1.address) as SmartVault;
     const psEmptyStrategy1 = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, core.rewardToken.address, psVault1.address, [], [core.rewardToken.address]) as NoopStrategy;
+        core.controller.address, MaticAddresses.WMATIC_TOKEN, vault.address, [], [MaticAddresses.WMATIC_TOKEN]) as NoopStrategy;
 
 
-    await psVault1.initializeSmartVault(
+    await vault.initializeSmartVault(
         "TETU_PS1",
         "xTETU1",
         core.controller.address,
-        core.rewardToken.address,
-        1
+        MaticAddresses.WMATIC_TOKEN,
+        999999
     );
 
-    await core.controller.addVaultAndStrategy(psVault1.address, psEmptyStrategy1.address);
+    await core.controller.addVaultAndStrategy(vault.address, psEmptyStrategy1.address);
 
-    await psVault1.addRewardToken(MaticAddresses.WMATIC_TOKEN);
+    await vault.addRewardToken(core.psVault.address);
+    await vault.addRewardToken(core.rewardToken.address);
+    await Erc20Utils.approve(core.rewardToken.address, signer, vault.address, utils.parseUnits("100").toString());
+    await vault.notifyTargetRewardAmount(
+        core.rewardToken.address,
+        utils.parseUnits("100")
+    );
 
-    await VaultUtils.deposit(signer, psVault1, BigNumber.from('10'));
+    await VaultUtils.deposit(signer, vault, BigNumber.from('10'));
+    await TimeUtils.advanceBlocksOnTs(999);
+    await vault.exit();
+    await VaultUtils.deposit(signer, vault, BigNumber.from('10'));
+    await TimeUtils.advanceBlocksOnTs(999);
 
-    expect(await psVault1.name()).is.eq('TETU_PS1');
+    expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
+    .is.equal(10);
 
-    expect(await psVault1.rewardTokensLength()).is.eq(1);
+    expect(await vault.name()).is.eq('TETU_PS1');
 
-    expect(await psVault1.underlyingBalanceWithInvestmentForHolder(signer.address))
+    expect(await vault.rewardTokensLength()).is.eq(2);
+    const earned = await vault.earned(core.rewardToken.address, signer.address);
+    console.log('earned', earned.toString());
+    expect(+utils.formatUnits(earned)).is.greaterThan(0);
+
+    expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
     .is.equal(10);
 
 
     const newVaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
 
     await core.announcer.announceTetuProxyUpgradeBatch([
-      psVault1.address
+      vault.address
     ], [
       newVaultLogic.address
     ]);
 
-    await TimeUtils.advanceBlocksOnTs(1);
+    await TimeUtils.advanceBlocksOnTs(999);
 
     await core.controller.upgradeTetuProxyBatch(
         [
-          psVault1.address
+          vault.address
         ], [
           newVaultLogic.address
         ]
     );
 
-    expect(await psVault1.name()).is.eq('TETU_PS1');
+    await core.announcer.announceVaultStopBatch([vault.address]);
+    await TimeUtils.advanceBlocksOnTs(999);
+    await core.vaultController.stopVaultsBatch([vault.address]);
 
-    expect(await psVault1.rewardTokensLength()).is.eq(1);
+    expect(await vault.name()).is.eq('TETU_PS1');
 
-    expect(await psVault1.underlyingBalanceWithInvestmentForHolder(signer.address))
+    expect(await vault.rewardTokensLength()).is.eq(2);
+
+    expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
     .is.equal(10);
-    await psVault1.exit();
+    expect(+utils.formatUnits(await vault.earned(core.rewardToken.address, signer.address))).is.eq(0);
+    await vault.exit();
+    expect(+utils.formatUnits(await vault.earned(core.rewardToken.address, signer.address))).is.eq(0);
   });
 
 });
