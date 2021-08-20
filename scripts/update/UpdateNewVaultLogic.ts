@@ -23,13 +23,15 @@ async function main() {
 
   for (let i = 0; i < vaultsLength; i++) {
     const vault = await bookkeeper._vaults(i);
-    if (
-        await cReader.vaultActive(vault)
-        && await controller.vaults(vault)
-    ) {
-      vaults.push(vault);
-      console.log('vault', vault);
-    }
+    // if (
+    //     !(await cReader.vaultActive(vault))
+    //     &&
+    //     !(await controller.vaults(vault))
+    // ) {
+    //   continue;
+    // }
+    vaults.push(vault);
+    console.log('vault', vault);
   }
 
   let vaultBatch: string[] = [];

@@ -90,7 +90,8 @@ contract ContractReader is Initializable, Controllable {
     address[] rewardTokens;
     uint256[] rewards;
     uint256[] rewardsUsdc;
-    uint256[] rewardsEarned;
+    uint256[] rewardsBoost;
+    uint256[] rewardsBoostUsdc;
   }
 
   struct UserInfoLight {
@@ -198,7 +199,8 @@ contract ContractReader is Initializable, Controllable {
       rewardTokens,
       userRewards(_user, _vault),
       userRewardsUsdc(_user, _vault),
-      rewardsEarned
+      userRewardsBoost(_user, _vault),
+      userRewardsBoostUsdc(_user, _vault)
     );
   }
 
@@ -561,6 +563,19 @@ contract ContractReader is Initializable, Controllable {
   }
 
   // normalized precision
+  function userRewardsBoost(address _user, address _vault) public view returns (uint256[] memory) {
+    address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
+    uint256[] memory rewards = new uint256[](rewardTokens.length);
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
+      rewards[i] = normalizePrecision(
+        ISmartVault(_vault).earnedWithBoost(rewardTokens[i], _user),
+        ERC20(rewardTokens[i]).decimals()
+      );
+    }
+    return rewards;
+  }
+
+  // normalized precision
   function userRewardsUsdc(address _user, address _vault) public view returns (uint256[] memory) {
     address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
     uint256[] memory rewards = new uint256[](rewardTokens.length);
@@ -568,6 +583,20 @@ contract ContractReader is Initializable, Controllable {
       uint256 price = getPrice(rewardTokens[i]);
       rewards[i] = normalizePrecision(
         ISmartVault(_vault).earned(rewardTokens[i], _user).mul(price).div(PRECISION),
+        ERC20(rewardTokens[i]).decimals()
+      );
+    }
+    return rewards;
+  }
+
+  // normalized precision
+  function userRewardsBoostUsdc(address _user, address _vault) public view returns (uint256[] memory) {
+    address[] memory rewardTokens = ISmartVault(_vault).rewardTokens();
+    uint256[] memory rewards = new uint256[](rewardTokens.length);
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
+      uint256 price = getPrice(rewardTokens[i]);
+      rewards[i] = normalizePrecision(
+        ISmartVault(_vault).earnedWithBoost(rewardTokens[i], _user).mul(price).div(PRECISION),
         ERC20(rewardTokens[i]).decimals()
       );
     }

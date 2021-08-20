@@ -562,8 +562,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       address rt = _rewardTokens[i];
       periodFinishForToken[rt] = block.timestamp;
       rewardRateForToken[rt] = 0;
-      lastUpdateTimeForToken[rt] = 0;
-      rewardPerTokenStoredForToken[rt] = 0;
       uint256 amount = IERC20Upgradeable(rt).balanceOf(address(this));
       if (amount != 0) {
         IERC20Upgradeable(rt).safeTransfer(controller(), amount);

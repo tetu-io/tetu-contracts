@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
-import {Announcer, Bookkeeper, SmartVault} from "../../../typechain";
+import {SmartVault} from "../../../typechain";
 
 
 async function main() {

@@ -9,7 +9,9 @@ import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {Erc20Utils} from "../../Erc20Utils";
 import {MaticAddresses} from "../../MaticAddresses";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
+import {MintHelperUtils} from "../../MintHelperUtils";
+import {VaultUtils} from "../../VaultUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -533,18 +535,19 @@ describe("Announcer tests", function () {
     const amount = utils.parseUnits('1000');
 
     const rt = MaticAddresses.WMATIC_TOKEN;
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000'));
     await core.vaultController.addRewardTokens([target], rt);
     await Erc20Utils.approve(rt, signer, target, amount.toString());
     await core.psVault.notifyTargetRewardAmount(rt, amount);
+    await VaultUtils.deposit(signer, core.psVault, BigNumber.from('10'));
 
     expect(await Erc20Utils.balanceOf(rt, target)).is.not.equal(0);
     expect(await Erc20Utils.balanceOf(rt, core.controller.address)).is.equal(0);
 
     await announcer.announceVaultStopBatch([target]);
-    console.log('1');
     const index = await announcer.multiTimeLockIndexes(opCode, target);
-    expect(index).is.eq(1);
+    expect(index).is.eq(2);
 
     const info = await announcer.timeLockInfo(index);
     expect(info.target).is.eq(target);
@@ -552,12 +555,11 @@ describe("Announcer tests", function () {
     expect(info.numValues.length).is.eq(0);
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
-    console.log('2');
     await core.vaultController.stopVaultsBatch([target]);
-    console.log('3');
     expect(await core.psVault.active()).is.eq(false);
     expect(await Erc20Utils.balanceOf(rt, target)).is.equal(0);
     expect(await Erc20Utils.balanceOf(rt, core.controller.address)).is.not.equal(0);
+    await core.psVault.exit();
   });
 
   it("should mint with time-lock", async () => {

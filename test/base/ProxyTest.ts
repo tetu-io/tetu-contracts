@@ -186,6 +186,7 @@ describe("Controller tests", function () {
 
     expect(await psVault1.underlyingBalanceWithInvestmentForHolder(signer.address))
     .is.equal(10);
+    await psVault1.exit();
   });
 
 });

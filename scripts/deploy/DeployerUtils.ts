@@ -383,7 +383,7 @@ export class DeployerUtils {
         strategyUnderlying,
         rewardDuration
     ), true, wait);
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address],vaultRewardToken), true, wait);
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken), true, wait);
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
 
@@ -466,6 +466,39 @@ export class DeployerUtils {
       throw Error('No config for ' + net.name);
     }
     return core;
+  }
+
+  public static async getCoreAddressesWrapper(signer: SignerWithAddress): Promise<CoreContractsWrapper> {
+    const net = await ethers.provider.getNetwork();
+    console.log('network', net.name);
+    const core = Addresses.CORE.get(net.name);
+    if (!core) {
+      throw Error('No config for ' + net.name);
+    }
+
+    const ps = await DeployerUtils.connectContract(signer, "SmartVault", core.psVault) as SmartVault;
+    const str = await ps.strategy();
+
+    return new CoreContractsWrapper(
+        await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller,
+        '',
+        await DeployerUtils.connectContract(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+        await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
+        '',
+        await DeployerUtils.connectContract(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
+        await DeployerUtils.connectContract(signer, "MintHelper", core.mintHelper) as MintHelper,
+        '',
+        await DeployerUtils.connectContract(signer, "RewardToken", core.rewardToken) as RewardToken,
+        ps,
+        '',
+        await DeployerUtils.connectContract(signer, "NoopStrategy", str) as NoopStrategy,
+        await DeployerUtils.connectContract(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
+        '',
+        await DeployerUtils.connectContract(signer, "Announcer", core.announcer) as Announcer,
+        '',
+        await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController,
+        '',
+    );
   }
 
   public static async getToolsAddresses(): Promise<ToolsAddresses> {
