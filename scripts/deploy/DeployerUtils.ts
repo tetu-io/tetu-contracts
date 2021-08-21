@@ -195,7 +195,10 @@ export class DeployerUtils {
     const mocks = await DeployerUtils.getTokenAddresses();
 
     await calculator.addKeyTokens([
-      mocks.get('usdc') as string
+      mocks.get('quick') as string,
+      mocks.get('sushi') as string,
+      mocks.get('usdc') as string,
+      mocks.get('weth') as string,
     ]);
     await calculator.setDefaultToken(mocks.get('usdc') as string);
     await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");

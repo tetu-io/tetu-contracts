@@ -18,17 +18,17 @@ export class Addresses {
         '',// vault logic
     )],
     ['rinkeby', new CoreAddresses(
-        '0x00aEC86D06B4336bCA967b42724E3596d3622313', // controller
-        '0xAC5C0014bdD5cb34149bA49eC879aE7b6fFF94b8', // announcer
-        '0x804456cCD09C3b1dD99F1Aaa344144C4AFfd1c7e', // forwarder
-        '0x758A7a9503A29558AEb6b848Ed0b698C01D19F93', // bookkeeper
-        '0x3f37F1fAC94F4c0757c831A2a175d834f62FF497', // notifier
-        '0x697C0c61a3644A51c65B870d4A25884F73b8A73C', // mint helper
-        '0xB1F4691CA07c2202B43d874ac6F508c5b00F82bA', // tetu token
-        '0x97f7540eb87e4cd54dd49BEB2ad0BEfCf3fDeFFE', // ps vault
-        '0xa49d2Df50F51eb433C7233106e5E3bE98f77998F',// fund keeper
-        '0xffb99A4676E577c715Aaf08082d0D3684f30b3d8',// vault controller
-        '0x7cF312aac38Fa7a2BA04EdF85a199A2E4acaD85f',// vault logic
+        '0x423394A1723C81a2a9E3Ee1852Bc55Db7B85bfE1', // controller
+        '0x42A323CF86FE5E8c2B1aAb8C38F7Cd6bd4f05c9c', // announcer
+        '0x472a3B6DB960407378BF8b51Ee3b841Ee281d06D', // forwarder
+        '0xFB1e7bF70FFBbD195c692AA79F2721e0143A42Bc', // bookkeeper
+        '0x44487fB06DF0E2712c13f617C46301301B1B8B88', // notifier
+        '0x2eABFA0f09D3F393beC9Efb102066733c0030D36', // mint helper
+        '0x4604E8C1504F0F95DB69d23EADeae699ACd93feB', // tetu token
+        '0xAec561cF4F54756EBB9E897b7fdbb444DE8783bA', // ps vault
+        '0x1b6E2a7AcB8f79044bE4b384fa7A1Cac1259bb72',// fund keeper
+        '',// vault controller
+        '',// vault logic
     )]
   ]);
 
@@ -44,14 +44,14 @@ export class Addresses {
         '0x3359B9A0e429d670a3F4dA9b4C69FFCe2Cc93Bbd', // zapContract
     )],
     ['rinkeby', new ToolsAddresses(
-        '0x720297240ea63ce4dcc4588D726C0979EB53ee67', // calculator
-        '0x100BCdeD3E235B8b174840d7Ef44fB6971Fc04a3', // reader
-        '0x7d393E021d5E5f7C6B3C9Ce4FD6B0712daeEC6AE', // utils
-        '0xDe3A5aC324c271C2F915b82C489A7b316714C442', // rebalancer
+        '0x9b8205F7fa03FD4DFc29c9b0E553883913ec4132', // calculator
+        '0x9B1F56a7cE7529522C2E5F32C13422654808Ea7a', // reader
+        '0x51be2Ad4f39CC0f722E6900F1db8cb0196ed01b2', // utils
+        '0x56b44897c8333fa08DaEC0dc8c16695750b24c6D', // rebalancer
         '', // payrollClerk
         '0xE08a4d6aFC2f3bB5F95ceC1e4D88559d837C08F2', // mockFaucet
-        '', // multiSwap
-        '', // zapContract
+        '0xe5C203ef4CB3E56766E7936fDE4b157209e93dD5', // multiSwap
+        '0x9Ff04B5D8f6e7fFF99DBE07CAa9a83467Ec4A1c1', // zapContract
     )]
   ]);
 

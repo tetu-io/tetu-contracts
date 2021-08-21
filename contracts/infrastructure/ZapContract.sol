@@ -62,6 +62,43 @@ contract ZapContract is Controllable, ReentrancyGuard {
   // ******************** USERS ACTIONS *********************
 
   /// @notice Approval for token is assumed.
+  ///      Buy token and deposit to given vault
+  ///      TokenIn should be declared as a keyToken in the PriceCalculator
+  /// @param _vault A target vault for deposit
+  /// @param _tokenIn This token will be swapped to required token for adding liquidity
+  /// @param _asset Token address required for adding liquidity
+  /// @param _assetRoute Pair addresses for buying asset0
+  /// @param _tokenInAmount Amount of token for deposit
+  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
+  function zapInto(
+    address _vault,
+    address _tokenIn,
+    address _asset,
+    address[] memory _assetRoute,
+    uint256 _tokenInAmount,
+    uint256 slippageTolerance
+  ) external nonReentrant onlyOneCallPerBlock {
+    require(_tokenInAmount > 1, "ZC: not enough amount");
+    require(_asset == ISmartVault(_vault).underlying(), "ZC: asset is not underlying");
+
+    IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _tokenInAmount);
+
+    // asset multi-swap
+    callMultiSwap(
+      _tokenIn,
+      _tokenInAmount,
+      _assetRoute,
+      _asset,
+      slippageTolerance
+    );
+    // assume that final outcome amount was checked on the multiSwap contract side
+
+    uint256 assetAmount = IERC20(_asset).balanceOf(address(this));
+
+    depositToVault(_vault, assetAmount, _asset);
+  }
+
+  /// @notice Approval for token is assumed.
   ///      Add liquidity and deposit to given vault with Uin pair underlying
   ///      TokenIn should be declared as a keyToken in the PriceCalculator
   /// @param _vault A target vault for deposit
@@ -128,6 +165,43 @@ contract ZapContract is Controllable, ReentrancyGuard {
   }
 
   /// @notice Approval for share token is assumed.
+  ///         Withdraw from given vault underlying and sell tokens for given tokenOut
+  /// @param _vault A target vault for withdraw
+  /// @param _tokenOut This token will be a target for swaps
+  /// @param _asset Token address required selling removed assets
+  /// @param _assetRoute Pair addresses for selling asset0
+  /// @param _shareTokenAmount Amount of share token for withdraw
+  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
+  function zapOut(
+    address _vault,
+    address _tokenOut,
+    address _asset,
+    address[] memory _assetRoute,
+    uint256 _shareTokenAmount,
+    uint256 slippageTolerance
+  ) external nonReentrant onlyOneCallPerBlock {
+    require(_shareTokenAmount != 0, "ZC: zero amount");
+    require(_asset == ISmartVault(_vault).underlying(), "ZC: asset is not underlying");
+
+    IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
+
+    uint256 assetBalance = withdrawFromVault(_vault, _asset, _shareTokenAmount);
+
+    // asset multi-swap
+    callMultiSwap(
+      _asset,
+      assetBalance,
+      _assetRoute,
+      _tokenOut,
+      slippageTolerance
+    );
+
+    uint256 tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
+    require(tokenOutBalance != 0, "zero token out balance");
+    IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+  }
+
+  /// @notice Approval for share token is assumed.
   ///      Withdraw from given vault underlying, remove liquidity and sell tokens for given tokenOut
   /// @param _vault A target vault for withdraw
   /// @param _tokenOut This token will be a target for swaps
@@ -191,6 +265,7 @@ contract ZapContract is Controllable, ReentrancyGuard {
     );
 
     uint256 tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
+    require(tokenOutBalance != 0, "zero token out balance");
     IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
   }
 
