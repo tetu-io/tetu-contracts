@@ -502,6 +502,7 @@ describe("Announcer tests", function () {
     await controller.upgradeTetuProxyBatch([proxyAdr], [newImpl.address]);
 
     expect(await proxy.implementation()).is.eq(newImpl.address);
+    expect(await announcer.multiTimeLockIndexes(opCode, proxyAdr)).is.eq(0);
   });
 
   it("should upgrade strategy with time-lock", async () => {

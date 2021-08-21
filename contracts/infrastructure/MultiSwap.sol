@@ -60,6 +60,9 @@ contract MultiSwap is Controllable, IMultiSwap, ReentrancyGuard {
   /// @dev Return an array with lp pairs that reflect a route for given tokens
   function findLpsForSwaps(address _tokenIn, address _tokenOut)
   public override view returns (address[] memory){
+    if (_tokenIn == _tokenOut) {
+      return new address[](0);
+    }
 
     address[] memory usedLps = new address[](MAX_ROUTES);
     address[] memory usedTokens = new address[](MAX_ROUTES);
