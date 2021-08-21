@@ -16,10 +16,9 @@ async function main() {
 
   const logic = await DeployerUtils.deployContract(signer, "Announcer") as Announcer;
 
-  await RunHelper.runAndWait(() => announcer.announceTetuProxyUpgrade(core.announcer, logic.address));
+  // await RunHelper.runAndWait(() => announcer.announceTetuProxyUpgrade(core.announcer, logic.address));
 
-
-  await RunHelper.runAndWait(() => controller.upgradeTetuProxy(core.announcer, logic.address));
+  // await RunHelper.runAndWait(() => controller.upgradeTetuProxy(core.announcer, logic.address));
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);

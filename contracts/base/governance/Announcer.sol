@@ -46,7 +46,7 @@ contract Announcer is Controllable, IAnnouncer {
   mapping(TimeLockOpCodes => uint256) public timeLockIndexes;
   /// @dev Hold indexes for upgrade info by address
   mapping(TimeLockOpCodes => mapping(address => uint256)) public multiTimeLockIndexes;
-  /// @dev A list of opCodes allowed for multi scheduling
+  /// @dev Deprecated, don't remove for keep slot ordering
   mapping(TimeLockOpCodes => bool) public multiOpCodes;
 
   /// @notice Address change was announced
@@ -84,11 +84,6 @@ contract Announcer is Controllable, IAnnouncer {
     assembly {
       sstore(slot, _timeLock)
     }
-
-    // setup multi opCodes
-    multiOpCodes[TimeLockOpCodes.TetuProxyUpdate] = true;
-    multiOpCodes[TimeLockOpCodes.StrategyUpgrade] = true;
-    multiOpCodes[TimeLockOpCodes.VaultStop] = true;
 
     // placeholder for index 0
     _timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, 0, address(0), new address[](0), new uint256[](0)));
@@ -358,7 +353,7 @@ contract Announcer is Controllable, IAnnouncer {
   /// @param opCode TimeLockOpCodes uint8 value
   function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControlMembers {
     timeLockSchedule[opHash] = 0;
-    if (multiOpCodes[opCode]) {
+    if (multiTimeLockIndexes[opCode][target] != 0) {
       multiTimeLockIndexes[opCode][target] = 0;
     } else {
       timeLockIndexes[opCode] = 0;
