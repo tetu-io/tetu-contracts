@@ -4,10 +4,10 @@ import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
 import {Settings} from "../../../../settings";
-import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrategyTest";
+// import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrategyTest";
 
 
-const {expect} = chai;
+// const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Dino tests', async () => {
@@ -17,6 +17,8 @@ describe('Universal Dino tests', async () => {
   const infos = readFileSync('scripts/utils/generate/dino_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
+    if (info.trim()==='') return;
+
     const strat = info.split(',');
 
     const idx = strat[0];

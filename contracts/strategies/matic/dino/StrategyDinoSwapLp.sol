@@ -12,10 +12,10 @@
 pragma solidity 0.8.4;
 
 
-import "../../../base/strategies/masterchef-base/WaultStrategyFullBuyback.sol";
+import "../../../base/strategies/masterchef-base/DinoStrategyFullBuyback.sol";
 import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 
-contract StrategyDinoSwapLp is WaultStrategyFullBuyback {
+contract StrategyDinoSwapLp is DinoStrategyFullBuyback {
 
   // MASTER_CHEF
   address public constant MASTER_CHEF  = address(0x1948abC5400Aa1d72223882958Da3bec643fb4E5);
@@ -32,7 +32,7 @@ contract StrategyDinoSwapLp is WaultStrategyFullBuyback {
     address _token0,
     address _token1,
     uint256 _poolId
-  ) WaultStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, MASTER_CHEF, _poolId) {
+  ) DinoStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, MASTER_CHEF, _poolId) {
     require(_underlying != address(0), "zero underlying");
     require(_token0 != address(0), "zero token0");
     require(_token1 != address(0), "zero token1");

@@ -17,6 +17,7 @@ describe('Universal Wault tests', async () => {
   const infos = readFileSync('scripts/utils/generate/wault_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
+    if (info.trim()==='') return;
     const strat = info.split(',');
 
     const idx = strat[0];

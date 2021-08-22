@@ -143,9 +143,10 @@ async function startDefaultLpStrategyTest(
     //       (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString());
     // });
     it("do hard work with liq path", async () => {
+      console.log('strategyInfo.underlying', strategyInfo.underlying);
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
           (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString()
-      );
+    );
     });
     it("emergency exit", async () => {
       await StrategyTestUtils.checkEmergencyExit(strategyInfo);
