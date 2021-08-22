@@ -34,6 +34,7 @@ export class MaticAddresses {
   public static miMATIC_TOKEN = "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1".toLowerCase();
   public static WEXpoly_TOKEN = "0x4c4BF319237D98a30A929A96112EfFa8DA3510EB".toLowerCase();
   public static PEAR_TOKEN = "0xc8bcb58caEf1bE972C0B638B1dD8B0748Fdc8A44".toLowerCase();
+  public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
   // public static dQUICK_TOKEN = "".toLowerCase();
 
   //quick
@@ -77,6 +78,15 @@ export class MaticAddresses {
   public static WAULT_FACTORY = "0xa98ea6356A316b44Bf710D5f9b6b4eA0081409Ef".toLowerCase();
   public static WAULT_ROUTER = "0x3a1D87f206D12415f5b0A33E786967680AAb4f6d".toLowerCase();
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
+
+  // Dino
+  // *Currently, DinoSwap DEX Router is integrated via SushiSwap —
+  // router functionality will be added to incorporate additional DEXs in the
+  // near future.
+  public static DINO_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
+  public static DINO_FACTORY = "0xc35dadb65012ec5796536bd9864ed8773abc74c4".toLowerCase();
+  // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
+  public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
