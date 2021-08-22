@@ -261,7 +261,7 @@ describe("contract reader tests", function () {
   });
 
   // it("deploy all and check", async () => {
-  //   let infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
+  //   let infos = readFileSync('scripts/utils/generate/quick_pools.csv', 'utf8').split(/\r?\n/);
   //   const deployed = [];
   //
   //   for (let info of infos) {
@@ -315,7 +315,7 @@ describe("contract reader tests", function () {
   //     deployed.push(data);
   //   }
   //
-  //   infos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
+  //   infos = readFileSync('scripts/utils/generate/sushi_pools.csv', 'utf8').split(/\r?\n/);
   //
   //
   //   for (let info of infos) {
@@ -367,7 +367,7 @@ describe("contract reader tests", function () {
   //     deployed.push(data);
   //   }
   //
-  //   infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+  //   infos = readFileSync('scripts/utils/generate/wault_pools.csv', 'utf8').split(/\r?\n/);
   //
   //   for (let info of infos) {
   //     const strat = info.split(',');

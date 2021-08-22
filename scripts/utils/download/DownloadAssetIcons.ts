@@ -4,9 +4,9 @@ import axios, {AxiosResponse} from "axios";
 
 async function main() {
   const outputPath = 'tmp/assets/matic/';
-  const quickInfos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
-  const sushiInfos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
-  const waultInfos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+  const quickInfos = readFileSync('scripts/utils/generate/quick_pools.csv', 'utf8').split(/\r?\n/);
+  const sushiInfos = readFileSync('scripts/utils/generate/sushi_pools.csv', 'utf8').split(/\r?\n/);
+  const waultInfos = readFileSync('scripts/utils/generate/wault_pools.csv', 'utf8').split(/\r?\n/);
 
   mkdir(outputPath, {recursive: true}, (err) => {
     if (err) throw err;

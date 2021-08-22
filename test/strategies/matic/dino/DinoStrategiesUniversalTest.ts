@@ -10,11 +10,11 @@ import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrat
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Wault tests', async () => {
+describe('Universal Dino tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/generate/wault_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/generate/dino_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -32,7 +32,7 @@ describe('Universal Wault tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneWaultStrategyTest && +strat[0] !== Settings.onlyOneWaultStrategyTest) {
+    if (Settings.onlyOneDinoStrategyTest && +strat[0] !== Settings.onlyOneDinoStrategyTest) {
       return;
     }
 
@@ -41,26 +41,27 @@ describe('Universal Wault tests', async () => {
 
     if (strat[6]) {
       startDefaultLpStrategyTest(
-          'StrategyWaultLp',
-          MaticAddresses.WAULT_FACTORY,
+          'StrategyDinoSwapLp',
+          MaticAddresses.DINO_FACTORY,
           lp_address.toLowerCase(),
           token0,
           token0_name,
           token1,
           token1_name,
           idx,
-          [MaticAddresses.WEXpoly_TOKEN]
+          [MaticAddresses.DINO_TOKEN]
       );
     } else {
-      startDefaultSingleTokenStrategyTest(
-          'StrategyWaultSingle',
-          MaticAddresses.WAULT_FACTORY,
+      throw new Error('Strategy DinoSwap for single token is not implemented!')
+      /*startDefaultSingleTokenStrategyTest(
+          'StrategyDinoSingle',
+          MaticAddresses.DINO_FACTORY,
           lp_address.toLowerCase(),
           token0,
           token0_name,
           idx,
-          [MaticAddresses.WEXpoly_TOKEN]
-      );
+          [MaticAddresses.DINO_TOKEN]
+      );*/
     }
   });
 
