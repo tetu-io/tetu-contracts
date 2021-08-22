@@ -12,20 +12,17 @@
 pragma solidity 0.8.4;
 
 
-import "../../../base/strategies/masterchef-base/MCv2StrategyFullBuyback.sol";
+import "../../../base/strategies/masterchef-base/WaultStrategyFullBuyback.sol";
 import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 
-/// @title SNXStrategyFullBuyback implementation for DinoSwap platform
-/// @author bogdoslav
-contract StrategyDinoSwapLp is MCv2StrategyFullBuyback {
+contract StrategyDinoSwapLp is WaultStrategyFullBuyback {
 
   // MASTER_CHEF
-  address public constant _MASTER_CHEF_REWARD_POOL = address(0x1948abC5400Aa1d72223882958Da3bec643fb4E5);
+  address public constant MASTER_CHEF  = address(0x1948abC5400Aa1d72223882958Da3bec643fb4E5);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.DINO;
   // rewards
-  address private constant DINO = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
-  address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
-  address[] private dinoPoolRewards = [DINO, WMATIC];
+  address private constant DINO  = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
+  address[] private poolRewards = [DINO];
   address[] private _assets;
 
   constructor(
@@ -35,7 +32,7 @@ contract StrategyDinoSwapLp is MCv2StrategyFullBuyback {
     address _token0,
     address _token1,
     uint256 _poolId
-  ) MCv2StrategyFullBuyback(_controller, _underlying, _vault, dinoPoolRewards, _MASTER_CHEF_REWARD_POOL, _poolId) {
+  ) WaultStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, MASTER_CHEF, _poolId) {
     require(_underlying != address(0), "zero underlying");
     require(_token0 != address(0), "zero token0");
     require(_token1 != address(0), "zero token1");

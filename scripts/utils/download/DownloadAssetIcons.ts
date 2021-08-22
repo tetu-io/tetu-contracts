@@ -3,7 +3,6 @@ import axios, {AxiosResponse} from "axios";
 
 
 async function main() {
-  const templatePath = 'scripts/utils/generate/quick/quick_strat_template.sol';
   const outputPath = 'tmp/assets/matic/';
   const quickInfos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
   const sushiInfos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);

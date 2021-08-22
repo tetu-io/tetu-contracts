@@ -37,9 +37,7 @@ async function main() {
     console.log('weekRewardUsd', weekRewardUsd);
 
     const lpPrice = await oracle.getPrice(lp);
-    console.log('lpPrice', lpPrice);
     const tvl = await lpContract.balanceOf(chef.address);
-    console.log('tvl', tvl);
     const tvlUsd = utils.formatUnits(tvl.mul(lpPrice).div(1e9).div(1e9));
 
     const apr = ((weekRewardUsd / +tvlUsd) / 7) * 365 * 100;
@@ -64,7 +62,7 @@ async function main() {
     }
 
     const data = i + ',' +
-        'WAULT_' + token0Name + (token1Name ? '_' + token1Name : '') + ',' +
+        'DINO_' + token0Name + (token1Name ? '_' + token1Name : '') + ',' +
         lp + ',' +
         token0 + ',' +
         token0Name + ',' +
