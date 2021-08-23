@@ -27,8 +27,8 @@ export class Addresses {
         '0x4604E8C1504F0F95DB69d23EADeae699ACd93feB', // tetu token
         '0xAec561cF4F54756EBB9E897b7fdbb444DE8783bA', // ps vault
         '0x1b6E2a7AcB8f79044bE4b384fa7A1Cac1259bb72',// fund keeper
-        '',// vault controller
-        '',// vault logic
+        '0xb990e66DAbda0a30a6d79fe9e7f5aeD36E59156b',// vault controller
+        '0x57E9994EC192d9661a2a1e3A84a38c8aaD013937',// vault logic
     )]
   ]);
 

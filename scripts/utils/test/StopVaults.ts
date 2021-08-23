@@ -24,12 +24,12 @@ async function main() {
         !(await vaultContract.active())
         || vault === core.psVault.address
     ) {
-      console.log('inactive ', name);
+      console.log('inactive or ps', name);
       continue;
     }
 
     if (name.indexOf('4') !== -1) {
-      console.log('skip vaults with 4 ', name);
+      console.log('skip vault ', name);
       continue;
     }
     vaultsForStop.push(vault);
@@ -37,18 +37,18 @@ async function main() {
 
   let i = 0;
   let vaultBatch: string[] = [];
-  // for (let vault of vaultsForStop) {
-  //   i++;
-  //   vaultBatch.push(vault)
-  //   if (vaultBatch.length === batch || i === vaultsForStop.length) {
-  //     try {
-  //       await RunHelper.runAndWait(() => announcer.announceVaultStopBatch(vaultBatch));
-  //     } catch (e) {
-  //       console.log('ann', e);
-  //     }
-  //     vaultBatch = [];
-  //   }
-  // }
+  for (let vault of vaultsForStop) {
+    i++;
+    vaultBatch.push(vault)
+    if (vaultBatch.length === batch || i === vaultsForStop.length) {
+      try {
+        await RunHelper.runAndWait(() => announcer.announceVaultStopBatch(vaultBatch));
+      } catch (e) {
+        console.log('ann', e);
+      }
+      vaultBatch = [];
+    }
+  }
 
   i = 0;
   vaultBatch = [];

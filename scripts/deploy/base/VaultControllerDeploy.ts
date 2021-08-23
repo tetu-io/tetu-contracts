@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {Bookkeeper, ContractReader, Controller, VaultController} from "../../../typechain";
+import {Controller, VaultController} from "../../../typechain";
 
 
 async function main() {
@@ -12,8 +12,10 @@ async function main() {
   const vaultController = logic.attach(proxy.address) as VaultController;
   await vaultController.initialize(core.controller);
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  await controller.setVaultController(vaultController.address);
+  if ((await ethers.provider.getNetwork()).name !== "matic") {
+    const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
+    await controller.setVaultController(vaultController.address);
+  }
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);

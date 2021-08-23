@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Announcer, Controller, TetuProxyControlled} from "../../typechain";
+import {Announcer, Controller} from "../../typechain";
 import {RunHelper} from "../utils/RunHelper";
 
 
@@ -8,6 +8,7 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
+  const net = await ethers.provider.getNetwork();
 
   const controller = await DeployerUtils.connectInterface(signer, 'Controller', core.controller) as Controller;
   const announcer = await DeployerUtils.connectInterface(signer, 'Announcer', core.announcer) as Announcer;
@@ -16,10 +17,10 @@ async function main() {
 
   const logic = await DeployerUtils.deployContract(signer, "Controller") as Controller;
 
-  // await RunHelper.runAndWait(() => announcer.announceTetuProxyUpgrade(core.controller, logic.address));
-  //
-  //
-  // await RunHelper.runAndWait(() => controller.upgradeTetuProxy(core.controller, logic.address));
+  if ((await ethers.provider.getNetwork()).name !== "matic") {
+    await RunHelper.runAndWait(() => announcer.announceTetuProxyUpgrade(core.controller, logic.address));
+    await RunHelper.runAndWait(() => controller.upgradeTetuProxy(core.controller, logic.address));
+  }
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);
