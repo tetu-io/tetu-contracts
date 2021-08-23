@@ -18,7 +18,6 @@ import {Erc20Utils} from "../Erc20Utils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
-import {readFileSync} from "fs";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -62,6 +61,7 @@ describe("contract reader tests", function () {
               1
           ) as Promise<IStrategy>,
           core.controller,
+          core.vaultController,
           MaticAddresses.WMATIC_TOKEN,
           signer
       );
@@ -105,7 +105,7 @@ describe("contract reader tests", function () {
     // add rewards to PS
     const rewardAmount = utils.parseUnits("1000", rtDecimals).toString();
     console.log('rewardAmount', rewardAmount.toString());
-    await core.psVault.addRewardToken(rt);
+    await core.vaultController.addRewardTokens([core.psVault.address], rt);
     await Erc20Utils.approve(rt, signer, core.psVault.address, rewardAmount);
     await core.psVault.notifyTargetRewardAmount(rt, rewardAmount);
 
@@ -151,7 +151,7 @@ describe("contract reader tests", function () {
   });
 
   it("vault rewards apr should be zero without price", async () => {
-    await core.psVault.addRewardToken(MaticAddresses.USDC_TOKEN);
+    await core.vaultController.addRewardTokens([core.psVault.address], MaticAddresses.USDC_TOKEN);
     expect((await contractReader.vaultRewardsApr(core.psVault.address))[0])
     .is.eq('0');
   });

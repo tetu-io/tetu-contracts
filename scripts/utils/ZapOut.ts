@@ -1,7 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {ContractReader, MultiSwap, SmartVault, ZapContract} from "../../typechain";
-import {MaticAddresses} from "../../test/MaticAddresses";
 import {Erc20Utils} from "../../test/Erc20Utils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {RunHelper} from "./RunHelper";
@@ -13,9 +12,10 @@ const exclude = new Set<string>([
 ]);
 
 async function main() {
-  const signer = (await ethers.getSigners())[2];
+  const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
+  const tokens = await DeployerUtils.getTokenAddresses();
 
   const zap = await DeployerUtils.connectInterface(signer, 'ZapContract', tools.zapContract as string) as ZapContract;
   const mSwap = await DeployerUtils.connectInterface(signer, 'MultiSwap', tools.multiSwap as string) as MultiSwap;
@@ -52,7 +52,7 @@ async function main() {
         zap,
         contractReader,
         vault,
-        MaticAddresses.USDC_TOKEN,
+        tokens.get('usdc') as string,
         amountShare.toString()
     );
 
@@ -89,7 +89,7 @@ async function zapOutVaultWithLp(
   }
 
   await Erc20Utils.approve(vault, signer, zapContract.address, amountShare.toString())
-  await RunHelper.runAndWait( () => zapContract.zapOutLp(
+  await RunHelper.runAndWait(() => zapContract.zapOutLp(
       vault,
       tokenOut,
       assets[0],

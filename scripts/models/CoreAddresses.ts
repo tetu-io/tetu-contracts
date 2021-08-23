@@ -8,6 +8,8 @@ export class CoreAddresses {
   public readonly rewardToken: string;
   public readonly psVault: string;
   public readonly fundKeeper: string;
+  public readonly vaultController: string;
+  public readonly vaultLogic: string;
 
 
   constructor(
@@ -19,7 +21,9 @@ export class CoreAddresses {
       mintHelper: string,
       rewardToken: string,
       psVault: string,
-      fundKeeper: string
+      fundKeeper: string,
+      vaultController: string,
+      vaultLogic: string
   ) {
     this.controller = controller;
     this.announcer = announcer;
@@ -30,5 +34,7 @@ export class CoreAddresses {
     this.rewardToken = rewardToken;
     this.psVault = psVault;
     this.fundKeeper = fundKeeper;
+    this.vaultController = vaultController;
+    this.vaultLogic = vaultLogic;
   }
 }

@@ -9,6 +9,9 @@ import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {Erc20Utils} from "../../Erc20Utils";
 import {MaticAddresses} from "../../MaticAddresses";
+import {BigNumber, utils} from "ethers";
+import {MintHelperUtils} from "../../MintHelperUtils";
+import {VaultUtils} from "../../VaultUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -261,6 +264,26 @@ describe("Announcer tests", function () {
     expect(await controller.fund()).is.eq(signer1.address);
   });
 
+  it("should change vault controller with time-lock", async () => {
+    const opCode = 19;
+    await announcer.announceAddressChange(opCode, signer1.address);
+
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(core.controller.address);
+    expect(info.adrValues.length).is.eq(1);
+    expect(info.adrValues[0]).is.eq(signer1.address);
+    expect(info.numValues.length).is.eq(0);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await controller.setVaultController(signer1.address);
+
+    expect(await controller.vaultController()).is.eq(signer1.address);
+  });
+
   it("should change ps ratio with time-lock", async () => {
     const opCode = 9;
     const num = 7;
@@ -324,13 +347,13 @@ describe("Announcer tests", function () {
     const balUser = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const balController = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
 
-    await announcer.announceTokenMove(opCode, core.controller.address, MaticAddresses.WMATIC_TOKEN, amount);
+    await announcer.announceTokenMove(opCode, signer.address, MaticAddresses.WMATIC_TOKEN, amount);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
 
     const info = await announcer.timeLockInfo(index);
-    expect(info.target).is.eq(core.controller.address);
+    expect(info.target).is.eq(signer.address);
     expect(info.adrValues.length).is.eq(1);
     expect(info.adrValues[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
     expect(info.numValues.length).is.eq(1);
@@ -338,7 +361,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.controllerTokenMove(MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.controllerTokenMove(signer.address, MaticAddresses.WMATIC_TOKEN, amount);
 
     const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const balControllerAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
@@ -378,6 +401,49 @@ describe("Announcer tests", function () {
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balContractAfter).is.eq(balContract.sub(amount));
+  });
+
+  it("should set reward boost duration", async () => {
+    const opCode = 20;
+    const amount = 1;
+
+    await announcer.announceUintChange(opCode, amount);
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(1);
+    expect(info.numValues[0]).is.eq(amount);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await core.vaultController.setRewardBoostDuration(amount);
+
+    expect(await core.vaultController.rewardBoostDuration()).is.eq(amount);
+  });
+
+  it("should set RewardRatioWithoutBoost", async () => {
+    const opCode = 21;
+    const amount = 1;
+
+    await announcer.announceUintChange(opCode, amount);
+
+    const index = await announcer.timeLockIndexes(opCode);
+    expect(index).is.eq(1);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(1);
+    expect(info.numValues[0]).is.eq(amount);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+
+    await core.vaultController.setRewardRatioWithoutBoost(amount);
+
+    expect(await core.vaultController.rewardRatioWithoutBoost()).is.eq(amount);
   });
 
   it("should fund token salvage with time-lock", async () => {
@@ -436,6 +502,7 @@ describe("Announcer tests", function () {
     await controller.upgradeTetuProxyBatch([proxyAdr], [newImpl.address]);
 
     expect(await proxy.implementation()).is.eq(newImpl.address);
+    expect(await announcer.multiTimeLockIndexes(opCode, proxyAdr)).is.eq(0);
   });
 
   it("should upgrade strategy with time-lock", async () => {
@@ -461,6 +528,39 @@ describe("Announcer tests", function () {
     await controller.setVaultStrategyBatch([target], [newImpl.address]);
 
     expect(await core.psVault.strategy()).is.eq(newImpl.address);
+  });
+
+  it("should stop vault with time-lock", async () => {
+    const opCode = 22;
+    const target = core.psVault.address;
+    const amount = utils.parseUnits('1000');
+
+    const rt = MaticAddresses.WMATIC_TOKEN;
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000'));
+    await core.vaultController.addRewardTokens([target], rt);
+    await Erc20Utils.approve(rt, signer, target, amount.toString());
+    await core.psVault.notifyTargetRewardAmount(rt, amount);
+    await VaultUtils.deposit(signer, core.psVault, BigNumber.from('10'));
+
+    expect(await Erc20Utils.balanceOf(rt, target)).is.not.equal(0);
+    expect(await Erc20Utils.balanceOf(rt, core.controller.address)).is.equal(0);
+
+    await announcer.announceVaultStopBatch([target]);
+    const index = await announcer.multiTimeLockIndexes(opCode, target);
+    expect(index).is.eq(2);
+
+    const info = await announcer.timeLockInfo(index);
+    expect(info.target).is.eq(target);
+    expect(info.adrValues.length).is.eq(0);
+    expect(info.numValues.length).is.eq(0);
+
+    await TimeUtils.advanceBlocksOnTs(timeLockDuration);
+    await core.vaultController.stopVaultsBatch([target]);
+    expect(await core.psVault.active()).is.eq(false);
+    expect(await Erc20Utils.balanceOf(rt, target)).is.equal(0);
+    expect(await Erc20Utils.balanceOf(rt, core.controller.address)).is.not.equal(0);
+    await core.psVault.exit();
   });
 
   it("should mint with time-lock", async () => {

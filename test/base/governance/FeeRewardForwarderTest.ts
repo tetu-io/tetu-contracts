@@ -84,6 +84,7 @@ describe("Fee reward forwarder tests", function () {
             1
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         MaticAddresses.WMATIC_TOKEN,
         signer
     );
@@ -103,11 +104,12 @@ describe("Fee reward forwarder tests", function () {
             1
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         MaticAddresses.WMATIC_TOKEN,
         signer
     );
     const vault = data[1] as SmartVault;
-    vault.addRewardToken(core.psVault.address);
+    await core.vaultController.addRewardTokens([vault.address], core.psVault.address);
     await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('no liq path');
   });
 
@@ -123,11 +125,12 @@ describe("Fee reward forwarder tests", function () {
             1
         ) as Promise<IStrategy>,
         core.controller,
+        core.vaultController,
         MaticAddresses.WMATIC_TOKEN,
         signer
     );
     const vault = data[1] as SmartVault;
-    vault.addRewardToken(core.psVault.address);
+    await core.vaultController.addRewardTokens([vault.address], core.psVault.address);
     await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('no liq path');
   });
 

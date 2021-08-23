@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../base/governance/Controllable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
@@ -23,7 +24,7 @@ import "./IMultiSwap.sol";
 
 /// @title Contract for complex swaps across multiple platforms
 /// @author belbix
-contract MultiSwap is Controllable, IMultiSwap {
+contract MultiSwap is Controllable, IMultiSwap, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -34,9 +35,6 @@ contract MultiSwap is Controllable, IMultiSwap {
 
   /// @dev PriceCalculator contract for determinate the best liquidity pool across swap platforms
   IPriceCalculator public calculator;
-
-  event CalculatorUpdated(address oldValue, address newValue);
-  event RouterUpdated(address factory, address router);
 
   constructor(
     address _controller,
@@ -62,6 +60,9 @@ contract MultiSwap is Controllable, IMultiSwap {
   /// @dev Return an array with lp pairs that reflect a route for given tokens
   function findLpsForSwaps(address _tokenIn, address _tokenOut)
   public override view returns (address[] memory){
+    if (_tokenIn == _tokenOut) {
+      return new address[](0);
+    }
 
     address[] memory usedLps = new address[](MAX_ROUTES);
     address[] memory usedTokens = new address[](MAX_ROUTES);
@@ -149,7 +150,7 @@ contract MultiSwap is Controllable, IMultiSwap {
     address tokenOut,
     uint256 amount,
     uint256 slippageTolerance
-  ) external override {
+  ) external override nonReentrant {
     require(lps.length > 0, "MC: zero lp");
     require(tokenIn != address(0), "MC: zero tokenIn");
     require(tokenOut != address(0), "MC: zero tokenOut");
@@ -208,24 +209,6 @@ contract MultiSwap is Controllable, IMultiSwap {
 
   // ******************* INTERNAL ***************************
 
-  function pairPrice(IUniswapV2Pair _pair, address _token) internal view returns (uint256) {
-    if (_pair.token0() == _token) {
-      _pair.getReserves();
-    }
-
-    return 0;
-  }
-
-  /// @dev Find given token in the given array and return true if it exist
-  function isTokensUsed(address[] memory _usedTokens, address _token, uint256 size) internal pure returns (bool) {
-    for (uint256 i = 0; i < size; i++) {
-      if (_usedTokens[i] == _token) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
   /// @param _router Uniswap router address
   /// @param _route Path for swap
@@ -251,19 +234,6 @@ contract MultiSwap is Controllable, IMultiSwap {
   }
 
   // ************************* GOV ACTIONS *******************
-
-  /// @dev Only controller or governance can do it. Set Uni router for factory address
-  function setRouterForFactory(address factory, address router) external onlyControllerOrGovernance {
-    factoryToRouter[factory] = router;
-    emit RouterUpdated(factory, router);
-  }
-
-  /// @dev Only controller or governance can do it. Set PriceCalculator address.
-  function setCalculator(address _newValue) public onlyControllerOrGovernance {
-    require(_newValue != address(0), "MC: zero address");
-    emit CalculatorUpdated(address(calculator), _newValue);
-    calculator = IPriceCalculator(_newValue);
-  }
 
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
   /// @param _token Token address

@@ -8,7 +8,7 @@ import {
   NoopStrategy,
   NotifyHelper,
   RewardToken,
-  SmartVault
+  SmartVault, VaultController
 } from "../typechain";
 import {tracer} from "hardhat";
 
@@ -29,6 +29,8 @@ export class CoreContractsWrapper {
   public fundKeeperLogic: string;
   public announcer: Announcer;
   public announcerLogic: string;
+  public vaultController: VaultController;
+  public vaultControllerLogic: string;
 
   constructor(controller: Controller,
               controllerLogic: string,
@@ -45,7 +47,9 @@ export class CoreContractsWrapper {
               fundKeeper: FundKeeper,
               fundKeeperLogic: string,
               announcer: Announcer,
-              announcerLogic: string
+              announcerLogic: string,
+              vaultController: VaultController,
+              vaultControllerLogic: string
   ) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;
@@ -63,6 +67,8 @@ export class CoreContractsWrapper {
     this.fundKeeperLogic = fundKeeperLogic;
     this.announcer = announcer;
     this.announcerLogic = announcerLogic;
+    this.vaultController = vaultController;
+    this.vaultControllerLogic = vaultControllerLogic;
   }
 
   public registerInTracer() {

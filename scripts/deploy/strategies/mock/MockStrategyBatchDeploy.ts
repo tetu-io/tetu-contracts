@@ -5,7 +5,7 @@ import {
   ERC20PresetMinterPauser,
   IStrategy,
   IUniswapV2Factory,
-  SmartVault
+  SmartVault, VaultController
 } from "../../../../typechain";
 import {utils} from "ethers";
 import {Erc20Utils} from "../../../../test/Erc20Utils";
@@ -33,6 +33,7 @@ async function main() {
   const datasPools = [];
   const controller = await DeployerUtils.connectContract(
       signer, 'Controller', core.controller) as Controller;
+  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
 
   const possibleTokens = [
     mocks.get('quick') as string,
@@ -92,7 +93,7 @@ async function main() {
     ));
 
 
-    await RunHelper.runAndWait(() => pool.addRewardToken(poolReward));
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([pool.address], poolReward));
     const poolRewardDecimals = await Erc20Utils.decimals(poolReward);
 
     const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", poolReward) as ERC20PresetMinterPauser;
@@ -121,9 +122,9 @@ async function main() {
         strategyUnderlying,
         rewardDuration
     ));
-    await RunHelper.runAndWait(() => vault.addRewardToken(vaultRewardToken));
-    await RunHelper.runAndWait(() => vault.addRewardToken(vaultSecondReward));
-    await RunHelper.runAndWait(() => vault.addRewardToken(vaultThirdReward));
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultThirdReward));
 
     await RunHelper.runAndWait(() =>
         controller.addVaultAndStrategy(vault.address, strategy.address));

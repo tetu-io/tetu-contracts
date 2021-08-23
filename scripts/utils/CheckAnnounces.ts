@@ -12,7 +12,7 @@ async function main() {
 
   const timeLockInfosLength = (await announcer.timeLockInfosLength()).toNumber();
 
-  for (let i = 0; i < timeLockInfosLength; i++) {
+  for (let i = timeLockInfosLength - 1; i >= 0; i--) {
     const timeLockInfo = await announcer.timeLockInfo(i);
     if (timeLockInfo.opCode === 18) {
       continue;

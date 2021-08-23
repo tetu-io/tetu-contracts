@@ -51,7 +51,7 @@ describe("SmartVaultNoopStrat", () => {
         REWARD_DURATION
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
-    await vault.addRewardToken(vaultRewardToken0);
+    await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
 
     await new VaultUtils(vault).checkEmptyVault(
         strategy.address,
@@ -121,9 +121,9 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.bookkeeper.vaultUsersQuantity(vault.address)).at.eq("1");
 
       // ************** GOV ACTIONS *******************************
-      await vault.addRewardToken(MaticAddresses.WMATIC_TOKEN);
-      await vault.removeRewardToken(MaticAddresses.WMATIC_TOKEN);
-      await expect(vault.removeRewardToken(core.psVault.address)).rejectedWith('last rt');
+      await core.vaultController.addRewardTokens([vault.address], MaticAddresses.WMATIC_TOKEN);
+      await core.vaultController.removeRewardTokens([vault.address], MaticAddresses.WMATIC_TOKEN);
+      await expect(core.vaultController.removeRewardTokens([vault.address], core.psVault.address)).rejectedWith('last rt');
 
       expect(await vault.rewardTokensLength()).at.eq(1);
       await vault.doHardWork();
@@ -195,9 +195,9 @@ describe("SmartVaultNoopStrat", () => {
       const rewardBalanceBeforeClaim = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards before", utils.formatUnits(rewardBalanceBeforeClaim, 18));
       expect(rewardBalanceBeforeClaim).at.eq("0");
-      const rewards = await vault.earned(core.psVault.address, signerAddress);
+      const rewards = await vault.earnedWithBoost(core.psVault.address, signerAddress);
       console.log("rewards to claim", utils.formatUnits(rewards, 18));
-      expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(1.5);
+      expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(0.45);
       await vault.withdraw(BigNumber.from("1000000"));
       await vault.getReward(core.psVault.address);
       await Erc20Utils.approve(underlying, signer, vault.address, "1000000");
@@ -224,7 +224,7 @@ describe("SmartVaultNoopStrat", () => {
       expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.02);
     });
     it("Active status", async () => {
-      await vault.changeActivityStatus(false);
+      await core.vaultController.changeVaultsStatuses([vault.address], [false]);
       await expect(vault.doHardWork()).to.be.rejectedWith("not active");
     });
     it("investedUnderlyingBalance with zero pool", async () => {
@@ -261,55 +261,14 @@ describe("SmartVaultNoopStrat", () => {
       const rewardBalanceBeforeClaim = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards before", utils.formatUnits(rewardBalanceBeforeClaim, 18));
       expect(rewardBalanceBeforeClaim).at.eq("0");
-      const rewards = await vault.earned(core.psVault.address, signerAddress);
+      const rewards = await vault.earnedWithBoost(core.psVault.address, signerAddress);
       console.log("rewards to claim", utils.formatUnits(rewards, 18));
-      expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(1.5);
+      expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(0.45);
       await vault.exit();
       const rewardBalance = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards balance", utils.formatUnits(rewardBalance, 18));
       expect(+utils.formatUnits(rewardBalance, 18)).at.greaterThanOrEqual(+utils.formatUnits(rewards, 18));
 
-    });
-
-    it("check reward duration vesting", async () => {
-      const underlying = await vault.underlying();
-      const underlyingDec = await Erc20Utils.decimals(underlying);
-      const rtDecimals = await Erc20Utils.decimals(vaultRewardToken0);
-      const duration = (await vault.duration()).toNumber();
-      const time = 60;
-      const rewards = "100";
-
-      await VaultUtils.deposit(signer, core.psVault, utils.parseUnits(rewards));
-      const xTokenBalance = await Erc20Utils.balanceOf(core.psVault.address, signerAddress);
-
-      await Erc20Utils.approve(core.psVault.address, signer, vault.address, xTokenBalance.toString());
-      await vault.notifyTargetRewardAmount(core.psVault.address, xTokenBalance);
-
-      await VaultUtils.deposit(signer, vault, utils.parseUnits("1000", underlyingDec))
-
-      let claimedTotal = 0;
-      const cycles = duration / (time + 3);
-      console.log('cycles', cycles);
-      for (let i = 0; i < cycles + 1; i++) {
-        await TimeUtils.advanceBlocksOnTs(time);
-
-        const rtBalance = +utils.formatUnits(await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress), rtDecimals);
-        const vaultRtBalance = +utils.formatUnits(await Erc20Utils.balanceOf(vaultRewardToken0, vault.address), rtDecimals);
-        const toClaim = +utils.formatUnits(await vault.earned(vaultRewardToken0, signer.address), rtDecimals);
-        console.log('toClaim', toClaim, 'all rewards in vault', vaultRtBalance, 'rt balance', rtBalance);
-        expect(toClaim).is.greaterThan(0, 'to claim is zero ' + i);
-        await vault.getAllRewards();
-
-        const rtBalanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress), rtDecimals);
-        const claimed = rtBalanceAfter - rtBalance;
-        claimedTotal += claimed;
-        expect(claimed).is.greaterThan(0);
-        expect(toClaim).is.approximately(claimed, claimed * 0.05, 'claimed not enough ' + i);
-      }
-
-      expect(claimedTotal).is.approximately(+utils.formatUnits(xTokenBalance), claimedTotal * 0.01, 'total claimed not enough');
-
-      await vault.exit();
     });
 
     it("should not doHardWork from users", async () => {
@@ -338,15 +297,15 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not add underlying reward token", async () => {
-      await expect(vault.addRewardToken(underlying)).rejectedWith('rt is underlying');
+      await expect(core.vaultController.addRewardTokens([vault.address], underlying)).rejectedWith('rt is underlying');
     });
 
     it("should not add exist reward token", async () => {
-      await expect(vault.addRewardToken(vaultRewardToken0)).rejectedWith('rt exist');
+      await expect(core.vaultController.addRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('rt exist');
     });
 
     it("should not remove not exist reward token", async () => {
-      await expect(vault.removeRewardToken(MaticAddresses.QUICK_TOKEN)).rejectedWith('not exist');
+      await expect(core.vaultController.removeRewardTokens([vault.address], MaticAddresses.QUICK_TOKEN)).rejectedWith('not exist');
     });
 
     it("should not remove not finished reward token", async () => {
@@ -357,7 +316,7 @@ describe("SmartVaultNoopStrat", () => {
           vault.address,
           utils.parseUnits("100", 18)
       );
-      await expect(vault.removeRewardToken(vaultRewardToken0)).rejectedWith('not finished');
+      await expect(core.vaultController.removeRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('not finished');
     });
 
     it("tests without strategy", async () => {

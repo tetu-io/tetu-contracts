@@ -21,6 +21,7 @@ import {
   SmartVault,
   TetuProxyControlled,
   TetuProxyGov,
+  VaultController,
   ZapContract,
 } from "../../typechain";
 import {expect} from "chai";
@@ -114,6 +115,15 @@ export class DeployerUtils {
     return [contract, proxy, logic];
   }
 
+  public static async deployVaultController(signer: SignerWithAddress, controller: string)
+      : Promise<[VaultController, TetuProxyControlled, VaultController]> {
+    const logic = await DeployerUtils.deployContract(signer, "VaultController") as VaultController;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as VaultController;
+    await contract.initialize(controller);
+    return [contract, proxy, logic];
+  }
+
   public static async deployFeeForwarder(signer: SignerWithAddress, controllerAddress: string): Promise<FeeRewardForwarder> {
     return await DeployerUtils.deployContract(
         signer, "FeeRewardForwarder", controllerAddress) as FeeRewardForwarder;
@@ -185,7 +195,10 @@ export class DeployerUtils {
     const mocks = await DeployerUtils.getTokenAddresses();
 
     await calculator.addKeyTokens([
-      mocks.get('usdc') as string
+      mocks.get('quick') as string,
+      mocks.get('sushi') as string,
+      mocks.get('usdc') as string,
+      mocks.get('weth') as string,
     ]);
     await calculator.setDefaultToken(mocks.get('usdc') as string);
     await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
@@ -261,6 +274,9 @@ export class DeployerUtils {
     // ************ ANNOUNCER **********
     const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, timeLock);
 
+    // ************ VAULT CONTROLLER **********
+    const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
+
     // ********* FEE FORWARDER *********
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
 
@@ -303,6 +319,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
     await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
+    await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address), true, wait);
 
     try {
       const tokens = await DeployerUtils.getTokenAddresses()
@@ -338,7 +355,9 @@ export class DeployerUtils {
         fundKeeperData[0],
         fundKeeperData[2].address,
         announcerData[0],
-        announcerData[2].address
+        announcerData[2].address,
+        vaultControllerData[0],
+        vaultControllerData[2].address
     );
   }
 
@@ -346,6 +365,7 @@ export class DeployerUtils {
       vaultName: string,
       strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
       controller: Controller,
+      vaultController: VaultController,
       vaultRewardToken: string,
       signer: SignerWithAddress,
       rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
@@ -366,7 +386,7 @@ export class DeployerUtils {
         strategyUnderlying,
         rewardDuration
     ), true, wait);
-    await RunHelper.runAndWait(() => vault.addRewardToken(vaultRewardToken), true, wait);
+    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken), true, wait);
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
 
@@ -449,6 +469,39 @@ export class DeployerUtils {
       throw Error('No config for ' + net.name);
     }
     return core;
+  }
+
+  public static async getCoreAddressesWrapper(signer: SignerWithAddress): Promise<CoreContractsWrapper> {
+    const net = await ethers.provider.getNetwork();
+    console.log('network', net.name);
+    const core = Addresses.CORE.get(net.name);
+    if (!core) {
+      throw Error('No config for ' + net.name);
+    }
+
+    const ps = await DeployerUtils.connectContract(signer, "SmartVault", core.psVault) as SmartVault;
+    const str = await ps.strategy();
+
+    return new CoreContractsWrapper(
+        await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller,
+        '',
+        await DeployerUtils.connectContract(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+        await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
+        '',
+        await DeployerUtils.connectContract(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
+        await DeployerUtils.connectContract(signer, "MintHelper", core.mintHelper) as MintHelper,
+        '',
+        await DeployerUtils.connectContract(signer, "RewardToken", core.rewardToken) as RewardToken,
+        ps,
+        '',
+        await DeployerUtils.connectContract(signer, "NoopStrategy", str) as NoopStrategy,
+        await DeployerUtils.connectContract(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
+        '',
+        await DeployerUtils.connectContract(signer, "Announcer", core.announcer) as Announcer,
+        '',
+        await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController,
+        '',
+    );
   }
 
   public static async getToolsAddresses(): Promise<ToolsAddresses> {

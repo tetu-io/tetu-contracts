@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../base/governance/Controllable.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IStrategy.sol";
@@ -26,15 +27,14 @@ import "./IMultiSwap.sol";
 /// @title Dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults
 /// @author belbix
-contract ZapContract is Controllable {
+contract ZapContract is Controllable, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   string public constant VERSION = "1.1.0";
 
   IMultiSwap public multiSwap;
-
-  event UpdateMultiSwap(address oldValue, address newValue);
+  mapping(address => uint256) calls;
 
   struct ZapInfo {
     address lp;
@@ -53,7 +53,50 @@ contract ZapContract is Controllable {
     multiSwap = IMultiSwap(_multiSwap);
   }
 
+  modifier onlyOneCallPerBlock() {
+    require(calls[msg.sender] < block.number, "ZC: call in the same block forbidden");
+    _;
+    calls[msg.sender] = block.number;
+  }
+
   // ******************** USERS ACTIONS *********************
+
+  /// @notice Approval for token is assumed.
+  ///      Buy token and deposit to given vault
+  ///      TokenIn should be declared as a keyToken in the PriceCalculator
+  /// @param _vault A target vault for deposit
+  /// @param _tokenIn This token will be swapped to required token for adding liquidity
+  /// @param _asset Token address required for adding liquidity
+  /// @param _assetRoute Pair addresses for buying asset0
+  /// @param _tokenInAmount Amount of token for deposit
+  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
+  function zapInto(
+    address _vault,
+    address _tokenIn,
+    address _asset,
+    address[] memory _assetRoute,
+    uint256 _tokenInAmount,
+    uint256 slippageTolerance
+  ) external nonReentrant onlyOneCallPerBlock {
+    require(_tokenInAmount > 1, "ZC: not enough amount");
+    require(_asset == ISmartVault(_vault).underlying(), "ZC: asset is not underlying");
+
+    IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _tokenInAmount);
+
+    // asset multi-swap
+    callMultiSwap(
+      _tokenIn,
+      _tokenInAmount,
+      _assetRoute,
+      _asset,
+      slippageTolerance
+    );
+    // assume that final outcome amount was checked on the multiSwap contract side
+
+    uint256 assetAmount = IERC20(_asset).balanceOf(address(this));
+
+    depositToVault(_vault, assetAmount, _asset);
+  }
 
   /// @notice Approval for token is assumed.
   ///      Add liquidity and deposit to given vault with Uin pair underlying
@@ -75,7 +118,7 @@ contract ZapContract is Controllable {
     address[] memory _asset1Route,
     uint256 _tokenInAmount,
     uint256 slippageTolerance
-  ) external {
+  ) external nonReentrant onlyOneCallPerBlock {
     require(_tokenInAmount > 1, "ZC: not enough amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
@@ -122,6 +165,43 @@ contract ZapContract is Controllable {
   }
 
   /// @notice Approval for share token is assumed.
+  ///         Withdraw from given vault underlying and sell tokens for given tokenOut
+  /// @param _vault A target vault for withdraw
+  /// @param _tokenOut This token will be a target for swaps
+  /// @param _asset Token address required selling removed assets
+  /// @param _assetRoute Pair addresses for selling asset0
+  /// @param _shareTokenAmount Amount of share token for withdraw
+  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
+  function zapOut(
+    address _vault,
+    address _tokenOut,
+    address _asset,
+    address[] memory _assetRoute,
+    uint256 _shareTokenAmount,
+    uint256 slippageTolerance
+  ) external nonReentrant onlyOneCallPerBlock {
+    require(_shareTokenAmount != 0, "ZC: zero amount");
+    require(_asset == ISmartVault(_vault).underlying(), "ZC: asset is not underlying");
+
+    IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
+
+    uint256 assetBalance = withdrawFromVault(_vault, _asset, _shareTokenAmount);
+
+    // asset multi-swap
+    callMultiSwap(
+      _asset,
+      assetBalance,
+      _assetRoute,
+      _tokenOut,
+      slippageTolerance
+    );
+
+    uint256 tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
+    require(tokenOutBalance != 0, "zero token out balance");
+    IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+  }
+
+  /// @notice Approval for share token is assumed.
   ///      Withdraw from given vault underlying, remove liquidity and sell tokens for given tokenOut
   /// @param _vault A target vault for withdraw
   /// @param _tokenOut This token will be a target for swaps
@@ -140,7 +220,7 @@ contract ZapContract is Controllable {
     address[] memory _asset1Route,
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
-  ) external {
+  ) external nonReentrant onlyOneCallPerBlock {
     require(_shareTokenAmount != 0, "ZC: zero amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
@@ -185,6 +265,7 @@ contract ZapContract is Controllable {
     );
 
     uint256 tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
+    require(tokenOutBalance != 0, "zero token out balance");
     IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
   }
 
@@ -297,13 +378,6 @@ contract ZapContract is Controllable {
   }
 
   // ************************* GOV ACTIONS *******************
-
-  /// @dev Set MultiSwap contract address
-  function setMultiSwap(address _newValue) external onlyControllerOrGovernance {
-    require(_newValue != address(0), "ZC: zero address");
-    emit UpdateMultiSwap(address(multiSwap), _newValue);
-    multiSwap = IMultiSwap(_newValue);
-  }
 
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
   /// @param _token Token address
