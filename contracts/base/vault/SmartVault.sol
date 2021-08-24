@@ -25,6 +25,9 @@ import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
 
+import "hardhat/console.sol";
+
+
 /// @title Smart Vault is a combination of implementations drawn from Synthetix pool
 ///        for their innovative reward vesting and Yearn vault for their share price model
 /// @dev Use with TetuProxy
@@ -269,11 +272,16 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   ///         the invested amount (if DAI is invested elsewhere by the strategy).
   function underlyingBalanceWithInvestment() public view override returns (uint256) {
     if (address(strategy()) == address(0)) {
+      console.log(">> address(0)");
+
+
+
       // initial state, when not set
       return underlyingBalanceInVault();
     }
-    return underlyingBalanceInVault()
-    .add(IStrategy(strategy()).investedUnderlyingBalance());
+    console.log(">> underlyingBalanceInVault: %s", underlyingBalanceInVault());
+
+    return underlyingBalanceInVault().add(IStrategy(strategy()).investedUnderlyingBalance());
   }
 
   /// @notice Get the user's share (in underlying)
@@ -299,8 +307,16 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Return amount of the underlying asset ready to invest to the strategy
   function availableToInvestOut() public view override returns (uint256) {
+    console.log(">> availableToInvestOut");
+
     uint256 wantInvestInTotal = underlyingBalanceWithInvestment();
+
+    console.log(">> wantInvestInTotal %s", wantInvestInTotal);
+
+
     uint256 alreadyInvested = IStrategy(strategy()).investedUnderlyingBalance();
+    console.log(">> alreadyInvested %s", alreadyInvested);
+
     if (alreadyInvested >= wantInvestInTotal) {
       return 0;
     } else {
@@ -365,13 +381,20 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // only statistic, no funds affected
     IBookkeeper(IController(controller()).bookkeeper())
     .registerUserAction(beneficiary, toMint, true);
+    console.log(">> Deposit: %s, amount %s", beneficiary, amount);
 
     emit Deposit(beneficiary, amount);
   }
 
   /// @notice Transfer underlying to the strategy
   function invest() internal whenStrategyDefined {
+    console.log(">> invest");
+
     uint256 availableAmount = availableToInvestOut();
+
+    console.log(">> availableAmount: %s ", availableAmount);
+
+
     if (availableAmount > 0) {
       IERC20Upgradeable(underlying()).safeTransfer(address(strategy()), availableAmount);
       IStrategy(strategy()).investAllUnderlying();
