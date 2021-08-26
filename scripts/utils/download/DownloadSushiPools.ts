@@ -1,4 +1,4 @@
-import {ethers, web3} from "hardhat";
+import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {IMiniChefV2, IOracleMatic, IRewarder, IUniswapV2Pair} from "../../../typechain";
@@ -27,6 +27,10 @@ async function main() {
 
   let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, sushiWeekRewardUsd, maticWeekRewardUsd, weekRewardUsd, tvlUsd, apr \n';
   for (let i = 0; i < poolLength; i++) {
+    console.log('id', i);
+    if(i === 26) {
+      continue;
+    }
     const lp = await chef.lpToken(i);
     const poolInfo = await chef.poolInfo(i);
     const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair

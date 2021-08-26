@@ -43,11 +43,10 @@ describe("contract reader tests", function () {
         signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     contractReader = logic.attach(proxy.address) as ContractReader;
     expect(await proxy.implementation()).is.eq(logic.address);
-    await contractReader.initialize(core.controller.address);
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-    await contractReader.setPriceCalculator(calculator.address);
+    await contractReader.initialize(core.controller.address, calculator.address);
 
     for (let i = 0; i < 3; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(

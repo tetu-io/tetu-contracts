@@ -1,10 +1,10 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {ContractReader, TetuProxyGov} from "../../../typechain";
+import {ContractReader} from "../../../typechain";
 import {VaultInfoModel} from "../../models/VaultInfoModel";
 import {UserInfoModel} from "../../models/UserInfoModel";
 import {mkdir, writeFileSync} from 'fs';
-import {InfoModel} from "../../models/InfoModel";
+import {utils} from "ethers";
 
 
 async function main() {
@@ -12,30 +12,68 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const signer = (await ethers.getSigners())[0];
 
-  const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.reader) as TetuProxyGov;
-  const logicAddress = await proxy.implementation();
-  const logic = await DeployerUtils.connectContract(signer, "ContractReader", logicAddress) as ContractReader;
-  const contractReader = logic.attach(proxy.address);
+  const contractReader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
 
   const vaults = await contractReader.vaults();
   console.log('vaults size', vaults.length);
 
-  const infosParsed: InfoModel[] = [];
-  for (let i = 0; i < vaults.length; i++) {
-    const infos = await contractReader.vaultWithUserInfoPages(signer.address, i, 1);
-    const info = infos[0];
-    console.log('info', info.vault.name);
-    infosParsed.push(new InfoModel(
-        vaultInfo(info.vault),
-        userInfo(info.user),
-    ));
+  let data =
+      'addr,' +
+      'name,' +
+      'created,' +
+      'active,' +
+      'tvl,' +
+      'tvlUsdc,' +
+      'decimals,' +
+      'underlying,' +
+      'rewardTokens,' +
+      'rewardTokensBal,' +
+      'rewardTokensBalUsdc,' +
+      'duration,' +
+      // 'rewardsApr,' +
+      'ppfsApr,' +
+      'users,' +
+      'strategy,' +
+      'strategyCreated,' +
+      'platform,' +
+      // 'assets,' +
+      // 'strategyRewards,' +
+      'strategyOnPause,' +
+      'earned' +
+      '\n';
+  for (let i = 1; i < vaults.length; i++) {
+    const info = await contractReader.vaultInfo(vaults[i]);
+    console.log(info['name'].toString());
+    data +=
+        info['addr'].toString() + ',' +
+        info['name'].toString() + ',' +
+        info['created'].toString() + ',' +
+        info['active'].toString() + ',' +
+        utils.formatUnits(info['tvl']) + ',' +
+        utils.formatUnits(info['tvlUsdc']) + ',' +
+        info['decimals'].toString() + ',' +
+        info['underlying'].toString() + ',' +
+        info['rewardTokens'][0].toString() + ',' +
+        info['rewardTokensBal'][0].toString() + ',' +
+        info['rewardTokensBalUsdc'][0].toString() + ',' +
+        info['duration'].toString() + ',' +
+        // info['rewardsApr'].toString() + ',' +
+        info['ppfsApr'].toString() + ',' +
+        info['users'].toString() + ',' +
+        info['strategy'].toString() + ',' +
+        info['strategyCreated'].toString() + ',' +
+        info['platform'].toString() + ',' +
+        // info['assets'].toString() + ',' +
+        // info['strategyRewards'].toString() + ',' +
+        info['strategyOnPause'].toString() + ',' +
+        utils.formatUnits(info['earned'])+ ',' +
+        '\n'
   }
 
   mkdir('./tmp', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
-  const data = JSON.stringify(infosParsed);
   // console.log('data', data);
   await writeFileSync('./tmp/infos.json', data, 'utf8');
   console.log('done');

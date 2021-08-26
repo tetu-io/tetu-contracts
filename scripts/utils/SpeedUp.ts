@@ -15,21 +15,11 @@ const MATIC_CHAIN = Common.forCustomChain(
 );
 
 async function main() {
-  const signer = (await ethers.getSigners())[0];
-
-  const url = 'https://matic-mainnet.chainstacklabs.com';
-
-  const data = {
-    id: 1,
-    jsonrpc: "2.0",
-    method: "eth_getRawTransactionByHash",
-    params: ["0x684ac31ac9fa8c052b38357219b50f68eaa146fa490f5fa2fe6cd5d5f51552ec"]
-  };
-
+  const txHash = '0xbaae0372dfef86afca47dddfee2f469abca22a62110bbf9f3d7f54ceb2cef4fc'.trim();
   let response: AxiosResponse<any>;
   try {
-    response = await axios.post(url,
-        '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["0x684ac31ac9fa8c052b38357219b50f68eaa146fa490f5fa2fe6cd5d5f51552ec"],"id":1}',
+    response = await axios.post(Secrets.maticRpcUrl,
+        `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["${txHash}"],"id":1}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -43,19 +33,17 @@ async function main() {
   const result = response.data['result'];
   console.log('response', result);
 
-  // web3.eth.
-
   const nonce = web3.utils.hexToNumber(result['nonce']);
   console.log('nonce', nonce);
 
   const gasPrice = await web3.eth.getGasPrice();
-  const gasPriceAdjusted = web3.utils.toBN(gasPrice).sub(
-      web3.utils.toBN(gasPrice).mul(web3.utils.toBN(2))
-  ).toString();
+  const gasPriceAdjusted = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(2)).toString();
+
+  console.log('gas', gasPrice, gasPriceAdjusted);
 
   const tx = new EthereumTx(
       {
-        nonce: nonce + 1,
+        nonce: web3.utils.numberToHex(nonce),
         to: result['to'],
         data: result['input'],
         gasPrice: web3.utils.numberToHex(gasPriceAdjusted),
@@ -64,13 +52,16 @@ async function main() {
       {common: MATIC_CHAIN});
 
 
-  tx.sign(Buffer.from(Secrets.maticPrivateKey, 'hex'));
+  tx.sign(Buffer.from(Secrets.maticPrivateKey3, 'hex'));
 
   const txRaw = '0x' + tx.serialize().toString('hex');
 
-  // await web3.eth.sendSignedTransaction(txRaw, (err, res) => {
-  //   console.log('result', err, res);
-  // });
+  await web3.eth.sendSignedTransaction(txRaw, (err, res) => {
+    console.log('result', err, res);
+  });
+
+
+
 }
 
 main()

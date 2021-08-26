@@ -1,6 +1,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {ContractReader} from "../../../typechain";
+import {RunHelper} from "../../utils/RunHelper";
 
 
 async function main() {
@@ -12,8 +13,8 @@ async function main() {
   const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address);
   const contractReader = logic.attach(proxy.address) as ContractReader;
 
-  await contractReader.initialize(core.controller);
-  await contractReader.setPriceCalculator(tools.calculator);
+  await RunHelper.runAndWait(() => contractReader.initialize(core.controller, tools.calculator));
+  // await contractReader.setPriceCalculator(tools.calculator);
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);

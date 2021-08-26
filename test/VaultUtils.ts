@@ -1,6 +1,5 @@
-import {Controller, SmartVault} from "../typechain";
+import {ContractReader, Controller, SmartVault} from "../typechain";
 import {expect} from "chai";
-import {MaticAddresses} from "./MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Erc20Utils} from "./Erc20Utils";
 import {BigNumber, utils} from "ethers";
@@ -68,6 +67,26 @@ export class VaultUtils {
     await Erc20Utils.approve(underlying, user, vault.address, amount.toString());
     console.log('deposit', BigNumber.from(amount).toString())
     return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+  }
+
+  public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader, rtDec = 18) {
+    const rewardPerToken = +utils.formatUnits(await vault.rewardPerToken(rt), rtDec);
+    const totalSupply = +utils.formatUnits(await vault.totalSupply());
+    const finish = (await vault.periodFinishForToken(rt)).toNumber();
+    const duration = (await vault.duration()).toNumber();
+    const tvlUsd = +utils.formatUnits(await cReader.vaultTvlUsdc(vault.address));
+    const rtPrice = +utils.formatUnits(await cReader.getPrice(rt));
+
+    const now = +(Date.now() / 1000).toFixed(0);
+    const currentPeriod = finish - now;
+    const periodRate = currentPeriod / duration;
+
+    const rewardsForFullPeriod = rewardPerToken * totalSupply * rtPrice;
+
+    const currentRewardsAmount = rewardsForFullPeriod * periodRate;
+
+    const rewardsPerTvlRatio = currentRewardsAmount / tvlUsd;
+    return ((currentRewardsAmount / tvlUsd) / (duration / (60 * 60 * 24))) * 365 * 100;
   }
 
 }

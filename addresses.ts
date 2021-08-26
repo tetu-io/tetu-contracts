@@ -14,8 +14,8 @@ export class Addresses {
         '0x255707B70BF90aa112006E1b07B9AeA6De021424', // tetu token
         '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
         '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2',// fund keeper
-        '',// vault controller
-        '',// vault logic
+        '0xC5b3aF6FB4b2ff14642e337F41B86C9494f70b43',// vault controller
+        '0x52646dfb3E1D540D85DC32223A220a6F9c7eD759',// vault logic
     )],
     ['rinkeby', new CoreAddresses(
         '0x423394A1723C81a2a9E3Ee1852Bc55Db7B85bfE1', // controller
@@ -42,6 +42,7 @@ export class Addresses {
         '', // mockFaucet
         '0x6b887F2BE347984D55bC1a21BB970c707566eB48', // multiSwap
         '0x980cc507CDA067Fc71e90a5966A526DEBFB1eE74', // zapContract
+        '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
     )],
     ['rinkeby', new ToolsAddresses(
         '0x9b8205F7fa03FD4DFc29c9b0E553883913ec4132', // calculator
@@ -52,6 +53,7 @@ export class Addresses {
         '0xE08a4d6aFC2f3bB5F95ceC1e4D88559d837C08F2', // mockFaucet
         '0xe5C203ef4CB3E56766E7936fDE4b157209e93dD5', // multiSwap
         '0x9Ff04B5D8f6e7fFF99DBE07CAa9a83467Ec4A1c1', // zapContract
+        '', // multicall
     )]
   ]);
 
