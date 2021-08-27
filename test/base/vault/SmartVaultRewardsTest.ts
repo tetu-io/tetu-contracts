@@ -116,11 +116,10 @@ describe("Smart vault rewards test", () => {
     await Erc20Utils.transfer(underlying, signer, user4.address, utils.parseUnits(user4Deposit, underlyingDec).toString());
     await Erc20Utils.transfer(underlying, signer, user5.address, utils.parseUnits(user5Deposit, underlyingDec).toString());
 
-    await VaultUtils.deposit(user5, vault, utils.parseUnits(user5Deposit, underlyingDec))
-
     // long holder
-    await VaultUtils.deposit(user3, vault, utils.parseUnits(user3Deposit, underlyingDec))
-    await VaultUtils.deposit(user4, vault, utils.parseUnits(user4Deposit, underlyingDec))
+    await VaultUtils.deposit(user3, vault, utils.parseUnits(user3Deposit, underlyingDec));
+    await VaultUtils.deposit(user4, vault, utils.parseUnits(user4Deposit, underlyingDec));
+    await VaultUtils.deposit(user5, vault, utils.parseUnits(user5Deposit, underlyingDec));
 
     const signerUndBal2 = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), underlyingDec);
 
@@ -134,7 +133,6 @@ describe("Smart vault rewards test", () => {
     let user2Deposited = false;
 
     let finish = (await vault.periodFinishForToken(rt)).toNumber();
-    const rtPrice = +utils.formatUnits(await contractReader.getPrice(rt));
 
     for (let i = 0; i < cycles; i++) {
       console.log('cycle', i, cycles);

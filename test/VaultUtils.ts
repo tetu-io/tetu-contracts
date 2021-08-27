@@ -69,9 +69,11 @@ export class VaultUtils {
     return await vaultForUser.depositAndInvest(BigNumber.from(amount));
   }
 
-  public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader, rtDec = 18) {
-    const rewardPerToken = +utils.formatUnits(await vault.rewardPerToken(rt), rtDec);
-    const totalSupply = +utils.formatUnits(await vault.totalSupply());
+  public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader): Promise<number> {
+    const rtDec = await Erc20Utils.decimals(rt);
+    const undDec = await vault.decimals();
+    const rewardRateForToken = +utils.formatUnits(await vault.rewardRateForToken(rt), rtDec);
+    const totalSupply = +utils.formatUnits(await vault.totalSupply(), undDec);
     const finish = (await vault.periodFinishForToken(rt)).toNumber();
     const duration = (await vault.duration()).toNumber();
     const tvlUsd = +utils.formatUnits(await cReader.vaultTvlUsdc(vault.address));
@@ -80,13 +82,23 @@ export class VaultUtils {
     const now = +(Date.now() / 1000).toFixed(0);
     const currentPeriod = finish - now;
     const periodRate = currentPeriod / duration;
+    const rewardsForFullPeriodUsd = rewardRateForToken * duration * rtPrice;
+    const currentRewardsAmountUsd = rewardsForFullPeriodUsd * periodRate;
 
-    const rewardsForFullPeriod = rewardPerToken * totalSupply * rtPrice;
+    console.log('----------- APR CALCULATION -----------');
+    console.log('rewardRateForToken', rewardRateForToken);
+    console.log('totalSupply', totalSupply);
+    console.log('finish', finish);
+    console.log('duration', duration);
+    console.log('tvlUsd', tvlUsd);
+    console.log('rtPrice', rtPrice);
+    console.log('currentPeriod', currentPeriod);
+    console.log('periodRate', periodRate);
+    console.log('rewardsForFullPeriodUsd', rewardsForFullPeriodUsd, rewardRateForToken * duration);
+    console.log('currentRewardsAmountUsd', currentRewardsAmountUsd);
+    console.log('---------------------------------------');
 
-    const currentRewardsAmount = rewardsForFullPeriod * periodRate;
-
-    const rewardsPerTvlRatio = currentRewardsAmount / tvlUsd;
-    return ((currentRewardsAmount / tvlUsd) / (duration / (60 * 60 * 24))) * 365 * 100;
+    return ((currentRewardsAmountUsd / tvlUsd) / (duration / (60 * 60 * 24))) * 365 * 100;
   }
 
 }
