@@ -8,9 +8,9 @@ import { StrategyInfo } from "../../StrategyInfo";
 import { TimeUtils } from "../../../TimeUtils";
 import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
 import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { addLiquidityAave, configureFeeRewardForwarder} from "./utils/CurveUtils";
 import { DoHardWorkLoop } from "../../DoHardWorkLoop";
 import { CurveDoHardWorkLoop } from "./utils/CurveDoHardWorkLoop";
+import {CurveUtils} from "./utils/CurveUtils";
 
 chai.use(chaiAsPromised);
 
@@ -31,7 +31,7 @@ describe('Curve aave tests', async () => {
         const underlying = MaticAddresses.AM3CRV_TOKEN;
         const underlyingName = await Erc20Utils.tokenSymbol(underlying);
         const strategyName = 'CurveAaveStrategyFullBuyback';
-        await configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
+        await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
 
         const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
             strategyName, signer, coreContracts, underlying, underlyingName);
@@ -48,7 +48,7 @@ describe('Curve aave tests', async () => {
         );
   
         // swap tokens to invest      
-        await addLiquidityAave(investor);
+        await CurveUtils.addLiquidityAave(investor);
 
         console.log('############## Preparations completed ##################');
       });

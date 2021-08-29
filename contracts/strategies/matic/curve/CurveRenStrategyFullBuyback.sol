@@ -41,7 +41,7 @@ contract CurveRenStrategyFullBuyback is CurveStrategyFullBuyback{
   /// @notice Curve gauge rewards pool
   address public constant CURVE_REN_GAUGE = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
 
-  address[] private _assets;
+  address[] private _assets = [WBTC, RENBTC];
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -52,10 +52,7 @@ contract CurveRenStrategyFullBuyback is CurveStrategyFullBuyback{
     address _controller,
     address _underlying,
     address _vault
-  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_REN_GAUGE) {
-    _assets.push(WBTC);
-    _assets.push(RENBTC);
-  }
+  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_REN_GAUGE) {}
 
   /// assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {

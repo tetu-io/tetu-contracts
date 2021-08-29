@@ -10,9 +10,9 @@ import { StrategyInfo } from "../../StrategyInfo";
 import { TimeUtils } from "../../../TimeUtils";
 import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
 import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { addLiquidityRen, configureFeeRewardForwarder} from "./utils/CurveUtils";
 import { DoHardWorkLoop } from "../../DoHardWorkLoop";
 import { CurveDoHardWorkLoop } from "./utils/CurveDoHardWorkLoop";
+import {CurveUtils} from "./utils/CurveUtils";
 
 chai.use(chaiAsPromised);
 
@@ -38,7 +38,7 @@ describe('Curve ren tests', async () => {
 
         const strategyName = 'CurveRenStrategyFullBuyback';
 
-        await configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
+        await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
 
         const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
             strategyName, signer, coreContracts, underlying, underlyingName);
@@ -60,7 +60,7 @@ describe('Curve ren tests', async () => {
         await UniswapUtils.buyToken(
             trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
 
-        await addLiquidityRen(investor);
+        await CurveUtils.addLiquidityRen(investor);
 
         console.log('############## Preparations completed ##################');
       });
