@@ -42,7 +42,7 @@ contract CurveAaveStrategyFullBuyback is CurveStrategyFullBuyback{
   /// @notice Curve gauge rewards pool
   address public constant CURVE_AAVE_GAUGE = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
 
-  address[] private _assets;
+  address[] private _assets = [DAI, USDC, USDT];
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -53,11 +53,7 @@ contract CurveAaveStrategyFullBuyback is CurveStrategyFullBuyback{
     address _controller,
     address _underlying,
     address _vault
-  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_AAVE_GAUGE) {
-    _assets.push(DAI);
-    _assets.push(USDC);
-    _assets.push(USDT);
-  }
+  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_AAVE_GAUGE) {}
 
   /// assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {

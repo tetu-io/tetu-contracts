@@ -6,9 +6,9 @@ import { Erc20Utils } from "../../../../Erc20Utils";
 import { StrategyInfo } from "../../../StrategyInfo";
 import { TimeUtils } from "../../../../TimeUtils";
 import { StrategyTestUtils } from "../../../StrategyTestUtils";
-import { swapTokensAAVE } from "./CurveUtils";
 import { VaultUtils } from "../../../../VaultUtils";
 import {IGauge} from "../../../../../typechain";
+import {CurveUtils} from "./CurveUtils";
 
 export class CurveDoHardWorkLoop {
 
@@ -28,7 +28,7 @@ export class CurveDoHardWorkLoop {
         const userEarnedTotalxTetu = await strategyInfo.core.bookkeeper.userEarned(strategyInfo.user.address, strategyInfo.vault.address, xTetu);
 
         let trader = (await ethers.getSigners())[2];
-        await swapTokensAAVE(trader);
+        await CurveUtils.swapTokensAAVE(trader);
 
         const sevenDays = 7 * 24 * 60 * 60;
         await TimeUtils.advanceBlocksOnTs(sevenDays);
