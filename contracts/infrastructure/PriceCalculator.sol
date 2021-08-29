@@ -31,7 +31,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using Address for address;
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
