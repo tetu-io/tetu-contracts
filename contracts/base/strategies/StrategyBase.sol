@@ -225,7 +225,6 @@ abstract contract StrategyBase is IStrategy, Controllable {
       IERC20(rt).safeApprove(forwarder, amount);
       // it will sell reward token to Target Token and distribute it to SmartVault and PS
       uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault);
-
       if (targetTokenEarned > 0) {
         IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
       }
