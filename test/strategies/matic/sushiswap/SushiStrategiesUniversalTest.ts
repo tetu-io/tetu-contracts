@@ -13,7 +13,7 @@ describe('Universal Sushi tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/generate/sushi/sushi_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/sushi_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
     const strat = info.split(',');

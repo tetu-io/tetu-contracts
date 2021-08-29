@@ -10,10 +10,7 @@ export class PriceCalculatorUtils {
       token: string,
       outputToken: string
   ): Promise<number> {
-    const price = +utils.formatUnits(
-        await calculator.getPrice(token, outputToken),
-        await Erc20Utils.decimals(token)
-    );
+    const price = +utils.formatUnits(await calculator.getPrice(token, outputToken));
     const name = await Erc20Utils.tokenName(token);
     const outputName = await Erc20Utils.tokenName(outputToken);
     console.log('price', name, 'against', outputName, price);

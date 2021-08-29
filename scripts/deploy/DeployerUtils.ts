@@ -182,6 +182,8 @@ export class DeployerUtils {
     await calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2");
     await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
     await calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP");
+    await calculator.addSwapPlatform(MaticAddresses.FIREBIRD_FACTORY, "FireBird Liquidity Provider");
+    await calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token");
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -299,7 +301,7 @@ export class DeployerUtils {
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     const psEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        controller.address, rewardToken.address, psVault.address, [], [rewardToken.address]) as NoopStrategy;
+        controller.address, rewardToken.address, psVault.address, [], [rewardToken.address], 1) as NoopStrategy;
 
     //!########### INIT ##############
     await RunHelper.runAndWait(() => psVault.initializeSmartVault(

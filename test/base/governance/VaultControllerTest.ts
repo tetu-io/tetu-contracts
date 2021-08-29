@@ -2,7 +2,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Bookkeeper, Controller, NoopStrategy, VaultController} from "../../../typechain";
+import {VaultController} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";

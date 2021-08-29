@@ -75,7 +75,7 @@ describe("Controller tests", function () {
         REWARD_DURATION
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        controller.address, underlying, vault.address, [MaticAddresses.WMATIC_TOKEN], [underlying]) as NoopStrategy;
+        controller.address, underlying, vault.address, [MaticAddresses.WMATIC_TOKEN], [underlying], 1) as NoopStrategy;
     await controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     expect(await controller.isValidVault(vault.address)).at.eq(true);
     expect(await controller.strategies(strategy.address)).at.eq(true);
@@ -96,7 +96,7 @@ describe("Controller tests", function () {
         REWARD_DURATION
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying]) as NoopStrategy;
+        controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying],1) as NoopStrategy;
     await controller.addVaultAndStrategy(vault.address, strategy.address);
 
     await controller.doHardWork(vault.address);

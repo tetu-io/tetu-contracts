@@ -61,6 +61,7 @@ export class Addresses {
     ['matic', new Map([
       ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
       ['sushi_lp_token_usdc', '0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9'],
+      ['quick_lp_token_usdc', '0x22e2bdabeba9b5ff8924275dbe47ade5cf7b822b'],
     ])],
     ['rinkeby', new Map([
       ['quick', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],
@@ -68,6 +69,7 @@ export class Addresses {
       ['usdc', '0xa85682167bA1da84bccadEf0C737b63c14196803'],
       ['weth', '0x65741ef7bF896E9146125E289C0858552659B66b'],
       ['sushi_lp_token_usdc', '0x02436A8Ce8E92Fe980166b5edd8C844DC2EaC2ee'],
+      ['quick_lp_token_usdc', ''],
     ])],
 
   ]);

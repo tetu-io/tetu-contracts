@@ -15,7 +15,7 @@ const MATIC_CHAIN = Common.forCustomChain(
 );
 
 async function main() {
-  const txHash = '0xbaae0372dfef86afca47dddfee2f469abca22a62110bbf9f3d7f54ceb2cef4fc'.trim();
+  const txHash = '0x471c157e4258c4cde0f7046de5f25c197c7a110d469c3548f7be352b156192de'.trim();
   let response: AxiosResponse<any>;
   try {
     response = await axios.post(Secrets.maticRpcUrl,

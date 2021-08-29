@@ -10,6 +10,7 @@ import {
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {Erc20Utils} from "../../../../test/Erc20Utils";
+import {RunHelper} from "../../../utils/RunHelper";
 
 
 async function main() {
@@ -32,7 +33,7 @@ async function main() {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
-  const tetuLp = (await DeployerUtils.getTokenAddresses()).get('sushi_lp_token_usdc') as string;
+  const tetuLp = (await DeployerUtils.getTokenAddresses()).get('quick_lp_token_usdc') as string;
 
   const lpCont = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', tetuLp) as IUniswapV2Pair
   const token0 = await lpCont.token0();
@@ -45,9 +46,9 @@ async function main() {
   const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
   const tetuLpVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
   const tetuLpEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-      core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken], 3) as NoopStrategy;
+      core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken], 2) as NoopStrategy;
 
-  const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
+  const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
 
   console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
 
@@ -56,18 +57,19 @@ async function main() {
     return;
   }
 
-  await tetuLpVault.initializeSmartVault(
+  await RunHelper.runAndWait(() =>tetuLpVault.initializeSmartVault(
       `TETU_${vaultNameWithoutPrefix}`,
       `x${vaultNameWithoutPrefix}`,
       controller.address,
       tetuLp,
       60 * 60 * 24 * 28
-  );
+  ));
 
-  await vaultController.addRewardTokens([tetuLpVault.address], core.psVault);
-
-  await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
-
+  // ! gov actions
+  if ((await ethers.provider.getNetwork()).name !== "matic") {
+    await vaultController.addRewardTokens([tetuLpVault.address], core.psVault);
+    await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
+  }
 
   await DeployerUtils.wait(5);
 

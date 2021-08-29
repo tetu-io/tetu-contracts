@@ -80,7 +80,7 @@ async function main() {
     const pool = poolLogic.attach(poolProxy.address) as SmartVault;
 
     const noopStrategy = await DeployerUtils.deployContract(signer, 'NoopStrategy',
-        controller.address, underlying, pool.address, [], [underlying0, underlying1]) as IStrategy;
+        controller.address, underlying, pool.address, [], [underlying0, underlying1], 1) as IStrategy;
 
     const noopStrategyUnderlying = await noopStrategy.underlying();
 

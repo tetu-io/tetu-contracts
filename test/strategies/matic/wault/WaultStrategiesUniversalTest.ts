@@ -14,7 +14,7 @@ describe('Universal Wault tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/wault_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -28,7 +28,7 @@ describe('Universal Wault tests', async () => {
     const token1_name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx' || idx === '0') {
+    if (+alloc <= 0 || idx === 'idx' || idx === '0' || !lp_address) {
       console.log('skip', idx);
       return;
     }

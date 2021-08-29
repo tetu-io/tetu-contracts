@@ -4,7 +4,7 @@ import {readFileSync, writeFileSync} from "fs";
 async function main() {
   const templatePath = 'scripts/utils/generate/quick/quick_strat_template.sol';
   const outputPath = 'tmp/quick_strats/';
-  const infos = readFileSync('scripts/utils/generate/quick/quick_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
   const template = readFileSync(templatePath, 'utf8');
 
   infos.forEach(info => {

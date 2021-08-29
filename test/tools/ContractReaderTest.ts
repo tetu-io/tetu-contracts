@@ -270,7 +270,7 @@ describe("contract reader tests", function () {
     // ******** DEPLOY VAULT *******
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, underlying, vault.address, [], [MaticAddresses.USDT_TOKEN]) as NoopStrategy;
+        core.controller.address, underlying, vault.address, [], [MaticAddresses.USDT_TOKEN], 1) as NoopStrategy;
     await vault.initializeSmartVault(
         "NOOP",
         "tNOOP",

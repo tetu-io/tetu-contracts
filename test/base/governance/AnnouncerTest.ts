@@ -510,7 +510,7 @@ describe("Announcer tests", function () {
 
     const target = core.psVault.address;
     const newImpl = await DeployerUtils.deployContract(signer, 'NoopStrategy',
-        controller.address, core.rewardToken.address, core.psVault.address, [], [core.rewardToken.address]) as IStrategy;
+        controller.address, core.rewardToken.address, core.psVault.address, [], [core.rewardToken.address], 1) as IStrategy;
 
     await announcer.announceStrategyUpgrades([target], [newImpl.address]);
 
