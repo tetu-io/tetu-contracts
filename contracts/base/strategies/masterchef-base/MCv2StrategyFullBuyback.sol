@@ -29,7 +29,7 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
   string public constant STRATEGY_NAME = "MCv2StrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
@@ -156,9 +156,8 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
-    exitRewardPool();
+    IMiniChefV2(mcRewardPool).harvest(poolID, address(this));
     liquidateReward();
-    investAllUnderlying();
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
@@ -177,8 +176,17 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
     (uint256 bal, uint256 debt) = IMiniChefV2(mcRewardPool).userInfo(poolID, address(this));
     (uint256 accSushiPerShare, ,) = IMiniChefV2(mcRewardPool).poolInfo(poolID);
     uint256 accumulatedSushi = bal * accSushiPerShare / 1e12;
-    if (accumulatedSushi < debt) {
-      // sushi has a bug with rounding, in some cases we can't withdrawAndHarvest
+
+    IRewarder rewarder = IMiniChefV2(mcRewardPool).rewarder(poolID);
+    (IERC20[] memory tokens,) = rewarder.pendingTokens(poolID, address(this), 0);
+    uint256 rewarderBal = tokens[0].balanceOf(address(rewarder));
+
+    if (
+    // sushi has a bug with rounding, in some cases we can't withdrawAndHarvest
+      accumulatedSushi < debt
+      // if rewarder doesn't have enough balance make emergency withdraw
+      || rewarderBal < 10 * 1e18
+    ) {
       IMiniChefV2(mcRewardPool).emergencyWithdraw(poolID, address(this));
     } else {
       IMiniChefV2(mcRewardPool).withdrawAndHarvest(poolID, amount, address(this));

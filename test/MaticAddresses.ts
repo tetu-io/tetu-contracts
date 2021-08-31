@@ -102,6 +102,10 @@ export class MaticAddresses {
         return MaticAddresses.SUSHI_ROUTER;
       case MaticAddresses.WAULT_FACTORY:
         return MaticAddresses.WAULT_ROUTER;
+      case MaticAddresses.FIREBIRD_FACTORY:
+        return MaticAddresses.FIREBIRD_ROUTER;
+      case MaticAddresses.DFYN_FACTORY:
+        return MaticAddresses.DFYN_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

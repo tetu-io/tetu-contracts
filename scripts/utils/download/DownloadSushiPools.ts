@@ -1,15 +1,18 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
-import {IMiniChefV2, IOracleMatic, IRewarder, IUniswapV2Pair} from "../../../typechain";
+import {IMiniChefV2, IOracleMatic, IRewarder, IUniswapV2Pair, SmartVault} from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {Addresses} from "../../../addresses";
+import axios from "axios";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 
-async function main() {
+async function downloadSushi() {
   const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtils.getCoreAddresses();
 
   const chef = await DeployerUtils.connectInterface(signer, 'IMiniChefV2', MaticAddresses.SUSHI_MINISHEFV2) as IMiniChefV2;
 
@@ -18,6 +21,19 @@ async function main() {
   const poolLength = (await chef.poolLength()).toNumber();
   console.log('length', poolLength);
 
+  const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC");
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (let vInfo of vaultInfos.data) {
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
+    }
+  }
+
   const sushiPerSecond = await chef.sushiPerSecond();
   const totalAllocPoint = await chef.totalAllocPoint();
   const sushiPrice = await oracle.getPrice(MaticAddresses.SUSHI_TOKEN);
@@ -25,13 +41,18 @@ async function main() {
   const maticPrice = await oracle.getPrice(MaticAddresses.WMATIC_TOKEN);
   console.log('maticPrice', utils.formatUnits(maticPrice));
 
-  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, sushiWeekRewardUsd, maticWeekRewardUsd, weekRewardUsd, tvlUsd, apr \n';
+  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, sushiWeekRewardUsd, maticWeekRewardUsd, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n';
   for (let i = 0; i < poolLength; i++) {
-    console.log('id', i);
-    if(i === 26) {
+    if (i === 26) {
       continue;
     }
     const lp = await chef.lpToken(i);
+
+    const status = underlyingStatuses.get(lp.toLowerCase());
+    if (!status) {
+      continue;
+    }
+    console.log('id', i);
     const poolInfo = await chef.poolInfo(i);
     const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
     const token0 = await lpContract.token0();
@@ -77,7 +98,9 @@ async function main() {
         maticWeekRewardUsd.toFixed(0) + ',' +
         allRewards.toFixed(0) + ',' +
         (+tvlUsd).toFixed(0) + ',' +
-        apr.toFixed(0)
+        apr.toFixed(0) + ',' +
+        currentRewards.get(lp.toLowerCase()) + ',' +
+        underlyingToVault.get(lp.toLowerCase())
     ;
     console.log(data);
     infos += data + '\n';
@@ -92,7 +115,7 @@ async function main() {
   console.log('done');
 }
 
-main()
+downloadSushi()
 .then(() => process.exit(0))
 .catch(error => {
   console.error(error);

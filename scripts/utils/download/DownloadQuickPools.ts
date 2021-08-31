@@ -1,33 +1,49 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
-  IOracleMatic,
   IStakingRewardsFactory,
   IUniswapV2Pair,
+  PriceCalculator,
+  SmartVault,
   SNXRewardInterface
 } from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {utils} from "ethers";
-import {Addresses} from "../../../addresses";
+import axios from "axios";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 const exclude = new Set<string>([]);
 
 
-async function main() {
+async function downloadQuick() {
   const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
 
   const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactory', MaticAddresses.QUICK_STAKING_FACTORY) as IStakingRewardsFactory;
   console.log('rewardsToken', await factory.rewardsToken());
 
-  const oracle = await DeployerUtils.connectInterface(signer, 'IOracleMatic', Addresses.ORACLE) as IOracleMatic;
+  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
+  const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC");
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (let vInfo of vaultInfos.data) {
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
+    }
+  }
   const poolLength = 10000;
-  const quickPrice = await oracle.getPrice(MaticAddresses.QUICK_TOKEN);
+  const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
   console.log('quickPrice', utils.formatUnits(quickPrice));
 
-  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, duration, weekRewardUsd, tvlUsd, apr \n';
+  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
   for (let i = 0; i < poolLength; i++) {
     let lp;
     let token0: string = '';
@@ -40,6 +56,11 @@ async function main() {
     } catch (e) {
       console.log('looks like we dont have more lps', i);
       break;
+    }
+
+    const status = underlyingStatuses.get(lp.toLowerCase());
+    if (!status) {
+      continue;
     }
 
     try {
@@ -80,7 +101,7 @@ async function main() {
     console.log('notifiedAmount', notifiedAmountN);
 
     const tvl = await poolContract.totalSupply();
-    const underlyingPrice = await oracle.getPrice(lp);
+    const underlyingPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
     const tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
 
     const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100
@@ -94,10 +115,11 @@ async function main() {
         token1Name + ',' +
         info[0] + ',' +
         notifiedAmountUsd.toFixed(2) + ',' +
-        durationDays.toFixed(2) + ',' +
+        underlyingToVault.get(lp.toLowerCase()) + ',' +
         (notifiedAmountUsd * weekDurationRatio).toFixed(2) + ',' +
         tvlUsd.toFixed(2) + ',' +
-        apr.toFixed(2)
+        apr.toFixed(2) + ',' +
+        currentRewards.get(lp.toLowerCase())
     ;
     console.log(data);
     infos += data + '\n';
@@ -111,7 +133,7 @@ async function main() {
   console.log('done');
 }
 
-main()
+downloadQuick()
 .then(() => process.exit(0))
 .catch(error => {
   console.error(error);

@@ -35,7 +35,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using Address for address;
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;

@@ -1,10 +1,11 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {ContractReader} from "../../../typechain";
+import {ContractReader, SmartVault} from "../../../typechain";
 import {VaultInfoModel} from "../../models/VaultInfoModel";
 import {UserInfoModel} from "../../models/UserInfoModel";
 import {mkdir, writeFileSync} from 'fs';
 import {utils} from "ethers";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 
 async function main() {
@@ -39,11 +40,15 @@ async function main() {
       // 'assets,' +
       // 'strategyRewards,' +
       'strategyOnPause,' +
-      'earned' +
+      'earned,' +
+      'estRewardAmount' +
       '\n';
   for (let i = 1; i < vaults.length; i++) {
     const info = await contractReader.vaultInfo(vaults[i]);
     console.log(info['name'].toString());
+    const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaults[i]) as SmartVault;
+    const estRew = await VaultUtils.vaultRewardsAmountCurrent(vaultCtr, core.psVault)
+    console.log('estRew', estRew, 'realRew', utils.formatUnits(info['rewardTokensBal'][0]), estRew - +utils.formatUnits(info['rewardTokensBal'][0]));
     data +=
         info['addr'].toString() + ',' +
         info['name'].toString() + ',' +
@@ -54,8 +59,8 @@ async function main() {
         info['decimals'].toString() + ',' +
         info['underlying'].toString() + ',' +
         info['rewardTokens'][0].toString() + ',' +
-        info['rewardTokensBal'][0].toString() + ',' +
-        info['rewardTokensBalUsdc'][0].toString() + ',' +
+        utils.formatUnits(info['rewardTokensBal'][0]) + ',' +
+        utils.formatUnits(info['rewardTokensBalUsdc'][0]) + ',' +
         info['duration'].toString() + ',' +
         // info['rewardsApr'].toString() + ',' +
         info['ppfsApr'].toString() + ',' +
@@ -66,7 +71,8 @@ async function main() {
         // info['assets'].toString() + ',' +
         // info['strategyRewards'].toString() + ',' +
         info['strategyOnPause'].toString() + ',' +
-        utils.formatUnits(info['earned'])+ ',' +
+        utils.formatUnits(info['earned']) + ',' +
+        estRew + ',' +
         '\n'
   }
 

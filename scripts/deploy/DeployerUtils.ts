@@ -163,13 +163,13 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
-  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
 
-    await calculator.addKeyTokens([
+    await RunHelper.runAndWait(() => calculator.addKeyTokens([
       MaticAddresses.USDC_TOKEN,
       MaticAddresses.WETH_TOKEN,
       MaticAddresses.DAI_TOKEN,
@@ -177,13 +177,14 @@ export class DeployerUtils {
       MaticAddresses.WBTC_TOKEN,
       MaticAddresses.WMATIC_TOKEN,
       MaticAddresses.QUICK_TOKEN,
-    ]);
-    await calculator.setDefaultToken(MaticAddresses.USDC_TOKEN);
-    await calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2");
-    await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
-    await calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP");
-    await calculator.addSwapPlatform(MaticAddresses.FIREBIRD_FACTORY, "FireBird Liquidity Provider");
-    await calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token");
+    ]), true, wait);
+
+    await RunHelper.runAndWait(() =>calculator.setDefaultToken(MaticAddresses.USDC_TOKEN), true, wait);
+    await RunHelper.runAndWait(() =>calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2"), true, wait);
+    await RunHelper.runAndWait(() =>calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token"), true, wait);
+    await RunHelper.runAndWait(() =>calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP"), true, wait);
+    await RunHelper.runAndWait(() =>calculator.addSwapPlatform(MaticAddresses.FIREBIRD_FACTORY, "FireBird Liquidity Provider"), true, wait);
+    await RunHelper.runAndWait(() =>calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token"), true, wait);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];

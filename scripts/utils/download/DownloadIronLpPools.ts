@@ -2,35 +2,52 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {
-  ContractReader,
   ERC20,
   IIronChef,
   IIronLpToken,
   IIronSwap,
-  IUniswapV2Pair, PriceCalculator
+  IUniswapV2Pair,
+  PriceCalculator,
+  SmartVault
 } from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import axios from "axios";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
   const chef = await DeployerUtils.connectInterface(signer, 'IIronChef', MaticAddresses.IRON_MINISHEFV2) as IIronChef;
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', '0x3649ad5A5172DF3a8D5d09457e388e285efbB0a8') as PriceCalculator;
 
   const poolLength = (await chef.poolLength()).toNumber();
   console.log('length', poolLength);
+
+  const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC");
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (let vInfo of vaultInfos.data) {
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
+    }
+  }
 
   const rewardPerSecond = await chef.rewardPerSecond();
   const totalAllocPoint = await chef.totalAllocPoint();
   const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.ICE_TOKEN);
   console.log('reward price', utils.formatUnits(rewardPrice));
 
-  let infos: string = 'idx, lp_name, lp_address, tokens, token_names, alloc, rewardWeekUsd, weekRewardUsd, tvlUsd, apr \n';
+  let infos: string = 'idx, lp_name, lp_address, vault, tokens, token_names, alloc, rewardWeekUsd, weekRewardUsd, tvlUsd, apr, currentRewards \n';
   for (let i = 0; i < poolLength; i++) {
     console.log('id', i);
 
@@ -65,13 +82,15 @@ async function main() {
     const data = i + ',' +
         poolName + ',' +
         lp + ',' +
+        underlyingToVault.get(lp.toLowerCase()) + ',' +
         tokens.join(' | ') + ',' +
         tokenNames.join(' | ') + ',' +
         rewardAllocPoint.toNumber() + ',' +
         rewardWeekUsd.toFixed(0) + ',' +
         rewardWeekUsd.toFixed(0) + ',' +
         (+tvlUsd).toFixed(0) + ',' +
-        apr.toFixed(0)
+        apr.toFixed(0) + ',' +
+        currentRewards.get(lp.toLowerCase())
     ;
     console.log(data);
     infos += data + '\n';

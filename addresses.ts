@@ -9,7 +9,7 @@ export class Addresses {
         '0x286c02C93f3CF48BB759A93756779A1C78bCF833', // announcer
         '0xd055b086180cB6dac888792C9307970Ed10CF137', // forwarder
         '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F', // bookkeeper
-        '0xca3F0f662f0449c74b2ceCD65620192EbaFc44a9', // notifier
+        '0xca3F0f662f0449c74b2ceCD65620192EbaFc44a9', // notifier todo need to switch to 0x560471ab39C3Eb26D63aB3b2A5b9835764C998ea, don't forget allow distribute!
         '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // mint helper
         '0x255707B70BF90aa112006E1b07B9AeA6De021424', // tetu token
         '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault

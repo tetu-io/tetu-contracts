@@ -101,4 +101,24 @@ export class VaultUtils {
     return ((currentRewardsAmountUsd / tvlUsd) / (duration / (60 * 60 * 24))) * 365 * 100;
   }
 
+  public static async vaultRewardsAmount(vault: SmartVault, rt: string): Promise<number> {
+    const rtDec = await Erc20Utils.decimals(rt);
+    const rewardRateForToken = +utils.formatUnits(await vault.rewardRateForToken(rt), rtDec);
+    const duration = (await vault.duration()).toNumber();
+    return rewardRateForToken * duration;
+  }
+
+  public static async vaultRewardsAmountCurrent(vault: SmartVault, rt: string): Promise<number> {
+    const rtDec = await Erc20Utils.decimals(rt);
+    const rewardRateForToken = +utils.formatUnits(await vault.rewardRateForToken(rt), rtDec);
+    const duration = (await vault.duration()).toNumber();
+    const finish = (await vault.periodFinishForToken(rt)).toNumber();
+
+    const now = +(Date.now() / 1000).toFixed(0);
+    const currentPeriod = finish - now;
+    const periodRate = currentPeriod / duration;
+
+    return rewardRateForToken * duration * periodRate;
+  }
+
 }
