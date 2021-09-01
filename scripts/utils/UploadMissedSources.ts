@@ -22,8 +22,9 @@ async function main() {
 
   const vaults = await bookkeeper.vaults();
 
-  for (let vault of vaults) {
-    console.log('verify for ', vault);
+  for (let i = 120; i < vaults.length; i++) {
+    const vault = vaults[i];
+    console.log('################# verify for ', i, vault);
     const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
     const vaultImpl = await (await DeployerUtils.connectInterface(signer, 'TetuProxyControlled', vault) as TetuProxyControlled).implementation();
     const strategy = await vaultCtr.strategy();
@@ -34,13 +35,13 @@ async function main() {
     const platform = await strategyCtr.platform();
     const assets = await strategyCtr.assets();
 
-    console.log('------------ LOGIC VERIFY ----------------')
-    await DeployerUtils.verify(vaultImpl);
-    console.log('----------------------------')
-    console.log('------------ PROXY VERIFY ----------------')
-    await DeployerUtils.verifyWithArgs(vault, [vaultImpl]);
-    console.log('----------------------------')
-    await DeployerUtils.verifyProxy(vault);
+    // console.log('------------ LOGIC VERIFY ----------------')
+    // await DeployerUtils.verify(vaultImpl);
+    // console.log('----------------------------')
+    // console.log('------------ PROXY VERIFY ----------------')
+    // await DeployerUtils.verifyWithArgs(vault, [vaultImpl]);
+    // console.log('----------------------------')
+    // await DeployerUtils.verifyProxy(vault);
 
     console.log('------------ STRATEGY VERIFY ----------------')
     if (platform === 2) {
@@ -52,7 +53,7 @@ async function main() {
           underlying,
           assets[0],
           assets[1],
-          ctr.rewardPool()
+          await ctr.rewardPool()
         ]);
       }
 
@@ -65,19 +66,26 @@ async function main() {
           underlying,
           assets[0],
           assets[1],
-          ctr.poolID()
+          await ctr.poolID()
         ]);
       }
     } else if (platform === 4) {
       const ctr = await DeployerUtils.connectInterface(signer, 'WaultStrategyFullBuyback', strategy) as WaultStrategyFullBuyback;
       if (assets.length === 2) {
-        await DeployerUtils.verifyWithArgs(strategy, [
+        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/wault/StrategyWaultLp.sol:StrategyWaultLp',[
           core.controller,
           vault,
           underlying,
           assets[0],
           assets[1],
-          ctr.poolID()
+          await ctr.poolID()
+        ]);
+      } else {
+        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/wault/StrategyWaultSingle.sol:StrategyWaultSingle',[
+          core.controller,
+          vault,
+          underlying,
+          await ctr.poolID()
         ]);
       }
     }

@@ -54,6 +54,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   uint256 public suppliedInUnderlying;
   uint256 public borrowedInUnderlying;
 
+  event FoldChanged(bool value);
+  event BorrowTargetFactorNumeratorChanged(uint256 value);
+  event CollateralFactorNumeratorChanged(uint256 value);
+
   modifier updateSupplyInTheEnd() {
     _;
     suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
@@ -111,7 +115,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @notice Return approximately amount of reward tokens ready to claim in Iron MasterChef contract
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
-  function readyToClaim() external view override returns (uint256[] memory) {
+  function readyToClaim() external pure override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
     return rewards;
   }
@@ -126,7 +130,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @notice Calculate approximately weekly reward amounts for each reward tokens
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array of weekly reward amounts
-  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
+  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
     return rewards;
   }
@@ -156,18 +160,21 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Set use folding
   function setFold(bool _fold) external restricted {
     fold = _fold;
+    emit FoldChanged(_fold);
   }
 
   /// @dev Set borrow rate target
   function setBorrowTargetFactorNumerator(uint256 _target) external restricted {
     require(_target < collateralFactorNumerator, "Target should be lower than collateral limit");
     borrowTargetFactorNumerator = _target;
+    emit BorrowTargetFactorNumeratorChanged(_target);
   }
 
   /// @dev Set collateral rate for asset market
   function setCollateralFactorNumerator(uint256 _target) external restricted {
     require(_target < factorDenominator, "Collateral factor cannot be this high");
     collateralFactorNumerator = _target;
+    emit CollateralFactorNumeratorChanged(_target);
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************

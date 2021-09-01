@@ -445,10 +445,10 @@ export class DeployerUtils {
     }
   }
 
-  public static async verifyWithContractName(address: string, contractPath: string) {
+  public static async verifyWithContractName(address: string, contractPath: string, args?: any[]) {
     try {
       await hre.run("verify:verify", {
-        address: address, contract: contractPath
+        address: address, contract: contractPath, constructorArguments: args
       })
     } catch (e) {
       console.log('error verify', e);
