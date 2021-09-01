@@ -16,7 +16,7 @@ import "../../../base/strategies/iron-fold/IronFoldStrategyBase.sol";
 
 contract StrategyIronFold is IronFoldStrategyBase {
 
-  // IRON CHEF
+  // IRON CONTROLLER
   address public constant _IRON_CONTROLLER = address(0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IRON;
   // rewards

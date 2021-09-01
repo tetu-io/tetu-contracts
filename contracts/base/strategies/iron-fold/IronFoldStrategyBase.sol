@@ -22,7 +22,7 @@ import "../../../third_party/iron/CompleteRToken.sol";
 
 
 /// @title Abstract contract for Iron strategy implementation
-/// @author belbix
+/// @author JasperS13
 abstract contract IronFoldStrategyBase is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
@@ -41,11 +41,16 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @notice Iron Controller address
   address public ironController;
 
+  /// @notice Numerator value for the targeted borrow rate
   uint256 public borrowTargetFactorNumerator;
+  /// @notice Numerator value for the asset market collateral value
   uint256 public collateralFactorNumerator;
+  /// @notice Denominator value for the both above mentioned ratios
   uint256 public factorDenominator;
+  /// @notice Using folding
   bool public fold;
 
+  /// @notice Strategy balance parameters to be tracked
   uint256 public suppliedInUnderlying;
   uint256 public borrowedInUnderlying;
 
@@ -63,6 +68,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @param __rewardTokens Reward tokens that the strategy will farm
   /// @param _rToken RToken address
   /// @param _ironController Iron Controller address
+  /// @param _borrowTargetFactorNumerator Numerator value for the targeted borrow rate
+  /// @param _collateralFactorNumerator Numerator value for the asset market collateral value
+  /// @param _factorDenominator Denominator value for the both above mentioned ratios
+  /// @param _fold Using folding
   constructor(
     address _controller,
     address _underlying,
@@ -75,7 +84,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 _factorDenominator,
     bool _fold
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
-    require(_rToken != address(0), "zero address pool");
+    require(_rToken != address(0), "zero address rToken");
     require(_ironController != address(0), "zero address ironController");
     rToken = _rToken;
     ironController = _ironController;
@@ -128,14 +137,15 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   function doHardWork() external onlyNotPausedInvesting override restricted {
     claimReward();
     liquidateReward();
+    rebalance();
   }
 
   /// @dev Rebalances the borrow ratio
-  function rebalance() external restricted updateSupplyInTheEnd {
+  function rebalance() public restricted updateSupplyInTheEnd {
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
-    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator.div(factorDenominator).sub(borrowTargetFactorNumerator));
+    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     if (borrowed > borrowTarget) {
       _redeemPartialWithLoan(0);
     } else {
@@ -143,15 +153,18 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     }
   }
 
+  /// @dev Set use folding
   function setFold(bool _fold) external restricted {
     fold = _fold;
   }
 
+  /// @dev Set borrow rate target
   function setBorrowTargetFactorNumerator(uint256 _target) external restricted {
     require(_target < collateralFactorNumerator, "Target should be lower than collateral limit");
     borrowTargetFactorNumerator = _target;
   }
 
+  /// @dev Set collateral rate for asset market
   function setCollateralFactorNumerator(uint256 _target) external restricted {
     require(_target < factorDenominator, "Collateral factor cannot be this high");
     collateralFactorNumerator = _target;
@@ -178,7 +191,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
-    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator.div(factorDenominator).sub(borrowTargetFactorNumerator));
+    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget.sub(borrowed);
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
