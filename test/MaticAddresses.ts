@@ -35,6 +35,7 @@ export class MaticAddresses {
   public static WEXpoly_TOKEN = "0x4c4BF319237D98a30A929A96112EfFa8DA3510EB".toLowerCase();
   public static PEAR_TOKEN = "0xc8bcb58caEf1bE972C0B638B1dD8B0748Fdc8A44".toLowerCase();
   public static ICE_TOKEN = "0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef".toLowerCase(); // iron ice
+  public static COSMIC_TOKEN = "0xa5Eb60CA85898f8b26e18fF7c7E43623ccbA772C".toLowerCase();
   // public static dQUICK_TOKEN = "".toLowerCase();
 
   //iron

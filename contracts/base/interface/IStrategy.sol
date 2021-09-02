@@ -20,7 +20,10 @@ interface IStrategy {
     QUICK, // 2
     SUSHI, // 3
     WAULT, // 4
-    IRON // 5
+    IRON, // 5
+    COSMIC, // 6
+    CURVE, // 7
+    DINO // 8
   }
 
   // *************** GOVERNANCE ACTIONS **************
