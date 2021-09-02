@@ -20,6 +20,7 @@ import "../../../third_party/iron/IIronChef.sol";
 import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/CompleteRToken.sol";
 
+import "hardhat/console.sol";
 
 /// @title Abstract contract for Iron strategy implementation
 /// @author JasperS13
@@ -189,6 +190,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Deposit underlying to rToken contract
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
+    console.log("Strategy: Depositing:", amount);
+    console.log(" ");
     if (amount > 0) {
       _supply(amount);
     }
@@ -199,6 +202,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    console.log("Strategy: Supplied before:", supplied);
+    console.log("Strategy: Borrowed before:", borrowed);
+    console.log("Strategy: Balance before:", balance);
+    console.log("Strategy: Borrow target:", borrowTarget);
+    console.log(" ");
+    uint256 i;
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget.sub(borrowed);
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
@@ -211,6 +220,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
       borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       balance = supplied.sub(borrowed);
+      console.log("Strategy: Supplied loop",i,":", supplied);
+      console.log("Strategy: Borrowed loop",i,":", borrowed);
+      console.log("Strategy: Balance loop",i,":", balance);
+      console.log(" ");
+      i = i+1;
     }
   }
 
@@ -286,6 +300,9 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
   /// @dev Redeems a set amount of underlying tokens while keeping the borrow ratio healthy.
   function _redeemPartialWithLoan(uint256 amount) internal {
+    console.log("Strategy: Withdrawing:", amount);
+    console.log(" ");
+
     // amount we supplied
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
     // amount we borrowed
@@ -293,7 +310,14 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 oldBalance = supplied.sub(borrowed);
     uint256 newBalance = oldBalance.sub(amount);
     uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    console.log("Strategy: Supplied before:", supplied);
+    console.log("Strategy: Borrowed before:", borrowed);
+    console.log("Strategy: Balance before:", oldBalance);
+    console.log("Strategy: Balance after:", newBalance);
+    console.log("Strategy: New borrow target:", newBorrowTarget);
+    console.log(" ");
     uint256 underlyingBalance;
+    uint256 i;
     while (borrowed > newBorrowTarget) {
       uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
       uint256 toRepay = borrowed.sub(newBorrowTarget);
@@ -307,6 +331,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       // update the parameters
       borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
+      uint256 balance = supplied.sub(borrowed);
+      console.log("Strategy: Supplied loop",i,":", supplied);
+      console.log("Strategy: Borrowed loop",i,":", borrowed);
+      console.log("Strategy: Balance loop",i,":", balance);
+      console.log(" ");
+      i = i+1;
     }
     underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
     if (underlyingBalance < amount) {
