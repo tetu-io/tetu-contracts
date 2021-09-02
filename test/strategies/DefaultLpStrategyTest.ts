@@ -147,7 +147,8 @@ async function startDefaultLpStrategyTest(
     // });
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString()
+          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          strategyInfo.strategy.readyToClaim
       );
     });
     it("emergency exit", async () => {
