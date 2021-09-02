@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, Controller, IStrategy, VaultController} from "../../../../typechain";
-import {readFileSync} from "fs";
+import {readFileSync, writeFileSync} from "fs";
 
 const ironSwapIds = new Set<string>([
   "0",
@@ -39,11 +39,11 @@ async function main() {
     const idx = strat[0];
     const lp_name = strat[1];
     const lp_address = strat[2];
-    const tokens = strat[4].split(' | ');
-    const tokenNames = strat[5].split(' | ');
+    const tokens = strat[4]?.split(' | ');
+    const tokenNames = strat[5]?.split(' | ');
     const alloc = strat[6];
 
-    if (+alloc <= 0 || idx === 'idx') {
+    if (+alloc <= 0 || idx === 'idx' || !tokens) {
       console.log('skip', idx);
       continue;
     }
@@ -62,9 +62,10 @@ async function main() {
     }
 
     console.log('strat', idx, lp_name, vaultNameWithoutPrefix);
+    let data: any[];
 
     if (ironSwapIds.has(idx)) {
-      const data = await DeployerUtils.deployVaultAndStrategy(
+      data = await DeployerUtils.deployVaultAndStrategy(
           vaultNameWithoutPrefix,
           vaultAddress => DeployerUtils.deployContract(
               signer,
@@ -85,10 +86,7 @@ async function main() {
 
       if ((await ethers.provider.getNetwork()).name !== "hardhat") {
         await DeployerUtils.wait(5);
-        await DeployerUtils.verify(data[0].address);
-        await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
-        await DeployerUtils.verifyProxy(data[1].address);
-        await DeployerUtils.verifyWithArgs(data[2].address, [
+        await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap', [
           core.controller,
           data[1].address,
           lp_address,
@@ -97,7 +95,7 @@ async function main() {
         ]);
       }
     } else {
-      const data = await DeployerUtils.deployVaultAndStrategy(
+      data = await DeployerUtils.deployVaultAndStrategy(
           vaultNameWithoutPrefix,
           vaultAddress => DeployerUtils.deployContract(
               signer,
@@ -119,10 +117,7 @@ async function main() {
 
       if ((await ethers.provider.getNetwork()).name !== "hardhat") {
         await DeployerUtils.wait(5);
-        await DeployerUtils.verify(data[0].address);
-        await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
-        await DeployerUtils.verifyProxy(data[1].address);
-        await DeployerUtils.verifyWithArgs(data[2].address, [
+        await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/matic/iron/StrategyIronUniPair.sol:StrategyIronUniPair', [
           core.controller,
           data[1].address,
           lp_address,
@@ -132,6 +127,12 @@ async function main() {
         ]);
       }
     }
+
+    await DeployerUtils.verify(data[0].address);
+    await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
+    await DeployerUtils.verifyProxy(data[1].address);
+
+    await writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, JSON.stringify(data), 'utf8');
   }
 
 }

@@ -9,7 +9,7 @@ export class Addresses {
         '0x286c02C93f3CF48BB759A93756779A1C78bCF833', // announcer
         '0xd055b086180cB6dac888792C9307970Ed10CF137', // forwarder
         '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F', // bookkeeper
-        '0xca3F0f662f0449c74b2ceCD65620192EbaFc44a9', // notifier todo need to switch to 0x560471ab39C3Eb26D63aB3b2A5b9835764C998ea, don't forget allow distribute!
+        '0x560471ab39C3Eb26D63aB3b2A5b9835764C998ea', // notifier
         '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // mint helper
         '0x255707B70BF90aa112006E1b07B9AeA6De021424', // tetu token
         '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
@@ -61,7 +61,7 @@ export class Addresses {
     ['matic', new Map([
       ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
       ['sushi_lp_token_usdc', '0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9'],
-      ['quick_lp_token_usdc', '0x22e2bdabeba9b5ff8924275dbe47ade5cf7b822b'],
+      ['quick_lp_token_usdc', '0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B'],
     ])],
     ['rinkeby', new Map([
       ['quick', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],

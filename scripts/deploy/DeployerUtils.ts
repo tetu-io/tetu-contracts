@@ -474,7 +474,7 @@ export class DeployerUtils {
           (await DeployerUtils.getNetworkScanUrl()) +
           `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
           `address=${adr}`);
-      console.log("proxy verify resp", resp.data);
+      // console.log("proxy verify resp", resp.data);
     } catch (e) {
       console.log('error proxy verify', adr, e);
     }

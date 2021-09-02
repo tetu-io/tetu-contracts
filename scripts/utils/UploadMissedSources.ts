@@ -3,6 +3,7 @@ import {DeployerUtils} from "../deploy/DeployerUtils";
 import {
   Bookkeeper,
   ContractReader,
+  IronMcStrategyBase,
   IStrategy,
   MCv2StrategyFullBuyback,
   SmartVault,
@@ -34,6 +35,7 @@ async function main() {
     const underlying = await vaultCtr.underlying();
     const platform = await strategyCtr.platform();
     const assets = await strategyCtr.assets();
+    console.log('platform', platform, 'assets', assets)
 
     // console.log('------------ LOGIC VERIFY ----------------')
     // await DeployerUtils.verify(vaultImpl);
@@ -72,7 +74,7 @@ async function main() {
     } else if (platform === 4) {
       const ctr = await DeployerUtils.connectInterface(signer, 'WaultStrategyFullBuyback', strategy) as WaultStrategyFullBuyback;
       if (assets.length === 2) {
-        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/wault/StrategyWaultLp.sol:StrategyWaultLp',[
+        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/wault/StrategyWaultLp.sol:StrategyWaultLp', [
           core.controller,
           vault,
           underlying,
@@ -81,10 +83,30 @@ async function main() {
           await ctr.poolID()
         ]);
       } else {
-        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/wault/StrategyWaultSingle.sol:StrategyWaultSingle',[
+        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/wault/StrategyWaultSingle.sol:StrategyWaultSingle', [
           core.controller,
           vault,
           underlying,
+          await ctr.poolID()
+        ]);
+      }
+    } else if (platform === 5) {
+      const ctr = await DeployerUtils.connectInterface(signer, 'IronMcStrategyBase', strategy) as IronMcStrategyBase;
+      if (assets.length === 2) {
+        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/iron/StrategyIronUniPair.sol:StrategyIronUniPair', [
+          core.controller,
+          vault,
+          underlying,
+          assets[0],
+          assets[1],
+          await ctr.poolID()
+        ]);
+      } else {
+        await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap', [
+          core.controller,
+          vault,
+          underlying,
+          assets,
           await ctr.poolID()
         ]);
       }
