@@ -48,6 +48,10 @@ export default {
         {
           privateKey: Secrets.maticPrivateKey,
           balance: "1000000000000000000000000000",
+        },
+        {
+          privateKey: Secrets.maticPrivateKey2,
+          balance: "1000000000000000000000000000",
         }
       ],
     },

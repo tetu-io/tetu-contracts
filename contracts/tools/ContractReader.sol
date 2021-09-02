@@ -31,8 +31,9 @@ contract ContractReader is Initializable, Controllable {
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
-  function initialize(address _controller) external initializer {
+  function initialize(address _controller, address _calculator) external initializer {
     Controllable.initializeControllable(_controller);
+    tools[keccak256(abi.encodePacked("calculator"))] = _calculator;
   }
 
   event ToolAddressUpdated(address newValue);
@@ -427,18 +428,27 @@ contract ContractReader is Initializable, Controllable {
   // normalized precision
   function computeRewardApr(address _vault, address rt) public view returns (uint256) {
     uint256 periodFinish = ISmartVault(_vault).periodFinishForToken(rt);
+    // already normalized precision
     uint256 tvlUsd = vaultTvlUsdc(_vault);
     uint256 rtPrice = getPrice(rt);
 
+    uint256 rewardsForFullPeriod = ISmartVault(_vault).rewardRateForToken(rt)
+    .mul(ISmartVault(_vault).duration());
+
     // keep precision numbers
-    uint256 rtBalanceUsd = ERC20(rt).balanceOf(_vault).mul(rtPrice).div(PRECISION);
-    if (tvlUsd != 0 && rtBalanceUsd != 0 && periodFinish > block.timestamp) {
-      uint256 duration = periodFinish.sub(block.timestamp);
+    if (tvlUsd != 0 && rewardsForFullPeriod != 0 && periodFinish > block.timestamp) {
+      uint256 currentPeriod = periodFinish.sub(block.timestamp);
+      uint256 periodRatio = currentPeriod.mul(PRECISION).div(ISmartVault(_vault).duration());
+
+      uint256 rtBalanceUsd = rewardsForFullPeriod
+      .mul(periodRatio)
+      .mul(rtPrice)
+      .div(1e36);
+
       // amounts should have the same decimals
-      tvlUsd = normalizePrecision(tvlUsd, vaultDecimals(_vault));
       rtBalanceUsd = normalizePrecision(rtBalanceUsd, ERC20(rt).decimals());
 
-      return computeApr(tvlUsd, rtBalanceUsd, duration);
+      return computeApr(tvlUsd, rtBalanceUsd, currentPeriod);
     } else {
       return 0;
     }

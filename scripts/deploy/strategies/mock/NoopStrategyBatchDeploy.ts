@@ -24,7 +24,7 @@ async function main() {
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     const strategy = await DeployerUtils.deployContract(signer, strategyName,
-        controller.address, mocks.get('usdc'), vault.address, [mocks.get('quick')], [mocks.get('usdc')]) as IStrategy;
+        controller.address, mocks.get('usdc'), vault.address, [mocks.get('quick')], [mocks.get('usdc')], 1) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
 

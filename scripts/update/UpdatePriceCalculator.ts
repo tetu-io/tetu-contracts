@@ -8,21 +8,12 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const net = await ethers.provider.getNetwork();
 
-  let name;
-  if (net.name === 'rinkeby') {
-    name = 'PriceCalculatorRinkeby';
-  } else if (net.name === 'ropsten') {
-    name = 'PriceCalculatorRopsten';
-  } else {
-    throw Error('Unknown net' + net);
+  const logic = await DeployerUtils.deployContract(signer, 'PriceCalculator');
+
+  if ((await ethers.provider.getNetwork()).name !== "matic") {
+    const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.calculator) as TetuProxyGov;
+    await proxy.upgrade(logic.address);
   }
-
-  const logic = await DeployerUtils.deployContract(signer, name);
-
-  const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.calculator) as TetuProxyGov;
-  await proxy.upgrade(logic.address);
-
-  // const reader = logic.attach(proxy.address);
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);

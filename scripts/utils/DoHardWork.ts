@@ -55,6 +55,7 @@ async function main() {
 
       console.log('DoHardWork for', await vaultContract.name(), iTokenBal);
       console.log('ps share price', psPpfs);
+      console.log('toClaimUsd', toClaimUsd);
 
       await RunHelper.runAndWait(() => controller.doHardWork(vault));
 

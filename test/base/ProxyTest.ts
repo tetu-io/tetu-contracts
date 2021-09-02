@@ -51,12 +51,12 @@ describe("Controller tests", function () {
     const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const psVault1 = vaultLogic.attach(vaultProxy1.address) as SmartVault;
     const psEmptyStrategy1 = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, core.rewardToken.address, psVault1.address, [], [core.rewardToken.address]) as NoopStrategy;
+        core.controller.address, core.rewardToken.address, psVault1.address, [], [core.rewardToken.address], 1) as NoopStrategy;
 
     const vaultProxy2 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const psVault2 = vaultLogic.attach(vaultProxy2.address) as SmartVault;
     const psEmptyStrategy2 = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, core.rewardToken.address, psVault2.address, [], [core.rewardToken.address]) as NoopStrategy;
+        core.controller.address, core.rewardToken.address, psVault2.address, [], [core.rewardToken.address],1) as NoopStrategy;
 
 
     await psVault1.initializeSmartVault(
@@ -140,7 +140,7 @@ describe("Controller tests", function () {
     const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy1.address) as SmartVault;
     const psEmptyStrategy1 = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, MaticAddresses.WMATIC_TOKEN, vault.address, [], [MaticAddresses.WMATIC_TOKEN]) as NoopStrategy;
+        core.controller.address, MaticAddresses.WMATIC_TOKEN, vault.address, [], [MaticAddresses.WMATIC_TOKEN], 1) as NoopStrategy;
 
 
     await vault.initializeSmartVault(

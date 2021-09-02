@@ -9,13 +9,13 @@ export class Addresses {
         '0x286c02C93f3CF48BB759A93756779A1C78bCF833', // announcer
         '0xd055b086180cB6dac888792C9307970Ed10CF137', // forwarder
         '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F', // bookkeeper
-        '0xca3F0f662f0449c74b2ceCD65620192EbaFc44a9', // notifier
+        '0x560471ab39C3Eb26D63aB3b2A5b9835764C998ea', // notifier
         '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // mint helper
         '0x255707B70BF90aa112006E1b07B9AeA6De021424', // tetu token
         '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
         '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2',// fund keeper
-        '',// vault controller
-        '',// vault logic
+        '0xC5b3aF6FB4b2ff14642e337F41B86C9494f70b43',// vault controller
+        '0x52646dfb3E1D540D85DC32223A220a6F9c7eD759',// vault logic
     )],
     ['rinkeby', new CoreAddresses(
         '0x423394A1723C81a2a9E3Ee1852Bc55Db7B85bfE1', // controller
@@ -42,6 +42,7 @@ export class Addresses {
         '', // mockFaucet
         '0x6b887F2BE347984D55bC1a21BB970c707566eB48', // multiSwap
         '0x980cc507CDA067Fc71e90a5966A526DEBFB1eE74', // zapContract
+        '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
     )],
     ['rinkeby', new ToolsAddresses(
         '0x9b8205F7fa03FD4DFc29c9b0E553883913ec4132', // calculator
@@ -52,6 +53,7 @@ export class Addresses {
         '0xE08a4d6aFC2f3bB5F95ceC1e4D88559d837C08F2', // mockFaucet
         '0xe5C203ef4CB3E56766E7936fDE4b157209e93dD5', // multiSwap
         '0x9Ff04B5D8f6e7fFF99DBE07CAa9a83467Ec4A1c1', // zapContract
+        '', // multicall
     )]
   ]);
 
@@ -59,6 +61,7 @@ export class Addresses {
     ['matic', new Map([
       ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
       ['sushi_lp_token_usdc', '0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9'],
+      ['quick_lp_token_usdc', '0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B'],
     ])],
     ['rinkeby', new Map([
       ['quick', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],
@@ -66,6 +69,7 @@ export class Addresses {
       ['usdc', '0xa85682167bA1da84bccadEf0C737b63c14196803'],
       ['weth', '0x65741ef7bF896E9146125E289C0858552659B66b'],
       ['sushi_lp_token_usdc', '0x02436A8Ce8E92Fe980166b5edd8C844DC2EaC2ee'],
+      ['quick_lp_token_usdc', ''],
     ])],
 
   ]);

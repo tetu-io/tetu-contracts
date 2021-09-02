@@ -163,13 +163,13 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
-  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+  public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
 
-    await calculator.addKeyTokens([
+    await RunHelper.runAndWait(() => calculator.addKeyTokens([
       MaticAddresses.USDC_TOKEN,
       MaticAddresses.WETH_TOKEN,
       MaticAddresses.DAI_TOKEN,
@@ -177,11 +177,14 @@ export class DeployerUtils {
       MaticAddresses.WBTC_TOKEN,
       MaticAddresses.WMATIC_TOKEN,
       MaticAddresses.QUICK_TOKEN,
-    ]);
-    await calculator.setDefaultToken(MaticAddresses.USDC_TOKEN);
-    await calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2");
-    await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
-    await calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP");
+    ]), true, wait);
+
+    await RunHelper.runAndWait(() => calculator.setDefaultToken(MaticAddresses.USDC_TOKEN), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.FIREBIRD_FACTORY, "FireBird Liquidity Provider"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token"), true, wait);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -225,8 +228,7 @@ export class DeployerUtils {
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as ContractReader;
-    await contract.initialize(controller);
-    await contract.setPriceCalculator(calculator);
+    await contract.initialize(controller, calculator);
     return [contract, proxy, logic];
   }
 
@@ -300,7 +302,7 @@ export class DeployerUtils {
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     const psEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        controller.address, rewardToken.address, psVault.address, [], [rewardToken.address]) as NoopStrategy;
+        controller.address, rewardToken.address, psVault.address, [], [rewardToken.address], 1) as NoopStrategy;
 
     //!########### INIT ##############
     await RunHelper.runAndWait(() => psVault.initializeSmartVault(
@@ -393,6 +395,34 @@ export class DeployerUtils {
     return [vaultLogic, vault, strategy];
   }
 
+  public static async deployVaultAndStrategy<T>(
+      vaultName: string,
+      strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
+      controller: Controller,
+      vaultController: VaultController,
+      vaultRewardToken: string,
+      signer: SignerWithAddress,
+      rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+      wait = false
+  ): Promise<any[]> {
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
+
+    const strategy = await strategyDeployer(vault.address);
+
+    const strategyUnderlying = await strategy.underlying();
+
+    await RunHelper.runAndWait(() => vault.initializeSmartVault(
+        "TETU_" + vaultName,
+        "x" + vaultName,
+        controller.address,
+        strategyUnderlying,
+        rewardDuration
+    ), true, wait);
+    return [vaultLogic, vault, strategy];
+  }
+
   // ************** VERIFY **********************
 
   public static async verify(address: string) {
@@ -415,10 +445,20 @@ export class DeployerUtils {
     }
   }
 
-  public static async verifyWithContractName(address: string, contractPath: string) {
+  public static async verifyWithContractName(address: string, contractPath: string, args?: any[]) {
     try {
       await hre.run("verify:verify", {
-        address: address, contract: contractPath
+        address: address, contract: contractPath, constructorArguments: args
+      })
+    } catch (e) {
+      console.log('error verify', e);
+    }
+  }
+
+  public static async verifyWithArgsAndContractName(address: string, args: any[], contractPath: string) {
+    try {
+      await hre.run("verify:verify", {
+        address: address, constructorArguments: args, contract: contractPath
       })
     } catch (e) {
       console.log('error verify', e);
@@ -429,12 +469,12 @@ export class DeployerUtils {
   public static async verifyProxy(adr: string) {
     try {
 
-      // const resp =
+      const resp =
       await axios.post(
           (await DeployerUtils.getNetworkScanUrl()) +
           `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
           `address=${adr}`);
-      // console.log("proxy verify resp", resp);
+      // console.log("proxy verify resp", resp.data);
     } catch (e) {
       console.log('error proxy verify', adr, e);
     }

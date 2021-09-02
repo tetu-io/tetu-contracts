@@ -1,6 +1,13 @@
 import {ethers} from "hardhat";
 import {MaticAddresses} from "./MaticAddresses";
-import {IUniswapV2Factory, IUniswapV2Pair, IUniswapV2Router02, PriceCalculator} from "../typechain";
+import {
+  IFireBirdFactory,
+  IFireBirdRouter,
+  IUniswapV2Factory,
+  IUniswapV2Pair,
+  IUniswapV2Router02,
+  PriceCalculator
+} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {Erc20Utils} from "./Erc20Utils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -8,6 +15,7 @@ import {expect} from "chai";
 import {RunHelper} from "../scripts/utils/RunHelper";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
+import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 
 export class UniswapUtils {
   private static deadline = "1000000000000";
@@ -76,22 +84,40 @@ export class UniswapUtils {
     expect(+utils.formatUnits(bal1, t1Dec))
     .is.greaterThanOrEqual(+utils.formatUnits(amountB, t1Dec), 'not enough bal for token B ' + name1);
 
-    const router = await UniswapUtils.connectRouter(_router, sender);
-    await RunHelper.runAndWait(() => Erc20Utils.approve(tokenA, sender, router.address, amountA), true, wait);
-    await RunHelper.runAndWait(() => Erc20Utils.approve(tokenB, sender, router.address, amountB), true, wait);
-    await RunHelper.runAndWait(() => router.addLiquidity(
-        tokenA,
-        tokenB,
-        amountA,
-        amountB,
-        1,
-        1,
-        sender.address,
-        UniswapUtils.deadline
-    ), true, wait);
+
+    await RunHelper.runAndWait(() => Erc20Utils.approve(tokenA, sender, _router, amountA), true, wait);
+    await RunHelper.runAndWait(() => Erc20Utils.approve(tokenB, sender, _router, amountB), true, wait);
+
+    if (_factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()) {
+      const pair = await UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, _factory);
+      const router = await DeployerUtils.connectInterface(sender, 'IFireBirdRouter', _router) as IFireBirdRouter
+      await RunHelper.runAndWait(() => router.addLiquidity(
+          pair,
+          tokenA,
+          tokenB,
+          amountA,
+          amountB,
+          1,
+          1,
+          sender.address,
+          UniswapUtils.deadline
+      ), true, wait);
+    } else {
+      const router = await UniswapUtils.connectRouter(_router, sender);
+      await RunHelper.runAndWait(() => router.addLiquidity(
+          tokenA,
+          tokenB,
+          amountA,
+          amountB,
+          1,
+          1,
+          sender.address,
+          UniswapUtils.deadline
+      ), true, wait);
+    }
 
     const factory = await UniswapUtils.connectFactory(_factory, sender);
-    return factory.getPair(tokenA, tokenB);
+    return await UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, factory.address);
   }
 
   public static async connectRouter(router: string, signer: SignerWithAddress): Promise<IUniswapV2Router02> {
@@ -222,8 +248,7 @@ export class UniswapUtils {
       await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(factory1), token1, amountForSell1, token1Opposite, wait);
     }
 
-    const factory = await UniswapUtils.connectFactory(targetFactory, signer);
-    const lpToken = await factory.getPair(token0, token1);
+    let lpToken = await UniswapUtils.getPairFromFactory(signer, token0, token1, targetFactory);
 
     const lpBalanceBefore = await Erc20Utils.balanceOf(lpToken, signer.address);
 
@@ -258,6 +283,17 @@ export class UniswapUtils {
     const price = await priceCalculator.getPriceWithDefaultOutput(tokenAddress);
     const D18 = BigNumber.from('1000000000000000000');
     return BigNumber.from(usdAmount).mul(D18).mul(BigNumber.from(1).pow(dec)).div(price)
+  }
+
+  public static async getPairFromFactory(signer: SignerWithAddress, token0: string, token1: string, factory: string): Promise<string> {
+    if (factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()) {
+      console.log('Firebird factory');
+      const factoryCtr = await DeployerUtils.connectInterface(signer, 'IFireBirdFactory', factory) as IFireBirdFactory;
+      return await factoryCtr.getPair(token0, token1, 50, 20);
+    } else {
+      const factoryCtr = await UniswapUtils.connectFactory(factory, signer);
+      return await factoryCtr.getPair(token0, token1);
+    }
   }
 
   public static async buyAllBigTokens(

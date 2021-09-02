@@ -12,7 +12,7 @@ async function main() {
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
   const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
 
-  const infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/wault_pools.csv', 'utf8').split(/\r?\n/);
 
   const deployed = [];
   const vaultNames = new Set<string>();

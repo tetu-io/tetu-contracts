@@ -10,8 +10,10 @@ async function main() {
 
   const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
 
-  const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.reader) as TetuProxyGov;
-  await proxy.upgrade(logic.address);
+  if ((await ethers.provider.getNetwork()).name !== "matic") {
+    const proxy = await DeployerUtils.connectContract(signer, "TetuProxyGov", tools.reader) as TetuProxyGov;
+    await proxy.upgrade(logic.address);
+  }
 
   // const reader = logic.attach(proxy.address);
 

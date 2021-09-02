@@ -75,7 +75,7 @@ describe.skip('TETU LP test', async () => {
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     tetuLpVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     tetuLpEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken]) as NoopStrategy;
+        core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken], 1) as NoopStrategy;
 
     const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
 

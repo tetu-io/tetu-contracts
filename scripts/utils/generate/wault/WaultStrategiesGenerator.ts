@@ -5,7 +5,7 @@ async function main() {
   const templatePath = 'scripts/utils/generate/wault/wault_strat_template.sol';
   const templateSinglePath = 'scripts/utils/generate/wault/wault_strat_single_template.sol';
   const outputPath = 'tmp/wault_strats/';
-  const infos = readFileSync('scripts/utils/generate/wault/wault_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/wault_pools.csv', 'utf8').split(/\r?\n/);
   const template = readFileSync(templatePath, 'utf8');
   const templateSingle = readFileSync(templateSinglePath, 'utf8');
 

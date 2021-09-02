@@ -9,6 +9,7 @@ import {PriceCalculator} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {Erc20Utils} from "../Erc20Utils";
+import {utils} from "ethers";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -176,6 +177,34 @@ describe("Price calculator tests", function () {
     console.log('factory', factory);
     console.log('lp', lp);
     expect(tokenOpposite.toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN.toLowerCase());
+  });
+
+  it("calculate IRON_USDC_USDT_DAI, price and check", async () => {
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.IRON_IS3USD, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.99);
+    expect(price).is.lessThan(1.01);
+  });
+
+  it("calculate FIREBIRD eth-ice, price and check", async () => {
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.FIREBIRD_ETH_ICE, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(10);
+    expect(price).is.lessThan(500);
+  });
+
+  it("calculate DFYN usdc-ice, price and check", async () => {
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.DFYN_USDC_ICE, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(94116);
+    expect(price).is.lessThan(9411690);
+  });
+
+  it("calculate IRON_IRON_IS3USD, price and check", async () => {
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.IRON_IRON_IS3USD, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.99);
+    expect(price).is.lessThan(1.01);
   });
 
 });
