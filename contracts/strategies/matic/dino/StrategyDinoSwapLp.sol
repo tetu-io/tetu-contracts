@@ -21,7 +21,7 @@ contract StrategyDinoSwapLp is DinoStrategyFullBuyback {
   address public constant MASTER_CHEF  = address(0x1948abC5400Aa1d72223882958Da3bec643fb4E5);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.DINO;
   // rewards
-  address private constant DINO  = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
+  address private constant DINO  = address(0xAa9654BECca45B5BDFA5ac646c939C62b527D394);
   address[] private poolRewards = [DINO];
   address[] private _assets;
 

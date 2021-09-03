@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../third_party/dino/IFossilFarms.sol";
 import "../StrategyBase.sol";
 
-/// @title Abstract contract for Wault strategy implementation
+/// @title Abstract contract for Dino strategy implementation
 /// @author belbix, bogdoslav
 abstract contract DinoStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
@@ -26,7 +26,7 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
 
   // ************ VARIABLES **********************
   /// @notice Strategy type for statistical purposes
-  string public constant STRATEGY_NAME = "WaultStrategyFullBuyback";
+  string public constant STRATEGY_NAME = "DinoStrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
@@ -35,7 +35,7 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
 
   /// @notice Wault rewards pool
   address public pool;
-  /// @notice WexPolyMaster rewards pool ID
+  /// @notice Dino FossilFarms rewards pool ID
   uint256 public poolID;
 
   /// @notice Contract constructor using on strategy implementation
@@ -44,7 +44,7 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
   /// @param _underlying Underlying token address
   /// @param _vault SmartVault address that will provide liquidity
   /// @param __rewardTokens Reward tokens that the strategy will farm
-  /// @param _pool WexPolyMaster pool address
+  /// @param _pool Dino FossilFarms pool address
   /// @param _poolID Pool id
   constructor(
     address _controller,
@@ -64,13 +64,13 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
 
   // ************* VIEWS *******************
 
-  /// @notice Strategy balance in the WexPolyMaster pool
+  /// @notice Strategy balance in the Dino FossilFarms pool
   /// @return bal Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint256 bal) {
     (bal,) = IFossilFarms(pool).userInfo(poolID, address(this));
   }
 
-  /// @notice Return approximately amount of reward tokens ready to claim in WexPolyMaster pool
+  /// @notice Return approximately amount of reward tokens ready to claim in Dino FossilFarms pool
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
@@ -79,7 +79,7 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
     return toClaim;
   }
 
-  /// @notice TVL of the underlying in the WexPolyMaster pool
+  /// @notice TVL of the underlying in the Dino FossilFarms pool
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
@@ -88,22 +88,22 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
 
   /// @notice Calculate approximately weekly reward amounts for each reward tokens
   /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Array of weekly reward amounts, 0 - WEX
+  /// @return Array of weekly reward amounts, 0 - DINO
   function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
-    rewards[0] = computeWaultWeeklyPoolReward();
+    rewards[0] = computeWeeklyPoolReward();
     return rewards;
   }
 
-  /// @notice Calculate approximately weekly reward amounts for WEX
+  /// @notice Calculate approximately weekly reward amounts for DINO
   /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Weekly reward amount of WEX
-  function computeWaultWeeklyPoolReward() public view returns (uint256) {
+  /// @return Weekly reward amount of DINO
+  function computeWeeklyPoolReward() public view returns (uint256) {
     (, uint256 allocPoint, uint256 lastRewardBlock,) = IFossilFarms(pool).poolInfo(poolID);
     uint256 time = block.number - lastRewardBlock;
-    uint256 wexPerBlock = IFossilFarms(pool).dinoPerBlock();
+    uint256 dinoPerBlock = IFossilFarms(pool).dinoPerBlock();
     uint256 totalAllocPoint = IFossilFarms(pool).totalAllocPoint();
-    uint256 sushiReward = time.mul(wexPerBlock).mul(allocPoint).div(totalAllocPoint);
+    uint256 sushiReward = time.mul(dinoPerBlock).mul(allocPoint).div(totalAllocPoint);
     uint256 averageBlockTime = 5;
     return sushiReward * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
   }
@@ -112,17 +112,18 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
-    // wault WEXpoly pool has the same underlying and reward token
+    // Dino FossilFarms pool has the same underlying and reward token
     // need to be sure that we don't liquidate invested funds
     investAllUnderlying();
     // only claim rewards
-    // IFossilFarms(pool).claim(poolID); // TODO! FossilFarms have no claim method  https://github.com/DinoSwap/fossil-farms-contract/blob/main/FossilFarms.sol
+    // TFossilFarms have no claim() method  https://github.com/DinoSwap/fossil-farms-contract/blob/main/FossilFarms.sol so we use withdraw with amount 0
+    IFossilFarms(pool).withdraw(poolID,0);
     liquidateReward();
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
-  /// @dev Deposit underlying to WexPolyMaster pool
+  /// @dev Deposit underlying to Dino FossilFarms pool
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
     IERC20(_underlyingToken).safeApprove(pool, 0);
@@ -130,7 +131,7 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
     IFossilFarms(pool).deposit(poolID, amount);
   }
 
-  /// @dev Withdraw underlying from WexPolyMaster pool
+  /// @dev Withdraw underlying from Dino FossilFarms pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
     IFossilFarms(pool).withdraw(poolID, amount);
