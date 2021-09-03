@@ -34,8 +34,24 @@ export class MaticAddresses {
   public static miMATIC_TOKEN = "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1".toLowerCase();
   public static WEXpoly_TOKEN = "0x4c4BF319237D98a30A929A96112EfFa8DA3510EB".toLowerCase();
   public static PEAR_TOKEN = "0xc8bcb58caEf1bE972C0B638B1dD8B0748Fdc8A44".toLowerCase();
+  public static ICE_TOKEN = "0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef".toLowerCase(); // iron ice
   public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
   // public static dQUICK_TOKEN = "".toLowerCase();
+
+  //iron
+  public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
+  public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
+  public static IRON_IRON_IS3USD = "0x985D40feDAA3208DAbaCDFDCA00CbeAAc9543949".toLowerCase();
+
+  // firebird
+  public static FIREBIRD_FACTORY = "0x5De74546d3B86C8Df7FEEc30253865e1149818C8".toLowerCase();
+  public static FIREBIRD_ROUTER = "0xF6fa9Ea1f64f1BBfA8d71f7f43fAF6D45520bfac".toLowerCase();
+  public static FIREBIRD_ETH_ICE = "0xf1EE78544a1118F2efb87f7EaCd9f1E6e80e1ea5".toLowerCase();
+
+  // dfyn
+  public static DFYN_FACTORY = "0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B".toLowerCase();
+  public static DFYN_ROUTER = "0xA102072A4C07F06EC3B4900FDC4C7B80b6c57429".toLowerCase();
+  public static DFYN_USDC_ICE = "0x34832D9AC4127a232C1919d840f7aaE0fcb7315B".toLowerCase();
 
   //quick
   public static QUICK_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff".toLowerCase();
@@ -96,6 +112,10 @@ export class MaticAddresses {
         return MaticAddresses.SUSHI_ROUTER;
       case MaticAddresses.WAULT_FACTORY:
         return MaticAddresses.WAULT_ROUTER;
+      case MaticAddresses.FIREBIRD_FACTORY:
+        return MaticAddresses.FIREBIRD_ROUTER;
+      case MaticAddresses.DFYN_FACTORY:
+        return MaticAddresses.DFYN_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

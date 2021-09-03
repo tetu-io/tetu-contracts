@@ -5,10 +5,30 @@ import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
+const vaultsForParsing = new Set<string>([
+  "0x6C3246e749472879D1088C24Dacd2A37CAaEe9B1".toLowerCase(),
+  "0xd5c5fc773883289778092e864afE015979A10eb9".toLowerCase(),
+  "0x3Fd0A8a975eC101748aE931B2d13711E04231920".toLowerCase(),
+  "0xe29d72E3f072A6B93F54F08C8644Dd3429Fe69a7".toLowerCase(),
+  "0xa5218933721D2fa8Bb95e5f02D32d3FE0a9039F8".toLowerCase(),
+  "0xC6f6e9772361A75988C6CC248a3945a870FB1272".toLowerCase(),
+  "0x46e8E75484eE655C374B608842ACd41B2eC3f11C".toLowerCase(),
+  "0xb831c5A919983F88D2220E2fF591550513Dd2236".toLowerCase(),
+  "0x087b137545dBe79594d76F9122A12bdf5cf12AD4".toLowerCase(),
+  "0xA842cee4E5e4537718B5cA37145f6BdF606014f5".toLowerCase(),
+  "0x8846715645A06a5c46309dC29623793D97795242".toLowerCase(),
+  "0x5C65bdebca760d113B4Ef334013eAFf07779F00b".toLowerCase(),
+  "0xB564D64014F52fd7Eb1CB7e639C134Ec24C76Ed2".toLowerCase(),
+  "0x3b9AFEBaD9490916aC286EAe9005921eFdfc29a0".toLowerCase(),
+  "0xCd72ec3d469ecFCf37CBB7979d8F916dDdE939cE".toLowerCase(),
+  "0x0163948cda17ca2a313F00B7F0301BB3Bf98dBb0".toLowerCase(),
+  "0x0E90bF48b16C5B409Dc33e261EfCa205623fe686".toLowerCase(),
+  "0xF99F5B28093BfA3B04c8c6a0225580236BeBbFfd".toLowerCase(),
+]);
 
 const EVENT_DEPOSIT = '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c';
 const START_BLOCK = 17462342;
-const STEP = 9_999;
+const STEP = 2000;
 
 async function main() {
   const signer = (await ethers.getSigners())[1];
@@ -33,11 +53,14 @@ async function main() {
 
   let data = '';
   const usersTotal = new Set<string>();
+  let vaultUnclaimed = "";
 
   for (let vault of vaults) {
 
     try {
-      if (vault.toLowerCase() == core.psVault.toLowerCase()) {
+      if (vault.toLowerCase() == core.psVault.toLowerCase()
+          || !vaultsForParsing.has(vault.toLowerCase())
+      ) {
         continue;
       }
       // const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
@@ -45,7 +68,7 @@ async function main() {
       const vaultName = await cReader.vaultName(vault);
       console.log('vault name', vaultName);
 
-      let start = START_BLOCK;
+      let start = (await cReader.vaultCreated(vault)).toNumber();
       let end = START_BLOCK + STEP;
       const logs = [];
       while (true) {
@@ -97,7 +120,9 @@ async function main() {
         totalToClaim += +userToClaim;
         data += `${vaultName},${vault},${userAddress},${userToClaim}\n`;
       }
+      vaultUnclaimed += `${vaultName},${vault},${totalToClaim}\n`;
       await writeFileSync(`./tmp/stats/to_claim_partially.txt`, data, 'utf8');
+      await writeFileSync(`./tmp/stats/unclaimed_partially.txt`, vaultUnclaimed, 'utf8');
     } catch (e) {
       console.error('error with vault ', vault, e);
     }
@@ -107,6 +132,7 @@ async function main() {
   data += await collectPs(usersTotal, core.psVault, vaults, signer, tools.utils);
 
   await writeFileSync(`./tmp/stats/to_claim.txt`, data, 'utf8');
+  await writeFileSync(`./tmp/stats/unclaimed.txt`, vaultUnclaimed, 'utf8');
 }
 
 

@@ -46,11 +46,13 @@ contract Announcer is Controllable, IAnnouncer {
   mapping(TimeLockOpCodes => uint256) public timeLockIndexes;
   /// @dev Hold indexes for upgrade info by address
   mapping(TimeLockOpCodes => mapping(address => uint256)) public multiTimeLockIndexes;
-  /// @dev A list of opCodes allowed for multi scheduling
+  /// @dev Deprecated, don't remove for keep slot ordering
   mapping(TimeLockOpCodes => bool) public multiOpCodes;
 
   /// @notice Address change was announced
   event AddressChangeAnnounce(TimeLockOpCodes opCode, address newAddress);
+  /// @notice Uint256 change was announced
+  event UintChangeAnnounce(TimeLockOpCodes opCode, uint256 newValue);
   /// @notice Ratio change was announced
   event RatioChangeAnnounced(TimeLockOpCodes opCode, uint256 numerator, uint256 denominator);
   /// @notice Token movement was announced
@@ -63,6 +65,8 @@ contract Announcer is Controllable, IAnnouncer {
   event AnnounceClosed(bytes32 opHash);
   /// @notice Strategy Upgrade was announced
   event StrategyUpgradeAnnounced(address _contract, address _implementation);
+  /// @notice Vault stop action announced
+  event VaultStop(address _contract);
 
   constructor() {
     require(_TIME_LOCK_SLOT == bytes32(uint256(keccak256("eip1967.announcer.timeLock")) - 1), "wrong timeLock");
@@ -81,10 +85,6 @@ contract Announcer is Controllable, IAnnouncer {
       sstore(slot, _timeLock)
     }
 
-    // setup multi opCodes
-    multiOpCodes[TimeLockOpCodes.TetuProxyUpdate] = true;
-    multiOpCodes[TimeLockOpCodes.StrategyUpgrade] = true;
-
     // placeholder for index 0
     _timeLockInfos.push(TimeLockInfo(TimeLockOpCodes.ZeroPlaceholder, 0, address(0), new address[](0), new uint256[](0)));
   }
@@ -99,6 +99,17 @@ contract Announcer is Controllable, IAnnouncer {
   modifier onlyGovernanceOrDao() {
     require(isGovernance(msg.sender)
       || IController(controller()).isDao(msg.sender), "not governance or dao");
+    _;
+  }
+
+  /// @dev Operations allowed for Governance or Dao addresses
+  modifier onlyControlMembers() {
+    require(
+      isGovernance(msg.sender)
+      || isController(msg.sender)
+      || IController(controller()).isDao(msg.sender)
+      || IController(controller()).vaultController() == msg.sender
+    , "not control member");
     _;
   }
 
@@ -140,6 +151,7 @@ contract Announcer is Controllable, IAnnouncer {
   ///                 6 - FundToken
   ///                 7 - PsVault
   ///                 8 - Fund
+  ///                 19 - VaultController
   /// @param newAddress New address
   function announceAddressChange(TimeLockOpCodes opCode, address newAddress) external onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
@@ -153,6 +165,25 @@ contract Announcer is Controllable, IAnnouncer {
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit AddressChangeAnnounce(opCode, newAddress);
+  }
+
+  /// @notice Only Governance can do it.
+  ///         Announce some single uint256 change. You will able to setup new value after Time-lock period
+  /// @param opCode Operation code from the list
+  ///                 20 - RewardBoostDuration
+  ///                 21 - RewardRatioWithoutBoost
+  /// @param newValue New value
+  function announceUintChange(TimeLockOpCodes opCode, uint256 newValue) external onlyGovernance {
+    require(timeLockIndexes[opCode] == 0, "already announced");
+    bytes32 opHash = keccak256(abi.encode(opCode, newValue));
+    timeLockSchedule[opHash] = block.timestamp + timeLock();
+
+    uint256[] memory values = new uint256[](1);
+    values[0] = newValue;
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, address(0), new address[](0), values));
+    timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
+
+    emit UintChangeAnnounce(opCode, newValue);
   }
 
   /// @notice Only Governance or DAO can do it.
@@ -273,7 +304,6 @@ contract Announcer is Controllable, IAnnouncer {
   }
 
   /// @notice Only Governance can do it. Announce strategy update for given vaults
-  ///         You will able to mint after Time-lock period
   /// @param _targets Vault addresses
   /// @param _strategies Strategy addresses
   function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
@@ -293,6 +323,22 @@ contract Announcer is Controllable, IAnnouncer {
     }
   }
 
+  /// @notice Only Governance can do it. Announce the stop vault action
+  /// @param _vaults Vault addresses
+  function announceVaultStopBatch(address[] calldata _vaults) external onlyGovernance {
+    TimeLockOpCodes opCode = TimeLockOpCodes.VaultStop;
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      require(multiTimeLockIndexes[opCode][_vaults[i]] == 0, "already announced");
+      bytes32 opHash = keccak256(abi.encode(opCode, _vaults[i]));
+      timeLockSchedule[opHash] = block.timestamp + timeLock();
+
+      _timeLockInfos.push(TimeLockInfo(opCode, opHash, _vaults[i], new address[](0), new uint256[](0)));
+      multiTimeLockIndexes[opCode][_vaults[i]] = (_timeLockInfos.length - 1);
+
+      emit VaultStop(_vaults[i]);
+    }
+  }
+
   /// @notice Close any announce. Use in emergency case.
   /// @param opCode TimeLockOpCodes uint8 value
   /// @param opHash keccak256(abi.encode()) code with attributes.
@@ -305,9 +351,9 @@ contract Announcer is Controllable, IAnnouncer {
   /// @notice Only controller can use it. Clear announce after successful call time-locked function
   /// @param opHash Generated keccak256 opHash
   /// @param opCode TimeLockOpCodes uint8 value
-  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControllerOrGovernance {
+  function clearAnnounce(bytes32 opHash, TimeLockOpCodes opCode, address target) public override onlyControlMembers {
     timeLockSchedule[opHash] = 0;
-    if (multiOpCodes[opCode]) {
+    if (multiTimeLockIndexes[opCode][target] != 0) {
       multiTimeLockIndexes[opCode][target] = 0;
     } else {
       timeLockIndexes[opCode] = 0;

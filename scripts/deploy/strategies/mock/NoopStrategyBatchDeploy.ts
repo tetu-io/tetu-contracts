@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {Controller, IStrategy, SmartVault} from "../../../../typechain";
+import {Controller, IStrategy, SmartVault, VaultController} from "../../../../typechain";
 
 
 async function main() {
@@ -11,6 +11,7 @@ async function main() {
   const mocks = await DeployerUtils.getTokenAddresses();
   const controller = await DeployerUtils.connectContract(
       signer, 'Controller', core.controller) as Controller;
+  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
 
   for (let i = 0; i < 10; i++) {
     const vaultName: string = 'NOOP_MockUSDC_' + i;
@@ -23,7 +24,7 @@ async function main() {
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     const strategy = await DeployerUtils.deployContract(signer, strategyName,
-        controller.address, mocks.get('usdc'), vault.address, [mocks.get('quick')], [mocks.get('usdc')]) as IStrategy;
+        controller.address, mocks.get('usdc'), vault.address, [mocks.get('quick')], [mocks.get('usdc')], 1) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
 
@@ -34,9 +35,9 @@ async function main() {
         strategyUnderlying,
         rewardDuration
     );
-    await vault.addRewardToken(vaultRewardToken);
-    await vault.addRewardToken(mocks.get('weth') as string);
-    await vault.addRewardToken(mocks.get('sushi') as string);
+    await vaultController.addRewardTokens([vault.address],vaultRewardToken);
+    await vaultController.addRewardTokens([vault.address],mocks.get('weth') as string);
+    await vaultController.addRewardTokens([vault.address],mocks.get('sushi') as string);
 
     await controller.addVaultAndStrategy(vault.address, strategy.address);
 

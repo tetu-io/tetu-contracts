@@ -12,15 +12,18 @@ async function main() {
 
   const timeLockInfosLength = (await announcer.timeLockInfosLength()).toNumber();
 
-  for (let i = 0; i < timeLockInfosLength; i++) {
+  for (let i = timeLockInfosLength - 1; i >= 0; i--) {
     const timeLockInfo = await announcer.timeLockInfo(i);
-    if (timeLockInfo.opCode === 18) {
+    if (timeLockInfo.opCode === 18 || timeLockInfo.opCode === 22) {
       continue;
     }
-    console.info('timeLockInfo', timeLockInfo.opCode, timeLockInfo);
+
 
     const ts = (await announcer.timeLockSchedule(timeLockInfo.opHash)).toNumber();
-    console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
+    if (ts !== 0) {
+      console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
+      console.info('timeLockInfo', timeLockInfo.opCode, timeLockInfo);
+    }
   }
 
 }

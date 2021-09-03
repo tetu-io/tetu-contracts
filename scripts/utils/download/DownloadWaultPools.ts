@@ -1,32 +1,61 @@
 import {ethers, web3} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
-import {ERC20, IOracleMatic, IWaultSwapPair, IWexPolyMaster} from "../../../typechain";
+import {
+  ERC20,
+  IWaultSwapPair,
+  IWexPolyMaster,
+  PriceCalculator,
+  SmartVault
+} from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
-import {Addresses} from "../../../addresses";
+import axios from "axios";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 
-async function main() {
+async function downloadWault() {
   const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
 
   const chef = await DeployerUtils.connectInterface(signer, 'IWexPolyMaster', MaticAddresses.WAULT_POLYMASTER) as IWexPolyMaster;
 
-  const oracle = await DeployerUtils.connectInterface(signer, 'IOracleMatic', Addresses.ORACLE) as IOracleMatic;
+  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+
+  const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC");
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (let vInfo of vaultInfos.data) {
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      console.log(vInfo.addr);
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      const rewards = await VaultUtils.vaultRewardsAmount(vctr, core.psVault);
+      console.log('rewards', rewards);
+      currentRewards.set(vInfo.underlying.toLowerCase(), rewards);
+    }
+  }
 
   const poolLength = (await chef.poolLength()).toNumber();
   console.log('length', poolLength);
 
   const wexPerBlock = await chef.wexPerBlock();
   const totalAllocPoint = await chef.totalAllocPoint();
-  const wexPrice = await oracle.getPrice(MaticAddresses.WEXpoly_TOKEN);
+  const wexPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.WEXpoly_TOKEN);
   console.log('wex price', utils.formatUnits(wexPrice));
 
-  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr \n';
+  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n';
   for (let i = 0; i < poolLength; i++) {
     const poolInfo = await chef.poolInfo(i);
     const lp = poolInfo[0];
+    const status = underlyingStatuses.get(lp.toLowerCase());
+    if (!status) {
+      continue;
+    }
     const lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair
 
     const waultAllocPoint = poolInfo[1];
@@ -36,7 +65,7 @@ async function main() {
     const weekRewardUsd = computeWeekReward(duration, wexPerBlock, waultAllocPoint, totalAllocPoint, wexPrice);
     console.log('weekRewardUsd', weekRewardUsd);
 
-    const lpPrice = await oracle.getPrice(lp);
+    const lpPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
     const tvl = await lpContract.balanceOf(chef.address);
     const tvlUsd = utils.formatUnits(tvl.mul(lpPrice).div(1e9).div(1e9));
 
@@ -71,7 +100,9 @@ async function main() {
         poolInfo[1] + ',' +
         weekRewardUsd.toFixed() + ',' +
         (+tvlUsd).toFixed() + ',' +
-        apr.toFixed(0)
+        apr.toFixed(0) + ',' +
+        currentRewards.get(lp.toLowerCase()) + ',' +
+        underlyingToVault.get(lp.toLowerCase())
     ;
     console.log(data);
     infos += data + '\n';
@@ -86,7 +117,7 @@ async function main() {
   console.log('done');
 }
 
-main()
+downloadWault()
 .then(() => process.exit(0))
 .catch(error => {
   console.error(error);

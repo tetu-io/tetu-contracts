@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, Controller, IStrategy} from "../../../../typechain";
+import {ContractReader, Controller, IStrategy, VaultController} from "../../../../typechain";
 import {readFileSync} from "fs";
 
 
@@ -10,8 +10,9 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
+  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
 
-  const infos = readFileSync('scripts/utils/generate/wault_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/wault_pools.csv', 'utf8').split(/\r?\n/);
 
   const deployed = [];
   const vaultNames = new Set<string>();
@@ -73,6 +74,7 @@ async function main() {
               idx
           ) as Promise<IStrategy>,
           controller,
+          vaultController,
           core.psVault,
           signer,
           60 * 60 * 24 * 28,
@@ -98,6 +100,7 @@ async function main() {
               idx
           ) as Promise<IStrategy>,
           controller,
+          vaultController,
           core.psVault,
           signer,
           60 * 60 * 24 * 28,

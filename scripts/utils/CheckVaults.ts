@@ -107,7 +107,7 @@ async function checkVaultFields(vaultAddress: string) {
   console.log('userRewardsUsdc', await cReader.userRewardsUsdc(signer.address, vaultAddress));
 
   for (let rt of rewardTokens) {
-    console.log('earned', rt, await vaultContract.earned(rt, signer.address));
+    console.log('earned', rt, await vaultContract.earnedWithBoost(rt, signer.address));
   }
 
   console.log(await priceCalculator.getPriceWithDefaultOutput(vUnd));

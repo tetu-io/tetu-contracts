@@ -28,6 +28,7 @@ export class StrategyTestUtils {
         vaultName,
         strategyDeployer,
         core.controller,
+        core.vaultController,
         core.psVault.address,
         signer
     );

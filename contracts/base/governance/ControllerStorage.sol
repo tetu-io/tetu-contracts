@@ -151,6 +151,17 @@ abstract contract ControllerStorage is Initializable, IController {
     return getAddress("announcer");
   }
 
+  function _setVaultController(address _address) internal {
+    emit UpdatedAddressSlot("vaultController", vaultController(), _address);
+    setAddress("vaultController", _address);
+  }
+
+  /// @notice Return FundKeeper address
+  /// @return FundKeeper address
+  function vaultController() public override view returns (address) {
+    return getAddress("vaultController");
+  }
+
   // ----------- INTEGERS ----------
   function _setPsNumerator(uint256 _value) internal {
     emit UpdatedUint256Slot("psNumerator", psNumerator(), _value);

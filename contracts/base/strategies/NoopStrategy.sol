@@ -28,6 +28,7 @@ contract NoopStrategy is StrategyBase {
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Assets should reflect underlying tokens for investing
   address[] private _assets;
+  Platform private _platform;
 
   /// @notice Contract constructor
   /// @param _controller Controller address
@@ -40,9 +41,11 @@ contract NoopStrategy is StrategyBase {
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
-    address[] memory __assets
+    address[] memory __assets,
+    uint256 __platform
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     _assets = __assets;
+    _platform = Platform(__platform);
   }
 
   /// @dev Stub function for Strategy Base implementation

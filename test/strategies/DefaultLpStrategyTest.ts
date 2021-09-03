@@ -10,7 +10,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {Erc20Utils} from "../Erc20Utils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
-import {IStrategy} from "../../typechain";
+import {IStrategy, IUniswapV2Pair} from "../../typechain";
 
 
 const {expect} = chai;
@@ -18,7 +18,7 @@ chai.use(chaiAsPromised);
 
 async function startDefaultLpStrategyTest(
     strategyName: string,
-    factory: string,
+    factoryForLiquidation: string,
     underlying: string,
     token0: string,
     token0Name: string,
@@ -28,7 +28,7 @@ async function startDefaultLpStrategyTest(
     rewardTokens: string[]
 ) {
 
-  describe(strategyName + " " + token0Name + " " + token1Name + " Test", async function () {
+  describe(strategyName + " " + token0Name + " " + token1Name + " LpTest", async function () {
     let snapshotBefore: string;
     let snapshot: string;
     let strategyInfo: StrategyInfo;
@@ -44,12 +44,12 @@ async function startDefaultLpStrategyTest(
       for (let rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(
             [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-            [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
+            [MaticAddresses.getRouterByFactory(factoryForLiquidation), MaticAddresses.QUICK_ROUTER]
         );
 
         await core.feeRewardForwarder.setConversionPath(
             [rt, MaticAddresses.USDC_TOKEN],
-            [MaticAddresses.getRouterByFactory(factory)]
+            [MaticAddresses.getRouterByFactory(factoryForLiquidation)]
         );
       }
 
@@ -110,11 +110,14 @@ async function startDefaultLpStrategyTest(
       const amountForSell1 = baseAmount / price1;
       console.log('amountForSell0', amountForSell0, 'amountForSell1', amountForSell1);
 
+      const pair = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair;
+
+
       await UniswapUtils.buyTokensAndAddLiq(
           user,
           token0OppositeFactory,
           token1OppositeFactory,
-          factory,
+          await pair.factory(),
           token0,
           token0Opposite,
           token1,

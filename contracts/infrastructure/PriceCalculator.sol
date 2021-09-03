@@ -19,8 +19,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../base/governance/Controllable.sol";
 import "../third_party/uniswap/IUniswapV2Factory.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
+import "../third_party/firebird/IFireBirdPair.sol";
+import "../third_party/firebird/IFireBirdFactory.sol";
 import "./IPriceCalculator.sol";
 import "../base/interface/ISmartVault.sol";
+import "../third_party/iron/IIronSwap.sol";
+import "../third_party/iron/IIronLpToken.sol";
 
 pragma solidity 0.8.4;
 
@@ -31,7 +35,9 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using Address for address;
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
+  string public constant IS3USD = "IRON Stableswap 3USD";
+  string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -94,6 +100,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
         uint256 tokenValue = priceToken * amounts[i] / 10 ** PRECISION_DECIMALS;
         price += tokenValue;
       }
+    } else if (isIronPair(token)) {
+      price = IIronSwap(IIronLpToken(token).swap()).getVirtualPrice();
     } else {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(token, outputToken, usedLps, 0);
@@ -115,6 +123,10 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       }
     }
     return false;
+  }
+
+  function isIronPair(address token) public view returns (bool) {
+    return isEqualString(ERC20(token).name(), IS3USD) || isEqualString(ERC20(token).name(), IRON_IS3USD);
   }
 
   /* solhint-disable no-unused-vars */
@@ -199,7 +211,14 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   function getLpForFactory(address _factory, address token, address tokenOpposite)
   public view returns (uint256, address){
-    address pairAddress = IUniswapV2Factory(_factory).getPair(token, tokenOpposite);
+    address pairAddress;
+    // shortcut for firebird ice-weth
+    // todo make more smart solution
+    if(_factory == 0x5De74546d3B86C8Df7FEEc30253865e1149818C8) {
+      pairAddress = IFireBirdFactory(_factory).getPair(token, tokenOpposite, 50, 20);
+    } else {
+      pairAddress = IUniswapV2Factory(_factory).getPair(token, tokenOpposite);
+    }
     if (pairAddress != address(0)) {
       return (getLpSize(pairAddress, token), pairAddress);
     }

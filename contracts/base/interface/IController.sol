@@ -38,6 +38,8 @@ interface IController {
 
   function announcer() external view returns (address);
 
+  function vaultController() external view returns (address);
+
   function whiteList(address _target) external view returns (bool);
 
   function vaults(address _target) external view returns (bool);

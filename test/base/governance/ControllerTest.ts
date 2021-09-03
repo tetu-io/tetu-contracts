@@ -49,21 +49,6 @@ describe("Controller tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-
-  // it("should change governance", async () => {
-  //   await controller.setGovernance(signer1.address);
-  //   await expect(controller.setGovernance(MaticAddresses.USDC_TOKEN)).to.be.rejectedWith("not governance");
-  //   const cS1 = controller.connect(signer1);
-  //   expect(await cS1.isGovernance(signer1.address)).at.eq(true);
-  //   await cS1.setGovernance(signerAddress);
-  //   expect(await controller.isGovernance(signerAddress)).at.eq(true);
-  // });
-  // it("ps numerator denominator update", async () => {
-  //   await controller.setPSNumeratorDenominator(10, 1000);
-  //   expect(await controller.psNumerator()).at.eq(10);
-  //   expect(await controller.psDenominator()).at.eq(1000);
-  //   await expect(controller.connect(signer1).setGovernance(MaticAddresses.USDC_TOKEN)).to.be.rejectedWith("not governance");
-  // });
   it("should add and remove hardworker", async () => {
     await controller.addHardWorker(MaticAddresses.USDC_TOKEN);
     expect(await controller.isHardWorker(MaticAddresses.USDC_TOKEN)).at.eq(true);
@@ -90,7 +75,7 @@ describe("Controller tests", function () {
         REWARD_DURATION
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        controller.address, underlying, vault.address, [MaticAddresses.WMATIC_TOKEN], [underlying]) as NoopStrategy;
+        controller.address, underlying, vault.address, [MaticAddresses.WMATIC_TOKEN], [underlying], 1) as NoopStrategy;
     await controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     expect(await controller.isValidVault(vault.address)).at.eq(true);
     expect(await controller.strategies(strategy.address)).at.eq(true);
@@ -111,7 +96,7 @@ describe("Controller tests", function () {
         REWARD_DURATION
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying]) as NoopStrategy;
+        controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying],1) as NoopStrategy;
     await controller.addVaultAndStrategy(vault.address, strategy.address);
 
     await controller.doHardWork(vault.address);
@@ -119,21 +104,9 @@ describe("Controller tests", function () {
     await expect(controller.connect(signer1).doHardWork(vault.address))
     .to.be.rejectedWith("only hardworker");
   });
-  // it("should salvage", async () => {
-  //
-  //   await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER,
-  //       MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
-  //
-  //   await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, controller.address, "100");
-  //
-  //   const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address), 6);
-  //   await controller.salvage(MaticAddresses.USDC_TOKEN, 100);
-  //   const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address), 6);
-  //   expect(balanceAfter).is.greaterThan(balanceBefore);
-  // });
 
   it("should not salvage", async () => {
-    await expect(controller.connect(signer1).controllerTokenMove(MaticAddresses.USDC_TOKEN, 100))
+    await expect(controller.connect(signer1).controllerTokenMove(signer.address, MaticAddresses.USDC_TOKEN, 100))
     .to.be.rejectedWith("not governance");
   });
   it("created", async () => {
@@ -146,7 +119,7 @@ describe("Controller tests", function () {
 
   it("should not setup exist strategy", async () => {
     const strat = await core.psVault.strategy();
-    controller.addStrategy(strat);
+    await expect(controller.addStrategy(strat)).rejectedWith('only exist active vault');
   });
 
   it("should not set gov without announce", async () => {
@@ -215,20 +188,6 @@ describe("Controller tests", function () {
 
   it("should not doHardWork for wrong vault", async () => {
     await expect(controller.doHardWork(MaticAddresses.ZERO_ADDRESS)).rejectedWith('not vault');
-  });
-
-  it("should change vault statuses", async () => {
-    await controller.changeVaultsStatuses([core.psVault.address], [false]);
-    expect(await core.psVault.active()).is.false;
-  });
-
-  it("should change reward tokens", async () => {
-    expect((await core.psVault.rewardTokens()).length).is.eq(0);
-    await controller.addRewardTokens([core.psVault.address], MaticAddresses.WMATIC_TOKEN);
-    await controller.addRewardTokens([core.psVault.address], MaticAddresses.USDC_TOKEN);
-    expect((await core.psVault.rewardTokens())[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
-    await controller.removeRewardTokens([core.psVault.address], MaticAddresses.WMATIC_TOKEN);
-    expect((await core.psVault.rewardTokens()).length).is.eq(1);
   });
 
 });

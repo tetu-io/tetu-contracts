@@ -12,7 +12,7 @@ async function main() {
   let calculatorData: [PriceCalculator, TetuProxyGov, PriceCalculator];
   if (net.name === "matic") {
     // @ts-ignore
-    calculatorData = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller);
+    calculatorData = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller, true);
   } else {
     // @ts-ignore
     calculatorData = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller);
@@ -22,8 +22,7 @@ async function main() {
   const readerProxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", readerLogic.address);
   const contractReader = readerLogic.attach(readerProxy.address) as ContractReader;
 
-  await contractReader.initialize(core.controller);
-  await contractReader.setPriceCalculator(calculatorData[0].address);
+  await contractReader.initialize(core.controller, calculatorData[0].address);
 
   const balancer = await DeployerUtils.deployContract(signer, "LiquidityBalancer", core.controller);
 

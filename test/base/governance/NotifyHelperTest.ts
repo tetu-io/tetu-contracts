@@ -50,6 +50,7 @@ describe("Notify Helper test", () => {
               1
           ) as Promise<IStrategy>,
           core.controller,
+          core.vaultController,
           core.psVault.address,
           signer
       );
@@ -108,8 +109,7 @@ describe("Notify Helper test", () => {
       const amount = utils.parseUnits("1", 6);
       amounts.push(amount);
       sum = sum.add(amount);
-      const v = await DeployerUtils.connectVault(vault, signer);
-      await v.addRewardToken(rt);
+      await core.vaultController.addRewardTokens([vault], rt);
     }
 
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER,
