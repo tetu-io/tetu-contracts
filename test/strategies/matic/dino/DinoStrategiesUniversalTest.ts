@@ -14,7 +14,7 @@ describe('Universal Dino tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/generate/dino_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/dino_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
     if (info.trim()==='') return;

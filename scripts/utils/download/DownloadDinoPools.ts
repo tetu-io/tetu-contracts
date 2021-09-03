@@ -82,7 +82,7 @@ async function main() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/dino_pools.csv', infos, 'utf8');
+  await writeFileSync('./scripts/utils/download/data/dino_pools.csv', infos, 'utf8');
   console.log('done');
 }
 
