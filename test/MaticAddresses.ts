@@ -36,7 +36,7 @@ export class MaticAddresses {
   public static PEAR_TOKEN = "0xc8bcb58caEf1bE972C0B638B1dD8B0748Fdc8A44".toLowerCase();
   public static ICE_TOKEN = "0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef".toLowerCase(); // iron ice
   public static COSMIC_TOKEN = "0xa5Eb60CA85898f8b26e18fF7c7E43623ccbA772C".toLowerCase();
-  // public static dQUICK_TOKEN = "".toLowerCase();
+  public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
 
   //iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
@@ -94,6 +94,13 @@ export class MaticAddresses {
   public static WAULT_FACTORY = "0xa98ea6356A316b44Bf710D5f9b6b4eA0081409Ef".toLowerCase();
   public static WAULT_ROUTER = "0x3a1D87f206D12415f5b0A33E786967680AAb4f6d".toLowerCase();
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
+
+  // Dino
+  // *Currently, DinoSwap DEX Router is integrated via SushiSwap —
+  // router functionality will be added to incorporate additional DEXs in the
+  // near future.
+  // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
+  public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
