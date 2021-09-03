@@ -99,8 +99,6 @@ export class MaticAddresses {
   // *Currently, DinoSwap DEX Router is integrated via SushiSwap —
   // router functionality will be added to incorporate additional DEXs in the
   // near future.
-  public static DINO_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
-  public static DINO_FACTORY = "0xc35dadb65012ec5796536bd9864ed8773abc74c4".toLowerCase();
   // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
   public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
 

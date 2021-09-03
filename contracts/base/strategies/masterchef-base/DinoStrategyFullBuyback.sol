@@ -33,7 +33,7 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
-  /// @notice Wault rewards pool
+  /// @notice Dino rewards pool
   address public pool;
   /// @notice Dino FossilFarms rewards pool ID
   uint256 public poolID;
@@ -84,15 +84,6 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return IERC20(_underlyingToken).balanceOf(pool);
-  }
-
-  /// @notice Calculate approximately weekly reward amounts for each reward tokens
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Array of weekly reward amounts, 0 - DINO
-  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = computeWeeklyPoolReward();
-    return rewards;
   }
 
   /// @notice Calculate approximately weekly reward amounts for DINO

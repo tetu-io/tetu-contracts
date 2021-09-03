@@ -44,7 +44,7 @@ describe('Universal Dino tests', async () => {
     if (strat[6]) {
       startDefaultLpStrategyTest(
           'StrategyDinoSwapLp',
-          MaticAddresses.DINO_FACTORY,
+          MaticAddresses.SUSHI_FACTORY,
           lp_address.toLowerCase(),
           token0,
           token0_name,
@@ -57,7 +57,7 @@ describe('Universal Dino tests', async () => {
       throw new Error('Strategy DinoSwap for single token is not implemented!')
       /*startDefaultSingleTokenStrategyTest(
           'StrategyDinoSingle',
-          MaticAddresses.DINO_FACTORY,
+          MaticAddresses.SUSHI_FACTORY,
           lp_address.toLowerCase(),
           token0,
           token0_name,
