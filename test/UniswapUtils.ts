@@ -268,6 +268,7 @@ export class UniswapUtils {
     const name = await Erc20Utils.tokenName(lpToken);
     const bought = lpBalanceAfter.sub(lpBalanceBefore);
     console.log('add liq', name, utils.formatUnits(bought, dec))
+    console.log('lpToken', lpToken);
   }
 
   public static async wrapMatic(signer: SignerWithAddress) {
