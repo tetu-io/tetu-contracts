@@ -17,7 +17,7 @@ import "../../../third_party/curve/IGauge.sol";
 import "../../../base/strategies/StrategyBase.sol";
 
 
-/// @title Contract for Curve aave strategy implementation
+/// @title Contract for Curve REN strategy implementation
 /// @author Oleg N
 contract CurveRenStrategyFullBuyback is CurveStrategyFullBuyback{
   
