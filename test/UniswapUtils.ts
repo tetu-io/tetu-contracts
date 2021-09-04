@@ -304,6 +304,7 @@ export class UniswapUtils {
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WETH_TOKEN, utils.parseUnits('5000000')); // ~500eth
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'), MaticAddresses.WETH_TOKEN);
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('1000000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_TOKEN, utils.parseUnits('2000000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.FRAX_TOKEN, utils.parseUnits('400'), MaticAddresses.QUICK_TOKEN);
     await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.ANY_TOKEN, utils.parseUnits('200'), MaticAddresses.QUICK_TOKEN);

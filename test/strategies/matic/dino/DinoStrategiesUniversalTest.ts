@@ -4,20 +4,17 @@ import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
 import {Settings} from "../../../../settings";
-// import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrategyTest";
 
 
-// const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Dino tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/dino_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/dino_pools.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
-    if (info.trim()==='') return;
 
     const strat = info.split(',');
 
@@ -30,7 +27,7 @@ describe('Universal Dino tests', async () => {
     const token1_name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx' || idx === '0') {
+    if (+alloc <= 0 || idx === 'idx' || !token1_name) {
       console.log('skip', idx);
       return;
     }
@@ -40,31 +37,17 @@ describe('Universal Dino tests', async () => {
 
     console.log('strat', idx, lp_name);
 
-
-    if (strat[6]) {
-      startDefaultLpStrategyTest(
-          'StrategyDinoSwapLp',
-          MaticAddresses.SUSHI_FACTORY,
-          lp_address.toLowerCase(),
-          token0,
-          token0_name,
-          token1,
-          token1_name,
-          idx,
-          [MaticAddresses.DINO_TOKEN]
-      );
-    } else {
-      throw new Error('Strategy DinoSwap for single token is not implemented!')
-      /*startDefaultSingleTokenStrategyTest(
-          'StrategyDinoSingle',
-          MaticAddresses.SUSHI_FACTORY,
-          lp_address.toLowerCase(),
-          token0,
-          token0_name,
-          idx,
-          [MaticAddresses.DINO_TOKEN]
-      );*/
-    }
+    startDefaultLpStrategyTest(
+        'StrategyDinoSwapLp',
+        MaticAddresses.SUSHI_FACTORY,
+        lp_address.toLowerCase(),
+        token0,
+        token0_name,
+        token1,
+        token1_name,
+        idx,
+        [MaticAddresses.DINO_TOKEN]
+    );
   });
 
 

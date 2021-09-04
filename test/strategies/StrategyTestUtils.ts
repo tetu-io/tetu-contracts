@@ -47,7 +47,7 @@ export class StrategyTestUtils {
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string) {
+  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc: () => Promise<BigNumber[]>) {
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
     console.log('new ps ratio', newNum, den)
@@ -72,25 +72,34 @@ export class StrategyTestUtils {
     // *********** TIME MACHINE GO BRRRRR***********
     await TimeUtils.advanceBlocksOnTs(60 * 60); // 1 hour
 
-    const targetTokenPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(info.core.rewardToken.address));
-    console.log('targetTokenPrice', targetTokenPrice);
-    const toClaim = await info.strategy.readyToClaim();
-    const rts = await info.strategy.rewardTokens();
+    // ** calculate to claim
     let totalToClaim = 0;
-    for (let i = 0; i < toClaim.length; i++) {
-      const rt = rts[i];
-      const rtDec = await Erc20Utils.decimals(rt);
-      const rtPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(rt));
-      const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
-      console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);
-      totalToClaim += rtAmount;
+    if (toClaimCalcFunc != null) {
+      const targetTokenPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(info.core.rewardToken.address));
+      console.log('targetTokenPrice', targetTokenPrice);
+      const toClaim = await toClaimCalcFunc();
+      const rts = await info.strategy.rewardTokens();
+      for (let i = 0; i < toClaim.length; i++) {
+        const rt = rts[i];
+        const rtDec = await Erc20Utils.decimals(rt);
+        const rtPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(rt));
+        const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
+        console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);
+        totalToClaim += rtAmount;
+      }
     }
 
+    // ** doHardWork
     await info.vault.doHardWork();
 
+
     const earned = +utils.formatUnits(await info.core.bookkeeper.targetTokenEarned(info.strategy.address));
-    console.log('earned', earned, totalToClaim);
-    expect(earned).is.approximately(totalToClaim, totalToClaim * 2); // very approximately
+    expect(earned).is.not.equal(0);
+    // ** check to claim
+    if (toClaimCalcFunc != null) {
+      console.log('earned', earned, totalToClaim);
+      expect(earned).is.approximately(totalToClaim, totalToClaim * 2); // very approximately
+    }
 
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
 

@@ -227,7 +227,8 @@ describe("contract reader tests", function () {
     expect(info.vault.name).is.eq('TETU_PS');
   });
 
-  it("vault + user infos pages", async () => {
+  // too heavy for alchemy
+  it.skip("vault + user infos pages", async () => {
     const infos = await contractReader.vaultWithUserInfoPages(signer.address, 1, 2);
     expect(infos.length).is.eq(2);
     expect(infos[0].vault.name).is.eq('TETU_WAULT_WEX_1');

@@ -21,7 +21,9 @@ interface IStrategy {
     SUSHI, // 3
     WAULT, // 4
     IRON, // 5
-    DINO // 6
+    COSMIC, // 6
+    CURVE, // 7
+    DINO // 8
   }
 
   // *************** GOVERNANCE ACTIONS **************
