@@ -99,6 +99,14 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
     return sushiReward * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
   }
 
+  /// @notice Stubbed to zero
+  /// @return [0]
+  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
+    uint256[] memory rewards = new uint256[](1);
+    rewards[0] = 0;
+    return rewards;
+  }
+
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder

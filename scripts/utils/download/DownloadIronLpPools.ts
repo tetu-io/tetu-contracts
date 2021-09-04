@@ -24,7 +24,7 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const chef = await DeployerUtils.connectInterface(signer, 'IIronChef', MaticAddresses.IRON_MINISHEFV2) as IIronChef;
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', '0x3649ad5A5172DF3a8D5d09457e388e285efbB0a8') as PriceCalculator;
+  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
   const poolLength = (await chef.poolLength()).toNumber();
   console.log('length', poolLength);

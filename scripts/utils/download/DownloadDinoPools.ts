@@ -1,27 +1,27 @@
 import {ethers, web3} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
-import {ERC20, IOracleMatic, IUniswapV2Pair, IFossilFarms } from "../../../typechain";
+import {ERC20, IFossilFarms, IUniswapV2Pair, PriceCalculator} from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
-import {Addresses} from "../../../addresses";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
+  const tools = await DeployerUtils.getToolsAddresses();
 
-  const chef = await DeployerUtils.connectInterface(signer, 'IFossilFarms', MaticAddresses.DINO_MASTERCHEF) as IFossilFarms ;
+  const chef = await DeployerUtils.connectInterface(signer, 'IFossilFarms', MaticAddresses.DINO_MASTERCHEF) as IFossilFarms;
 
-  const oracle = await DeployerUtils.connectInterface(signer, 'IOracleMatic', Addresses.ORACLE) as IOracleMatic;
+  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
   const poolLength = (await chef.poolLength()).toNumber();
   console.log('length', poolLength);
 
-  const wexPerBlock = await chef.dinoPerBlock();
+  const rewardPerBlock = await chef.dinoPerBlock();
   const totalAllocPoint = await chef.totalAllocPoint();
-  const wexPrice = await oracle.getPrice(MaticAddresses.WEXpoly_TOKEN);
-  console.log('dino price', utils.formatUnits(wexPrice));
+  const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.DINO_TOKEN);
+  console.log('dino price', utils.formatUnits(rewardPrice));
 
   let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr \n';
   for (let i = 0; i < poolLength; i++) {
@@ -29,14 +29,14 @@ async function main() {
     const lp = poolInfo[0];
     const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
 
-    const waultAllocPoint = poolInfo[1];
+    const allocPoint = poolInfo[1];
     const currentBlock = await web3.eth.getBlockNumber();
     const duration = currentBlock - poolInfo[2].toNumber();
     console.log('duration', duration, currentBlock, poolInfo[2].toNumber());
-    const weekRewardUsd = computeWeekReward(duration, wexPerBlock, waultAllocPoint, totalAllocPoint, wexPrice);
+    const weekRewardUsd = computeWeekReward(duration, rewardPerBlock, allocPoint, totalAllocPoint, rewardPrice);
     console.log('weekRewardUsd', weekRewardUsd);
 
-    const lpPrice = await oracle.getPrice(lp);
+    const lpPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
     const tvl = await lpContract.balanceOf(chef.address);
     const tvlUsd = utils.formatUnits(tvl.mul(lpPrice).div(1e9).div(1e9));
 
@@ -82,16 +82,16 @@ async function main() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./scripts/utils/download/data/dino_pools.csv', infos, 'utf8');
+  await writeFileSync('./tmp/dino_pools.csv', infos, 'utf8');
   console.log('done');
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch(error => {
-      console.error(error);
-      process.exit(1);
-    });
+.then(() => process.exit(0))
+.catch(error => {
+  console.error(error);
+  process.exit(1);
+});
 
 function computeWeekReward(
     block: number,
