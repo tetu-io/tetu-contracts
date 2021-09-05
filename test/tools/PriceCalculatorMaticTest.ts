@@ -179,6 +179,22 @@ describe("Price calculator tests", function () {
     expect(tokenOpposite.toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN.toLowerCase());
   });
 
+  it("calculate BTCCRV_TOKEN price", async () => {
+    const tokenPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.BTCCRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    const expectedTokenPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.WBTC_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(expectedTokenPrice == tokenPrice, "BTCCRV_TOKEN token price should be equal WBTC_TOKEN token price")
+  });
+
+  it("calculate AM3CRV_TOKEN price", async () => {
+    const tokenPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    const expectedTokenPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.USDC_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(expectedTokenPrice == tokenPrice, "AM3CRV_TOKEN token price should be equal USDC_TOKEN token price")
+  });
+
   it("calculate IRON_USDC_USDT_DAI, price and check", async () => {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.IRON_IS3USD, MaticAddresses.USDC_TOKEN);
