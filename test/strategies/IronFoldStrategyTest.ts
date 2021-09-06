@@ -134,7 +134,7 @@ async function startIronFoldStrategyTest(
           strategyInfo,
           (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           5,
-          60
+          6
       );
     });
 

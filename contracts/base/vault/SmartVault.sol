@@ -25,6 +25,8 @@ import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
 
+import "hardhat/console.sol";
+
 /// @title Smart Vault is a combination of implementations drawn from Synthetix pool
 ///        for their innovative reward vesting and Yearn vault for their share price model
 /// @dev Use with TetuProxy
@@ -316,9 +318,12 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     require(totalSupply() > 0, "no shares");
     require(numberOfShares > 0, "zero amount");
 
+    console.log("Vault: Withdrawing:", numberOfShares);
+
     userLastWithdrawTs[msg.sender] = block.timestamp;
 
     uint256 totalSupply = totalSupply();
+    console.log("Vault: Total supply:", totalSupply);
     _burn(msg.sender, numberOfShares);
 
     // only statistic, no funds affected
@@ -329,11 +334,15 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     uint256 underlyingAmountToWithdraw = underlyingBalanceWithInvestment()
     .mul(numberOfShares)
     .div(totalSupply);
+    console.log("Vault: Underlying to withdraw:", underlyingAmountToWithdraw);
     if (underlyingAmountToWithdraw > underlyingBalanceInVault()) {
+      console.log("Vault: Check 1: OK");
       // withdraw everything from the strategy to accurately check the share value
       if (numberOfShares == totalSupply) {
+        console.log("Vault: Check 2: OK");
         IStrategy(strategy()).withdrawAllToVault();
       } else {
+        console.log("Vault: Check 2: Fail");
         uint256 missing = underlyingAmountToWithdraw.sub(underlyingBalanceInVault());
         IStrategy(strategy()).withdrawToVault(missing);
       }
@@ -341,6 +350,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       underlyingAmountToWithdraw = MathUpgradeable.min(underlyingBalanceWithInvestment()
       .mul(numberOfShares)
       .div(totalSupply), underlyingBalanceInVault());
+      console.log("Vault: Underlying to withdraw:", underlyingAmountToWithdraw);
     }
 
     IERC20Upgradeable(underlying()).safeTransfer(msg.sender, underlyingAmountToWithdraw);

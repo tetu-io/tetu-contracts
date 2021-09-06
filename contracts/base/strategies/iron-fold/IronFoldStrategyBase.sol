@@ -46,9 +46,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   uint256 public borrowTargetFactorNumerator;
   /// @notice Numerator value for the asset market collateral value
   uint256 public collateralFactorNumerator;
+  /// @notice Numerator value for compounding ratio of rewards
+  uint256 public compoundRatioNumerator;
   /// @notice Denominator value for the both above mentioned ratios
   uint256 public factorDenominator;
-  /// @notice Using folding
+  /// @notice Use folding
   bool public fold;
 
   /// @notice Strategy balance parameters to be tracked
@@ -75,6 +77,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @param _ironController Iron Controller address
   /// @param _borrowTargetFactorNumerator Numerator value for the targeted borrow rate
   /// @param _collateralFactorNumerator Numerator value for the asset market collateral value
+  /// @param _compoundRatioNumerator Numerator value for compounding ratio of rewards
   /// @param _factorDenominator Denominator value for the both above mentioned ratios
   /// @param _fold Using folding
   constructor(
@@ -86,6 +89,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     address _ironController,
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator,
+    uint256 _compoundRatioNumerator,
     uint256 _factorDenominator,
     bool _fold
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
@@ -102,6 +106,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     collateralFactorNumerator = _collateralFactorNumerator;
     require(_borrowTargetFactorNumerator < collateralFactorNumerator, "Target should be lower than collateral limit");
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
+    require(_compoundRatioNumerator < factorDenominator, "Ratio should be lower than 1");
+    compoundRatioNumerator = _compoundRatioNumerator;
     fold = _fold;
   }
 
@@ -142,6 +148,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   function doHardWork() external onlyNotPausedInvesting override restricted {
     claimReward();
     liquidateReward();
+    investAllUnderlying();
     rebalance();
   }
 
@@ -153,22 +160,28 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     if (borrowed > borrowTarget) {
       _redeemPartialWithLoan(0);
-    } else {
+    } else if (borrowed < borrowTarget) {
       depositToPool(0);
     }
   }
 
   /// @dev Set use folding
-  function setFold(bool _fold) external restricted {
+  function setFold(bool _fold) public restricted {
     fold = _fold;
     emit FoldChanged(_fold);
   }
 
   /// @dev Set borrow rate target
-  function setBorrowTargetFactorNumerator(uint256 _target) external restricted {
+  function setBorrowTargetFactorNumerator(uint256 _target) public restricted {
     require(_target < collateralFactorNumerator, "Target should be lower than collateral limit");
     borrowTargetFactorNumerator = _target;
     emit BorrowTargetFactorNumeratorChanged(_target);
+  }
+
+  function stopFolding() external restricted {
+    setBorrowTargetFactorNumerator(0);
+    setFold(false);
+    rebalance();
   }
 
   /// @dev Set collateral rate for asset market
@@ -211,9 +224,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget.sub(borrowed);
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
+      console.log("Strategy: Borrowing:", Math.min(wantBorrow, maxBorrow));
       _borrow(Math.min(wantBorrow, maxBorrow));
       uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
       if (underlyingBalance > 0) {
+        console.log("Strategy: Supplying:", underlyingBalance);
         _supply(underlyingBalance);
       }
       //update parameters
@@ -232,6 +247,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
     claimReward();
+    liquidateReward();
     _redeemPartialWithLoan(amount);
   }
 
@@ -241,10 +257,40 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     _redeemMaximumWithLoan();
   }
 
+  function exitRewardPool() internal override updateSupplyInTheEnd {
+    uint256 bal = rewardPoolBalance();
+    if (bal != 0) {
+      claimReward();
+      liquidateReward();
+      _redeemMaximumWithLoan();
+    }
+  }
+
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    liquidateRewardDefault();
+    address forwarder = IController(controller()).feeRewardForwarder();
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      console.log("Strategy: Liquidating:", amount);
+      address rt = _rewardTokens[i];
+      IERC20(rt).safeApprove(forwarder, 0);
+      IERC20(rt).safeApprove(forwarder, amount);
+      // it will sell reward token to Target Token and distribute it to SmartVault and PS
+      uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).partialCompound(
+        rt,
+        _underlyingToken,
+        amount,
+        compoundRatioNumerator,
+        factorDenominator,
+        address(this),
+        _smartVault
+      );
+      if (targetTokenEarned > 0) {
+        IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+      }
+    }
   }
+
 
   /// @dev Supplies to Iron
   function _supply(uint256 amount) internal returns(uint256) {
@@ -308,7 +354,13 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     // amount we borrowed
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 oldBalance = supplied.sub(borrowed);
-    uint256 newBalance = oldBalance.sub(amount);
+    uint256 newBalance;
+    if (amount > oldBalance) {
+      console.log("Strategy: Withdrawing more than balance");
+      newBalance = 0;
+    } else {
+      newBalance = oldBalance.sub(amount);
+    }
     uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     console.log("Strategy: Supplied before:", supplied);
     console.log("Strategy: Borrowed before:", borrowed);
@@ -324,9 +376,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       // redeem just as much as needed to repay the loan
       // supplied - requiredCollateral = max redeemable, amount + repay = needed
       uint256 toRedeem = Math.min(supplied.sub(requiredCollateral), amount.add(toRepay));
+      console.log("Strategy: Redeeming:", toRedeem);
       _redeemUnderlying(toRedeem);
       // now we can repay our borrowed amount
       underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      console.log("Strategy: Repaying:", Math.min(toRepay, underlyingBalance));
       _repay(Math.min(toRepay, underlyingBalance));
       // update the parameters
       borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
@@ -341,6 +395,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
     if (underlyingBalance < amount) {
       uint256 toRedeem = amount.sub(underlyingBalance);
+      console.log("Strategy: Redeeming:", toRedeem);
       // redeem the most we can redeem
       _redeemUnderlying(toRedeem);
     }
