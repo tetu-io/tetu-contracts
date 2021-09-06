@@ -31,9 +31,7 @@ describe("Payroll Clerk tests", function () {
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
 
-    clerk = (await DeployerUtils.deployPayrollClerk(signer, core.controller.address))[0];
-
-    await clerk.setCalculator(calculator.address);
+    clerk = (await DeployerUtils.deployPayrollClerk(signer, core.controller.address, calculator.address))[0];
 
     await UniswapUtils.createPairForRewardToken(signer, core, "10000");
   });
@@ -182,7 +180,7 @@ describe("Payroll Clerk tests", function () {
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
     const bal = await Erc20Utils.balanceOf(core.rewardToken.address, clerk.address);
     expect(bal.isZero()).is.false;
-    await clerk.moveTokensToController(core.rewardToken.address, bal);
+    await clerk.moveTokensToGovernance(core.rewardToken.address, bal);
     expect((await Erc20Utils.balanceOf(core.rewardToken.address, clerk.address)).isZero()).is.true;
   });
 

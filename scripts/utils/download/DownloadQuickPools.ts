@@ -27,7 +27,7 @@ async function downloadQuick() {
 
   const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
-  const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC");
+  const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC", {headers: {"Origin": "localhost"}});
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
@@ -39,12 +39,14 @@ async function downloadQuick() {
       currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
     }
   }
+  console.log('loaded vaults', underlyingStatuses.size);
   const poolLength = 10000;
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
   console.log('quickPrice', utils.formatUnits(quickPrice));
 
   let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
   for (let i = 0; i < poolLength; i++) {
+    console.log('id', i);
     let lp;
     let token0: string = '';
     let token1: string = '';
@@ -60,6 +62,7 @@ async function downloadQuick() {
 
     const status = underlyingStatuses.get(lp.toLowerCase());
     if (!status) {
+      console.log('not active', i);
       continue;
     }
 

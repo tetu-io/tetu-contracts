@@ -20,35 +20,17 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../base/governance/Controllable.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
 import "./IPriceCalculator.sol";
+import "./PayrollClerkStorage.sol";
 
 /// @title Disperse salary to workers
 /// @author belbix
-contract PayrollClerk is Initializable, Controllable {
+contract PayrollClerk is PayrollClerkStorage {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.0.0";
-  uint256 constant FULL_RATIO = 100;
-  uint256 constant BUST_STEP = 300;
-  uint256 constant MAX_HOURLY_RATE = 200;
-  uint256 constant MAX_BOOST = 3;
-  bytes32 internal constant _CALCULATOR_SLOT = 0xF22095D134BC46C0780E7917D889873E9978E54129C92BF2AC021A7ED70FB3B7;
-
-  address[] public tokens;
-  address[] public workers;
-  mapping(address => uint256) public baseHourlyRates;
-  mapping(address => uint256) public workedHours;
-  mapping(address => uint256) public earned;
-  mapping(address => uint256) public tokenRatios;
-  mapping(address => string) public workerNames;
-  mapping(address => string) public workerRoles;
-  mapping(address => bool) public boostActivated;
-
-  event UpdateCalculator(address oldValue, address newValue);
   event WorkerRateUpdated(address indexed worker, uint256 value);
   event WorkerNameUpdated(address indexed worker, string value);
   event WorkerRoleUpdated(address indexed worker, string value);
@@ -56,12 +38,14 @@ contract PayrollClerk is Initializable, Controllable {
   event SalaryPaid(address indexed worker, uint256 usdAmount, uint256 workedHours, uint256 rate);
   event TokenMoved(address token, uint256 amount);
 
-  constructor() {
-    assert(_CALCULATOR_SLOT == bytes32(uint256(keccak256("eip1967.calculator")) - 1));
-  }
-
-  function initialize(address _controller) external initializer {
+  function initialize(address _controller, address _calculator) external initializer {
+    require(_calculator != address(0), "zero calculator address");
     Controllable.initializeControllable(_controller);
+
+    bytes32 slot = _CALCULATOR_SLOT;
+    assembly {
+      sstore(slot, _calculator)
+    }
   }
 
   function allWorkers() external view returns (address[] memory) {
@@ -231,28 +215,13 @@ contract PayrollClerk is Initializable, Controllable {
     return type(uint256).max;
   }
 
-  // move tokens to controller where money will be protected with time lock
-  function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
+  /// @dev Move tokens to governance
+  ///      This contract should contain only governance funds
+  function moveTokensToGovernance(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
-    IERC20(_token).safeTransfer(controller(), amount);
+    IERC20(_token).safeTransfer(IController(controller()).governance(), amount);
     emit TokenMoved(_token, amount);
-  }
-
-  function calculator() public view returns (address adr) {
-    bytes32 slot = _CALCULATOR_SLOT;
-    assembly {
-      adr := sload(slot)
-    }
-  }
-
-  function setCalculator(address _newValue) external onlyControllerOrGovernance {
-    require(_newValue != address(0), "zero address");
-    emit UpdateCalculator(calculator(), _newValue);
-    bytes32 slot = _CALCULATOR_SLOT;
-    assembly {
-      sstore(slot, _newValue)
-    }
   }
 
 }

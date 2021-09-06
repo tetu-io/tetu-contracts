@@ -1,21 +1,21 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
-import {IFossilFarms} from "../../../typechain";
+import {ICosmicMasterChef} from "../../../typechain";
 import {BigNumber, utils} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const chef = await DeployerUtils.connectInterface(signer, 'IFossilFarms', MaticAddresses.DINO_MASTERCHEF) as IFossilFarms;
+  const chef = await DeployerUtils.connectInterface(signer, 'ICosmicMasterChef', MaticAddresses.COSMIC_MASTERCHEF) as ICosmicMasterChef;
 
   await McLpDownloader.download(
-      'DINO',
-      MaticAddresses.DINO_MASTERCHEF,
-      MaticAddresses.DINO_TOKEN,
+      'COSMIC',
+      MaticAddresses.COSMIC_MASTERCHEF,
+      MaticAddresses.COSMIC_TOKEN,
       chef.poolLength,
-      chef.dinoPerBlock,
+      chef.cosmicPerBlock,
       chef.totalAllocPoint,
       (id) => {
         return chef.poolInfo(id)
