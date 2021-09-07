@@ -38,7 +38,7 @@ export class Addresses {
         '0xCa9C8Fba773caafe19E6140eC0A7a54d996030Da', // reader
         '0x0D4D9e9E43e97f31C81a75415C4307c4b58AbF59', // utils
         '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
-        '0x458947e634e22917Bf5dB76E063D6fE35Db046Fb', // payrollClerk
+        '0x2793Fa8D570B99eb9ba7f5d3E2480f6Ab06cBe9C', // payrollClerk
         '', // mockFaucet
         '0x6b887F2BE347984D55bC1a21BB970c707566eB48', // multiSwap
         '0x980cc507CDA067Fc71e90a5966A526DEBFB1eE74', // zapContract
