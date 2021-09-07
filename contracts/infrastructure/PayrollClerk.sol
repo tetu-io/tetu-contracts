@@ -175,7 +175,7 @@ contract PayrollClerk is PayrollClerkStorage {
 
   function setBaseHourlyRate(address worker, uint256 rate) public onlyControllerOrGovernance {
     require(rate != 0, "zero rate");
-    require(rate < MAX_HOURLY_RATE, "too high rate");
+    require(rate <= MAX_HOURLY_RATE, "too high rate");
     baseHourlyRates[worker] = rate;
     emit WorkerRateUpdated(worker, rate);
   }

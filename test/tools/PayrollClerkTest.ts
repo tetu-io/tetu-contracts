@@ -178,10 +178,13 @@ describe("Payroll Clerk tests", function () {
   it("should salvage token", async () => {
     await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await Erc20Utils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
+    const govBal = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
     const bal = await Erc20Utils.balanceOf(core.rewardToken.address, clerk.address);
     expect(bal.isZero()).is.false;
     await clerk.moveTokensToGovernance(core.rewardToken.address, bal);
     expect((await Erc20Utils.balanceOf(core.rewardToken.address, clerk.address)).isZero()).is.true;
+    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    .is.eq(govBal.add(bal));
   });
 
 });
