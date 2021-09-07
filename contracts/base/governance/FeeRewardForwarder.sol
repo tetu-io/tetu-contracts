@@ -128,7 +128,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @param _token Token for distribute
   /// @param _vault Target vault
   /// @return Amount of distributed Target(TETU) tokens + FundKeeper fee (approx)
-  function distribute(uint256 _amount, address _token, address _vault) external override onlyRewardDistribution returns (uint256){
+  function distribute(uint256 _amount, address _token, address _vault) public override onlyRewardDistribution returns (uint256){
     require(_amount != 0, "zero amount");
 
     uint256 profitSharingNumerator = IController(controller()).psNumerator();
@@ -206,6 +206,27 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     smartVault.notifyTargetRewardAmount(psToken, amountToSend);
     emit FeeMovedToVault(_rewardPool, psToken, amountToSend);
     return targetTokenBalance;
+  }
+
+  function partialCompound(
+    address rewardToken,
+    address underlyingToken,
+    uint256 amount,
+    uint256 compoundRatio,
+    uint256 ratioDenominator,
+    address strategy,
+    address vault
+  ) public override onlyRewardDistribution returns (uint256) {
+    require(amount != 0, "zero amount");
+    require(compoundRatio <= 10000, "invalid compoundRatio");
+
+    uint256 toCompound = amount.mul(compoundRatio).div(ratioDenominator);
+    uint256 underlyingTokenBalance = liquidateTokenForTargetToken(rewardToken, toCompound, underlyingToken);
+    IERC20(underlyingToken).safeTransfer(strategy, underlyingTokenBalance);
+
+    uint256 toDistribute = amount.sub(toCompound);
+    uint256 targetTokenEarned = distribute(toDistribute, rewardToken, vault);
+    return (targetTokenEarned);
   }
 
   //************************* INTERNAL **************************

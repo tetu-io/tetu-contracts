@@ -199,7 +199,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   // ***************** INTERNAL ************************
 
   /// @dev Withdraw everything from external pool
-  function exitRewardPool() internal {
+  function exitRewardPool() internal virtual {
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
       withdrawAndClaimFromPool(bal);
