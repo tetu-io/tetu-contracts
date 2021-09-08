@@ -20,7 +20,7 @@ import "./StrategyBase.sol";
 contract NoopStrategy is StrategyBase {
 
   /// @notice Strategy type for statistical purposes
-  string public constant STRATEGY_NAME = "NoopStrategy";
+  string public constant override STRATEGY_NAME = "NoopStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";

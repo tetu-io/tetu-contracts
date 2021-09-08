@@ -24,9 +24,7 @@ contract StrategyIronFold is IronFoldStrategyBase {
   address[] private _poolRewards = [ICE];
   address[] private _assets;
 
-  uint256 _COMPOUND_RATIO = 5000; // 50% of rewards
   uint256 _FACTOR_DENOMINATOR = 10000;
-  bool _FOLD = true;
 
   constructor(
     address _controller,
@@ -44,9 +42,7 @@ contract StrategyIronFold is IronFoldStrategyBase {
       _IRON_CONTROLLER,
       _borrowTargetFactorNumerator,
       _collateralFactorNumerator,
-      _COMPOUND_RATIO,
-      _FACTOR_DENOMINATOR,
-      _FOLD
+      _FACTOR_DENOMINATOR
   ) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(_underlying);

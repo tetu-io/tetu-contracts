@@ -24,16 +24,18 @@ import "../../../third_party/iron/CompleteRToken.sol";
 
 import "hardhat/console.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
+import "../../interface/ISmartVault.sol";
 
-/// @title Abstract contract for Iron strategy implementation
+/// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
+/// @author belbix
 abstract contract IronFoldStrategyBase is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
   /// @notice Strategy type for statistical purposes
-  string public constant STRATEGY_NAME = "IronFoldStrategyBase";
+  string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
@@ -52,12 +54,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   uint256 public borrowTargetFactorNumerator;
   /// @notice Numerator value for the asset market collateral value
   uint256 public collateralFactorNumerator;
-  /// @notice Numerator value for compounding ratio of rewards
-  uint256 public compoundRatioNumerator;
   /// @notice Denominator value for the both above mentioned ratios
   uint256 public factorDenominator;
   /// @notice Use folding
-  bool public fold;
+  bool public fold = true;
 
   /// @notice Strategy balance parameters to be tracked
   uint256 public suppliedInUnderlying;
@@ -83,9 +83,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @param _ironController Iron Controller address
   /// @param _borrowTargetFactorNumerator Numerator value for the targeted borrow rate
   /// @param _collateralFactorNumerator Numerator value for the asset market collateral value
-  /// @param _compoundRatioNumerator Numerator value for compounding ratio of rewards
   /// @param _factorDenominator Denominator value for the both above mentioned ratios
-  /// @param _fold Using folding
   constructor(
     address _controller,
     address _underlying,
@@ -95,9 +93,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     address _ironController,
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator,
-    uint256 _compoundRatioNumerator,
-    uint256 _factorDenominator,
-    bool _fold
+    uint256 _factorDenominator
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_rToken != address(0), "zero address rToken");
     require(_ironController != address(0), "zero address ironController");
@@ -108,13 +104,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     require(_lpt == _underlyingToken, "wrong underlying");
 
     factorDenominator = _factorDenominator;
+
     require(_collateralFactorNumerator < factorDenominator, "Collateral factor cannot be this high");
     collateralFactorNumerator = _collateralFactorNumerator;
+
     require(_borrowTargetFactorNumerator < collateralFactorNumerator, "Target should be lower than collateral limit");
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
-    require(_compoundRatioNumerator < factorDenominator, "Ratio should be lower than 1");
-    compoundRatioNumerator = _compoundRatioNumerator;
-    fold = _fold;
   }
 
   // ************* VIEWS *******************
@@ -146,6 +141,83 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
     return rewards;
+  }
+
+  /// @dev Calculate expected rewards rate for reward token
+  ///      May the Force be with you, reviewers!
+  function rewardsRateNormalised() public view returns (uint256){
+    CompleteRToken rt = CompleteRToken(rToken);
+    uint8 underlyingDecimals = ERC20(rt.underlying()).decimals();
+
+    // get reward per token for both - suppliers and borrowers
+    uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(rToken);
+    // using internal Iron Oracle the safest way
+    uint256 rewardTokenPrice = rTokenPrice(ICE_R_TOKEN);
+    // normalize reward speed to USD price
+    uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
+
+
+    // get total supply, cash and borrows, and normalize them to 18 decimals
+    uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** rt.decimals());
+    uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals);
+    uint256 totalCash = rt.getCash() * 1e18 / (10 ** underlyingDecimals);
+
+    // for avoiding revert for empty market
+    if (totalSupply == 0 || totalBorrows == 0 || totalCash == 0) {
+      return 0;
+    }
+
+    // rewards per token for supply based on rToken amount, need to normalize it to underlying
+    uint256 cashToTokenRatio = totalSupply * 1e18 / totalCash;
+
+    // amount of reward tokens per block for 1 supplied rToken
+    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / totalSupply;
+
+    // amount of reward tokens per block for 1 borrowed rToken
+    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows;
+
+    // normalize amount for cash value
+    uint256 rewardPerSupply = rewardSpeedUsdPerSuppliedToken * cashToTokenRatio / 1e18;
+    // calculate approximately expected income from borrows
+    uint256 rewardPerBorrow = rewardSpeedUsdPerBorrowedToken * borrowTargetFactorNumerator / factorDenominator;
+
+
+    console.log("---------------");
+    console.log("|: Rewards speed:", rewardSpeed);
+    console.log("|: Rewards price:", rewardTokenPrice);
+    console.log("|: Rewards speed usd:", rewardSpeedUsd);
+    console.log("|: totalSupply:", totalSupply);
+    console.log("|: totalCash:", totalCash);
+    console.log("|: cashToTokenRatio:", cashToTokenRatio);
+    console.log("|: Rewards speed usd per token:", rewardSpeedUsdPerSuppliedToken);
+    console.log("|: rewardPerSupply:", rewardPerSupply);
+    console.log("|: rewardPerBorrow:", rewardPerBorrow);
+    console.log("---------------");
+
+    return rewardPerSupply + rewardPerBorrow;
+  }
+
+  /// @dev Return a normalized to 18 decimal cost of folding
+  function foldCostRatePerToken() public view returns (uint256) {
+    CompleteRToken rt = CompleteRToken(rToken);
+    // if for some reason supply rate higher than borrow we pay nothing for the borrows
+    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
+      return 1;
+    }
+    uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
+    uint256 _rTokenPrice = rTokenPrice(rToken);
+
+    // let's calculate profit for 1 token
+
+    console.log("---------------");
+    console.log("|: Borrow rate:", rt.borrowRatePerBlock(), 0.0005e16, 5e12);
+    console.log("|: Supply rate:", rt.supplyRatePerBlock());
+    console.log("|: Fold rate:", foldRateCost);
+    console.log("|: Rt price:", _rTokenPrice);
+    console.log("|: foldRateCostPerToken:", foldRateCost * _rTokenPrice / 1e18);
+    console.log("---------------");
+
+    return foldRateCost * _rTokenPrice / 1e18;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
@@ -206,79 +278,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     IronControllerInterface(ironController).claimReward(address(this), markets);
   }
 
-  /// @dev Calculate expected rewards from borrow+supply and reward tokens
-  ///      Rewards amount should be higher than cost of folding
-  ///      May the Force be with you, reviewers!
-  function isFoldingProfitable() internal view returns (bool) {
-    uint256 _foldCostRatePerToken = foldCostRatePerToken();
-
-    CompleteRToken rt = CompleteRToken(rToken);
-    uint8 underlyingDecimals = ERC20(rt.underlying()).decimals();
-
-    // get reward per token for both - suppliers and borrowers
-    uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(rToken);
-    // using internal Iron Oracle the safest way
-    uint256 rewardTokenPrice = rTokenPrice(ICE_R_TOKEN);
-    // normalize reward speed to USD price
-    uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
-
-
-    // get total supply, cash and borrows, and normalize them to 18 decimals
-    uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** rt.decimals());
-    uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals);
-    uint256 totalCash = rt.getCash() * 1e18 / (10 ** underlyingDecimals);
-
-    // rewards per token for supply based on rToken amount, need to normalize it to underlying
-    uint256 cashToTokenRatio = totalSupply * 1e18 / totalCash;
-
-    // amount of reward tokens per block for 1 supplied rToken
-    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / totalSupply;
-
-    // amount of reward tokens per block for 1 borrowed rToken
-    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows;
-
-    // normalize amount for cash value
-    uint256 rewardPerSupply = rewardSpeedUsdPerSuppliedToken * cashToTokenRatio / 1e18;
-    // calculate approximately expected income from borrows
-    uint256 rewardPerBorrow = rewardSpeedUsdPerBorrowedToken * borrowTargetFactorNumerator / factorDenominator;
-
-    console.log("---------------");
-    console.log("|: foldRateCostPerToken:", _foldCostRatePerToken);
-    console.log("|: Rewards speed:", rewardSpeed);
-    console.log("|: Rewards price:", rewardTokenPrice);
-    console.log("|: Rewards speed usd:", rewardSpeedUsd);
-    console.log("|: totalSupply:", totalSupply);
-    console.log("|: totalCash:", totalCash);
-    console.log("|: cashToTokenRatio:", cashToTokenRatio);
-    console.log("|: Rewards speed usd per token:", rewardSpeedUsdPerSuppliedToken);
-    console.log("|: rewardPerSupply:", rewardPerSupply);
-    console.log("|: rewardPerBorrow:", rewardPerBorrow);
-    console.log("|: result:", rewardPerSupply + rewardPerBorrow > _foldCostRatePerToken);
-    console.log("---------------");
-    // we compare values per block per 1$
-    return rewardPerSupply + rewardPerBorrow > _foldCostRatePerToken;
-  }
-
-  /// @dev Return a normalized to 18 decimal cost of folding
-  function foldCostRatePerToken() internal view returns (uint256) {
-    CompleteRToken rt = CompleteRToken(rToken);
-    // if for some reason supply rate higher than borrow we pay nothing for the borrows
-    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
-      return 1;
-    }
-    uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
-    uint256 _rTokenPrice = rTokenPrice(rToken);
-
-    // let's calculate profit for 1 token
-
-    console.log("---------------");
-    console.log("|: Borrow rate:", rt.borrowRatePerBlock(), 0.0005e16, 5e12);
-    console.log("|: Supply rate:", rt.supplyRatePerBlock());
-    console.log("|: Fold rate:", foldRateCost);
-    console.log("|: Rt price:", _rTokenPrice);
-    console.log("---------------");
-
-    return foldRateCost * _rTokenPrice / 1e18;
+  /// @dev Return true if we can gain profit with folding
+  function isFoldingProfitable() public view returns (bool) {
+    // compare values per block per 1$
+    console.log("|: isFoldingProfitable:", rewardsRateNormalised() > foldCostRatePerToken());
+    return rewardsRateNormalised() > foldCostRatePerToken();
   }
 
   /// @dev Deposit underlying to rToken contract
@@ -353,26 +357,27 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
     address forwarder = IController(controller()).feeRewardForwarder();
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      uint256 amount = rewardBalance(i);
-      console.log("Strategy: Liquidating:", amount);
-      address rt = _rewardTokens[i];
-      IERC20(rt).safeApprove(forwarder, 0);
-      IERC20(rt).safeApprove(forwarder, amount);
-      // it will sell reward token to Target Token and distribute it to SmartVault and PS
-      uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).partialCompound(
-        rt,
-        _underlyingToken,
-        amount,
-        compoundRatioNumerator,
-        factorDenominator,
-        address(this),
-        _smartVault
-      );
-      if (targetTokenEarned > 0) {
-        IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+
+    // in case of negative ppfs compound all profit to underlying
+    if (ISmartVault(_smartVault).getPricePerFullShare() < ISmartVault(_smartVault).underlyingUnit()) {
+      for (uint256 i = 0; i < _rewardTokens.length; i++) {
+        uint256 amount = rewardBalance(i);
+        console.log("Strategy: Liquidating:", amount);
+        address rt = _rewardTokens[i];
+
+        // it will sell reward token to Target Token and send back
+        if (amount != 0) {
+          // keep a bit for for distributing for catch all necessary events
+          amount = amount * 90 / 100;
+          IERC20(rt).safeApprove(forwarder, 0);
+          IERC20(rt).safeApprove(forwarder, amount);
+          uint256 profit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
+          depositToPool(profit);
+        }
+        console.log("Strategy: Reward balance after liq:", rewardBalance(i));
       }
     }
+    liquidateRewardDefault();
   }
 
   /// @dev Supplies to Iron

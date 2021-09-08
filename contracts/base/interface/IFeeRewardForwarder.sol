@@ -19,13 +19,5 @@ interface IFeeRewardForwarder {
 
   function notifyCustomPool(address _token, address _rewardPool, uint256 _maxBuyback) external returns (uint256);
 
-  function partialCompound(
-    address rewardToken,
-    address underlyingToken,
-    uint256 amount,
-    uint256 compoundRatio,
-    uint256 ratioDenominator,
-    address strategy,
-    address vault
-  ) external returns (uint256);
+  function liquidate(address rewardToken, address underlyingToken, uint256 amount) external returns (uint256);
 }

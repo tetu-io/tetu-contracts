@@ -19,19 +19,19 @@ import "../../../base/strategies/StrategyBase.sol";
 
 /// @title Contract for Curve aave strategy implementation
 /// @author Oleg N
-contract CurveAaveStrategyFullBuyback is CurveStrategyFullBuyback{
-  
+contract CurveAaveStrategyFullBuyback is CurveStrategyFullBuyback {
+
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
 
   /// @notice Strategy type for statistical purposes
-  string public constant STRATEGY_NAME = "CurveAaveStrategyFullBuyback";
+  string public constant override STRATEGY_NAME = "CurveAaveStrategyFullBuyback";
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
   address private constant CRV = address(0x172370d5Cd63279eFa6d502DAB29171933a610AF);
-  
+
   address[] private poolRewards = [WMATIC, CRV];
 
   /// deposit tokens

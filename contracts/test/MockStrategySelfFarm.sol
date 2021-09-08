@@ -23,7 +23,7 @@ contract MockStrategySelfFarm is StrategyBase {
   address[] private _assets;
 
   string public constant VERSION = "1.0.0";
-  string public constant STRATEGY_TYPE = "MockStrategy";
+  string public constant override STRATEGY_NAME = "MockStrategy";
   uint256 private constant BUY_BACK_RATIO = 10000;
 
   address public pool;

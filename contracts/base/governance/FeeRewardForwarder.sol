@@ -39,6 +39,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   event FeeMovedToVault(address indexed vault, address indexed token, uint256 amount);
   /// @notice Fee distributed to FundKeeper
   event FeeMovedToFund(address indexed fund, address indexed token, uint256 amount);
+  /// @notice Simple liquidation was done
+  event Liquidated(address indexed tokenIn, address indexed tokenOut, uint256 amount);
+  /// @notice Added or changed a route with routers
+  event RouteAdded(address indexed tokenIn, address indexed tokenOut);
 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
@@ -97,7 +101,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @param _targetToken Final token
   /// @return True if more than 1 router
   function isMultiRouter(address _token, address _targetToken) public view returns (bool){
-    require(routers[_token][_targetToken].length != 0, "invalid route");
+    require(routers[_token][_targetToken].length != 0, "FRF: Invalid route");
     return routers[_token][_targetToken].length > 1;
   }
 
@@ -111,12 +115,12 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   function setConversionPath(address[] memory _route, address[] memory _routers)
   external onlyControllerOrGovernance {
     require(_routers.length == 1 ||
-      (_route.length != 0 && _routers.length == _route.length.sub(1)), "wrong data");
+      (_route.length != 0 && _routers.length == _route.length.sub(1)), "FRF: Wrong data");
     address from = _route[0];
     address to = _route[_route.length - 1];
-    require(to == targetToken() || to == fundToken(), "wrong to");
     routes[from][to] = _route;
     routers[from][to] = _routers;
+    emit RouteAdded(from, to);
   }
 
   // ***************** EXTERNAL *******************************
@@ -129,7 +133,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @param _vault Target vault
   /// @return Amount of distributed Target(TETU) tokens + FundKeeper fee (approx)
   function distribute(uint256 _amount, address _token, address _vault) public override onlyRewardDistribution returns (uint256){
-    require(_amount != 0, "zero amount");
+    require(_amount != 0, "FRF: Zero amount for distribute");
 
     uint256 profitSharingNumerator = IController(controller()).psNumerator();
     uint256 profitSharingDenominator = IController(controller()).psDenominator();
@@ -158,7 +162,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @param _amount Amount of token for liquidation
   /// @return Amount of distributed Target(TETU) tokens
   function notifyPsPool(address _token, uint256 _amount) public override onlyRewardDistribution returns (uint256) {
-    require(targetToken() != address(0), "target token is zero");
+    require(targetToken() != address(0), "FRF: Target token is zero for notify");
 
     uint256 toFund = toFundAmount(_amount);
     sendToFund(_token, toFund);
@@ -166,7 +170,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
 
     uint256 amountToSend = liquidateTokenForTargetToken(_token, toPs, targetToken());
 
-    require(amountToSend > 0, "no liq path");
+    require(amountToSend > 0, "FRF: Liquidation path not found for target token");
 
     IERC20(targetToken()).safeTransfer(psVault(), amountToSend);
     uint256 ppfs = ISmartVault(psVault()).getPricePerFullShare();
@@ -184,11 +188,12 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @return Amount of distributed Target(TETU) tokens
   function notifyCustomPool(address _token, address _rewardPool, uint256 _amount)
   public override onlyRewardDistribution returns (uint256) {
-    require(targetToken() != address(0), "target token is zero");
+    require(targetToken() != address(0), "FRF: Target token is zero");
 
     address psToken = psVault();
     ISmartVault smartVault = ISmartVault(_rewardPool);
-    require(smartVault.getRewardTokenIndex(psToken) != type(uint256).max, "psToken not added to vault");
+    require(smartVault.getRewardTokenIndex(psToken) != type(uint256).max,
+      "FRF: psToken not added to vault");
 
     uint256 toFund = toFundAmount(_amount);
     sendToFund(_token, toFund);
@@ -197,7 +202,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     // if liquidation path exist liquidate to the target token
     uint256 targetTokenBalance = liquidateTokenForTargetToken(_token, toVault, targetToken());
 
-    require(targetTokenBalance > 0, "no liq path");
+    require(targetTokenBalance > 0, "FRF: Liquidation path not found for target token");
 
     IERC20(targetToken()).safeApprove(psVault(), targetTokenBalance);
     ISmartVault(psVault()).deposit(targetTokenBalance);
@@ -208,25 +213,16 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     return targetTokenBalance;
   }
 
-  function partialCompound(
-    address rewardToken,
-    address underlyingToken,
-    uint256 amount,
-    uint256 compoundRatio,
-    uint256 ratioDenominator,
-    address strategy,
-    address vault
-  ) public override onlyRewardDistribution returns (uint256) {
-    require(amount != 0, "zero amount");
-    require(compoundRatio <= 10000, "invalid compoundRatio");
-
-    uint256 toCompound = amount.mul(compoundRatio).div(ratioDenominator);
-    uint256 underlyingTokenBalance = liquidateTokenForTargetToken(rewardToken, toCompound, underlyingToken);
-    IERC20(underlyingToken).safeTransfer(strategy, underlyingTokenBalance);
-
-    uint256 toDistribute = amount.sub(toCompound);
-    uint256 targetTokenEarned = distribute(toDistribute, rewardToken, vault);
-    return (targetTokenEarned);
+  /// @dev Simple function for liquidate and send back the given token
+  ///      No strict access
+  function liquidate(address tokenIn, address tokenOut, uint256 amount)
+  external override returns (uint256){
+    require(amount != 0, "FRF: Zero amount got liquidation");
+    uint256 resultAmount = liquidateTokenForTargetToken(tokenIn, amount, tokenOut);
+    require(resultAmount > 0, "FRF: Liquidation path not found");
+    IERC20(tokenOut).safeTransfer(msg.sender, resultAmount);
+    emit Liquidated(tokenIn, tokenOut, amount);
+    return resultAmount;
   }
 
   //************************* INTERNAL **************************
@@ -239,12 +235,12 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     if (_amount == 0) {
       return;
     }
-    require(fundToken() != address(0), "fund token is zero");
-    require(fund() != address(0), "fund is zero");
+    require(fundToken() != address(0), "FRF: Fund token is zero");
+    require(fund() != address(0), "FRF: Fund is zero");
 
     uint256 amountToSend = liquidateTokenForTargetToken(_token, _amount, fundToken());
 
-    require(amountToSend > 0, "no liq path for fund token");
+    require(amountToSend > 0, "FRF: No liq path for fund token");
 
     IERC20(fundToken()).safeTransfer(fund(), amountToSend);
 
@@ -287,13 +283,11 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
     } else if (hasValidRoute(_token, _targetToken)) {
       // move reward to this contract
       IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-      // get balance for reason we can have manually sent reward tokens
-      uint256 balanceToSwap = IERC20(_token).balanceOf(address(this));
       //liquidate depends on routers count
       if (isMultiRouter(_token, _targetToken)) {
-        liquidateMultiRouter(_token, balanceToSwap, _targetToken);
+        liquidateMultiRouter(_token, _amount, _targetToken);
       } else {
-        liquidate(_token, balanceToSwap, _targetToken);
+        liquidate(_token, _amount, _targetToken);
       }
       return IERC20(_targetToken).balanceOf(address(this));
     }

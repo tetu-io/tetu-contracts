@@ -98,8 +98,13 @@ export class StrategyTestUtils {
       }
     }
 
+    const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+
     // ** doHardWork
     await info.vault.doHardWork();
+
+    const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+    expect(ppfs).is.greaterThan(oldPpfs);
 
 
     const earned = +utils.formatUnits(await info.core.bookkeeper.targetTokenEarned(info.strategy.address));

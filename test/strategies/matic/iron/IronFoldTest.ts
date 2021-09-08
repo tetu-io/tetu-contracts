@@ -13,7 +13,7 @@ describe('Universal Iron Fold tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/iron_lendingMarkets.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -26,7 +26,7 @@ describe('Universal Iron Fold tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (idx === 'idx') {
+    if (idx === 'idx' || collateralFactor === '0') {
       console.log('skip', idx);
       return;
     }

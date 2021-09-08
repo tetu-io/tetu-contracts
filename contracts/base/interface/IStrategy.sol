@@ -27,6 +27,8 @@ interface IStrategy {
   }
 
   // *************** GOVERNANCE ACTIONS **************
+  function STRATEGY_NAME() external view returns (string memory);
+
   function withdrawAllToVault() external;
 
   function withdrawToVault(uint256 amount) external;

@@ -82,4 +82,8 @@ interface IronControllerInterface {
   function rewardSpeeds(address rToken) external view returns (uint);
 
   function oracle() external view returns (address);
+
+  function getAllMarkets() external view returns (address[] memory);
+
+  function markets(address rToken) external view returns (bool isListed, uint collateralFactorMantissa);
 }

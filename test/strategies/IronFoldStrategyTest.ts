@@ -9,8 +9,8 @@ import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
 import {Erc20Utils} from "../Erc20Utils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
-import {BigNumber, utils} from "ethers";
-import {IStrategy} from "../../typechain";
+import {utils} from "ethers";
+import {StrategyIronFold} from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
 
 
@@ -50,6 +50,19 @@ async function startIronFoldStrategyTest(
             [rt, MaticAddresses.USDC_TOKEN],
             [MaticAddresses.getRouterByFactory(factory)]
         );
+
+        if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
+          await core.feeRewardForwarder.setConversionPath(
+              [rt, MaticAddresses.USDC_TOKEN],
+              [MaticAddresses.getRouterByFactory(factory)]
+          );
+        } else {
+          await core.feeRewardForwarder.setConversionPath(
+              [rt, MaticAddresses.USDC_TOKEN, underlying],
+              [MaticAddresses.getRouterByFactory(factory), MaticAddresses.getRouterByFactory(factory)]
+          );
+        }
+
       }
 
 
@@ -66,7 +79,7 @@ async function startIronFoldStrategyTest(
               rToken,
               borrowTargetFactorNumerator,
               collateralFactorNumerator
-          ) as Promise<IStrategy>,
+          ) as Promise<StrategyIronFold>,
           underlying
       );
 
@@ -91,7 +104,7 @@ async function startIronFoldStrategyTest(
       console.log('largest', largest);
 
       //************** add funds for investing ************
-      const baseAmount = 10_000;
+      const baseAmount = 1000_000;
       await UniswapUtils.buyAllBigTokens(user);
       const name = await Erc20Utils.tokenSymbol(tokenOpposite);
       const dec = await Erc20Utils.decimals(tokenOpposite);
@@ -119,6 +132,13 @@ async function startIronFoldStrategyTest(
 
 
     it("do hard work with liq path", async () => {
+      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          null
+      );
+    });
+    it("do hard work without folding", async () => {
+      await (strategyInfo.strategy as StrategyIronFold).setFold(false);
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
           (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           null
