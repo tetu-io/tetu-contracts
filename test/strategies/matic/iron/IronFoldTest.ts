@@ -26,6 +26,11 @@ describe('Universal Iron Fold tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
+    if (idx === 'idx') {
+      console.log('skip', idx);
+      return;
+    }
+
     if (Settings.onlyOneIronFoldStrategyTest !== null && parseFloat(idx) !== Settings.onlyOneIronFoldStrategyTest) {
       return;
     }

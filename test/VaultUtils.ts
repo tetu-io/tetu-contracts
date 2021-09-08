@@ -3,6 +3,7 @@ import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Erc20Utils} from "./Erc20Utils";
 import {BigNumber, utils} from "ethers";
+import axios from "axios";
 
 export class VaultUtils {
 
@@ -119,6 +120,11 @@ export class VaultUtils {
     const periodRate = currentPeriod / duration;
 
     return rewardRateForToken * duration * periodRate;
+  }
+
+  public static async getVaultInfoFromServer() {
+    // return (await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC")).data;
+    return (await axios.get("http://localhost:8080/api/v1/reader/vaultInfos?network=MATIC")).data;
   }
 
 }

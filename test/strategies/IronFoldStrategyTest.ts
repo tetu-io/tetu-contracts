@@ -9,8 +9,9 @@ import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
 import {Erc20Utils} from "../Erc20Utils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {IStrategy} from "../../typechain";
+import {VaultUtils} from "../VaultUtils";
 
 
 const {expect} = chai;
@@ -120,11 +121,35 @@ async function startIronFoldStrategyTest(
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
           (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          strategyInfo.strategy.readyToClaim
+          null
       );
     });
     it("emergency exit", async () => {
-      await StrategyTestUtils.checkEmergencyExit(strategyInfo);
+      const info = strategyInfo;
+      const deposit = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+
+      await VaultUtils.deposit(info.user, info.vault, deposit);
+
+      const invested = deposit;
+      const strategy = info.strategy;
+      const vault = info.vault;
+      expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
+      const stratInvested = await strategy.investedUnderlyingBalance();
+      // loans return a bit less balance for deposited assets
+      expect(+utils.formatUnits(stratInvested))
+      .is.approximately(+utils.formatUnits(invested), +utils.formatUnits(stratInvested) * 0.001,
+          "assets in the pool should be more or equal than invested");
+      expect(await vault.underlyingBalanceInVault())
+      .at.eq(deposit.sub(invested), "all assets in strategy");
+
+      await info.strategy.emergencyExit();
+
+      expect(await info.strategy.pausedInvesting()).is.true;
+      await info.strategy.continueInvesting();
+      expect(await info.strategy.pausedInvesting()).is.false;
+
+      expect(await info.strategy.rewardPoolBalance())
+      .is.eq("0", "assets in the pool");
     });
     it("common test should be ok", async () => {
       await StrategyTestUtils.commonTests(strategyInfo);

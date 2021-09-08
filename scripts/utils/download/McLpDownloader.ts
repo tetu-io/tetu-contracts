@@ -35,11 +35,11 @@ export class McLpDownloader {
 
     const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
-    const vaultInfos = await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC");
+    const vaultInfos = await VaultUtils.getVaultInfoFromServer();
     const underlyingStatuses = new Map<string, boolean>();
     const currentRewards = new Map<string, number>();
     const underlyingToVault = new Map<string, string>();
-    for (let vInfo of vaultInfos.data) {
+    for (let vInfo of vaultInfos) {
       underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
       underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
       if (vInfo.active) {

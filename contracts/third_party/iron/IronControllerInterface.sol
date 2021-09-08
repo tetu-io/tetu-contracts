@@ -2,75 +2,84 @@
 
 pragma solidity 0.8.4;
 
-abstract contract IronControllerInterface {
-    /// @notice Indicator that this is a IronController contract (for inspection)
-    bool public constant isIronController = true;
+interface IronControllerInterface {
+  /*** Assets You Are In ***/
 
-    /*** Assets You Are In ***/
+  function enterMarkets(address[] calldata RTokens) external returns (uint[] memory);
 
-    function enterMarkets(address[] calldata RTokens) virtual external returns (uint[] memory);
-    function exitMarket(address RToken) virtual external returns (uint);
+  function exitMarket(address RToken) external returns (uint);
 
-    /*** Policy Hooks ***/
+  /*** Policy Hooks ***/
 
-    function mintAllowed(address RToken, address minter, uint mintAmount) virtual external returns (uint);
-    function mintVerify(address RToken, address minter, uint mintAmount, uint mintTokens) virtual external;
+  function mintAllowed(address RToken, address minter, uint mintAmount) external returns (uint);
 
-    function redeemAllowed(address RToken, address redeemer, uint redeemTokens) virtual external returns (uint);
-    function redeemVerify(address RToken, address redeemer, uint redeemAmount, uint redeemTokens) virtual external;
+  function mintVerify(address RToken, address minter, uint mintAmount, uint mintTokens) external;
 
-    function borrowAllowed(address RToken, address borrower, uint borrowAmount) virtual external returns (uint);
-    function borrowVerify(address RToken, address borrower, uint borrowAmount) virtual external;
+  function redeemAllowed(address RToken, address redeemer, uint redeemTokens) external returns (uint);
 
-    function repayBorrowAllowed(
-        address RToken,
-        address payer,
-        address borrower,
-        uint repayAmount) virtual external returns (uint);
-    function repayBorrowVerify(
-        address RToken,
-        address payer,
-        address borrower,
-        uint repayAmount,
-        uint borrowerIndex) virtual external;
+  function redeemVerify(address RToken, address redeemer, uint redeemAmount, uint redeemTokens) external;
 
-    function liquidateBorrowAllowed(
-        address RTokenBorrowed,
-        address RTokenCollateral,
-        address liquidator,
-        address borrower,
-        uint repayAmount) virtual external returns (uint);
-    function liquidateBorrowVerify(
-        address RTokenBorrowed,
-        address RTokenCollateral,
-        address liquidator,
-        address borrower,
-        uint repayAmount,
-        uint seizeTokens) virtual external;
+  function borrowAllowed(address RToken, address borrower, uint borrowAmount) external returns (uint);
 
-    function seizeAllowed(
-        address RTokenCollateral,
-        address RTokenBorrowed,
-        address liquidator,
-        address borrower,
-        uint seizeTokens) virtual external returns (uint);
-    function seizeVerify(
-        address RTokenCollateral,
-        address RTokenBorrowed,
-        address liquidator,
-        address borrower,
-        uint seizeTokens) virtual external;
+  function borrowVerify(address RToken, address borrower, uint borrowAmount) external;
 
-    function transferAllowed(address RToken, address src, address dst, uint transfeRTokens) virtual external returns (uint);
-    function transferVerify(address RToken, address src, address dst, uint transfeRTokens) virtual external;
+  function repayBorrowAllowed(
+    address RToken,
+    address payer,
+    address borrower,
+    uint repayAmount) external returns (uint);
 
-    /*** Liquidity/Liquidation Calculations ***/
+  function repayBorrowVerify(
+    address RToken,
+    address payer,
+    address borrower,
+    uint repayAmount,
+    uint borrowerIndex) external;
 
-    function liquidateCalculateSeizeTokens(
-        address RTokenBorrowed,
-        address RTokenCollateral,
-        uint repayAmount) virtual external view returns (uint, uint);
+  function liquidateBorrowAllowed(
+    address RTokenBorrowed,
+    address RTokenCollateral,
+    address liquidator,
+    address borrower,
+    uint repayAmount) external returns (uint);
+
+  function liquidateBorrowVerify(
+    address RTokenBorrowed,
+    address RTokenCollateral,
+    address liquidator,
+    address borrower,
+    uint repayAmount,
+    uint seizeTokens) external;
+
+  function seizeAllowed(
+    address RTokenCollateral,
+    address RTokenBorrowed,
+    address liquidator,
+    address borrower,
+    uint seizeTokens) external returns (uint);
+
+  function seizeVerify(
+    address RTokenCollateral,
+    address RTokenBorrowed,
+    address liquidator,
+    address borrower,
+    uint seizeTokens) external;
+
+  function transferAllowed(address RToken, address src, address dst, uint transfeRTokens) external returns (uint);
+
+  function transferVerify(address RToken, address src, address dst, uint transfeRTokens) external;
+
+  /*** Liquidity/Liquidation Calculations ***/
+
+  function liquidateCalculateSeizeTokens(
+    address RTokenBorrowed,
+    address RTokenCollateral,
+    uint repayAmount) external view returns (uint, uint);
 
 
-    function claimReward(address holder, address[] memory rTokens) virtual external;
+  function claimReward(address holder, address[] memory rTokens) external;
+
+  function rewardSpeeds(address rToken) external view returns (uint);
+
+  function oracle() external view returns (address);
 }

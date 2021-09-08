@@ -2,6 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {PayrollClerk} from "../../typechain";
 import {mkdir, writeFileSync} from "fs";
+import {utils} from "ethers";
 
 
 async function main() {
@@ -24,7 +25,7 @@ async function main() {
     workerInfo += await clerk.hourlyRate(workerAdr) + ',';
     workerInfo += await clerk.boostActivated(workerAdr) + ',';
     workerInfo += await clerk.workedHours(workerAdr) + ',';
-    workerInfo += await clerk.earned(workerAdr);
+    workerInfo += utils.formatUnits(await clerk.earned(workerAdr));
     console.log('workerInfo', workerInfo);
     data += workerInfo + '\n';
   }

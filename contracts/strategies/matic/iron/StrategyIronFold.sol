@@ -24,7 +24,7 @@ contract StrategyIronFold is IronFoldStrategyBase {
   address[] private _poolRewards = [ICE];
   address[] private _assets;
 
-  uint256 _COMPOUND_RATIO = 1000; //10% of rewards
+  uint256 _COMPOUND_RATIO = 5000; // 50% of rewards
   uint256 _FACTOR_DENOMINATOR = 10000;
   bool _FOLD = true;
 

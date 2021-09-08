@@ -15,12 +15,15 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/iron/IIronChef.sol";
 import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/CompleteRToken.sol";
 
+
 import "hardhat/console.sol";
+import "../../../third_party/iron/IronPriceOracle.sol";
 
 /// @title Abstract contract for Iron strategy implementation
 /// @author JasperS13
@@ -36,6 +39,9 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   string public constant VERSION = "1.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
+  /// @dev Maximum folding loops
+  uint256 public constant MAX_DEPTH = 10;
+  address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
 
   /// @notice RToken address
   address public rToken;
@@ -200,6 +206,81 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     IronControllerInterface(ironController).claimReward(address(this), markets);
   }
 
+  /// @dev Calculate expected rewards from borrow+supply and reward tokens
+  ///      Rewards amount should be higher than cost of folding
+  ///      May the Force be with you, reviewers!
+  function isFoldingProfitable() internal view returns (bool) {
+    uint256 _foldCostRatePerToken = foldCostRatePerToken();
+
+    CompleteRToken rt = CompleteRToken(rToken);
+    uint8 underlyingDecimals = ERC20(rt.underlying()).decimals();
+
+    // get reward per token for both - suppliers and borrowers
+    uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(rToken);
+    // using internal Iron Oracle the safest way
+    uint256 rewardTokenPrice = rTokenPrice(ICE_R_TOKEN);
+    // normalize reward speed to USD price
+    uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
+
+
+    // get total supply, cash and borrows, and normalize them to 18 decimals
+    uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** rt.decimals());
+    uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals);
+    uint256 totalCash = rt.getCash() * 1e18 / (10 ** underlyingDecimals);
+
+    // rewards per token for supply based on rToken amount, need to normalize it to underlying
+    uint256 cashToTokenRatio = totalSupply * 1e18 / totalCash;
+
+    // amount of reward tokens per block for 1 supplied rToken
+    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / totalSupply;
+
+    // amount of reward tokens per block for 1 borrowed rToken
+    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows;
+
+    // normalize amount for cash value
+    uint256 rewardPerSupply = rewardSpeedUsdPerSuppliedToken * cashToTokenRatio / 1e18;
+    // calculate approximately expected income from borrows
+    uint256 rewardPerBorrow = rewardSpeedUsdPerBorrowedToken * borrowTargetFactorNumerator / factorDenominator;
+
+    console.log("---------------");
+    console.log("|: foldRateCostPerToken:", _foldCostRatePerToken);
+    console.log("|: Rewards speed:", rewardSpeed);
+    console.log("|: Rewards price:", rewardTokenPrice);
+    console.log("|: Rewards speed usd:", rewardSpeedUsd);
+    console.log("|: totalSupply:", totalSupply);
+    console.log("|: totalCash:", totalCash);
+    console.log("|: cashToTokenRatio:", cashToTokenRatio);
+    console.log("|: Rewards speed usd per token:", rewardSpeedUsdPerSuppliedToken);
+    console.log("|: rewardPerSupply:", rewardPerSupply);
+    console.log("|: rewardPerBorrow:", rewardPerBorrow);
+    console.log("|: result:", rewardPerSupply + rewardPerBorrow > _foldCostRatePerToken);
+    console.log("---------------");
+    // we compare values per block per 1$
+    return rewardPerSupply + rewardPerBorrow > _foldCostRatePerToken;
+  }
+
+  /// @dev Return a normalized to 18 decimal cost of folding
+  function foldCostRatePerToken() internal view returns (uint256) {
+    CompleteRToken rt = CompleteRToken(rToken);
+    // if for some reason supply rate higher than borrow we pay nothing for the borrows
+    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
+      return 1;
+    }
+    uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
+    uint256 _rTokenPrice = rTokenPrice(rToken);
+
+    // let's calculate profit for 1 token
+
+    console.log("---------------");
+    console.log("|: Borrow rate:", rt.borrowRatePerBlock(), 0.0005e16, 5e12);
+    console.log("|: Supply rate:", rt.supplyRatePerBlock());
+    console.log("|: Fold rate:", foldRateCost);
+    console.log("|: Rt price:", _rTokenPrice);
+    console.log("---------------");
+
+    return foldRateCost * _rTokenPrice / 1e18;
+  }
+
   /// @dev Deposit underlying to rToken contract
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
@@ -208,7 +289,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     if (amount > 0) {
       _supply(amount);
     }
-    if (!fold) {
+    if (!fold || !isFoldingProfitable()) {
       return;
     }
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
@@ -220,7 +301,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     console.log("Strategy: Balance before:", balance);
     console.log("Strategy: Borrow target:", borrowTarget);
     console.log(" ");
-    uint256 i;
+    uint256 i = 0;
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget.sub(borrowed);
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
@@ -235,11 +316,14 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
       borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       balance = supplied.sub(borrowed);
-      console.log("Strategy: Supplied loop",i,":", supplied);
-      console.log("Strategy: Borrowed loop",i,":", borrowed);
-      console.log("Strategy: Balance loop",i,":", balance);
+      console.log("Strategy: Supplied loop", i, ":", supplied);
+      console.log("Strategy: Borrowed loop", i, ":", borrowed);
+      console.log("Strategy: Balance loop", i, ":", balance);
       console.log(" ");
-      i = i+1;
+      i++;
+      if (i == MAX_DEPTH) {
+        break;
+      }
     }
   }
 
@@ -291,9 +375,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     }
   }
 
-
   /// @dev Supplies to Iron
-  function _supply(uint256 amount) internal returns(uint256) {
+  function _supply(uint256 amount) internal returns (uint256) {
     uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
     if (amount < balance) {
       balance = amount;
@@ -369,7 +452,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     console.log("Strategy: New borrow target:", newBorrowTarget);
     console.log(" ");
     uint256 underlyingBalance;
-    uint256 i;
+    uint256 i = 0;
     while (borrowed > newBorrowTarget) {
       uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
       uint256 toRepay = borrowed.sub(newBorrowTarget);
@@ -386,11 +469,14 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
       uint256 balance = supplied.sub(borrowed);
-      console.log("Strategy: Supplied loop",i,":", supplied);
-      console.log("Strategy: Borrowed loop",i,":", borrowed);
-      console.log("Strategy: Balance loop",i,":", balance);
+      console.log("Strategy: Supplied loop", i, ":", supplied);
+      console.log("Strategy: Borrowed loop", i, ":", borrowed);
+      console.log("Strategy: Balance loop", i, ":", balance);
       console.log(" ");
-      i = i+1;
+      i++;
+      if (i == MAX_DEPTH) {
+        break;
+      }
     }
     underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
     if (underlyingBalance < amount) {
@@ -399,5 +485,19 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       // redeem the most we can redeem
       _redeemUnderlying(toRedeem);
     }
+  }
+
+  /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
+  function rTokenPrice(address _rToken) internal view returns (uint256){
+    uint8 underlyingDecimals = ERC20(CompleteRToken(_rToken).underlying()).decimals();
+    uint256 _rTokenPrice = IronPriceOracle(
+      IronControllerInterface(ironController).oracle()
+    ).getUnderlyingPrice(_rToken);
+    // normalize token price to 1e18
+    if (underlyingDecimals < 18) {
+      console.log("normalize price:", (10 ** (18 - underlyingDecimals)));
+      _rTokenPrice = _rTokenPrice / (10 ** (18 - underlyingDecimals));
+    }
+    return _rTokenPrice;
   }
 }

@@ -3,7 +3,14 @@ import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Announcer, Controller,IStrategy, PriceCalculator, RewardToken, SmartVault} from "../../typechain";
+import {
+  Announcer,
+  Controller,
+  IStrategy,
+  PriceCalculator,
+  RewardToken,
+  SmartVault
+} from "../../typechain";
 import {Erc20Utils} from "../Erc20Utils";
 import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
@@ -47,7 +54,7 @@ export class StrategyTestUtils {
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc: () => Promise<BigNumber[]>) {
+  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc: (() => Promise<BigNumber[]>) | null) {
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
     console.log('new ps ratio', newNum, den)
@@ -60,6 +67,8 @@ export class StrategyTestUtils {
     const rt0 = (await vaultForUser.rewardTokens())[0];
 
     const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+
+    const undDec = await Erc20Utils.decimals(info.underlying);
 
     console.log("deposit", deposit);
     await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
@@ -122,7 +131,9 @@ export class StrategyTestUtils {
     await info.strategy.emergencyExit();
     await vaultForUser.exit();
     const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
-    expect(userUnderlyingBalanceAfter).is.eq(userUnderlyingBalance, "should have all underlying");
+    expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
+    .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec),
+        "should have more or equal underlying than deposit");
 
     const userEarnedTotalAfter = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
     console.log('user total earned rt0', +utils.formatUnits(userEarnedTotal), +utils.formatUnits(userEarnedTotalAfter),
@@ -143,7 +154,10 @@ export class StrategyTestUtils {
     const invested = deposit;
 
     expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
-    expect(await strategy.investedUnderlyingBalance()).at.eq(invested.toString(), "assets in the pool");
+    const stratInvested = await strategy.investedUnderlyingBalance();
+    expect(+utils.formatUnits(stratInvested))
+    .is.greaterThanOrEqual(+utils.formatUnits(invested),
+        "assets in the pool should be more or equal than invested");
     expect(await vault.underlyingBalanceInVault())
     .at.eq(deposit.sub(invested), "all assets in strategy");
   }
@@ -226,7 +240,7 @@ export class StrategyTestUtils {
     expect(await info.strategy.platform()).is.not.eq(0);
     expect(await info.strategy.assets()).is.not.empty;
     expect(await info.strategy.poolTotalAmount()).is.not.eq('0');
-    expect(await info.strategy.poolWeeklyRewardsAmount()).is.not.eq('0');
+    // expect(await info.strategy.poolWeeklyRewardsAmount()).is.not.eq('0');
   }
 
 
@@ -238,10 +252,10 @@ export class StrategyTestUtils {
 
   public static async deployStrategy(
       strategyName: string,
-      signer:SignerWithAddress,
+      signer: SignerWithAddress,
       coreContracts: CoreContractsWrapper,
       underlying: string,
-      underlyingName: string){
+      underlyingName: string) {
 
     return StrategyTestUtils.deploy(
         signer,
@@ -258,7 +272,7 @@ export class StrategyTestUtils {
     );
   }
 
-  public static async updatePSRatio(announcer:Announcer, controller:Controller,numenator:number, denumenatior: number) {
+  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number) {
     console.log('new ps ratio', numenator, denumenatior.toFixed())
     await announcer.announceRatioChange(9, numenator, denumenatior);
     await TimeUtils.advanceBlocksOnTs(1);
@@ -266,7 +280,7 @@ export class StrategyTestUtils {
   }
 
 
-  public static async calculateTotalToClaim(calculator: PriceCalculator, strategy: IStrategy, rewardToken:RewardToken){
+  public static async calculateTotalToClaim(calculator: PriceCalculator, strategy: IStrategy, rewardToken: RewardToken) {
     const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rewardToken.address));
     console.log('targetTokenPrice', targetTokenPrice);
     const toClaim = await strategy.readyToClaim();

@@ -44,6 +44,7 @@ export class MaticAddresses {
 
   //iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
+  public static IRON_CONTROLLER = "0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c".toLowerCase();
   public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
   public static IRON_IRON_IS3USD = "0x985D40feDAA3208DAbaCDFDCA00CbeAAc9543949".toLowerCase();
 
