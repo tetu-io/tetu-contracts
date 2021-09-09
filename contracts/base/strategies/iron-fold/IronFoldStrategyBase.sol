@@ -17,8 +17,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../StrategyBase.sol";
-import "../../../third_party/iron/IIronChef.sol";
-import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/CompleteRToken.sol";
 
 
@@ -42,7 +40,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Maximum folding loops
-  uint256 public constant MAX_DEPTH = 10;
+  uint256 public constant MAX_DEPTH = 50;
   address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
 
   /// @notice RToken address
@@ -220,6 +218,20 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     return foldRateCost * _rTokenPrice / 1e18;
   }
 
+  /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
+  function rTokenPrice(address _rToken) public view returns (uint256){
+    uint8 underlyingDecimals = ERC20(CompleteRToken(_rToken).underlying()).decimals();
+    uint256 _rTokenPrice = IronPriceOracle(
+      IronControllerInterface(ironController).oracle()
+    ).getUnderlyingPrice(_rToken);
+    // normalize token price to 1e18
+    if (underlyingDecimals < 18) {
+      console.log("normalize price:", (10 ** (18 - underlyingDecimals)));
+      _rTokenPrice = _rTokenPrice / (10 ** (18 - underlyingDecimals));
+    }
+    return _rTokenPrice;
+  }
+
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
@@ -291,6 +303,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     console.log("Strategy: Depositing:", amount);
     console.log(" ");
     if (amount > 0) {
+      // we need to sell excess in non hardWork function for keeping ppfs ~1
+      liquidateExcessUnderlying();
       _supply(amount);
     }
     if (!fold || !isFoldingProfitable()) {
@@ -334,9 +348,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Withdraw underlying from Iron MasterChef finance
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
+    console.log("Strategy: withdrawAndClaimFromPool:", amount);
     claimReward();
     liquidateReward();
     _redeemPartialWithLoan(amount);
+    // we need to sell excess for non hardWork function
+    liquidateExcessUnderlying();
   }
 
   /// @dev Exit from external project without caring about rewards
@@ -351,15 +368,20 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       claimReward();
       liquidateReward();
       _redeemMaximumWithLoan();
+      // we need to sell excess in non hardWork function for keeping ppfs ~1
+      liquidateExcessUnderlying();
     }
   }
 
   /// @dev Do something useful with farmed rewards
-  function liquidateReward() internal override {
+  function liquidateReward() internal override updateSupplyInTheEnd {
     address forwarder = IController(controller()).feeRewardForwarder();
+    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
+    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
 
+    console.log("Strategy: Liquidating: rew bal", IERC20(_rewardTokens[0]).balanceOf(address(this)));
     // in case of negative ppfs compound all profit to underlying
-    if (ISmartVault(_smartVault).getPricePerFullShare() < ISmartVault(_smartVault).underlyingUnit()) {
+    if (ppfs < ppfsPeg) {
       for (uint256 i = 0; i < _rewardTokens.length; i++) {
         uint256 amount = rewardBalance(i);
         console.log("Strategy: Liquidating:", amount);
@@ -371,13 +393,57 @@ abstract contract IronFoldStrategyBase is StrategyBase {
           amount = amount * 90 / 100;
           IERC20(rt).safeApprove(forwarder, 0);
           IERC20(rt).safeApprove(forwarder, amount);
-          uint256 profit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
-          depositToPool(profit);
+          IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
         }
         console.log("Strategy: Reward balance after liq:", rewardBalance(i));
       }
+      // safe way to keep ppfs peg is sell excess after reward liquidation
+      // it should not decrease old ppfs
+      liquidateExcessUnderlying();
+      require(ppfs < ISmartVault(_smartVault).getPricePerFullShare(), "IFS: Ppfs decreased after liq");
     }
+
     liquidateRewardDefault();
+    console.log("Strategy: Liquidating: rew bal after", IERC20(_rewardTokens[0]).balanceOf(address(this)));
+  }
+
+  function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
+    address forwarder = IController(controller()).feeRewardForwarder();
+    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
+    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
+
+    if (ppfs > ppfsPeg + 1) {
+      // -1 for avoid rounding issues
+      uint256 ppfsDiff = ppfs - ppfsPeg - 1;
+      uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
+      if (undBal == 0) {
+        // no actions in case of no money
+        return;
+      }
+      // ppfs = 1 if underlying balance = total supply
+      uint256 toLiquidate = undBal - ERC20(_smartVault).totalSupply();
+
+      console.log("EXCESS: ppfsDiff", ppfsDiff, undBal, toLiquidate);
+      console.log("EXCESS: underlyingBalance", underlyingBalance());
+
+      if (underlyingBalance() < toLiquidate) {
+        _redeemPartialWithLoan(toLiquidate - underlyingBalance());
+      }
+      console.log("EXCESS: underlyingBalance after redeem", underlyingBalance());
+
+      toLiquidate = Math.min(underlyingBalance(), toLiquidate);
+      if (toLiquidate != 0) {
+        IERC20(_underlyingToken).safeApprove(forwarder, 0);
+        IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
+        // it will sell reward token to Target Token and distribute it to SmartVault and PS
+        uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(toLiquidate, _underlyingToken, _smartVault);
+        if (targetTokenEarned > 0) {
+          IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+        }
+      }
+      console.log("EXCESS: ppfs after liq", ISmartVault(_smartVault).getPricePerFullShare());
+      require(ISmartVault(_smartVault).getPricePerFullShare() >= ppfsPeg, "IFS: Wrong ppfs after sale");
+    }
   }
 
   /// @dev Supplies to Iron
@@ -388,35 +454,65 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     }
     IERC20(_underlyingToken).safeApprove(rToken, 0);
     IERC20(_underlyingToken).safeApprove(rToken, balance);
-    uint256 mintResult = CompleteRToken(rToken).mint(balance);
-    require(mintResult == 0, "Supplying failed");
+    require(CompleteRToken(rToken).mint(balance) == 0, "IFS: Supplying failed");
     return balance;
   }
 
   /// @dev Borrows against the collateral
   function _borrow(uint256 amountUnderlying) internal {
     // Borrow, check the balance for this contract's address
-    uint256 result = CompleteRToken(rToken).borrow(amountUnderlying);
-    require(result == 0, "Borrow failed");
+    require(CompleteRToken(rToken).borrow(amountUnderlying) == 0, "IFS: Borrow failed");
   }
 
   /// @dev Redeem liquidity in underlying
   function _redeemUnderlying(uint256 amountUnderlying) internal {
+
+
+    (,,,uint256 _exchangeRate) = CompleteRToken(rToken).getAccountSnapshot(address(this));
+    uint256 _rTokenRedeem = amountUnderlying * 1e18 / _exchangeRate;
+    (uint err, uint liquidity, uint shortfall) = IronControllerInterface(ironController).getAccountLiquidity(address(this));
+    uint256 allowedCode = IronControllerInterface(ironController).redeemAllowed(rToken, address(this), _rTokenRedeem);
+
+    console.log("REDEEM: getAccountLiquidity:", err, liquidity, shortfall);
+    console.log("REDEEM: allowedCode:", allowedCode);
+
+    console.log("REDEEM: _redeemUnderlying:", amountUnderlying, CompleteRToken(rToken).getCash());
+    console.log("REDEEM: rToken bal:", CompleteRToken(rToken).balanceOf(address(this)));
+    console.log("REDEEM: und bal:", CompleteRToken(rToken).balanceOfUnderlying(address(this)));
+
+    // we can have a very little gap, it will slitly decrease ppfs and should be covered with reward liquidation process
+    amountUnderlying = Math.min(amountUnderlying, CompleteRToken(rToken).balanceOfUnderlying(address(this)));
     if (amountUnderlying > 0) {
-      CompleteRToken(rToken).redeemUnderlying(amountUnderlying);
+      (,,, uint256 exchangeRate) = CompleteRToken(rToken).getAccountSnapshot(address(this));
+      console.log("Strategy: exchangeRate:", exchangeRate);
+      uint256 rTokenRedeem = amountUnderlying * 1e18 / exchangeRate;
+      console.log("Strategy: rTokenRedeem:", rTokenRedeem);
+      if (rTokenRedeem > 0) {
+        _redeemRToken(rTokenRedeem);
+      }
+    }
+    console.log("REDEEM: rToken bal after:", CompleteRToken(rToken).balanceOf(address(this)));
+  }
+
+  /// @dev Redeem liquidity in rToken
+  function _redeemRToken(uint256 amountRToken) internal {
+    if (amountRToken > 0) {
+      require(CompleteRToken(rToken).redeem(amountRToken) == 0, "IFS: Redeem failed");
     }
   }
 
   /// @dev Repays a loan
   function _repay(uint256 amountUnderlying) internal {
-    IERC20(_underlyingToken).safeApprove(rToken, 0);
-    IERC20(_underlyingToken).safeApprove(rToken, amountUnderlying);
-    CompleteRToken(rToken).repayBorrow(amountUnderlying);
+    if (amountUnderlying != 0) {
+      IERC20(_underlyingToken).safeApprove(rToken, 0);
+      IERC20(_underlyingToken).safeApprove(rToken, amountUnderlying);
+      require(CompleteRToken(rToken).repayBorrow(amountUnderlying) == 0, "IFS: Repay failed");
+    }
   }
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
   function _redeemMaximumWithLoan() internal {
-    // amount of liquidity in Venus
+    // amount of liquidity
     uint256 available = CompleteRToken(rToken).getCash();
     // amount we supplied
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
@@ -424,11 +520,15 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
 
+    console.log("Strategy: _redeemMaximumWithLoan:", available, supplied, borrowed);
+
     _redeemPartialWithLoan(Math.min(available, balance));
-    supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
-    if (supplied > 0) {
-      available = CompleteRToken(rToken).getCash();
-      _redeemUnderlying(Math.min(available, supplied));
+
+    // we have a little amount of supply after full exit
+    // better to redeem rToken amount for avoid rounding issues
+    (,uint256 rTokenBalance,,) = CompleteRToken(rToken).getAccountSnapshot(address(this));
+    if (rTokenBalance > 0) {
+      _redeemRToken(rTokenBalance);
     }
   }
 
@@ -456,27 +556,36 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     console.log("Strategy: Balance after:", newBalance);
     console.log("Strategy: New borrow target:", newBorrowTarget);
     console.log(" ");
-    uint256 underlyingBalance;
+    uint256 underlyingBalance = 0;
     uint256 i = 0;
     while (borrowed > newBorrowTarget) {
       uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
+      console.log("Strategy: requiredCollateral:", i, requiredCollateral);
       uint256 toRepay = borrowed.sub(newBorrowTarget);
       // redeem just as much as needed to repay the loan
       // supplied - requiredCollateral = max redeemable, amount + repay = needed
       uint256 toRedeem = Math.min(supplied.sub(requiredCollateral), amount.add(toRepay));
-      console.log("Strategy: Redeeming:", toRedeem);
+      console.log("Strategy: Redeeming:", i, toRedeem);
       _redeemUnderlying(toRedeem);
       // now we can repay our borrowed amount
       underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      console.log("Strategy: Repaying:", Math.min(toRepay, underlyingBalance));
-      _repay(Math.min(toRepay, underlyingBalance));
+      toRepay = Math.min(toRepay, underlyingBalance);
+      console.log("Strategy: Repaying:", toRepay, underlyingBalance);
+      if(toRepay == 0) {
+        // in case of we don't have money for repaying we can't do anything
+        break;
+      }
+      _repay(toRepay);
       // update the parameters
       borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
-      uint256 balance = supplied.sub(borrowed);
+      if (supplied > borrowed) {
+        uint256 balance = supplied.sub(borrowed);
+        console.log("Strategy: Balance loop", i, ":", balance);
+      }
+
       console.log("Strategy: Supplied loop", i, ":", supplied);
       console.log("Strategy: Borrowed loop", i, ":", borrowed);
-      console.log("Strategy: Balance loop", i, ":", balance);
       console.log(" ");
       i++;
       if (i == MAX_DEPTH) {
@@ -486,23 +595,9 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
     if (underlyingBalance < amount) {
       uint256 toRedeem = amount.sub(underlyingBalance);
-      console.log("Strategy: Redeeming:", toRedeem);
+      console.log("Strategy: Redeeming2:", toRedeem, amount, underlyingBalance);
       // redeem the most we can redeem
       _redeemUnderlying(toRedeem);
     }
-  }
-
-  /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
-  function rTokenPrice(address _rToken) internal view returns (uint256){
-    uint8 underlyingDecimals = ERC20(CompleteRToken(_rToken).underlying()).decimals();
-    uint256 _rTokenPrice = IronPriceOracle(
-      IronControllerInterface(ironController).oracle()
-    ).getUnderlyingPrice(_rToken);
-    // normalize token price to 1e18
-    if (underlyingDecimals < 18) {
-      console.log("normalize price:", (10 ** (18 - underlyingDecimals)));
-      _rTokenPrice = _rTokenPrice / (10 ** (18 - underlyingDecimals));
-    }
-    return _rTokenPrice;
   }
 }

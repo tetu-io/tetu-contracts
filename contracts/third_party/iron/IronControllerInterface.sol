@@ -86,4 +86,6 @@ interface IronControllerInterface {
   function getAllMarkets() external view returns (address[] memory);
 
   function markets(address rToken) external view returns (bool isListed, uint collateralFactorMantissa);
+
+  function getAccountLiquidity(address account) external view returns (uint, uint, uint);
 }

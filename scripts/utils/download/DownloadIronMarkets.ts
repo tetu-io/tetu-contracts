@@ -8,14 +8,12 @@ import {
   IUniswapV2Pair,
   PriceCalculator,
   RErc20Storage,
-  RTokenInterface,
-  SmartVault
+  RTokenInterface
 } from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {VaultUtils} from "../../../test/VaultUtils";
 
 
 async function main() {
@@ -50,7 +48,7 @@ async function main() {
   for (let i = 0; i < markets.length; i++) {
     console.log('id', i);
 
-    if(i === 2) {
+    if (i === 2) {
       console.log('skip matic temporally')
       continue;
     }
@@ -64,14 +62,14 @@ async function main() {
     const tokenName = await Erc20Utils.tokenSymbol(token);
 
     const collateralFactor = +utils.formatUnits((await controller.markets(rTokenAdr)).collateralFactorMantissa) * 10000;
-    const borrowTarget = collateralFactor * 0.9;
+    const borrowTarget = Math.floor(collateralFactor * 0.9);
 
     const data = i + ',' +
         rTokenName + ',' +
         rTokenAdr + ',' +
         token + ',' +
         tokenName + ',' +
-        collateralFactor + ',' +
+        Math.floor(collateralFactor * 0.99) + ',' +
         borrowTarget
 
     console.log(data);

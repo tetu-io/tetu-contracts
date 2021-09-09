@@ -55,7 +55,8 @@ export class VaultUtils {
   public static async deposit(
       user: SignerWithAddress,
       vault: SmartVault,
-      amount: BigNumber
+      amount: BigNumber,
+      invest = true
   ) {
     const vaultForUser = vault.connect(user);
     const underlying = await vaultForUser.underlying();
@@ -66,8 +67,12 @@ export class VaultUtils {
     .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
 
     await Erc20Utils.approve(underlying, user, vault.address, amount.toString());
-    console.log('deposit', BigNumber.from(amount).toString())
-    return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+    console.log('deposit', BigNumber.from(amount).toString());
+    if(invest) {
+      return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+    } else {
+      return await vaultForUser.deposit(BigNumber.from(amount));
+    }
   }
 
   public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader): Promise<number> {

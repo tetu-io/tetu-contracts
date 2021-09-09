@@ -104,7 +104,7 @@ export class StrategyTestUtils {
     await info.vault.doHardWork();
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
-    expect(ppfs).is.greaterThan(oldPpfs);
+    expect(ppfs).is.greaterThanOrEqual(oldPpfs);
 
 
     const earned = +utils.formatUnits(await info.core.bookkeeper.targetTokenEarned(info.strategy.address));

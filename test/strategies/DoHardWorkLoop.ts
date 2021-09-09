@@ -15,6 +15,7 @@ export class DoHardWorkLoop {
     const calculator = (await DeployerUtils
     .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
     const vaultForUser = info.vault.connect(info.user);
+    const undDec = await Erc20Utils.decimals(info.underlying);
 
     const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
 
@@ -45,9 +46,16 @@ export class DoHardWorkLoop {
       const psRate = await VaultUtils.profitSharingRatio(info.core.controller);
       console.log('psRate', psRate);
 
+      const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+
       // *********** DO HARD WORK **************
       await TimeUtils.advanceBlocksOnTs(loopTime);
       await info.vault.doHardWork();
+
+      const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+
+      console.log('PPFS', oldPpfs, ppfs, ppfs - oldPpfs);
+      expect(ppfs).is.greaterThanOrEqual(oldPpfs);
 
       const balancesAfter = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
       // console.log('balancesAfter', balancesAfter[0].toString(), balancesAfter[0].sub(balancesBefore[0]).toString());
@@ -87,6 +95,15 @@ export class DoHardWorkLoop {
       // hardhat sometimes doesn't provide a block for some reason, need to investigate why
       // it is not critical checking, we already checked earned amount
       // expect(roi).is.greaterThan(0, 'zero roi');
+
+
+      await vaultForUser.exit();
+      // some pools have auto compounding so user balance can increase
+      expect(+utils.formatUnits(await Erc20Utils.balanceOf(info.underlying, info.user.address), undDec))
+      .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec), "should have all underlying");
+
+      await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit).div(2));
+      await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit).div(2), false);
     }
 
     // *************** POST LOOPS CHECKING **************
@@ -116,7 +133,6 @@ export class DoHardWorkLoop {
     await vaultForUser.exit();
     // some pools have auto compounding so user balance can increase
     const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
-    const undDec = await Erc20Utils.decimals(info.underlying);
     expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec), "should have all underlying");
   }

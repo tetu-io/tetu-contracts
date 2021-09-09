@@ -31,27 +31,27 @@ export default {
       accounts: [
         {
           privateKey: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e", // random account
-          balance: "1000000000000000000000000000",
+          balance: "100000000000000000000000000000",
         },
         {
           privateKey: "72d01b39db439c2c5b89f20013298079161cf0acfbd8b9aec933810439d8e83f", // random account
-          balance: "1000000000000000000000000000",
+          balance: "100000000000000000000000000000",
         },
         {
           privateKey: "0aa11e3181585907868e05ac1c4c5adb3bcdb5cbf06a1b82e92cd82318debe3d", // random account
-          balance: "1000000000000000000000000000",
+          balance: "100000000000000000000000000000",
         },
         {
           privateKey: "2fa47ef2cc8a29842081ce03948d4039538a320068cad021036ffd8accec879d", // random account
-          balance: "1000000000000000000000000000",
+          balance: "100000000000000000000000000000",
         },
         {
           privateKey: Secrets.maticPrivateKey,
-          balance: "1000000000000000000000000000",
+          balance: "100000000000000000000000000000",
         },
         {
           privateKey: Secrets.maticPrivateKey2,
-          balance: "1000000000000000000000000000",
+          balance: "100000000000000000000000000000",
         }
       ],
     },
