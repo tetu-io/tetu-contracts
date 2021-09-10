@@ -53,6 +53,11 @@ async function main() {
       continue;
     }
 
+    if (i === 5 || i === 6 || i === 7) {
+      console.log('skip volatile assets')
+      continue;
+    }
+
     const rTokenAdr = markets[i];
     const rTokenName = await Erc20Utils.tokenSymbol(rTokenAdr);
     console.log('rTokenName', rTokenName, rTokenAdr)
