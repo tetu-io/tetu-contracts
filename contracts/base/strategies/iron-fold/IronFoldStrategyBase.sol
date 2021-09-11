@@ -418,6 +418,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
       borrowedInUnderlying = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
+      console.log("STRATEGY: Balance with investment:", undBal);
       if (undBal == 0
       || ERC20(_smartVault).totalSupply() == 0
       || undBal < ERC20(_smartVault).totalSupply()
@@ -428,13 +429,14 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       }
       // ppfs = 1 if underlying balance = total supply
       // -1 for avoiding problem with rounding
+      console.log("STRATEGY: Vaults total supply:", ERC20(_smartVault).totalSupply());
       uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
-      console.log("EXCESS: to liq", toLiquidate, ERC20(_smartVault).totalSupply(), undBal);
-
+      console.log("EXCESS: to liq", toLiquidate);
+      console.log("EXCESS: Underlying Balance:", underlyingBalance());
       if (underlyingBalance() < toLiquidate) {
         _redeemPartialWithLoan(toLiquidate - underlyingBalance());
       }
-
+      console.log("EXCESS: Underlying Balance:", underlyingBalance());
       toLiquidate = Math.min(underlyingBalance(), toLiquidate);
       if (toLiquidate != 0) {
         IERC20(_underlyingToken).safeApprove(forwarder, 0);
@@ -449,8 +451,13 @@ abstract contract IronFoldStrategyBase is StrategyBase {
             IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
           }
         } catch {
+          console.log("CHECK: FAILED");
           emit UnderlyingLiquidationFailed();
         }
+        suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
+        borrowedInUnderlying = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
+        uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
+        console.log("STRATEGY: Balance with investment:", undBal);
         console.log("EXCESS: liq ppfs", ppfs, ISmartVault(_smartVault).getPricePerFullShare());
       }
     }
