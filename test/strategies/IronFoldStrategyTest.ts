@@ -191,8 +191,8 @@ async function startIronFoldStrategyTest(
       await doHardWorkLoopFolding(
           strategyInfo,
           (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).div(2).toString(),
-          50,
-          60_000 * 60 * 24
+          10,
+          3000
       );
     });
 
@@ -202,7 +202,7 @@ async function startIronFoldStrategyTest(
 export {startIronFoldStrategyTest};
 
 
-async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopTime: number) {
+async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
   const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyIronFold', info.strategy.address) as StrategyIronFold;
   const calculator = (await DeployerUtils
   .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
@@ -263,7 +263,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
     const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
     // *********** DO HARD WORK **************
-    await TimeUtils.advanceBlocksOnTs(loopTime);
+    await TimeUtils.advanceNBlocks(loopBlocks);
     await info.vault.doHardWork();
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
