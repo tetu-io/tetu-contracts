@@ -53,7 +53,7 @@ async function main() {
       continue;
     }
 
-    if (i === 5 || i === 6 || i === 7) {
+    if (i === 5 || i === 6) {
       console.log('skip volatile assets')
       continue;
     }
@@ -74,7 +74,7 @@ async function main() {
         rTokenAdr + ',' +
         token + ',' +
         tokenName + ',' +
-        Math.floor(collateralFactor * 0.99) + ',' +
+        (collateralFactor - 1) + ',' +
         borrowTarget
 
     console.log(data);

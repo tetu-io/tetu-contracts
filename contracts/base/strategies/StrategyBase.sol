@@ -184,7 +184,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
       withdrawAndClaimFromPool(toWithdraw);
     }
 
-    IERC20(_underlyingToken).safeTransfer(_smartVault, amount);
+    IERC20(_underlyingToken).safeTransfer(_smartVault, Math.min(amount, underlyingBalance()));
   }
 
   /// @notice Stakes everything the strategy holds into the reward pool
@@ -220,13 +220,15 @@ abstract contract StrategyBase is IStrategy, Controllable {
     address forwarder = IController(controller()).feeRewardForwarder();
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
-      address rt = _rewardTokens[i];
-      IERC20(rt).safeApprove(forwarder, 0);
-      IERC20(rt).safeApprove(forwarder, amount);
-      // it will sell reward token to Target Token and distribute it to SmartVault and PS
-      uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault);
-      if (targetTokenEarned > 0) {
-        IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+      if (amount != 0) {
+        address rt = _rewardTokens[i];
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, amount);
+        // it will sell reward token to Target Token and distribute it to SmartVault and PS
+        uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault);
+        if (targetTokenEarned > 0) {
+          IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+        }
       }
     }
   }

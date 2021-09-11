@@ -145,6 +145,7 @@ export class StrategyTestUtils {
         +utils.formatUnits(userEarnedTotalAfter) - +utils.formatUnits(userEarnedTotal))
     expect(+utils.formatUnits(userEarnedTotalAfter))
     .is.greaterThan(+utils.formatUnits(userEarnedTotal));
+    await info.strategy.continueInvesting();
   }
 
   public static async checkStrategyRewardsBalance(strategy: IStrategy, balances: string[]) {
