@@ -21,6 +21,8 @@ import "../../../third_party/iron/CompleteRToken.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
 import "../../interface/ISmartVault.sol";
 
+import "hardhat/console.sol";
+
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
 /// @author belbix
@@ -46,6 +48,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   address public ironController;
 
   /// @notice Numerator value for the targeted borrow rate
+  uint256 public borrowTargetFactorNumeratorStored;
   uint256 public borrowTargetFactorNumerator;
   /// @notice Numerator value for the asset market collateral value
   uint256 public collateralFactorNumerator;
@@ -60,6 +63,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
   event FoldChanged(bool value);
   event FoldStopped();
+  event FoldStarted(uint256 borrowTargetFactorNumerator);
   event MaxDepthReached();
   event RedeemFailed(uint256 amount, uint256 code);
   event RepayFailed(uint256 amount, uint256 code);
@@ -111,6 +115,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     collateralFactorNumerator = _collateralFactorNumerator;
 
     require(_borrowTargetFactorNumerator < collateralFactorNumerator, "IFS: Target should be lower than collateral limit");
+    borrowTargetFactorNumeratorStored = _borrowTargetFactorNumerator;
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
   }
 
@@ -134,7 +139,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-    return CompleteRToken(rToken).getCash().add(CompleteRToken(rToken).totalBorrows());
+    return CompleteRToken(rToken).getCash().add(CompleteRToken(rToken).totalBorrows()).sub(CompleteRToken(rToken).totalReserves());
   }
 
   /// @notice Calculate approximately weekly reward amounts for each reward tokens
@@ -160,33 +165,27 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     // get total supply, cash and borrows, and normalize them to 18 decimals
     uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** rt.decimals());
     uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals);
-    uint256 totalCash = rt.getCash() * 1e18 / (10 ** underlyingDecimals);
 
     // for avoiding revert for empty market
-    if (totalSupply == 0 || totalBorrows == 0 || totalCash == 0) {
+    if (totalSupply == 0 || totalBorrows == 0) {
       return 0;
     }
 
-    // rewards per token for supply based on rToken amount, need to normalize it to underlying
-    uint256 cashToTokenRatio = totalSupply * 1e18 / totalCash;
+    // exchange rate between rToken and underlyingToken
+    uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** rt.decimals()) / (10 ** underlyingDecimals) ;
+    // amount of reward tokens per block for 1 supplied underlyingToken
+    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / rTokenExchangeRate * 1e18 / totalSupply / 2;
+    // amount of reward tokens per block for 1 borrowed underlyingToken
+    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows / 2;
 
-    // amount of reward tokens per block for 1 supplied rToken
-    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / totalSupply;
-
-    // amount of reward tokens per block for 1 borrowed rToken
-    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows;
-
-    // normalize amount for cash value
-    uint256 rewardPerSupply = rewardSpeedUsdPerSuppliedToken * cashToTokenRatio / 1e18;
-    // calculate approximately expected income from borrows
-    uint256 rewardPerBorrow = rewardSpeedUsdPerBorrowedToken * borrowTargetFactorNumerator / factorDenominator;
-
-    return rewardPerSupply + rewardPerBorrow;
+    console.log("STRATEGY: Reward per token:", rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken);
+    return rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken;
   }
 
   /// @dev Return a normalized to 18 decimal cost of folding
   function foldCostRatePerToken() public view returns (uint256) {
     CompleteRToken rt = CompleteRToken(rToken);
+
     // if for some reason supply rate higher than borrow we pay nothing for the borrows
     if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
       return 1;
@@ -195,6 +194,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 _rTokenPrice = rTokenPrice(rToken);
 
     // let's calculate profit for 1 token
+    console.log("STRATEGY: Cost per token:", foldRateCost * _rTokenPrice / 1e18);
     return foldRateCost * _rTokenPrice / 1e18;
   }
 
@@ -224,7 +224,13 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     claimReward();
     liquidateReward();
     investAllUnderlying();
-    rebalance();
+    if (!isFoldingProfitable() && fold) {
+      stopFolding();
+    } else if (isFoldingProfitable() && !fold) {
+      startFolding();
+    } else {
+      rebalance();
+    }
   }
 
   /// @dev Rebalances the borrow ratio
@@ -248,17 +254,27 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   }
 
   /// @dev Set borrow rate target
-  function setBorrowTargetFactorNumerator(uint256 _target) public restricted {
+  function setBorrowTargetFactorNumeratorStored(uint256 _target) public restricted {
     require(_target < collateralFactorNumerator, "Target should be lower than collateral limit");
-    borrowTargetFactorNumerator = _target;
+    borrowTargetFactorNumeratorStored = _target;
+    if (fold) {
+      borrowTargetFactorNumerator = _target;
+    }
     emit BorrowTargetFactorNumeratorChanged(_target);
   }
 
-  function stopFolding() external restricted {
-    setBorrowTargetFactorNumerator(0);
+  function stopFolding() public restricted {
+    borrowTargetFactorNumerator = 0;
     setFold(false);
     rebalance();
     emit FoldStopped();
+  }
+
+  function startFolding() public restricted {
+    borrowTargetFactorNumerator = borrowTargetFactorNumeratorStored;
+    setFold(true);
+    rebalance();
+    emit FoldStarted(borrowTargetFactorNumeratorStored);
   }
 
   /// @dev Set collateral rate for asset market
@@ -278,6 +294,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       liquidateExcessUnderlying();
       _supply(amount);
     }
+    console.log("STRATEGY: Folding profitable:", isFoldingProfitable());
     if (!fold || !isFoldingProfitable()) {
       return;
     }
@@ -287,6 +304,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     uint256 i = 0;
     while (borrowed < borrowTarget) {
+      console.log("STRATEGY: Fold", i);
       uint256 wantBorrow = borrowTarget.sub(borrowed);
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
       _borrow(Math.min(wantBorrow, maxBorrow));
@@ -340,6 +358,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
     // in case of negative ppfs compound all profit to underlying
     if (ppfs < ppfsPeg) {
+      console.log("STRATEGY: PPFS:", ppfs);
+      console.log("STRATEGY: Compounding...");
       for (uint256 i = 0; i < _rewardTokens.length; i++) {
         uint256 amount = rewardBalance(i);
         address rt = _rewardTokens[i];
@@ -359,7 +379,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       // in case of ppfs decreasing we will get revert in vault anyway
       require(ppfs < ISmartVault(_smartVault).getPricePerFullShare(), "IFS: Ppfs decreased after liq");
     }
-
     liquidateRewardDefault();
   }
 
@@ -378,6 +397,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
 
     if (ppfs > ppfsPeg) {
+      console.log("STRATEGY: PPFS:", ppfs);
+      console.log("STRATEGY: Liquidating excess...");
       uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
       if (undBal == 0
       || ERC20(_smartVault).totalSupply() == 0
