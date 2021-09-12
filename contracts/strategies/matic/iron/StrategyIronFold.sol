@@ -18,7 +18,7 @@ contract StrategyIronFold is IronFoldStrategyBase {
 
   // IRON CONTROLLER
   address public constant _IRON_CONTROLLER = address(0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c);
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IRON;
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IRON_LEND;
   // rewards
   address private constant ICE = address(0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef);
   address[] private _poolRewards = [ICE];

@@ -190,9 +190,16 @@ async function startIronFoldStrategyTest(
       await StrategyTestUtils.commonTests(strategyInfo);
     });
     it("doHardWork loop", async function () {
+      const deposit = 100_000;
+      const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
+      const undDec = await Erc20Utils.decimals(strategyInfo.underlying);
+      const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
+      const bal = await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
+      // remove excess balance
+      await Erc20Utils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
       await doHardWorkLoopFolding(
           strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).div(2).toString(),
+          depositBN.div(2).toString(),
           10,
           3000
       );
@@ -206,14 +213,15 @@ export {startIronFoldStrategyTest};
 
 async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
   const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyIronFold', info.strategy.address) as StrategyIronFold;
+  const rr = await foldContract.rewardsRateNormalised();
+  console.log('rr', rr.toString());
   const calculator = (await DeployerUtils
   .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
   const vaultForUser = info.vault.connect(info.user);
   const undDec = await Erc20Utils.decimals(info.underlying);
 
-  let userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
-  await Erc20Utils.transfer(info.underlying, info.user, info.signer.address, userUnderlyingBalance.div(2).toString());
-  userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+  await Erc20Utils.transfer(info.underlying, info.user, info.signer.address, BigNumber.from(deposit).div(2).toString());
+  const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
 
   const signerUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.signer.address);
 

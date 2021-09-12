@@ -20,7 +20,6 @@ import "../StrategyBase.sol";
 import "../../../third_party/iron/CompleteRToken.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
 import "../../interface/ISmartVault.sol";
-import "hardhat/console.sol";
 
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
@@ -173,12 +172,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
     // exchange rate between rToken and underlyingToken
     uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** rt.decimals()) / (10 ** underlyingDecimals);
+
     // amount of reward tokens per block for 1 supplied underlyingToken
     uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / rTokenExchangeRate * 1e18 / totalSupply / 2;
     // amount of reward tokens per block for 1 borrowed underlyingToken
     uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows / 2;
 
-    console.log("STRATEGY: Reward per token:", rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken);
     return rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken;
   }
 
@@ -194,7 +193,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 _rTokenPrice = rTokenUnderlyingPrice(rToken);
 
     // let's calculate profit for 1 token
-    console.log("STRATEGY: Cost per token:", foldRateCost * _rTokenPrice / 1e18);
     return foldRateCost * _rTokenPrice / 1e18;
   }
 
@@ -221,15 +219,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
-    console.log("doHardWork: ppfs 1", ISmartVault(_smartVault).getPricePerFullShare());
     claimReward();
-    console.log("doHardWork: ppfs 2", ISmartVault(_smartVault).getPricePerFullShare());
     compound();
-    console.log("doHardWork: ppfs 2.1", ISmartVault(_smartVault).getPricePerFullShare());
     liquidateReward();
-    console.log("doHardWork: ppfs 3", ISmartVault(_smartVault).getPricePerFullShare());
     investAllUnderlying();
-    console.log("doHardWork: ppfs 4", ISmartVault(_smartVault).getPricePerFullShare());
     if (!isFoldingProfitable() && fold) {
       stopFolding();
     } else if (isFoldingProfitable() && !fold) {
@@ -237,7 +230,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     } else {
       rebalance();
     }
-    console.log("doHardWork: ppfs 5", ISmartVault(_smartVault).getPricePerFullShare());
   }
 
   /// @dev Rebalances the borrow ratio
@@ -296,13 +288,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Deposit underlying to rToken contract
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
-    console.log("depositToPool: ppfs before", ISmartVault(_smartVault).getPricePerFullShare());
     if (amount > 0) {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
       liquidateExcessUnderlying();
       _supply(amount);
     }
-    console.log("STRATEGY: Folding profitable:", isFoldingProfitable());
     if (!fold || !isFoldingProfitable()) {
       return;
     }
@@ -312,7 +302,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     uint256 i = 0;
     while (borrowed < borrowTarget) {
-      console.log("STRATEGY: Fold", i);
       uint256 wantBorrow = borrowTarget.sub(borrowed);
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
       _borrow(Math.min(wantBorrow, maxBorrow));
@@ -329,16 +318,13 @@ abstract contract IronFoldStrategyBase is StrategyBase {
         break;
       }
     }
-    console.log("depositToPool: ppfs after", ISmartVault(_smartVault).getPricePerFullShare());
   }
 
   /// @dev Withdraw underlying from Iron MasterChef finance
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
-    console.log("withdrawAndClaimFromPool: ppfs before", ISmartVault(_smartVault).getPricePerFullShare());
     claimReward();
     _redeemPartialWithLoan(amount);
-    console.log("withdrawAndClaimFromPool: ppfs after", ISmartVault(_smartVault).getPricePerFullShare());
   }
 
   /// @dev Exit from external project without caring about rewards
@@ -348,21 +334,17 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   }
 
   function exitRewardPool() internal override updateSupplyInTheEnd {
-    console.log("exitRewardPool: ppfs before", ISmartVault(_smartVault).getPricePerFullShare());
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
       claimReward();
       _redeemMaximumWithLoan();
       liquidateReward();
     }
-    console.log("exitRewardPool: ppfs after", ISmartVault(_smartVault).getPricePerFullShare());
   }
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    console.log("liquidateReward: rew bal before", IERC20(_rewardTokens[0]).balanceOf(address(this)));
     liquidateRewardDefault();
-    console.log("liquidateReward: rew bal after", IERC20(_rewardTokens[0]).balanceOf(address(this)));
   }
 
   /// @dev Claim distribution rewards
@@ -380,12 +362,9 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
     // in case of negative ppfs compound all profit to underlying
     if (ppfs < ppfsPeg) {
-      console.log("STRATEGY: PPFS:", ppfs);
-      console.log("STRATEGY: Compounding...");
       for (uint256 i = 0; i < _rewardTokens.length; i++) {
         uint256 amount = rewardBalance(i);
         address rt = _rewardTokens[i];
-
         // it will sell reward token to Target Token and send back
         if (amount != 0) {
           address forwarder = IController(controller()).feeRewardForwarder();
@@ -393,14 +372,18 @@ abstract contract IronFoldStrategyBase is StrategyBase {
           amount = amount * 90 / 100;
           IERC20(rt).safeApprove(forwarder, 0);
           IERC20(rt).safeApprove(forwarder, amount);
-          IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
+          uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
+          // supply profit for correct ppfs calculation
+          if (underlyingProfit != 0) {
+            _supply(underlyingProfit);
+          }
         }
       }
       // safe way to keep ppfs peg is sell excess after reward liquidation
       // it should not decrease old ppfs
       liquidateExcessUnderlying();
       // in case of ppfs decreasing we will get revert in vault anyway
-      require(ppfs < ISmartVault(_smartVault).getPricePerFullShare(), "IFS: Ppfs decreased after liq");
+      require(ppfs < ISmartVault(_smartVault).getPricePerFullShare(), "IFS: Ppfs decreased after compound");
     }
   }
 
@@ -415,10 +398,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
 
     if (ppfs > ppfsPeg) {
-      console.log("STRATEGY: PPFS:", ppfs);
-      console.log("STRATEGY: Liquidating excess...");
       uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
-      console.log("STRATEGY: Balance with investment:", undBal);
       if (undBal == 0
       || ERC20(_smartVault).totalSupply() == 0
       || undBal < ERC20(_smartVault).totalSupply()
@@ -429,14 +409,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       }
       // ppfs = 1 if underlying balance = total supply
       // -1 for avoiding problem with rounding
-      console.log("STRATEGY: Vaults total supply:", ERC20(_smartVault).totalSupply());
       uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
-      console.log("EXCESS: to liq", toLiquidate);
-      console.log("EXCESS: Underlying Balance:", underlyingBalance());
       if (underlyingBalance() < toLiquidate) {
         _redeemPartialWithLoan(toLiquidate - underlyingBalance());
       }
-      console.log("EXCESS: Underlying Balance:", underlyingBalance());
       toLiquidate = Math.min(underlyingBalance(), toLiquidate);
       if (toLiquidate != 0) {
         IERC20(_underlyingToken).safeApprove(forwarder, 0);
@@ -451,13 +427,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
             IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
           }
         } catch {
-          console.log("CHECK: FAILED");
           emit UnderlyingLiquidationFailed();
         }
         suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
         borrowedInUnderlying = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
-        console.log("STRATEGY: Balance with investment:", ISmartVault(_smartVault).underlyingBalanceWithInvestment());
-        console.log("EXCESS: liq ppfs", ppfs, ISmartVault(_smartVault).getPricePerFullShare());
       }
     }
   }
@@ -590,8 +563,5 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       // redeem the most we can redeem
       _redeemUnderlying(toRedeem);
     }
-
-    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-    console.log("REDEEM", amount, underlyingBalance, amount <= underlyingBalance);
   }
 }
