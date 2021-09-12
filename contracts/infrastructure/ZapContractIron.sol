@@ -21,17 +21,17 @@ import "../base/interface/IStrategy.sol";
 import "../base/interface/IController.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/uniswap/IUniswapV2Router02.sol";
-import "./IPriceCalculator.sol";
+//import "./IPriceCalculator.sol";
 import "./IMultiSwap.sol";
 
 /// @title Dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults
-/// @author belbix
-contract ZapContract is Controllable, ReentrancyGuard {
+/// @author belbix, bogdoslav
+contract ZapContractIron is Controllable, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.0.0";
 
   IMultiSwap public multiSwap;
   mapping(address => uint256) calls;
@@ -122,6 +122,7 @@ contract ZapContract is Controllable, ReentrancyGuard {
     require(_tokenInAmount > 1, "ZC: not enough amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
+    require(_asset0 != _asset1, "ZC: asset 0 must be different from asset 1");
     require(_asset0 == lp.token0() || _asset0 == lp.token1(), "ZC: asset 0 not exist in lp tokens");
     require(_asset1 == lp.token0() || _asset1 == lp.token1(), "ZC: asset 1 not exist in lp tokens");
 
@@ -224,6 +225,7 @@ contract ZapContract is Controllable, ReentrancyGuard {
     require(_shareTokenAmount != 0, "ZC: zero amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
+    require(_asset0 != _asset1, "ZC: asset 0 must be different from asset 1");
     require(_asset0 == lp.token0() || _asset0 == lp.token1(), "ZC: asset 0 not exist in lp token");
     require(_asset1 == lp.token0() || _asset1 == lp.token1(), "ZC: asset 1 not exist in lp token");
 

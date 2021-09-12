@@ -42,6 +42,8 @@ describe("Zap contract tests", function () {
   let btcWexVault: SmartVault;
   let wexPearVault: SmartVault;
   let wexVault: SmartVault;
+  let usdcDinoVault: SmartVault;
+  let usdcCosmicVault: SmartVault;
 
   before(async function () {
     this.timeout(1200000);
@@ -162,6 +164,42 @@ describe("Zap contract tests", function () {
             vaultAddress,
             MaticAddresses.WEXpoly_TOKEN,
             1
+        ) as Promise<IStrategy>,
+        core.controller,
+        core.vaultController,
+        core.psVault.address,
+        signer
+    ))[1];
+
+    usdcDinoVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyDinoSwapLp',
+            core.controller.address,
+            vaultAddress,
+            '0x3324af8417844e70b81555A6D1568d78f4D4Bf1f', // usdc dino
+            MaticAddresses.USDC_TOKEN,
+            MaticAddresses.DINO_TOKEN,
+            10
+        ) as Promise<IStrategy>,
+        core.controller,
+        core.vaultController,
+        core.psVault.address,
+        signer
+    ))[1];
+
+    usdcCosmicVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+        't',
+        vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyCosmicSwapLp',
+            core.controller.address,
+            vaultAddress,
+            '0x71e600fe09d1d8efcb018634ac3ee53f8380c94a', // usdc cosmic
+            MaticAddresses.USDC_TOKEN,
+            MaticAddresses.COSMIC_TOKEN,
+            0
         ) as Promise<IStrategy>,
         core.controller,
         core.vaultController,
@@ -325,6 +363,58 @@ describe("Zap contract tests", function () {
     );
   });
 
+  it("should zap usdc/dino vault with usdc", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        usdcDinoVault.address,
+        MaticAddresses.USDC_TOKEN,
+        '100',
+        3
+    );
+  });
+
+  it("should zap usdc/dino vault with wmatic", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        usdcDinoVault.address,
+        MaticAddresses.WMATIC_TOKEN,
+        '100',
+        3
+    );
+  });
+
+  it("should zap usdc/cosmic vault with usdc", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        usdcCosmicVault.address,
+        MaticAddresses.USDC_TOKEN,
+        '1000',
+        3
+    );
+  });
+
+  it("should zap usdc/cosmic vault with wmatic", async () => {
+    await vaultLpTest(
+        signer,
+        cReader,
+        multiSwap,
+        zapContract,
+        usdcCosmicVault.address,
+        MaticAddresses.WMATIC_TOKEN,
+        '1000',
+        3
+    );
+  });
+
   it.skip("should be able to invest to all vaults with 2 assets", async () => {
 
     const deployedZap = await DeployerUtils.connectInterface(
@@ -354,9 +444,10 @@ describe("Zap contract tests", function () {
     for (let i = 0; i < vaults.length; i++) {
       const vault = vaults[i];
       console.log(i, await contractReader.vaultName(vault));
+      const vaultActive = await contractReader.vaultActive(vault);
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
       if ((await contractReader.strategyAssets(await vCtr.strategy())).length !== 2
-          || exclude.has(vault.toLowerCase())) {
+          || exclude.has(vault.toLowerCase()) || !vaultActive ) {
         continue;
       }
 
