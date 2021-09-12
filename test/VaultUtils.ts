@@ -3,6 +3,7 @@ import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Erc20Utils} from "./Erc20Utils";
 import {BigNumber, utils} from "ethers";
+import axios from "axios";
 
 export class VaultUtils {
 
@@ -54,7 +55,8 @@ export class VaultUtils {
   public static async deposit(
       user: SignerWithAddress,
       vault: SmartVault,
-      amount: BigNumber
+      amount: BigNumber,
+      invest = true
   ) {
     const vaultForUser = vault.connect(user);
     const underlying = await vaultForUser.underlying();
@@ -65,8 +67,12 @@ export class VaultUtils {
     .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
 
     await Erc20Utils.approve(underlying, user, vault.address, amount.toString());
-    console.log('deposit', BigNumber.from(amount).toString())
-    return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+    console.log('deposit', BigNumber.from(amount).toString());
+    if(invest) {
+      return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+    } else {
+      return await vaultForUser.deposit(BigNumber.from(amount));
+    }
   }
 
   public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader): Promise<number> {
@@ -119,6 +125,11 @@ export class VaultUtils {
     const periodRate = currentPeriod / duration;
 
     return rewardRateForToken * duration * periodRate;
+  }
+
+  public static async getVaultInfoFromServer() {
+    // return (await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC")).data;
+    return (await axios.get("http://localhost:8080/api/v1/reader/vaultInfos?network=MATIC")).data;
   }
 
 }

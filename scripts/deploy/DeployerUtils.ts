@@ -218,12 +218,12 @@ export class DeployerUtils {
     return logic.attach(proxy.address) as SmartVault;
   }
 
-  public static async deployPayrollClerk(signer: SignerWithAddress, controller: string)
+  public static async deployPayrollClerk(signer: SignerWithAddress, controller: string, calculator: string)
       : Promise<[PayrollClerk, TetuProxyGov, PayrollClerk]> {
     const logic = await DeployerUtils.deployContract(signer, "PayrollClerk") as PayrollClerk;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as PayrollClerk;
-    await contract.initialize(controller);
+    await contract.initialize(controller, calculator);
     return [contract, proxy, logic];
   }
 

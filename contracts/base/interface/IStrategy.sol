@@ -23,10 +23,13 @@ interface IStrategy {
     IRON, // 5
     COSMIC, // 6
     CURVE, // 7
-    DINO // 8
+    DINO, // 8
+    IRON_LEND // 9
   }
 
   // *************** GOVERNANCE ACTIONS **************
+  function STRATEGY_NAME() external view returns (string memory);
+
   function withdrawAllToVault() external;
 
   function withdrawToVault(uint256 amount) external;

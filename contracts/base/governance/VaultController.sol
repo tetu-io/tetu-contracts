@@ -32,7 +32,7 @@ contract VaultController is Initializable, Controllable, VaultControllerStorage 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -113,6 +113,15 @@ contract VaultController is Initializable, Controllable, VaultControllerStorage 
   }
 
   // ---------------- NO TIME_LOCK --------------------------
+
+  /// @notice Only Governance can do it. Change permissions for ppfs decrease
+  /// @param _targets Vault addresses
+  /// @param _value  New value
+  function changePpfsDecreasePermissions(address[] calldata _targets, bool _value) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).changePpfsDecreaseAllowed(_value);
+    }
+  }
 
   /// @notice Only Governance can do it. Change statuses of given vaults
   /// @param _targets Vault addresses

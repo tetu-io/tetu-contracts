@@ -18,14 +18,13 @@ contract StrategyIronFold is IronFoldStrategyBase {
 
   // IRON CONTROLLER
   address public constant _IRON_CONTROLLER = address(0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c);
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IRON;
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IRON_LEND;
   // rewards
   address private constant ICE = address(0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef);
   address[] private _poolRewards = [ICE];
   address[] private _assets;
 
   uint256 _FACTOR_DENOMINATOR = 10000;
-  bool _FOLD = true;
 
   constructor(
     address _controller,
@@ -43,8 +42,7 @@ contract StrategyIronFold is IronFoldStrategyBase {
       _IRON_CONTROLLER,
       _borrowTargetFactorNumerator,
       _collateralFactorNumerator,
-      _FACTOR_DENOMINATOR,
-      _FOLD
+      _FACTOR_DENOMINATOR
   ) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(_underlying);

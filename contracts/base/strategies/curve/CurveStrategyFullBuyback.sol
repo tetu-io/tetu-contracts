@@ -18,8 +18,8 @@ import "../../../base/strategies/StrategyBase.sol";
 
 /// @title Contract for Curve strategy implementation
 /// @author Oleg N
-abstract contract CurveStrategyFullBuyback is StrategyBase{
-  
+abstract contract CurveStrategyFullBuyback is StrategyBase {
+
   using SafeERC20 for IERC20;
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.CURVE;
@@ -29,7 +29,7 @@ abstract contract CurveStrategyFullBuyback is StrategyBase{
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
-  
+
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
@@ -52,7 +52,7 @@ abstract contract CurveStrategyFullBuyback is StrategyBase{
     address[] memory __rewardTokens,
     address _gague
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
-    gague = _gague; 
+    gague = _gague;
     address lpToken = IGauge(gague).lp_token();
     require(lpToken == _underlyingToken, "wrong underlying");
   }
@@ -73,7 +73,7 @@ abstract contract CurveStrategyFullBuyback is StrategyBase{
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory toClaim = new uint256[](_rewardTokens.length);
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      toClaim[i] = IGauge(gague).claimable_reward(address(this), _rewardTokens[i]);  
+      toClaim[i] = IGauge(gague).claimable_reward(address(this), _rewardTokens[i]);
     }
     return toClaim;
   }

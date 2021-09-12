@@ -18,4 +18,6 @@ interface IFeeRewardForwarder {
   function notifyPsPool(address _token, uint256 _amount) external returns (uint256);
 
   function notifyCustomPool(address _token, address _rewardPool, uint256 _maxBuyback) external returns (uint256);
+
+  function liquidate(address rewardToken, address underlyingToken, uint256 amount) external returns (uint256);
 }

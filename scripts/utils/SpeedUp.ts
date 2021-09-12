@@ -37,7 +37,7 @@ async function main() {
   console.log('nonce', nonce);
 
   const gasPrice = await web3.eth.getGasPrice();
-  const gasPriceAdjusted = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(2)).toString();
+  const gasPriceAdjusted = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(3)).toString();
 
   console.log('gas', gasPrice, gasPriceAdjusted);
 

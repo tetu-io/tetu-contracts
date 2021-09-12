@@ -11,6 +11,13 @@ export class TimeUtils {
     // await TimeUtils.mineAndCheck();
   }
 
+  public static async advanceNBlocks(n: number) {
+    await ethers.provider.send('evm_increaseTime', [n*3]);
+    for (let i = 0; i < n; i++) {
+      await ethers.provider.send('evm_mine', []);
+    }
+  }
+
   public static async mineAndCheck() {
     const start = ethers.provider.blockNumber;
     while (true) {

@@ -88,6 +88,16 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return getBoolean("active");
   }
 
+  function _setPpfsDecreaseAllowed(bool _value) internal {
+    emit UpdatedBoolSlot("ppfsDecreaseAllowed", ppfsDecreaseAllowed(), _value);
+    setBoolean("ppfsDecreaseAllowed", _value);
+  }
+
+  /// @notice Vault status
+  function ppfsDecreaseAllowed() public view override returns (bool) {
+    return getBoolean("ppfsDecreaseAllowed");
+  }
+
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
   function setBoolean(string memory key, bool _value) internal {

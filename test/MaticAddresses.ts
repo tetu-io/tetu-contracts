@@ -44,6 +44,7 @@ export class MaticAddresses {
 
   //iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
+  public static IRON_CONTROLLER = "0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c".toLowerCase();
   public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
   public static IRON_IRON_IS3USD = "0x985D40feDAA3208DAbaCDFDCA00CbeAAc9543949".toLowerCase();
 
@@ -65,7 +66,8 @@ export class MaticAddresses {
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
   public static QUICK_QI_miMATIC = "0x7AfcF11F3e2f01e71B7Cc6b8B5e707E42e6Ea397".toLowerCase();
-  // public static QUICK_QUICK_dQUICK = "".toLowerCase();
+  public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
+
   //sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
   public static SUSHI_FACTORY = "0xc35dadb65012ec5796536bd9864ed8773abc74c4".toLowerCase();
@@ -100,12 +102,17 @@ export class MaticAddresses {
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
 
   // Dino
-  // *Currently, DinoSwap DEX Router is integrated via SushiSwap —
+  // Currently, DinoSwap DEX Router is integrated via SushiSwap —
   // router functionality will be added to incorporate additional DEXs in the
   // near future.
   // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
   public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
+  public static DINO_DINO_USDC = "0x3324af8417844e70b81555A6D1568d78f4D4Bf1f".toLowerCase();
+  public static DINO_DINO_WETH = "0x9f03309A588e33A239Bf49ed8D68b2D45C7A1F11".toLowerCase();
 
+  // COSMIC
+  public static COSMIC_MASTERCHEF = "0x7cEFc4449f047FaF16eeD516b80a9E49D3c45F6F".toLowerCase();
+  public static COSMIC_COSMIC_USDC = "0x71E600Fe09d1d8EfCb018634Ac3Ee53f8380c94A".toLowerCase();
 
   // curve
   public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
