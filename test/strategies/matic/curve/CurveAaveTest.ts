@@ -30,7 +30,7 @@ describe('Curve aave tests', async () => {
         const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, coreContracts.controller.address))[0];
         const underlying = MaticAddresses.AM3CRV_TOKEN;
         const underlyingName = await Erc20Utils.tokenSymbol(underlying);
-        const strategyName = 'CurveAaveStrategyFullBuyback';
+        const strategyName = 'CurveAaveStrategy';
         await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
 
         const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(

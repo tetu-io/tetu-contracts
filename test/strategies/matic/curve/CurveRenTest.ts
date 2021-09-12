@@ -36,7 +36,7 @@ describe('Curve ren tests', async () => {
         
         const underlyingName = await Erc20Utils.tokenSymbol(underlying);
 
-        const strategyName = 'CurveRenStrategyFullBuyback';
+        const strategyName = 'CurveRenStrategy';
 
         await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
 

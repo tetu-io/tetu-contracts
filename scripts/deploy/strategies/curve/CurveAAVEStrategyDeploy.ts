@@ -35,7 +35,7 @@ async function main() {
       vaultNameWithoutPrefix,
       vaultAddress => DeployerUtils.deployContract(
           signer,
-          'CurveAaveStrategyFullBuyback',
+          'CurveAaveStrategy',
           core.controller,
           MaticAddresses.AM3CRV_TOKEN,
           vaultAddress
@@ -53,7 +53,7 @@ async function main() {
     await DeployerUtils.verify(vaultLogic.address);
     await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
     await DeployerUtils.verifyProxy(vault.address);
-    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveAaveStrategyFullBuyback.sol:CurveAaveStrategyFullBuyback', [
+    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveAaveStrategy.sol:CurveAaveStrategy', [
       core.controller,
       MaticAddresses.AM3CRV_TOKEN,
       vault.address

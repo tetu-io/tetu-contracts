@@ -17,16 +17,16 @@ import "../../../third_party/curve/IGauge.sol";
 import "../../../base/strategies/StrategyBase.sol";
 
 
-/// @title Contract for Curve REN strategy implementation
+/// @title Contract for Curve aave strategy implementation
 /// @author Oleg N
-contract CurveRenStrategyFullBuyback is CurveStrategyFullBuyback {
+contract CurveAaveStrategy is CurveStrategyFullBuyback {
 
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
 
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "CurveRenStrategyFullBuyback";
+  string public constant override STRATEGY_NAME = "CurveAaveStrategy";
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -35,13 +35,14 @@ contract CurveRenStrategyFullBuyback is CurveStrategyFullBuyback {
   address[] private poolRewards = [WMATIC, CRV];
 
   /// deposit tokens
-  address private constant WBTC = address(0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6);
-  address private constant RENBTC = address(0xDBf31dF14B66535aF65AaC99C32e9eA844e14501);
+  address private constant DAI = address(0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063);
+  address private constant USDC = address(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
+  address private constant USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
 
   /// @notice Curve gauge rewards pool
-  address public constant CURVE_REN_GAUGE = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
+  address public constant CURVE_AAVE_GAUGE = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
 
-  address[] private _assets = [WBTC, RENBTC];
+  address[] private _assets = [DAI, USDC, USDT];
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -52,7 +53,7 @@ contract CurveRenStrategyFullBuyback is CurveStrategyFullBuyback {
     address _controller,
     address _underlying,
     address _vault
-  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_REN_GAUGE) {}
+  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_AAVE_GAUGE) {}
 
   /// assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {
