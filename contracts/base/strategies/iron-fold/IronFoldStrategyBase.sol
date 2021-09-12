@@ -338,7 +338,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     if (bal != 0) {
       claimReward();
       _redeemMaximumWithLoan();
-      liquidateReward();
+      // reward liquidation can ruin transaction, do it in hard work process
     }
   }
 
