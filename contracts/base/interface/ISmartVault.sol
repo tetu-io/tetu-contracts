@@ -18,6 +18,8 @@ interface ISmartVault {
 
   function changeActivityStatus(bool _active) external;
 
+  function changePpfsDecreaseAllowed(bool _value) external;
+
   function doHardWork() external;
 
   function notifyTargetRewardAmount(address _rewardToken, uint256 reward) external;
@@ -91,4 +93,6 @@ interface ISmartVault {
   function removeRewardToken(address rt) external;
 
   function stop() external;
+
+  function ppfsDecreaseAllowed() external view returns (bool);
 }

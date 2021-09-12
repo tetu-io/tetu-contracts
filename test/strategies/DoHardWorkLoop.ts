@@ -106,6 +106,8 @@ export class DoHardWorkLoop {
       await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit).div(2), false);
     }
 
+    // liquidate rewards after user withdraw
+    await info.vault.doHardWork();
     // *************** POST LOOPS CHECKING **************
 
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);

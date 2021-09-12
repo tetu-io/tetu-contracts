@@ -139,12 +139,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-    return CompleteRToken(rToken).getCash().add(CompleteRToken(rToken).totalBorrows()).sub(CompleteRToken(rToken).totalReserves());
+    return CompleteRToken(rToken).getCash()
+    .add(CompleteRToken(rToken).totalBorrows())
+    .sub(CompleteRToken(rToken).totalReserves());
   }
 
-  /// @notice Calculate approximately weekly reward amounts for each reward tokens
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Array of weekly reward amounts
+  /// @notice stub to zero
   function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
     return rewards;
@@ -158,7 +158,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     // get reward per token for both - suppliers and borrowers
     uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(rToken);
     // using internal Iron Oracle the safest way
-    uint256 rewardTokenPrice = rTokenPrice(ICE_R_TOKEN);
+    uint256 rewardTokenPrice = rTokenUnderlyingPrice(ICE_R_TOKEN);
     // normalize reward speed to USD price
     uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
 
@@ -191,7 +191,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       return 1;
     }
     uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
-    uint256 _rTokenPrice = rTokenPrice(rToken);
+    uint256 _rTokenPrice = rTokenUnderlyingPrice(rToken);
 
     // let's calculate profit for 1 token
     console.log("STRATEGY: Cost per token:", foldRateCost * _rTokenPrice / 1e18);
@@ -199,7 +199,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   }
 
   /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
-  function rTokenPrice(address _rToken) public view returns (uint256){
+  function rTokenUnderlyingPrice(address _rToken) public view returns (uint256){
     uint8 underlyingDecimals = ERC20(CompleteRToken(_rToken).underlying()).decimals();
     uint256 _rTokenPrice = IronPriceOracle(
       IronControllerInterface(ironController).oracle()
@@ -407,6 +407,9 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev We should keep PPFS ~1
   ///      This function must not ruin transaction
   function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
+    // update balances for accurate ppfs calculation
+    suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
+    borrowedInUnderlying = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     address forwarder = IController(controller()).feeRewardForwarder();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
@@ -414,9 +417,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     if (ppfs > ppfsPeg) {
       console.log("STRATEGY: PPFS:", ppfs);
       console.log("STRATEGY: Liquidating excess...");
-      // update balances for accurate ppfs calculation
-      suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
-      borrowedInUnderlying = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
       uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
       console.log("STRATEGY: Balance with investment:", undBal);
       if (undBal == 0
@@ -456,8 +456,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
         }
         suppliedInUnderlying = CompleteRToken(rToken).balanceOfUnderlying(address(this));
         borrowedInUnderlying = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
-        uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
-        console.log("STRATEGY: Balance with investment:", undBal);
+        console.log("STRATEGY: Balance with investment:", ISmartVault(_smartVault).underlyingBalanceWithInvestment());
         console.log("EXCESS: liq ppfs", ppfs, ISmartVault(_smartVault).getPricePerFullShare());
       }
     }
@@ -551,10 +550,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     // amount we borrowed
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 oldBalance = supplied.sub(borrowed);
-    uint256 newBalance;
-    if (amount > oldBalance) {
-      newBalance = 0;
-    } else {
+    uint256 newBalance = 0;
+    if (amount < oldBalance) {
       newBalance = oldBalance.sub(amount);
     }
     uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));

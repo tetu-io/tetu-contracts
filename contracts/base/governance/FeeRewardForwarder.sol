@@ -47,7 +47,7 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   /// @notice Routes for token liquidations
   mapping(address => mapping(address => address[])) public routes;
@@ -216,7 +216,11 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @dev Simple function for liquidate and send back the given token
   ///      No strict access
   function liquidate(address tokenIn, address tokenOut, uint256 amount)
-  external override returns (uint256){
+  external override returns (uint256) {
+    if (tokenIn == tokenOut) {
+      // no action required if the same token;
+      return amount;
+    }
     require(amount != 0, "FRF: Zero amount got liquidation");
     uint256 resultAmount = liquidateTokenForTargetToken(tokenIn, amount, tokenOut);
     require(resultAmount > 0, "FRF: Liquidation path not found");

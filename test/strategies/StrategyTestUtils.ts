@@ -104,7 +104,11 @@ export class StrategyTestUtils {
     await info.vault.doHardWork();
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
-    expect(ppfs).is.greaterThanOrEqual(oldPpfs);
+    if (await info.vault.ppfsDecreaseAllowed()) {
+      expect(ppfs).is.greaterThanOrEqual(oldPpfs * 0.999);
+    } else {
+      expect(ppfs).is.greaterThanOrEqual(oldPpfs);
+    }
 
 
     const earned = +utils.formatUnits(await info.core.bookkeeper.targetTokenEarned(info.strategy.address));
@@ -133,12 +137,19 @@ export class StrategyTestUtils {
     .is.not.eq("0", "should have earned iToken rewards");
 
     // ************* EXIT ***************
-    await info.strategy.emergencyExit();
     await vaultForUser.exit();
     const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
-    expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-    .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec),
-        "should have more or equal underlying than deposit");
+
+    if (await info.vault.ppfsDecreaseAllowed()) {
+      expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
+      .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999,
+          "should have more or equal underlying than deposited");
+    } else {
+      expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
+      .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec),
+          "should have more or equal underlying than deposited");
+    }
+
 
     const userEarnedTotalAfter = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
     console.log('user total earned rt0', +utils.formatUnits(userEarnedTotal), +utils.formatUnits(userEarnedTotalAfter),
