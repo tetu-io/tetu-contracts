@@ -62,7 +62,8 @@ async function main() {
       `x${vaultNameWithoutPrefix}`,
       controller.address,
       tetuLp,
-      60 * 60 * 24 * 28
+      60 * 60 * 24 * 28,
+      false
   ));
 
   // ! gov actions

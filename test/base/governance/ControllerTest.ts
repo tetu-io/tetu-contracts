@@ -72,7 +72,8 @@ describe("Controller tests", function () {
         "tNOOP",
         controller.address,
         underlying,
-        REWARD_DURATION
+        REWARD_DURATION,
+        false
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
         controller.address, underlying, vault.address, [MaticAddresses.WMATIC_TOKEN], [underlying], 1) as NoopStrategy;
@@ -93,7 +94,8 @@ describe("Controller tests", function () {
         "tNOOP",
         controller.address,
         underlying,
-        REWARD_DURATION
+        REWARD_DURATION,
+        false
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
         controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying],1) as NoopStrategy;

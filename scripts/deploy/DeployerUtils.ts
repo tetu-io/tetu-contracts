@@ -320,7 +320,8 @@ export class DeployerUtils {
         "xTETU",
         controller.address,
         rewardToken.address,
-        psRewardDuration
+        psRewardDuration,
+        false
     ), true, wait);
 
     // ******* SETUP CONTROLLER ********
@@ -397,7 +398,8 @@ export class DeployerUtils {
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false
     ), true, wait);
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken), true, wait);
 
@@ -429,7 +431,8 @@ export class DeployerUtils {
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false
     ), true, wait);
     return [vaultLogic, vault, strategy];
   }

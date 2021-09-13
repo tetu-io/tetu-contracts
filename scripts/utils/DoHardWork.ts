@@ -20,7 +20,8 @@ async function main() {
 
   // noinspection InfiniteLoopJS
   while (true) {
-    for (let vault of vaults) {
+    for (let i = vaults.length; i > 0; i--) {
+      const vault = vaults[i - 1];
       const vaultContract = await DeployerUtils.connectVault(vault, signer);
       const strategy = await vaultContract.strategy();
       const stratContr = await DeployerUtils.connectInterface(signer, 'IStrategy', strategy) as IStrategy;
@@ -45,7 +46,7 @@ async function main() {
         toClaimUsd += +utils.formatUnits(toClaim.mul(rtPrice), rtDec + 18);
       }
 
-      if (platform <= 1 || toClaimUsd <= 1) {
+      if (platform <= 1 || toClaimUsd <= 10) {
         console.log('no rewards', vaultName, platform, toClaimUsd);
         continue;
       }

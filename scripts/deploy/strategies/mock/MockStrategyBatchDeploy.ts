@@ -89,7 +89,8 @@ async function main() {
         "x" + poolName,
         controller.address,
         noopStrategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false
     ));
 
 
@@ -120,7 +121,8 @@ async function main() {
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false
     ));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));

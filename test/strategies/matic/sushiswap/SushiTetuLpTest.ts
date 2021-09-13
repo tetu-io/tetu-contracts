@@ -84,7 +84,8 @@ describe.skip('TETU LP test', async () => {
         `x${vaultNameWithoutPrefix}`,
         controller.address,
         tetuLp,
-        60 * 60 * 24 * 28
+        60 * 60 * 24 * 28,
+        false
     );
 
     await vaultController.addRewardTokens([tetuLpVault.address], core.psVault);

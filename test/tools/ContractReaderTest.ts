@@ -277,7 +277,8 @@ describe("contract reader tests", function () {
         "tNOOP",
         core.controller.address,
         underlying,
-        60 * 60 * 24 * 28
+        60 * 60 * 24 * 28,
+        false
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);

@@ -1,21 +1,24 @@
 import {web3} from "hardhat";
+import {DeployerUtils} from "../deploy/DeployerUtils";
 
 export class Web3Utils {
 
 
-  public static async parseLogs(contract: string, topics: string[], start: number, end: number, step = 50_000) {
+  public static async parseLogs(contract: string, topics: string[], start: number, end: number, step = 10_000) {
     const logs = [];
-    try {
-      console.log(start, end);
-      let from = start;
-      let to = start + step;
-      while (true) {
+
+    console.log(start, end);
+    let from = start;
+    let to = start + step;
+    while (true) {
+      try {
         logs.push(...(await web3.eth.getPastLogs({
           fromBlock: from,
           toBlock: to,
           address: contract,
           topics: topics
         })));
+
         console.log('logs', from, to, logs.length);
 
         from = to;
@@ -24,10 +27,12 @@ export class Web3Utils {
         if (to >= end) {
           break;
         }
+      } catch (e) {
+        console.log('Error fetch logs', e);
+        await DeployerUtils.delay(1000);
       }
-    } catch (e) {
-      console.log('Error fetch logs', e);
     }
+
     return logs;
   }
 

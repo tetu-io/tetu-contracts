@@ -75,7 +75,8 @@ export class McLpStrategyDeployer {
         `x${vaultNameWithoutPrefix}`,
         controller.address,
         underlying,
-        60 * 60 * 24 * 28
+        60 * 60 * 24 * 28,
+        false
     ));
 
     // ! gov actions

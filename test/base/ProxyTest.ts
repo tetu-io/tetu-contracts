@@ -1,7 +1,7 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {NoopStrategy, SmartVault} from "../../typechain";
+import {NoopStrategy, SmartVault, SmartVaultV100} from "../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
@@ -16,7 +16,7 @@ import {Erc20Utils} from "../Erc20Utils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Controller tests", function () {
+describe("Proxy tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -49,12 +49,12 @@ describe("Controller tests", function () {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV1_0_0");
 
     const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
-    const psVault1 = vaultLogic.attach(vaultProxy1.address) as SmartVault;
+    const psVault1 = vaultLogic.attach(vaultProxy1.address) as SmartVaultV100;
     const psEmptyStrategy1 = await DeployerUtils.deployContract(signer, "NoopStrategy",
         core.controller.address, core.rewardToken.address, psVault1.address, [], [core.rewardToken.address], 1) as NoopStrategy;
 
     const vaultProxy2 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
-    const psVault2 = vaultLogic.attach(vaultProxy2.address) as SmartVault;
+    const psVault2 = vaultLogic.attach(vaultProxy2.address) as SmartVaultV100;
     const psEmptyStrategy2 = await DeployerUtils.deployContract(signer, "NoopStrategy",
         core.controller.address, core.rewardToken.address, psVault2.address, [], [core.rewardToken.address],1) as NoopStrategy;
 
@@ -81,7 +81,9 @@ describe("Controller tests", function () {
     await psVault1.addRewardToken(MaticAddresses.WMATIC_TOKEN);
     await psVault2.addRewardToken(MaticAddresses.WMATIC_TOKEN);
 
+    // @ts-ignore
     await VaultUtils.deposit(signer, psVault1, BigNumber.from('10'));
+    // @ts-ignore
     await VaultUtils.deposit(signer, psVault2, BigNumber.from('20'));
 
     expect(await psVault1.name()).is.eq('TETU_PS1');
@@ -138,7 +140,7 @@ describe("Controller tests", function () {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV1_0_0");
 
     const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
-    const vault = vaultLogic.attach(vaultProxy1.address) as SmartVault;
+    const vault = vaultLogic.attach(vaultProxy1.address) as SmartVaultV100;
     const psEmptyStrategy1 = await DeployerUtils.deployContract(signer, "NoopStrategy",
         core.controller.address, MaticAddresses.WMATIC_TOKEN, vault.address, [], [MaticAddresses.WMATIC_TOKEN], 1) as NoopStrategy;
 
@@ -161,9 +163,11 @@ describe("Controller tests", function () {
         utils.parseUnits("100")
     );
 
+    // @ts-ignore
     await VaultUtils.deposit(signer, vault, BigNumber.from('10'));
     await TimeUtils.advanceBlocksOnTs(999);
     await vault.exit();
+    // @ts-ignore
     await VaultUtils.deposit(signer, vault, BigNumber.from('10'));
     await TimeUtils.advanceBlocksOnTs(999);
 
