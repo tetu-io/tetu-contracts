@@ -69,7 +69,7 @@ async function main() {
       console.log('vault name', vaultName);
 
       let start = (await cReader.vaultCreated(vault)).toNumber();
-      let end = START_BLOCK + STEP;
+      let end = start + STEP;
       const logs = [];
       while (true) {
         logs.push(...(await web3.eth.getPastLogs({
