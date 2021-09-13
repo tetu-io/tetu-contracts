@@ -63,17 +63,16 @@ async function startIronFoldStrategyTest(
         }
 
       }
-
-      await core.feeRewardForwarder.setConversionPath(
-          [underlying, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-          [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
-      );
-
-      await core.feeRewardForwarder.setConversionPath(
-          [underlying, MaticAddresses.USDC_TOKEN],
-          [MaticAddresses.QUICK_ROUTER]
-      );
-
+      if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
+        await core.feeRewardForwarder.setConversionPath(
+            [underlying, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
+            [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
+        );
+        await core.feeRewardForwarder.setConversionPath(
+            [underlying, MaticAddresses.USDC_TOKEN],
+            [MaticAddresses.QUICK_ROUTER]
+        );
+      }
 
       const data = await StrategyTestUtils.deploy(
           signer,

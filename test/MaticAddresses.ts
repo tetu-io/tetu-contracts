@@ -39,6 +39,7 @@ export class MaticAddresses {
   public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
   public static AM3CRV_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171".toLowerCase();
   public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
+  public static DFYN_TOKEN = "0xc168e40227e4ebd8c1cae80f7a55a4f0e6d66c97".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

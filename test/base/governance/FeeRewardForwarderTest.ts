@@ -62,7 +62,7 @@ describe("Fee reward forwarder tests", function () {
     const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", controllerLogic.address);
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
-    const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
+    const feeRewardForwarder = (await DeployerUtils.deployFeeForwarder(signer, controller.address))[0];
     await expect(feeRewardForwarder.callStatic.notifyPsPool(MaticAddresses.ZERO_ADDRESS, 1)).is.rejectedWith('FRF: Target token is zero for notify')
   });
 
@@ -121,9 +121,9 @@ describe("Fee reward forwarder tests", function () {
   });
 
   it("should distribute", async () => {
-    await core.feeRewardForwarder.setConversionPath(
-        [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-        [MaticAddresses.QUICK_ROUTER]
+    await core.feeRewardForwarder.setConversionPathMulti(
+        [[MaticAddresses.USDC_TOKEN, core.rewardToken.address]],
+        [[MaticAddresses.QUICK_ROUTER]]
     );
     await Erc20Utils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
     expect(await forwarder.callStatic.distribute(utils.parseUnits('1000', 6), MaticAddresses.USDC_TOKEN, core.psVault.address)).is.not.eq(0);
