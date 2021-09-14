@@ -96,6 +96,12 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       rate = ISmartVault(token).getPricePerFullShare();
       token = ISmartVault(token).underlying();
       rateDenominator = 10 ** ERC20(token).decimals();
+      // some vaults can have another vault as underlying
+      if (IController(controller()).vaults(token)) {
+        rate = rate * ISmartVault(token).getPricePerFullShare();
+        token = ISmartVault(token).underlying();
+        rateDenominator = rateDenominator * (10 ** ERC20(token).decimals());
+      }
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
@@ -233,7 +239,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     address pairAddress;
     // shortcut for firebird ice-weth
     // todo make more smart solution
-    if(_factory == 0x5De74546d3B86C8Df7FEEc30253865e1149818C8) {
+    if (_factory == 0x5De74546d3B86C8Df7FEEc30253865e1149818C8) {
       pairAddress = IFireBirdFactory(_factory).getPair(token, tokenOpposite, 50, 20);
     } else {
       pairAddress = IUniswapV2Factory(_factory).getPair(token, tokenOpposite);

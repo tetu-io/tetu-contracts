@@ -20,9 +20,9 @@ interface ISmartVault {
 
   function changePpfsDecreaseAllowed(bool _value) external;
 
-  function changeLockPeriod(uint256 _value) external;
+  function setLockPeriod(uint256 _value) external;
 
-  function changeLockPenalty(uint256 _value) external;
+  function setLockPenalty(uint256 _value) external;
 
   function doHardWork() external;
 

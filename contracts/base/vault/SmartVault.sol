@@ -24,6 +24,7 @@ import "../interface/IVaultController.sol";
 import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
+import "hardhat/console.sol";
 
 /// @title Smart Vault is a combination of implementations drawn from Synthetix pool
 ///        for their innovative reward vesting and Yearn vault for their share price model
@@ -143,18 +144,20 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _setPpfsDecreaseAllowed(_value);
   }
 
-  /// @notice Change lock period for funds
+  /// @notice Set lock period for funds. Can be called only once
   /// @param _value Timestamp value
-  function changeLockPeriod(uint256 _value) external override onlyVaultController {
+  function setLockPeriod(uint256 _value) external override onlyControllerOrGovernance {
     require(lockAllowed(), "SV: Lock not allowed");
+    require(lockPeriod() == 0, "SV: Already defined");
     _setLockPeriod(_value);
   }
 
-  /// @notice Change lock initial penalty nominator
+  /// @notice Set lock initial penalty nominator. Can be called only once
   /// @param _value Penalty denominator, should be in range 0 - (LOCK_PENALTY_DENOMINATOR / 2)
-  function changeLockPenalty(uint256 _value) external override onlyVaultController {
+  function setLockPenalty(uint256 _value) external override onlyControllerOrGovernance {
     require(_value <= (LOCK_PENALTY_DENOMINATOR / 2), "SV: Wrong value");
     require(lockAllowed(), "SV: Lock not allowed");
+    require(lockPenalty() == 0, "SV: Already defined");
     _setLockPenalty(_value);
   }
 
@@ -266,7 +269,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       }
     } else if (to == address(0)) {
       // burn - assuming it is withdraw action
-      // no action required
+      userLastWithdrawTs[from] = block.timestamp;
     } else {
       // regular transfer
       // if recipient didn't have deposit - start boost time
@@ -277,6 +280,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       if (userLockTs[to] == 0 && lockAllowed()) {
         userLockTs[to] = block.timestamp;
       }
+      // reset timer if token transferred
+      userLastWithdrawTs[from] = block.timestamp;
     }
 
     // register ownership changing
@@ -347,37 +352,43 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Burn shares, withdraw underlying from strategy
   ///         and send back to the user the underlying asset
   function _withdraw(uint256 numberOfShares) internal updateRewards(msg.sender) {
+    uint256 ppfsBefore = getPricePerFullShare();
     require(totalSupply() > 0, "no shares");
     require(numberOfShares > 0, "zero amount");
-
-    userLastWithdrawTs[msg.sender] = block.timestamp;
 
     uint256 totalSupply = totalSupply();
 
     // this logic not eligible for normal vaults
     // lockAllowed unchangeable attribute even for proxy upgrade process
     if (lockAllowed()) {
+      console.log("WITHDRAW: lock ---------------------", numberOfShares);
       // locking logic will add a part of locked shares as rewards for this vault
       // calculate locked amount
       uint256 lockStart = userLockTs[msg.sender];
+      console.log("WITHDRAW: lockStart:", lockStart, block.timestamp, lockStart < block.timestamp);
       // refresh lock time
       userLockTs[msg.sender] = block.timestamp;
       if (lockStart != 0 && lockStart < block.timestamp) {
         uint256 currentLockDuration = block.timestamp.sub(lockStart);
-
+        console.log("WITHDRAW: currentLockDuration:", currentLockDuration);
+        console.log("WITHDRAW: lockPeriod():", lockPeriod());
         if (currentLockDuration < lockPeriod()) {
-          uint256 sharesBase = numberOfShares.mul(lockPenalty()).div(LOCK_PENALTY_DENOMINATOR);
-
+          uint256 sharesBase = numberOfShares.mul(LOCK_PENALTY_DENOMINATOR - lockPenalty()).div(LOCK_PENALTY_DENOMINATOR);
+          console.log("WITHDRAW: sharesBase:", sharesBase);
           uint256 toWithdraw = sharesBase.add(
             numberOfShares.sub(sharesBase).mul(currentLockDuration).div(lockPeriod())
           );
+          console.log("WITHDRAW: toWithdraw:", toWithdraw);
           uint256 change = numberOfShares.sub(toWithdraw);
+          console.log("WITHDRAW: change:", change);
           numberOfShares = toWithdraw;
 
+          _transfer(msg.sender, address(this), change);
           // vault should have itself as reward token for recirculation process
           notifyRewardWithoutPeriodChange(change, address(this));
         }
       }
+      console.log("WITHDRAW: lock end ---------------------");
     }
 
 
@@ -409,6 +420,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
     // update the withdrawal amount for the holder
     emit Withdraw(msg.sender, underlyingAmountToWithdraw);
+    console.log("WITHDRAW: ppfs after", getPricePerFullShare(), ppfsBefore);
   }
 
   /// @notice Mint shares and transfer underlying from user to the vault
@@ -533,7 +545,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   external override
   updateRewards(address(0))
   onlyRewardDistribution {
-
+    console.log("REWARDS: amount", amount);
     // register notified amount for statistical purposes
     IBookkeeper(IController(controller()).bookkeeper())
     .registerRewardDistribution(address(this), _rewardToken, amount);
@@ -549,7 +561,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       rewardRateForToken[_rewardToken] = amount.div(duration());
     } else {
       uint256 remaining = periodFinishForToken[_rewardToken].sub(block.timestamp);
+      console.log("REWARDS: remaining", remaining);
       uint256 leftover = remaining.mul(rewardRateForToken[_rewardToken]);
+      console.log("REWARDS: leftover", leftover);
       rewardRateForToken[_rewardToken] = amount.add(leftover).div(duration());
     }
     lastUpdateTimeForToken[_rewardToken] = block.timestamp;
@@ -560,6 +574,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // very high values of rewardRate in the earned and rewardsPerToken functions;
     // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
     uint balance = IERC20Upgradeable(_rewardToken).balanceOf(address(this));
+    console.log("REWARDS: balance", balance);
+    console.log("REWARDS: duration()", duration());
+    console.log("REWARDS: balance.div(duration()", balance.div(duration()));
+    console.log("REWARDS: rewardRateForToken", rewardRateForToken[_rewardToken]);
     require(rewardRateForToken[_rewardToken] <= balance.div(duration()), "Provided reward too high");
     emit RewardAdded(_rewardToken, amount);
   }
