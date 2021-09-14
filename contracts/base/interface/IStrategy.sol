@@ -24,7 +24,8 @@ interface IStrategy {
     COSMIC, // 6
     CURVE, // 7
     DINO, // 8
-    IRON_LEND // 9
+    IRON_LEND, // 9
+    HERMES // 10
   }
 
   // *************** GOVERNANCE ACTIONS **************
