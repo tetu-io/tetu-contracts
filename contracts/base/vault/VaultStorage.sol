@@ -100,11 +100,11 @@ abstract contract VaultStorage is Initializable, ISmartVault {
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
-  function setBoolean(string memory key, bool _value) internal {
+  function setBoolean(string memory key, bool _value) private {
     boolStorage[keccak256(abi.encodePacked(key))] = _value;
   }
 
-  function getBoolean(string memory key) internal view returns (bool) {
+  function getBoolean(string memory key) private view returns (bool) {
     return boolStorage[keccak256(abi.encodePacked(key))];
   }
 

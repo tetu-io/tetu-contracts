@@ -52,6 +52,7 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_rewardPool != address(0), "zero address pool");
     rewardPool = SNXRewardInterface(_rewardPool);
+    require(rewardPool.stakingToken() == _underlying, "wrong underlying");
   }
 
   // ************* VIEWS *******************
