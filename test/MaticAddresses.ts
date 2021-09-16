@@ -39,6 +39,7 @@ export class MaticAddresses {
   public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
   public static AM3CRV_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171".toLowerCase();
   public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
+  public static IRIS_TOKEN = "0xdaB35042e63E93Cc8556c9bAE482E5415B5Ac4B1".toLowerCase(); // Hermes
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -119,6 +120,16 @@ export class MaticAddresses {
   public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
+
+  // HERMES
+  /*
+    At launch time (we will use QuickSwap LP), our initial farm is.
+    Supported LP tokens: IRIS/WMATIC
+   */
+  public static HERMES_MASTERCHEF = "0x4aA8DeF481d19564596754CD2108086Cf0bDc71B".toLowerCase();
+  public static HERMES_IRIS_WMATIC = "0x86ad6271809f350522085F95F5A67d46ff7ed3AB".toLowerCase();
+  public static HERMES_IRIS_KOGECOIN = "0x302f7E9bB5b5AC673Ac537F464a1B7A36bbbaBfA".toLowerCase();
+  public static HERMES_IRIS_USDC = "0x277D9B07671eB9ac0d5D63E15BeEdc0aDBE3e9Fd".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
