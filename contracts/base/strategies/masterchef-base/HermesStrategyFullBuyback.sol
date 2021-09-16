@@ -29,7 +29,7 @@ abstract contract HermesStrategyFullBuyback is StrategyBase {
   string public constant override STRATEGY_NAME = "HermesStrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @notice Hermes rewards pool
@@ -88,31 +88,25 @@ abstract contract HermesStrategyFullBuyback is StrategyBase {
   /// @notice Calculate approximately weekly reward amounts for HERMES
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Weekly reward amount of HERMES
-  function computeWeeklyPoolReward() public view returns (uint256) {
-    (, uint256 allocPoint, uint256 lastRewardBlock,,,) = IIrisMasterChef(pool).poolInfo(poolID);
-    uint256 time = block.number - lastRewardBlock;
-    uint256 irisPerBlock = IIrisMasterChef(pool).irisPerBlock();
-    uint256 totalAllocPoint = IIrisMasterChef(pool).totalAllocPoint();
-    uint256 sushiReward = time.mul(irisPerBlock).mul(allocPoint).div(totalAllocPoint);
-    uint256 averageBlockTime = 2;
-    return sushiReward * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
-  }
-
-  /// @return [0]
   function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
-    rewards[0] = computeWeeklyPoolReward();
+    (, uint256 allocPoint, uint256 lastRewardBlock,,,) = IIrisMasterChef(pool).poolInfo(poolID);
+    uint256 time = block.number - lastRewardBlock;
+    uint256 rewardPerBlock = IIrisMasterChef(pool).irisPerBlock();
+    uint256 totalAllocPoint = IIrisMasterChef(pool).totalAllocPoint();
+    uint256 rewardAmount = time.mul(rewardPerBlock).mul(allocPoint).div(totalAllocPoint);
+    uint256 averageBlockTime = 2;
+    // don't simplify computation for keep the logic clear
+    rewards[0] = rewardAmount * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
     return rewards;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
 
   function doHardWork() external onlyNotPausedInvesting override restricted {
-    // Hermes MasterChef pool has the same underlying and reward token
-    // need to be sure that we don't liquidate invested funds
     investAllUnderlying();
     // only claim rewards
-    IIrisMasterChef(pool).withdraw(poolID,0);
+    IIrisMasterChef(pool).withdraw(poolID, 0);
     liquidateReward();
   }
 
