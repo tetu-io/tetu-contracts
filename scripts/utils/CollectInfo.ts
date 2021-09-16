@@ -4,6 +4,7 @@ import {Bookkeeper, ContractReader, ContractUtils, SmartVault} from "../../typec
 import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {Web3Utils} from "./Web3Utils";
 
 const vaultsForParsing = new Set<string>([
   "0x6C3246e749472879D1088C24Dacd2A37CAaEe9B1".toLowerCase(),
@@ -59,33 +60,23 @@ async function main() {
 
     try {
       if (vault.toLowerCase() == core.psVault.toLowerCase()
-          || !vaultsForParsing.has(vault.toLowerCase())
+          // || !vaultsForParsing.has(vault.toLowerCase())
       ) {
         continue;
       }
       // const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
 
       const vaultName = await cReader.vaultName(vault);
+      const created = (await cReader.vaultCreated(vault)).toNumber();
       console.log('vault name', vaultName);
 
-      let start = (await cReader.vaultCreated(vault)).toNumber();
-      let end = start + STEP;
-      const logs = [];
-      while (true) {
-        logs.push(...(await web3.eth.getPastLogs({
-          fromBlock: start,
-          toBlock: end,
-          address: vault,
-          topics: [EVENT_DEPOSIT]
-        })));
-
-        start = end;
-        end = start + STEP;
-
-        if (start > currentBlock) {
-          break;
-        }
-      }
+      const approxBlockDiff = Math.floor((Date.now() / 1000 - created) / 2);
+      const logs =  await Web3Utils.parseLogs(
+          vault,
+          [EVENT_DEPOSIT],
+          Math.max(currentBlock - approxBlockDiff, START_BLOCK),
+          currentBlock
+      );
 
       console.log('logs', logs.length);
 

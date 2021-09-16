@@ -46,7 +46,9 @@ async function main() {
         toClaimUsd += +utils.formatUnits(toClaim.mul(rtPrice), rtDec + 18);
       }
 
-      if (platform <= 1 || toClaimUsd <= 10) {
+      if (platform <= 1
+          // || toClaimUsd <= 10
+      ) {
         console.log('no rewards', vaultName, platform, toClaimUsd);
         continue;
       }

@@ -1,6 +1,13 @@
 import {ethers} from "hardhat";
 import chai from "chai";
-import {ContractReader, Multicall, MultiSwap, NoopStrategy, ZapContract} from "../../../typechain";
+import {
+  ContractReader,
+  Multicall,
+  MultiSwap,
+  NoopStrategy,
+  SmartVault,
+  ZapContract
+} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../VaultUtils";
 import {utils} from "ethers";
@@ -16,7 +23,7 @@ import {MintHelperUtils} from "../../MintHelperUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-const LOCK_DURATION = 60 * 60 * 24 * 10;
+const LOCK_DURATION = 60 * 60 * 24 * 3;
 const LOCK_PENALTY = 400;
 
 describe("Diamond vault test", () => {
@@ -161,20 +168,38 @@ describe("Diamond vault test", () => {
       if (i % 3 === 0) {
         if (user1Deposited) {
           console.log('--USER 1 EXIT');
+
+          const bal = +utils.formatUnits(await vault.underlyingBalanceWithInvestmentForHolder(user1.address));
+          console.log('bal', bal);
+
+          const toClaim = +utils.formatUnits(await vault.earnedWithBoost(rt, user1.address), rtDecimals);
+          console.log('toClaim', toClaim);
+          await vault.connect(user1).getAllRewards();
+
+
           await vault.connect(user1).exit();
-          const newDeposit = await printBalance(user1.address, underlying, underlyingDec, +user1Deposit, user1DepositedTime);
-          const diff = +user1Deposit - +newDeposit;
+          const lastWithdrawTs = (await vault.userLastWithdrawTs(user1.address)).toNumber();
+
+          const curBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, user1.address), underlyingDec);
+          const newDeposit = await printBalance(user1.address, underlying, underlyingDec,
+              curBal,
+              bal, // user claim rewards and withdraw it when exit
+              (await vault.userLastDepositTs(user1.address)).toNumber(),
+              lastWithdrawTs
+          );
+          const diff = bal - +newDeposit;
+          console.log('--USER 1 diff', diff, bal, toClaim, newDeposit);
           user1Deposit = newDeposit;
           rewardsTotalAmount = rewardsTotalAmount.add(utils.parseUnits(diff.toString(), underlyingDec));
           user1Deposited = false;
-          console.log('ppfs after user1 exit', +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec));
+          //we can't calculate accurate value for exit cos it withdraw immediately
+          claimedTotal += toClaim;
         } else {
           console.log('--USER 1 DEPOSIT');
           await VaultUtils.deposit(user1, vault, utils.parseUnits(user1Deposit, underlyingDec));
           user1Deposited = true;
           user1DepositedTime = await TimeUtils.getBlockTime();
           console.log('user1DepositedTime', user1DepositedTime);
-          console.log('ppfs after user 2 deposit', +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec));
         }
       }
 
@@ -182,9 +207,17 @@ describe("Diamond vault test", () => {
         if (user2Deposited) {
           console.log('--USER 2 WITHDRAW');
           const user2Staked = await Erc20Utils.balanceOf(vault.address, user2.address);
+          const bal = +utils.formatUnits(await vault.underlyingBalanceWithInvestmentForHolder(user2.address));
           await vault.connect(user2).withdraw(user2Staked);
-          const newDeposit = await printBalance(user2.address, underlying, underlyingDec, +user2Deposit, user2DepositedTime);
-          const diff = +user2Deposit - +newDeposit;
+          const curBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, user2.address), underlyingDec);
+          const newDeposit = await printBalance(user2.address, underlying, underlyingDec,
+              curBal,
+              bal,
+              (await vault.userLastDepositTs(user2.address)).toNumber(),
+              (await vault.userLastWithdrawTs(user2.address)).toNumber()
+          );
+          const diff = bal - +newDeposit;
+          console.log('--USER 2 diff', diff, bal, newDeposit);
           user2Deposit = newDeposit;
           rewardsTotalAmount = rewardsTotalAmount.add(utils.parseUnits(diff.toString(), underlyingDec));
           user2Deposited = false;
@@ -272,6 +305,10 @@ describe("Diamond vault test", () => {
       expect(ppfsAfter).eq(ppfs);
       console.log('claimedTotal', claimedTotal, +utils.formatUnits(rewardsTotalAmount, rtDecimals));
 
+      const vaultToClaim = +utils.formatUnits(await vault.earnedWithBoost(rt, vault.address), rtDecimals);
+      console.log('vaultToClaim', vaultToClaim);
+      // expect(vaultToClaim).is.eq(0);
+
       if ((await multicall.getCurrentBlockTimestamp()).toNumber() > finish) {
         console.log('cycles ended', i);
         break;
@@ -281,6 +318,14 @@ describe("Diamond vault test", () => {
 
     // other users should claim without penalty
     await TimeUtils.advanceBlocksOnTs(LOCK_DURATION);
+
+    const toClaimUser1FullBoost = +utils.formatUnits(await vault.earned(rt, user1.address), rtDecimals);
+    const toClaimUser1 = +utils.formatUnits(await vault.earnedWithBoost(rt, user1.address), rtDecimals);
+    console.log('User1 toClaim', toClaimUser1, '100% boost', toClaimUser1FullBoost);
+    const rtBalanceUser1 = +utils.formatUnits(await Erc20Utils.balanceOf(rt, user1.address), rtDecimals);
+    await vault.connect(user1).getAllRewards();
+    const claimedUser1 = +utils.formatUnits(await Erc20Utils.balanceOf(rt, user1.address), rtDecimals) - rtBalanceUser1;
+    claimedTotal += claimedUser1;
 
     const toClaimUser3FullBoost = +utils.formatUnits(await vault.earned(rt, user3.address), rtDecimals);
     const toClaimUser3 = +utils.formatUnits(await vault.earnedWithBoost(rt, user3.address), rtDecimals);
@@ -304,6 +349,26 @@ describe("Diamond vault test", () => {
     expect(claimedUser4).is.greaterThan(0);
     expect(toClaimUser4).is.approximately(claimedUser4, claimedUser4 * 0.01, 'user4 claimed not enough');
 
+    const toClaimSignerFullBoost = +utils.formatUnits(await vault.earned(rt, signer.address), rtDecimals);
+    const toClaimSigner = +utils.formatUnits(await vault.earnedWithBoost(rt, signer.address), rtDecimals);
+    console.log('signer toClaim', toClaimSigner, '100% boost', toClaimSignerFullBoost);
+    const rtBalanceSigner = +utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals);
+    await vault.getAllRewards();
+    const claimedSigner = +utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals) - rtBalanceSigner;
+    claimedTotal += claimedSigner;
+    console.log('claimedSigner', claimedSigner);
+    expect(claimedSigner).is.greaterThan(0);
+    expect(toClaimSigner).is.approximately(claimedSigner, claimedSigner * 0.01, 'signer claimed not enough');
+
+    console.log('vaultRtBalance before all exit', +utils.formatUnits(await Erc20Utils.balanceOf(rt, vault.address), rtDecimals));
+
+    await withdraw(vault, signer);
+    await withdraw(vault, user1);
+    await withdraw(vault, user2);
+    await withdraw(vault, user3);
+    await withdraw(vault, user4);
+    await withdraw(vault, user5);
+
     const vaultRtBalance = +utils.formatUnits(await Erc20Utils.balanceOf(rt, vault.address), rtDecimals);
     console.log('vaultRtBalance', vaultRtBalance);
     const controllerBal = +utils.formatUnits(await Erc20Utils.balanceOf(rt, core.controller.address), rtDecimals);
@@ -321,23 +386,34 @@ async function printBalance(
     userAdr: string,
     underlying: string,
     underlyingDec: number,
-    prevDeposit: number,
-    depositedTime: number
+    curBal: number,
+    prevBal: number,
+    depositedTime: number,
+    withdrawTime: number
 ): Promise<string> {
-  const curBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, userAdr), underlyingDec);
-  const currentLockDuration = Math.floor(Date.now() / 1000) - depositedTime;
-  const sharesBase = prevDeposit * (1000 - LOCK_PENALTY) / 1000;
-  const toWithdraw = sharesBase + ((prevDeposit - sharesBase) * currentLockDuration / LOCK_DURATION);
+  const currentLockDuration = withdrawTime - depositedTime;
+  const sharesBase = prevBal * (1000 - LOCK_PENALTY) / 1000;
+  const toWithdraw = sharesBase + ((prevBal - sharesBase) * currentLockDuration / LOCK_DURATION);
   console.log('-- USER BALANCE--------------------');
   console.log('-- Current balance  ', curBal);
-  console.log('-- Previous balance ', prevDeposit);
-  console.log('-- Balance diff     ', prevDeposit - curBal);
-  console.log('-- Diff %           ', (prevDeposit - curBal) / prevDeposit * 100);
+  console.log('-- Previous balance ', prevBal);
+  console.log('-- Balance diff     ', prevBal - curBal);
+  console.log('-- Diff %           ', (prevBal - curBal) / prevBal * 100);
+  console.log('-----   ');
+  console.log('-- depositedTime    ', depositedTime);
+  console.log('-- withdrawTime     ', withdrawTime);
   console.log('-- currentLockDur   ', currentLockDuration);
   console.log('-- sharesBase       ', sharesBase);
   console.log('-- toWithdraw       ', toWithdraw);
   console.log('-- expected diff    ', curBal - toWithdraw);
   console.log('-- expected diff %  ', (curBal - toWithdraw) / curBal * 100);
   console.log('------------------------------------');
+  expect(toWithdraw).is.approximately(curBal, curBal * 0.1);
   return Math.floor(curBal).toFixed();
+}
+
+async function withdraw(vault: SmartVault, user: SignerWithAddress) {
+  if (!(await Erc20Utils.balanceOf(vault.address, user.address)).isZero()) {
+    await vault.connect(user).exit();
+  }
 }

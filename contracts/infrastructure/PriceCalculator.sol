@@ -42,8 +42,6 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
 
-  mapping(address => address) replacementTokens;
-
   // Addresses for factories and registries for different DEX platforms.
   // Functions will be added to allow to alter these when needed.
   address[] public swapFactories;
@@ -52,6 +50,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   //Key tokens are used to find liquidity for any given token on Swap platforms.
   address[] public keyTokens;
+
+  mapping(address => address) replacementTokens;
 
   event DefaultTokenChanged(address oldToken, address newToken);
   event KeyTokenAdded(address newKeyToken);

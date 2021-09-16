@@ -90,6 +90,8 @@ interface ISmartVault {
 
   function userLastWithdrawTs(address _user) external returns (uint256);
 
+  function userLastDepositTs(address _user) external returns (uint256);
+
   function userBoostTs(address _user) external returns (uint256);
 
   function userLockTs(address _user) external returns (uint256);
