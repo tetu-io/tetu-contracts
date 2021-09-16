@@ -27,6 +27,7 @@ async function main() {
       const stratContr = await DeployerUtils.connectInterface(signer, 'IStrategy', strategy) as IStrategy;
       const platform = await stratContr.platform();
       const vaultName = await vaultContract.name();
+      const undDec = await vaultContract.decimals();
 
       // const platform = await
       if (!(await vaultContract.active()) || platform <= 1) {
@@ -54,18 +55,21 @@ async function main() {
       }
 
       const psPpfs = +utils.formatUnits(await ps.getPricePerFullShare());
+      const ppfs = +utils.formatUnits(await vaultContract.getPricePerFullShare(), undDec);
       const iTokenBal = +utils.formatUnits(await Erc20Utils.balanceOf(core.rewardToken, vault));
 
       console.log('DoHardWork for', await vaultContract.name(), iTokenBal);
-      console.log('ps share price', psPpfs);
+      // console.log('ps share price', psPpfs);
       console.log('toClaimUsd', toClaimUsd);
 
       await RunHelper.runAndWait(() => controller.doHardWork(vault));
 
       const psPpfsAfter = +utils.formatUnits(await ps.getPricePerFullShare());
+      const ppfsAfter = +utils.formatUnits(await vaultContract.getPricePerFullShare(), undDec);
       const iTokenBalAfter = +utils.formatUnits(await Erc20Utils.balanceOf(core.rewardToken, vault));
 
       console.log('reward change', iTokenBalAfter - iTokenBal);
+      console.log('PPFS change', ppfsAfter - ppfs, ppfs, ppfsAfter);
       console.log('PS ppfs change', psPpfsAfter - psPpfs);
     }
 
