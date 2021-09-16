@@ -24,7 +24,8 @@ async function main() {
           return {
             "lpAddress": info[0] as string,
             "allocPoint": info[1] as BigNumber,
-            "lastUpdateTime": info[2].toNumber()
+            "lastUpdateTime": info[2].toNumber(),
+            "depositFeeBP": info[4]
           };
         });
       }

@@ -32,8 +32,6 @@ abstract contract HermesStrategyFullBuyback is StrategyBase {
   string public constant VERSION = "1.0.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
-
-  /// @notice Hermes rewards pool
   /// @notice Hermes rewards pool
   address public pool;
   /// @notice Hermes MasterChef rewards pool ID
@@ -96,21 +94,19 @@ abstract contract HermesStrategyFullBuyback is StrategyBase {
     uint256 irisPerBlock = IIrisMasterChef(pool).irisPerBlock();
     uint256 totalAllocPoint = IIrisMasterChef(pool).totalAllocPoint();
     uint256 sushiReward = time.mul(irisPerBlock).mul(allocPoint).div(totalAllocPoint);
-    uint256 averageBlockTime = 5;
+    uint256 averageBlockTime = 2;
     return sushiReward * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
   }
 
-  /// @notice Stubbed to zero
   /// @return [0]
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
+  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
-    rewards[0] = 0;
+    rewards[0] = computeWeeklyPoolReward();
     return rewards;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
 
-  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
     // Hermes MasterChef pool has the same underlying and reward token
     // need to be sure that we don't liquidate invested funds
