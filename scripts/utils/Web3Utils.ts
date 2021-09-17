@@ -4,10 +4,10 @@ import {DeployerUtils} from "../deploy/DeployerUtils";
 export class Web3Utils {
 
 
-  public static async parseLogs(contract: string, topics: string[], start: number, end: number, step = 10_000) {
+  public static async parseLogs(contracts: string[], topics: string[], start: number, end: number, step = 10_000) {
     const logs = [];
 
-    console.log(start, end);
+    console.log('parseLogs', start, end);
     let from = start;
     let to = start + step;
     while (true) {
@@ -15,7 +15,7 @@ export class Web3Utils {
         logs.push(...(await web3.eth.getPastLogs({
           fromBlock: from,
           toBlock: to,
-          address: contract,
+          address: contracts,
           topics: topics
         })));
 
@@ -24,7 +24,7 @@ export class Web3Utils {
         from = to;
         to = from + step;
 
-        if (to >= end) {
+        if (from >= end) {
           break;
         }
       } catch (e) {

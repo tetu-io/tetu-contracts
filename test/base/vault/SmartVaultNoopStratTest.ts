@@ -49,7 +49,8 @@ describe("SmartVaultNoopStrat", () => {
         core.controller.address,
         underlying,
         REWARD_DURATION,
-        false
+        false,
+        MaticAddresses.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
@@ -328,7 +329,8 @@ describe("SmartVaultNoopStrat", () => {
           core.controller.address,
           underlying,
           REWARD_DURATION,
-          false
+          false,
+          MaticAddresses.ZERO_ADDRESS
       );
       expect(await vault1.underlyingBalanceWithInvestment()).is.eq(0);
       await expect(vault1.doHardWork()).rejectedWith('zero strat')

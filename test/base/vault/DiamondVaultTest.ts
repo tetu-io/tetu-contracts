@@ -85,7 +85,8 @@ describe("Diamond vault test", () => {
         core.controller.address,
         underlying,
         60 * 60 * 24 * 28,
-        true
+        true,
+        MaticAddresses.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);

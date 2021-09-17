@@ -44,80 +44,83 @@ async function main() {
     if (err) throw err;
   });
 
-  const vaults = await bookkeeper.vaults();
+  const vaultsPure = await bookkeeper.vaults();
 
-  console.log('vaults', vaults.length);
+  console.log('vaults', vaultsPure.length);
 
   const currentBlock = await web3.eth.getBlockNumber();
   console.log('current block', currentBlock);
 
-
   let data = '';
-  const usersTotal = new Set<string>();
+  const vaults: string[] = [];
+  const usersTotal = new Map<string, Set<string>>();
+  const users = new Map<string, Map<string, string>>();
   let vaultUnclaimed = "";
 
-  for (let vault of vaults) {
+  for (let vault of vaultsPure) {
+    const v = vault.toLowerCase();
+    if (v == core.psVault.toLowerCase()
+        // || !vaultsForParsing.has(v)
+    ) {
+      continue;
+    }
+    usersTotal.set(v, new Set<string>());
+    vaults.push(v);
+    users.set(v, new Map<string, string>());
+  }
 
+  const logs = await Web3Utils.parseLogs(
+      vaults,
+      [EVENT_DEPOSIT],
+      START_BLOCK,
+      currentBlock
+  );
+
+  console.log('logs', logs.length);
+
+
+  for (let log of logs) {
+    const logDecoded = web3.eth.abi.decodeLog([
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "beneficiary",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }],
+        log.data,
+        log.topics.slice(1));
+    usersTotal.get(log.address)?.add(logDecoded.beneficiary.toLowerCase());
+    users.get(log.address)?.set(logDecoded.beneficiary.toLowerCase(), '0');
+  }
+  console.log('users', users.size);
+
+  for (let vaultAddress of Array.from(users.keys())) {
     try {
-      if (vault.toLowerCase() == core.psVault.toLowerCase()
-          // || !vaultsForParsing.has(vault.toLowerCase())
-      ) {
-        continue;
-      }
-      // const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
-
-      const vaultName = await cReader.vaultName(vault);
-      const created = (await cReader.vaultCreated(vault)).toNumber();
-      console.log('vault name', vaultName);
-
-      const approxBlockDiff = Math.floor((Date.now() / 1000 - created) / 2);
-      const logs =  await Web3Utils.parseLogs(
-          vault,
-          [EVENT_DEPOSIT],
-          Math.max(currentBlock - approxBlockDiff, START_BLOCK),
-          currentBlock
-      );
-
-      console.log('logs', logs.length);
-
-      const users = new Map<string, string>();
-      for (let log of logs) {
-        const logDecoded = web3.eth.abi.decodeLog([
-              {
-                "indexed": true,
-                "internalType": "address",
-                "name": "beneficiary",
-                "type": "address"
-              },
-              {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-              }],
-            log.data,
-            log.topics.slice(1));
-        usersTotal.add(logDecoded.beneficiary);
-        users.set(logDecoded.beneficiary, '0');
-      }
-      console.log('users', users.size);
 
       let totalToClaim = 0;
-      for (let userAddress of Array.from(users.keys())) {
-        const userToClaim = utils.formatUnits((await cReader.userRewards(userAddress, vault))[0]);
+      const vaultName = await cReader.vaultName(vaultAddress);
+      console.log('vault name', vaultName);
+      const u = users.get(vaultAddress) as Map<string, string>;
+      for (let userAddress of Array.from(u.keys())) {
+        const userToClaim = utils.formatUnits((await cReader.userRewards(userAddress, vaultAddress))[0]);
         if (+userToClaim === 0) {
           continue;
         }
         totalToClaim += +userToClaim;
-        data += `${vaultName},${vault},${userAddress},${userToClaim}\n`;
+        data += `${vaultName},${vaultAddress},${userAddress},${userToClaim}\n`;
       }
-      vaultUnclaimed += `${vaultName},${vault},${totalToClaim}\n`;
+      vaultUnclaimed += `${vaultName},${vaultAddress},${totalToClaim}\n`;
       await writeFileSync(`./tmp/stats/to_claim_partially.txt`, data, 'utf8');
       await writeFileSync(`./tmp/stats/unclaimed_partially.txt`, vaultUnclaimed, 'utf8');
     } catch (e) {
-      console.error('error with vault ', vault, e);
+      console.error('error with vault ', vaultAddress, e);
     }
-
   }
 
   data += await collectPs(usersTotal, core.psVault, vaults, signer, tools.utils);
@@ -136,7 +139,7 @@ main()
 
 
 async function collectPs(
-    usersTotal: Set<string>,
+    usersTotalAll: Map<string, Set<string>>,
     psAdr: string,
     vaults: string[],
     signer: SignerWithAddress,
@@ -155,6 +158,7 @@ async function collectPs(
   const batchSize = 150;
   let i = 0;
   let batch = [];
+  const usersTotal = usersTotalAll.get(psAdr) as Set<string>;
   for (let user of Array.from(usersTotal.keys())) {
     if (exclude.has(user) || !user || !psAdr) {
       continue;

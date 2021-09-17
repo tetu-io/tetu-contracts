@@ -321,7 +321,8 @@ export class DeployerUtils {
         controller.address,
         rewardToken.address,
         psRewardDuration,
-        false
+        false,
+        MaticAddresses.ZERO_ADDRESS
     ), true, wait);
 
     // ******* SETUP CONTROLLER ********
@@ -399,9 +400,9 @@ export class DeployerUtils {
         controller.address,
         strategyUnderlying,
         rewardDuration,
-        false
+        false,
+        vaultRewardToken
     ), true, wait);
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken), true, wait);
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
 
@@ -432,7 +433,8 @@ export class DeployerUtils {
         controller.address,
         strategyUnderlying,
         rewardDuration,
-        false
+        false,
+        vaultRewardToken
     ), true, wait);
     return [vaultLogic, vault, strategy];
   }

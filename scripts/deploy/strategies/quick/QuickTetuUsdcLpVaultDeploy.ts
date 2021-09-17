@@ -63,12 +63,12 @@ async function main() {
       controller.address,
       tetuLp,
       60 * 60 * 24 * 28,
-      false
+      false,
+      core.psVault
   ));
 
   // ! gov actions
   if ((await ethers.provider.getNetwork()).name !== "matic") {
-    await vaultController.addRewardTokens([tetuLpVault.address], core.psVault);
     await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
   }
 

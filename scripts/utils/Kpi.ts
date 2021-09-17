@@ -44,7 +44,7 @@ async function main() {
       const created = (await reader.vaultCreated(vault)).toNumber();
       const approxBlockDiff = Math.floor((Date.now() / 1000 - created) / 2);
       const logs = await Web3Utils.parseLogs(
-          vault,
+          [vault],
           [EVENT_NOTIFY],
           Math.max(currentBlock - approxBlockDiff, START_BLOCK),
           currentBlock
