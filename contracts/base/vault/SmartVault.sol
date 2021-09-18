@@ -286,8 +286,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _payReward(rt);
   }
 
-  /// @dev Update userBoostTs
-  ///      Store statistical information to Bookkeeper when token transferred
+  /// @dev Update user specific variables
+  ///      Store statistical information to Bookkeeper
   function _beforeTokenTransfer(address from, address to, uint256 amount)
   internal override updateRewards(from) updateRewards(to) {
 
@@ -297,10 +297,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       if (userBoostTs[to] == 0) {
         userBoostTs[to] = block.timestamp;
       }
+
       // start lock only for new deposits
       if (userLockTs[to] == 0 && lockAllowed()) {
         userLockTs[to] = block.timestamp;
       }
+
+      // store current timestamp
       userLastDepositTs[to] = block.timestamp;
     } else if (to == address(0)) {
       // burn - assuming it is withdraw action
@@ -315,12 +318,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       if (userLockTs[to] == 0 && lockAllowed()) {
         userLockTs[to] = block.timestamp;
       }
-      // reset timer if token transferred
-      userLastWithdrawTs[from] = block.timestamp;
+
       // update only for new deposit for avoiding miscellaneous sending for reset the value
       if (userLastDepositTs[to] == 0) {
         userLastDepositTs[to] = block.timestamp;
       }
+
+      // reset timer if token transferred
+      userLastWithdrawTs[from] = block.timestamp;
     }
 
     // register ownership changing
@@ -394,38 +399,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     require(totalSupply() > 0, "no shares");
     require(numberOfShares > 0, "zero amount");
 
+    // store totalSupply before shares burn
     uint256 totalSupply = totalSupply();
 
     // this logic not eligible for normal vaults
     // lockAllowed unchangeable attribute even for proxy upgrade process
     if (lockAllowed()) {
-      // locking logic will add a part of locked shares as rewards for this vault
-      // calculate locked amount
-      uint256 lockStart = userLockTs[msg.sender];
-      // refresh lock time
-      // if full withdraw set timer to 0
-      if (balanceOf(msg.sender) == numberOfShares) {
-        userLockTs[msg.sender] = 0;
-      } else {
-        userLockTs[msg.sender] = block.timestamp;
-      }
-      if (lockStart != 0 && lockStart < block.timestamp) {
-        uint256 currentLockDuration = block.timestamp.sub(lockStart);
-        if (currentLockDuration < lockPeriod()) {
-          uint256 sharesBase = numberOfShares.mul(LOCK_PENALTY_DENOMINATOR - lockPenalty()).div(LOCK_PENALTY_DENOMINATOR);
-          uint256 toWithdraw = sharesBase.add(
-            numberOfShares.sub(sharesBase).mul(currentLockDuration).div(lockPeriod())
-          );
-          uint256 change = numberOfShares.sub(toWithdraw);
-          numberOfShares = toWithdraw;
-
-          _transfer(msg.sender, address(this), change);
-          // vault should have itself as reward token for recirculation process
-          notifyRewardWithoutPeriodChange(change, address(this));
-        }
-      }
+      numberOfShares = _calculateLockedAmount(numberOfShares);
     }
-
 
     _burn(msg.sender, numberOfShares);
 
@@ -455,6 +436,37 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
     // update the withdrawal amount for the holder
     emit Withdraw(msg.sender, underlyingAmountToWithdraw);
+  }
+
+  /// @dev Locking logic will add a part of locked shares as rewards for this vault
+  ///      Calculate locked amount and distribute locked shares as reward to the current vault
+  /// @return Number of shares available to withdraw
+  function _calculateLockedAmount(uint256 numberOfShares) internal returns (uint256){
+    uint256 lockStart = userLockTs[msg.sender];
+    // refresh lock time
+    // if full withdraw set timer to 0
+    if (balanceOf(msg.sender) == numberOfShares) {
+      userLockTs[msg.sender] = 0;
+    } else {
+      userLockTs[msg.sender] = block.timestamp;
+    }
+    if (lockStart != 0 && lockStart < block.timestamp) {
+      uint256 currentLockDuration = block.timestamp.sub(lockStart);
+      if (currentLockDuration < lockPeriod()) {
+        uint256 sharesBase = numberOfShares.mul(LOCK_PENALTY_DENOMINATOR - lockPenalty()).div(LOCK_PENALTY_DENOMINATOR);
+        uint256 toWithdraw = sharesBase.add(
+          numberOfShares.sub(sharesBase).mul(currentLockDuration).div(lockPeriod())
+        );
+        uint256 lockedSharesToReward = numberOfShares.sub(toWithdraw);
+        numberOfShares = toWithdraw;
+
+        // move shares to current contract for using as rewards
+        _transfer(msg.sender, address(this), lockedSharesToReward);
+        // vault should have itself as reward token for recirculation process
+        notifyRewardWithoutPeriodChange(lockedSharesToReward, address(this));
+      }
+    }
+    return numberOfShares;
   }
 
   /// @notice Mint shares and transfer underlying from user to the vault
