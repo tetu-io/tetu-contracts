@@ -39,11 +39,14 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   /// @param _durationValue Reward vesting period
   function initializeVaultStorage(
     address _underlyingToken,
-    uint256 _durationValue
+    uint256 _durationValue,
+    bool _lockAllowed
   ) public initializer {
     _setUnderlying(_underlyingToken);
     _setDuration(_durationValue);
     _setActive(true);
+    // no way to change it after initialisation for avoiding risks of misleading users
+    setBoolean("lockAllowed", _lockAllowed);
   }
 
   // ******************* SETTERS AND GETTERS **********************
@@ -96,6 +99,31 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   /// @notice Vault status
   function ppfsDecreaseAllowed() public view override returns (bool) {
     return getBoolean("ppfsDecreaseAllowed");
+  }
+
+  function _setLockPeriod(uint256 _value) internal {
+    emit UpdatedUint256Slot("lockPeriod", lockPeriod(), _value);
+    setUint256("lockPeriod", _value);
+  }
+
+  /// @notice Deposit lock period
+  function lockPeriod() public view override returns (uint256) {
+    return getUint256("lockPeriod");
+  }
+
+  function _setLockPenalty(uint256 _value) internal {
+    emit UpdatedUint256Slot("lockPenalty", lockPenalty(), _value);
+    setUint256("lockPenalty", _value);
+  }
+
+  /// @notice Base penalty if funds locked
+  function lockPenalty() public view override returns (uint256) {
+    return getUint256("lockPenalty");
+  }
+
+  /// @notice Lock functionality allowed for this contract or not
+  function lockAllowed() public view override returns (bool) {
+    return getBoolean("lockAllowed");
   }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************

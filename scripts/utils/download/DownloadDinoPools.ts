@@ -11,6 +11,7 @@ async function main() {
   const chef = await DeployerUtils.connectInterface(signer, 'IFossilFarms', MaticAddresses.DINO_MASTERCHEF) as IFossilFarms;
 
   await McLpDownloader.download(
+      "8",
       'DINO',
       MaticAddresses.DINO_MASTERCHEF,
       MaticAddresses.DINO_TOKEN,

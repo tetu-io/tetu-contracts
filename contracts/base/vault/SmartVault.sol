@@ -34,36 +34,74 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   using SafeMathUpgradeable for uint256;
 
   // ************* CONSTANTS ********************
-  string public constant VERSION = "1.2.0";
+  /// @notice Version of the contract
+  /// @dev Should be incremented when contract changed
+  string public constant VERSION = "1.3.0";
+  /// @dev Denominator for penalty numerator
+  uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
   //https://docs.soliditylang.org/en/v0.4.21/miscellaneous.html#layout-of-state-variables-in-storage
   //use VaultStorage for primitive variables
+
+  // ****** REWARD MECHANIC VARIABLES ******** //
+  /// @dev A list of reward tokens that able to be distributed to this contract
   address[] internal _rewardTokens;
+  /// @dev Timestamp value when current period of rewards will be ended
   mapping(address => uint256) public override periodFinishForToken;
+  /// @dev Reward rate in normal circumstances is distributed rewards divided on duration
   mapping(address => uint256) public override rewardRateForToken;
+  /// @dev Last rewards snapshot time. Updated on each share movements
   mapping(address => uint256) public override lastUpdateTimeForToken;
+  /// @dev Rewards snapshot calculated from rewardPerToken(rt). Updated on each share movements
   mapping(address => uint256) public override rewardPerTokenStoredForToken;
+  /// @dev User personal reward rate snapshot. Updated on each share movements
   mapping(address => mapping(address => uint256)) public override userRewardPerTokenPaidForToken;
+  /// @dev User personal earned reward snapshot. Updated on each share movements
   mapping(address => mapping(address => uint256)) public override rewardsForToken;
+
+  // ******** OTHER VARIABLES **************** //
+  /// @dev Only for statistical purposes, no guarantee to be accurate
+  ///      Last timestamp value when user withdraw. Resets on transfer
   mapping(address => uint256) public override userLastWithdrawTs;
   mapping(address => uint256) public override userBoostTs;
+  mapping(address => uint256) public override userLockTs;
+  /// @dev Only for statistical purposes, no guarantee to be accurate
+  ///      Last timestamp value when user deposit. Doesn't update on transfers
+  mapping(address => uint256) public override userLastDepositTs;
 
+  /// @notice Initialize contract after setup it as proxy implementation
+  /// @dev Use it only once after first logic setup
+  /// @param _name ERC20 name
+  /// @param _symbol ERC20 symbol
+  /// @param _controller Controller address
+  /// @param _underlying Vault underlying address
+  /// @param _duration Rewards duration
+  /// @param _lockAllowed Set true with lock mechanic requires
+  /// @param _rewardToken Reward token address. Set zero address if not requires
   function initializeSmartVault(
     string memory _name,
     string memory _symbol,
     address _controller,
     address _underlying,
-    uint256 _duration
+    uint256 _duration,
+    bool _lockAllowed,
+    address _rewardToken
   ) external initializer {
     __ERC20_init(_name, _symbol);
 
     Controllable.initializeControllable(_controller);
     VaultStorage.initializeVaultStorage(
       _underlying,
-      _duration
+      _duration,
+      _lockAllowed
     );
+    // initialize reward token for easily deploy new vaults from deployer address
+    if (_rewardToken != address(0)) {
+      require(_rewardToken != underlying(), "SV: Rt is underlying");
+      _rewardTokens.push(_rewardToken);
+    }
   }
 
   // *************** EVENTS ***************************
@@ -80,11 +118,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   event RewardDenied(address indexed user, address rewardToken, uint256 reward);
   event AddedRewardToken(address indexed token);
   event RemovedRewardToken(address indexed token);
-
-  function decimals() public view override returns (uint8) {
-    return ERC20Upgradeable(underlying()).decimals();
-  }
-
+  event RewardRecirculated(address indexed token, uint256 amount);
+  event RewardSentToController(address indexed token, uint256 amount);
 
   // *************** MODIFIERS ***************************
 
@@ -109,24 +144,26 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @dev Use it for any underlying movements
   modifier updateRewards(address account) {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      address rt = _rewardTokens[i];
-      rewardPerTokenStoredForToken[rt] = rewardPerToken(rt);
-      lastUpdateTimeForToken[rt] = lastTimeRewardApplicable(rt);
-      if (account != address(0)) {
-        rewardsForToken[rt][account] = earned(rt, account);
-        userRewardPerTokenPaidForToken[rt][account] = rewardPerTokenStoredForToken[rt];
-      }
+      _updateReward(account, _rewardTokens[i]);
     }
     _;
   }
 
   /// @dev Use it for any underlying movements
   modifier updateReward(address account, address rt){
-    rewardPerTokenStoredForToken[rt] = rewardPerToken(rt);
-    lastUpdateTimeForToken[rt] = lastTimeRewardApplicable(rt);
-    rewardsForToken[rt][account] = earned(rt, account);
-    userRewardPerTokenPaidForToken[rt][account] = rewardPerTokenStoredForToken[rt];
+    _updateReward(account, rt);
     _;
+  }
+
+  // ************ COMMON VIEWS ***********************
+
+  /// @notice ERC20 compatible decimals value. Should be the same as underlying
+  function decimals() public view override returns (uint8) {
+    return ERC20Upgradeable(underlying()).decimals();
+  }
+
+  function _vaultController() internal view returns (IVaultController){
+    return IVaultController(IController(controller()).vaultController());
   }
 
   // ************ GOVERNANCE ACTIONS ******************
@@ -137,13 +174,30 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _setPpfsDecreaseAllowed(_value);
   }
 
+  /// @notice Set lock period for funds. Can be called only once
+  /// @param _value Timestamp value
+  function setLockPeriod(uint256 _value) external override onlyControllerOrGovernance {
+    require(lockAllowed(), "SV: Lock not allowed");
+    require(lockPeriod() == 0, "SV: Already defined");
+    _setLockPeriod(_value);
+  }
+
+  /// @notice Set lock initial penalty nominator. Can be called only once
+  /// @param _value Penalty denominator, should be in range 0 - (LOCK_PENALTY_DENOMINATOR / 2)
+  function setLockPenalty(uint256 _value) external override onlyControllerOrGovernance {
+    require(_value <= (LOCK_PENALTY_DENOMINATOR / 2), "SV: Wrong value");
+    require(lockAllowed(), "SV: Lock not allowed");
+    require(lockPenalty() == 0, "SV: Already defined");
+    _setLockPenalty(_value);
+  }
+
   /// @notice Change the active state marker
   /// @param _active Status true - active, false - deactivated
   function changeActivityStatus(bool _active) external override onlyVaultController {
     _setActive(_active);
   }
 
-  /// @notice Call DoHardWork process
+  /// @notice Earn some money for honest work
   function doHardWork() external whenStrategyDefined onlyControllerOrGovernance isActive override {
     uint256 sharePriceBeforeHardWork = getPricePerFullShare();
     IStrategy(strategy()).doHardWork();
@@ -213,8 +267,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Withdraw all and claim rewards
   function exit() external override onlyAllowedUsers {
-    _withdraw(balanceOf(msg.sender));
+    // for locked functionality need to claim rewards firstly
+    // otherwise token transfer will refresh the lock period
+    // also it will withdraw claimed tokens too
     getAllRewards();
+    _withdraw(balanceOf(msg.sender));
   }
 
   /// @notice Update and Claim all rewards
@@ -229,8 +286,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _payReward(rt);
   }
 
-  /// @dev Update userBoostTs
-  ///      Store statistical information to Bookkeeper when token transferred
+  /// @dev Update user specific variables
+  ///      Store statistical information to Bookkeeper
   function _beforeTokenTransfer(address from, address to, uint256 amount)
   internal override updateRewards(from) updateRewards(to) {
 
@@ -240,15 +297,35 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       if (userBoostTs[to] == 0) {
         userBoostTs[to] = block.timestamp;
       }
+
+      // start lock only for new deposits
+      if (userLockTs[to] == 0 && lockAllowed()) {
+        userLockTs[to] = block.timestamp;
+      }
+
+      // store current timestamp
+      userLastDepositTs[to] = block.timestamp;
     } else if (to == address(0)) {
       // burn - assuming it is withdraw action
-      // no action required
+      userLastWithdrawTs[from] = block.timestamp;
     } else {
       // regular transfer
       // if recipient didn't have deposit - start boost time
       if (userBoostTs[to] == 0) {
         userBoostTs[to] = block.timestamp;
       }
+      // if recipient didn't have deposit - start lock time
+      if (userLockTs[to] == 0 && lockAllowed()) {
+        userLockTs[to] = block.timestamp;
+      }
+
+      // update only for new deposit for avoiding miscellaneous sending for reset the value
+      if (userLastDepositTs[to] == 0) {
+        userLastDepositTs[to] = block.timestamp;
+      }
+
+      // reset timer if token transferred
+      userLastWithdrawTs[from] = block.timestamp;
     }
 
     // register ownership changing
@@ -322,9 +399,15 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     require(totalSupply() > 0, "no shares");
     require(numberOfShares > 0, "zero amount");
 
-    userLastWithdrawTs[msg.sender] = block.timestamp;
-
+    // store totalSupply before shares burn
     uint256 totalSupply = totalSupply();
+
+    // this logic not eligible for normal vaults
+    // lockAllowed unchangeable attribute even for proxy upgrade process
+    if (lockAllowed()) {
+      numberOfShares = _calculateLockedAmount(numberOfShares);
+    }
+
     _burn(msg.sender, numberOfShares);
 
     // only statistic, no funds affected
@@ -353,6 +436,37 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
     // update the withdrawal amount for the holder
     emit Withdraw(msg.sender, underlyingAmountToWithdraw);
+  }
+
+  /// @dev Locking logic will add a part of locked shares as rewards for this vault
+  ///      Calculate locked amount and distribute locked shares as reward to the current vault
+  /// @return Number of shares available to withdraw
+  function _calculateLockedAmount(uint256 numberOfShares) internal returns (uint256){
+    uint256 lockStart = userLockTs[msg.sender];
+    // refresh lock time
+    // if full withdraw set timer to 0
+    if (balanceOf(msg.sender) == numberOfShares) {
+      userLockTs[msg.sender] = 0;
+    } else {
+      userLockTs[msg.sender] = block.timestamp;
+    }
+    if (lockStart != 0 && lockStart < block.timestamp) {
+      uint256 currentLockDuration = block.timestamp.sub(lockStart);
+      if (currentLockDuration < lockPeriod()) {
+        uint256 sharesBase = numberOfShares.mul(LOCK_PENALTY_DENOMINATOR - lockPenalty()).div(LOCK_PENALTY_DENOMINATOR);
+        uint256 toWithdraw = sharesBase.add(
+          numberOfShares.sub(sharesBase).mul(currentLockDuration).div(lockPeriod())
+        );
+        uint256 lockedSharesToReward = numberOfShares.sub(toWithdraw);
+        numberOfShares = toWithdraw;
+
+        // move shares to current contract for using as rewards
+        _transfer(msg.sender, address(this), lockedSharesToReward);
+        // vault should have itself as reward token for recirculation process
+        notifyRewardWithoutPeriodChange(lockedSharesToReward, address(this));
+      }
+    }
+    return numberOfShares;
   }
 
   /// @notice Mint shares and transfer underlying from user to the vault
@@ -387,8 +501,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   //**************** REWARDS FUNCTIONALITY ***********************
 
-  function _vaultController() internal view returns (IVaultController){
-    return IVaultController(IController(controller()).vaultController());
+  /// @dev Refresh reward numbers
+  function _updateReward(address account, address rt) internal {
+    rewardPerTokenStoredForToken[rt] = rewardPerToken(rt);
+    lastUpdateTimeForToken[rt] = lastTimeRewardApplicable(rt);
+    if (account != address(0) && account != address(this)) {
+      rewardsForToken[rt][account] = earned(rt, account);
+      userRewardPerTokenPaidForToken[rt][account] = rewardPerTokenStoredForToken[rt];
+    }
   }
 
   /// @notice Return earned rewards for specific token and account (with 100% boost)
@@ -439,7 +559,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       .sub(lastUpdateTimeForToken[rt])
       .mul(rewardRateForToken[rt])
       .mul(1e18)
-      .div(totalSupply())
+      .div(totalSupply().sub(balanceOf(address(this))))
     );
   }
 
@@ -476,8 +596,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function notifyTargetRewardAmount(address _rewardToken, uint256 amount)
   external override
   updateRewards(address(0))
-  onlyRewardDistribution
-  {
+  onlyRewardDistribution {
+    // register notified amount for statistical purposes
+    IBookkeeper(IController(controller()).bookkeeper())
+    .registerRewardDistribution(address(this), _rewardToken, amount);
+
     // overflow fix according to https://sips.synthetix.io/sips/sip-77
     require(amount < type(uint256).max / 1e18, "amount overflow");
     uint256 i = getRewardTokenIndex(_rewardToken);
@@ -544,6 +667,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @dev Add reward amount without changing reward duration
   function notifyRewardWithoutPeriodChange(uint256 _amount, address _rewardToken) internal {
+    require(getRewardTokenIndex(_rewardToken) != type(uint256).max, "SV: RT not found");
     if (_amount > 1 && _amount < type(uint256).max / 1e18) {
       rewardPerTokenStoredForToken[_rewardToken] = rewardPerToken(_rewardToken);
       lastUpdateTimeForToken[_rewardToken] = lastTimeRewardApplicable(_rewardToken);
@@ -551,10 +675,12 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
         // if vesting ended transfer the change to the controller
         // otherwise we will have possible infinity rewards duration
         IERC20Upgradeable(_rewardToken).safeTransfer(controller(), _amount);
+        emit RewardSentToController(_rewardToken, _amount);
       } else {
         uint256 remaining = periodFinishForToken[_rewardToken].sub(block.timestamp);
         uint256 leftover = remaining.mul(rewardRateForToken[_rewardToken]);
         rewardRateForToken[_rewardToken] = _amount.add(leftover).div(remaining);
+        emit RewardRecirculated(_rewardToken, _amount);
       }
     }
   }

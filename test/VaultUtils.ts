@@ -128,8 +128,7 @@ export class VaultUtils {
   }
 
   public static async getVaultInfoFromServer() {
-    // return (await axios.get("https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC")).data;
-    return (await axios.get("http://localhost:8080/api/v1/reader/vaultInfos?network=MATIC")).data;
+    return (await axios.get("https://tetu-server-staging.herokuapp.com//api/v1/reader/vaultInfos?network=MATIC")).data;
   }
 
 }

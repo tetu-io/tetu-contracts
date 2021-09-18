@@ -16,6 +16,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
+import "../interface/ISmartVault.sol";
 
 /// @title Contract for holding statistical info and doesn't affect any funds.
 /// @dev Only not critical functional. Use with TetuProxy
@@ -25,7 +26,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault. Can have another length than strategies.
@@ -43,7 +44,18 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   mapping(address => uint256) public override vaultUsersQuantity;
   /// @dev Hold last price per full share change for given user
   mapping(address => PpfsChange) private _lastPpfsChange;
-  mapping(address => uint256) public fundKeeperEarned;
+  /// @dev Stored any FundKeeper earnings by tokens
+  mapping(address => uint256) public override fundKeeperEarned;
+  /// @dev Hold reward notified amounts for vaults
+  mapping(address => mapping(address => uint256[])) public override vaultRewards;
+  /// @dev Length of vault rewards arrays
+  mapping(address => mapping(address => uint256)) public override vaultRewardsLength;
+  /// @dev Strategy earned values stored per each reward notification
+  mapping(address => uint256[]) public override strategyEarnedSnapshots;
+  /// @dev Timestamp when snapshot created. Has the same length as strategy snapshots
+  mapping(address => uint256[]) public override strategyEarnedSnapshotsTime;
+  /// @dev Snapshot lengths
+  mapping(address => uint256) public override strategyEarnedSnapshotsLength;
 
   /// @notice Vault added
   event RegisterVault(address value);
@@ -63,6 +75,8 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   event RegisterUserEarned(address indexed user, address vault, address token, uint256 amount);
   /// @notice Vault's PricePer Full Share changed
   event RegisterPpfsChange(address indexed vault, uint256 oldValue, uint256 newValue);
+  /// @notice Reward distribution registered
+  event RewardDistribution(address indexed vault, address token, uint256 amount, uint256 time);
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -155,6 +169,23 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
       lastPpfs.value
     );
     emit RegisterPpfsChange(vault, lastPpfs.value, value);
+  }
+
+  /// @notice Vault action.
+  ///         Register reward distribution
+  /// @param vault Vault address
+  /// @param rewardToken Reward token address
+  /// @param amount Reward amount
+  function registerRewardDistribution(address vault, address rewardToken, uint256 amount)
+  external override onlyVault {
+    vaultRewards[vault][rewardToken].push(amount);
+    vaultRewardsLength[vault][rewardToken] = vaultRewards[vault][rewardToken].length;
+
+    address strategy = ISmartVault(vault).strategy();
+    strategyEarnedSnapshots[strategy].push(targetTokenEarned[strategy]);
+    strategyEarnedSnapshotsTime[strategy].push(block.timestamp);
+    strategyEarnedSnapshotsLength[strategy] = strategyEarnedSnapshots[strategy].length;
+    emit RewardDistribution(vault, rewardToken, amount, block.timestamp);
   }
 
   /// @notice Vault action. Register user's deposit/withdraw

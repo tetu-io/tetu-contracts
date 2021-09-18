@@ -47,6 +47,8 @@ interface IBookkeeper {
 
   function registerPpfsChange(address vault, uint256 value) external;
 
+  function registerRewardDistribution(address vault, address token, uint256 amount) external;
+
   function vaults() external view returns (address[] memory);
 
   function vaultsLength() external view returns (uint256);
@@ -85,4 +87,16 @@ interface IBookkeeper {
   /// @param vault Vault address
   /// @return Users quantity
   function vaultUsersQuantity(address vault) external view returns (uint256);
+
+  function fundKeeperEarned(address vault) external view returns (uint256);
+
+  function vaultRewards(address vault, address token, uint256 idx) external view returns (uint256);
+
+  function vaultRewardsLength(address vault, address token) external view returns (uint256);
+
+  function strategyEarnedSnapshots(address strategy, uint256 idx) external view returns (uint256);
+
+  function strategyEarnedSnapshotsTime(address strategy, uint256 idx) external view returns (uint256);
+
+  function strategyEarnedSnapshotsLength(address strategy) external view returns (uint256);
 }
