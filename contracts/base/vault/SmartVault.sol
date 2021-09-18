@@ -65,7 +65,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @dev Only for statistical purposes, no guarantee to be accurate
   ///      Last timestamp value when user withdraw. Resets on transfer
   mapping(address => uint256) public override userLastWithdrawTs;
+  /// @dev In normal circumstances hold last claim timestamp for users
   mapping(address => uint256) public override userBoostTs;
+  /// @dev In normal circumstances hold last withdraw timestamp for users
   mapping(address => uint256) public override userLockTs;
   /// @dev Only for statistical purposes, no guarantee to be accurate
   ///      Last timestamp value when user deposit. Doesn't update on transfers
