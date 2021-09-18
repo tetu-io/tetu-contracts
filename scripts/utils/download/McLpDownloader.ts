@@ -27,7 +27,8 @@ export class McLpDownloader {
       poolInfoCall: (id: number) => Promise<{
         "lpAddress": string,
         "allocPoint": BigNumber,
-        "lastUpdateTime": number
+        "lastUpdateTime": number,
+        "depositFeeBP"?: number
       }>
   ) {
     const signer = (await ethers.getSigners())[0];
@@ -68,6 +69,10 @@ export class McLpDownloader {
     for (let i = 0; i < poolLength; i++) {
       try {
         const poolInfo = await poolInfoCall(i);
+        if (poolInfo.depositFeeBP) {
+          console.log('depositFeeBP', poolInfo.depositFeeBP, 'is defined, skipping the pool');
+          continue;
+        }
         const lp = poolInfo.lpAddress;
         const status = underlyingStatuses.get(lp.toLowerCase());
         if (status != null && !status) {
@@ -134,7 +139,7 @@ export class McLpDownloader {
       if (err) throw err;
     });
 
-    await writeFileSync(`./tmp/${prefix}_pools.csv`, infos, 'utf8');
+    await writeFileSync(`./tmp/${prefix.toLowerCase()}_pools.csv`, infos, 'utf8');
     console.log('downloaded', prefix, counter);
   }
 
