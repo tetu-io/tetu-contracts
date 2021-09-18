@@ -130,9 +130,23 @@ describe("Diamond vault test", () => {
     await Erc20Utils.transfer(underlying, signer, user4.address, utils.parseUnits(user4Deposit, underlyingDec).toString());
     await Erc20Utils.transfer(underlying, signer, user5.address, utils.parseUnits(user5Deposit, underlyingDec).toString());
 
-    // long holder
+    // long holders
     await VaultUtils.deposit(user3, vault, utils.parseUnits(user3Deposit, underlyingDec));
+
+    const lockTsUser3 = await vault.userLockTs(user3.address);
+    const lockTsUser4 = await vault.userLockTs(user4.address);
+    expect(lockTsUser4).is.eq(0);
+    const bal = await Erc20Utils.balanceOf(vault.address, user3.address);
+    await Erc20Utils.transfer(vault.address, user3, user4.address, bal.div(100).toString());
+    user3Deposit = (+user3Deposit - (+user3Deposit / 100)).toString()
+    const lockTsUser3After = await vault.userLockTs(user3.address);
+    const lockTsUser4After = await vault.userLockTs(user4.address);
+
+    expect(lockTsUser3).is.eq(lockTsUser3After);
+    expect(lockTsUser4After).is.not.eq(0);
+
     await VaultUtils.deposit(user4, vault, utils.parseUnits(user4Deposit, underlyingDec));
+    user4Deposit = (+user4Deposit + (+user3Deposit / 100)).toString()
     await VaultUtils.deposit(user5, vault, utils.parseUnits(user5Deposit, underlyingDec));
 
     const signerUndBal2 = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), underlyingDec);
@@ -233,6 +247,20 @@ describe("Diamond vault test", () => {
         }
       }
 
+      if (i % 3 === 0) {
+        const lockTsUser3 = await vault.userLockTs(user3.address);
+        const lockTsUser4 = await vault.userLockTs(user4.address);
+        const bal = await Erc20Utils.balanceOf(vault.address, user3.address);
+        await Erc20Utils.transfer(vault.address, user3, user4.address, bal.div(100).toString());
+
+        const lockTsUser3After = await vault.userLockTs(user3.address);
+        const lockTsUser4After = await vault.userLockTs(user4.address);
+        user3Deposit = (+user3Deposit - (+user3Deposit / 100)).toString()
+        user4Deposit = (+user4Deposit + (+user3Deposit / 100)).toString()
+        expect(lockTsUser3).is.eq(lockTsUser3After);
+        expect(lockTsUser4).is.eq(lockTsUser4After);
+      }
+
       // ! TIME MACHINE BRRRRRRR
       await TimeUtils.advanceBlocksOnTs(time);
 
@@ -295,6 +323,7 @@ describe("Diamond vault test", () => {
         await vault.connect(user3).getAllRewards();
         const claimedUser3 = +utils.formatUnits(await Erc20Utils.balanceOf(rt, user3.address), rtDecimals) - rtBalanceUser3;
         claimedTotal += claimedUser3;
+        user3Deposit = (+user3Deposit + claimedUser3).toString();
         console.log('claimedUser3', claimedUser3);
         expect(claimedUser3).is.greaterThan(0, 'user 3 claimed zero');
         expect(toClaimUser3).is.approximately(claimedUser3, claimedUser3 * 0.01, 'user3 claimed not enough ' + i);
@@ -317,7 +346,7 @@ describe("Diamond vault test", () => {
 
     }
 
-    // other users should claim without penalty
+    // other users should withdraw without penalty
     await TimeUtils.advanceBlocksOnTs(LOCK_DURATION);
 
     const toClaimUser1FullBoost = +utils.formatUnits(await vault.earned(rt, user1.address), rtDecimals);
@@ -335,6 +364,7 @@ describe("Diamond vault test", () => {
     await vault.connect(user3).getAllRewards();
     const claimedUser3 = +utils.formatUnits(await Erc20Utils.balanceOf(rt, user3.address), rtDecimals) - rtBalanceUser3;
     claimedTotal += claimedUser3;
+    user3Deposit = (+user3Deposit + claimedUser3).toString();
     console.log('claimedUser3', claimedUser3);
     expect(claimedUser3).is.greaterThan(0);
     expect(toClaimUser3).is.approximately(claimedUser3, claimedUser3 * 0.01, 'user3 claimed not enough');
@@ -346,6 +376,7 @@ describe("Diamond vault test", () => {
     await vault.connect(user4).getAllRewards();
     const claimedUser4 = +utils.formatUnits(await Erc20Utils.balanceOf(rt, user4.address), rtDecimals) - rtBalanceUser4;
     claimedTotal += claimedUser4;
+    user4Deposit = (+user4Deposit + claimedUser4).toString();
     console.log('claimedUser4', claimedUser4);
     expect(claimedUser4).is.greaterThan(0);
     expect(toClaimUser4).is.approximately(claimedUser4, claimedUser4 * 0.01, 'user4 claimed not enough');
@@ -363,12 +394,17 @@ describe("Diamond vault test", () => {
 
     console.log('vaultRtBalance before all exit', +utils.formatUnits(await Erc20Utils.balanceOf(rt, vault.address), rtDecimals));
 
-    await withdraw(vault, signer);
-    await withdraw(vault, user1);
-    await withdraw(vault, user2);
-    await withdraw(vault, user3);
-    await withdraw(vault, user4);
-    await withdraw(vault, user5);
+    await exit(vault, signer);
+    await exit(vault, user1);
+    await exit(vault, user2);
+    await exit(vault, user3);
+    await exit(vault, user4);
+    await exit(vault, user5);
+
+    expect(+utils.formatUnits(await Erc20Utils.balanceOf(underlying, user3.address), underlyingDec))
+    .is.approximately(+user3Deposit, +user3Deposit * 0.01);
+    expect(+utils.formatUnits(await Erc20Utils.balanceOf(underlying, user4.address), underlyingDec))
+    .is.approximately(+user4Deposit, +user4Deposit * 0.01);
 
     const vaultRtBalance = +utils.formatUnits(await Erc20Utils.balanceOf(rt, vault.address), rtDecimals);
     console.log('vaultRtBalance', vaultRtBalance);
@@ -413,7 +449,7 @@ async function printBalance(
   return Math.floor(curBal).toFixed();
 }
 
-async function withdraw(vault: SmartVault, user: SignerWithAddress) {
+async function exit(vault: SmartVault, user: SignerWithAddress) {
   if (!(await Erc20Utils.balanceOf(vault.address, user.address)).isZero()) {
     await vault.connect(user).exit();
   }

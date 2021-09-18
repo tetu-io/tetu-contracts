@@ -244,10 +244,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Allows for depositing the underlying asset in exchange for shares.
   ///         Approval is assumed.
   function deposit(uint256 amount) external override onlyAllowedUsers isActive {
-    // since version 1.3.0 we are investing on each deposit for avoiding situations when money not in work
-    // depositAndInvest keep for compatibility with old integrations
     _deposit(amount, msg.sender, msg.sender);
-    invest();
   }
 
   /// @notice Allows for depositing the underlying asset in exchange for shares.
@@ -261,7 +258,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   ///         This facilitates depositing for someone else
   function depositFor(uint256 amount, address holder) external override onlyAllowedUsers isActive {
     _deposit(amount, msg.sender, holder);
-    invest();
   }
 
   /// @notice Withdraw shares partially without touching rewards
