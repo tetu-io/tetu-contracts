@@ -312,13 +312,15 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       userLastWithdrawTs[from] = block.timestamp;
     } else {
       // regular transfer
+
+      // we can't normally refresh lock timestamp for locked assets when it transfers to another account
+      // need to allow transfers for reward notification process and claim rewards
+      require(!lockAllowed() || to == address(this) || from == address(this),
+        "SV: Transfer forbidden for locked funds");
+
       // if recipient didn't have deposit - start boost time
       if (userBoostTs[to] == 0) {
         userBoostTs[to] = block.timestamp;
-      }
-      // if recipient didn't have deposit - start lock time
-      if (userLockTs[to] == 0 && lockAllowed()) {
-        userLockTs[to] = block.timestamp;
       }
 
       // update only for new deposit for avoiding miscellaneous sending for reset the value
@@ -554,7 +556,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   ///                (lastTimeRewardApplicable - lastUpdateTimeForToken)
   ///                 * rewardRateForToken * 10**18 / totalSupply)
   function rewardPerToken(address rt) public view override returns (uint256) {
-    if (totalSupply() == 0) {
+    uint256 totalSupplyWithoutItself = totalSupply().sub(balanceOf(address(this)));
+    if (totalSupplyWithoutItself == 0) {
       return rewardPerTokenStoredForToken[rt];
     }
     return
@@ -563,7 +566,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       .sub(lastUpdateTimeForToken[rt])
       .mul(rewardRateForToken[rt])
       .mul(1e18)
-      .div(totalSupply().sub(balanceOf(address(this))))
+      .div(totalSupplyWithoutItself)
     );
   }
 
