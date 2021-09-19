@@ -294,10 +294,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   function removeFromVaults(uint256 index) external onlyControllerOrGovernance {
     require(index < _vaults.length, "wrong index");
     emit RemoveVault(_vaults[index]);
-
-    for (uint256 i = index; i < _vaults.length - 1; i++) {
-      _vaults[i] = _vaults[i + 1];
-    }
+    _vaults[index] = _vaults[_vaults.length - 1];
     _vaults.pop();
   }
 
@@ -306,10 +303,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   function removeFromStrategies(uint256 index) external onlyControllerOrGovernance {
     require(index < _strategies.length, "wrong index");
     emit RemoveStrategy(_strategies[index]);
-
-    for (uint256 i = index; i < _strategies.length - 1; i++) {
-      _strategies[i] = _strategies[i + 1];
-    }
+    _strategies[index] = _strategies[_strategies.length - 1];
     _strategies.pop();
   }
 
