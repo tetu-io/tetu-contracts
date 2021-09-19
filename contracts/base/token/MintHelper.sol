@@ -141,6 +141,9 @@ contract MintHelper is Controllable, IMintHelper {
       require(_funds[i] != address(0), "Address should not be 0");
       require(_fractions[i] != 0, "Ratio should not be 0");
       fractionSum = fractionSum.add(_fractions[i]);
+      for (uint256 j = 0; j < devFundsList.length; j++) {
+        require(devFundsList[j] != _funds[i], "duplicate fund");
+      }
       devFunds[_funds[i]] = _fractions[i];
       devFundsList.push(_funds[i]);
     }

@@ -33,4 +33,6 @@ interface SNXRewardInterface {
 
   function rewardRate() external view returns (uint256);
 
+  function stakingToken() external view returns (address);
+
 }
