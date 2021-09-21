@@ -11,7 +11,6 @@ import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {utils} from "ethers";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 const exclude = new Set<string>([]);
@@ -61,10 +60,10 @@ async function downloadQuick() {
     }
 
     const status = underlyingStatuses.get(lp.toLowerCase());
-    if (!status) {
-      console.log('not active', i);
-      continue;
-    }
+    // if (!status) {
+    //   console.log('not active', i);
+    //   continue;
+    // }
 
     try {
       const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
@@ -102,11 +101,14 @@ async function downloadQuick() {
     console.log('duration', durationDays);
     console.log('weekDurationRatio', weekDurationRatio);
     console.log('notifiedAmount', notifiedAmountN);
-
-    const tvl = await poolContract.totalSupply();
-    const underlyingPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
-    const tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
-
+    let tvlUsd = 0;
+    try {
+      const tvl = await poolContract.totalSupply();
+      const underlyingPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
+      tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
+    } catch (e) {
+      console.log('error fetch tvl', lp);
+    }
     const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100
 
     const data = i + ',' +

@@ -38,9 +38,10 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   }
 
   uint256 constant public MAX_POSITIONS_PER_USER = 100;
-  uint256 constant public LOAN_FEE_DENOMINATOR = 1000;
-  uint256 constant public PLATFORM_FEE = 10; // 1%
+  uint256 constant public FEE_DENOMINATOR = 1000;
+  uint256 constant public PLATFORM_FEE_MAX = 50; // 5%
 
+  uint256 platformFee = 10; // 1% by default
   mapping(uint256 => Loan) public loans;
   uint256 public loansCounter;
   uint256[] public loansList;
@@ -52,6 +53,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
 
   // ************* USER ACTIONS *************
 
+  // assume approve
   function openPosition(
     address _collateralToken,
     uint256 _collateralAmount,
@@ -62,7 +64,8 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     uint256 _loanFee
   ) external onlyAllowedUsers nonReentrant returns (uint256){
     require(borrowerPositions[msg.sender].length <= MAX_POSITIONS_PER_USER, "TL: Too many positions");
-    require(_loanFee <= LOAN_FEE_DENOMINATOR * 10, "TL: Loan fee absurdly high");
+    require(_loanFee <= FEE_DENOMINATOR * 10, "TL: Loan fee absurdly high");
+    require(_loanDurationBlocks != 0 || _loanFee == 0, "TL: Fee for instant buy forbidden");
 
     console.log("OPEN: borrower #pos", borrowerPositions[msg.sender].length);
 
@@ -131,6 +134,27 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     transferCollateral(loan.collateral, address(this), loan.borrower);
   }
 
+  // assume approve
+  function bid(uint256 id, uint256 amount) external onlyAllowedUsers nonReentrant {
+    Loan storage loan = loans[id];
+    if (loan.acquired.acquiredAmount != 0) {
+      require(amount == loan.acquired.acquiredAmount, "TL: Wrong bid amount");
+
+      uint256 feeAmount = amount * platformFee / FEE_DENOMINATOR;
+      transferFee(loan.acquired.acquiredToken, msg.sender, feeAmount);
+      uint256 toSend = amount - feeAmount;
+      IERC20(loan.acquired.acquiredToken).safeTransferFrom(msg.sender, loan.borrower, toSend);
+
+      loan.execution.lender = msg.sender;
+      loan.execution.loanStartBlock = block.number;
+      loan.execution.loanStartTs = block.timestamp;
+      // instant buy
+      if (loan.info.loanDurationBlocks == 0) {
+        transferCollateral(loan.collateral, address(this), msg.sender);
+      }
+    }
+  }
+
   // ************* INTERNAL FUNCTIONS *************
 
   function transferCollateral(LoanCollateral memory _collateral, address _sender, address _recipient) internal {
@@ -142,6 +166,11 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     } else {
       revert("TL: Wrong asset type");
     }
+  }
+
+  function transferFee(address token, address from, uint256 amount) internal {
+    // todo liquidator
+    IERC20(token).safeTransferFrom(from, controller(), amount);
   }
 
   function removeLoan(Loan memory _loan) internal {

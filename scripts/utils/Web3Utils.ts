@@ -22,7 +22,7 @@ export class Web3Utils {
         console.log('logs', from, to, logs.length);
 
         from = to;
-        to = from + step;
+        to = Math.min(from + step, end);
 
         if (from >= end) {
           break;

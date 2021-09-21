@@ -8,7 +8,7 @@ import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TetuLoans} from "../../../typechain";
 import {MaticAddresses} from "../../MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {LoanUtils} from "./LoanUtils";
 import {Erc20Utils} from "../../Erc20Utils";
 
@@ -142,12 +142,25 @@ async function openAndCheck(
 }
 
 async function closeAndCheck(id: number, signer: SignerWithAddress, loan: TetuLoans): Promise<void> {
+  const loanListLength = (await loan.loanListSize()).toNumber();
+  const lastLoanId = (await loan.loansList(loanListLength - 1)).toNumber();
+  const lastLoanListIndex = (await loan.loanIndexes(0, lastLoanId)).toNumber();
+  expect(lastLoanListIndex).is.eq(loanListLength - 1);
+
   const l = await loan.loans(id);
+  const loanListIndex = (await loan.loanIndexes(0, l.id)).toNumber();
   // const dec = await Erc20Utils.decimals(l.collateral.collateralToken);
   const bal = (await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address));
+
   await LoanUtils.closePosition(id, signer, loan);
+
   const balAfter = (await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address));
   expect(bal.add(l.collateral.collateralAmount).toString()).is.eq(balAfter.toString());
+
+  const lastLoanListIndexAfter = (await loan.loanIndexes(0, lastLoanId)).toNumber();
+  const loanListIndexAfter = (await loan.loanIndexes(0, l.id)).toString();
+  expect(loanListIndexAfter).is.eq(LoanUtils.MAX_UINT);
+  expect(lastLoanListIndexAfter).is.eq(loanListIndex);
 }
 
 
