@@ -3,6 +3,11 @@ import {ERC20, IERC20, IWmatic} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "./MaticAddresses";
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+
+const {expect} = chai;
+chai.use(chaiAsPromised);
 
 export class Erc20Utils {
 
@@ -17,6 +22,7 @@ export class Erc20Utils {
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
+    await Erc20Utils.checkBalance(tokenAddress, signer.address, amount);
     console.log('approve', await Erc20Utils.tokenSymbol(tokenAddress), amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
     return await token.approve(spender, BigNumber.from(amount));
@@ -51,6 +57,12 @@ export class Erc20Utils {
   public static async tokenSymbol(tokenAddress: string): Promise<string> {
     const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
     return await token.symbol();
+  }
+
+  public static async checkBalance(tokenAddress: string, account: string, amount: string) {
+    const bal = await Erc20Utils.balanceOf(tokenAddress, account);
+    expect(bal.gt(BigNumber.from(amount))).is.true;
+    return bal;
   }
 
 }

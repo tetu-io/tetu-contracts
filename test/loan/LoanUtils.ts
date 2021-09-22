@@ -1,6 +1,6 @@
-import {Erc20Utils} from "../../Erc20Utils";
-import {MaticAddresses} from "../../MaticAddresses";
-import {TetuLoans} from "../../../typechain";
+import {Erc20Utils} from "../Erc20Utils";
+import {MaticAddresses} from "../MaticAddresses";
+import {TetuLoans} from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -50,4 +50,25 @@ export class LoanUtils {
     await loan.connect(signer).closePosition(id);
   }
 
+  public static async bid(id: number, amount: string, signer: SignerWithAddress, loan: TetuLoans) {
+    console.log('Try to bid on position', id, amount);
+    const l = await loan.loans(id);
+    const aToken = l.acquired.acquiredToken;
+    await Erc20Utils.approve(aToken, signer, loan.address, amount);
+    await loan.connect(signer).bid(id, amount);
+  }
+
+  public static async claim(id: number, signer: SignerWithAddress, loan: TetuLoans) {
+    console.log('Try to claim on position', id);
+    await loan.connect(signer).claim(id);
+  }
+
+  public static async redeem(id: number, signer: SignerWithAddress, loan: TetuLoans) {
+    console.log('Try to redeem on position', id);
+    const l = await loan.loans(id);
+    const aToken = l.acquired.acquiredToken;
+    const toRedeem = await loan.toRedeem(id);
+    await Erc20Utils.approve(aToken, signer, loan.address, toRedeem.toString());
+    await loan.connect(signer).redeem(id);
+  }
 }

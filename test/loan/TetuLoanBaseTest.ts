@@ -2,15 +2,15 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
-import {CoreContractsWrapper} from "../../CoreContractsWrapper";
-import {TimeUtils} from "../../TimeUtils";
-import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
-import {TetuLoans} from "../../../typechain";
-import {MaticAddresses} from "../../MaticAddresses";
-import {UniswapUtils} from "../../UniswapUtils";
-import {BigNumber} from "ethers";
+import {CoreContractsWrapper} from "../CoreContractsWrapper";
+import {TimeUtils} from "../TimeUtils";
+import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
+import {TetuLoans} from "../../typechain";
+import {MaticAddresses} from "../MaticAddresses";
+import {UniswapUtils} from "../UniswapUtils";
+import {BigNumber, utils} from "ethers";
 import {LoanUtils} from "./LoanUtils";
-import {Erc20Utils} from "../../Erc20Utils";
+import {Erc20Utils} from "../Erc20Utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -20,6 +20,7 @@ describe("Tetu loans base tests", function () {
   let snapshot: string;
   let signer: SignerWithAddress;
   let user1: SignerWithAddress;
+  let user2: SignerWithAddress;
   let core: CoreContractsWrapper;
   let loan: TetuLoans;
 
@@ -27,10 +28,15 @@ describe("Tetu loans base tests", function () {
     snapshotBefore = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     user1 = (await ethers.getSigners())[1];
+    user2 = (await ethers.getSigners())[2];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
 
     loan = await DeployerUtils.deployContract(signer, 'TetuLoans', core.controller.address) as TetuLoans;
 
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
   });
 
   after(async function () {
@@ -46,9 +52,8 @@ describe("Tetu loans base tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("open position", async () => {
+  it("open max positions with closes", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, collateralToken, BigNumber.from(100000000));
 
     const max = (await loan.MAX_POSITIONS_PER_USER()).toNumber();
     console.log('max position: ' + max);
@@ -56,7 +61,7 @@ describe("Tetu loans base tests", function () {
       await openAndCheck(
           user1,
           loan,
-          MaticAddresses.WMATIC_TOKEN,
+          collateralToken,
           '10' + i,
           '555' + i,
           99 + i,
@@ -79,6 +84,59 @@ describe("Tetu loans base tests", function () {
         100
     )).rejectedWith('TL: Too many positions');
 
+  });
+
+  it("bid on position with instant execution", async () => {
+    const collateralToken = MaticAddresses.WMATIC_TOKEN;
+
+    const acquiredAmount = '555';
+    const id = await openAndCheck(
+        user1,
+        loan,
+        collateralToken,
+        '10',
+        acquiredAmount,
+        0,
+        0
+    );
+
+    await bidAndCheck(id, acquiredAmount, user2, loan)
+  });
+
+  it("bid on position and claim", async () => {
+    const collateralToken = MaticAddresses.WMATIC_TOKEN;
+
+    const acquiredAmount = '555';
+    const id = await openAndCheck(
+        user1,
+        loan,
+        collateralToken,
+        '10',
+        acquiredAmount,
+        1,
+        0
+    );
+
+    await bidAndCheck(id, acquiredAmount, user2, loan);
+    await TimeUtils.advanceNBlocks(2);
+    await claimAndCheck(id, user2, loan);
+  });
+
+  it("open position and redeem", async () => {
+    const collateralToken = MaticAddresses.WMATIC_TOKEN;
+
+    const acquiredAmount = '555';
+    const id = await openAndCheck(
+        user1,
+        loan,
+        collateralToken,
+        '10',
+        acquiredAmount,
+        1,
+        0
+    );
+    await bidAndCheck(id, acquiredAmount, user2, loan);
+    await redeemAndCheck(id, user1, loan);
   });
 
 });
@@ -163,4 +221,61 @@ async function closeAndCheck(id: number, signer: SignerWithAddress, loan: TetuLo
   expect(lastLoanListIndexAfter).is.eq(loanListIndex);
 }
 
+async function bidAndCheck(id: number, amount: string, signer: SignerWithAddress, loan: TetuLoans) {
+  const l = await loan.loans(id);
+  const aBalanceBefore = await Erc20Utils.balanceOf(l.acquired.acquiredToken, signer.address);
+  const cBalanceBefore = await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address);
+
+  await LoanUtils.bid(id, amount, signer, loan);
+
+  const aBalanceAfter = await Erc20Utils.balanceOf(l.acquired.acquiredToken, signer.address);
+  expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(amount);
+
+  const lAfter = await loan.loans(id);
+
+  expect(lAfter.execution.lender.toLowerCase()).is.eq(signer.address.toLowerCase());
+  expect(lAfter.execution.loanStartBlock).is.not.eq(0);
+  expect(lAfter.execution.loanStartTs).is.not.eq(0);
+
+  if (l.info.loanDurationBlocks.isZero()) {
+    const cBalanceAfter = await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address);
+    expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
+    expect(lAfter.execution.loanEndTs).is.not.eq(0);
+  } else {
+    const lenderIndex = await loan.loanIndexes(4, id);
+    expect(await loan.lenderPositions(signer.address, lenderIndex)).is.eq(id);
+  }
+}
+
+async function claimAndCheck(id: number, signer: SignerWithAddress, loan: TetuLoans) {
+  const l = await loan.loans(id);
+  const cBalanceBefore = await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address);
+
+  await LoanUtils.claim(id, signer, loan);
+
+  const lAfter = await loan.loans(id);
+
+  const cBalanceAfter = await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address);
+  expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
+  expect(lAfter.execution.loanEndTs).is.not.eq(0);
+}
+
+async function redeemAndCheck(id: number, signer: SignerWithAddress, loan: TetuLoans) {
+  const l = await loan.loans(id);
+  const aBalanceBefore = await Erc20Utils.balanceOf(l.acquired.acquiredToken, signer.address);
+  const cBalanceBefore = await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address);
+  const toRedeem = await loan.toRedeem(id);
+
+  await LoanUtils.redeem(id, signer, loan);
+
+  const lAfter = await loan.loans(id);
+
+  const aBalanceAfter = await Erc20Utils.balanceOf(l.acquired.acquiredToken, signer.address);
+  expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(toRedeem);
+
+  const cBalanceAfter = await Erc20Utils.balanceOf(l.collateral.collateralToken, signer.address);
+  expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
+
+  expect(lAfter.execution.loanEndTs).is.not.eq(0);
+}
 

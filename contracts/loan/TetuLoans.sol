@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../governance/Controllable.sol";
+import "../base/governance/Controllable.sol";
 
 import "hardhat/console.sol";
 import "./ITetuLoans.sol";
@@ -38,8 +38,8 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   }
 
   uint256 constant public MAX_POSITIONS_PER_USER = 100;
-  uint256 constant public FEE_DENOMINATOR = 1000;
-  uint256 constant public PLATFORM_FEE_MAX = 50; // 5%
+  uint256 constant public DENOMINATOR = 10000;
+  uint256 constant public PLATFORM_FEE_MAX = 500; // 5%
 
   uint256 platformFee = 10; // 1% by default
   mapping(uint256 => Loan) public loans;
@@ -48,6 +48,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   mapping(address => uint256[]) public loansByCollateral;
   mapping(address => uint256[]) public loansByAcquired;
   mapping(address => uint256[]) public borrowerPositions;
+  mapping(address => uint256[]) public lenderPositions;
   /// @dev index type => ID => index
   mapping(IndexType => mapping(uint256 => uint256)) public loanIndexes;
 
@@ -64,7 +65,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     uint256 _loanFee
   ) external onlyAllowedUsers nonReentrant returns (uint256){
     require(borrowerPositions[msg.sender].length <= MAX_POSITIONS_PER_USER, "TL: Too many positions");
-    require(_loanFee <= FEE_DENOMINATOR * 10, "TL: Loan fee absurdly high");
+    require(_loanFee <= DENOMINATOR * 10, "TL: Loan fee absurdly high");
     require(_loanDurationBlocks != 0 || _loanFee == 0, "TL: Fee for instant buy forbidden");
 
     console.log("OPEN: borrower #pos", borrowerPositions[msg.sender].length);
@@ -95,6 +96,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
       LoanExecution memory execution = LoanExecution(
         address(0),
         0,
+        0,
         0
       );
 
@@ -109,55 +111,103 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     }
 
     loansList.push(loan.id);
-    loansByCollateral[_collateralToken].push(loan.id);
-    loansByAcquired[_acquiredToken].push(loan.id);
-    borrowerPositions[msg.sender].push(loan.id);
-
     loanIndexes[IndexType.LIST][loan.id] = loansList.length - 1;
+
+    loansByCollateral[_collateralToken].push(loan.id);
     loanIndexes[IndexType.BY_COLLATERAL][loan.id] = loansByCollateral[_collateralToken].length - 1;
+
+    loansByAcquired[_acquiredToken].push(loan.id);
     loanIndexes[IndexType.BY_ACQUIRED][loan.id] = loansByAcquired[_acquiredToken].length - 1;
+
+    borrowerPositions[msg.sender].push(loan.id);
     loanIndexes[IndexType.BORROWER_POSITION][loan.id] = borrowerPositions[msg.sender].length - 1;
 
     loans[loan.id] = loan;
     loansCounter++;
 
-    transferCollateral(loan.collateral, msg.sender, address(this));
+    _transferCollateral(loan.collateral, msg.sender, address(this));
     return loan.id;
   }
 
-  function closePosition(uint256 _loanId) external onlyAllowedUsers nonReentrant {
-    Loan memory loan = loans[_loanId];
+  function closePosition(uint256 id) external onlyAllowedUsers nonReentrant {
+    Loan memory loan = loans[id];
+    require(loan.id == id, "TL: Wrong ID");
     require(loan.borrower == msg.sender, "TL: Only borrower can close a position");
-    require(loan.execution.lender == address(0), "TL: Can't close executed position");
-    removeLoan(loan);
+    require(loan.execution.lender == address(0), "TL: Can't close bid position");
+    _removeLoanFromIndexes(loan);
+    borrowerPositions[loan.borrower].removeIndexed(loanIndexes[IndexType.BORROWER_POSITION], loan.id);
 
-    transferCollateral(loan.collateral, address(this), loan.borrower);
+    _transferCollateral(loan.collateral, address(this), loan.borrower);
   }
 
   // assume approve
   function bid(uint256 id, uint256 amount) external onlyAllowedUsers nonReentrant {
     Loan storage loan = loans[id];
+    require(loan.id == id, "TL: Wrong ID");
+    require(loan.execution.lender == address(0), "TL: Can't bid executed position");
     if (loan.acquired.acquiredAmount != 0) {
       require(amount == loan.acquired.acquiredAmount, "TL: Wrong bid amount");
 
-      uint256 feeAmount = amount * platformFee / FEE_DENOMINATOR;
-      transferFee(loan.acquired.acquiredToken, msg.sender, feeAmount);
+      uint256 feeAmount = amount * platformFee / DENOMINATOR;
+      _transferFee(loan.acquired.acquiredToken, msg.sender, feeAmount);
       uint256 toSend = amount - feeAmount;
       IERC20(loan.acquired.acquiredToken).safeTransferFrom(msg.sender, loan.borrower, toSend);
 
       loan.execution.lender = msg.sender;
       loan.execution.loanStartBlock = block.number;
       loan.execution.loanStartTs = block.timestamp;
+      _removeLoanFromIndexes(loan);
+
+      lenderPositions[msg.sender].push(loan.id);
+      loanIndexes[IndexType.LENDER_POSITION][loan.id] = lenderPositions[msg.sender].length - 1;
+
       // instant buy
       if (loan.info.loanDurationBlocks == 0) {
-        transferCollateral(loan.collateral, address(this), msg.sender);
+        _transferCollateral(loan.collateral, address(this), msg.sender);
+        _endPosition(loan);
       }
+    } else {
+      // todo auction
     }
+  }
+
+  function claim(uint256 id) external onlyAllowedUsers nonReentrant {
+    Loan storage loan = loans[id];
+    require(loan.id == id, "TL: Wrong ID");
+    require(loan.execution.lender == msg.sender, "TL: Only lender can claim");
+    uint256 loanEnd = loan.execution.loanStartBlock + loan.info.loanDurationBlocks;
+    require(loanEnd < block.number, "TL: Too early to claim");
+
+    _endPosition(loan);
+    _transferCollateral(loan.collateral, address(this), msg.sender);
+  }
+
+  // assume approve
+  function redeem(uint256 id) external onlyAllowedUsers nonReentrant {
+    Loan storage loan = loans[id];
+    require(loan.id == id, "TL: Wrong ID");
+    require(loan.borrower == msg.sender, "TL: Only borrower can redeem");
+    require(loan.execution.lender != address(0), "TL: Not executed position");
+
+    _endPosition(loan);
+    uint256 toSend = toRedeem(id);
+    IERC20(loan.acquired.acquiredToken).safeTransferFrom(msg.sender, loan.execution.lender, toSend);
+    _transferCollateral(loan.collateral, address(this), msg.sender);
   }
 
   // ************* INTERNAL FUNCTIONS *************
 
-  function transferCollateral(LoanCollateral memory _collateral, address _sender, address _recipient) internal {
+  function _endPosition(Loan storage _loan) internal {
+    require(_loan.execution.loanEndTs == 0, "TL: Position claimed");
+    _loan.execution.loanEndTs = block.timestamp;
+    borrowerPositions[_loan.borrower].removeIndexed(loanIndexes[IndexType.BORROWER_POSITION], _loan.id);
+    if (_loan.execution.lender != address(0)) {
+      lenderPositions[_loan.execution.lender].removeIndexed(loanIndexes[IndexType.LENDER_POSITION], _loan.id);
+    }
+
+  }
+
+  function _transferCollateral(LoanCollateral memory _collateral, address _sender, address _recipient) internal {
     if (_collateral.collateralType == AssetType.ERC20) {
       console.log("TRANSFER: ERC20 token", _collateral.collateralToken, _collateral.collateralAmount);
       IERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
@@ -168,18 +218,23 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     }
   }
 
-  function transferFee(address token, address from, uint256 amount) internal {
+  function _transferFee(address token, address from, uint256 amount) internal {
     // todo liquidator
     IERC20(token).safeTransferFrom(from, controller(), amount);
   }
 
-  function removeLoan(Loan memory _loan) internal {
-    delete loans[_loan.id];
-
+  function _removeLoanFromIndexes(Loan memory _loan) internal {
     loansList.removeIndexed(loanIndexes[IndexType.LIST], _loan.id);
     loansByCollateral[_loan.collateral.collateralToken].removeIndexed(loanIndexes[IndexType.BY_COLLATERAL], _loan.id);
     loansByAcquired[_loan.acquired.acquiredToken].removeIndexed(loanIndexes[IndexType.BY_ACQUIRED], _loan.id);
-    borrowerPositions[_loan.borrower].removeIndexed(loanIndexes[IndexType.BORROWER_POSITION], _loan.id);
+  }
+
+  // ************* VIEWS **************************
+
+  function toRedeem(uint256 id) public view returns (uint256){
+    Loan memory loan = loans[id];
+    return loan.acquired.acquiredAmount +
+    (loan.acquired.acquiredAmount * loan.info.loanFee / DENOMINATOR);
   }
 
   function getAssetType(address _token) public view returns (AssetType){

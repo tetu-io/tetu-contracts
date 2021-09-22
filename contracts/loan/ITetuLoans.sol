@@ -23,7 +23,8 @@ interface ITetuLoans {
     LIST, // 0
     BY_COLLATERAL, // 1
     BY_ACQUIRED, // 2
-    BORROWER_POSITION // 3
+    BORROWER_POSITION, // 3
+    LENDER_POSITION // 4
   }
 
   struct Loan {
@@ -59,6 +60,7 @@ interface ITetuLoans {
     address lender;
     uint256 loanStartBlock;
     uint256 loanStartTs;
+    uint256 loanEndTs;
   }
 
   //  struct LoanIndex {
