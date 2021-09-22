@@ -24,10 +24,11 @@ contract NotifyHelper is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
 
   mapping(address => bool) public alreadyNotified;
   address[] public alreadyNotifiedList;
+  address public dxTetu;
 
   event TokenMoved(address token, uint256 amount);
 
@@ -46,7 +47,7 @@ contract NotifyHelper is Controllable {
   // move tokens to controller where money will be protected with time lock
   function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
-    require(tokenBalance >= amount, "not enough balance");
+    require(tokenBalance >= amount, "NH: Not enough balance");
     IERC20(_token).safeTransfer(controller(), amount);
     emit TokenMoved(_token, amount);
   }
@@ -54,16 +55,19 @@ contract NotifyHelper is Controllable {
   function notifyVaults(uint256[] memory amounts, address[] memory vaults, uint256 sum, address token)
   external onlyControllerOrGovernance {
     uint256 tokenBal = IERC20(token).balanceOf(address(this));
-    require(sum <= tokenBal, "not enough balance");
+    require(sum <= tokenBal, "NH: Not enough balance");
     require(amounts.length == vaults.length, "wrong data");
 
     uint256 check = 0;
     for (uint i = 0; i < vaults.length; i++) {
-      require(amounts[i] > 0, "Notify zero");
-      require(!alreadyNotified[vaults[i]], "Duplicate pool");
-      require(IController(controller()).isValidVault(vaults[i]), "Vault not registered");
+      require(amounts[i] > 0, "NH: Notify zero");
+      require(!alreadyNotified[vaults[i]], "NH: Duplicate pool");
+      require(IController(controller()).isValidVault(vaults[i]), "NH: Vault not registered");
 
-      if (token == ISmartVault(psVault()).underlying()) {
+      // we need specific logic for dxTETU because locked assets can't be transferred easy
+      if (vaults[i] == dxTetu && token == ISmartVault(psVault()).underlying()) {
+        notifyVaultWithDXTetu(amounts[i]);
+      } else if (token == ISmartVault(psVault()).underlying()) {
         notifyVaultWithPsToken(amounts[i], vaults[i]);
       } else {
         notifyVault(amounts[i], vaults[i], token);
@@ -74,27 +78,47 @@ contract NotifyHelper is Controllable {
 
       check = check.add(amounts[i]);
     }
-    require(sum == check, "Wrong check sum");
+    require(sum == check, "NH: Wrong check sum");
   }
 
   function notifyVault(uint256 amount, address vault, address token) internal {
+    IERC20(token).safeApprove(vault, 0);
     IERC20(token).safeApprove(vault, amount);
     ISmartVault(vault).notifyTargetRewardAmount(token, amount);
   }
 
   function notifyVaultWithPsToken(uint256 amount, address vault) internal {
-    require(vault != psVault(), "ps forbidden");
-
+    require(vault != psVault(), "NH: PS forbidden");
     address token = ISmartVault(psVault()).underlying();
 
     // deposit token to PS
-    require(token == ISmartVault(psVault()).underlying(), "invalid token");
+    IERC20(token).safeApprove(psVault(), 0);
     IERC20(token).safeApprove(psVault(), amount);
     ISmartVault(psVault()).deposit(amount);
     uint256 amountToSend = IERC20(psVault()).balanceOf(address(this));
 
+    IERC20(psVault()).safeApprove(vault, 0);
     IERC20(psVault()).safeApprove(vault, amountToSend);
     ISmartVault(vault).notifyTargetRewardAmount(psVault(), amountToSend);
+  }
+
+  function notifyVaultWithDXTetu(uint256 amount) internal {
+    // deposit TETU to xTETU
+    address token = ISmartVault(psVault()).underlying();
+    IERC20(token).safeApprove(psVault(), 0);
+    IERC20(token).safeApprove(psVault(), amount);
+    ISmartVault(psVault()).deposit(amount);
+    uint256 xTetuAmount = IERC20(psVault()).balanceOf(address(this));
+
+    // deposit xTETU to dxTETU vault
+    IERC20(psVault()).safeApprove(dxTetu, 0);
+    IERC20(psVault()).safeApprove(dxTetu, xTetuAmount);
+    ISmartVault(dxTetu).deposit(xTetuAmount);
+    uint256 amountToSend = IERC20(dxTetu).balanceOf(address(this));
+
+    IERC20(dxTetu).safeApprove(dxTetu, 0);
+    IERC20(dxTetu).safeApprove(dxTetu, amountToSend);
+    ISmartVault(dxTetu).notifyTargetRewardAmount(dxTetu, amountToSend);
   }
 
   /// @notice Clear statuses. Need to use after full cycle of reward distribution
@@ -104,5 +128,9 @@ contract NotifyHelper is Controllable {
       delete alreadyNotifiedList[i - 1];
       alreadyNotifiedList.pop();
     }
+  }
+
+  function setDXTetu(address _value) external onlyControllerOrGovernance {
+    dxTetu = _value;
   }
 }
