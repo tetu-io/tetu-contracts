@@ -131,6 +131,7 @@ export class MaticAddresses {
   public static HERMES_IRIS_WMATIC = "0x86ad6271809f350522085F95F5A67d46ff7ed3AB".toLowerCase();
   public static HERMES_IRIS_KOGECOIN = "0x302f7E9bB5b5AC673Ac537F464a1B7A36bbbaBfA".toLowerCase();
   public static HERMES_IRIS_USDC = "0x277D9B07671eB9ac0d5D63E15BeEdc0aDBE3e9Fd".toLowerCase();
+  public static HERMES_IRIS_TETU = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
