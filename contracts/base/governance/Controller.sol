@@ -510,6 +510,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     require(!vaults[_vault], "vault already exists");
     require(!strategies[_strategy], "strategy already exists");
     require(_strategy != address(0), "new strategy must not be empty");
+    require(IControllable(_vault).isController(address(this)), "SV: Wrong vault controller");
 
     vaults[_vault] = true;
     IBookkeeper(bookkeeper()).addVault(_vault);

@@ -34,7 +34,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   using SafeMathUpgradeable for uint256;
 
   // ************* CONSTANTS ********************
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -131,6 +131,12 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   // ************ GOVERNANCE ACTIONS ******************
 
+  /// @notice Change permission for decreasing ppfs during hard work process
+  /// @param _value true - allowed, false - disallowed
+  function changePpfsDecreaseAllowed(bool _value) external override onlyVaultController {
+    _setPpfsDecreaseAllowed(_value);
+  }
+
   /// @notice Change the active state marker
   /// @param _active Status true - active, false - deactivated
   function changeActivityStatus(bool _active) external override onlyVaultController {
@@ -141,7 +147,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function doHardWork() external whenStrategyDefined onlyControllerOrGovernance isActive override {
     uint256 sharePriceBeforeHardWork = getPricePerFullShare();
     IStrategy(strategy()).doHardWork();
-    require(sharePriceBeforeHardWork <= getPricePerFullShare(), "ppfs decreased");
+    require(ppfsDecreaseAllowed() || sharePriceBeforeHardWork <= getPricePerFullShare(), "ppfs decreased");
   }
 
   /// @notice Add a reward token to the internal array
@@ -358,13 +364,15 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     uint256 toMint = totalSupply() == 0
     ? amount
     : amount.mul(totalSupply()).div(underlyingBalanceWithInvestment());
+    require(toMint != 0, "SV: Zero mint");
     _mint(beneficiary, toMint);
 
     IERC20Upgradeable(underlying()).safeTransferFrom(sender, address(this), amount);
 
     // only statistic, no funds affected
-    IBookkeeper(IController(controller()).bookkeeper())
-    .registerUserAction(beneficiary, toMint, true);
+    try IBookkeeper(IController(controller()).bookkeeper())
+    .registerUserAction(beneficiary, toMint, true){
+    } catch {}
 
     emit Deposit(beneficiary, amount);
   }
@@ -578,6 +586,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     require(_strategy != address(0), "zero strat");
     require(IStrategy(_strategy).underlying() == address(underlying()), "wrong underlying");
     require(IStrategy(_strategy).vault() == address(this), "wrong strat vault");
+    require(IControllable(_strategy).isController(controller()), "SV: Wrong strategy controller");
 
     emit StrategyChanged(_strategy, strategy());
     if (_strategy != strategy()) {

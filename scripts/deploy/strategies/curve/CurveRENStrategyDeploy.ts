@@ -35,7 +35,7 @@ async function main() {
       vaultNameWithoutPrefix,
       vaultAddress => DeployerUtils.deployContract(
           signer,
-          'CurveRenStrategyFullBuyback',
+          'CurveAaveStrategy',
           core.controller,
           MaticAddresses.BTCCRV_TOKEN,
           vaultAddress
@@ -49,24 +49,25 @@ async function main() {
   );
 
   if ((await ethers.provider.getNetwork()).name !== "hardhat") {
-          await DeployerUtils.wait(5);
-          await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveRenStrategyFullBuyback.sol:CurveRenStrategyFullBuyback', [
-            core.controller,
-            MaticAddresses.BTCCRV_TOKEN,
-            vault.address
-          ]);
+    await DeployerUtils.wait(5);
+    await DeployerUtils.verify(vaultLogic.address);
+    await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
+    await DeployerUtils.verifyProxy(vault.address);
+    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveRenStrategy.sol:CurveRenStrategy', [
+      core.controller,
+      MaticAddresses.BTCCRV_TOKEN,
+      vault.address
+    ]);
   }
-  await DeployerUtils.verify(vaultLogic.address);
-  await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
-  await DeployerUtils.verifyProxy(vault.address);
+
   await writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`,
       JSON.stringify([vaultLogic, vault, strategy]), 'utf8');
 
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch(error => {
-      console.error(error);
-      process.exit(1);
-    });
+.then(() => process.exit(0))
+.catch(error => {
+  console.error(error);
+  process.exit(1);
+});

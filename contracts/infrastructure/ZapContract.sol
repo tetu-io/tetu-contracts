@@ -31,7 +31,7 @@ contract ZapContract is Controllable, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
 
   IMultiSwap public multiSwap;
   mapping(address => uint256) calls;
@@ -360,7 +360,7 @@ contract ZapContract is Controllable, ReentrancyGuard {
 
     IERC20(_underlying).safeApprove(_vault, 0);
     IERC20(_underlying).safeApprove(_vault, _amount);
-    ISmartVault(_vault).deposit(_amount);
+    ISmartVault(_vault).depositAndInvest(_amount);
 
     uint256 shareBalance = IERC20(_vault).balanceOf(address(this));
     require(shareBalance != 0, "ZC: zero shareBalance");

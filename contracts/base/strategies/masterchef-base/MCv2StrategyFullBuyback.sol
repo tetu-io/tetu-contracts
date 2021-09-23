@@ -26,7 +26,7 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase {
 
   // ************ VARIABLES **********************
   /// @notice Strategy type for statistical purposes
-  string public constant STRATEGY_NAME = "MCv2StrategyFullBuyback";
+  string public constant override STRATEGY_NAME = "MCv2StrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.1.0";

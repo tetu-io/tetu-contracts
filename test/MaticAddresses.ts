@@ -39,11 +39,13 @@ export class MaticAddresses {
   public static DINO_TOKEN = "0xaa9654becca45b5bdfa5ac646c939c62b527d394".toLowerCase();
   public static AM3CRV_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171".toLowerCase();
   public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
+  public static IRIS_TOKEN = "0xdaB35042e63E93Cc8556c9bAE482E5415B5Ac4B1".toLowerCase(); // Hermes
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
   //iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
+  public static IRON_CONTROLLER = "0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c".toLowerCase();
   public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
   public static IRON_IRON_IS3USD = "0x985D40feDAA3208DAbaCDFDCA00CbeAAc9543949".toLowerCase();
 
@@ -65,7 +67,8 @@ export class MaticAddresses {
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
   public static QUICK_QI_miMATIC = "0x7AfcF11F3e2f01e71B7Cc6b8B5e707E42e6Ea397".toLowerCase();
-  // public static QUICK_QUICK_dQUICK = "".toLowerCase();
+  public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
+
   //sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
   public static SUSHI_FACTORY = "0xc35dadb65012ec5796536bd9864ed8773abc74c4".toLowerCase();
@@ -100,18 +103,33 @@ export class MaticAddresses {
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
 
   // Dino
-  // *Currently, DinoSwap DEX Router is integrated via SushiSwap —
+  // Currently, DinoSwap DEX Router is integrated via SushiSwap —
   // router functionality will be added to incorporate additional DEXs in the
   // near future.
   // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
   public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
+  public static DINO_DINO_USDC = "0x3324af8417844e70b81555A6D1568d78f4D4Bf1f".toLowerCase();
+  public static DINO_DINO_WETH = "0x9f03309A588e33A239Bf49ed8D68b2D45C7A1F11".toLowerCase();
 
+  // COSMIC
+  public static COSMIC_MASTERCHEF = "0x7cEFc4449f047FaF16eeD516b80a9E49D3c45F6F".toLowerCase();
+  public static COSMIC_COSMIC_USDC = "0x71E600Fe09d1d8EfCb018634Ac3Ee53f8380c94A".toLowerCase();
 
   // curve
   public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
   public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
+
+  // HERMES
+  /*
+    At launch time (we will use QuickSwap LP), our initial farm is.
+    Supported LP tokens: IRIS/WMATIC
+   */
+  public static HERMES_MASTERCHEF = "0x4aA8DeF481d19564596754CD2108086Cf0bDc71B".toLowerCase();
+  public static HERMES_IRIS_WMATIC = "0x86ad6271809f350522085F95F5A67d46ff7ed3AB".toLowerCase();
+  public static HERMES_IRIS_KOGECOIN = "0x302f7E9bB5b5AC673Ac537F464a1B7A36bbbaBfA".toLowerCase();
+  public static HERMES_IRIS_USDC = "0x277D9B07671eB9ac0d5D63E15BeEdc0aDBE3e9Fd".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {

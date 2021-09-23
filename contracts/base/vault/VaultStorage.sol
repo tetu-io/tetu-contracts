@@ -88,13 +88,23 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return getBoolean("active");
   }
 
+  function _setPpfsDecreaseAllowed(bool _value) internal {
+    emit UpdatedBoolSlot("ppfsDecreaseAllowed", ppfsDecreaseAllowed(), _value);
+    setBoolean("ppfsDecreaseAllowed", _value);
+  }
+
+  /// @notice Vault status
+  function ppfsDecreaseAllowed() public view override returns (bool) {
+    return getBoolean("ppfsDecreaseAllowed");
+  }
+
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
-  function setBoolean(string memory key, bool _value) internal {
+  function setBoolean(string memory key, bool _value) private {
     boolStorage[keccak256(abi.encodePacked(key))] = _value;
   }
 
-  function getBoolean(string memory key) internal view returns (bool) {
+  function getBoolean(string memory key) private view returns (bool) {
     return boolStorage[keccak256(abi.encodePacked(key))];
   }
 

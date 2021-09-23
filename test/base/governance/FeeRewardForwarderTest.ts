@@ -49,14 +49,12 @@ describe("Fee reward forwarder tests", function () {
   });
 
   it("should not setup empty conv path", async () => {
-    await expect(forwarder.setConversionPath([], [])).rejectedWith('wrong data');
+    await expect(forwarder.setConversionPath([], [])).rejectedWith('FRF: Wrong data');
   });
 
   it("should not setup wrong conv path", async () => {
     await expect(forwarder.setConversionPath([MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS],
-        [MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS])).rejectedWith('wrong data');
-    await expect(forwarder.setConversionPath([MaticAddresses.ZERO_ADDRESS,
-      MaticAddresses.ZERO_ADDRESS], [MaticAddresses.ZERO_ADDRESS])).rejectedWith('wrong to');
+        [MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS])).rejectedWith('FRF: Wrong data');
   });
 
   it("should not notify ps with zero target token", async () => {
@@ -65,11 +63,11 @@ describe("Fee reward forwarder tests", function () {
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
     const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
-    await expect(feeRewardForwarder.callStatic.notifyPsPool(MaticAddresses.ZERO_ADDRESS, 1)).is.rejectedWith('target token is zero')
+    await expect(feeRewardForwarder.callStatic.notifyPsPool(MaticAddresses.ZERO_ADDRESS, 1)).is.rejectedWith('FRF: Target token is zero for notify')
   });
 
   it("should not notify ps without liq path", async () => {
-    await expect(forwarder.notifyPsPool(MaticAddresses.ZERO_ADDRESS, '1')).rejectedWith('no liq path');
+    await expect(forwarder.notifyPsPool(MaticAddresses.ZERO_ADDRESS, '1')).rejectedWith('FRF: Liquidation path not found for target token');
   });
 
   it("should not notify vault without xTETU", async () => {
@@ -110,28 +108,7 @@ describe("Fee reward forwarder tests", function () {
     );
     const vault = data[1] as SmartVault;
     await core.vaultController.addRewardTokens([vault.address], core.psVault.address);
-    await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('no liq path');
-  });
-
-  it("should not notify vault without liq path", async () => {
-    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyWaultSingle',
-            core.controller.address,
-            vaultAddress,
-            MaticAddresses.WEXpoly_TOKEN,
-            1
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        MaticAddresses.WMATIC_TOKEN,
-        signer
-    );
-    const vault = data[1] as SmartVault;
-    await core.vaultController.addRewardTokens([vault.address], core.psVault.address);
-    await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('no liq path');
+    await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('FRF: Liquidation path not found for target token');
   });
 
   it("should notify ps single liq path", async () => {
