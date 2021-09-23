@@ -63,11 +63,8 @@ interface ITetuLoans {
     uint256 loanEndTs;
   }
 
-  //  struct LoanIndex {
-  //    uint256 listIndex;
-  //    uint256 byCollateralIndex;
-  //    uint256 byAcquiredIndex;
-  //    uint256 borrowerPosIndex;
-  //  }
+  struct AuctionBid {
+
+  }
 
 }

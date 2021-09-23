@@ -6,7 +6,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {LiquidityBalancer} from "../../typechain";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
@@ -37,7 +37,7 @@ describe("liquidity balancer tsets", function () {
         signer, core.controller.address) as LiquidityBalancer;
 
     await MintHelperUtils.mint(core.controller, core.announcer, '10000000', signer.address);
-    await Erc20Utils.transfer(core.rewardToken.address, signer,
+    await TokenUtils.transfer(core.rewardToken.address, signer,
         liquidityBalancer.address, utils.parseUnits("100000").toString());
 
     await liquidityBalancer.setTargetPriceUpdateNumerator(1000);
@@ -76,7 +76,7 @@ describe("liquidity balancer tsets", function () {
     const oppositeToken = lpInfo[1];
     const oppositeTokenStacked = lpInfo[2];
     const price = lpInfo[3];
-    const oppositeTokenDecimals = await Erc20Utils.decimals(oppositeToken);
+    const oppositeTokenDecimals = await TokenUtils.decimals(oppositeToken);
 
     console.log('INITIAL STATS',
         'tokenStacked: ' + tokenStacked,
@@ -144,7 +144,7 @@ describe("liquidity balancer tsets", function () {
     const oppositeToken = lpInfo[1];
     const oppositeTokenStacked = lpInfo[2];
     const price = lpInfo[3];
-    const oppositeTokenDecimals = await Erc20Utils.decimals(oppositeToken);
+    const oppositeTokenDecimals = await TokenUtils.decimals(oppositeToken);
 
     console.log('INITIAL STATS',
         'tokenStacked: ' + tokenStacked,
@@ -173,7 +173,7 @@ describe("liquidity balancer tsets", function () {
       const lpInfoBefore = await UniswapUtils.getLpInfo(lp, signer, token);
 
       const sellAmount = Math.max((lpInfoBefore[0] * 0.01), 100);
-      const lpTokenBalance = +utils.formatUnits(await Erc20Utils.balanceOf(lp, liquidityBalancer.address), lpDecimals);
+      const lpTokenBalance = +utils.formatUnits(await TokenUtils.balanceOf(lp, liquidityBalancer.address), lpDecimals);
       console.log('lpTokenBalance', lpTokenBalance);
       const remAmount = (lpTokenBalance * 0.1);
       console.log('sellAmount', sellAmount, 'remAmount', remAmount);
@@ -199,9 +199,9 @@ describe("liquidity balancer tsets", function () {
   });
 
   it("should salvage", async () => {
-    const balanceBefore = await Erc20Utils.balanceOf(token, core.controller.address);
+    const balanceBefore = await TokenUtils.balanceOf(token, core.controller.address);
     await liquidityBalancer.moveTokensToController(token, '123456789');
-    const balanceAfter = await Erc20Utils.balanceOf(token, core.controller.address);
+    const balanceAfter = await TokenUtils.balanceOf(token, core.controller.address);
     expect(+utils.formatUnits(balanceAfter, 18)).is.eq(+utils.formatUnits(balanceBefore.add('123456789'), 18));
   });
 

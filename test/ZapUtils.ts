@@ -1,4 +1,4 @@
-import {Erc20Utils} from "./Erc20Utils";
+import {TokenUtils} from "./TokenUtils";
 import {utils} from "ethers";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {ContractReader, IUniswapV2Pair, MultiSwap, SmartVault, ZapContract} from "../typechain";
@@ -18,9 +18,9 @@ export class ZapUtils {
       slippage: number
   ) {
     console.log("zap lp in", amountN, slippage);
-    const tokenInDec = await Erc20Utils.decimals(tokenIn);
+    const tokenInDec = await TokenUtils.decimals(tokenIn);
     const amount = utils.parseUnits(amountN.toString(), tokenInDec);
-    expect(+utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec))
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
     .is.greaterThanOrEqual(amountN);
 
     const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
@@ -38,12 +38,12 @@ export class ZapUtils {
         lps = await multiSwap.findLpsForSwaps(tokenIn, asset);
       }
 
-      console.log('zapLpIn ============', await Erc20Utils.tokenSymbol(tokenIn), '=>', await Erc20Utils.tokenSymbol(asset))
+      console.log('zapLpIn ============', await TokenUtils.tokenSymbol(tokenIn), '=>', await TokenUtils.tokenSymbol(asset))
       for (let lp of lps) {
         const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
         const t0 = await lpCtr.token0();
         const t1 = await lpCtr.token1();
-        console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+        console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
       }
       console.log('============')
 
@@ -51,7 +51,7 @@ export class ZapUtils {
       tokensOutLps.push(lps);
     }
 
-    await Erc20Utils.approve(tokenIn, signer, zapContract.address, amount.toString());
+    await TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString());
     await zapContract.connect(signer).zapIntoLp(
         vault,
         tokenIn,
@@ -76,7 +76,7 @@ export class ZapUtils {
   ) {
     console.log("zap lp out", amountShare, slippage);
 
-    expect(+utils.formatUnits(await Erc20Utils.balanceOf(vault, signer.address)))
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(vault, signer.address)))
     .is.greaterThanOrEqual(+utils.formatUnits(amountShare));
 
     const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
@@ -90,19 +90,19 @@ export class ZapUtils {
         lps = [...await multiSwap.findLpsForSwaps(tokenOut, asset)].reverse();
       }
 
-      console.log('zapLpOut ============', await Erc20Utils.tokenSymbol(asset), '=>', await Erc20Utils.tokenSymbol(tokenOut))
+      console.log('zapLpOut ============', await TokenUtils.tokenSymbol(asset), '=>', await TokenUtils.tokenSymbol(tokenOut))
       for (let lp of lps) {
         const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
         const t0 = await lpCtr.token0();
         const t1 = await lpCtr.token1();
-        console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+        console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
       }
       console.log('============')
 
       assetsLpRoute.push(lps);
     }
 
-    await Erc20Utils.approve(vault, signer, zapContract.address, amountShare.toString())
+    await TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString())
     await zapContract.connect(signer).zapOutLp(
         vault,
         tokenOut,

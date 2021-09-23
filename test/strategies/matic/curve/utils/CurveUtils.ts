@@ -6,7 +6,7 @@ import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { expect } from "chai";
 import { UniswapUtils } from "../../../../UniswapUtils";
-import { Erc20Utils } from "../../../../Erc20Utils";
+import { TokenUtils } from "../../../../TokenUtils";
 
 export class CurveUtils {
 
@@ -26,7 +26,7 @@ export class CurveUtils {
     public static async addLiquidityAave(investor: SignerWithAddress) {
         await UniswapUtils.buyToken(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
         await UniswapUtils.buyToken(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000000'));
-        let usdcUserBalance = await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
+        let usdcUserBalance = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
         let aavePool = await ethers.getContractAt("IAavePool", MaticAddresses.CURVE_AAVE_POOL, investor) as IAavePool;
         const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, investor) as IERC20;
         await usdcToken.approve(MaticAddresses.CURVE_AAVE_POOL, usdcUserBalance, {from: investor.address});

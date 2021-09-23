@@ -7,7 +7,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IIronLpToken, IIronSwap, IStrategy} from "../../typechain";
@@ -94,8 +94,8 @@ async function startIronSwapStrategyTest(
       const token0Opposite = data0[0];
       const token0OppositeFactory = await calculator.swapFactories(data0[1]);
 
-      const name0 = await Erc20Utils.tokenSymbol(token0Opposite);
-      const dec0 = await Erc20Utils.decimals(token0Opposite);
+      const name0 = await TokenUtils.tokenSymbol(token0Opposite);
+      const dec0 = await TokenUtils.decimals(token0Opposite);
       const price0 = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(token0Opposite)));
       console.log('token0Opposite Price', price0, name0);
       const amountForSell0 = baseAmount / price0;
@@ -114,11 +114,11 @@ async function startIronSwapStrategyTest(
       const lpCtr = await DeployerUtils.connectInterface(user, 'IIronLpToken', underlying) as IIronLpToken;
       const swapCtr = await DeployerUtils.connectInterface(user, 'IIronSwap', await lpCtr.swap()) as IIronSwap;
 
-      const availBal = await Erc20Utils.balanceOf(token, user.address);
+      const availBal = await TokenUtils.balanceOf(token, user.address);
       console.log('availBal', availBal.toString());
       // amounts[0]  = utils.parseUnits((baseAmount/10).toFixed(0), await Erc20Utils.decimals(token));
       amounts[targetTokenIdx]  = availBal;
-      await Erc20Utils.approve(token, user, swapCtr.address, amounts[targetTokenIdx].toString());
+      await TokenUtils.approve(token, user, swapCtr.address, amounts[targetTokenIdx].toString());
 
       console.log('try to add liq to iron swap', amounts)
       await swapCtr.addLiquidity(amounts, 0, Date.now())
@@ -141,7 +141,7 @@ async function startIronSwapStrategyTest(
 
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           strategyInfo.strategy.readyToClaim
       );
     });
@@ -154,7 +154,7 @@ async function startIronSwapStrategyTest(
     it("doHardWork loop", async function () {
       await DoHardWorkLoop.doHardWorkLoop(
           strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           3,
           60
       );

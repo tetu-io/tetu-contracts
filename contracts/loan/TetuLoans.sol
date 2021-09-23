@@ -31,17 +31,15 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   using SafeMath for uint256;
   using TetuLoansLib for uint256[];
 
-
-
   constructor(address _controller) {
     Controllable.initializeControllable(_controller);
   }
 
-  uint256 constant public MAX_POSITIONS_PER_USER = 100;
+  uint256 constant public MAX_POSITIONS_PER_USER = 10;
   uint256 constant public DENOMINATOR = 10000;
   uint256 constant public PLATFORM_FEE_MAX = 500; // 5%
 
-  uint256 platformFee = 10; // 1% by default
+  uint256 public platformFee = 10; // 1% by default
   mapping(uint256 => Loan) public loans;
   uint256 public loansCounter;
   uint256[] public loansList;
@@ -66,9 +64,11 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   ) external onlyAllowedUsers nonReentrant returns (uint256){
     require(borrowerPositions[msg.sender].length <= MAX_POSITIONS_PER_USER, "TL: Too many positions");
     require(_loanFee <= DENOMINATOR * 10, "TL: Loan fee absurdly high");
-    require(_loanDurationBlocks != 0 || _loanFee == 0, "TL: Fee for instant buy forbidden");
-
-    console.log("OPEN: borrower #pos", borrowerPositions[msg.sender].length);
+    require(_loanDurationBlocks != 0 || _loanFee == 0, "TL: Fee for instant deal forbidden");
+    require(_loanDurationBlocks != 0 || _acquiredAmount != 0, "TL: aAmount for instant deal required");
+    require(_collateralAmount == 0 || _collateralTokenId == 0, "TL: Wrong amounts");
+    require(_collateralToken != address(0), "TL: Zero cToken");
+    require(_acquiredToken != address(0), "TL: Zero aToken");
 
     Loan memory loan;
     {
@@ -85,8 +85,6 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
         _collateralAmount,
         _collateralTokenId
       );
-
-      console.log("OPEN: collateralToken", collateral.collateralToken);
 
       LoanAcquired memory acquired = LoanAcquired(
         _acquiredToken,
@@ -212,6 +210,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
       console.log("TRANSFER: ERC20 token", _collateral.collateralToken, _collateral.collateralAmount);
       IERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
     } else if (_collateral.collateralType == AssetType.ERC721) {
+      console.log("TRANSFER: ERC721 token", _collateral.collateralToken, _collateral.collateralTokenId);
       IERC721(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralTokenId);
     } else {
       revert("TL: Wrong asset type");

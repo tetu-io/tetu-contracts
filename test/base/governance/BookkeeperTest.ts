@@ -10,7 +10,7 @@ import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {VaultUtils} from "../../VaultUtils";
 import {BigNumber} from "ethers";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
 
 const {expect} = chai;
@@ -130,7 +130,7 @@ describe("Bookkeeper tests", function () {
     expect(vaultUsers).eq(1);
 
     // ******** USER1 transfer to USER2
-    await Erc20Utils.transfer(vault.address, signer, signer1.address, '500');
+    await TokenUtils.transfer(vault.address, signer, signer1.address, '500');
 
     user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
     let user2Bal = await bookkeeper.vaultUsersBalances(vault.address, signer1.address)

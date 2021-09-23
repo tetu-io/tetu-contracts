@@ -8,7 +8,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {PriceCalculator} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 
 const {expect} = chai;
@@ -173,7 +173,7 @@ describe("Price calculator tests", function () {
     const platformIdx = data[1];
     const lp = data[2];
     const factory = await calculator.swapFactories(platformIdx);
-    console.log('tokenOpposite', await Erc20Utils.tokenSymbol(tokenOpposite));
+    console.log('tokenOpposite', await TokenUtils.tokenSymbol(tokenOpposite));
     console.log('factory', factory);
     console.log('lp', lp);
     expect(tokenOpposite.toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN.toLowerCase());

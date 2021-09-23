@@ -7,7 +7,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {StrategyIronFold} from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
@@ -116,8 +116,8 @@ async function startIronFoldStrategyTest(
       //************** add funds for investing ************
       const baseAmount = 100_000;
       await UniswapUtils.buyAllBigTokens(user);
-      const name = await Erc20Utils.tokenSymbol(tokenOpposite);
-      const dec = await Erc20Utils.decimals(tokenOpposite);
+      const name = await TokenUtils.tokenSymbol(tokenOpposite);
+      const dec = await TokenUtils.decimals(tokenOpposite);
       const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
       console.log('tokenOpposite Price', price, name);
       const amountForSell = baseAmount / price;
@@ -143,15 +143,15 @@ async function startIronFoldStrategyTest(
 
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           null
       );
     });
     it("emergency exit", async () => {
       const info = strategyInfo;
-      const deposit = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+      const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
 
-      const undDec = await Erc20Utils.decimals(info.underlying);
+      const undDec = await TokenUtils.decimals(info.underlying);
       const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
       await VaultUtils.deposit(info.user, info.vault, deposit);
@@ -191,11 +191,11 @@ async function startIronFoldStrategyTest(
     it("doHardWork loop", async function () {
       const deposit = 100_000;
       const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
-      const undDec = await Erc20Utils.decimals(strategyInfo.underlying);
+      const undDec = await TokenUtils.decimals(strategyInfo.underlying);
       const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
-      const bal = await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
+      const bal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
       // remove excess balance
-      await Erc20Utils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
+      await TokenUtils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
       await doHardWorkLoopFolding(
           strategyInfo,
           depositBN.div(2).toString(),
@@ -217,22 +217,22 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   const calculator = (await DeployerUtils
   .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
   const vaultForUser = info.vault.connect(info.user);
-  const undDec = await Erc20Utils.decimals(info.underlying);
+  const undDec = await TokenUtils.decimals(info.underlying);
 
-  await Erc20Utils.transfer(info.underlying, info.user, info.signer.address, BigNumber.from(deposit).div(2).toString());
-  const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+  await TokenUtils.transfer(info.underlying, info.user, info.signer.address, BigNumber.from(deposit).div(2).toString());
+  const userUnderlyingBalance = await TokenUtils.balanceOf(info.underlying, info.user.address);
 
-  const signerUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.signer.address);
+  const signerUnderlyingBalance = await TokenUtils.balanceOf(info.underlying, info.signer.address);
 
   console.log("deposit", deposit);
   await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
 
-  const signerDeposit = await Erc20Utils.balanceOf(info.underlying, info.signer.address);
+  const signerDeposit = await TokenUtils.balanceOf(info.underlying, info.signer.address);
   await VaultUtils.deposit(info.signer, info.vault, signerDeposit);
 
-  const rewardBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
-  const vaultBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.vault.address);
-  const psBalanceBefore = await Erc20Utils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+  const rewardBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
+  const vaultBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
+  const psBalanceBefore = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
   const psSharePriceBefore = await info.core.psVault.getPricePerFullShare();
 
   const start = await StrategyTestUtils.getBlockTime();
@@ -322,7 +322,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
     if (deposited && i % 3 === 0) {
       deposited = false;
       const vBal = await vaultForUser.underlyingBalanceWithInvestment();
-      const bal = await Erc20Utils.balanceOf(vaultForUser.address, info.user.address);
+      const bal = await TokenUtils.balanceOf(vaultForUser.address, info.user.address);
       //* INVESTOR CAN WITHDRAW A VERY LITTLE AMOUNT LOWER OR HIGHER
       // depends on ppfs fluctuation
       if (i % 2 === 0) {
@@ -330,20 +330,20 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
         console.log('ppfs', utils.formatUnits(await info.vault.getPricePerFullShare(), undDec));
         await vaultForUser.exit();
         // some pools have auto compounding so user balance can increase
-        expect(+utils.formatUnits(await Erc20Utils.balanceOf(info.underlying, info.user.address), undDec))
+        expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
         .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "should have all underlying");
       } else {
         console.log('user withdraw', bal.toString(), vBal.toString());
         await vaultForUser.withdraw(BigNumber.from(bal).mul(90).div(100));
         // some pools have auto compounding so user balance can increase
-        expect(+utils.formatUnits(await Erc20Utils.balanceOf(info.underlying, info.user.address), undDec))
+        expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
         .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance.mul(90).div(100), undDec) * 0.999, "should have all underlying");
       }
 
 
     } else if (!deposited && i % 2 === 0) {
       deposited = true;
-      const bal = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+      const bal = await TokenUtils.balanceOf(info.underlying, info.user.address);
       console.log('user deposit', bal.toString());
       await VaultUtils.deposit(info.user, info.vault, BigNumber.from(bal).div(3));
       await VaultUtils.deposit(info.user, info.vault, BigNumber.from(bal).div(3), false);
@@ -356,11 +356,11 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   // await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
 
   // check vault balance
-  const vaultBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.vault.address);
+  const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
   expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
 
   // check ps balance
-  const psBalanceAfter = await Erc20Utils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+  const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
   expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
 
   // check ps PPFS
@@ -370,22 +370,22 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   // check reward for user
   await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week
   await vaultForUser.getAllRewards();
-  const rewardBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
+  const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
   expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
   .is.not.eq("0", "should have earned iToken rewards");
 
   // ************* EXIT ***************
-  const bal = await Erc20Utils.balanceOf(vaultForUser.address, info.user.address);
+  const bal = await TokenUtils.balanceOf(vaultForUser.address, info.user.address);
   if (!bal.isZero()) {
     await vaultForUser.exit();
   }
   await info.vault.exit();
   // some pools have auto compounding so user balance can increase
-  const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+  const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
   expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
   .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "user should have all underlying");
 
-  const signerUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+  const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
   expect(+utils.formatUnits(signerUnderlyingBalanceAfter, undDec))
   .is.greaterThanOrEqual(+utils.formatUnits(signerUnderlyingBalance, undDec) * 0.999, "signer should have all underlying");
 }
