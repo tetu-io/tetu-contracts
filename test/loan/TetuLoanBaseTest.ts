@@ -11,6 +11,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {LoanUtils} from "./LoanUtils";
 import {TokenUtils} from "../TokenUtils";
+import {LoanTestUtils} from "./LoanTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -21,6 +22,7 @@ describe("Tetu loans base tests", function () {
   let signer: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
+  let user3: SignerWithAddress;
   let core: CoreContractsWrapper;
   let loan: TetuLoans;
   let nft: MockNFT;
@@ -30,6 +32,7 @@ describe("Tetu loans base tests", function () {
     signer = (await ethers.getSigners())[0];
     user1 = (await ethers.getSigners())[1];
     user2 = (await ethers.getSigners())[2];
+    user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
 
     loan = await DeployerUtils.deployContract(signer, 'TetuLoans', core.controller.address) as TetuLoans;
@@ -43,6 +46,8 @@ describe("Tetu loans base tests", function () {
     await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
     await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
     await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.buyToken(user3, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
+    await UniswapUtils.buyToken(user3, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
   });
 
   after(async function () {
@@ -64,7 +69,7 @@ describe("Tetu loans base tests", function () {
     const max = (await loan.MAX_POSITIONS_PER_USER()).toNumber();
     console.log('max position: ' + max);
     for (let i = 0; i < max + 5; i++) {
-      await openErc20ForUsdcAndCheck(
+      await LoanTestUtils.openErc20ForUsdcAndCheck(
           user1,
           loan,
           collateralToken,
@@ -75,7 +80,7 @@ describe("Tetu loans base tests", function () {
       );
 
       if (i !== 0 && i % 3 === 0) {
-        await closeAndCheck(i - 2, user1, loan);
+        await LoanTestUtils.closeAndCheck(i - 2, user1, loan);
       }
     }
 
@@ -96,7 +101,7 @@ describe("Tetu loans base tests", function () {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     const acquiredAmount = '555';
-    const id = await openErc20ForUsdcAndCheck(
+    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
         loan,
         collateralToken,
@@ -106,14 +111,14 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await bidAndCheck(id, acquiredAmount, user2, loan)
+    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan)
   });
 
   it("bid on position and claim", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     const acquiredAmount = '555';
-    const id = await openErc20ForUsdcAndCheck(
+    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
         loan,
         collateralToken,
@@ -123,16 +128,16 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await bidAndCheck(id, acquiredAmount, user2, loan);
+    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
     await TimeUtils.advanceNBlocks(2);
-    await claimAndCheck(id, user2, loan);
+    await LoanTestUtils.claimAndCheck(id, user2, loan);
   });
 
   it("open position and redeem", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     const acquiredAmount = '555';
-    const id = await openErc20ForUsdcAndCheck(
+    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
         loan,
         collateralToken,
@@ -141,15 +146,59 @@ describe("Tetu loans base tests", function () {
         1,
         0
     );
-    await bidAndCheck(id, acquiredAmount, user2, loan);
-    await redeemAndCheck(id, user1, loan);
+    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
+    await LoanTestUtils.redeemAndCheck(id, user1, loan);
+  });
+
+  it("open auction", async () => {
+
+    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+        user1,
+        loan,
+        MaticAddresses.WMATIC_TOKEN,
+        '10',
+        '0',
+        1,
+        0
+    );
+
+    await LoanTestUtils.bidAndCheck(id, '555', user2, loan);
+
+    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, user3, loan.address, '555');
+    await expect(loan.connect(user3).bid(id, '555')).rejectedWith('TL: New bid lower than previous');
+
+    await LoanTestUtils.bidAndCheck(id, '556', user3, loan);
+
+    const bidIndex2 = await loan.lenderOpenBids(user2.address, id);
+    expect(bidIndex2).is.not.eq(0);
+    const bidId2 = await loan.loanToBidIds(id, bidIndex2.sub(1));
+    expect(bidId2).is.not.eq(0);
+    const bid2 = await loan.auctionBids(bidId2);
+    expect(bid2.lender).is.eq(user2.address);
+
+    const bidIndex3 = await loan.lenderOpenBids(user3.address, id);
+    expect(bidIndex3).is.not.eq(0);
+    const bidId3 = await loan.loanToBidIds(id, bidIndex3.sub(1));
+    expect(bidId3).is.not.eq(0);
+    const bid3 = await loan.auctionBids(bidId3);
+    expect(bid3.lender).is.eq(user3.address);
+
+    await expect(loan.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TL: Auction is not ended");
+
+    await LoanTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, loan)
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
+
+
   });
 
   // ! ** NFT **************
 
   it("NFT bid on position with instant execution", async () => {
     const acquiredAmount = '555';
-    const id = await openNftForUsdcAndCheck(
+    const id = await LoanTestUtils.openNftForUsdcAndCheck(
         user1,
         loan,
         nft.address,
@@ -159,12 +208,12 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await bidAndCheck(id, acquiredAmount, user2, loan)
+    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan)
   });
 
   it("NFT bid on position and claim", async () => {
     const acquiredAmount = '555';
-    const id = await openNftForUsdcAndCheck(
+    const id = await LoanTestUtils.openNftForUsdcAndCheck(
         user1,
         loan,
         nft.address,
@@ -174,14 +223,14 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await bidAndCheck(id, acquiredAmount, user2, loan);
+    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
     await TimeUtils.advanceNBlocks(2);
-    await claimAndCheck(id, user2, loan);
+    await LoanTestUtils.claimAndCheck(id, user2, loan);
   });
 
   it("NFT open position and redeem", async () => {
     const acquiredAmount = '555';
-    const id = await openNftForUsdcAndCheck(
+    const id = await LoanTestUtils.openNftForUsdcAndCheck(
         user1,
         loan,
         nft.address,
@@ -190,221 +239,8 @@ describe("Tetu loans base tests", function () {
         1,
         0
     );
-    await bidAndCheck(id, acquiredAmount, user2, loan);
-    await redeemAndCheck(id, user1, loan);
+    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
+    await LoanTestUtils.redeemAndCheck(id, user1, loan);
   });
 
 });
-
-async function openErc20ForUsdcAndCheck(
-    signer: SignerWithAddress,
-    loan: TetuLoans,
-    collateralToken: string,
-    collateralAmount: string,
-    acquiredAmount: string,
-    loanDurationBlocks = 99,
-    loanFee = 100,
-): Promise<number> {
-  const id = await LoanUtils.openErc20ForUsdc(
-      signer,
-      loan,
-      collateralToken,
-      collateralAmount,
-      acquiredAmount,
-      loanDurationBlocks,
-      loanFee
-  );
-
-  await checkPosition(
-      id,
-      signer,
-      loan,
-      collateralToken,
-      collateralAmount,
-      "0",
-      0,
-      acquiredAmount,
-      loanDurationBlocks,
-      loanFee,
-  )
-  return id;
-}
-
-async function openNftForUsdcAndCheck(
-    signer: SignerWithAddress,
-    loan: TetuLoans,
-    collateralToken: string,
-    collateralId: string,
-    acquiredAmount: string,
-    loanDurationBlocks = 99,
-    loanFee = 100,
-): Promise<number> {
-  const id = await LoanUtils.openNftForUsdc(
-      signer,
-      loan,
-      collateralToken,
-      collateralId,
-      acquiredAmount,
-      loanDurationBlocks,
-      loanFee
-  );
-
-  await checkPosition(
-      id,
-      signer,
-      loan,
-      collateralToken,
-      "0",
-      collateralId,
-      1,
-      acquiredAmount,
-      loanDurationBlocks,
-      loanFee,
-  )
-  return id;
-}
-
-async function checkPosition(
-    id: number,
-    signer: SignerWithAddress,
-    loan: TetuLoans,
-    collateralToken: string,
-    collateralAmount: string,
-    collateralId: string,
-    collateralType: number,
-    acquiredAmount: string,
-    loanDurationBlocks: number,
-    loanFee: number,
-) {
-  const l = await loan.loans(id);
-
-  expect(l.id.toNumber()).eq(id);
-  expect(l.borrower).is.eq(signer.address);
-
-  const info = l.info;
-  expect(info.loanDurationBlocks.toNumber()).is.eq(loanDurationBlocks);
-  expect(info.loanFee.toNumber()).is.eq(loanFee);
-  expect(info.createdBlock.toNumber()).is.not.eq(0);
-  expect(info.createdTs.toNumber()).is.not.eq(0);
-
-  const collateral = l.collateral;
-  expect(collateral.collateralToken.toLowerCase()).is.eq(collateralToken.toLowerCase());
-  expect(collateral.collateralType).is.eq(collateralType);
-  expect(collateral.collateralAmount.toString()).is.eq(collateralAmount);
-  expect(collateral.collateralTokenId.toString()).is.eq(collateralId);
-
-  const acquired = l.acquired;
-  expect(acquired.acquiredToken.toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN);
-  expect(acquired.acquiredAmount.toString()).is.eq(acquiredAmount);
-
-  const execution = l.execution;
-  expect(execution.lender.toLowerCase()).is.eq(MaticAddresses.ZERO_ADDRESS);
-  expect(execution.loanStartBlock).is.eq(0);
-  expect(execution.loanStartTs).is.eq(0);
-
-
-  const listIndex = (await loan.loanIndexes(0, id)).toNumber();
-  const cIndex = (await loan.loanIndexes(1, id)).toNumber();
-  const aIndex = (await loan.loanIndexes(2, id)).toNumber();
-  const bIndex = (await loan.loanIndexes(3, id)).toNumber();
-
-  expect(await loan.loansList(listIndex)).is.eq(id);
-  expect((await loan.loansByCollateral(collateralToken, cIndex))).is.eq(id);
-  expect((await loan.loansByAcquired(MaticAddresses.USDC_TOKEN, aIndex))).is.eq(id);
-  expect((await loan.borrowerPositions(signer.address, bIndex))).is.eq(id);
-}
-
-async function closeAndCheck(id: number, signer: SignerWithAddress, loan: TetuLoans): Promise<void> {
-  const loanListLength = (await loan.loanListSize()).toNumber();
-  const lastLoanId = (await loan.loansList(loanListLength - 1)).toNumber();
-  const lastLoanListIndex = (await loan.loanIndexes(0, lastLoanId)).toNumber();
-  expect(lastLoanListIndex).is.eq(loanListLength - 1);
-
-  const l = await loan.loans(id);
-  const loanListIndex = (await loan.loanIndexes(0, l.id)).toNumber();
-  // const dec = await Erc20Utils.decimals(l.collateral.collateralToken);
-  const bal = (await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address));
-
-  await LoanUtils.closePosition(id, signer, loan);
-
-  const balAfter = (await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address));
-  expect(bal.add(l.collateral.collateralAmount).toString()).is.eq(balAfter.toString());
-
-  const lastLoanListIndexAfter = (await loan.loanIndexes(0, lastLoanId)).toNumber();
-  const loanListIndexAfter = (await loan.loanIndexes(0, l.id)).toString();
-  expect(loanListIndexAfter).is.eq(LoanUtils.MAX_UINT);
-  expect(lastLoanListIndexAfter).is.eq(loanListIndex);
-}
-
-async function bidAndCheck(id: number, amount: string, signer: SignerWithAddress, loan: TetuLoans) {
-  const l = await loan.loans(id);
-  const aBalanceBefore = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
-  const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-
-  await LoanUtils.bid(id, amount, signer, loan);
-
-  const aBalanceAfter = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
-  expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(amount);
-
-  const lAfter = await loan.loans(id);
-
-  expect(lAfter.execution.lender.toLowerCase()).is.eq(signer.address.toLowerCase());
-  expect(lAfter.execution.loanStartBlock).is.not.eq(0);
-  expect(lAfter.execution.loanStartTs).is.not.eq(0);
-
-  if (l.info.loanDurationBlocks.isZero()) {
-    const cBalanceAfter = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-    if (l.collateral.collateralType === 0) {
-      expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
-    } else {
-      expect(cBalanceAfter.sub(cBalanceBefore).toNumber()).is.eq(1);
-    }
-
-    expect(lAfter.execution.loanEndTs).is.not.eq(0);
-  } else {
-    const lenderIndex = await loan.loanIndexes(4, id);
-    expect(await loan.lenderPositions(signer.address, lenderIndex)).is.eq(id);
-  }
-}
-
-async function claimAndCheck(id: number, signer: SignerWithAddress, loan: TetuLoans) {
-  const l = await loan.loans(id);
-  const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-
-  await LoanUtils.claim(id, signer, loan);
-
-  const lAfter = await loan.loans(id);
-
-  const cBalanceAfter = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-  if (l.collateral.collateralType === 0) {
-    expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
-  } else {
-    expect(cBalanceAfter.sub(cBalanceBefore).toNumber()).is.eq(1);
-  }
-  expect(lAfter.execution.loanEndTs).is.not.eq(0);
-}
-
-async function redeemAndCheck(id: number, signer: SignerWithAddress, loan: TetuLoans) {
-  const l = await loan.loans(id);
-  const aBalanceBefore = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
-  const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-  const toRedeem = await loan.toRedeem(id);
-
-  await LoanUtils.redeem(id, signer, loan);
-
-  const lAfter = await loan.loans(id);
-
-  const aBalanceAfter = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
-  expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(toRedeem);
-
-  const cBalanceAfter = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-
-  if (l.collateral.collateralType === 0) {
-    expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
-  } else {
-    expect(cBalanceAfter.sub(cBalanceBefore).toNumber()).is.eq(1);
-  }
-
-  expect(lAfter.execution.loanEndTs).is.not.eq(0);
-}
-

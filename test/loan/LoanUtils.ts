@@ -97,4 +97,21 @@ export class LoanUtils {
     await TokenUtils.approve(aToken, signer, loan.address, toRedeem.toString());
     await loan.connect(signer).redeem(id);
   }
+
+  public static async closeAuctionBid(bidId: number, signer: SignerWithAddress, loan: TetuLoans) {
+    console.log('Try to close auction bid', bidId);
+    await loan.connect(signer).closeAuctionBid(bidId);
+  }
+
+  public static async acceptAuctionBid(loanId: number, signer: SignerWithAddress, loan: TetuLoans) {
+    console.log('Try to accept auction bid for loanId', loanId);
+    await loan.connect(signer).acceptAuctionBid(loanId);
+  }
+
+  public static async lastAuctionBidId(loanId: number, loan: TetuLoans) {
+    const size = (await loan.auctionBidSize(loanId)).toNumber();
+    console.log('auction bids size', size);
+    expect(size).is.not.eq(0, 'no bids for ' + loanId);
+    return (await loan.loanToBidIds(loanId, size - 1)).toNumber();
+  }
 }

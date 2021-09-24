@@ -24,8 +24,7 @@ interface ITetuLoans {
     BY_COLLATERAL, // 1
     BY_ACQUIRED, // 2
     BORROWER_POSITION, // 3
-    LENDER_POSITION, // 4
-    LOAN_TO_BID // 5
+    LENDER_POSITION // 4
   }
 
   struct Loan {
@@ -69,6 +68,7 @@ interface ITetuLoans {
     uint256 loanId;
     address lender;
     uint256 amount;
+    bool open;
   }
 
 }

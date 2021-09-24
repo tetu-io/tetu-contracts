@@ -38,6 +38,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   uint256 constant public MAX_POSITIONS_PER_USER = 10;
   uint256 constant public DENOMINATOR = 10000;
   uint256 constant public PLATFORM_FEE_MAX = 500; // 5%
+  uint256 constant public AUCTION_DURATION = 1 days;
 
   uint256 public platformFee = 10; // 1% by default
   uint256 public loansCounter = 1;
@@ -53,10 +54,12 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   uint256 public auctionBidCounter = 1;
   /// @dev bidId => Bid
   mapping(uint256 => AuctionBid) public auctionBids;
-  /// @dev lender => loanId
-  mapping(address => mapping(uint256 => bool)) public lenderOpenBids;
-  /// @dev loanId => auctionId
+  /// @dev lender => loanId => loanToBidIdsIndex + 1
+  mapping(address => mapping(uint256 => uint256)) public lenderOpenBids;
+  /// @dev loanId => bidIds
   mapping(uint256 => uint256[]) public loanToBidIds;
+  /// @dev loanId => timestamp
+  mapping(uint256 => uint256) public lastAuctionBidTs;
 
   // ************* USER ACTIONS *************
 
@@ -183,23 +186,44 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     _transferCollateral(loan.collateral, address(this), msg.sender);
   }
 
-  function acceptAuctionBid(uint256 auctionId) external onlyAllowedUsers nonReentrant {
-    AuctionBid storage _bid = auctionBids[auctionId];
-    require(_bid.id != 0, "TL: Auction bid not found");
-    Loan storage loan = loans[_bid.loanId];
+  function acceptAuctionBid(uint256 loanId) external onlyAllowedUsers nonReentrant {
+    require(loanToBidIds[loanId].length > 0, "TL: No bids");
+    uint256 bidId = loanToBidIds[loanId][loanToBidIds[loanId].length - 1];
 
+    AuctionBid storage _bid = auctionBids[bidId];
+    require(_bid.id != 0, "TL: Auction bid not found");
+    require(_bid.open, "TL: Bid closed");
+    require(_bid.loanId == loanId, "TL: Wrong bid");
+
+    Loan storage loan = loans[loanId];
     require(loan.borrower == msg.sender, "TL: Not borrower");
+    require(lastAuctionBidTs[loanId] + AUCTION_DURATION < block.timestamp, "TL: Auction not ended");
 
     _executeBid(loan, _bid.amount, address(this), msg.sender);
+    lenderOpenBids[_bid.lender][loan.id] = 0;
+    _bid.open = false;
+    console.log("ACCEPT: bid id", bidId);
+    console.log("ACCEPT: bid amount", _bid.amount);
   }
 
-  function closeAuctionBid(uint256 auctionId) external onlyAllowedUsers nonReentrant {
-    AuctionBid storage _bid = auctionBids[auctionId];
+  function closeAuctionBid(uint256 bidId) external onlyAllowedUsers nonReentrant {
+    AuctionBid storage _bid = auctionBids[bidId];
     require(_bid.id != 0, "TL: Auction bid not found");
     Loan storage loan = loans[_bid.loanId];
 
-    lenderOpenBids[_bid.lender][loan.id] = false;
-    loanToBidIds[loan.id].removeIndexed(loanIndexes[IndexType.LOAN_TO_BID], loan.id);
+    bool isAuctionEnded = lastAuctionBidTs[loan.id] + AUCTION_DURATION < block.timestamp;
+    bool isLastBid = false;
+    if (loanToBidIds[loan.id].length != 0) {
+      uint256 lastBidId = loanToBidIds[loan.id][loanToBidIds[loan.id].length - 1];
+      isLastBid = lastBidId == bidId;
+    }
+
+    require((isLastBid && isAuctionEnded) || !isLastBid, "TL: Auction is not ended");
+
+    lenderOpenBids[_bid.lender][loan.id] = 0;
+    _bid.open = false;
+    IERC20(loan.acquired.acquiredToken).safeTransfer(msg.sender, _bid.amount);
+    console.log("CLOSE: bidId", bidId);
   }
 
   // ************* INTERNAL FUNCTIONS *************
@@ -213,7 +237,11 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     uint256 feeAmount = amount * platformFee / DENOMINATOR;
     _transferFee(loan.acquired.acquiredToken, acquiredMoneyHolder, feeAmount);
     uint256 toSend = amount - feeAmount;
-    IERC20(loan.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, loan.borrower, toSend);
+    if (acquiredMoneyHolder == address(this)) {
+      IERC20(loan.acquired.acquiredToken).safeTransfer(loan.borrower, toSend);
+    } else {
+      IERC20(loan.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, loan.borrower, toSend);
+    }
 
     loan.execution.lender = lender;
     loan.execution.loanStartBlock = block.number;
@@ -231,9 +259,12 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   }
 
   function _auctionBid(Loan storage loan, uint256 amount, address lender) internal {
-    require(!lenderOpenBids[lender][loan.id], "TL: Auction bid already exist");
+    require(lenderOpenBids[lender][loan.id] == 0, "TL: Auction bid already exist");
 
     if (loanToBidIds[loan.id].length != 0) {
+      // if we have bids need to check auction duration
+      require(lastAuctionBidTs[loan.id] + AUCTION_DURATION > block.timestamp, "TL: Auction ended");
+
       uint256 lastBidId = loanToBidIds[loan.id][loanToBidIds[loan.id].length - 1];
       AuctionBid storage lastBid = auctionBids[lastBidId];
       require(lastBid.amount < amount, "TL: New bid lower than previous");
@@ -243,18 +274,21 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
       auctionBidCounter,
       loan.id,
       lender,
-      amount
+      amount,
+      true
     );
 
     loanToBidIds[loan.id].push(_bid.id);
-    loanIndexes[IndexType.LOAN_TO_BID][loan.id] = loanToBidIds[loan.id].length - 1;
-
-    lenderOpenBids[lender][loan.id] = true;
+    // write index + 1 for keep zero as empty value
+    lenderOpenBids[lender][loan.id] = loanToBidIds[loan.id].length;
 
     IERC20(loan.acquired.acquiredToken).safeTransferFrom(msg.sender, address(this), amount);
 
+    lastAuctionBidTs[loan.id] = block.timestamp;
     auctionBids[_bid.id] = _bid;
     auctionBidCounter++;
+    console.log("AUCTION BID: loan.id", loan.id);
+    console.log("AUCTION BID: _bid.id", _bid.id);
   }
 
   function _endPosition(Loan storage _loan) internal {
@@ -270,7 +304,11 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   function _transferCollateral(LoanCollateral memory _collateral, address _sender, address _recipient) internal {
     if (_collateral.collateralType == AssetType.ERC20) {
       console.log("TRANSFER: ERC20 token", _collateral.collateralToken, _collateral.collateralAmount);
-      IERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
+      if (_sender == address(this)) {
+        IERC20(_collateral.collateralToken).safeTransfer(_recipient, _collateral.collateralAmount);
+      } else {
+        IERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
+      }
     } else if (_collateral.collateralType == AssetType.ERC721) {
       console.log("TRANSFER: ERC721 token", _collateral.collateralToken, _collateral.collateralTokenId);
       IERC721(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralTokenId);
@@ -330,5 +368,9 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
 
   function loanListSize() external view returns (uint256) {
     return loansList.length;
+  }
+
+  function auctionBidSize(uint256 loanId) external view returns (uint256) {
+    return loanToBidIds[loanId].length;
   }
 }
