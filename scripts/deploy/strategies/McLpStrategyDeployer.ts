@@ -10,6 +10,7 @@ import {
 } from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
+import {MaticAddresses} from "../../../test/MaticAddresses";
 
 
 export class McLpStrategyDeployer {
@@ -75,12 +76,13 @@ export class McLpStrategyDeployer {
         `x${vaultNameWithoutPrefix}`,
         controller.address,
         underlying,
-        60 * 60 * 24 * 28
+        60 * 60 * 24 * 28,
+        false,
+        core.psVault
     ));
 
     // ! gov actions
     if ((await ethers.provider.getNetwork()).name !== "matic") {
-      await vaultController.addRewardTokens([vault.address], core.psVault);
       await controller.addVaultAndStrategy(vault.address, strategy.address);
     }
 

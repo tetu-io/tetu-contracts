@@ -17,6 +17,7 @@ export class McLpDownloader {
 
 
   public static async download(
+      platformId: string,
       prefix: string,
       chefAddress: string,
       rewardAddress: string,
@@ -41,6 +42,9 @@ export class McLpDownloader {
     const currentRewards = new Map<string, number>();
     const underlyingToVault = new Map<string, string>();
     for (let vInfo of vaultInfos) {
+      if(vInfo.platform !== platformId) {
+        continue;
+      }
       underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
       underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
       if (vInfo.active) {
@@ -72,6 +76,7 @@ export class McLpDownloader {
         const lp = poolInfo.lpAddress;
         const status = underlyingStatuses.get(lp.toLowerCase());
         if (status != null && !status) {
+          console.log('deactivated');
           continue;
         }
         const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair

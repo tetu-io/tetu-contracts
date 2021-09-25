@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
   Bookkeeper,
   ContractReader,
@@ -10,7 +10,7 @@ import {
   SNXStrategyFullBuyback,
   TetuProxyControlled,
   WaultStrategyFullBuyback
-} from "../../typechain";
+} from "../../../typechain";
 
 async function main() {
   const signer = (await ethers.getSigners())[1];

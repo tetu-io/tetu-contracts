@@ -20,6 +20,10 @@ interface ISmartVault {
 
   function changePpfsDecreaseAllowed(bool _value) external;
 
+  function setLockPeriod(uint256 _value) external;
+
+  function setLockPenalty(uint256 _value) external;
+
   function doHardWork() external;
 
   function notifyTargetRewardAmount(address _rewardToken, uint256 reward) external;
@@ -86,7 +90,11 @@ interface ISmartVault {
 
   function userLastWithdrawTs(address _user) external returns (uint256);
 
+  function userLastDepositTs(address _user) external returns (uint256);
+
   function userBoostTs(address _user) external returns (uint256);
+
+  function userLockTs(address _user) external returns (uint256);
 
   function addRewardToken(address rt) external;
 
@@ -95,4 +103,10 @@ interface ISmartVault {
   function stop() external;
 
   function ppfsDecreaseAllowed() external view returns (bool);
+
+  function lockPeriod() external view returns (uint256);
+
+  function lockPenalty() external view returns (uint256);
+
+  function lockAllowed() external view returns (bool);
 }

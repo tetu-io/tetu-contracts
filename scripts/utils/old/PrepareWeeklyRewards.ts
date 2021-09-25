@@ -10,11 +10,11 @@ import {
   IStrategy,
   PriceCalculator,
   SNXRewardInterface
-} from "../../typechain";
+} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Erc20Utils} from "../../test/Erc20Utils";
-import {MaticAddresses} from "../../test/MaticAddresses";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {Erc20Utils} from "../../../test/Erc20Utils";
+import {MaticAddresses} from "../../../test/MaticAddresses";
 
 
 async function main() {

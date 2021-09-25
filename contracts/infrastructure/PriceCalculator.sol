@@ -35,14 +35,18 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   using Address for address;
   using SafeMath for uint256;
 
+  // ************ CONSTANTS **********************
+
   string public constant VERSION = "1.2.0";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
+  address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
 
-  mapping(address => address) replacementTokens;
+  // ************ VARIABLES **********************
+  // !!! DON'T CHANGE NAMES OR ORDERING !!!
 
   // Addresses for factories and registries for different DEX platforms.
   // Functions will be added to allow to alter these when needed.
@@ -52,6 +56,10 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   //Key tokens are used to find liquidity for any given token on Swap platforms.
   address[] public keyTokens;
+
+  mapping(address => address) replacementTokens;
+
+  // ********** EVENTS ****************************
 
   event DefaultTokenChanged(address oldToken, address newToken);
   event KeyTokenAdded(address newKeyToken);
@@ -96,6 +104,12 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       rate = ISmartVault(token).getPricePerFullShare();
       token = ISmartVault(token).underlying();
       rateDenominator = 10 ** ERC20(token).decimals();
+      // some vaults can have another vault as underlying
+      if (IController(controller()).vaults(token)) {
+        rate = rate * ISmartVault(token).getPricePerFullShare();
+        token = ISmartVault(token).underlying();
+        rateDenominator = rateDenominator * (10 ** ERC20(token).decimals());
+      }
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
@@ -233,7 +247,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     address pairAddress;
     // shortcut for firebird ice-weth
     // todo make more smart solution
-    if(_factory == 0x5De74546d3B86C8Df7FEEc30253865e1149818C8) {
+    if (_factory == FIREBIRD_FACTORY) {
       pairAddress = IFireBirdFactory(_factory).getPair(token, tokenOpposite, 50, 20);
     } else {
       pairAddress = IUniswapV2Factory(_factory).getPair(token, tokenOpposite);

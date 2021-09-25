@@ -1,11 +1,11 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {LiquidityBalancer} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {LiquidityBalancer} from "../../../typechain";
 import {utils} from "ethers";
-import {RopstenAddresses} from "../../test/RopstenAddresses";
-import {Settings} from "../../settings";
-import {MaticAddresses} from "../../test/MaticAddresses";
-import {RunHelper} from "./RunHelper";
+import {RopstenAddresses} from "../../../test/RopstenAddresses";
+import {Settings} from "../../../settings";
+import {MaticAddresses} from "../../../test/MaticAddresses";
+import {RunHelper} from "../RunHelper";
 
 
 async function main() {

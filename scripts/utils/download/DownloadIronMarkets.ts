@@ -8,12 +8,14 @@ import {
   IUniswapV2Pair,
   PriceCalculator,
   RErc20Storage,
-  RTokenInterface
+  RTokenInterface,
+  SmartVault
 } from "../../../typechain";
 import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 
 async function main() {
@@ -27,24 +29,28 @@ async function main() {
   const markets = await controller.getAllMarkets();
   console.log('markets', markets.length);
 
-  // const vaultInfos = await VaultUtils.getVaultInfoFromServer();
-  // const underlyingStatuses = new Map<string, boolean>();
-  // const currentRewards = new Map<string, number>();
-  // const underlyingToVault = new Map<string, string>();
-  // for (let vInfo of vaultInfos) {
-  //   underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
-  //   underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
-  //   if (vInfo.active) {
-  //     const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
-  //     currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
-  //   }
-  // }
+  const vaultInfos = await VaultUtils.getVaultInfoFromServer();
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (let vInfo of vaultInfos) {
+    if (vInfo.platform !== '9') {
+      continue;
+    }
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
+    }
+  }
 
+  console.log('loaded vault', underlyingStatuses.size);
 
   const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.ICE_TOKEN);
   console.log('reward price', utils.formatUnits(rewardPrice));
 
-  let infos: string = 'idx, rToken_name, rToken_address, token, tokenName, collateralFactor, borrowTarget \n';
+  let infos: string = 'idx, rToken_name, rToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, apr, vault, current rewards \n';
   for (let i = 0; i < markets.length; i++) {
     console.log('id', i);
 
@@ -58,6 +64,7 @@ async function main() {
       continue;
     }
 
+
     const rTokenAdr = markets[i];
     const rTokenName = await Erc20Utils.tokenSymbol(rTokenAdr);
     console.log('rTokenName', rTokenName, rTokenAdr)
@@ -69,13 +76,35 @@ async function main() {
     const collateralFactor = +utils.formatUnits((await controller.markets(rTokenAdr)).collateralFactorMantissa) * 10000;
     const borrowTarget = Math.floor(collateralFactor * 0.9);
 
+    const status = underlyingStatuses.get(token.toLowerCase());
+    if (status != null && !status) {
+      console.log('deactivated');
+      continue;
+    }
+    const undPrice = +utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token));
+
+    const undDec = await Erc20Utils.decimals(token);
+    const cash = +utils.formatUnits(await rTokenCtr.getCash(), undDec);
+    const borrowed = +utils.formatUnits(await rTokenCtr.totalBorrows(), undDec);
+    const reserves = +utils.formatUnits(await rTokenCtr.totalReserves(), undDec);
+
+    const tvl = (cash + borrowed - reserves) * undPrice;
+    const apr = 0;
+    const curRewards = currentRewards.get(token.toLowerCase());
+    const vault = underlyingToVault.get(token.toLowerCase());
+
     const data = i + ',' +
         rTokenName + ',' +
         rTokenAdr + ',' +
         token + ',' +
         tokenName + ',' +
         (collateralFactor - 1) + ',' +
-        borrowTarget
+        borrowTarget + ',' +
+        tvl.toFixed(2) + ',' +
+        apr + ',' +
+        vault + ',' +
+        curRewards
+
 
     console.log(data);
     infos += data + '\n';

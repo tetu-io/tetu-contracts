@@ -20,6 +20,7 @@ import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "./ForwarderStorage.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
@@ -28,7 +29,7 @@ import "../../third_party/uniswap/IUniswapV2Router02.sol";
 ///        If external rewards have a destination Profit Share pool
 ///        it is just sent to the contract as TETU tokens increasing share price.
 /// @author belbix
-contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
+contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStorage {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
@@ -44,19 +45,10 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   /// @notice Added or changed a route with routers
   event RouteAdded(address indexed tokenIn, address indexed tokenOut);
 
-  // ************ VARIABLES **********************
-  /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
-
-  /// @notice Routes for token liquidations
-  mapping(address => mapping(address => address[])) public routes;
-  /// @notice Routers for token liquidations
-  mapping(address => mapping(address => address[])) public routers;
-
-  /// @notice Contract constructor
-  /// @param _controller Controller address
-  constructor(address _controller) {
+  /// @notice Initialize contract after setup it as proxy implementation
+  /// @dev Use it only once after first logic setup
+  ///      Initialize Controllable with sender address
+  function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
   }
 
@@ -108,12 +100,22 @@ contract FeeRewardForwarder is IFeeRewardForwarder, Controllable {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Only Governance or Controller can call it.
+  ///         Call setConversionPath for each route of given array
+  function setConversionPathMulti(address[][] memory _routes, address[][] memory _routers)
+  external onlyControllerOrGovernance {
+    require(_routes.length == _routers.length, "FRF: Wrong arrays");
+    for (uint256 i = 0; i < _routes.length; i++) {
+      setConversionPath(_routes[i], _routers[i]);
+    }
+  }
+
+  /// @notice Only Governance or Controller can call it.
   ///         Sets the path for swapping tokens to the Target/Fund token address
   /// @param _route Array with tokens that need to swap where first
   ///               is external project reward and final is Target/Fund token
   /// @param _routers Swap platform routers. 1 for each swap operation in the route
   function setConversionPath(address[] memory _route, address[] memory _routers)
-  external onlyControllerOrGovernance {
+  public onlyControllerOrGovernance {
     require(_routers.length == 1 ||
       (_route.length != 0 && _routers.length == _route.length.sub(1)), "FRF: Wrong data");
     address from = _route[0];
