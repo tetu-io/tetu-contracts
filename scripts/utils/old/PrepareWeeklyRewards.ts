@@ -13,7 +13,7 @@ import {
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 
 
@@ -174,7 +174,7 @@ async function defaultPoolWeeklyRewardsAmountUsdc(
       throw Error('error fetch stratContract.poolWeeklyRewardsAmount()');
     }
 
-    const rtDec = await Erc20Utils.decimals(rt);
+    const rtDec = await TokenUtils.decimals(rt);
 
     if (!prices.has(rt)) {
       try {

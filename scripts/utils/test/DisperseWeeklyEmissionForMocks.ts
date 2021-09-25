@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper, NotifyHelper} from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {RunHelper} from "../RunHelper";
 
@@ -15,7 +15,7 @@ async function main() {
       signer, "Bookkeeper", core.bookkeeper) as Bookkeeper;
 
   const vaults = await bookkeeper.vaults();
-  const availableAmount = +(+utils.formatUnits(await Erc20Utils.balanceOf(core.rewardToken, core.notifyHelper), 18)).toFixed();
+  const availableAmount = +(+utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken, core.notifyHelper), 18)).toFixed();
   console.log("availableAmount", availableAmount)
   const basePerVault = availableAmount / vaults.length;
   console.log("basePerVault", basePerVault)

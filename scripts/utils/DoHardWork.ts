@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Bookkeeper, Controller, IStrategy, PriceCalculator} from "../../typechain";
 import {utils} from "ethers";
-import {Erc20Utils} from "../../test/Erc20Utils";
+import {TokenUtils} from "../../test/TokenUtils";
 import {RunHelper} from "./RunHelper";
 
 
@@ -39,7 +39,7 @@ async function main() {
       let toClaimUsd = 0;
 
       for (let i = 0; i < rts.length; i++) {
-        const rtDec = await Erc20Utils.decimals(rts[i]);
+        const rtDec = await TokenUtils.decimals(rts[i]);
         const toClaim = readyToClaim[i];
 
         const rtPrice = await calculator.getPriceWithDefaultOutput(rts[i]);
@@ -56,7 +56,7 @@ async function main() {
 
       const psPpfs = +utils.formatUnits(await ps.getPricePerFullShare());
       const ppfs = +utils.formatUnits(await vaultContract.getPricePerFullShare(), undDec);
-      const iTokenBal = +utils.formatUnits(await Erc20Utils.balanceOf(core.rewardToken, vault));
+      const iTokenBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken, vault));
 
       console.log('DoHardWork for', await vaultContract.name(), iTokenBal);
       // console.log('ps share price', psPpfs);
@@ -66,7 +66,7 @@ async function main() {
 
       const psPpfsAfter = +utils.formatUnits(await ps.getPricePerFullShare());
       const ppfsAfter = +utils.formatUnits(await vaultContract.getPricePerFullShare(), undDec);
-      const iTokenBalAfter = +utils.formatUnits(await Erc20Utils.balanceOf(core.rewardToken, vault));
+      const iTokenBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken, vault));
 
       console.log('reward change', iTokenBalAfter - iTokenBal);
       console.log('PPFS change', ppfsAfter - ppfs, ppfs, ppfsAfter);

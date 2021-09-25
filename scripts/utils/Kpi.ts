@@ -2,7 +2,7 @@ import {ethers, web3} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {ContractReader, SmartVault} from "../../typechain";
 import {Web3Utils} from "./Web3Utils";
-import {Erc20Utils} from "../../test/Erc20Utils";
+import {TokenUtils} from "../../test/TokenUtils";
 import {utils} from "ethers";
 import {mkdir, writeFileSync} from "fs";
 
@@ -66,7 +66,7 @@ async function main() {
     const vault = log.address.toLowerCase();
     const rewardPerToken = rewards.get(vault) as Map<string, number>;
     const rt = logDecoded.rewardToken;
-    const rtDec = await Erc20Utils.decimals(rt);
+    const rtDec = await TokenUtils.decimals(rt);
     const amount = +utils.formatUnits(logDecoded.amount, rtDec);
     const prevAmount = rewardPerToken.get(rt.toLowerCase()) ?? 0;
     rewardPerToken.set(rt.toLowerCase(), prevAmount + amount);

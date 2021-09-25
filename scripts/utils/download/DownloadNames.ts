@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper, ContractReader, ContractUtils} from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 
 const exclude = new Set<string>([]);
 
@@ -35,16 +35,16 @@ async function main() {
 
     for (let asset of vInfo.assets) {
       // @ts-ignore
-      assetsNames[asset.toLowerCase()] = await Erc20Utils.tokenSymbol(asset);
+      assetsNames[asset.toLowerCase()] = await TokenUtils.tokenSymbol(asset);
     }
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
-  await writeFileSync('./tmp/assets_names.json', JSON.stringify(assetsNames), 'utf8');
-  await writeFileSync('./tmp/vaults_names.json', JSON.stringify(vaultsNames), 'utf8');
+  await writeFileSync('./tmp/download/assets_names.json', JSON.stringify(assetsNames), 'utf8');
+  await writeFileSync('./tmp/download/vaults_names.json', JSON.stringify(vaultsNames), 'utf8');
   console.log('done');
 }
 

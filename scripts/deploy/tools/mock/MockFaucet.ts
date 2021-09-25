@@ -1,7 +1,7 @@
 import {DeployerUtils} from "../../DeployerUtils";
 import {ethers} from "hardhat";
 import {RunHelper} from "../../../utils/RunHelper";
-import {Erc20Utils} from "../../../../test/Erc20Utils";
+import {TokenUtils} from "../../../../test/TokenUtils";
 import {MockFaucet} from "../../../../typechain";
 
 
@@ -14,13 +14,13 @@ async function main() {
     const mock = mocks.get(mockName) as string;
     await RunHelper.runAndWait(() => contract.addToken(mock));
 
-    const balance = await Erc20Utils.balanceOf(mock, signer.address);
+    const balance = await TokenUtils.balanceOf(mock, signer.address);
     if (balance.isZero()) {
       continue;
     }
     //send a half
     await RunHelper.runAndWait(() =>
-        Erc20Utils.transfer(mock, signer, contract.address, balance.div(2).toString()));
+        TokenUtils.transfer(mock, signer, contract.address, balance.div(2).toString()));
   }
 
 

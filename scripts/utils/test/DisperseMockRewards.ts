@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper, ERC20PresetMinterPauser, NotifyHelper} from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {RunHelper} from "../RunHelper";
 
@@ -37,12 +37,12 @@ async function main() {
         continue;
       }
 
-      const rtDecimals = await Erc20Utils.decimals(rt);
+      const rtDecimals = await TokenUtils.decimals(rt);
 
       const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", rt) as ERC20PresetMinterPauser;
       await mockContract.mint(signer.address, utils.parseUnits("100000", rtDecimals));
 
-      const availableAmount = +(+utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals)).toFixed();
+      const availableAmount = +(+utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), rtDecimals)).toFixed();
       console.log("availableAmount", availableAmount)
       const amountN = (availableAmount / vaults.length / 2).toFixed();
       console.log("amountN", amountN)
@@ -75,15 +75,15 @@ async function main() {
 
     if (i >= 50 || i === vaults.length - 1) {
       for (let rt of Array.from(allSum.keys())) {
-        const rtDecimals = await Erc20Utils.decimals(rt);
+        const rtDecimals = await TokenUtils.decimals(rt);
         const amounts = allAmounts.get(rt) as BigNumber[];
         const sum = allSum.get(rt) as BigNumber;
         const vlts = vaultsPerRt.get(rt) as string[];
 
-        const bal = utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals)
+        const bal = utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), rtDecimals)
         console.log("notify", rt, amounts.length, vlts.length, bal, utils.formatUnits(sum, rtDecimals));
 
-        await Erc20Utils.transfer(rt, signer, notifyHelper.address, sum.toString());
+        await TokenUtils.transfer(rt, signer, notifyHelper.address, sum.toString());
         await RunHelper.runAndWait(() => notifyHelper.notifyVaults(amounts, vlts, sum, rt));
       }
       i = 0;
