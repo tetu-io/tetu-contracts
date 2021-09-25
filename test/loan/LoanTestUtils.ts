@@ -5,6 +5,7 @@ import {MaticAddresses} from "../MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
+import {BigNumber} from "ethers";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -152,51 +153,61 @@ export class LoanTestUtils {
     expect(lastLoanListIndexAfter).is.eq(loanListIndex);
   }
 
-  public static async bidAndCheck(id: number, amount: string, signer: SignerWithAddress, loan: TetuLoans) {
-    const l = await loan.loans(id);
+  public static async bidAndCheck(loanId: number, amount: string, signer: SignerWithAddress, loan: TetuLoans) {
+    const l = await loan.loans(loanId);
     const aBalanceBefore = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
     const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
 
-    await LoanUtils.bid(id, amount, signer, loan);
+    await LoanUtils.bid(loanId, amount, signer, loan);
 
     const aBalanceAfter = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
     expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(amount);
 
-    const lAfter = await loan.loans(id);
+    await LoanTestUtils.checkExecution(loanId, amount, signer.address, loan, cBalanceBefore);
+  }
+
+  public static async checkExecution(
+      loanId: number,
+      amount: string,
+      lenderAddress: string,
+      loan: TetuLoans,
+      cBalanceBefore: BigNumber
+  ) {
+    const lAfter = await loan.loans(loanId);
 
     // auction
-    if (l.acquired.acquiredAmount.isZero()) {
-      const bidIndex = await loan.lenderOpenBids(signer.address, id);
+    if (lAfter.acquired.acquiredAmount.isZero()) {
+      const bidIndex = await loan.lenderOpenBids(lenderAddress, loanId);
       expect(bidIndex).is.not.eq(0);
-      const bidId = await loan.loanToBidIds(id, bidIndex.sub(1));
+      const bidId = await loan.loanToBidIds(loanId, bidIndex.sub(1));
       expect(bidId).is.not.eq(0);
       const bid = await loan.auctionBids(bidId);
 
       expect(bid.id).is.eq(bidId);
-      expect(bid.loanId).is.eq(id);
-      expect(bid.lender).is.eq(signer.address);
+      expect(bid.loanId).is.eq(loanId);
+      expect(bid.lender).is.eq(lenderAddress);
       expect(bid.amount).is.eq(amount);
     } else {
-      expect(lAfter.execution.lender.toLowerCase()).is.eq(signer.address.toLowerCase());
+      expect(lAfter.execution.lender.toLowerCase()).is.eq(lenderAddress.toLowerCase());
       expect(lAfter.execution.loanStartBlock).is.not.eq(0);
       expect(lAfter.execution.loanStartTs).is.not.eq(0);
     }
 
 
     // instant buy
-    if (l.info.loanDurationBlocks.isZero()) {
-      const cBalanceAfter = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
-      if (l.collateral.collateralType === 0) {
-        expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(l.collateral.collateralAmount);
+    if (lAfter.info.loanDurationBlocks.isZero()) {
+      const cBalanceAfter = await TokenUtils.balanceOf(lAfter.collateral.collateralToken, lenderAddress);
+      if (lAfter.collateral.collateralType === 0) {
+        expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(lAfter.collateral.collateralAmount);
       } else {
         expect(cBalanceAfter.sub(cBalanceBefore).toNumber()).is.eq(1);
       }
 
       expect(lAfter.execution.loanEndTs).is.not.eq(0);
     } else {
-      if (!l.acquired.acquiredAmount.isZero()) {
-        const lenderIndex = await loan.loanIndexes(4, id);
-        expect(await loan.lenderPositions(signer.address, lenderIndex)).is.eq(id);
+      if (!lAfter.acquired.acquiredAmount.isZero()) {
+        const lenderIndex = await loan.loanIndexes(4, loanId);
+        expect(await loan.lenderPositions(lenderAddress, lenderIndex)).is.eq(loanId);
       }
     }
   }
@@ -261,13 +272,27 @@ export class LoanTestUtils {
     const aBalanceBefore = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
     const lastBidId = await LoanUtils.lastAuctionBidId(loanId, loan);
     const bid = await loan.auctionBids(lastBidId);
+    const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, bid.lender);
 
     await LoanUtils.acceptAuctionBid(loanId, signer, loan);
 
     const aBalanceAfter = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
     expect(aBalanceAfter.sub(aBalanceBefore).toString()).is.eq(bid.amount);
-    // todo other chacks
+
+    expect(await loan.lenderOpenBids(bid.lender, loanId)).is.eq(0);
+    expect((await loan.auctionBids(lastBidId)).open).is.false;
+
+    await LoanTestUtils.checkExecution(loanId, bid.amount.toString(), bid.lender, loan, cBalanceBefore);
   }
 
+  public static async getBidIdAndCheck(loanId: number, lenderAddress: string, loan: TetuLoans){
+    const bidIndex = await loan.lenderOpenBids(lenderAddress, loanId);
+    expect(bidIndex).is.not.eq(0);
+    const bidId = await loan.loanToBidIds(loanId, bidIndex.sub(1));
+    expect(bidId).is.not.eq(0);
+    const bid = await loan.auctionBids(bidId);
+    expect(bid.lender).is.eq(lenderAddress);
+    return bidId;
+  }
 
 }

@@ -187,6 +187,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   }
 
   function acceptAuctionBid(uint256 loanId) external onlyAllowedUsers nonReentrant {
+    require(lastAuctionBidTs[loanId] + AUCTION_DURATION < block.timestamp, "TL: Auction not ended");
     require(loanToBidIds[loanId].length > 0, "TL: No bids");
     uint256 bidId = loanToBidIds[loanId][loanToBidIds[loanId].length - 1];
 
@@ -197,9 +198,9 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
 
     Loan storage loan = loans[loanId];
     require(loan.borrower == msg.sender, "TL: Not borrower");
-    require(lastAuctionBidTs[loanId] + AUCTION_DURATION < block.timestamp, "TL: Auction not ended");
 
-    _executeBid(loan, _bid.amount, address(this), msg.sender);
+    loan.acquired.acquiredAmount = _bid.amount;
+    _executeBid(loan, _bid.amount, address(this), _bid.lender);
     lenderOpenBids[_bid.lender][loan.id] = 0;
     _bid.open = false;
     console.log("ACCEPT: bid id", bidId);

@@ -9,7 +9,6 @@ import {MockNFT, TetuLoans} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
-import {LoanUtils} from "./LoanUtils";
 import {TokenUtils} from "../TokenUtils";
 import {LoanTestUtils} from "./LoanTestUtils";
 
@@ -150,7 +149,7 @@ describe("Tetu loans base tests", function () {
     await LoanTestUtils.redeemAndCheck(id, user1, loan);
   });
 
-  it("open auction", async () => {
+  it("start auction and claim", async () => {
 
     const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
@@ -169,19 +168,8 @@ describe("Tetu loans base tests", function () {
 
     await LoanTestUtils.bidAndCheck(id, '556', user3, loan);
 
-    const bidIndex2 = await loan.lenderOpenBids(user2.address, id);
-    expect(bidIndex2).is.not.eq(0);
-    const bidId2 = await loan.loanToBidIds(id, bidIndex2.sub(1));
-    expect(bidId2).is.not.eq(0);
-    const bid2 = await loan.auctionBids(bidId2);
-    expect(bid2.lender).is.eq(user2.address);
-
-    const bidIndex3 = await loan.lenderOpenBids(user3.address, id);
-    expect(bidIndex3).is.not.eq(0);
-    const bidId3 = await loan.loanToBidIds(id, bidIndex3.sub(1));
-    expect(bidId3).is.not.eq(0);
-    const bid3 = await loan.auctionBids(bidId3);
-    expect(bid3.lender).is.eq(user3.address);
+    const bidId2 = await LoanTestUtils.getBidIdAndCheck(id, user2.address, loan);
+    const bidId3 = await LoanTestUtils.getBidIdAndCheck(id, user3.address, loan);
 
     await expect(loan.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TL: Auction is not ended");
 
@@ -191,7 +179,9 @@ describe("Tetu loans base tests", function () {
 
     await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
 
+    await TimeUtils.advanceNBlocks(2);
 
+    await LoanTestUtils.claimAndCheck(id, user3, loan);
   });
 
   // ! ** NFT **************
