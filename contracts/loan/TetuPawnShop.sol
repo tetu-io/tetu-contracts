@@ -32,7 +32,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   using SafeMath for uint256;
   using ArrayLib for uint256[];
 
-  /// @dev Tetu Controller address require for governance actions
+  /// @dev Tetu Controller address requires for governance actions
   constructor(address _controller) {
     Controllable.initializeControllable(_controller);
   }
@@ -44,9 +44,9 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   string public constant VERSION = "1.1.0";
   /// @dev Denominator for any internal computation with low precision
   uint256 constant public DENOMINATOR = 10000;
-  /// @dev Governance can't set fee more that this value
+  /// @dev Governance can't set fee more than this value
   uint256 constant public PLATFORM_FEE_MAX = 500; // 5%
-  /// @dev Standard auction duration. Refresh when a new bid placed
+  /// @dev Standard auction duration that refresh when a new bid placed
   uint256 constant public AUCTION_DURATION = 1 days;
 
   // ---- CHANGEABLE VARIABLES
@@ -66,19 +66,18 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   uint256 public positionCounter = 1;
   /// @dev PosId => Position. Hold all positions. Any record should not be removed
   mapping(uint256 => Position) public positions;
-  /// @dev Hold open positions. Removed when position closed
-  uint256[] public positionsList;
-  /// @dev Collateral token => PosIds
-  mapping(address => uint256[]) public positionsByCollateral;
-  /// @dev Acquired token => PosIds
-  mapping(address => uint256[]) public positionsByAcquired;
-  /// @dev Borrower token => PosIds
-  mapping(address => uint256[]) public borrowerPositions;
-  /// @dev Lender token => PosIds
-  mapping(address => uint256[]) public lenderPositions;
-  /// @dev index type => PosId => index
-  ///      Hold array positions for given type of array
-  mapping(IndexType => mapping(uint256 => uint256)) public posIndexes;
+  /// @inheritdoc ITetuPawnShop
+  uint256[] public override positionsList;
+  /// @inheritdoc ITetuPawnShop
+  mapping(address => uint256[]) public override positionsByCollateral;
+  /// @inheritdoc ITetuPawnShop
+  mapping(address => uint256[]) public override positionsByAcquired;
+  /// @inheritdoc ITetuPawnShop
+  mapping(address => uint256[]) public override borrowerPositions;
+  /// @inheritdoc ITetuPawnShop
+  mapping(address => uint256[]) public override lenderPositions;
+  /// @inheritdoc ITetuPawnShop
+  mapping(IndexType => mapping(uint256 => uint256)) public override posIndexes;
 
   // ---- AUCTION
 
@@ -86,22 +85,16 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   uint256 public auctionBidCounter = 1;
   /// @dev BidId => Bid. Hold all bids. Any record should not be removed
   mapping(uint256 => AuctionBid) public auctionBids;
-  /// @dev lender => PosId => positionToBidIds + 1
-  ///      Lender auction position for given PosId. 0 keep for empty position
-  mapping(address => mapping(uint256 => uint256)) public lenderOpenBids;
-  /// @dev PosId => bidIds. All open and close bids for the given position
-  mapping(uint256 => uint256[]) public positionToBidIds;
-  /// @dev PosId => timestamp. Timestamp of the last bid for the auction
-  mapping(uint256 => uint256) public lastAuctionBidTs;
-
-  // ---- DEPOSIT
-
-  mapping(uint256 => mapping(address => uint256)) public userDeposits;
+  /// @inheritdoc ITetuPawnShop
+  mapping(address => mapping(uint256 => uint256)) public override lenderOpenBids;
+  /// @inheritdoc ITetuPawnShop
+  mapping(uint256 => uint256[]) public override positionToBidIds;
+  /// @inheritdoc ITetuPawnShop
+  mapping(uint256 => uint256) public override lastAuctionBidTs;
 
   // ************* USER ACTIONS *************
 
-  /// @dev Borrower action. Assume approve
-  ///      Open a position with multiple options - loan / instant deal / auction
+  /// @inheritdoc ITetuPawnShop
   function openPosition(
     address _collateralToken,
     uint256 _collateralAmount,
@@ -110,7 +103,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     uint256 _acquiredAmount,
     uint256 _posDurationBlocks,
     uint256 _posFee
-  ) external onlyAllowedUsers nonReentrant returns (uint256){
+  ) external onlyAllowedUsers nonReentrant override returns (uint256){
     require(_posFee <= DENOMINATOR * 10, "TL: Pos fee absurdly high");
     require(_posDurationBlocks != 0 || _posFee == 0, "TL: Fee for instant deal forbidden");
     require(_collateralAmount == 0 || _collateralTokenId == 0, "TL: Wrong amounts");
@@ -179,9 +172,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     return pos.id;
   }
 
-  /// @dev Borrower action
-  ///      Close not executed position. Return collateral and deposit to borrower
-  function closePosition(uint256 id) external onlyAllowedUsers nonReentrant {
+  /// @inheritdoc ITetuPawnShop
+  function closePosition(uint256 id) external onlyAllowedUsers nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TL: Wrong ID");
     require(pos.borrower == msg.sender, "TL: Only borrower can close a position");
@@ -197,10 +189,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     emit PositionClosed(id);
   }
 
-  /// @dev Lender action. Assume approve for acquired token
-  ///      Place a bid for given position ID
-  ///      It can be an auction bid if acquired amount is zero
-  function bid(uint256 id, uint256 amount) external onlyAllowedUsers nonReentrant {
+  /// @inheritdoc ITetuPawnShop
+  function bid(uint256 id, uint256 amount) external onlyAllowedUsers nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TL: Wrong ID");
     require(pos.open, "TL: Position closed");
@@ -213,10 +203,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     }
   }
 
-  /// @dev Lender action
-  ///      Transfer collateral to lender if borrower didn't return the loan
-  ///      Deposit will be returned to borrower
-  function claim(uint256 id) external onlyAllowedUsers nonReentrant {
+  /// @inheritdoc ITetuPawnShop
+  function claim(uint256 id) external onlyAllowedUsers nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TL: Wrong ID");
     require(pos.execution.lender == msg.sender, "TL: Only lender can claim");
@@ -230,9 +218,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     emit PositionClaimed(id);
   }
 
-  /// @dev Borrower action. Assume approve on acquired token
-  ///      Return the loan to lender, transfer collateral and deposit to borrower
-  function redeem(uint256 id) external onlyAllowedUsers nonReentrant {
+  /// @inheritdoc ITetuPawnShop
+  function redeem(uint256 id) external onlyAllowedUsers nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TL: Wrong ID");
     require(pos.borrower == msg.sender, "TL: Only borrower can redeem");
@@ -247,9 +234,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     emit PositionRedeemed(id);
   }
 
-  /// @dev Borrower action. Assume that auction ended.
-  ///      Transfer acquired token to borrower
-  function acceptAuctionBid(uint256 posId) external onlyAllowedUsers nonReentrant {
+  /// @inheritdoc ITetuPawnShop
+  function acceptAuctionBid(uint256 posId) external onlyAllowedUsers nonReentrant override {
     require(lastAuctionBidTs[posId] + AUCTION_DURATION < block.timestamp, "TL: Auction not ended");
     require(positionToBidIds[posId].length > 0, "TL: No bids");
     uint256 bidId = positionToBidIds[posId][positionToBidIds[posId].length - 1];
@@ -270,9 +256,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     emit AuctionBidAccepted(posId, _bid.id);
   }
 
-  /// @dev Lender action. Requires ended auction, or not the last bid
-  ///      Close auction bid and transfer acquired tokens to lender
-  function closeAuctionBid(uint256 bidId) external onlyAllowedUsers nonReentrant {
+  /// @inheritdoc ITetuPawnShop
+  function closeAuctionBid(uint256 bidId) external onlyAllowedUsers nonReentrant override {
     AuctionBid storage _bid = auctionBids[bidId];
     require(_bid.id != 0, "TL: Auction bid not found");
     Position storage pos = positions[_bid.posId];
@@ -437,15 +422,15 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
   // ************* VIEWS **************************
 
-  /// @dev Return amount required for redeem position
-  function toRedeem(uint256 id) public view returns (uint256){
+  /// @inheritdoc ITetuPawnShop
+  function toRedeem(uint256 id) public view override returns (uint256){
     Position memory pos = positions[id];
     return pos.acquired.acquiredAmount +
     (pos.acquired.acquiredAmount * pos.info.posFee / DENOMINATOR);
   }
 
-  /// @dev Return asset type ERC20 or ERC721
-  function getAssetType(address _token) public view returns (AssetType){
+  /// @inheritdoc ITetuPawnShop
+  function getAssetType(address _token) public view override returns (AssetType){
     if (isERC721(_token)) {
       return AssetType.ERC721;
     } else if (isERC20(_token)) {
@@ -456,7 +441,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   }
 
   //noinspection NoReturn
-  function isERC721(address _token) public view returns (bool) {
+  function isERC721(address _token) public view override returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
     try IERC721(_token).supportsInterface{gas : 30000}(type(IERC721).interfaceId) returns (bool result){
       return result;
@@ -466,7 +451,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   }
 
   //noinspection NoReturn
-  function isERC20(address _token) public view returns (bool) {
+  function isERC20(address _token) public view override returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
     try IERC20(_token).totalSupply{gas : 30000}() returns (uint256){
       return true;
@@ -475,32 +460,41 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     }
   }
 
-  /// @dev Return size of active positions
-  function positionsListSize() external view returns (uint256) {
+  /// @inheritdoc ITetuPawnShop
+  function positionsListSize() external view override returns (uint256) {
     return positionsList.length;
   }
 
-  /// @dev Return size of all auction bids for given position
-  function auctionBidSize(uint256 posId) external view returns (uint256) {
+  /// @inheritdoc ITetuPawnShop
+  function auctionBidSize(uint256 posId) external view override returns (uint256) {
     return positionToBidIds[posId].length;
+  }
+
+  /// @inheritdoc ITetuPawnShop
+  function getPosition(uint256 posId) external view override returns (Position memory) {
+    return positions[posId];
+  }
+
+  /// @inheritdoc ITetuPawnShop
+  function getAuctionBid(uint256 bidId) external view override returns (AuctionBid memory) {
+    return auctionBids[bidId];
   }
 
   // ************* GOVERNANCE ACTIONS *************
 
-  /// @dev Platform fee in range 0 - 500, with denominator 10000
-  function setPlatformFee(uint256 _value) external onlyControllerOrGovernance {
+  /// @inheritdoc ITetuPawnShop
+  function setPlatformFee(uint256 _value) external onlyControllerOrGovernance override {
     require(_value <= PLATFORM_FEE_MAX, "TL: Too high fee");
     platformFee = _value;
   }
 
-  /// @dev Tokens amount that need to deposit for open position
-  ///      Will be returned when position closed
-  function setPositionDepositAmount(uint256 _value) external onlyControllerOrGovernance {
+  /// @inheritdoc ITetuPawnShop
+  function setPositionDepositAmount(uint256 _value) external onlyControllerOrGovernance override {
     positionDepositAmount = _value;
   }
 
-  /// @dev Tokens that need to deposit for open position
-  function setPositionDepositToken(address _value) external onlyControllerOrGovernance {
+  /// @inheritdoc ITetuPawnShop
+  function setPositionDepositToken(address _value) external onlyControllerOrGovernance override {
     positionDepositToken = _value;
   }
 }

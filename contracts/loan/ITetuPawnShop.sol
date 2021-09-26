@@ -12,6 +12,8 @@
 
 pragma solidity 0.8.4;
 
+/// @title Interface for Tetu PawnShop contract
+/// @author belbix
 interface ITetuPawnShop {
 
   event PositionOpened(uint256 posId);
@@ -82,4 +84,109 @@ interface ITetuPawnShop {
     bool open;
   }
 
+  // ****************** VIEWS ****************************
+
+  /// @notice Return Position for given id
+  /// @dev AbiEncoder not able to auto generate functions for mapping with structs
+  function getPosition(uint256 posId) external view returns (Position memory);
+
+  /// @dev Hold open positions ids. Removed when position closed
+  function positionsList(uint256 index) external view returns (uint256 posId);
+
+  /// @dev Collateral token => PosIds
+  function positionsByCollateral(address collateralToken, uint256 index) external view returns (uint256 posId);
+
+  /// @dev Acquired token => PosIds
+  function positionsByAcquired(address acquiredToken, uint256 index) external view returns (uint256 posId);
+
+  /// @dev Borrower token => PosIds
+  function borrowerPositions(address borrower, uint256 index) external view returns (uint256 posId);
+
+  /// @dev Lender token => PosIds
+  function lenderPositions(address lender, uint256 index) external view returns (uint256 posId);
+
+  /// @dev index type => PosId => index
+  ///      Hold array positions for given type of array
+  function posIndexes(IndexType typeId, uint256 posId) external view returns (uint256 index);
+
+  /// @notice Return auction bid for given id
+  /// @dev AbiEncoder not able to auto generate functions for mapping with structs
+  function getAuctionBid(uint256 bidId) external view returns (AuctionBid memory);
+
+  /// @dev lender => PosId => positionToBidIds + 1
+  ///      Lender auction position for given PosId. 0 keep for empty position
+  function lenderOpenBids(address lender, uint256 posId) external view returns (uint256 index);
+
+  /// @dev PosId => bidIds. All open and close bids for the given position
+  function positionToBidIds(uint256 posId, uint256 index) external view returns (uint256 bidId);
+
+  /// @dev PosId => timestamp. Timestamp of the last bid for the auction
+  function lastAuctionBidTs(uint256 posId) external view returns (uint256 ts);
+
+  /// @dev Return amount required for redeem position
+  function toRedeem(uint256 posId) external view returns (uint256 amount);
+
+  /// @dev Return asset type ERC20 or ERC721
+  function getAssetType(address _token) external view returns (AssetType);
+
+  function isERC721(address _token) external view returns (bool);
+
+  function isERC20(address _token) external view returns (bool);
+
+  /// @dev Return size of active positions
+  function positionsListSize() external view returns (uint256);
+
+  /// @dev Return size of all auction bids for given position
+  function auctionBidSize(uint256 posId) external view returns (uint256);
+
+  // ************* USER ACTIONS *************
+
+  /// @dev Borrower action. Assume approve
+  ///      Open a position with multiple options - loan / instant deal / auction
+  function openPosition(
+    address _collateralToken,
+    uint256 _collateralAmount,
+    uint256 _collateralTokenId,
+    address _acquiredToken,
+    uint256 _acquiredAmount,
+    uint256 _posDurationBlocks,
+    uint256 _posFee
+  ) external returns (uint256);
+
+  /// @dev Borrower action
+  ///      Close not executed position. Return collateral and deposit to borrower
+  function closePosition(uint256 id) external;
+
+  /// @dev Lender action. Assume approve for acquired token
+  ///      Place a bid for given position ID
+  ///      It can be an auction bid if acquired amount is zero
+  function bid(uint256 id, uint256 amount) external;
+
+  /// @dev Lender action
+  ///      Transfer collateral to lender if borrower didn't return the loan
+  ///      Deposit will be returned to borrower
+  function claim(uint256 id) external;
+
+  /// @dev Borrower action. Assume approve on acquired token
+  ///      Return the loan to lender, transfer collateral and deposit to borrower
+  function redeem(uint256 id) external;
+
+  /// @dev Borrower action. Assume that auction ended.
+  ///      Transfer acquired token to borrower
+  function acceptAuctionBid(uint256 posId) external;
+
+  /// @dev Lender action. Requires ended auction, or not the last bid
+  ///      Close auction bid and transfer acquired tokens to lender
+  function closeAuctionBid(uint256 bidId) external;
+
+
+  /// @dev Platform fee in range 0 - 500, with denominator 10000
+  function setPlatformFee(uint256 _value) external;
+
+  /// @dev Tokens amount that need to deposit for a new position
+  ///      Will be returned when position closed
+  function setPositionDepositAmount(uint256 _value) external;
+
+  /// @dev Tokens that need to deposit for a new position
+  function setPositionDepositToken(address _value) external;
 }
