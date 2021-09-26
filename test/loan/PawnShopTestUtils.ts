@@ -132,25 +132,29 @@ export class PawnShopTestUtils {
   }
 
   public static async closeAndCheck(id: number, signer: SignerWithAddress, shop: TetuPawnShop): Promise<void> {
-    const loanListLength = (await shop.positionsListSize()).toNumber();
-    const lastLoanId = (await shop.positionsList(loanListLength - 1)).toNumber();
+    const posListLength = (await shop.positionsListSize()).toNumber();
+    const lastLoanId = (await shop.positionsList(posListLength - 1)).toNumber();
     const lastLoanListIndex = (await shop.posIndexes(0, lastLoanId)).toNumber();
-    expect(lastLoanListIndex).is.eq(loanListLength - 1);
+    expect(lastLoanListIndex).is.eq(posListLength - 1);
 
-    const l = await shop.positions(id);
-    const loanListIndex = (await shop.posIndexes(0, l.id)).toNumber();
-    // const dec = await Erc20Utils.decimals(l.collateral.collateralToken);
-    const bal = (await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address));
+    const pos = await shop.positions(id);
+    const loanListIndex = (await shop.posIndexes(0, pos.id)).toString();
+    const bal = (await TokenUtils.balanceOf(pos.collateral.collateralToken, signer.address));
 
     await PawnShopUtils.closePosition(id, signer, shop);
 
-    const balAfter = (await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address));
-    expect(bal.add(l.collateral.collateralAmount).toString()).is.eq(balAfter.toString());
+    const posAfter = await shop.positions(id);
 
-    const lastLoanListIndexAfter = (await shop.posIndexes(0, lastLoanId)).toNumber();
-    const loanListIndexAfter = (await shop.posIndexes(0, l.id)).toString();
+    const balAfter = (await TokenUtils.balanceOf(pos.collateral.collateralToken, signer.address));
+    expect(bal.add(pos.collateral.collateralAmount).toString()).is.eq(balAfter.toString());
+
+    const lastLoanListIndexAfter = (await shop.posIndexes(0, lastLoanId)).toString();
+    const loanListIndexAfter = (await shop.posIndexes(0, pos.id)).toString();
     expect(loanListIndexAfter).is.eq(PawnShopUtils.MAX_UINT);
-    expect(lastLoanListIndexAfter).is.eq(loanListIndex);
+    if(posListLength > 1) {
+      expect(lastLoanListIndexAfter).is.eq(loanListIndex);
+    }
+    expect(posAfter.open).is.false;
   }
 
   public static async bidAndCheck(loanId: number, amount: string, signer: SignerWithAddress, shop: TetuPawnShop) {

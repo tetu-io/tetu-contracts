@@ -14,6 +14,15 @@ pragma solidity 0.8.4;
 
 interface ITetuPawnShop {
 
+  event PositionOpened(uint256 posId);
+  event PositionClosed(uint256 posId);
+  event BidExecuted(uint256 posId, address lender, uint256 amount);
+  event AuctionBidOpened(uint256 posId, uint256 bidId);
+  event PositionClaimed(uint256 posId);
+  event PositionRedeemed(uint256 posId);
+  event AuctionBidAccepted(uint256 posId, uint256 bidId);
+  event AuctionBidClosed(uint256 posId, uint256 bidId);
+
   enum AssetType {
     ERC20, // 0
     ERC721 // 1
@@ -32,6 +41,7 @@ interface ITetuPawnShop {
     address borrower;
     address depositToken;
     uint256 depositAmount;
+    bool open;
     PositionInfo info;
     PositionCollateral collateral;
     PositionAcquired acquired;

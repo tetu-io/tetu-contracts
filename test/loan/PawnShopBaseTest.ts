@@ -234,16 +234,6 @@ describe("Tetu pawnshop base tests", function () {
 
     await PawnShopTestUtils.closeAndCheck(id, user1, shop);
 
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
-
-    await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
-
-    await TimeUtils.advanceNBlocks(2);
-
-    await PawnShopTestUtils.claimAndCheck(id, user3, shop);
-
-    await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
-
     await PawnShopTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, shop)
   });
 

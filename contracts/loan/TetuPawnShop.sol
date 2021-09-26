@@ -24,8 +24,6 @@ import "./ITetuPawnShop.sol";
 import "../base/interface/IFeeRewardForwarder.sol";
 import "../base/ArrayLib.sol";
 
-import "hardhat/console.sol";
-
 /// @title Contract for handling deals between two parties
 /// @author belbix
 contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnShop {
@@ -41,6 +39,9 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
   // ---- CONSTANTS
 
+  /// @notice Version of the contract
+  /// @dev Should be incremented when contract changed
+  string public constant VERSION = "1.1.0";
   /// @dev Denominator for any internal computation with low precision
   uint256 constant public DENOMINATOR = 10000;
   /// @dev Governance can't set fee more that this value
@@ -99,7 +100,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
   // ************* USER ACTIONS *************
 
-  /// @dev Assume approve
+  /// @dev Borrower action. Assume approve
   ///      Open a position with multiple options - loan / instant deal / auction
   function openPosition(
     address _collateralToken,
@@ -149,6 +150,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
         msg.sender, // borrower
         positionDepositToken,
         positionDepositAmount,
+        true, // open
         info,
         collateral,
         acquired,
@@ -173,20 +175,26 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
     _takeDeposit(pos.id);
     _transferCollateral(pos.collateral, msg.sender, address(this));
+    emit PositionOpened(pos.id);
     return pos.id;
   }
 
-  /// @dev Close not executed position. Return collateral and deposit to borrower
+  /// @dev Borrower action
+  ///      Close not executed position. Return collateral and deposit to borrower
   function closePosition(uint256 id) external onlyAllowedUsers nonReentrant {
-    Position memory pos = positions[id];
+    Position storage pos = positions[id];
     require(pos.id == id, "TL: Wrong ID");
     require(pos.borrower == msg.sender, "TL: Only borrower can close a position");
     require(pos.execution.lender == address(0), "TL: Can't close executed position");
+    require(pos.open, "TL: Position closed");
+
     _removePosFromIndexes(pos);
     borrowerPositions[pos.borrower].removeIndexed(posIndexes[IndexType.BORROWER_POSITION], pos.id);
 
     _transferCollateral(pos.collateral, address(this), pos.borrower);
     _returnDeposit(id);
+    pos.open = false;
+    emit PositionClosed(id);
   }
 
   /// @dev Lender action. Assume approve for acquired token
@@ -195,6 +203,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   function bid(uint256 id, uint256 amount) external onlyAllowedUsers nonReentrant {
     Position storage pos = positions[id];
     require(pos.id == id, "TL: Wrong ID");
+    require(pos.open, "TL: Position closed");
     require(pos.execution.lender == address(0), "TL: Can't bid executed position");
     if (pos.acquired.acquiredAmount != 0) {
       require(amount == pos.acquired.acquiredAmount, "TL: Wrong bid amount");
@@ -217,6 +226,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     _endPosition(pos);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
+    pos.open = false;
+    emit PositionClaimed(id);
   }
 
   /// @dev Borrower action. Assume approve on acquired token
@@ -232,6 +243,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, pos.execution.lender, toSend);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
+    pos.open = false;
+    emit PositionRedeemed(id);
   }
 
   /// @dev Borrower action. Assume that auction ended.
@@ -248,13 +261,13 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
     Position storage pos = positions[posId];
     require(pos.borrower == msg.sender, "TL: Not borrower");
+    require(pos.open, "TL: Position closed");
 
     pos.acquired.acquiredAmount = _bid.amount;
     _executeBid(pos, _bid.amount, address(this), _bid.lender);
     lenderOpenBids[_bid.lender][pos.id] = 0;
     _bid.open = false;
-    console.log("ACCEPT: bid id", bidId);
-    console.log("ACCEPT: bid amount", _bid.amount);
+    emit AuctionBidAccepted(posId, _bid.id);
   }
 
   /// @dev Lender action. Requires ended auction, or not the last bid
@@ -270,13 +283,12 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
       uint256 lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
       isLastBid = lastBidId == bidId;
     }
-
-    require((isLastBid && isAuctionEnded) || !isLastBid, "TL: Auction is not ended");
+    require((isLastBid && isAuctionEnded) || !isLastBid || !pos.open, "TL: Auction is not ended");
 
     lenderOpenBids[_bid.lender][pos.id] = 0;
     _bid.open = false;
     IERC20(pos.acquired.acquiredToken).safeTransfer(msg.sender, _bid.amount);
-    console.log("CLOSE: bidId", bidId);
+    emit AuctionBidClosed(pos.id, bidId);
   }
 
   // ************* INTERNAL FUNCTIONS *************
@@ -325,10 +337,10 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
     // instant buy
     if (pos.info.posDurationBlocks == 0) {
-      console.log("INSTANT BUY");
       _transferCollateral(pos.collateral, address(this), lender);
       _endPosition(pos);
     }
+    emit BidExecuted(pos.id, lender, amount);
   }
 
   /// @dev Open an auction bid
@@ -362,6 +374,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     lastAuctionBidTs[pos.id] = block.timestamp;
     auctionBids[_bid.id] = _bid;
     auctionBidCounter++;
+    emit AuctionBidOpened(pos.id, _bid.id);
   }
 
   /// @dev Finalize position. Remove position from indexes
@@ -378,14 +391,12 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   /// @dev Transfer collateral from sender to recipient
   function _transferCollateral(PositionCollateral memory _collateral, address _sender, address _recipient) internal {
     if (_collateral.collateralType == AssetType.ERC20) {
-      console.log("TRANSFER: ERC20 token", _collateral.collateralToken, _collateral.collateralAmount);
       if (_sender == address(this)) {
         IERC20(_collateral.collateralToken).safeTransfer(_recipient, _collateral.collateralAmount);
       } else {
         IERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
       }
     } else if (_collateral.collateralType == AssetType.ERC721) {
-      console.log("TRANSFER: ERC721 token", _collateral.collateralToken, _collateral.collateralTokenId);
       IERC721(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralTokenId);
     } else {
       revert("TL: Wrong asset type");
@@ -402,8 +413,6 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(controller()).feeRewardForwarder());
     address targetToken = IController(controller()).rewardToken();
 
-    console.log("---FEE: amount", amount);
-
     IERC20(token).safeTransferFrom(from, address(this), amount);
     IERC20(token).safeApprove(address(forwarder), 0);
     IERC20(token).safeApprove(address(forwarder), amount);
@@ -412,12 +421,9 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     // should have gas limitation for not breaking the main logic
     try forwarder.liquidate{gas : 2_000_000}(token, targetToken, amount) returns (uint256 amountOut) {
       // send to controller
-      console.log("---FEE: bought back", amountOut);
-      console.log("---FEE: balance", IERC20(targetToken).balanceOf(address(this)));
       IERC20(targetToken).safeTransfer(controller(), amountOut);
     } catch {
       // it will be manually handled in the controller
-      console.log("---FEE: fail: ", amount);
       IERC20(token).safeTransfer(controller(), amount);
     }
   }
