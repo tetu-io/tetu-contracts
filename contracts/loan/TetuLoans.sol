@@ -24,6 +24,7 @@ import "../base/governance/Controllable.sol";
 import "hardhat/console.sol";
 import "./ITetuLoans.sol";
 import "./TetuLoansLib.sol";
+import "../base/interface/IFeeRewardForwarder.sol";
 
 contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   using SafeERC20 for IERC20;
@@ -41,6 +42,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   uint256 constant public AUCTION_DURATION = 1 days;
 
   uint256 public platformFee = 10; // 1% by default
+
   uint256 public loansCounter = 1;
   mapping(uint256 => Loan) public loans;
   uint256[] public loansList;
@@ -76,7 +78,6 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     require(borrowerPositions[msg.sender].length <= MAX_POSITIONS_PER_USER, "TL: Too many positions");
     require(_loanFee <= DENOMINATOR * 10, "TL: Loan fee absurdly high");
     require(_loanDurationBlocks != 0 || _loanFee == 0, "TL: Fee for instant deal forbidden");
-    require(_loanDurationBlocks != 0 || _acquiredAmount != 0, "TL: aAmount for instant deal required");
     require(_collateralAmount == 0 || _collateralTokenId == 0, "TL: Wrong amounts");
     require(_collateralToken != address(0), "TL: Zero cToken");
     require(_acquiredToken != address(0), "TL: Zero aToken");
@@ -254,6 +255,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
 
     // instant buy
     if (loan.info.loanDurationBlocks == 0) {
+      console.log("INSTANT BUY");
       _transferCollateral(loan.collateral, address(this), lender);
       _endPosition(loan);
     }
@@ -319,8 +321,31 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   }
 
   function _transferFee(address token, address from, uint256 amount) internal {
-    // todo liquidator
-    IERC20(token).safeTransferFrom(from, controller(), amount);
+    // little deals can have zero fees
+    if (amount == 0) {
+      return;
+    }
+    IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(controller()).feeRewardForwarder());
+    address targetToken = IController(controller()).rewardToken();
+
+    console.log("---FEE: amount", amount);
+
+    IERC20(token).safeTransferFrom(from, address(this), amount);
+    IERC20(token).safeApprove(address(forwarder), 0);
+    IERC20(token).safeApprove(address(forwarder), amount);
+
+    // try to buy target token and if no luck send it to controller
+    // should have gas limitation for not breaking the main logic
+    try forwarder.liquidate{gas : 2_000_000}(token, targetToken, amount) returns (uint256 amountOut) {
+      // send to controller
+      console.log("---FEE: bought back", amountOut);
+      console.log("---FEE: balance", IERC20(targetToken).balanceOf(address(this)));
+      IERC20(targetToken).safeTransfer(controller(), amountOut);
+    } catch {
+      // it will be manually handled in the controller
+      console.log("---FEE: fail: ", amount);
+      IERC20(token).safeTransfer(controller(), amount);
+    }
   }
 
   function _removeLoanFromIndexes(Loan memory _loan) internal {

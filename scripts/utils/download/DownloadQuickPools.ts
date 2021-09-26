@@ -94,6 +94,7 @@ async function downloadQuick() {
     const currentTime = Math.floor(Date.now() / 1000);
 
     if (finish < currentTime) {
+      console.log('reward finished', token0Name, token1Name);
       durationDays = 0
       notifiedAmountUsd = 0;
     }

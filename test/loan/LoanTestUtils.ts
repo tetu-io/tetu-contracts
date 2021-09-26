@@ -194,8 +194,8 @@ export class LoanTestUtils {
     }
 
 
-    // instant buy
-    if (lAfter.info.loanDurationBlocks.isZero()) {
+    // instant buy and not auction bid
+    if (lAfter.info.loanDurationBlocks.isZero() && !lAfter.acquired.acquiredAmount.isZero()) {
       const cBalanceAfter = await TokenUtils.balanceOf(lAfter.collateral.collateralToken, lenderAddress);
       if (lAfter.collateral.collateralType === 0) {
         expect(cBalanceAfter.sub(cBalanceBefore).toString()).is.eq(lAfter.collateral.collateralAmount);

@@ -11,6 +11,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {LoanTestUtils} from "./LoanTestUtils";
+import {MintHelperUtils} from "../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -37,16 +38,35 @@ describe("Tetu loans base tests", function () {
     loan = await DeployerUtils.deployContract(signer, 'TetuLoans', core.controller.address) as TetuLoans;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
 
+
+    await core.feeRewardForwarder.setConversionPath(
+        [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
+        [MaticAddresses.QUICK_ROUTER]
+    );
+
     await nft.mint(user1.address);
     await nft.mint(user1.address);
     await nft.mint(user2.address);
 
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
-    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
-    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
-    await UniswapUtils.buyToken(user3, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
-    await UniswapUtils.buyToken(user3, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+    await UniswapUtils.buyToken(user3, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
+    await UniswapUtils.buyToken(user3, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+    await MintHelperUtils.mint(core.controller, core.announcer, '100', signer.address)
+    return await UniswapUtils.addLiquidity(
+        signer,
+        core.rewardToken.address,
+        MaticAddresses.USDC_TOKEN,
+        utils.parseUnits('50', 18).toString(),
+        utils.parseUnits('255', 6).toString(),
+        MaticAddresses.QUICK_FACTORY,
+        MaticAddresses.QUICK_ROUTER
+    );
   });
 
   after(async function () {
@@ -99,12 +119,12 @@ describe("Tetu loans base tests", function () {
   it("bid on position with instant execution", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
-    const acquiredAmount = '555';
+    const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
         loan,
         collateralToken,
-        '10',
+        utils.parseUnits('10').toString(),
         acquiredAmount,
         0,
         0
@@ -116,7 +136,7 @@ describe("Tetu loans base tests", function () {
   it("bid on position and claim", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
-    const acquiredAmount = '555';
+    const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
         loan,
@@ -135,7 +155,7 @@ describe("Tetu loans base tests", function () {
   it("open position and redeem", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
-    const acquiredAmount = '555';
+    const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
         user1,
         loan,
@@ -184,10 +204,54 @@ describe("Tetu loans base tests", function () {
     await LoanTestUtils.claimAndCheck(id, user3, loan);
   });
 
+  it("start auction and redeem", async () => {
+
+    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+        user1,
+        loan,
+        MaticAddresses.WMATIC_TOKEN,
+        '10',
+        '0',
+        1,
+        0
+    );
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await LoanTestUtils.bidAndCheck(id, '555', user2, loan);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
+
+    await LoanTestUtils.redeemAndCheck(id, user1, loan);
+  });
+
+  it("start auction with instant deal", async () => {
+
+    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+        user1,
+        loan,
+        MaticAddresses.WMATIC_TOKEN,
+        '10',
+        '0',
+        0,
+        0
+    );
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await LoanTestUtils.bidAndCheck(id, '555', user2, loan);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
+  });
+
   // ! ** NFT **************
 
   it("NFT bid on position with instant execution", async () => {
-    const acquiredAmount = '555';
+    const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await LoanTestUtils.openNftForUsdcAndCheck(
         user1,
         loan,
@@ -202,7 +266,7 @@ describe("Tetu loans base tests", function () {
   });
 
   it("NFT bid on position and claim", async () => {
-    const acquiredAmount = '555';
+    const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await LoanTestUtils.openNftForUsdcAndCheck(
         user1,
         loan,
@@ -219,7 +283,7 @@ describe("Tetu loans base tests", function () {
   });
 
   it("NFT open position and redeem", async () => {
-    const acquiredAmount = '555';
+    const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await LoanTestUtils.openNftForUsdcAndCheck(
         user1,
         loan,

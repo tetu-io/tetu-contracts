@@ -4,7 +4,7 @@ import {DeployerUtils} from "../deploy/DeployerUtils";
 export class Web3Utils {
 
 
-  public static async parseLogs(contracts: string[], topics: string[], start: number, end: number, step = 10_000) {
+  public static async parseLogs(contracts: string[], topics: string[], start: number, end: number, step = 3_000) {
     const logs = [];
 
     console.log('parseLogs', start, end);
