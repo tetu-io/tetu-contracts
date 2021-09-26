@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-interface ITetuLoans {
+interface ITetuPawnShop {
 
   enum AssetType {
     ERC20, // 0
@@ -27,46 +27,46 @@ interface ITetuLoans {
     LENDER_POSITION // 4
   }
 
-  struct Loan {
+  struct Position {
     uint256 id;
     address borrower;
     address depositToken;
     uint256 depositAmount;
-    LoanInfo info;
-    LoanCollateral collateral;
-    LoanAcquired acquired;
-    LoanExecution execution;
+    PositionInfo info;
+    PositionCollateral collateral;
+    PositionAcquired acquired;
+    PositionExecution execution;
   }
 
-  struct LoanInfo {
-    uint256 loanDurationBlocks;
-    uint256 loanFee;
+  struct PositionInfo {
+    uint256 posDurationBlocks;
+    uint256 posFee;
     uint256 createdBlock;
     uint256 createdTs;
   }
 
-  struct LoanCollateral {
+  struct PositionCollateral {
     address collateralToken;
     AssetType collateralType;
     uint256 collateralAmount;
     uint256 collateralTokenId;
   }
 
-  struct LoanAcquired {
+  struct PositionAcquired {
     address acquiredToken;
     uint256 acquiredAmount;
   }
 
-  struct LoanExecution {
+  struct PositionExecution {
     address lender;
-    uint256 loanStartBlock;
-    uint256 loanStartTs;
-    uint256 loanEndTs;
+    uint256 posStartBlock;
+    uint256 posStartTs;
+    uint256 posEndTs;
   }
 
   struct AuctionBid {
     uint256 id;
-    uint256 loanId;
+    uint256 posId;
     address lender;
     uint256 amount;
     bool open;

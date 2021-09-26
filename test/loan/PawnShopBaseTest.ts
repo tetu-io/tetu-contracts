@@ -5,18 +5,18 @@ import {ethers} from "hardhat";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {MockNFT, TetuLoans} from "../../typechain";
+import {MockNFT, TetuPawnShop} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
-import {LoanTestUtils} from "./LoanTestUtils";
+import {PawnShopTestUtils} from "./PawnShopTestUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Tetu loans base tests", function () {
+describe("Tetu pawnshop base tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -24,7 +24,7 @@ describe("Tetu loans base tests", function () {
   let user2: SignerWithAddress;
   let user3: SignerWithAddress;
   let core: CoreContractsWrapper;
-  let loan: TetuLoans;
+  let shop: TetuPawnShop;
   let nft: MockNFT;
 
   before(async function () {
@@ -35,10 +35,10 @@ describe("Tetu loans base tests", function () {
     user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
 
-    loan = await DeployerUtils.deployContract(signer, 'TetuLoans', core.controller.address) as TetuLoans;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address) as TetuPawnShop;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
 
-    await loan.setPositionDepositToken(core.rewardToken.address);
+    await shop.setPositionDepositToken(core.rewardToken.address);
 
     await core.feeRewardForwarder.setConversionPath(
         [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
@@ -69,7 +69,7 @@ describe("Tetu loans base tests", function () {
         MaticAddresses.QUICK_FACTORY,
         MaticAddresses.QUICK_ROUTER
     );
-    await TokenUtils.approve(core.rewardToken.address, user1, loan.address, utils.parseUnits('10000').toString());
+    await TokenUtils.approve(core.rewardToken.address, user1, shop.address, utils.parseUnits('10000').toString());
   });
 
   after(async function () {
@@ -89,9 +89,9 @@ describe("Tetu loans base tests", function () {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     for (let i = 0; i < 3; i++) {
-      await LoanTestUtils.openErc20ForUsdcAndCheck(
+      await PawnShopTestUtils.openErc20ForUsdcAndCheck(
           user1,
-          loan,
+          shop,
           collateralToken,
           '10' + i,
           '555' + i,
@@ -100,7 +100,7 @@ describe("Tetu loans base tests", function () {
       );
 
       if (i !== 0 && i % 2 === 0) {
-        await LoanTestUtils.closeAndCheck(i - 1, user1, loan);
+        await PawnShopTestUtils.closeAndCheck(i - 1, user1, shop);
       }
     }
   });
@@ -109,9 +109,9 @@ describe("Tetu loans base tests", function () {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
-    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         collateralToken,
         utils.parseUnits('10').toString(),
         acquiredAmount,
@@ -119,16 +119,16 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan)
+    await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop)
   });
 
   it("bid on position and claim", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
-    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         collateralToken,
         '10',
         acquiredAmount,
@@ -136,33 +136,33 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
+    await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
     await TimeUtils.advanceNBlocks(2);
-    await LoanTestUtils.claimAndCheck(id, user2, loan);
+    await PawnShopTestUtils.claimAndCheck(id, user2, shop);
   });
 
   it("open position and redeem", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
-    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         collateralToken,
         '10',
         acquiredAmount,
         1,
         0
     );
-    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
-    await LoanTestUtils.redeemAndCheck(id, user1, loan);
+    await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
+    await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
   });
 
   it("start auction and claim", async () => {
 
-    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         MaticAddresses.WMATIC_TOKEN,
         '10',
         '0',
@@ -170,34 +170,34 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await LoanTestUtils.bidAndCheck(id, '555', user2, loan);
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
 
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, user3, loan.address, '555');
-    await expect(loan.connect(user3).bid(id, '555')).rejectedWith('TL: New bid lower than previous');
+    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, user3, shop.address, '555');
+    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TL: New bid lower than previous');
 
-    await LoanTestUtils.bidAndCheck(id, '556', user3, loan);
+    await PawnShopTestUtils.bidAndCheck(id, '556', user3, shop);
 
-    const bidId2 = await LoanTestUtils.getBidIdAndCheck(id, user2.address, loan);
-    const bidId3 = await LoanTestUtils.getBidIdAndCheck(id, user3.address, loan);
+    const bidId2 = await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop);
+    const bidId3 = await PawnShopTestUtils.getBidIdAndCheck(id, user3.address, shop);
 
-    await expect(loan.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TL: Auction is not ended");
+    await expect(shop.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TL: Auction is not ended");
 
-    await LoanTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, loan)
+    await PawnShopTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, shop)
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
 
-    await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
+    await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
 
     await TimeUtils.advanceNBlocks(2);
 
-    await LoanTestUtils.claimAndCheck(id, user3, loan);
+    await PawnShopTestUtils.claimAndCheck(id, user3, shop);
   });
 
   it("start auction and redeem", async () => {
 
-    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         MaticAddresses.WMATIC_TOKEN,
         '10',
         '0',
@@ -207,20 +207,51 @@ describe("Tetu loans base tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
 
-    await LoanTestUtils.bidAndCheck(id, '555', user2, loan);
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
 
-    await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
+    await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
 
-    await LoanTestUtils.redeemAndCheck(id, user1, loan);
+    await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
+  });
+
+  it("start auction and close", async () => {
+
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+        user1,
+        shop,
+        MaticAddresses.WMATIC_TOKEN,
+        '10',
+        '0',
+        1,
+        0
+    );
+
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
+
+    const bidId2 = await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop);
+
+    await PawnShopTestUtils.closeAndCheck(id, user1, shop);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
+
+    await TimeUtils.advanceNBlocks(2);
+
+    await PawnShopTestUtils.claimAndCheck(id, user3, shop);
+
+    await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
+
+    await PawnShopTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, shop)
   });
 
   it("start auction with instant deal", async () => {
 
-    const id = await LoanTestUtils.openErc20ForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         MaticAddresses.WMATIC_TOKEN,
         '10',
         '0',
@@ -230,20 +261,20 @@ describe("Tetu loans base tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
 
-    await LoanTestUtils.bidAndCheck(id, '555', user2, loan);
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
 
-    await LoanTestUtils.acceptAuctionBidAndCheck(id, user1, loan);
+    await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
   });
 
   // ! ** NFT **************
 
   it("NFT bid on position with instant execution", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
-    const id = await LoanTestUtils.openNftForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         nft.address,
         '1',
         acquiredAmount,
@@ -251,14 +282,14 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan)
+    await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop)
   });
 
   it("NFT bid on position and claim", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
-    const id = await LoanTestUtils.openNftForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         nft.address,
         '1',
         acquiredAmount,
@@ -266,24 +297,24 @@ describe("Tetu loans base tests", function () {
         0
     );
 
-    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
+    await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
     await TimeUtils.advanceNBlocks(2);
-    await LoanTestUtils.claimAndCheck(id, user2, loan);
+    await PawnShopTestUtils.claimAndCheck(id, user2, shop);
   });
 
   it("NFT open position and redeem", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
-    const id = await LoanTestUtils.openNftForUsdcAndCheck(
+    const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
         user1,
-        loan,
+        shop,
         nft.address,
         '1',
         acquiredAmount,
         1,
         0
     );
-    await LoanTestUtils.bidAndCheck(id, acquiredAmount, user2, loan);
-    await LoanTestUtils.redeemAndCheck(id, user1, loan);
+    await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
+    await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
   });
 
 });
