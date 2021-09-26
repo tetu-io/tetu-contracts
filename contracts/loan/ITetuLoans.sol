@@ -30,11 +30,12 @@ interface ITetuLoans {
   struct Loan {
     uint256 id;
     address borrower;
+    address depositToken;
+    uint256 depositAmount;
     LoanInfo info;
     LoanCollateral collateral;
     LoanAcquired acquired;
     LoanExecution execution;
-    //    LoanIndex index;
   }
 
   struct LoanInfo {

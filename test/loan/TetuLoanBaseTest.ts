@@ -38,6 +38,7 @@ describe("Tetu loans base tests", function () {
     loan = await DeployerUtils.deployContract(signer, 'TetuLoans', core.controller.address) as TetuLoans;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
 
+    await loan.setPositionDepositToken(core.rewardToken.address);
 
     await core.feeRewardForwarder.setConversionPath(
         [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
@@ -48,6 +49,7 @@ describe("Tetu loans base tests", function () {
     await nft.mint(user1.address);
     await nft.mint(user2.address);
 
+    await MintHelperUtils.mint(core.controller, core.announcer, '100000', user1.address);
     await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
     await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
     await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
@@ -57,8 +59,8 @@ describe("Tetu loans base tests", function () {
 
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
-    await MintHelperUtils.mint(core.controller, core.announcer, '100', signer.address)
-    return await UniswapUtils.addLiquidity(
+    await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address)
+    await UniswapUtils.addLiquidity(
         signer,
         core.rewardToken.address,
         MaticAddresses.USDC_TOKEN,
@@ -67,6 +69,7 @@ describe("Tetu loans base tests", function () {
         MaticAddresses.QUICK_FACTORY,
         MaticAddresses.QUICK_ROUTER
     );
+    await TokenUtils.approve(core.rewardToken.address, user1, loan.address, utils.parseUnits('10000').toString());
   });
 
   after(async function () {
@@ -82,12 +85,10 @@ describe("Tetu loans base tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("open max positions with closes", async () => {
+  it("open multiple positions with close", async () => {
     const collateralToken = MaticAddresses.WMATIC_TOKEN;
 
-    const max = (await loan.MAX_POSITIONS_PER_USER()).toNumber();
-    console.log('max position: ' + max);
-    for (let i = 0; i < max + 5; i++) {
+    for (let i = 0; i < 3; i++) {
       await LoanTestUtils.openErc20ForUsdcAndCheck(
           user1,
           loan,
@@ -98,22 +99,10 @@ describe("Tetu loans base tests", function () {
           10 + i
       );
 
-      if (i !== 0 && i % 3 === 0) {
-        await LoanTestUtils.closeAndCheck(i - 2, user1, loan);
+      if (i !== 0 && i % 2 === 0) {
+        await LoanTestUtils.closeAndCheck(i - 1, user1, loan);
       }
     }
-
-    await TokenUtils.approve(collateralToken, user1, loan.address, '10');
-    await expect(loan.connect(user1).openPosition(
-        collateralToken,
-        '10',
-        0,
-        MaticAddresses.USDC_TOKEN,
-        '55',
-        99,
-        100
-    )).rejectedWith('TL: Too many positions');
-
   });
 
   it("bid on position with instant execution", async () => {

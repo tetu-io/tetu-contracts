@@ -36,36 +36,68 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     Controllable.initializeControllable(_controller);
   }
 
-  uint256 constant public MAX_POSITIONS_PER_USER = 10;
+  // ---- CONSTANTS
+
+  /// @dev Denominator for any internal computation with low precision
   uint256 constant public DENOMINATOR = 10000;
+  /// @dev Governance can't set fee more that this value
   uint256 constant public PLATFORM_FEE_MAX = 500; // 5%
+  /// @dev Standard auction duration. Refresh when a new bid placed
   uint256 constant public AUCTION_DURATION = 1 days;
 
-  uint256 public platformFee = 10; // 1% by default
+  // ---- CHANGEABLE VARIABLES
 
+  /// @dev 1% by default, percent of acquired tokens that will be used for buybacks
+  uint256 public platformFee = 10;
+  /// @dev Amount of tokens for open position. Protection against spam
+  ///      1000 TETU by default
+  uint256 public positionDepositAmount = 1000 * 1e18;
+  /// @dev Token for antispam protection. TETU assumed
+  ///      Zero address means no protection
+  address public positionDepositToken;
+
+  // ---- LOANS
+
+  /// @dev LoanId counter. Should start from 1 for keep 0 as empty value
   uint256 public loansCounter = 1;
+  /// @dev LoanId => Loan. Hold all loans. Any record should not be removed
   mapping(uint256 => Loan) public loans;
+  /// @dev Hold open positions. Removed when position closed
   uint256[] public loansList;
+  /// @dev Collateral token => loanIDs
   mapping(address => uint256[]) public loansByCollateral;
+  /// @dev Acquired token => loanIDs
   mapping(address => uint256[]) public loansByAcquired;
+  /// @dev Borrower token => loanIDs
   mapping(address => uint256[]) public borrowerPositions;
+  /// @dev Lender token => loanIDs
   mapping(address => uint256[]) public lenderPositions;
   /// @dev index type => ID => index
+  ///      Hold array positions for given type of array
   mapping(IndexType => mapping(uint256 => uint256)) public loanIndexes;
 
+  // ---- AUCTION
+
+  /// @dev BidId counter. Should start from 1 for keep 0 as empty value
   uint256 public auctionBidCounter = 1;
-  /// @dev bidId => Bid
+  /// @dev BidId => Bid. Hold all bids. Any record should not be removed
   mapping(uint256 => AuctionBid) public auctionBids;
   /// @dev lender => loanId => loanToBidIdsIndex + 1
+  ///      Lender auction position for given LoanId. 0 keep for empty position
   mapping(address => mapping(uint256 => uint256)) public lenderOpenBids;
-  /// @dev loanId => bidIds
+  /// @dev loanId => bidIds. All open and close bids for the given position
   mapping(uint256 => uint256[]) public loanToBidIds;
-  /// @dev loanId => timestamp
+  /// @dev loanId => timestamp. Timestamp of the last bid for the auction
   mapping(uint256 => uint256) public lastAuctionBidTs;
+
+  // ---- DEPOSIT
+
+  mapping(uint256 => mapping(address => uint256)) public userDeposits;
 
   // ************* USER ACTIONS *************
 
-  // assume approve
+  /// @dev Assume approve
+  ///      Open a position with multiple options - loan / instant deal / auction
   function openPosition(
     address _collateralToken,
     uint256 _collateralAmount,
@@ -75,7 +107,6 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     uint256 _loanDurationBlocks,
     uint256 _loanFee
   ) external onlyAllowedUsers nonReentrant returns (uint256){
-    require(borrowerPositions[msg.sender].length <= MAX_POSITIONS_PER_USER, "TL: Too many positions");
     require(_loanFee <= DENOMINATOR * 10, "TL: Loan fee absurdly high");
     require(_loanDurationBlocks != 0 || _loanFee == 0, "TL: Fee for instant deal forbidden");
     require(_collateralAmount == 0 || _collateralTokenId == 0, "TL: Wrong amounts");
@@ -113,6 +144,8 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
       loan = Loan(
         loansCounter, // id
         msg.sender, // borrower
+        positionDepositToken,
+        positionDepositAmount,
         info,
         collateral,
         acquired,
@@ -135,6 +168,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     loans[loan.id] = loan;
     loansCounter++;
 
+    _takeDeposit(loan.id);
     _transferCollateral(loan.collateral, msg.sender, address(this));
     return loan.id;
   }
@@ -148,6 +182,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     borrowerPositions[loan.borrower].removeIndexed(loanIndexes[IndexType.BORROWER_POSITION], loan.id);
 
     _transferCollateral(loan.collateral, address(this), loan.borrower);
+    _returnDeposit(id);
   }
 
   // assume approve
@@ -172,6 +207,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
 
     _endPosition(loan);
     _transferCollateral(loan.collateral, address(this), msg.sender);
+    _returnDeposit(id);
   }
 
   // assume approve
@@ -185,6 +221,7 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
     uint256 toSend = toRedeem(id);
     IERC20(loan.acquired.acquiredToken).safeTransferFrom(msg.sender, loan.execution.lender, toSend);
     _transferCollateral(loan.collateral, address(this), msg.sender);
+    _returnDeposit(id);
   }
 
   function acceptAuctionBid(uint256 loanId) external onlyAllowedUsers nonReentrant {
@@ -229,6 +266,20 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
   }
 
   // ************* INTERNAL FUNCTIONS *************
+
+  function _takeDeposit(uint256 loanId) internal {
+    Loan storage loan = loans[loanId];
+    if (loan.depositToken != address(0)) {
+      IERC20(loan.depositToken).safeTransferFrom(loan.borrower, address(this), loan.depositAmount);
+    }
+  }
+
+  function _returnDeposit(uint256 loanId) internal {
+    Loan storage loan = loans[loanId];
+    if (loan.depositToken != address(0)) {
+      IERC20(loan.depositToken).safeTransfer(loan.borrower, loan.depositAmount);
+    }
+  }
 
   function _executeBid(
     Loan storage loan,
@@ -398,5 +449,24 @@ contract TetuLoans is ERC721Holder, Controllable, ReentrancyGuard, ITetuLoans {
 
   function auctionBidSize(uint256 loanId) external view returns (uint256) {
     return loanToBidIds[loanId].length;
+  }
+
+  // ************* GOVERNANCE ACTIONS *************
+
+  /// @dev Platform fee in range 0 - 500, with denominator 10000
+  function setPlatformFee(uint256 _value) external onlyControllerOrGovernance {
+    require(_value <= PLATFORM_FEE_MAX, "TL: Too high fee");
+    platformFee = _value;
+  }
+
+  /// @dev Tokens amount that need to deposit for open position
+  ///      Will be returned when position closed
+  function setPositionDepositAmount(uint256 _value) external onlyControllerOrGovernance {
+    positionDepositAmount = _value;
+  }
+
+  /// @dev Tokens that need to deposit for open position
+  function setPositionDepositToken(address _value) external onlyControllerOrGovernance {
+    positionDepositToken = _value;
   }
 }
