@@ -15,7 +15,7 @@ import {
   TetuProxyGov
 } from "../../typechain";
 import {MintHelperUtils} from "../MintHelperUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
@@ -93,7 +93,7 @@ describe("contract reader tests", function () {
 
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address);
     const rt = MaticAddresses.USDC_TOKEN;
-    const rtDecimals = await Erc20Utils.decimals(rt);
+    const rtDecimals = await TokenUtils.decimals(rt);
 
     await UniswapUtils.swapExactTokensForTokens(
         signer,
@@ -107,7 +107,7 @@ describe("contract reader tests", function () {
     const rewardAmount = utils.parseUnits("1000", rtDecimals).toString();
     console.log('rewardAmount', rewardAmount.toString());
     await core.vaultController.addRewardTokens([core.psVault.address], rt);
-    await Erc20Utils.approve(rt, signer, core.psVault.address, rewardAmount);
+    await TokenUtils.approve(rt, signer, core.psVault.address, rewardAmount);
     await core.psVault.notifyTargetRewardAmount(rt, rewardAmount);
 
     await deposit("30123", core.rewardToken.address, core.psVault, signer);
@@ -127,7 +127,7 @@ describe("contract reader tests", function () {
     const tvlUsd = await contractReader.vaultTvlUsdc(core.psVault.address);
     const tvlUsdFormatted = +utils.formatUnits(tvlUsd);
     console.log('tvlUsd', tvlUsd.toString(), tvlUsdFormatted);
-    const rtBalanceUsd = await Erc20Utils.balanceOf(rt, core.psVault.address);
+    const rtBalanceUsd = await TokenUtils.balanceOf(rt, core.psVault.address);
     const rtBalanceUsdFormatted = +utils.formatUnits(rtBalanceUsd, rtDecimals);
     console.log('rtBalanceUsd', rtBalanceUsd.toString(), rtBalanceUsdFormatted);
     const periodFinish = await core.psVault.periodFinishForToken(rt);
@@ -285,8 +285,8 @@ describe("contract reader tests", function () {
     await core.vaultController.addRewardTokens([vault.address], rt);
 
     // ********** INIT VARS **************
-    const rtDecimals = await Erc20Utils.decimals(rt);
-    const underlyingDec = await Erc20Utils.decimals(underlying);
+    const rtDecimals = await TokenUtils.decimals(rt);
+    const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
     const rewardsTotalAmount = utils.parseUnits('100', rtDecimals).toString();
     const user1Deposit = utils.parseUnits('10000', underlyingDec);
@@ -298,9 +298,9 @@ describe("contract reader tests", function () {
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('1000000'));
 
-    await Erc20Utils.approve(rt, signer, vault.address, rewardsTotalAmount);
+    await TokenUtils.approve(rt, signer, vault.address, rewardsTotalAmount);
     await vault.notifyTargetRewardAmount(rt, rewardsTotalAmount);
-    await Erc20Utils.transfer(underlying, signer, user1.address, user1Deposit.toString());
+    await TokenUtils.transfer(underlying, signer, user1.address, user1Deposit.toString());
 
     await VaultUtils.deposit(user1, vault, user1Deposit);
 
@@ -320,7 +320,7 @@ describe("contract reader tests", function () {
 
     await vault.connect(user1).getAllRewards();
 
-    const rewardClaimed = +utils.formatUnits(await Erc20Utils.balanceOf(rt, user1.address), rtDecimals);
+    const rewardClaimed = +utils.formatUnits(await TokenUtils.balanceOf(rt, user1.address), rtDecimals);
     console.log('rewardClaimed', rewardClaimed);
     expect(rewardClaimed).is.greaterThan(0);
 
@@ -361,12 +361,12 @@ async function allPpfs(vault: string, contractReader: ContractReader): Promise<n
 async function notifyPsPool(amount: string, token: string,
                             forwarder: FeeRewardForwarder, signer: SignerWithAddress) {
   const notify = utils.parseUnits(amount, 18);
-  await Erc20Utils.approve(token, signer, forwarder.address, notify.toString());
+  await TokenUtils.approve(token, signer, forwarder.address, notify.toString());
   await forwarder.notifyPsPool(token, notify)
 }
 
 async function deposit(amount: string, token: string, vault: SmartVault, signer: SignerWithAddress) {
   const deposit = utils.parseUnits(amount, 18);
-  await Erc20Utils.approve(token, signer, vault.address, deposit.toString());
+  await TokenUtils.approve(token, signer, vault.address, deposit.toString());
   await vault.depositAndInvest(deposit);
 }

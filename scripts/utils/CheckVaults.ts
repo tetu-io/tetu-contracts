@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Bookkeeper, ContractReader, IController, IStrategy, PriceCalculator} from "../../typechain";
-import {Erc20Utils} from "../../test/Erc20Utils";
+import {TokenUtils} from "../../test/TokenUtils";
 
 
 async function main() {
@@ -73,7 +73,7 @@ async function checkVaultFields(vaultAddress: string) {
   const vUnd = await vaultContract.underlying();
   const rewardTokens = await vaultContract.rewardTokens();
   const tetu = await controller.rewardToken();
-  const dec = await Erc20Utils.decimals(tetu);
+  const dec = await TokenUtils.decimals(tetu);
 
   console.log('vaultName', await cReader.vaultName(vaultAddress));
   console.log('vaultCreated', await cReader.vaultCreated(vaultAddress));

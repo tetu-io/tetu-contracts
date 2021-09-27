@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {IMiniChefV2, IOracleMatic, IRewarder, IUniswapV2Pair, SmartVault} from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {Addresses} from "../../../addresses";
@@ -84,8 +84,8 @@ async function downloadSushi() {
 
     const apr = ((allRewards / +tvlUsd) / 7) * 365 * 100;
 
-    const token0Name = await Erc20Utils.tokenSymbol(token0);
-    const token1Name = await Erc20Utils.tokenSymbol(token1);
+    const token0Name = await TokenUtils.tokenSymbol(token0);
+    const token1Name = await TokenUtils.tokenSymbol(token1);
     const data = i + ',' +
         'SUSHI_' + token0Name + '_' + token1Name + ',' +
         lp + ',' +
@@ -106,12 +106,12 @@ async function downloadSushi() {
     infos += data + '\n';
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/sushi_pools.csv', infos, 'utf8');
+  await writeFileSync('./tmp/download/sushi_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

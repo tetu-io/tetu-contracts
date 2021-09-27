@@ -7,7 +7,7 @@ import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {BigNumber, utils} from "ethers";
 import {MintHelperUtils} from "../../MintHelperUtils";
@@ -342,10 +342,10 @@ describe("Announcer tests", function () {
     const opCode = 11;
     const amount = 1000;
 
-    await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, core.controller.address, amount.toString());
+    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, core.controller.address, amount.toString());
 
-    const balUser = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balController = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
+    const balUser = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    const balController = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
 
     await announcer.announceTokenMove(opCode, signer.address, MaticAddresses.WMATIC_TOKEN, amount);
 
@@ -363,8 +363,8 @@ describe("Announcer tests", function () {
 
     await controller.controllerTokenMove(signer.address, MaticAddresses.WMATIC_TOKEN, amount);
 
-    const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balControllerAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
+    const balUserAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    const balControllerAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balControllerAfter).is.eq(balController.sub(amount));
@@ -375,10 +375,10 @@ describe("Announcer tests", function () {
     const amount = 1000;
     const contract = await core.psVault.strategy();
 
-    await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
+    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
 
-    const balUser = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balContract = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUser = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    const balContract = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
 
     await announcer.announceTokenMove(opCode, contract, MaticAddresses.WMATIC_TOKEN, amount);
 
@@ -396,8 +396,8 @@ describe("Announcer tests", function () {
 
     await controller.strategyTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount);
 
-    const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balContractAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUserAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    const balContractAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balContractAfter).is.eq(balContract.sub(amount));
@@ -451,10 +451,10 @@ describe("Announcer tests", function () {
     const amount = 1000;
     const contract = await core.fundKeeper.address;
 
-    await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
+    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
 
-    const balUser = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
-    const balContract = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUser = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
+    const balContract = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
 
     await announcer.announceTokenMove(opCode, contract, MaticAddresses.WMATIC_TOKEN, amount);
 
@@ -472,8 +472,8 @@ describe("Announcer tests", function () {
 
     await controller.fundKeeperTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount);
 
-    const balUserAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
-    const balContractAfter = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUserAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
+    const balContractAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balContractAfter).is.eq(balContract.sub(amount));
@@ -539,12 +539,12 @@ describe("Announcer tests", function () {
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000'));
     await core.vaultController.addRewardTokens([target], rt);
-    await Erc20Utils.approve(rt, signer, target, amount.toString());
+    await TokenUtils.approve(rt, signer, target, amount.toString());
     await core.psVault.notifyTargetRewardAmount(rt, amount);
     await VaultUtils.deposit(signer, core.psVault, BigNumber.from('10'));
 
-    expect(await Erc20Utils.balanceOf(rt, target)).is.not.equal(0);
-    expect(await Erc20Utils.balanceOf(rt, core.controller.address)).is.equal(0);
+    expect(await TokenUtils.balanceOf(rt, target)).is.not.equal(0);
+    expect(await TokenUtils.balanceOf(rt, core.controller.address)).is.equal(0);
 
     await announcer.announceVaultStopBatch([target]);
     const index = await announcer.multiTimeLockIndexes(opCode, target);
@@ -558,16 +558,16 @@ describe("Announcer tests", function () {
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
     await core.vaultController.stopVaultsBatch([target]);
     expect(await core.psVault.active()).is.eq(false);
-    expect(await Erc20Utils.balanceOf(rt, target)).is.equal(0);
-    expect(await Erc20Utils.balanceOf(rt, core.controller.address)).is.not.equal(0);
+    expect(await TokenUtils.balanceOf(rt, target)).is.equal(0);
+    expect(await TokenUtils.balanceOf(rt, core.controller.address)).is.not.equal(0);
     await core.psVault.exit();
   });
 
   it("should mint with time-lock", async () => {
     const opCode = 16;
-    const balanceSigner = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
-    const balanceNotifier = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
-    const balanceFund = await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
+    const balanceSigner = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
+    const balanceNotifier = await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    const balanceFund = await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
 
     const toMint = 10_000;
     await announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
@@ -592,13 +592,13 @@ describe("Announcer tests", function () {
     const forVaults = curNetAmount * 0.7;
     const forDev = curNetAmount * 0.3;
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
     .is.eq(balanceNotifier.add(forVaults));
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
     .is.eq(balanceFund.add(toMint - curNetAmount));
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .is.eq(balanceSigner.add(forDev));
   });
 
@@ -636,9 +636,9 @@ describe("Announcer tests", function () {
 
     // mint
     const toMint = 10_000;
-    let balanceSigner = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
-    let balanceNotifier = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
-    let balanceFund = await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
+    let balanceSigner = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
+    let balanceNotifier = await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    let balanceFund = await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
 
     await announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
     await announcer.announceAddressChange(opCodeGovChange, signer1.address);
@@ -663,13 +663,13 @@ describe("Announcer tests", function () {
     let forVaults = curNetAmount * 0.7;
     let forDev = curNetAmount * 0.3;
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
     .is.eq(balanceNotifier.add(forVaults));
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
     .is.eq(balanceFund.add(toMint - curNetAmount));
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .is.eq(balanceSigner.add(forDev));
 
     console.log('mint first completed');
@@ -702,9 +702,9 @@ describe("Announcer tests", function () {
 
 
     //mint 2
-    balanceSigner = await Erc20Utils.balanceOf(core.rewardToken.address, signer.address);
-    balanceNotifier = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
-    balanceFund = await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
+    balanceSigner = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
+    balanceNotifier = await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    balanceFund = await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
 
     const index = await announcer.timeLockIndexes(opCodeMint);
     expect(index).is.eq(3);
@@ -725,13 +725,13 @@ describe("Announcer tests", function () {
     forVaults = curNetAmount * 0.7;
     forDev = curNetAmount * 0.3;
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
     .is.eq(balanceNotifier.add(forVaults));
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
     .is.eq(balanceFund.add(toMint - curNetAmount));
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .is.eq(balanceSigner.add(forDev));
   });
 

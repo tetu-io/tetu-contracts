@@ -10,7 +10,7 @@ import {
 import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 import {BigNumber, utils} from "ethers";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 
 export class McLpDownloader {
@@ -103,8 +103,8 @@ export class McLpDownloader {
           const lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
           token0 = await lpContract.token0();
           token1 = await lpContract.token1();
-          token0Name = await Erc20Utils.tokenSymbol(token0);
-          token1Name = await Erc20Utils.tokenSymbol(token1);
+          token0Name = await TokenUtils.tokenSymbol(token0);
+          token1Name = await TokenUtils.tokenSymbol(token1);
         } catch (e) {
         }
 
@@ -135,11 +135,11 @@ export class McLpDownloader {
       }
     }
 
-    mkdir('./tmp', {recursive: true}, (err) => {
+    mkdir('./tmp/download', {recursive: true}, (err) => {
       if (err) throw err;
     });
 
-    await writeFileSync(`./tmp/${prefix.toLowerCase()}_pools.csv`, infos, 'utf8');
+    await writeFileSync(`./tmp/download/${prefix.toLowerCase()}_pools.csv`, infos, 'utf8');
     console.log('downloaded', prefix, counter);
   }
 

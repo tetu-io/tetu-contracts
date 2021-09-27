@@ -8,7 +8,7 @@ import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -46,18 +46,18 @@ describe("Fund Keeper tests", function () {
   });
 
   it("salvage tokens", async () => {
-    await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
+    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
 
     await core.announcer.announceTokenMove(13, core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000');
     await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
     await core.controller.fundKeeperTokenMove(core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000')
 
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address))
+    expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address))
     .is.eq('1000');
   });
 
   it("should not salvage more than balance", async () => {
-    await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
+    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
 
     const opCode = 13;
     const amount = 1001;

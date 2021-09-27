@@ -17,7 +17,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {Addresses} from "../../addresses";
 
 const {expect} = chai;
@@ -184,13 +184,13 @@ describe("Zap contract tests", function () {
   });
 
   it("salvage tokens", async () => {
-    const bal = await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
     const amount = utils.parseUnits('1');
-    await Erc20Utils.transfer(MaticAddresses.WMATIC_TOKEN, signer, zapContract.address, amount.toString());
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, zapContract.address)).is.eq(amount);
+    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, zapContract.address, amount.toString());
+    expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, zapContract.address)).is.eq(amount);
     await zapContract.salvage(MaticAddresses.WMATIC_TOKEN, amount);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, zapContract.address)).is.eq(0);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address)).is.eq(bal);
+    expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, zapContract.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address)).is.eq(bal);
   });
 
   it("should zap grtEthVault twice with eth", async () => {
@@ -390,9 +390,9 @@ async function zapIntoVaultWihSingleToken(
     amountRaw = '1000',
     slippage: number
 ) {
-  const tokenInDec = await Erc20Utils.decimals(tokenIn);
+  const tokenInDec = await TokenUtils.decimals(tokenIn);
   const amount = utils.parseUnits(amountRaw, tokenInDec);
-  expect(+utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec))
+  expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
   .is.greaterThanOrEqual(+utils.formatUnits(amount, tokenInDec));
 
 
@@ -414,12 +414,12 @@ async function zapIntoVaultWihSingleToken(
     const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();
-    console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+    console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
   }
   console.log('============')
 
 
-  await Erc20Utils.approve(tokenIn, signer, zapContract.address, amount.toString())
+  await TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString())
   await zapContract.zapInto(
       vault,
       tokenIn,
@@ -429,9 +429,9 @@ async function zapIntoVaultWihSingleToken(
       slippage
   );
 
-  expect(await Erc20Utils.balanceOf(vault, signer.address)).is.not.eq(0);
+  expect(await TokenUtils.balanceOf(vault, signer.address)).is.not.eq(0);
 
-  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec);
+  const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec);
   console.log('balance after ADD', balanceAfter);
 }
 
@@ -445,9 +445,9 @@ async function zapIntoVaultWithLp(
     amountRaw = '1000',
     slippage: number
 ) {
-  const tokenInDec = await Erc20Utils.decimals(tokenIn);
+  const tokenInDec = await TokenUtils.decimals(tokenIn);
   const amount = utils.parseUnits(amountRaw, tokenInDec);
-  expect(+utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec))
+  expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
   .is.greaterThanOrEqual(+utils.formatUnits(amount, tokenInDec));
 
 
@@ -471,7 +471,7 @@ async function zapIntoVaultWithLp(
       const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
       const t0 = await lpCtr.token0();
       const t1 = await lpCtr.token1();
-      console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+      console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
     }
     console.log('============')
 
@@ -479,7 +479,7 @@ async function zapIntoVaultWithLp(
     tokensOutLps.push(lps);
   }
 
-  await Erc20Utils.approve(tokenIn, signer, zapContract.address, amount.toString())
+  await TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString())
   await zapContract.zapIntoLp(
       vault,
       tokenIn,
@@ -492,9 +492,9 @@ async function zapIntoVaultWithLp(
   );
 
 
-  expect(await Erc20Utils.balanceOf(vault, signer.address)).is.not.eq(0);
+  expect(await TokenUtils.balanceOf(vault, signer.address)).is.not.eq(0);
 
-  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec);
+  const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec);
   console.log('balance after ADD', balanceAfter);
 }
 
@@ -508,8 +508,8 @@ async function zapOutVaultWithSingleToken(
     amountShare: string,
     slippage: number
 ) {
-  const tokenOutDec = await Erc20Utils.decimals(tokenOut);
-  const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tokenOut, signer.address), tokenOutDec)
+  const tokenOutDec = await TokenUtils.decimals(tokenOut);
+  const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec)
 
   const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
 
@@ -531,12 +531,12 @@ async function zapOutVaultWithSingleToken(
     const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();
-    console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+    console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
   }
   console.log('============');
 
 
-  await Erc20Utils.approve(vault, signer, zapContract.address, amountShare.toString())
+  await TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString())
   await zapContract.zapOut(
       vault,
       tokenOut,
@@ -546,7 +546,7 @@ async function zapOutVaultWithSingleToken(
       slippage
   );
 
-  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tokenOut, signer.address), tokenOutDec);
+  const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec);
   console.log('balance after REMOVE', balanceAfter);
   expect(balanceAfter).is.greaterThan(balanceBefore);
 }
@@ -561,8 +561,8 @@ async function zapOutVaultWithLp(
     amountShare: string,
     slippage: number
 ) {
-  const tokenOutDec = await Erc20Utils.decimals(tokenOut);
-  const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tokenOut, signer.address), tokenOutDec)
+  const tokenOutDec = await TokenUtils.decimals(tokenOut);
+  const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec)
 
   const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
 
@@ -583,14 +583,14 @@ async function zapOutVaultWithLp(
       const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
       const t0 = await lpCtr.token0();
       const t1 = await lpCtr.token1();
-      console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+      console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
     }
     console.log('============')
 
     assetsLpRoute.push(lps);
   }
 
-  await Erc20Utils.approve(vault, signer, zapContract.address, amountShare.toString())
+  await TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString())
   await zapContract.zapOutLp(
       vault,
       tokenOut,
@@ -602,7 +602,7 @@ async function zapOutVaultWithLp(
       slippage
   );
 
-  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tokenOut, signer.address), tokenOutDec);
+  const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec);
   console.log('balance after REMOVE', balanceAfter);
   expect(balanceAfter).is.greaterThan(balanceBefore);
 }
@@ -617,16 +617,16 @@ async function vaultSingleTest(
     amount: string,
     slippage: number
 ) {
-  const dec = await Erc20Utils.decimals(inputToken);
+  const dec = await TokenUtils.decimals(inputToken);
   const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
   const underlying = await vCtr.underlying();
 
-  const tokenInDec = await Erc20Utils.decimals(inputToken);
-  await Erc20Utils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
-      (await Erc20Utils.balanceOf(inputToken, signer.address))
+  const tokenInDec = await TokenUtils.decimals(inputToken);
+  await TokenUtils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
+      (await TokenUtils.balanceOf(inputToken, signer.address))
       .sub(utils.parseUnits(amount, tokenInDec)).toString());
 
-  const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(inputToken, signer.address), dec);
+  const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
 
   await zapIntoVaultWihSingleToken(
       signer,
@@ -639,15 +639,15 @@ async function vaultSingleTest(
       slippage
   );
 
-  expect(await Erc20Utils.balanceOf(inputToken, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, multiSwap.address)).is.eq(0);
 
   console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
 
-  const amountShare = await Erc20Utils.balanceOf(vaultAddress, signer.address);
+  const amountShare = await TokenUtils.balanceOf(vaultAddress, signer.address);
 
   await zapOutVaultWithSingleToken(
       signer,
@@ -660,13 +660,13 @@ async function vaultSingleTest(
       slippage
   );
 
-  expect(await Erc20Utils.balanceOf(inputToken, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, multiSwap.address)).is.eq(0);
 
-  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(inputToken, signer.address), dec);
+  const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
   console.log(balanceBefore, balanceAfter, balanceAfter * ((100 - slippage) / 100));
   expect(balanceAfter)
   .is.greaterThan(balanceBefore * ((100 - slippage) / 100));
@@ -682,7 +682,7 @@ async function vaultLpTest(
     amount: string,
     slippage: number
 ) {
-  const dec = await Erc20Utils.decimals(inputToken);
+  const dec = await TokenUtils.decimals(inputToken);
   const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
   const underlying = await vCtr.underlying();
 
@@ -691,12 +691,12 @@ async function vaultLpTest(
   const token0 = await lpCtr.token0();
   const token1 = await lpCtr.token1();
 
-  const tokenInDec = await Erc20Utils.decimals(inputToken);
-  await Erc20Utils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
-      (await Erc20Utils.balanceOf(inputToken, signer.address))
+  const tokenInDec = await TokenUtils.decimals(inputToken);
+  await TokenUtils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
+      (await TokenUtils.balanceOf(inputToken, signer.address))
       .sub(utils.parseUnits(amount, tokenInDec)).toString());
 
-  const balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(inputToken, signer.address), dec);
+  const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
 
   await zapIntoVaultWithLp(
       signer,
@@ -709,21 +709,21 @@ async function vaultLpTest(
       slippage
   );
 
-  expect(await Erc20Utils.balanceOf(inputToken, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(token0, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(token0, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token0, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token0, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(token1, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(token1, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token1, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token1, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, multiSwap.address)).is.eq(0);
 
   console.log('!!!!!!!!!!!!!!!!! OUT !!!!!!!!!!!!!!!!!!!!!!!')
 
-  const amountShare = await Erc20Utils.balanceOf(vaultAddress, signer.address);
+  const amountShare = await TokenUtils.balanceOf(vaultAddress, signer.address);
 
   await zapOutVaultWithLp(
       signer,
@@ -736,19 +736,19 @@ async function vaultLpTest(
       slippage
   );
 
-  expect(await Erc20Utils.balanceOf(inputToken, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(token0, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(token0, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token0, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token0, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(token1, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(token1, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token1, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(token1, multiSwap.address)).is.eq(0);
 
-  expect(await Erc20Utils.balanceOf(underlying, zapContract.address)).is.eq(0);
-  expect(await Erc20Utils.balanceOf(underlying, multiSwap.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, zapContract.address)).is.eq(0);
+  expect(await TokenUtils.balanceOf(underlying, multiSwap.address)).is.eq(0);
 
-  const balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(inputToken, signer.address), dec);
+  const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
   console.log(balanceBefore, balanceAfter, balanceAfter * ((100 - slippage) / 100));
   expect(balanceAfter)
   .is.greaterThan(balanceBefore * ((100 - slippage) / 100));

@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper} from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {utils} from "ethers";
 import {RunHelper} from "../RunHelper";
 import {VaultUtils} from "../../../test/VaultUtils";
@@ -32,9 +32,9 @@ async function main() {
       continue;
     }
 
-    const availableAmount = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), decimals);
+    const availableAmount = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), decimals);
     if (availableAmount === 0) {
-      console.error('zero balance', await Erc20Utils.tokenSymbol(underlying), underlying);
+      console.error('zero balance', await TokenUtils.tokenSymbol(underlying), underlying);
       continue;
     }
     console.log("availableAmount", availableAmount)

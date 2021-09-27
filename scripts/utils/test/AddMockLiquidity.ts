@@ -3,7 +3,7 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../../../test/UniswapUtils";
 import {RopstenAddresses} from "../../../test/RopstenAddresses";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {RunHelper} from "../RunHelper";
 
@@ -25,13 +25,13 @@ async function main() {
     if (mockName === 'sushi_lp_token_usdc') {
       continue;
     }
-    const decimals = await Erc20Utils.decimals(mock);
+    const decimals = await TokenUtils.decimals(mock);
 
     // const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", mock) as ERC20PresetMinterPauser;
     // await mockContract.mint(signer.address, utils.parseUnits("10000", decimals));
 
 
-    let mockBal = await Erc20Utils.balanceOf(mock, signer.address);
+    let mockBal = await TokenUtils.balanceOf(mock, signer.address);
     console.log("mockBal", mockName, utils.formatUnits(mockBal, decimals));
 
     const lp = await UniswapUtils.addLiquidity(
@@ -61,7 +61,7 @@ async function main() {
     }
 
     if (prevMock) {
-      const prevMockDecimals = await Erc20Utils.decimals(prevMock);
+      const prevMockDecimals = await TokenUtils.decimals(prevMock);
       const lp = await UniswapUtils.addLiquidity(
           signer,
           prevMock,
@@ -99,8 +99,8 @@ async function addLiquidityWithWait(
     _router: string
 ): Promise<string> {
   const router = await UniswapUtils.connectRouter(_router, sender);
-  await Erc20Utils.approve(tokenA, sender, router.address, amountA);
-  await Erc20Utils.approve(tokenB, sender, router.address, amountB);
+  await TokenUtils.approve(tokenA, sender, router.address, amountA);
+  await TokenUtils.approve(tokenB, sender, router.address, amountB);
   await RunHelper.runAndWait(() => router.addLiquidity(
       tokenA,
       tokenB,

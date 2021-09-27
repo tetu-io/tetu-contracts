@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { MaticAddresses } from "../../../../MaticAddresses";
 import { BigNumber, utils } from "ethers";
 import { ethers } from "hardhat";
-import { Erc20Utils } from "../../../../Erc20Utils";
+import { TokenUtils } from "../../../../TokenUtils";
 import { StrategyInfo } from "../../../StrategyInfo";
 import { TimeUtils } from "../../../../TimeUtils";
 import { StrategyTestUtils } from "../../../StrategyTestUtils";
@@ -17,14 +17,14 @@ export class CurveDoHardWorkLoop {
         const vaultForUser = strategyInfo.vault.connect(strategyInfo.user);
 
         const xTetu = (await vaultForUser.rewardTokens())[0];
-        const userUnderlyingBalance = await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
+        const userUnderlyingBalance = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
 
         console.log("User Underlying Balance to deposit", userUnderlyingBalance.toString());
         await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(userUnderlyingBalance));
 
-        const rewardBalanceBefore = await Erc20Utils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.user.address);
-        const vaultBalanceBefore = await Erc20Utils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.vault.address);
-        const psBalanceBefore = await Erc20Utils.balanceOf(strategyInfo.core.rewardToken.address, strategyInfo.core.psVault.address);
+        const rewardBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.user.address);
+        const vaultBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.vault.address);
+        const psBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.rewardToken.address, strategyInfo.core.psVault.address);
         const userEarnedTotalxTetu = await strategyInfo.core.bookkeeper.userEarned(strategyInfo.user.address, strategyInfo.vault.address, xTetu);
 
         let trader = (await ethers.getSigners())[2];
@@ -51,23 +51,23 @@ export class CurveDoHardWorkLoop {
         await StrategyTestUtils.checkStrategyRewardsBalance(strategyInfo.strategy, ['0', '0']);
 
         // check vault balance
-        const vaultBalanceAfter = await Erc20Utils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.vault.address);
+        const vaultBalanceAfter = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.vault.address);
         expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
 
         // check ps balance
-        const psBalanceAfter = await Erc20Utils.balanceOf(strategyInfo.core.rewardToken.address, strategyInfo.core.psVault.address);
+        const psBalanceAfter = await TokenUtils.balanceOf(strategyInfo.core.rewardToken.address, strategyInfo.core.psVault.address);
         expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
 
         // check reward for user
         await TimeUtils.advanceBlocksOnTs(sevenDays); // 1 week
         await vaultForUser.getAllRewards();
-        const rewardBalanceAfter = await Erc20Utils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.user.address);
+        const rewardBalanceAfter = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.user.address);
         expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString()).is.not.eq("0", "should have earned iToken rewards");
 
         // ************* EXIT ***************
         await strategyInfo.strategy.emergencyExit();
         await vaultForUser.exit();
-        const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
+        const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
         expect(userUnderlyingBalanceAfter).is.eq(userUnderlyingBalance, "should have all underlying");
 
         const userEarnedTotalAfterRt0 = await strategyInfo.core.bookkeeper.userEarned(strategyInfo.user.address, strategyInfo.vault.address, xTetu);

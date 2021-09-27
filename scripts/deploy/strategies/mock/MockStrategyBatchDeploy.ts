@@ -8,7 +8,7 @@ import {
   SmartVault, VaultController
 } from "../../../../typechain";
 import {utils} from "ethers";
-import {Erc20Utils} from "../../../../test/Erc20Utils";
+import {TokenUtils} from "../../../../test/TokenUtils";
 import {RunHelper} from "../../../utils/RunHelper";
 import {Settings} from "../../../../settings";
 import {RopstenAddresses} from "../../../../test/RopstenAddresses";
@@ -69,8 +69,8 @@ async function main() {
 
     underlyingByIdx.set(i, [underlying0, underlying1, underlying]);
 
-    const undName0 = await Erc20Utils.tokenSymbol(underlying0);
-    const undName1 = await Erc20Utils.tokenSymbol(underlying1);
+    const undName0 = await TokenUtils.tokenSymbol(underlying0);
+    const undName1 = await TokenUtils.tokenSymbol(underlying1);
     const vaultName: string = `MOCK_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
     const poolName: string = `NOOP_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
     const vaultRewardToken: string = core.psVault;
@@ -95,11 +95,11 @@ async function main() {
         poolReward
     ));
 
-    const poolRewardDecimals = await Erc20Utils.decimals(poolReward);
+    const poolRewardDecimals = await TokenUtils.decimals(poolReward);
 
     const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", poolReward) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() => mockContract.mint(signer.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals)));
-    await RunHelper.runAndWait(() => Erc20Utils.approve(poolReward, signer, pool.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()));
+    await RunHelper.runAndWait(() => TokenUtils.approve(poolReward, signer, pool.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()));
     await RunHelper.runAndWait(() => pool.notifyTargetRewardAmount(poolReward, utils.parseUnits(poolRewardAmountN, poolRewardDecimals)));
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(pool.address, noopStrategy.address));
@@ -132,16 +132,16 @@ async function main() {
     await RunHelper.runAndWait(() =>
         controller.addVaultAndStrategy(vault.address, strategy.address));
 
-    const vaultSecondRewardDec = await Erc20Utils.decimals(vaultSecondReward);
+    const vaultSecondRewardDec = await TokenUtils.decimals(vaultSecondReward);
     const mockContract2 = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", vaultSecondReward) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() => mockContract2.mint(signer.address, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)));
-    await RunHelper.runAndWait(() => Erc20Utils.approve(vaultSecondReward, signer, vault.address, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec).toString()));
+    await RunHelper.runAndWait(() => TokenUtils.approve(vaultSecondReward, signer, vault.address, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec).toString()));
     await RunHelper.runAndWait(() => vault.notifyTargetRewardAmount(vaultSecondReward, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)));
 
-    const vaultThirdRewardDec = await Erc20Utils.decimals(vaultThirdReward);
+    const vaultThirdRewardDec = await TokenUtils.decimals(vaultThirdReward);
     const mockContract3 = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", vaultThirdReward) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() => mockContract3.mint(signer.address, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)));
-    await RunHelper.runAndWait(() => Erc20Utils.approve(vaultThirdReward, signer, vault.address, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec).toString()));
+    await RunHelper.runAndWait(() => TokenUtils.approve(vaultThirdReward, signer, vault.address, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec).toString()));
     await RunHelper.runAndWait(() => vault.notifyTargetRewardAmount(vaultThirdReward, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)));
 
     datas.push([vaultLogic, vault, strategy, pool]);

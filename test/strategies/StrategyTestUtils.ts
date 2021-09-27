@@ -11,7 +11,7 @@ import {
   RewardToken,
   SmartVault
 } from "../../typechain";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
@@ -66,16 +66,16 @@ export class StrategyTestUtils {
 
     const rt0 = (await vaultForUser.rewardTokens())[0];
 
-    const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+    const userUnderlyingBalance = await TokenUtils.balanceOf(info.underlying, info.user.address);
 
-    const undDec = await Erc20Utils.decimals(info.underlying);
+    const undDec = await TokenUtils.decimals(info.underlying);
 
     console.log("deposit", deposit);
     await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
 
-    const rewardBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
-    const vaultBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.vault.address);
-    const psBalanceBefore = await Erc20Utils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+    const rewardBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
+    const vaultBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
+    const psBalanceBefore = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
     const userEarnedTotal = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
 
     // *********** TIME MACHINE GO BRRRRR***********
@@ -90,7 +90,7 @@ export class StrategyTestUtils {
       const rts = await info.strategy.rewardTokens();
       for (let i = 0; i < toClaim.length; i++) {
         const rt = rts[i];
-        const rtDec = await Erc20Utils.decimals(rt);
+        const rtDec = await TokenUtils.decimals(rt);
         const rtPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(rt));
         const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
         console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);
@@ -122,23 +122,23 @@ export class StrategyTestUtils {
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
 
     // check vault balance
-    const vaultBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.vault.address);
+    const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
     expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
 
     // check ps balance
-    const psBalanceAfter = await Erc20Utils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+    const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
     expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
 
     // check reward for user
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week
     await vaultForUser.getAllRewards();
-    const rewardBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
+    const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
     expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
     .is.not.eq("0", "should have earned iToken rewards");
 
     // ************* EXIT ***************
     await vaultForUser.exit();
-    const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+    const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
 
     if (await info.vault.ppfsDecreaseAllowed()) {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
@@ -162,7 +162,7 @@ export class StrategyTestUtils {
   public static async checkStrategyRewardsBalance(strategy: IStrategy, balances: string[]) {
     const tokens = await strategy.rewardTokens();
     for (let i = 0; i < tokens.length; i++) {
-      expect((await Erc20Utils.balanceOf(tokens[i], strategy.address)).toString())
+      expect((await TokenUtils.balanceOf(tokens[i], strategy.address)).toString())
       .is.eq(balances[i], 'strategy has wrong reward balance for ' + i);
     }
   }
@@ -185,19 +185,19 @@ export class StrategyTestUtils {
       underlying: string,
       deposit: string
   ) {
-    const dec = await Erc20Utils.decimals(underlying);
-    const bal = await Erc20Utils.balanceOf(underlying, user.address);
+    const dec = await TokenUtils.decimals(underlying);
+    const bal = await TokenUtils.balanceOf(underlying, user.address);
     console.log('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec))
     .is.greaterThanOrEqual(+utils.formatUnits(deposit, dec), 'not enough balance')
     const vaultForUser = vault.connect(user);
-    await Erc20Utils.approve(underlying, user, vault.address, deposit);
+    await TokenUtils.approve(underlying, user, vault.address, deposit);
     console.log('deposit', BigNumber.from(deposit).toString())
     await vaultForUser.depositAndInvest(BigNumber.from(deposit));
   }
 
   public static async checkEmergencyExit(info: StrategyInfo) {
-    const deposit = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+    const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
 
     await VaultUtils.deposit(info.user, info.vault, deposit);
 
@@ -222,14 +222,14 @@ export class StrategyTestUtils {
   ) {
     console.log('try withdraw')
     await vaultForUser.withdraw(BigNumber.from(deposit).div(2));
-    const undDec = await Erc20Utils.decimals(underlying);
-    const currentBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, userAddress), undDec);
+    const undDec = await TokenUtils.decimals(underlying);
+    const currentBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, userAddress), undDec);
     const expectedBal = +utils.formatUnits(userUnderlyingBalance.sub(BigNumber.from(deposit).div(2)), undDec);
     expect(currentBal)
     .is.approximately(expectedBal, expectedBal * 0.01, "should have a half of underlying");
     console.log('try exit')
     await vaultForUser.exit();
-    expect(await Erc20Utils.balanceOf(underlying, userAddress))
+    expect(await TokenUtils.balanceOf(underlying, userAddress))
     .is.eq(userUnderlyingBalance, "should have all underlying");
     console.log('user exited');
   }
@@ -238,7 +238,7 @@ export class StrategyTestUtils {
     const tokens = await strategy.rewardTokens();
     const balances: BigNumber[] = [];
     for (let i = 0; i < tokens.length; i++) {
-      balances.push(await Erc20Utils.balanceOf(tokens[i], rewardReceiver));
+      balances.push(await TokenUtils.balanceOf(tokens[i], rewardReceiver));
     }
     return balances;
   }
@@ -306,7 +306,7 @@ export class StrategyTestUtils {
 
     for (let i = 0; i < toClaim.length; i++) {
       const rt = rts[i];
-      const rtDec = await Erc20Utils.decimals(rt);
+      const rtDec = await TokenUtils.decimals(rt);
       const rtPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rt));
       const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
       console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);

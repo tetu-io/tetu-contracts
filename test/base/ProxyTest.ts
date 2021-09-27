@@ -11,7 +11,7 @@ import {VaultUtils} from "../VaultUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -157,7 +157,7 @@ describe("Proxy tests", function () {
 
     await vault.addRewardToken(core.psVault.address);
     await vault.addRewardToken(core.rewardToken.address);
-    await Erc20Utils.approve(core.rewardToken.address, signer, vault.address, utils.parseUnits("100").toString());
+    await TokenUtils.approve(core.rewardToken.address, signer, vault.address, utils.parseUnits("100").toString());
     await vault.notifyTargetRewardAmount(
         core.rewardToken.address,
         utils.parseUnits("100")

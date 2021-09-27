@@ -8,7 +8,7 @@ import {
   PriceCalculator,
   SmartVault
 } from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import axios from "axios";
@@ -80,8 +80,8 @@ async function downloadWault() {
       const lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
       token0 = await lpContract.token0();
       token1 = await lpContract.token1();
-      token0Name = await Erc20Utils.tokenSymbol(token0);
-      token1Name = await Erc20Utils.tokenSymbol(token1);
+      token0Name = await TokenUtils.tokenSymbol(token0);
+      token1Name = await TokenUtils.tokenSymbol(token1);
     } catch (e) {
     }
 
@@ -108,12 +108,12 @@ async function downloadWault() {
     infos += data + '\n';
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/wault_pools.csv', infos, 'utf8');
+  await writeFileSync('./tmp/download/wault_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

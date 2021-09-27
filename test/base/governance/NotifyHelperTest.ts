@@ -6,7 +6,7 @@ import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {BigNumber, utils} from "ethers";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
@@ -87,12 +87,12 @@ describe("Notify Helper test", () => {
     }
 
     // await Erc20Utils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, sum.toString());
-    const tokenBal = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    const tokenBal = await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
     console.log("rtBalance", utils.formatUnits(tokenBal, 18));
     await core.notifyHelper.notifyVaults(amounts, vaults, sum, core.rewardToken.address);
 
     for (let vault of vaults) {
-      expect(await Erc20Utils.balanceOf(core.psVault.address, vault)).is.eq(utils.parseUnits("1", 18).toString());
+      expect(await TokenUtils.balanceOf(core.psVault.address, vault)).is.eq(utils.parseUnits("1", 18).toString());
     }
 
   });
@@ -122,10 +122,10 @@ describe("Notify Helper test", () => {
     await core.notifyHelper.setDXTetu(dxTETU);
 
     const amount = utils.parseUnits("1", 18);
-    const tokenBal = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    const tokenBal = await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
     console.log("rtBalance", utils.formatUnits(tokenBal, 18));
     await core.notifyHelper.notifyVaults([amount], [dxTETU], amount, core.rewardToken.address);
-    expect(await Erc20Utils.balanceOf(dxTETU, dxTETU)).is.eq(utils.parseUnits("1", 18).toString());
+    expect(await TokenUtils.balanceOf(dxTETU, dxTETU)).is.eq(utils.parseUnits("1", 18).toString());
 
   });
 
@@ -147,27 +147,27 @@ describe("Notify Helper test", () => {
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER,
         MaticAddresses.WMATIC_TOKEN, utils.parseUnits("10000", 18));
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits("1000", 18));
-    expect(+utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), 6))
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), 6))
     .is.greaterThanOrEqual(1000);
 
-    await Erc20Utils.transfer(rt, signer, core.notifyHelper.address, sum.toString());
-    expect(+utils.formatUnits(await Erc20Utils.balanceOf(rt, core.notifyHelper.address), 18))
+    await TokenUtils.transfer(rt, signer, core.notifyHelper.address, sum.toString());
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(rt, core.notifyHelper.address), 18))
     .is.eq(+utils.formatUnits(sum, 18));
 
 
     await core.notifyHelper.notifyVaults(amounts, vaults, sum, rt);
 
     for (let vault of vaults) {
-      expect(await Erc20Utils.balanceOf(rt, vault)).is.eq(utils.parseUnits("1", 6).toString());
+      expect(await TokenUtils.balanceOf(rt, vault)).is.eq(utils.parseUnits("1", 6).toString());
     }
 
   });
 
   it("check main stats", async () => {
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address)).is.eq("901000000000000000000000");
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1099000000000000000000000");
-    await Erc20Utils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, "1099000000000000000000000");
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("0");
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address)).is.eq("901000000000000000000000");
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1099000000000000000000000");
+    await TokenUtils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, "1099000000000000000000000");
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).is.eq("0");
     // await core.notifyHelper.moveFunds(core.rewardToken.address, signer.address);
     // expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1000000000000000000000000");
   });
@@ -184,21 +184,21 @@ describe("Notify Helper test", () => {
 
   it("should not notify with wrong data", async () => {
     const amount = utils.parseUnits('1000', 6);
-    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString())
     await expect(notifier.notifyVaults(['1'], [], '1', MaticAddresses.USDC_TOKEN))
     .rejectedWith('wrong data');
   });
 
   it("should not notify with zero amount", async () => {
     const amount = utils.parseUnits('1000', 6);
-    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString())
     await expect(notifier.notifyVaults(['0'], [MaticAddresses.ZERO_ADDRESS], '1', MaticAddresses.USDC_TOKEN))
     .rejectedWith('Notify zero');
   });
 
   it("should not notify with wrong vault", async () => {
     const amount = utils.parseUnits('1000', 6);
-    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString())
     await expect(notifier.notifyVaults(['1'], [MaticAddresses.ZERO_ADDRESS], '1', MaticAddresses.USDC_TOKEN))
     .rejectedWith('Vault not registered');
   });
@@ -208,7 +208,7 @@ describe("Notify Helper test", () => {
     const rtDecimals = 18;
     const rt = core.rewardToken.address;
     const amount = utils.parseUnits('1000', rtDecimals);
-    await Erc20Utils.transfer(rt, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(rt, signer, notifier.address, amount.toString())
     await expect(notifier.notifyVaults(
         [utils.parseUnits('500', rtDecimals), utils.parseUnits('500', rtDecimals)],
         [allVaults[0], allVaults[0]],
@@ -222,7 +222,7 @@ describe("Notify Helper test", () => {
     const rtDecimals = 18;
     const rt = core.rewardToken.address;
     const amount = utils.parseUnits('1000', rtDecimals);
-    await Erc20Utils.transfer(rt, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(rt, signer, notifier.address, amount.toString())
     await expect(notifier.notifyVaults(
         [utils.parseUnits('500', rtDecimals), utils.parseUnits('500', rtDecimals)],
         [allVaults[1], allVaults[1]],
@@ -236,7 +236,7 @@ describe("Notify Helper test", () => {
     const rtDecimals = 18;
     const rt = core.rewardToken.address;
     const amount = utils.parseUnits('500', rtDecimals);
-    await Erc20Utils.transfer(rt, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(rt, signer, notifier.address, amount.toString())
     await notifier.notifyVaults(
         [utils.parseUnits('250', rtDecimals), utils.parseUnits('250', rtDecimals)],
         [allVaults[1], allVaults[2]],
@@ -256,7 +256,7 @@ describe("Notify Helper test", () => {
     const rtDecimals = 18;
     const rt = core.rewardToken.address;
     const amount = utils.parseUnits('500', rtDecimals);
-    await Erc20Utils.transfer(rt, signer, notifier.address, amount.toString())
+    await TokenUtils.transfer(rt, signer, notifier.address, amount.toString())
     await notifier.notifyVaults(
         [utils.parseUnits('250', rtDecimals), utils.parseUnits('250', rtDecimals)],
         [allVaults[1], allVaults[2]],
@@ -276,9 +276,9 @@ describe("Notify Helper test", () => {
 
   it("should move tokens", async () => {
     const amount = utils.parseUnits('1000', 6);
-    await Erc20Utils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString());
+    await TokenUtils.transfer(MaticAddresses.USDC_TOKEN, signer, notifier.address, amount.toString());
     await notifier.moveTokensToController(MaticAddresses.USDC_TOKEN, amount);
-    expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, core.controller.address))
+    expect(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, core.controller.address))
     .is.eq(amount);
   });
 

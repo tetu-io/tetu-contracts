@@ -10,7 +10,7 @@ import {
   PriceCalculator,
   SmartVault
 } from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -74,7 +74,7 @@ async function main() {
     let poolName = 'IRON';
     const tokenNames = [];
     for (let token of tokens) {
-      const tokenName = await Erc20Utils.tokenSymbol(token);
+      const tokenName = await TokenUtils.tokenSymbol(token);
       tokenNames.push(tokenName);
       poolName += '_' + tokenName;
     }
@@ -96,12 +96,12 @@ async function main() {
     infos += data + '\n';
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/iron_pools.csv', infos, 'utf8');
+  await writeFileSync('./tmp/download/iron_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

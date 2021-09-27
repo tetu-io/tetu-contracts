@@ -8,7 +8,7 @@ import {
   SmartVault,
   VaultController
 } from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 
@@ -43,9 +43,9 @@ export class McLpStrategyDeployer {
 
     const lpCont = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair
     const token0 = await lpCont.token0();
-    const token0_name = await Erc20Utils.tokenSymbol(token0);
+    const token0_name = await TokenUtils.tokenSymbol(token0);
     const token1 = await lpCont.token1();
-    const token1_name = await Erc20Utils.tokenSymbol(token1);
+    const token1_name = await TokenUtils.tokenSymbol(token1);
 
     // *********** DEPLOY VAULT
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
