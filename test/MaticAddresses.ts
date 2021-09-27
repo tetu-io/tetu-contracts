@@ -40,6 +40,7 @@ export class MaticAddresses {
   public static AM3CRV_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171".toLowerCase();
   public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
   public static IRIS_TOKEN = "0xdaB35042e63E93Cc8556c9bAE482E5415B5Ac4B1".toLowerCase(); // Hermes
+  public static DFYN_TOKEN = "0xc168e40227e4ebd8c1cae80f7a55a4f0e6d66c97".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -130,6 +131,7 @@ export class MaticAddresses {
   public static HERMES_IRIS_WMATIC = "0x86ad6271809f350522085F95F5A67d46ff7ed3AB".toLowerCase();
   public static HERMES_IRIS_KOGECOIN = "0x302f7E9bB5b5AC673Ac537F464a1B7A36bbbaBfA".toLowerCase();
   public static HERMES_IRIS_USDC = "0x277D9B07671eB9ac0d5D63E15BeEdc0aDBE3e9Fd".toLowerCase();
+  public static HERMES_IRIS_TETU = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {

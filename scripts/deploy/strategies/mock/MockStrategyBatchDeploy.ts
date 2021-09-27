@@ -12,6 +12,7 @@ import {Erc20Utils} from "../../../../test/Erc20Utils";
 import {RunHelper} from "../../../utils/RunHelper";
 import {Settings} from "../../../../settings";
 import {RopstenAddresses} from "../../../../test/RopstenAddresses";
+import {MaticAddresses} from "../../../../test/MaticAddresses";
 
 
 async function main() {
@@ -89,11 +90,11 @@ async function main() {
         "x" + poolName,
         controller.address,
         noopStrategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false,
+        poolReward
     ));
 
-
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([pool.address], poolReward));
     const poolRewardDecimals = await Erc20Utils.decimals(poolReward);
 
     const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", poolReward) as ERC20PresetMinterPauser;
@@ -120,7 +121,9 @@ async function main() {
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false,
+        MaticAddresses.ZERO_ADDRESS
     ));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));

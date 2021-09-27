@@ -1,10 +1,10 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, NotifyHelper} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {Bookkeeper, NotifyHelper} from "../../../typechain";
 import {readFileSync} from "fs";
 import {expect} from "chai";
 import {BigNumber} from "ethers";
-import {RunHelper} from "./RunHelper";
+import {RunHelper} from "../RunHelper";
 
 
 async function main() {

@@ -12,6 +12,7 @@ async function main() {
       signer, 'IIrisMasterChef', MaticAddresses.HERMES_MASTERCHEF) as IIrisMasterChef;
 
   await McLpDownloader.download(
+      '10',
       'HERMES',
       MaticAddresses.HERMES_MASTERCHEF,
       MaticAddresses.IRIS_TOKEN,

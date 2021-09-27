@@ -11,7 +11,7 @@ import {MintHelperUtils} from "../../MintHelperUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 import {NotifyHelper} from "../../../typechain/NotifyHelper";
-import {IStrategy} from "../../../typechain";
+import {IStrategy, NoopStrategy, SmartVault} from "../../../typechain";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -97,6 +97,38 @@ describe("Notify Helper test", () => {
 
   });
 
+  it("should distribute to dxTETU", async () => {
+    const underlying = core.psVault.address;
+    const vault = await DeployerUtils.deploySmartVault(signer);
+    console.log('vault.address', vault.address);
+    const rt = vault.address;
+    const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
+        core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
+    await vault.initializeSmartVault(
+        "NOOP",
+        "tNOOP",
+        core.controller.address,
+        underlying,
+        60 * 60 * 24 * 28,
+        true,
+        rt
+    );
+    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await vault.setLockPenalty(10);
+    await vault.setLockPeriod(1);
+
+    const dxTETU = vault.address;
+
+    await core.notifyHelper.setDXTetu(dxTETU);
+
+    const amount = utils.parseUnits("1", 18);
+    const tokenBal = await Erc20Utils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
+    console.log("rtBalance", utils.formatUnits(tokenBal, 18));
+    await core.notifyHelper.notifyVaults([amount], [dxTETU], amount, core.rewardToken.address);
+    expect(await Erc20Utils.balanceOf(dxTETU, dxTETU)).is.eq(utils.parseUnits("1", 18).toString());
+
+  });
+
   it("should distribute other rewards", async () => {
     const rt = MaticAddresses.USDC_TOKEN;
     const allVaults: string[] = await core.bookkeeper.vaults();
@@ -147,7 +179,7 @@ describe("Notify Helper test", () => {
 
   it("should not notify without balance", async () => {
     await expect(notifier.notifyVaults(['1'], [MaticAddresses.ZERO_ADDRESS], '1', MaticAddresses.USDC_TOKEN))
-    .rejectedWith('not enough balance');
+    .rejectedWith('NH: Not enough balance');
   });
 
   it("should not notify with wrong data", async () => {
@@ -182,7 +214,7 @@ describe("Notify Helper test", () => {
         [allVaults[0], allVaults[0]],
         amount,
         rt)
-    ).rejectedWith('ps forbidden');
+    ).rejectedWith('NH: PS forbidden');
   });
 
   it("should not notify with duplicate vault", async () => {

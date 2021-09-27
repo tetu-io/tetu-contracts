@@ -12,7 +12,7 @@ export class TimeUtils {
   }
 
   public static async advanceNBlocks(n: number) {
-    await ethers.provider.send('evm_increaseTime', [n*3]);
+    await ethers.provider.send('evm_increaseTime', [n * 3]);
     for (let i = 0; i < n; i++) {
       await ethers.provider.send('evm_mine', []);
     }
@@ -54,6 +54,10 @@ export class TimeUtils {
       await TimeUtils.advanceBlocksOnTs(1);
       expect(count < 100000).is.true;
     }
+  }
+
+  public static async getBlockTime(): Promise<number> {
+    return (await ethers.provider.getBlock(await ethers.provider._getFastBlockNumber())).timestamp
   }
 
   public static async snapshot() {

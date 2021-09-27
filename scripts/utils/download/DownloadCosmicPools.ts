@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {ICosmicMasterChef} from "../../../typechain";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
 
 
@@ -11,6 +11,7 @@ async function main() {
   const chef = await DeployerUtils.connectInterface(signer, 'ICosmicMasterChef', MaticAddresses.COSMIC_MASTERCHEF) as ICosmicMasterChef;
 
   await McLpDownloader.download(
+      "6",
       'COSMIC',
       MaticAddresses.COSMIC_MASTERCHEF,
       MaticAddresses.COSMIC_TOKEN,

@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {FeeRewardForwarder} from "../../typechain";
-import {MaticAddresses} from "../../test/MaticAddresses";
-import {RopstenAddresses} from "../../test/RopstenAddresses";
-import {RunHelper} from "./RunHelper";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {FeeRewardForwarder} from "../../../typechain";
+import {MaticAddresses} from "../../../test/MaticAddresses";
+import {RopstenAddresses} from "../../../test/RopstenAddresses";
+import {RunHelper} from "../RunHelper";
 
 
 async function main() {

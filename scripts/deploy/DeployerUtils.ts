@@ -124,9 +124,15 @@ export class DeployerUtils {
     return [contract, proxy, logic];
   }
 
-  public static async deployFeeForwarder(signer: SignerWithAddress, controllerAddress: string): Promise<FeeRewardForwarder> {
-    return await DeployerUtils.deployContract(
-        signer, "FeeRewardForwarder", controllerAddress) as FeeRewardForwarder;
+  public static async deployFeeForwarder(
+      signer: SignerWithAddress,
+      controllerAddress: string
+  ): Promise<[FeeRewardForwarder, TetuProxyControlled, FeeRewardForwarder]> {
+    const logic = await DeployerUtils.deployContract(signer, "FeeRewardForwarder") as FeeRewardForwarder;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as FeeRewardForwarder;
+    await contract.initialize(controllerAddress);
+    return [contract, proxy, logic];
   }
 
   public static async deployMintHelper(
@@ -292,7 +298,7 @@ export class DeployerUtils {
     const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
 
     // ********* FEE FORWARDER *********
-    const feeRewardForwarder = await DeployerUtils.deployFeeForwarder(signer, controller.address);
+    const feeRewardForwarderData = await DeployerUtils.deployFeeForwarder(signer, controller.address);
 
     // ********** BOOKKEEPER **********
     const bookkeeperLogic = await DeployerUtils.deployContract(signer, "Bookkeeper");
@@ -322,11 +328,13 @@ export class DeployerUtils {
         "xTETU",
         controller.address,
         rewardToken.address,
-        psRewardDuration
+        psRewardDuration,
+        false,
+        MaticAddresses.ZERO_ADDRESS
     ), true, wait);
 
     // ******* SETUP CONTROLLER ********
-    await RunHelper.runAndWait(() => controller.setFeeRewardForwarder(feeRewardForwarder.address), true, wait);
+    await RunHelper.runAndWait(() => controller.setFeeRewardForwarder(feeRewardForwarderData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setBookkeeper(bookkeeper.address), true, wait);
     await RunHelper.runAndWait(() => controller.setMintHelper(mintHelperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setRewardToken(rewardToken.address), true, wait);
@@ -343,7 +351,7 @@ export class DeployerUtils {
     }
     await RunHelper.runAndWait(() => controller.setRewardDistribution(
         [
-          feeRewardForwarder.address,
+          feeRewardForwarderData[0].address,
           notifyHelper.address
         ], true), true, wait);
 
@@ -356,7 +364,8 @@ export class DeployerUtils {
     return new CoreContractsWrapper(
         controller,
         controllerLogic.address,
-        feeRewardForwarder,
+        feeRewardForwarderData[0],
+        feeRewardForwarderData[2].address,
         bookkeeper,
         bookkeeperLogic.address,
         notifyHelper,
@@ -398,9 +407,10 @@ export class DeployerUtils {
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false,
+        vaultRewardToken
     ), true, wait);
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken), true, wait);
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
 
@@ -430,7 +440,9 @@ export class DeployerUtils {
         "x" + vaultName,
         controller.address,
         strategyUnderlying,
-        rewardDuration
+        rewardDuration,
+        false,
+        vaultRewardToken
     ), true, wait);
     return [vaultLogic, vault, strategy];
   }
@@ -482,10 +494,10 @@ export class DeployerUtils {
     try {
 
       const resp =
-      await axios.post(
-          (await DeployerUtils.getNetworkScanUrl()) +
-          `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
-          `address=${adr}`);
+          await axios.post(
+              (await DeployerUtils.getNetworkScanUrl()) +
+              `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
+              `address=${adr}`);
       // console.log("proxy verify resp", resp.data);
     } catch (e) {
       console.log('error proxy verify', adr, e);
@@ -538,6 +550,7 @@ export class DeployerUtils {
         await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller,
         '',
         await DeployerUtils.connectContract(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+        '',
         await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
         '',
         await DeployerUtils.connectContract(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
