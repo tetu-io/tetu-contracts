@@ -14,44 +14,202 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../base/governance/Controllable.sol";
 import "../infrastructure/IPriceCalculator.sol";
+import "../loan/ITetuPawnShop.sol";
 
 /// @title View data reader for using on website UI and other integrations
 /// @author belbix
-contract ContractReader is Initializable, Controllable {
+contract PawnShopReader is Initializable, Controllable {
 
   string public constant VERSION = "1.0.0";
   uint256 constant public PRECISION = 1e18;
   string private constant _CALCULATOR = "calculator";
+  string private constant _SHOP = "shop";
   mapping(bytes32 => address) internal tools;
 
-  function initialize(address _controller, address _calculator) external initializer {
+  function initialize(address _controller, address _calculator, address _pawnshop) external initializer {
     Controllable.initializeControllable(_controller);
     tools[keccak256(abi.encodePacked(_CALCULATOR))] = _calculator;
+    tools[keccak256(abi.encodePacked(_SHOP))] = _pawnshop;
   }
 
   event ToolAddressUpdated(string name, address newValue);
-  
 
+  // ************** READ FUNCTIONS **************
 
+  function positions(uint256 from, uint256 to) external view returns (ITetuPawnShop.Position[] memory){
+    uint256 size = pawnshop().positionCounter();
+    if (size == 1) {
+      return new ITetuPawnShop.Position[](0);
+    }
+    if (from == 0) {
+      from = 1;
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.Position[] memory result = new ITetuPawnShop.Position[](to - from + 1);
 
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getPosition(i);
+      j++;
+    }
 
+    return result;
+  }
 
+  function openPositions(uint256 from, uint256 to) external view returns (ITetuPawnShop.Position[] memory){
+    uint256 size = pawnshop().openPositionsSize();
+    if (size == 0) {
+      return new ITetuPawnShop.Position[](0);
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.Position[] memory result = new ITetuPawnShop.Position[](to - from + 1);
 
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getPosition(pawnshop().openPositions(i));
+      j++;
+    }
 
+    return result;
+  }
 
+  function positionsByCollateral(
+    address collateral,
+    uint256 from,
+    uint256 to
+  ) external view returns (ITetuPawnShop.Position[] memory){
+    uint256 size = pawnshop().positionsByCollateralSize(collateral);
+    if (size == 0) {
+      return new ITetuPawnShop.Position[](0);
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.Position[] memory result = new ITetuPawnShop.Position[](to - from + 1);
 
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getPosition(pawnshop().positionsByCollateral(collateral, i));
+      j++;
+    }
 
+    return result;
+  }
 
+  function positionsByAcquired(
+    address acquired,
+    uint256 from,
+    uint256 to
+  ) external view returns (ITetuPawnShop.Position[] memory){
+    uint256 size = pawnshop().positionsByAcquiredSize(acquired);
+    if (size == 0) {
+      return new ITetuPawnShop.Position[](0);
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.Position[] memory result = new ITetuPawnShop.Position[](to - from + 1);
 
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getPosition(pawnshop().positionsByAcquired(acquired, i));
+      j++;
+    }
 
+    return result;
+  }
+
+  function borrowerPositions(
+    address borrower,
+    uint256 from,
+    uint256 to
+  ) external view returns (ITetuPawnShop.Position[] memory){
+    uint256 size = pawnshop().borrowerPositionsSize(borrower);
+    if (size == 0) {
+      return new ITetuPawnShop.Position[](0);
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.Position[] memory result = new ITetuPawnShop.Position[](to - from + 1);
+
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getPosition(pawnshop().borrowerPositions(borrower, i));
+      j++;
+    }
+
+    return result;
+  }
+
+  function lenderPositions(
+    address lender,
+    uint256 from,
+    uint256 to
+  ) external view returns (ITetuPawnShop.Position[] memory){
+    uint256 size = pawnshop().lenderPositionsSize(lender);
+    if (size == 0) {
+      return new ITetuPawnShop.Position[](0);
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.Position[] memory result = new ITetuPawnShop.Position[](to - from + 1);
+
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getPosition(pawnshop().lenderPositions(lender, i));
+      j++;
+    }
+
+    return result;
+  }
+
+  function auctionBids(uint256 from, uint256 to) external view returns (ITetuPawnShop.AuctionBid[] memory){
+    uint256 size = pawnshop().auctionBidCounter();
+    if (size == 1) {
+      return new ITetuPawnShop.AuctionBid[](0);
+    }
+    if (from == 0) {
+      from = 1;
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.AuctionBid[] memory result = new ITetuPawnShop.AuctionBid[](to - from + 1);
+
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getAuctionBid(i);
+      j++;
+    }
+
+    return result;
+  }
+
+  function lenderAuctionBid(address lender, uint256 posId) external view returns (ITetuPawnShop.AuctionBid memory){
+    uint256 index = pawnshop().lenderOpenBids(lender, posId) - 1;
+    uint256 bidId = pawnshop().positionToBidIds(posId, index);
+    return pawnshop().getAuctionBid(bidId);
+  }
+
+  function positionAuctionBids(uint256 posId, uint256 from, uint256 to) external view returns (ITetuPawnShop.AuctionBid[] memory){
+    uint256 size = pawnshop().auctionBidSize(posId);
+    if (size == 0) {
+      return new ITetuPawnShop.AuctionBid[](0);
+    }
+    to = Math.min(size - 1, to);
+    ITetuPawnShop.AuctionBid[] memory result = new ITetuPawnShop.AuctionBid[](to - from + 1);
+
+    uint256 j = 0;
+    for (uint256 i = from; i <= to; i++) {
+      result[j] = pawnshop().getAuctionBid(pawnshop().positionToBidIds(posId, i));
+      j++;
+    }
+
+    return result;
+  }
+
+  // ******************** COMMON VIEWS ********************
 
   // normalized precision
   //noinspection NoReturn
   function getPrice(address _token) public view returns (uint256) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try IPriceCalculator(priceCalculator()).getPriceWithDefaultOutput(_token) returns (uint256 price){
+    try priceCalculator().getPriceWithDefaultOutput(_token) returns (uint256 price){
       return price;
     } catch {
       return 0;
@@ -59,7 +217,15 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function normalizePrecision(uint256 amount, uint256 decimals) internal pure returns (uint256){
-    return amount.mul(PRECISION).div(10 ** decimals);
+    return amount * PRECISION / (10 ** decimals);
+  }
+
+  function priceCalculator() public view returns (IPriceCalculator) {
+    return IPriceCalculator(tools[keccak256(abi.encodePacked(_CALCULATOR))]);
+  }
+
+  function pawnshop() public view returns (ITetuPawnShop) {
+    return ITetuPawnShop(tools[keccak256(abi.encodePacked(_SHOP))]);
   }
 
   // *********** GOVERNANCE ACTIONS *****************
@@ -67,6 +233,11 @@ contract ContractReader is Initializable, Controllable {
   function setPriceCalculator(address newValue) external onlyControllerOrGovernance {
     tools[keccak256(abi.encodePacked(_CALCULATOR))] = newValue;
     emit ToolAddressUpdated(_CALCULATOR, newValue);
+  }
+
+  function setPawnShop(address newValue) external onlyControllerOrGovernance {
+    tools[keccak256(abi.encodePacked(_SHOP))] = newValue;
+    emit ToolAddressUpdated(_SHOP, newValue);
   }
 
 }

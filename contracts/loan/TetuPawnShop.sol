@@ -58,12 +58,12 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
   // ---- POSITIONS
 
-  /// @dev PosId counter. Should start from 1 for keep 0 as empty value
-  uint256 public positionCounter = 1;
+  /// @inheritdoc ITetuPawnShop
+  uint256 public override positionCounter = 1;
   /// @dev PosId => Position. Hold all positions. Any record should not be removed
   mapping(uint256 => Position) public positions;
   /// @inheritdoc ITetuPawnShop
-  uint256[] public override positionsList;
+  uint256[] public override openPositions;
   /// @inheritdoc ITetuPawnShop
   mapping(address => uint256[]) public override positionsByCollateral;
   /// @inheritdoc ITetuPawnShop
@@ -77,8 +77,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
   // ---- AUCTION
 
-  /// @dev BidId counter. Should start from 1 for keep 0 as empty value
-  uint256 public auctionBidCounter = 1;
+  /// @inheritdoc ITetuPawnShop
+  uint256 public override auctionBidCounter = 1;
   /// @dev BidId => Bid. Hold all bids. Any record should not be removed
   mapping(uint256 => AuctionBid) public auctionBids;
   /// @inheritdoc ITetuPawnShop
@@ -102,7 +102,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   ) external onlyAllowedUsers nonReentrant override returns (uint256){
     require(_posFee <= DENOMINATOR * 10, "TL: Pos fee absurdly high");
     require(_posDurationBlocks != 0 || _posFee == 0, "TL: Fee for instant deal forbidden");
-    require(_collateralAmount == 0 || _collateralTokenId == 0, "TL: Wrong amounts");
+    require(_collateralAmount != 0 || _collateralTokenId != 0, "TL: Wrong amounts");
     require(_collateralToken != address(0), "TL: Zero cToken");
     require(_acquiredToken != address(0), "TL: Zero aToken");
 
@@ -147,8 +147,8 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
       );
     }
 
-    positionsList.push(pos.id);
-    posIndexes[IndexType.LIST][pos.id] = positionsList.length - 1;
+    openPositions.push(pos.id);
+    posIndexes[IndexType.LIST][pos.id] = openPositions.length - 1;
 
     positionsByCollateral[_collateralToken].push(pos.id);
     posIndexes[IndexType.BY_COLLATERAL][pos.id] = positionsByCollateral[_collateralToken].length - 1;
@@ -411,7 +411,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
 
   /// @dev Remove position from common indexes
   function _removePosFromIndexes(Position memory _pos) internal {
-    positionsList.removeIndexed(posIndexes[IndexType.LIST], _pos.id);
+    openPositions.removeIndexed(posIndexes[IndexType.LIST], _pos.id);
     positionsByCollateral[_pos.collateral.collateralToken].removeIndexed(posIndexes[IndexType.BY_COLLATERAL], _pos.id);
     positionsByAcquired[_pos.acquired.acquiredToken].removeIndexed(posIndexes[IndexType.BY_ACQUIRED], _pos.id);
   }
@@ -457,13 +457,29 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   }
 
   /// @inheritdoc ITetuPawnShop
-  function positionsListSize() external view override returns (uint256) {
-    return positionsList.length;
+  function openPositionsSize() external view override returns (uint256) {
+    return openPositions.length;
   }
 
   /// @inheritdoc ITetuPawnShop
   function auctionBidSize(uint256 posId) external view override returns (uint256) {
     return positionToBidIds[posId].length;
+  }
+
+  function positionsByCollateralSize(address collateral) external view override returns (uint256) {
+    return positionsByCollateral[collateral].length;
+  }
+
+  function positionsByAcquiredSize(address acquiredToken) external view override returns (uint256) {
+    return positionsByAcquired[acquiredToken].length;
+  }
+
+  function borrowerPositionsSize(address borrower) external view override returns (uint256) {
+    return borrowerPositions[borrower].length;
+  }
+
+  function lenderPositionsSize(address lender) external view override returns (uint256) {
+    return lenderPositions[lender].length;
   }
 
   /// @inheritdoc ITetuPawnShop

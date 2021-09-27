@@ -125,15 +125,15 @@ export class PawnShopTestUtils {
     const aIndex = (await shop.posIndexes(2, id)).toNumber();
     const bIndex = (await shop.posIndexes(3, id)).toNumber();
 
-    expect(await shop.positionsList(listIndex)).is.eq(id);
+    expect(await shop.openPositions(listIndex)).is.eq(id);
     expect((await shop.positionsByCollateral(collateralToken, cIndex))).is.eq(id);
     expect((await shop.positionsByAcquired(MaticAddresses.USDC_TOKEN, aIndex))).is.eq(id);
     expect((await shop.borrowerPositions(signer.address, bIndex))).is.eq(id);
   }
 
   public static async closeAndCheck(id: number, signer: SignerWithAddress, shop: TetuPawnShop): Promise<void> {
-    const posListLength = (await shop.positionsListSize()).toNumber();
-    const lastLoanId = (await shop.positionsList(posListLength - 1)).toNumber();
+    const posListLength = (await shop.openPositionsSize()).toNumber();
+    const lastLoanId = (await shop.openPositions(posListLength - 1)).toNumber();
     const lastLoanListIndex = (await shop.posIndexes(0, lastLoanId)).toNumber();
     expect(lastLoanListIndex).is.eq(posListLength - 1);
 

@@ -86,12 +86,15 @@ interface ITetuPawnShop {
 
   // ****************** VIEWS ****************************
 
+  /// @dev PosId counter. Should start from 1 for keep 0 as empty value
+  function positionCounter() external view returns (uint256);
+
   /// @notice Return Position for given id
   /// @dev AbiEncoder not able to auto generate functions for mapping with structs
   function getPosition(uint256 posId) external view returns (Position memory);
 
   /// @dev Hold open positions ids. Removed when position closed
-  function positionsList(uint256 index) external view returns (uint256 posId);
+  function openPositions(uint256 index) external view returns (uint256 posId);
 
   /// @dev Collateral token => PosIds
   function positionsByCollateral(address collateralToken, uint256 index) external view returns (uint256 posId);
@@ -108,6 +111,9 @@ interface ITetuPawnShop {
   /// @dev index type => PosId => index
   ///      Hold array positions for given type of array
   function posIndexes(IndexType typeId, uint256 posId) external view returns (uint256 index);
+
+  /// @dev BidId counter. Should start from 1 for keep 0 as empty value
+  function auctionBidCounter() external view returns (uint256);
 
   /// @notice Return auction bid for given id
   /// @dev AbiEncoder not able to auto generate functions for mapping with structs
@@ -134,10 +140,18 @@ interface ITetuPawnShop {
   function isERC20(address _token) external view returns (bool);
 
   /// @dev Return size of active positions
-  function positionsListSize() external view returns (uint256);
+  function openPositionsSize() external view returns (uint256);
 
   /// @dev Return size of all auction bids for given position
   function auctionBidSize(uint256 posId) external view returns (uint256);
+
+  function positionsByCollateralSize(address collateral) external view returns (uint256);
+
+  function positionsByAcquiredSize(address acquiredToken) external view returns (uint256);
+
+  function borrowerPositionsSize(address borrower) external view returns (uint256);
+
+  function lenderPositionsSize(address lender) external view returns (uint256);
 
   // ************* USER ACTIONS *************
 
