@@ -49,14 +49,14 @@ async function main() {
 
     const vaultNameWithoutPrefix = `IRON_LOAN_${tokenName}`;
 
-    const vAdr = vaultsMap.get(vaultNameWithoutPrefix);
+    const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
 
     if (!vAdr) {
       console.log('Vault not found!', vaultNameWithoutPrefix);
       return;
     }
 
-    console.log('strat', idx, rToken_name, vaultNameWithoutPrefix);
+    console.log('strat', idx, rToken_name, vaultNameWithoutPrefix, vAdr);
 
     const strategy = await DeployerUtils.deployContract(
         signer,
