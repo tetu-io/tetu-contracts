@@ -42,6 +42,7 @@ export class Addresses {
         '', // mockFaucet
         '0x6b887F2BE347984D55bC1a21BB970c707566eB48', // multiSwap
         '0x980cc507CDA067Fc71e90a5966A526DEBFB1eE74', // zapContract
+        '', // zapContractIron //TODO deploy
         '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
     )],
     ['rinkeby', new ToolsAddresses(
@@ -53,6 +54,7 @@ export class Addresses {
         '0xE08a4d6aFC2f3bB5F95ceC1e4D88559d837C08F2', // mockFaucet
         '0xe5C203ef4CB3E56766E7936fDE4b157209e93dD5', // multiSwap
         '0x9Ff04B5D8f6e7fFF99DBE07CAa9a83467Ec4A1c1', // zapContract
+        '', // zapContractIron
         '', // multicall
     )]
   ]);

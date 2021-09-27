@@ -22,7 +22,7 @@ import {
   TetuProxyControlled,
   TetuProxyGov,
   VaultController,
-  ZapContract,
+  ZapContract, ZapContractIron,
 } from "../../typechain";
 import {expect} from "chai";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
@@ -242,6 +242,14 @@ export class DeployerUtils {
       multiSwap: string
   ): Promise<ZapContract> {
     return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
+  }
+
+  public static async deployZapContractIron(
+      signer: SignerWithAddress,
+      controllerAddress: string,
+      multiSwap: string
+  ): Promise<ZapContractIron> {
+    return await DeployerUtils.deployContract(signer, "ZapContractIron", controllerAddress, multiSwap) as ZapContractIron;
   }
 
   public static async deployMultiSwap(
