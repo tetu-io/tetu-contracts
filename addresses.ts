@@ -45,7 +45,7 @@ export class Addresses {
         '0x6b887F2BE347984D55bC1a21BB970c707566eB48', // multiSwap
         '0x980cc507CDA067Fc71e90a5966A526DEBFB1eE74', // zapContract
         '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
-        '', // pawnshopReader
+        '0x48aD115540a0f9E128Ee62dF5Ce519451ba5F6E0', // pawnshopReader
     )],
     ['rinkeby', new ToolsAddresses(
         '0x9b8205F7fa03FD4DFc29c9b0E553883913ec4132', // calculator
