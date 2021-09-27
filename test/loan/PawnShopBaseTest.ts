@@ -35,7 +35,7 @@ describe("Tetu pawnshop base tests", function () {
     user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, core.rewardToken.address) as TetuPawnShop;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
 
     await shop.setPositionDepositToken(core.rewardToken.address);

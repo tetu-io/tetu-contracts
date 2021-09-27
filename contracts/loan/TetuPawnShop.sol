@@ -29,15 +29,16 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   using ArrayLib for uint256[];
 
   /// @dev Tetu Controller address requires for governance actions
-  constructor(address _controller) {
+  constructor(address _controller, address _depositToken) {
     Controllable.initializeControllable(_controller);
+    positionDepositToken = _depositToken;
   }
 
   // ---- CONSTANTS
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.0.0";
   /// @dev Denominator for any internal computation with low precision
   uint256 constant public DENOMINATOR = 10000;
   /// @dev Governance can't set fee more than this value
@@ -48,7 +49,7 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
   // ---- CHANGEABLE VARIABLES
 
   /// @dev 1% by default, percent of acquired tokens that will be used for buybacks
-  uint256 public platformFee = 10;
+  uint256 public platformFee = 100;
   /// @dev Amount of tokens for open position. Protection against spam
   ///      1000 TETU by default
   uint256 public positionDepositAmount = 1000 * 1e18;

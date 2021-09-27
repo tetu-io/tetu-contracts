@@ -8,6 +8,7 @@ export class ToolsAddresses {
   public readonly multiSwap: string;
   public readonly zapContract: string;
   public readonly multicall: string;
+  public readonly pawnshopReader: string;
 
   constructor(
       calculator: string,
@@ -18,7 +19,8 @@ export class ToolsAddresses {
       mockFaucet: string,
       multiSwap: string,
       zapContract: string,
-      multicall: string
+      multicall: string,
+      pawnshopReader: string
   ) {
     this.calculator = calculator;
     this.reader = reader;
@@ -29,5 +31,6 @@ export class ToolsAddresses {
     this.multiSwap = multiSwap;
     this.zapContract = zapContract;
     this.multicall = multicall;
+    this.pawnshopReader = pawnshopReader;
   }
 }

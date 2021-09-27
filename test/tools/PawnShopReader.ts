@@ -42,7 +42,7 @@ describe("pawnshop reader tests", function () {
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, core.rewardToken.address) as TetuPawnShop;
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     await reader.initialize(core.controller.address, calculator.address, shop.address);

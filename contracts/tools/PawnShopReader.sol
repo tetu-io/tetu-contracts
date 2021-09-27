@@ -27,6 +27,8 @@ contract PawnShopReader is Initializable, Controllable {
   uint256 constant public PRECISION = 1e18;
   string private constant _CALCULATOR = "calculator";
   string private constant _SHOP = "shop";
+
+  // DO NOT CHANGE NAMES OR ORDERING!
   mapping(bytes32 => address) internal tools;
 
   function initialize(address _controller, address _calculator, address _pawnshop) external initializer {

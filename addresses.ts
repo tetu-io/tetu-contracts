@@ -16,6 +16,7 @@ export class Addresses {
         '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2',// fund keeper
         '0xC5b3aF6FB4b2ff14642e337F41B86C9494f70b43',// vault controller
         '0x52646dfb3E1D540D85DC32223A220a6F9c7eD759',// vault logic
+        '0xDE9aeB389A74b32a66D960b38c1B453A4ff4bDC0',// pawnshop
     )],
     ['rinkeby', new CoreAddresses(
         '0x423394A1723C81a2a9E3Ee1852Bc55Db7B85bfE1', // controller
@@ -29,6 +30,7 @@ export class Addresses {
         '0x1b6E2a7AcB8f79044bE4b384fa7A1Cac1259bb72',// fund keeper
         '0xb990e66DAbda0a30a6d79fe9e7f5aeD36E59156b',// vault controller
         '0x57E9994EC192d9661a2a1e3A84a38c8aaD013937',// vault logic
+        '',// pawnshop
     )]
   ]);
 
@@ -43,6 +45,7 @@ export class Addresses {
         '0x6b887F2BE347984D55bC1a21BB970c707566eB48', // multiSwap
         '0x980cc507CDA067Fc71e90a5966A526DEBFB1eE74', // zapContract
         '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
+        '', // pawnshopReader
     )],
     ['rinkeby', new ToolsAddresses(
         '0x9b8205F7fa03FD4DFc29c9b0E553883913ec4132', // calculator
@@ -54,6 +57,7 @@ export class Addresses {
         '0xe5C203ef4CB3E56766E7936fDE4b157209e93dD5', // multiSwap
         '0x9Ff04B5D8f6e7fFF99DBE07CAa9a83467Ec4A1c1', // zapContract
         '', // multicall
+        '', // pawnshopReader
     )]
   ]);
 
