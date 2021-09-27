@@ -57,6 +57,10 @@ export class MaticAddresses {
   public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
   public static IRON_IRON_IS3USD = "0x985D40feDAA3208DAbaCDFDCA00CbeAAc9543949".toLowerCase();
 
+  public static IRON_RWBTC = "0xEe1eb5fEBeF78A1eb1a23E79930D9c587F954E05".toLowerCase();
+  public static IRON_RMATIC = "0xCa0F37f73174a28a64552D426590d3eD601ecCa1".toLowerCase();
+  public static IRON_RUSDC = "0xbEbAD52f3A50806b25911051BabDe6615C8e21ef".toLowerCase();
+
   // firebird
   public static FIREBIRD_FACTORY = "0x5De74546d3B86C8Df7FEEc30253865e1149818C8".toLowerCase();
   public static FIREBIRD_ROUTER = "0xF6fa9Ea1f64f1BBfA8d71f7f43fAF6D45520bfac".toLowerCase();
