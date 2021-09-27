@@ -12,12 +12,10 @@
 
 pragma solidity 0.8.4;
 
-interface IFeeRewardForwarder {
-  function distribute(uint256 _amount, address _token, address _vault) external returns (uint256);
+import "@openzeppelin/contracts/token/ERC721/presets/ERC721PresetMinterPauserAutoId.sol";
 
-  function notifyPsPool(address _token, uint256 _amount) external returns (uint256);
+contract MockNFT is ERC721PresetMinterPauserAutoId {
 
-  function notifyCustomPool(address _token, address _rewardPool, uint256 _maxBuyback) external returns (uint256);
-
-  function liquidate(address tokenIn, address tokenOut, uint256 amount) external returns (uint256);
+  constructor() ERC721PresetMinterPauserAutoId("MockNFT", "MNFT", "https://api.tetu.io/token/")  {
+  }
 }

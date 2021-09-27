@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {IUniswapV2Pair} from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {RopstenAddresses} from "../../../test/RopstenAddresses";
 import {UniswapUtils} from "../../../test/UniswapUtils";
 import {BigNumber, utils} from "ethers";
@@ -26,7 +26,7 @@ async function main() {
   } else {
     oppositeToken = token0;
   }
-  const oppositeTokenDecimals = await Erc20Utils.decimals(oppositeToken);
+  const oppositeTokenDecimals = await TokenUtils.decimals(oppositeToken);
 
   let router: string;
   if (net === 'ropsten' || net === 'rinkeby') {

@@ -9,7 +9,7 @@ import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {utils} from "ethers";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -116,7 +116,7 @@ describe("Fee reward forwarder tests", function () {
         [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
         [MaticAddresses.QUICK_ROUTER]
     );
-    await Erc20Utils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
+    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
     expect(await forwarder.callStatic.notifyPsPool(MaticAddresses.USDC_TOKEN, utils.parseUnits('1000', 6))).is.not.eq(0);
   });
 
@@ -125,7 +125,7 @@ describe("Fee reward forwarder tests", function () {
         [[MaticAddresses.USDC_TOKEN, core.rewardToken.address]],
         [[MaticAddresses.QUICK_ROUTER]]
     );
-    await Erc20Utils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
+    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
     expect(await forwarder.callStatic.distribute(utils.parseUnits('1000', 6), MaticAddresses.USDC_TOKEN, core.psVault.address)).is.not.eq(0);
   });
 

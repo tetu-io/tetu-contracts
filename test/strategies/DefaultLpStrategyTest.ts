@@ -7,7 +7,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy, IUniswapV2Pair} from "../../typechain";
@@ -98,10 +98,10 @@ async function startDefaultLpStrategyTest(
       //************** add funds for investing ************
       const baseAmount = 10_000;
       await UniswapUtils.buyAllBigTokens(user);
-      const name0 = await Erc20Utils.tokenSymbol(token0Opposite);
-      const name1 = await Erc20Utils.tokenSymbol(token1Opposite);
-      const dec0 = await Erc20Utils.decimals(token0Opposite);
-      const dec1 = await Erc20Utils.decimals(token1Opposite);
+      const name0 = await TokenUtils.tokenSymbol(token0Opposite);
+      const name1 = await TokenUtils.tokenSymbol(token1Opposite);
+      const dec0 = await TokenUtils.decimals(token0Opposite);
+      const dec1 = await TokenUtils.decimals(token1Opposite);
       const price0 = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(token0Opposite)));
       console.log('token0Opposite Price', price0, name0);
       const price1 = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(token1Opposite)));
@@ -147,7 +147,7 @@ async function startDefaultLpStrategyTest(
     // });
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           strategyInfo.strategy.readyToClaim
       );
     });
@@ -160,7 +160,7 @@ async function startDefaultLpStrategyTest(
     it("doHardWork loop", async function () {
       await DoHardWorkLoop.doHardWorkLoop(
           strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           3,
           60
       );

@@ -7,7 +7,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy} from "../../typechain";
@@ -89,8 +89,8 @@ async function startDefaultSingleTokenStrategyTest(
       //************** add funds for investing ************
       const baseAmount = 10_000;
       await UniswapUtils.buyAllBigTokens(user);
-      const name = await Erc20Utils.tokenSymbol(tokenOpposite);
-      const dec = await Erc20Utils.decimals(tokenOpposite);
+      const name = await TokenUtils.tokenSymbol(tokenOpposite);
+      const dec = await TokenUtils.decimals(tokenOpposite);
       const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
       console.log('tokenOpposite Price', price, name);
       const amountForSell = baseAmount / price;
@@ -120,7 +120,7 @@ async function startDefaultSingleTokenStrategyTest(
     // });
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           strategyInfo.strategy.readyToClaim
       );
     });
@@ -133,7 +133,7 @@ async function startDefaultSingleTokenStrategyTest(
     it("doHardWork loop", async function () {
       await DoHardWorkLoop.doHardWorkLoop(
           strategyInfo,
-          (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           3,
           60
       );

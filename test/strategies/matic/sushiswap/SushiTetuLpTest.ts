@@ -14,7 +14,7 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {ethers} from "hardhat";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {BigNumber, utils} from "ethers";
-import {Erc20Utils} from "../../../Erc20Utils";
+import {TokenUtils} from "../../../TokenUtils";
 import {TimeUtils} from "../../../TimeUtils";
 import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -48,7 +48,7 @@ describe.skip('TETU LP test', async () => {
     // await MintHelperUtils.mintAll(controller, announcer, signer.address);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await controller.mintAndDistribute(0, core.notifyHelper, core.fundKeeper, true);
-    expect(await Erc20Utils.balanceOf(core.rewardToken, signer.address)).is.not.eq(0);
+    expect(await TokenUtils.balanceOf(core.rewardToken, signer.address)).is.not.eq(0);
 
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('20000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10000'));
@@ -67,9 +67,9 @@ describe.skip('TETU LP test', async () => {
 
     const lpCont = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', tetuLp) as IUniswapV2Pair
     const token0 = await lpCont.token0();
-    const token0_name = await Erc20Utils.tokenSymbol(token0);
+    const token0_name = await TokenUtils.tokenSymbol(token0);
     const token1 = await lpCont.token1();
-    const token1_name = await Erc20Utils.tokenSymbol(token1);
+    const token1_name = await TokenUtils.tokenSymbol(token1);
 
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
@@ -111,14 +111,14 @@ describe.skip('TETU LP test', async () => {
     // const vaultUtils = new VaultUtils(vault);
 
     // ************** DEPOSIT *******************************
-    let balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    let balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
 
     await VaultUtils.deposit(signer, tetuLpVault, BigNumber.from("1000000"));
 
-    let balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    let balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
     expect(balanceAfter.toFixed(6)).is.eq((balanceBefore - (+utils.formatUnits("1000000", 6))).toFixed(6));
 
-    expect(await Erc20Utils.balanceOf(tetuLpVault.address, signer.address)).at.eq("1000000");
+    expect(await TokenUtils.balanceOf(tetuLpVault.address, signer.address)).at.eq("1000000");
     expect(await tetuLpVault.underlyingBalanceInVault()).at.eq("0");
     expect(await tetuLpVault.underlyingBalanceWithInvestment()).at.eq("1000000");
     expect(await tetuLpVault.underlyingBalanceWithInvestmentForHolder(signer.address)).at.eq("1000000");
@@ -138,15 +138,15 @@ describe.skip('TETU LP test', async () => {
     await tetuLpVault.rebalance();
 
     // ************** WITHDRAW *******************************
-    balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
 
     await tetuLpVault.withdraw(BigNumber.from("500000"));
 
-    balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
     expect(balanceAfter).is.eq(balanceBefore + (+utils.formatUnits("500000", 6)));
 
 
-    expect(await Erc20Utils.balanceOf(tetuLpVault.address, signer.address)).at.eq("500000");
+    expect(await TokenUtils.balanceOf(tetuLpVault.address, signer.address)).at.eq("500000");
     expect(await tetuLpVault.underlyingBalanceInVault()).at.eq("0");
     expect(await tetuLpVault.underlyingBalanceWithInvestment()).at.eq("500000");
     expect(await tetuLpVault.underlyingBalanceWithInvestmentForHolder(signer.address)).at.eq("500000");
@@ -155,23 +155,23 @@ describe.skip('TETU LP test', async () => {
     expect(await bookkeeper.vaultUsersQuantity(tetuLpVault.address)).at.eq("1");
 
     // **************** DEPOSIT FOR ************
-    balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
 
-    await Erc20Utils.approve(tetuLp, signer, tetuLpVault.address, "250000");
+    await TokenUtils.approve(tetuLp, signer, tetuLpVault.address, "250000");
     await tetuLpVault.depositFor(BigNumber.from("250000"), signer.address);
 
-    balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
     expect(balanceAfter).is.eq(balanceBefore - (+utils.formatUnits("250000", 6)));
 
-    expect(await Erc20Utils.balanceOf(tetuLpVault.address, signer.address)).at.eq("750000");
+    expect(await TokenUtils.balanceOf(tetuLpVault.address, signer.address)).at.eq("750000");
     expect(await tetuLpVault.underlyingBalanceInVault()).at.eq("250000");
 
     // ************* EXIT ***************
-    balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
-    const fBal = await Erc20Utils.balanceOf(tetuLpVault.address, signer.address);
+    balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
+    const fBal = await TokenUtils.balanceOf(tetuLpVault.address, signer.address);
     await tetuLpVault.exit();
 
-    balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(tetuLp, signer.address), 6);
+    balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tetuLp, signer.address), 6);
     expect(balanceAfter).is.eq(balanceBefore + (+utils.formatUnits(fBal, 6)));
 
     expect(await tetuLpVault.underlyingBalanceWithInvestment()).at.eq("0");

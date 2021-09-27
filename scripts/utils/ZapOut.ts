@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {ContractReader, MultiSwap, SmartVault, ZapContract} from "../../typechain";
-import {Erc20Utils} from "../../test/Erc20Utils";
+import {TokenUtils} from "../../test/TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {RunHelper} from "./RunHelper";
 
@@ -40,7 +40,7 @@ async function main() {
       continue;
     }
 
-    const amountShare = await Erc20Utils.balanceOf(vault, signer.address);
+    const amountShare = await TokenUtils.balanceOf(vault, signer.address);
     if (amountShare.isZero()) {
       console.log('zero balance');
       continue;
@@ -88,7 +88,7 @@ async function zapOutVaultWithLp(
     assetsLpRoute.push(lps);
   }
 
-  await Erc20Utils.approve(vault, signer, zapContract.address, amountShare.toString())
+  await TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString())
   await RunHelper.runAndWait(() => zapContract.zapOutLp(
       vault,
       tokenOut,

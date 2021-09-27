@@ -4,7 +4,7 @@ import {ContractReader, Multicall, NoopStrategy, SmartVault} from "../../../type
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../VaultUtils";
 import {utils} from "ethers";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chaiAsPromised from "chai-as-promised";
@@ -82,8 +82,8 @@ describe("Diamond vault test", () => {
     // ********** INIT VARS **************
     const user1 = (await ethers.getSigners())[1];
     const user2 = (await ethers.getSigners())[2];
-    const rtDecimals = await Erc20Utils.decimals(rt);
-    const underlyingDec = await Erc20Utils.decimals(underlying);
+    const rtDecimals = await TokenUtils.decimals(rt);
+    const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
     const time = 60 * 60 * 6;
     let rewardsToDistribute = utils.parseUnits('10000', rtDecimals);
@@ -91,19 +91,19 @@ describe("Diamond vault test", () => {
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await UniswapUtils.createPairForRewardToken(signer, core, '567111');
-    await VaultUtils.deposit(signer, core.psVault, await Erc20Utils.balanceOf(core.rewardToken.address, signer.address));
-    console.log('underlying amount', utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), underlyingDec));
+    await VaultUtils.deposit(signer, core.psVault, await TokenUtils.balanceOf(core.rewardToken.address, signer.address));
+    console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
     await VaultUtils.deposit(signer, vault, rewardsToDistribute.mul(2).add(1));
-    await Erc20Utils.approve(rt, signer, vault.address, rewardsToDistribute.toString());
+    await TokenUtils.approve(rt, signer, vault.address, rewardsToDistribute.toString());
     await vault.notifyTargetRewardAmount(rt, rewardsToDistribute);
 
 
-    const signerUndBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), underlyingDec);
+    const signerUndBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec);
     let user1Balance = +(signerUndBal * 0.2).toFixed(underlyingDec);
     let user2Balance = +(signerUndBal * 0.3).toFixed(underlyingDec);
 
-    await Erc20Utils.transfer(underlying, signer, user1.address, utils.parseUnits(user1Balance.toString(), underlyingDec).toString());
-    await Erc20Utils.transfer(underlying, signer, user2.address, utils.parseUnits(user2Balance.toString(), underlyingDec).toString());
+    await TokenUtils.transfer(underlying, signer, user1.address, utils.parseUnits(user1Balance.toString(), underlyingDec).toString());
+    await TokenUtils.transfer(underlying, signer, user2.address, utils.parseUnits(user2Balance.toString(), underlyingDec).toString());
 
     //*************** CYCLES *************
     let claimedTotal = 0;
@@ -121,7 +121,7 @@ describe("Diamond vault test", () => {
 
       if (i == 50) {
         console.log("!!!!!!!!!!add rewards", finish)
-        await Erc20Utils.approve(rt, signer, vault.address, rewardsToDistribute.toString());
+        await TokenUtils.approve(rt, signer, vault.address, rewardsToDistribute.toString());
         await vault.notifyTargetRewardAmount(rt, rewardsToDistribute);
         rewardsTotalAmount = rewardsTotalAmount.add(rewardsToDistribute);
         finish = (await vault.periodFinishForToken(rt)).toNumber();
@@ -144,7 +144,7 @@ describe("Diamond vault test", () => {
           expect((await vault.underlyingBalanceWithInvestmentForHolder(user1.address)).isZero()).is.true;
           const lastWithdrawTs = (await vault.userLastWithdrawTs(user1.address)).toNumber();
 
-          const curUndBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, user1.address), underlyingDec);
+          const curUndBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, user1.address), underlyingDec);
           await printBalance(user1.address, underlying, underlyingDec,
               curUndBal,
               undBalBeforeExit, // user claim rewards and withdraw it when exit
@@ -166,10 +166,10 @@ describe("Diamond vault test", () => {
       if (i % 5 === 0) {
         if (user2Deposited) {
           console.log('--USER 2 WITHDRAW');
-          const user2Staked = await Erc20Utils.balanceOf(vault.address, user2.address);
+          const user2Staked = await TokenUtils.balanceOf(vault.address, user2.address);
           const bal = +utils.formatUnits(await vault.underlyingBalanceWithInvestmentForHolder(user2.address));
           await vault.connect(user2).withdraw(user2Staked);
-          const curBal = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, user2.address), underlyingDec);
+          const curBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, user2.address), underlyingDec);
           const newDeposit = await printBalance(user2.address, underlying, underlyingDec,
               curBal,
               bal,
@@ -232,15 +232,15 @@ describe("Diamond vault test", () => {
     claimedTotal += await claim(vault, user2, 'user2', true);
     claimedTotal += await claim(vault, signer, 'signer', true);
 
-    console.log('vaultRtBalance before all exit', +utils.formatUnits(await Erc20Utils.balanceOf(rt, vault.address), rtDecimals));
+    console.log('vaultRtBalance before all exit', +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address), rtDecimals));
 
     await exit(vault, signer);
     await exit(vault, user1);
     await exit(vault, user2);
 
-    const vaultRtBalance = +utils.formatUnits(await Erc20Utils.balanceOf(rt, vault.address), rtDecimals);
+    const vaultRtBalance = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address), rtDecimals);
     console.log('vaultRtBalance', vaultRtBalance);
-    const controllerBal = +utils.formatUnits(await Erc20Utils.balanceOf(rt, core.controller.address), rtDecimals);
+    const controllerBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, core.controller.address), rtDecimals);
     console.log('controller bal', controllerBal);
     console.log('controller earned', utils.formatUnits(await vault.earned(vault.address, core.controller.address), underlyingDec));
     console.log('vault earned', utils.formatUnits(await vault.earned(vault.address, vault.address), underlyingDec));
@@ -284,7 +284,7 @@ async function printBalance(
 }
 
 async function exit(vault: SmartVault, user: SignerWithAddress) {
-  const bal = await Erc20Utils.balanceOf(vault.address, user.address);
+  const bal = await TokenUtils.balanceOf(vault.address, user.address);
   if (!bal.isZero()) {
     console.log('exit', utils.formatUnits(bal));
     await vault.connect(user).exit();
@@ -298,7 +298,7 @@ async function claim(
     allowedZero = false
 ) {
   const rt = (await vault.rewardTokens())[0];
-  const rtDecimals = await Erc20Utils.decimals(rt);
+  const rtDecimals = await TokenUtils.decimals(rt);
 
   const toClaimSignerFullBoost = +utils.formatUnits(await vault.earned(rt, signer.address), rtDecimals);
   const toClaimSigner = +utils.formatUnits(await vault.earnedWithBoost(rt, signer.address), rtDecimals);
@@ -307,12 +307,12 @@ async function claim(
     return 0;
   }
 
-  const rtBalanceSigner = +utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals);
+  const rtBalanceSigner = +utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), rtDecimals);
   console.log(name, 'toClaim', toClaimSigner, '100% boost', toClaimSignerFullBoost);
 
   await vault.connect(signer).getAllRewards();
 
-  const claimedSigner = +utils.formatUnits(await Erc20Utils.balanceOf(rt, signer.address), rtDecimals) - rtBalanceSigner;
+  const claimedSigner = +utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), rtDecimals) - rtBalanceSigner;
   console.log(name, 'claimed', claimedSigner);
   expect(claimedSigner).is.greaterThan(0);
   expect(toClaimSigner).is.approximately(claimedSigner, claimedSigner * 0.01, name + ' claimed not enough');

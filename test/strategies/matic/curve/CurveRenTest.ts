@@ -5,7 +5,7 @@ import { Settings } from "../../../../settings";
 import { UniswapUtils } from "../../../UniswapUtils";
 import { utils} from "ethers";
 import { ethers} from "hardhat";
-import { Erc20Utils } from "../../../Erc20Utils";
+import { TokenUtils } from "../../../TokenUtils";
 import { StrategyInfo } from "../../StrategyInfo";
 import { TimeUtils } from "../../../TimeUtils";
 import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
@@ -34,7 +34,7 @@ describe('Curve ren tests', async () => {
         
         const underlying = MaticAddresses.BTCCRV_TOKEN;
         
-        const underlyingName = await Erc20Utils.tokenSymbol(underlying);
+        const underlyingName = await TokenUtils.tokenSymbol(underlying);
 
         const strategyName = 'CurveRenStrategy';
 
@@ -84,7 +84,7 @@ describe('Curve ren tests', async () => {
       it("doHardWork loop", async function () {
         await DoHardWorkLoop.doHardWorkLoop(
             strategyInfo,
-            (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+            (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
             3,
             27000
         );

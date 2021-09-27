@@ -3,7 +3,7 @@ import {ethers} from "hardhat";
 import {BigNumber, utils} from "ethers";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper, ContractReader, PriceCalculator} from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {RunHelper} from "../RunHelper";
 import {VaultUtils} from "../../../test/VaultUtils";
 import {UniswapUtils} from "../../../test/UniswapUtils";
@@ -59,12 +59,12 @@ async function main() {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
 
 
-    let availableAmount = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), decimals);
+    let availableAmount = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), decimals);
 
     const undPrice = +utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(underlying));
 
     if (availableAmount * undPrice < expectedDeposit * 0.8) {
-      console.error('availableAmount too low', await Erc20Utils.tokenSymbol(underlying), availableAmount);
+      console.error('availableAmount too low', await TokenUtils.tokenSymbol(underlying), availableAmount);
 
       // ************ TRY TO CREATE UNDERLYING
 
@@ -85,14 +85,14 @@ async function main() {
       if (assets.length === 1) {
         continue; // TODO fix
         const tokenToBuy = assets[0];
-        const tokenToBuyName = await Erc20Utils.tokenSymbol(tokenToBuy);
+        const tokenToBuyName = await TokenUtils.tokenSymbol(tokenToBuy);
         console.log('try to buy', tokenToBuyName);
 
         const priceData0 = (await priceCalculator.getLargestPool(tokenToBuy, []));
         const tokenOpposite = priceData0[0];
 
-        if ((await Erc20Utils.balanceOf(tokenOpposite, signer.address)).isZero()) {
-          console.log('zero opposite token', tokenOpposite, await Erc20Utils.tokenSymbol(tokenOpposite));
+        if ((await TokenUtils.balanceOf(tokenOpposite, signer.address)).isZero()) {
+          console.log('zero opposite token', tokenOpposite, await TokenUtils.tokenSymbol(tokenOpposite));
           continue;
         }
 
@@ -113,18 +113,18 @@ async function main() {
         const token0 = assets[0];
         const token1 = assets[1];
 
-        const token0Name = await Erc20Utils.tokenSymbol(token0);
-        const token1Name = await Erc20Utils.tokenSymbol(token1);
+        const token0Name = await TokenUtils.tokenSymbol(token0);
+        const token1Name = await TokenUtils.tokenSymbol(token1);
 
-        const tokenDec0 = await Erc20Utils.decimals(token0);
-        const tokenDec1 = await Erc20Utils.decimals(token1);
+        const tokenDec0 = await TokenUtils.decimals(token0);
+        const tokenDec1 = await TokenUtils.decimals(token1);
 
         const token0Price = +utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token0));
         const token1Price = +utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token1));
 
-        let token0Bal = await Erc20Utils.balanceOf(token0, signer.address);
+        let token0Bal = await TokenUtils.balanceOf(token0, signer.address);
         let token0BalN = +utils.formatUnits(token0Bal, tokenDec0);
-        let token1Bal = await Erc20Utils.balanceOf(token1, signer.address);
+        let token1Bal = await TokenUtils.balanceOf(token1, signer.address);
         let token1BalN = +utils.formatUnits(token1Bal, tokenDec1);
 
         const amountForDeposit0N = expectedDeposit / 2 / token0Price;
@@ -142,13 +142,13 @@ async function main() {
         const token1Opposite = data1[0];
         const token1OppositeFactory = await priceCalculator.swapFactories(data1[1]);
 
-        if ((await Erc20Utils.balanceOf(token0Opposite, signer.address)).isZero()) {
-          console.log('zero opposite token0', token0Opposite, await Erc20Utils.tokenSymbol(token0Opposite));
+        if ((await TokenUtils.balanceOf(token0Opposite, signer.address)).isZero()) {
+          console.log('zero opposite token0', token0Opposite, await TokenUtils.tokenSymbol(token0Opposite));
           continue;
         }
 
-        if ((await Erc20Utils.balanceOf(token1Opposite, signer.address)).isZero()) {
-          console.log('zero opposite token0', token1Opposite, await Erc20Utils.tokenSymbol(token1Opposite));
+        if ((await TokenUtils.balanceOf(token1Opposite, signer.address)).isZero()) {
+          console.log('zero opposite token0', token1Opposite, await TokenUtils.tokenSymbol(token1Opposite));
           continue;
         }
 
@@ -199,7 +199,7 @@ async function main() {
 
     }
 
-    availableAmount = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signer.address), decimals);
+    availableAmount = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), decimals);
 
     if (availableAmount * undPrice < expectedDeposit * 0.8) {
       console.log('still too low balance', availableAmount, availableAmount * undPrice);
@@ -212,7 +212,7 @@ async function main() {
     // console.log("depositN", depositN);
 
     // const deposit = utils.parseUnits(depositN.toFixed(decimals), decimals);
-    const deposit = await Erc20Utils.balanceOf(underlying, signer.address);
+    const deposit = await TokenUtils.balanceOf(underlying, signer.address);
     if (deposit.isZero()) {
       console.log('zero final amount');
       continue;
@@ -240,8 +240,8 @@ async function buyToken(
     tokenOppositeFactory: string,
     token: string
 ): Promise<BigNumber> {
-  const oppositeName = await Erc20Utils.tokenSymbol(tokenOpposite);
-  const oppositeDec = await Erc20Utils.decimals(tokenOpposite);
+  const oppositeName = await TokenUtils.tokenSymbol(tokenOpposite);
+  const oppositeDec = await TokenUtils.decimals(tokenOpposite);
   console.log('need to sell opposite token for buy token', oppositeName, tokenBalN, amountForDepositN);
   const tokenNeedToBuy = (amountForDepositN - tokenBalN);
   const tokenNeedToBuyUsd = tokenNeedToBuy * tokenPrice;
@@ -253,5 +253,5 @@ async function buyToken(
 
   await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(tokenOppositeFactory), token,
       amountForSell0, tokenOpposite, true);
-  return await Erc20Utils.balanceOf(token, signer.address)
+  return await TokenUtils.balanceOf(token, signer.address)
 }

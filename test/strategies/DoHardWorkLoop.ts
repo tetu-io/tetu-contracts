@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../MaticAddresses";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
@@ -15,16 +15,16 @@ export class DoHardWorkLoop {
     const calculator = (await DeployerUtils
     .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
     const vaultForUser = info.vault.connect(info.user);
-    const undDec = await Erc20Utils.decimals(info.underlying);
+    const undDec = await TokenUtils.decimals(info.underlying);
 
-    const userUnderlyingBalance = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+    const userUnderlyingBalance = await TokenUtils.balanceOf(info.underlying, info.user.address);
 
     console.log("deposit", deposit);
     await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
 
-    const rewardBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
-    const vaultBalanceBefore = await Erc20Utils.balanceOf(info.core.psVault.address, info.vault.address);
-    const psBalanceBefore = await Erc20Utils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+    const rewardBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
+    const vaultBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
+    const psBalanceBefore = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
     const psSharePriceBefore = await info.core.psVault.getPricePerFullShare();
 
     const start = await StrategyTestUtils.getBlockTime();
@@ -99,7 +99,7 @@ export class DoHardWorkLoop {
 
       await vaultForUser.exit();
       // some pools have auto compounding so user balance can increase
-      expect(+utils.formatUnits(await Erc20Utils.balanceOf(info.underlying, info.user.address), undDec))
+      expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
       .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec), "should have all underlying");
 
       await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit).div(2));
@@ -113,11 +113,11 @@ export class DoHardWorkLoop {
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
 
     // check vault balance
-    const vaultBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.vault.address);
+    const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
     expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
 
     // check ps balance
-    const psBalanceAfter = await Erc20Utils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+    const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
     expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
 
     // check ps PPFS
@@ -127,14 +127,14 @@ export class DoHardWorkLoop {
     // check reward for user
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week
     await vaultForUser.getAllRewards();
-    const rewardBalanceAfter = await Erc20Utils.balanceOf(info.core.psVault.address, info.user.address);
+    const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
     expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
     .is.not.eq("0", "should have earned iToken rewards");
 
     // ************* EXIT ***************
     await vaultForUser.exit();
     // some pools have auto compounding so user balance can increase
-    const userUnderlyingBalanceAfter = await Erc20Utils.balanceOf(info.underlying, info.user.address);
+    const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
     expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec), "should have all underlying");
   }

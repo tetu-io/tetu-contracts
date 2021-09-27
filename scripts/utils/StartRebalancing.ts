@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {IUniswapV2Pair, LiquidityBalancer} from "../../typechain";
-import {Erc20Utils} from "../../test/Erc20Utils";
+import {TokenUtils} from "../../test/TokenUtils";
 import {utils} from "ethers";
 import {RunHelper} from "./RunHelper";
 import {Settings} from "../../settings";
@@ -18,8 +18,8 @@ async function main() {
   const targetLp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', targetLpAddress) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
   const token1 = await targetLp.token1();
-  const token0Decimals = await Erc20Utils.decimals(token0);
-  const token1Decimals = await Erc20Utils.decimals(token1);
+  const token0Decimals = await TokenUtils.decimals(token0);
+  const token1Decimals = await TokenUtils.decimals(token1);
 
 
   let lastPrice;
@@ -37,8 +37,8 @@ async function main() {
       const price = lpData[0];
       const tvl = lpData[1] * 2;
       const lpTokenReserve = lpData[2];
-      const balancerTokenBal = +utils.formatUnits(await Erc20Utils.balanceOf(targetToken, balancer.address));
-      const balancerLpBal = +utils.formatUnits(await Erc20Utils.balanceOf(targetLpAddress, balancer.address));
+      const balancerTokenBal = +utils.formatUnits(await TokenUtils.balanceOf(targetToken, balancer.address));
+      const balancerLpBal = +utils.formatUnits(await TokenUtils.balanceOf(targetLpAddress, balancer.address));
       const currentPriceTarget = +utils.formatUnits(await balancer.priceTargets(targetToken));
       const currentTvlTarget = +utils.formatUnits(await balancer.lpTvlTargets(targetLpAddress));
 

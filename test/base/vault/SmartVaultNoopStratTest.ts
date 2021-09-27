@@ -5,7 +5,7 @@ import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {VaultUtils} from "../../VaultUtils";
 import {BigNumber, utils} from "ethers";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -70,7 +70,7 @@ describe("SmartVaultNoopStrat", () => {
         MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
     const lpAddress = await UniswapUtils.addLiquidity(
         signer,
         core.rewardToken.address,
@@ -80,7 +80,7 @@ describe("SmartVaultNoopStrat", () => {
         MaticAddresses.QUICK_FACTORY,
         MaticAddresses.QUICK_ROUTER,
     );
-    expect(await Erc20Utils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
+    expect(await TokenUtils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 
     await core.feeRewardForwarder.setConversionPath(
         [core.rewardToken.address, MaticAddresses.USDC_TOKEN],
@@ -105,14 +105,14 @@ describe("SmartVaultNoopStrat", () => {
       // const vaultUtils = new VaultUtils(vault);
 
       // ************** DEPOSIT *******************************
-      let balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      let balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
 
       await VaultUtils.deposit(signer, vault, BigNumber.from("1000000"));
 
-      let balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      let balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
       expect(balanceAfter.toFixed(6)).is.eq((balanceBefore - (+utils.formatUnits("1000000", 6))).toFixed(6));
 
-      expect(await Erc20Utils.balanceOf(vault.address, signerAddress)).at.eq("1000000");
+      expect(await TokenUtils.balanceOf(vault.address, signerAddress)).at.eq("1000000");
       expect(await vault.underlyingBalanceInVault()).at.eq("0");
       expect(await vault.underlyingBalanceWithInvestment()).at.eq("1000000");
       expect(await vault.underlyingBalanceWithInvestmentForHolder(signerAddress)).at.eq("1000000");
@@ -132,15 +132,15 @@ describe("SmartVaultNoopStrat", () => {
       await vault.rebalance();
 
       // ************** WITHDRAW *******************************
-      balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
 
       await vault.withdraw(BigNumber.from("500000"));
 
-      balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
       expect(balanceAfter).is.eq(balanceBefore + (+utils.formatUnits("500000", 6)));
 
 
-      expect(await Erc20Utils.balanceOf(vault.address, signerAddress)).at.eq("500000");
+      expect(await TokenUtils.balanceOf(vault.address, signerAddress)).at.eq("500000");
       expect(await vault.underlyingBalanceInVault()).at.eq("0");
       expect(await vault.underlyingBalanceWithInvestment()).at.eq("500000");
       expect(await vault.underlyingBalanceWithInvestmentForHolder(signerAddress)).at.eq("500000");
@@ -149,23 +149,23 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.bookkeeper.vaultUsersQuantity(vault.address)).at.eq("1");
 
       // **************** DEPOSIT FOR ************
-      balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
 
-      await Erc20Utils.approve(underlying, signer, vault.address, "250000");
+      await TokenUtils.approve(underlying, signer, vault.address, "250000");
       await vault.depositFor(BigNumber.from("250000"), signerAddress);
 
-      balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
       expect(balanceAfter).is.eq(balanceBefore - (+utils.formatUnits("250000", 6)));
 
-      expect(await Erc20Utils.balanceOf(vault.address, signerAddress)).at.eq("750000");
+      expect(await TokenUtils.balanceOf(vault.address, signerAddress)).at.eq("750000");
       expect(await vault.underlyingBalanceInVault()).at.eq("250000");
 
       // ************* EXIT ***************
-      balanceBefore = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
-      const fBal = await Erc20Utils.balanceOf(vault.address, signerAddress);
+      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      const fBal = await TokenUtils.balanceOf(vault.address, signerAddress);
       await vault.exit();
 
-      balanceAfter = +utils.formatUnits(await Erc20Utils.balanceOf(underlying, signerAddress), 6);
+      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
       expect(balanceAfter).is.eq(balanceBefore + (+utils.formatUnits(fBal, 6)));
 
       expect(await vault.underlyingBalanceWithInvestment()).at.eq("0");
@@ -173,7 +173,7 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.bookkeeper.vaultUsersQuantity(vault.address)).at.eq("0");
     });
     it("Add reward to the vault", async () => {
-      await Erc20Utils.approve(core.rewardToken.address, signer,
+      await TokenUtils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await core.feeRewardForwarder.notifyCustomPool(
           core.rewardToken.address,
@@ -185,16 +185,16 @@ describe("SmartVaultNoopStrat", () => {
       expect((await vault.periodFinishForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect((await vault.lastUpdateTimeForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
-      expect(await Erc20Utils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address))
+      expect(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address))
       .is.eq(9066108);
 
       // ***************** CLAIM REWARDS ****************
-      await Erc20Utils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
       await vault.deposit(BigNumber.from("1000000"));
 
       await TimeUtils.advanceBlocksOnTs(60);
 
-      const rewardBalanceBeforeClaim = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
+      const rewardBalanceBeforeClaim = await TokenUtils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards before", utils.formatUnits(rewardBalanceBeforeClaim, 18));
       expect(rewardBalanceBeforeClaim).at.eq("0");
       const rewards = await vault.earnedWithBoost(core.psVault.address, signerAddress);
@@ -202,15 +202,15 @@ describe("SmartVaultNoopStrat", () => {
       expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(0.45);
       await vault.withdraw(BigNumber.from("1000000"));
       await vault.getReward(core.psVault.address);
-      await Erc20Utils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
       await vault.deposit(BigNumber.from("1000000"));
-      const rewardBalance = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
+      const rewardBalance = await TokenUtils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards balance", utils.formatUnits(rewardBalance, 18));
       expect(+utils.formatUnits(rewardBalance, 18)).at.greaterThanOrEqual(+utils.formatUnits(rewards, 18));
 
       // *********** notify again
       await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
-      await Erc20Utils.approve(core.rewardToken.address, signer,
+      await TokenUtils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await core.feeRewardForwarder.notifyCustomPool(
           core.rewardToken.address,
@@ -241,7 +241,7 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("Add reward to the vault and exit", async () => {
-      await Erc20Utils.approve(core.rewardToken.address, signer,
+      await TokenUtils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await core.feeRewardForwarder.notifyCustomPool(
           core.rewardToken.address,
@@ -255,19 +255,19 @@ describe("SmartVaultNoopStrat", () => {
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
 
       // ***************** CLAIM REWARDS ****************
-      await Erc20Utils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
       await vault.deposit(BigNumber.from("1000000"));
 
       await TimeUtils.advanceBlocksOnTs(60);
 
-      const rewardBalanceBeforeClaim = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
+      const rewardBalanceBeforeClaim = await TokenUtils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards before", utils.formatUnits(rewardBalanceBeforeClaim, 18));
       expect(rewardBalanceBeforeClaim).at.eq("0");
       const rewards = await vault.earnedWithBoost(core.psVault.address, signerAddress);
       console.log("rewards to claim", utils.formatUnits(rewards, 18));
       expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(0.45);
       await vault.exit();
-      const rewardBalance = await Erc20Utils.balanceOf(vaultRewardToken0, signerAddress);
+      const rewardBalance = await TokenUtils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards balance", utils.formatUnits(rewardBalance, 18));
       expect(+utils.formatUnits(rewardBalance, 18)).at.greaterThanOrEqual(+utils.formatUnits(rewards, 18));
 
@@ -311,7 +311,7 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not remove not finished reward token", async () => {
-      await Erc20Utils.approve(core.rewardToken.address, signer,
+      await TokenUtils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await core.feeRewardForwarder.notifyCustomPool(
           core.rewardToken.address,

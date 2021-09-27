@@ -10,6 +10,7 @@ export class CoreAddresses {
   public readonly fundKeeper: string;
   public readonly vaultController: string;
   public readonly vaultLogic: string;
+  public readonly pawnshop: string;
 
 
   constructor(
@@ -23,7 +24,8 @@ export class CoreAddresses {
       psVault: string,
       fundKeeper: string,
       vaultController: string,
-      vaultLogic: string
+      vaultLogic: string,
+      pawnshop: string
   ) {
     this.controller = controller;
     this.announcer = announcer;
@@ -36,5 +38,6 @@ export class CoreAddresses {
     this.fundKeeper = fundKeeper;
     this.vaultController = vaultController;
     this.vaultLogic = vaultLogic;
+    this.pawnshop = pawnshop;
   }
 }

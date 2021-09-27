@@ -7,12 +7,11 @@ import {
   SmartVault,
   SNXRewardInterface
 } from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
 import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {utils} from "ethers";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
+import {TokenUtils} from "../../../test/TokenUtils";
 
 const exclude = new Set<string>([]);
 
@@ -70,8 +69,8 @@ async function downloadQuick() {
       const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
       token0 = await lpContract.token0();
       token1 = await lpContract.token1();
-      token0Name = await Erc20Utils.tokenSymbol(token0);
-      token1Name = await Erc20Utils.tokenSymbol(token1);
+      token0Name = await TokenUtils.tokenSymbol(token0);
+      token1Name = await TokenUtils.tokenSymbol(token1);
     } catch (e) {
       console.error('cant fetch token names for ', lp);
       continue;
@@ -95,6 +94,7 @@ async function downloadQuick() {
     const currentTime = Math.floor(Date.now() / 1000);
 
     if (finish < currentTime) {
+      console.log('reward finished', token0Name, token1Name);
       durationDays = 0
       notifiedAmountUsd = 0;
     }
@@ -102,11 +102,14 @@ async function downloadQuick() {
     console.log('duration', durationDays);
     console.log('weekDurationRatio', weekDurationRatio);
     console.log('notifiedAmount', notifiedAmountN);
-
-    const tvl = await poolContract.totalSupply();
-    const underlyingPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
-    const tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
-
+    let tvlUsd = 0;
+    try {
+      const tvl = await poolContract.totalSupply();
+      const underlyingPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
+      tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
+    } catch (e) {
+      console.log('error fetch tvl', lp);
+    }
     const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100
 
     const data = i + ',' +
@@ -128,11 +131,11 @@ async function downloadQuick() {
     infos += data + '\n';
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
-  await writeFileSync('./tmp/quick_pools.csv', infos, 'utf8');
+  await writeFileSync('./tmp/download/quick_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

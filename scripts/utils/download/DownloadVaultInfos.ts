@@ -76,12 +76,12 @@ async function main() {
         '\n'
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/infos.json', data, 'utf8');
+  await writeFileSync('./tmp/download/infos.json', data, 'utf8');
   console.log('done');
 }
 

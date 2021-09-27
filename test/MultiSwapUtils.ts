@@ -1,6 +1,6 @@
 import {MultiSwap} from "../typechain";
 import {BigNumber, utils} from "ethers";
-import {Erc20Utils} from "./Erc20Utils";
+import {TokenUtils} from "./TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {expect} from "chai";
 
@@ -15,17 +15,17 @@ export class MultiSwapUtils {
       slippageTolerance: number
   ): Promise<BigNumber> {
 
-    const tokenInDec = await Erc20Utils.decimals(tokenIn);
+    const tokenInDec = await TokenUtils.decimals(tokenIn);
 
-    expect(+utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec))
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
     .is.greaterThan(+utils.formatUnits(amount, tokenInDec));
 
     const lps = await multiSwap.findLpsForSwaps(tokenIn, tokenOut);
 
-    await Erc20Utils.approve(tokenIn, signer, multiSwap.address, amount.toString())
+    await TokenUtils.approve(tokenIn, signer, multiSwap.address, amount.toString())
     await multiSwap.multiSwap(lps, tokenIn, tokenOut, amount, slippageTolerance);
 
-    const bal = await Erc20Utils.balanceOf(tokenOut, signer.address);
+    const bal = await TokenUtils.balanceOf(tokenOut, signer.address);
     expect(bal).is.not.eq(0);
 
     return bal;

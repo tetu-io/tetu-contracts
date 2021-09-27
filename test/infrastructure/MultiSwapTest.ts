@@ -9,7 +9,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
-import {Erc20Utils} from "../Erc20Utils";
+import {TokenUtils} from "../TokenUtils";
 import {Addresses} from "../../addresses";
 
 const {expect} = chai;
@@ -92,29 +92,29 @@ describe("Multi swap tests", function () {
 });
 
 async function tryToSwap(signer: SignerWithAddress, multiSwap: MultiSwap, tokenIn: string, tokenOut: string, amountRaw = '1000') {
-  const tokenInDec = await Erc20Utils.decimals(tokenIn);
+  const tokenInDec = await TokenUtils.decimals(tokenIn);
 
   const amount = utils.parseUnits(amountRaw, tokenInDec);
 
-  expect(+utils.formatUnits(await Erc20Utils.balanceOf(tokenIn, signer.address), tokenInDec))
+  expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
   .is.greaterThan(+utils.formatUnits(amount, tokenInDec));
 
   const lps = await multiSwap.findLpsForSwaps(tokenIn, tokenOut);
 
-  console.log('===== PATH =======', await Erc20Utils.tokenSymbol(tokenIn), '=>', await Erc20Utils.tokenSymbol(tokenOut))
+  console.log('===== PATH =======', await TokenUtils.tokenSymbol(tokenIn), '=>', await TokenUtils.tokenSymbol(tokenOut))
   for (let lp of lps) {
     const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();
-    console.log('lp', await Erc20Utils.tokenSymbol(t0), await Erc20Utils.tokenSymbol(t1));
+    console.log('lp', await TokenUtils.tokenSymbol(t0), await TokenUtils.tokenSymbol(t1));
   }
   console.log('============')
 
-  await Erc20Utils.approve(tokenIn, signer, multiSwap.address, amount.toString())
+  await TokenUtils.approve(tokenIn, signer, multiSwap.address, amount.toString())
   await multiSwap.multiSwap(lps, tokenIn, tokenOut, amount, 9);
 
-  const bal = await Erc20Utils.balanceOf(tokenOut, signer.address);
+  const bal = await TokenUtils.balanceOf(tokenOut, signer.address);
   expect(bal).is.not.eq(0);
 
-  expect(await Erc20Utils.balanceOf(tokenOut, signer.address)).is.not.eq(0);
+  expect(await TokenUtils.balanceOf(tokenOut, signer.address)).is.not.eq(0);
 }

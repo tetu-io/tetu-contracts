@@ -17,9 +17,6 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
-
   const vaultNames = new Set<string>();
 
   const cReader = await DeployerUtils.connectContract(
@@ -32,7 +29,7 @@ async function main() {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
-  const tetuLp = (await DeployerUtils.getTokenAddresses()).get('sushi_lp_token_usdc') as string;
+  const tetuLp = MaticAddresses.SUSHI_TETU_WMATIC;
 
   const lpCont = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', tetuLp) as IUniswapV2Pair
   const token0 = await lpCont.token0();
@@ -45,7 +42,7 @@ async function main() {
   const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
   const tetuLpVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
   const tetuLpEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-      core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken], 3) as NoopStrategy;
+      core.controller, tetuLp, tetuLpVault.address, [], [token0, token1], 3) as NoopStrategy;
 
   const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
 
@@ -59,15 +56,12 @@ async function main() {
   await tetuLpVault.initializeSmartVault(
       `TETU_${vaultNameWithoutPrefix}`,
       `x${vaultNameWithoutPrefix}`,
-      controller.address,
+      core.controller,
       tetuLp,
       60 * 60 * 24 * 28,
       false,
       core.psVault
   );
-
-  await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
-
 
   await DeployerUtils.wait(5);
 
@@ -76,7 +70,7 @@ async function main() {
   await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
   await DeployerUtils.verifyProxy(vaultProxy.address);
   await DeployerUtils.verifyWithArgs(tetuLpEmptyStrategy.address,
-      [core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken]]);
+      [core.controller, tetuLp, tetuLpVault.address, [], [token0, token1], 3]);
 
 }
 

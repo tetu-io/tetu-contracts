@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import { MaticAddresses } from "../../../MaticAddresses";
 import { Settings } from "../../../../settings";
 import { ethers} from "hardhat";
-import { Erc20Utils } from "../../../Erc20Utils";
+import { TokenUtils } from "../../../TokenUtils";
 import { StrategyInfo } from "../../StrategyInfo";
 import { TimeUtils } from "../../../TimeUtils";
 import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
@@ -29,7 +29,7 @@ describe('Curve aave tests', async () => {
         const coreContracts = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
         const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, coreContracts.controller.address))[0];
         const underlying = MaticAddresses.AM3CRV_TOKEN;
-        const underlyingName = await Erc20Utils.tokenSymbol(underlying);
+        const underlyingName = await TokenUtils.tokenSymbol(underlying);
         const strategyName = 'CurveAaveStrategy';
         await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
 
@@ -72,7 +72,7 @@ describe('Curve aave tests', async () => {
       it("doHardWork loop", async function () {
         await DoHardWorkLoop.doHardWorkLoop(
             strategyInfo,
-            (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+            (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
             3,
             27000
         );

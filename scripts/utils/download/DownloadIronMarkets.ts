@@ -11,7 +11,7 @@ import {
   RTokenInterface,
   SmartVault
 } from "../../../typechain";
-import {Erc20Utils} from "../../../test/Erc20Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -66,12 +66,12 @@ async function main() {
 
 
     const rTokenAdr = markets[i];
-    const rTokenName = await Erc20Utils.tokenSymbol(rTokenAdr);
+    const rTokenName = await TokenUtils.tokenSymbol(rTokenAdr);
     console.log('rTokenName', rTokenName, rTokenAdr)
     const rTokenCtr = await DeployerUtils.connectInterface(signer, 'RTokenInterface', rTokenAdr) as RTokenInterface;
     const rTokenCtr2 = await DeployerUtils.connectInterface(signer, 'RErc20Storage', rTokenAdr) as RErc20Storage;
     const token = await rTokenCtr2.underlying();
-    const tokenName = await Erc20Utils.tokenSymbol(token);
+    const tokenName = await TokenUtils.tokenSymbol(token);
 
     const collateralFactor = +utils.formatUnits((await controller.markets(rTokenAdr)).collateralFactorMantissa) * 10000;
     const borrowTarget = Math.floor(collateralFactor * 0.9);
@@ -83,7 +83,7 @@ async function main() {
     }
     const undPrice = +utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token));
 
-    const undDec = await Erc20Utils.decimals(token);
+    const undDec = await TokenUtils.decimals(token);
     const cash = +utils.formatUnits(await rTokenCtr.getCash(), undDec);
     const borrowed = +utils.formatUnits(await rTokenCtr.totalBorrows(), undDec);
     const reserves = +utils.formatUnits(await rTokenCtr.totalReserves(), undDec);
@@ -110,12 +110,12 @@ async function main() {
     infos += data + '\n';
   }
 
-  mkdir('./tmp', {recursive: true}, (err) => {
+  mkdir('./tmp/download', {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/iron_markets.csv', infos, 'utf8');
+  await writeFileSync('./tmp/download/iron_markets.csv', infos, 'utf8');
   console.log('done');
 }
 

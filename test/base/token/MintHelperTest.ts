@@ -10,7 +10,7 @@ import {TimeUtils} from "../../TimeUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelper, RewardToken} from "../../../typechain";
 import {MintHelperUtils} from "../../MintHelperUtils";
-import {Erc20Utils} from "../../Erc20Utils";
+import {TokenUtils} from "../../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -69,11 +69,11 @@ describe("Mint helper tests", () => {
 
   it("Mint tokens", async () => {
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', core.notifyHelper.address);
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signerAddress))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress))
     .at.eq(utils.parseUnits("9900", 18));
 
     await MintHelperUtils.mint(core.controller, core.announcer, '200', core.notifyHelper.address);
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .at.eq(utils.parseUnits("9919.8", 18));
   });
 
@@ -145,7 +145,7 @@ describe("Mint helper tests", () => {
     const mintAmount = utils.formatUnits(maxTotalAmount.sub(totalAmount), 18);
     expect(maxTotalAmount.sub(totalAmount).toString()).at.eq("259492154000000000000000000");
     await MintHelperUtils.mint(core.controller, core.announcer, mintAmount, core.notifyHelper.address);
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .at.eq("25689733146000000000000000");
   });
   it("Should mint all emission", async () => {
@@ -163,7 +163,7 @@ describe("Mint helper tests", () => {
     const totalNet = total * 0.33;
     const devExpected = totalNet * 0.3;
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address))
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .at.eq(utils.parseUnits(devExpected.toFixed(), 18));
   });
   it("log2 test", async () => {
@@ -257,12 +257,12 @@ describe("Mint helper tests", () => {
   it("mint all available emission", async () => {
     const amount = '0';
     const destination = signer.address;
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).is.eq(0);
     await core.announcer.announceMint(utils.parseUnits(amount), destination, destination, true);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await core.controller.mintAndDistribute(utils.parseUnits(amount), destination, destination, true);
 
-    expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq('129746127000000000000000000');
+    expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).is.eq('129746127000000000000000000');
   });
 
 });
