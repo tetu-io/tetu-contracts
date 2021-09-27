@@ -14,8 +14,6 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -28,8 +26,6 @@ import "../base/ArrayLib.sol";
 /// @author belbix
 contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnShop {
   using SafeERC20 for IERC20;
-  using Address for address;
-  using SafeMath for uint256;
   using ArrayLib for uint256[];
 
   /// @dev Tetu Controller address requires for governance actions
