@@ -33,7 +33,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Maximum folding loops
@@ -459,8 +459,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
     amountUnderlying = Math.min(amountUnderlying, CompleteRToken(rToken).balanceOfUnderlying(address(this)));
     if (amountUnderlying > 0) {
-      uint256 code = CompleteRToken(rToken).redeemUnderlying(amountUnderlying);
-      if (code != 0) {
+      uint256 redeemCode = 999;
+      try CompleteRToken(rToken).redeemUnderlying(amountUnderlying) returns (uint256 code) {
+        redeemCode = code;
+      } catch{}
+      if (redeemCode != 0) {
         // iron has verification function that can ruin tx with underlying, in this case redeem rToken will work
         (,,, uint256 exchangeRate) = CompleteRToken(rToken).getAccountSnapshot(address(this));
         uint256 rTokenRedeem = amountUnderlying * 1e18 / exchangeRate;
@@ -472,26 +475,18 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   }
 
   /// @dev Redeem liquidity in rToken
-  ///      Must not revert transaction
   function _redeemRToken(uint256 amountRToken) internal updateSupplyInTheEnd {
     if (amountRToken > 0) {
-      uint256 code = CompleteRToken(rToken).redeem(amountRToken);
-      if (code != 0) {
-        emit RedeemFailed(amountRToken, code);
-      }
+      require(CompleteRToken(rToken).redeem(amountRToken) == 0, "IFS: Redeem failed");
     }
   }
 
-  /// @dev Repays a loan
-  ///      Must not revert transaction
+  /// @dev Repay a loan
   function _repay(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     if (amountUnderlying != 0) {
       IERC20(_underlyingToken).safeApprove(rToken, 0);
       IERC20(_underlyingToken).safeApprove(rToken, amountUnderlying);
-      uint256 code = CompleteRToken(rToken).repayBorrow(amountUnderlying);
-      if (code != 0) {
-        emit RepayFailed(amountUnderlying, code);
-      }
+      require(CompleteRToken(rToken).repayBorrow(amountUnderlying) == 0, "IFS: Repay failed");
     }
   }
 
