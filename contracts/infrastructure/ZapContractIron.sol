@@ -34,6 +34,10 @@ contract ZapContractIron is Controllable, ReentrancyGuard {
 
   string public constant VERSION = "1.0.0";
 
+  string constant _ZC_WRONG_ASSETS_COUNT = "ZC: wrong assets count";
+  string constant _ZC_WRONG_ROUTES_COUNT = "ZC: wrong routes count";
+  string constant _ZC_WRONG_ASSETS       = "ZC: wrong assets";
+
   IMultiSwap public multiSwap;
   mapping(address => uint256) calls;
 
@@ -57,10 +61,6 @@ contract ZapContractIron is Controllable, ReentrancyGuard {
     _;
     calls[msg.sender] = block.number;
   }
-
-  string constant _ZC_WRONG_ASSETS_COUNT = "ZC: wrong assets count";
-  string constant _ZC_WRONG_ROUTES_COUNT = "ZC: wrong routes count";
-  string constant _ZC_WRONG_ASSETS       = "ZC: wrong assets";
 
   // ******************** USERS ACTIONS *********************
 
