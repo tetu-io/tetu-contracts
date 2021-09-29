@@ -76,8 +76,7 @@ async function main() {
             borrowTarget,
             collateralFactor
         ) as Promise<IStrategy>,
-        controller,
-        vaultController,
+        core.controller,
         core.psVault,
         signer,
         60 * 60 * 24 * 28,

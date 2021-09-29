@@ -76,8 +76,7 @@ async function main() {
               tokens,
               idx
           ) as Promise<IStrategy>,
-          controller,
-          vaultController,
+          core.controller,
           core.psVault,
           signer,
           60 * 60 * 24 * 28,
@@ -107,8 +106,7 @@ async function main() {
               tokens[1],
               idx
           ) as Promise<IStrategy>,
-          controller,
-          vaultController,
+          core.controller,
           core.psVault,
           signer,
           60 * 60 * 24 * 28,

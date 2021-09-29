@@ -7,7 +7,6 @@ import {
   PriceCalculator,
   SmartVault
 } from "../../../typechain";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../test/TokenUtils";
@@ -42,7 +41,7 @@ export class McLpDownloader {
     const currentRewards = new Map<string, number>();
     const underlyingToVault = new Map<string, string>();
     for (let vInfo of vaultInfos) {
-      if(vInfo.platform !== platformId) {
+      if (vInfo.platform !== platformId) {
         continue;
       }
       underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -62,6 +61,7 @@ export class McLpDownloader {
     const rewardPerBlock = await rewardPerBlocCall();
     const totalAllocPoint = await totalAllocPointCall();
     const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(rewardAddress);
+    const currentBlock = await web3.eth.getBlockNumber();
     console.log('reward price', utils.formatUnits(rewardPrice));
 
     let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n';
@@ -70,7 +70,7 @@ export class McLpDownloader {
       try {
         const poolInfo = await poolInfoCall(i);
         if (poolInfo.depositFeeBP) {
-          console.log('depositFeeBP', poolInfo.depositFeeBP, 'is defined, skipping the pool');
+          console.log(i, 'depositFeeBP', poolInfo.depositFeeBP, 'is defined, skipping the pool');
           continue;
         }
         const lp = poolInfo.lpAddress;
@@ -82,13 +82,18 @@ export class McLpDownloader {
         const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
 
         const allocPoint = poolInfo.allocPoint;
-        const currentBlock = await web3.eth.getBlockNumber();
         const duration = currentBlock - poolInfo.lastUpdateTime;
         console.log('duration', duration, currentBlock, poolInfo.lastUpdateTime);
         const weekRewardUsd = McLpDownloader.computeWeekReward(duration, rewardPerBlock, allocPoint, totalAllocPoint, rewardPrice);
         console.log('weekRewardUsd', weekRewardUsd);
 
-        const lpPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
+        let lpPrice = BigNumber.from(0);
+        try {
+          lpPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
+        } catch (e) {
+          console.log('error get price for', lp);
+        }
+
         const tvl = await lpContract.balanceOf(chefAddress);
         const tvlUsd = utils.formatUnits(tvl.mul(lpPrice).div(1e9).div(1e9));
 
@@ -131,7 +136,7 @@ export class McLpDownloader {
         infos += data + '\n';
         counter++;
       } catch (e) {
-        console.error('Error download pool', i);
+        console.error('Error download pool', i, e);
       }
     }
 
@@ -149,7 +154,7 @@ export class McLpDownloader {
       allocPoint: BigNumber,
       totalAllocPoint: BigNumber,
       tokenPrice: BigNumber,
-      averageBlockTime = 5
+      averageBlockTime = 2.25
   ): number {
     console.log('blockDuration', blockDuration,
         'tokenPerBlock', tokenPerBlock.toString(),
@@ -157,6 +162,7 @@ export class McLpDownloader {
         'totalAllocPoint', totalAllocPoint.toString(),
         'tokenPrice', tokenPrice.toString(),
         'averageBlockTime', averageBlockTime);
+    blockDuration = Math.max(blockDuration, 1);
     const reward = BigNumber.from(blockDuration).mul(tokenPerBlock).mul(allocPoint).div(totalAllocPoint);
     const timeWeekRate = (60 * 60 * 24 * 7) / (blockDuration * averageBlockTime);
     const rewardForWeek = +utils.formatUnits(reward) * timeWeekRate;

@@ -40,8 +40,7 @@ async function main() {
           MaticAddresses.AM3CRV_TOKEN,
           vaultAddress
       ) as Promise<IStrategy>,
-      controller,
-      vaultController,
+      core.controller,
       core.psVault,
       signer,
       60 * 60 * 24 * 28,
