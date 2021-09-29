@@ -33,7 +33,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Maximum folding loops
@@ -64,8 +64,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   event FoldStopped();
   event FoldStarted(uint256 borrowTargetFactorNumerator);
   event MaxDepthReached();
-  event RedeemFailed(uint256 amount, uint256 code);
-  event RepayFailed(uint256 amount, uint256 code);
   event NoMoneyForLiquidateUnderlying();
   event UnderlyingLiquidationFailed();
   event Rebalanced(uint256 supplied, uint256 borrowed, uint256 borrowTarget);
@@ -454,7 +452,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   }
 
   /// @dev Redeem liquidity in underlying
-  ///      Must not revert transaction
   function _redeemUnderlying(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
     amountUnderlying = Math.min(amountUnderlying, CompleteRToken(rToken).balanceOfUnderlying(address(this)));
