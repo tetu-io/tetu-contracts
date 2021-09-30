@@ -10,7 +10,6 @@ import {
 } from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../../../test/MaticAddresses";
 
 
 export class McLpStrategyDeployer {
@@ -105,7 +104,7 @@ export class McLpStrategyDeployer {
       if (err) throw err;
     });
 
-    await writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`,
-        JSON.stringify([vaultLogic, vault, strategy]), 'utf8');
+    const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
+    await writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
   }
 }

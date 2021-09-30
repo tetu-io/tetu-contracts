@@ -29,7 +29,8 @@ async function main() {
             "depositFeeBP": info.depositFeeBP
           };
         });
-      }
+      },
+      true
   );
 }
 

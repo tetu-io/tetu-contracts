@@ -28,7 +28,8 @@ export class McLpDownloader {
         "allocPoint": BigNumber,
         "lastUpdateTime": number,
         "depositFeeBP"?: number
-      }>
+      }>,
+      onlyDeployed = false
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -77,6 +78,10 @@ export class McLpDownloader {
         const status = underlyingStatuses.get(lp.toLowerCase());
         if (status != null && !status) {
           console.log('deactivated');
+          continue;
+        }
+        if(onlyDeployed && !status){
+          console.log('not deployed');
           continue;
         }
         const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
