@@ -22,6 +22,8 @@ async function main() {
   const reader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
 
   const vaultsPure = await core.bookkeeper.vaults();
+  console.log('vaultsPure', vaultsPure.length)
+
   const currentBlock = await web3.eth.getBlockNumber();
 
   const rewards = new Map<string, Map<string, number>>();
@@ -32,7 +34,7 @@ async function main() {
     const v = vault.toLowerCase();
     if (v == core.psVault.address.toLowerCase()
         // || !vaultsForParsing.has(v)
-        || !(await reader.vaultActive(vault))
+        // || !(await reader.vaultActive(vault))
     ) {
       continue;
     }
