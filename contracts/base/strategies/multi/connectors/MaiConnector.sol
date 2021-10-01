@@ -12,5 +12,19 @@
 
 pragma solidity 0.8.4;
 
-import "./../../third_party/qudao-mai/ICamWMatic.sol";
-import "./../../third_party/qudao-mai/IErc20StableCoin.sol";
+import "./../../../../third_party/qudao-mai/ICamWMatic.sol";
+import "./../../../../third_party/qudao-mai/IErc20StableCoin.sol";
+
+contract MaiConnector {
+    address public erc20StableCoin;
+
+    constructor(
+        address _erc20StableCoin
+    ) public {
+        erc20StableCoin = _erc20StableCoin;
+    }
+
+    function _maiCreateVault() internal {
+        IErc20Stablecoin(erc20StableCoin).createVault(); //TODO add try w gas limit
+    }
+}

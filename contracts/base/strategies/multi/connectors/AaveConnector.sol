@@ -16,9 +16,9 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./../../third_party/aave/ILendingPool.sol";
-import "./../../third_party/aave/ILendingPoolAddressesProvider.sol";
-import "./../../third_party/aave/IAaveProtocolDataProvider.sol";
+import "../../../../../third_party/aave/ILendingPool.sol";
+import "../../../../../third_party/aave/ILendingPoolAddressesProvider.sol";
+import "../../../../../third_party/aave/IAaveProtocolDataProvider.sol";
 
 contract AaveConnector {
 
@@ -39,21 +39,21 @@ contract AaveConnector {
         aaveUnderlying = _underlying;
         lendingPoolProvider = _lendingPoolProvider;
         protocolDataProvider = _protocolDataProvider;
-        aTokenAddress = aaveToken();
+        aTokenAddress = aToken();
     }
 
-    function aaveLendingPool() public view returns (address) {
+    function lendingPool() public view returns (address) {
         return ILendingPoolAddressesProvider(lendingPoolProvider).getLendingPool();
     }
 
-    function aaveToken() public view returns (address) {
+    function aToken() public view returns (address) {
         (address newATokenAddress,,) =
         IAaveProtocolDataProvider(protocolDataProvider).getReserveTokensAddresses(aaveUnderlying);
         return newATokenAddress;
     }
 
     function _aaveDeposit(uint256 amount) internal {
-        address lendPool = aaveLendingPool();
+        address lendPool = lendingPool();
         IERC20(aaveUnderlying).safeApprove(lendPool, 0);
         IERC20(aaveUnderlying).safeApprove(lendPool, amount);
 
@@ -70,7 +70,7 @@ contract AaveConnector {
     }
 
     function _aaveWithdraw(uint256 amount) internal {
-        address lendPool = aaveLendingPool();
+        address lendPool = lendingPool();
         IERC20(aTokenAddress).safeApprove(lendPool, 0);
         IERC20(aTokenAddress).safeApprove(lendPool, amount);
         uint256 maxAmount = IERC20(aTokenAddress).balanceOf(address(this));

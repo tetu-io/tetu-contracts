@@ -14,13 +14,13 @@ pragma solidity 0.8.4;
 
 import "./../StrategyBase.sol";
 
-import "./../connectors/AaveConnector.sol";
-import "./../connectors/BalancerConnector.sol";
-import "./../connectors/MaiConnector.sol";
+import "./connectors/AaveConnector.sol";
+import "./connectors/BalancerConnector.sol";
+import "./connectors/MaiConnector.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
-contract AaveMaiBalStrategyBase is StrategyBase {
+contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector {
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
@@ -32,6 +32,11 @@ contract AaveMaiBalStrategyBase is StrategyBase {
   /// @dev Assets should reflect underlying tokens for investing
   address[] private _assets;
 
+  //TODO move to constructor
+  address public constant maiVaultAddress = 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a; //camWMATIC MAI Vault (cMVT)
+  address public constant aaveWethGatewayAddress = 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97;
+  address public constant aaveLendingPoolAddress = 0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf;
+
   /// @notice Contract constructor
   constructor(
     address _controller,
@@ -39,13 +44,17 @@ contract AaveMaiBalStrategyBase is StrategyBase {
     address _vault,
     address[] memory __rewardTokens,
     address[] memory __assets
-  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
+  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
+    AaveWethConnector(aaveWethGatewayAddress, aaveLendingPoolAddress)
+    MaiConnector(maiVaultAddress)
+  {
     _assets = __assets;
 
-//    TODO - MAI: create camMATIC vault
+//    MAI: create camMATIC vault
 //    https://polygonscan.com/tx/0x3f69c39b4ff0f3280d4277e0cc82d9dba3ff384a2ddad5890eb0960d55019dc2
 //    contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //    Function: createVault()
+    _maiCreateVault();
 
   }
 
@@ -64,12 +73,13 @@ contract AaveMaiBalStrategyBase is StrategyBase {
 
   /// @dev Stub function for Strategy Base implementation
   function depositToPool(uint256 amount) internal override {
-//  TODO - AAVE: deposit MATIC -> amMATIC {WMATIC rewards}
+//  AAVE: deposit MATIC -> amMATIC {WMATIC rewards}
 //  https://polygonscan.com/tx/0xab73bb28961fcee75cb5865c8cad0ff1aa7235461e8505dc9acea50078b1b12c
 //  contract WETHGateway 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97
 //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
-//
-//
+
+
+
 //  TODO - MAI: approve, enter yield deposit amMATIC to camMATIC
 //  https://polygonscan.com/tx/0xc48fd433ef7145089daabed2dedd98f1c4598a8f50d7f7644dc2b91a7d41aad4
 //  Contract 0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4 (Aave: amWMATIC Token)
