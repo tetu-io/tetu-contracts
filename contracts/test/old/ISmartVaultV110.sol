@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-interface ISmartVaultV1_0_0 {
+interface ISmartVaultV110 {
 
   function setStrategy(address _strategy) external;
 
@@ -58,6 +58,8 @@ interface ISmartVaultV1_0_0 {
 
   function earned(address rt, address account) external view returns (uint256);
 
+  function earnedWithBoost(address rt, address account) external view returns (uint256);
+
   function rewardPerToken(address rt) external view returns (uint256);
 
   function lastTimeRewardApplicable(address rt) external view returns (uint256);
@@ -82,7 +84,11 @@ interface ISmartVaultV1_0_0 {
 
   function userLastWithdrawTs(address _user) external returns (uint256);
 
+  function userBoostTs(address _user) external returns (uint256);
+
   function addRewardToken(address rt) external;
 
   function removeRewardToken(address rt) external;
+
+  function stop() external;
 }

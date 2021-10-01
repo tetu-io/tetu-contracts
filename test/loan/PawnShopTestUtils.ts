@@ -151,7 +151,7 @@ export class PawnShopTestUtils {
     const lastLoanListIndexAfter = (await shop.posIndexes(0, lastLoanId)).toString();
     const loanListIndexAfter = (await shop.posIndexes(0, pos.id)).toString();
     expect(loanListIndexAfter).is.eq(PawnShopUtils.MAX_UINT);
-    if(posListLength > 1) {
+    if (posListLength > 1) {
       expect(lastLoanListIndexAfter).is.eq(loanListIndex);
     }
     expect(posAfter.open).is.false;
@@ -273,15 +273,15 @@ export class PawnShopTestUtils {
 
   public static async acceptAuctionBidAndCheck(loanId: number, signer: SignerWithAddress, shop: TetuPawnShop) {
     const l = await shop.positions(loanId);
-    const aBalanceBefore = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
+    const aBalanceBefore = await TokenUtils.balanceOf(l.acquired.acquiredToken, shop.address);
     const lastBidId = await PawnShopUtils.lastAuctionBidId(loanId, shop);
     const bid = await shop.auctionBids(lastBidId);
     const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, bid.lender);
 
     await PawnShopUtils.acceptAuctionBid(loanId, signer, shop);
 
-    const aBalanceAfter = await TokenUtils.balanceOf(l.acquired.acquiredToken, signer.address);
-    expect(aBalanceAfter.sub(aBalanceBefore).toString()).is.eq(bid.amount);
+    const aBalanceAfter = await TokenUtils.balanceOf(l.acquired.acquiredToken, shop.address);
+    expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(bid.amount);
 
     expect(await shop.lenderOpenBids(bid.lender, loanId)).is.eq(0);
     expect((await shop.auctionBids(lastBidId)).open).is.false;
@@ -289,7 +289,7 @@ export class PawnShopTestUtils {
     await PawnShopTestUtils.checkExecution(loanId, bid.amount.toString(), bid.lender, shop, cBalanceBefore);
   }
 
-  public static async getBidIdAndCheck(loanId: number, lenderAddress: string, shop: TetuPawnShop){
+  public static async getBidIdAndCheck(loanId: number, lenderAddress: string, shop: TetuPawnShop) {
     const bidIndex = await shop.lenderOpenBids(lenderAddress, loanId);
     expect(bidIndex).is.not.eq(0);
     const bidId = await shop.positionToBidIds(loanId, bidIndex.sub(1));

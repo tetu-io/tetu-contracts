@@ -10,6 +10,7 @@ import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
+import {MintHelperUtils} from "../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -42,15 +43,15 @@ describe("pawnshop reader tests", function () {
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, core.rewardToken.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, MaticAddresses.ZERO_ADDRESS) as TetuPawnShop;
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     await reader.initialize(core.controller.address, calculator.address, shop.address);
 
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
-    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
-    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
 
     for (let i = 0; i < EXECUTED_POSITION_COUNT; i++) {
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(

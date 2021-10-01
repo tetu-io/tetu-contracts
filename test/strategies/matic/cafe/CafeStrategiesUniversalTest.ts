@@ -8,7 +8,7 @@ import {Settings} from "../../../../settings";
 
 chai.use(chaiAsPromised);
 
-describe('Universal Dino tests', async () => {
+describe('Universal Cafe tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }

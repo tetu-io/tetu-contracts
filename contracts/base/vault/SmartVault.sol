@@ -127,19 +127,19 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @dev Allow operation only for VaultController
   modifier onlyVaultController() {
-    require(IController(controller()).vaultController() == msg.sender, "not vault controller");
+    require(IController(controller()).vaultController() == msg.sender, "SV: Not vault controller");
     _;
   }
 
   /// @dev Strategy should not be a zero address
   modifier whenStrategyDefined() {
-    require(address(strategy()) != address(0), "zero strat");
+    require(address(strategy()) != address(0), "SV: Zero strat");
     _;
   }
 
   /// @dev Allowed only for active strategy
   modifier isActive() {
-    require(active(), "not active");
+    require(active(), "SV: Not active");
     _;
   }
 
@@ -200,17 +200,17 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /// @notice Earn some money for honest work
-  function doHardWork() external whenStrategyDefined onlyControllerOrGovernance isActive override {
+  function doHardWork() external whenStrategyDefined onlyControllerOrGovernance override {
     uint256 sharePriceBeforeHardWork = getPricePerFullShare();
     IStrategy(strategy()).doHardWork();
-    require(ppfsDecreaseAllowed() || sharePriceBeforeHardWork <= getPricePerFullShare(), "ppfs decreased");
+    require(ppfsDecreaseAllowed() || sharePriceBeforeHardWork <= getPricePerFullShare(), "SV: PPFS decreased");
   }
 
   /// @notice Add a reward token to the internal array
   /// @param rt Reward token address
   function addRewardToken(address rt) external override onlyVaultController {
-    require(getRewardTokenIndex(rt) == type(uint256).max, "rt exist");
-    require(rt != underlying(), "rt is underlying");
+    require(getRewardTokenIndex(rt) == type(uint256).max, "SV: RT exist");
+    require(rt != underlying(), "SV: RT is underlying");
     _rewardTokens.push(rt);
     emit AddedRewardToken(rt);
   }
@@ -219,9 +219,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @param rt Reward token address
   function removeRewardToken(address rt) external override onlyVaultController {
     uint256 i = getRewardTokenIndex(rt);
-    require(i != type(uint256).max, "not exist");
-    require(periodFinishForToken[_rewardTokens[i]] < block.timestamp, "not finished");
-    require(_rewardTokens.length > 1, "last rt");
+    require(i != type(uint256).max, "SV: Not exist");
+    require(periodFinishForToken[_rewardTokens[i]] < block.timestamp, "SV: Not finished");
+    require(_rewardTokens.length > 1, "SV: Last rt");
     uint256 lastIndex = _rewardTokens.length - 1;
     // swap
     _rewardTokens[i] = _rewardTokens[lastIndex];
@@ -400,8 +400,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Burn shares, withdraw underlying from strategy
   ///         and send back to the user the underlying asset
   function _withdraw(uint256 numberOfShares) internal updateRewards(msg.sender) {
-    require(totalSupply() > 0, "no shares");
-    require(numberOfShares > 0, "zero amount");
+    require(totalSupply() > 0, "SV: No shares");
+    require(numberOfShares > 0, "SV: Zero amount");
 
     // store totalSupply before shares burn
     uint256 totalSupply = totalSupply();
@@ -476,8 +476,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Mint shares and transfer underlying from user to the vault
   ///         New shares = (invested amount * total supply) / underlyingBalanceWithInvestment()
   function _deposit(uint256 amount, address sender, address beneficiary) internal updateRewards(sender) {
-    require(amount > 0, "zero amount");
-    require(beneficiary != address(0), "zero beneficiary");
+    require(amount > 0, "SV: Zero amount");
+    require(beneficiary != address(0), "SV: Zero beneficiary");
 
     uint256 toMint = totalSupply() == 0
     ? amount
@@ -609,9 +609,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     .registerRewardDistribution(address(this), _rewardToken, amount);
 
     // overflow fix according to https://sips.synthetix.io/sips/sip-77
-    require(amount < type(uint256).max / 1e18, "amount overflow");
+    require(amount < type(uint256).max / 1e18, "SV: Amount overflow");
     uint256 i = getRewardTokenIndex(_rewardToken);
-    require(i != type(uint256).max, "rt not found");
+    require(i != type(uint256).max, "SV: RT not found");
 
     IERC20Upgradeable(_rewardToken).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -630,7 +630,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // very high values of rewardRate in the earned and rewardsPerToken functions;
     // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
     uint balance = IERC20Upgradeable(_rewardToken).balanceOf(address(this));
-    require(rewardRateForToken[_rewardToken] <= balance.div(duration()), "Provided reward too high");
+    require(rewardRateForToken[_rewardToken] <= balance.div(duration()), "SV: Provided reward too high");
     emit RewardAdded(_rewardToken, amount);
   }
 
@@ -714,9 +714,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Check the strategy time lock, withdraw all to the vault and change the strategy
   ///         Should be called via controller
   function setStrategy(address _strategy) external override onlyController {
-    require(_strategy != address(0), "zero strat");
-    require(IStrategy(_strategy).underlying() == address(underlying()), "wrong underlying");
-    require(IStrategy(_strategy).vault() == address(this), "wrong strat vault");
+    require(_strategy != address(0), "SV: Zero strat");
+    require(IStrategy(_strategy).underlying() == address(underlying()), "SV: Wrong underlying");
+    require(IStrategy(_strategy).vault() == address(this), "SV: Wrong strat vault");
     require(IControllable(_strategy).isController(controller()), "SV: Wrong strategy controller");
 
     emit StrategyChanged(_strategy, strategy());
