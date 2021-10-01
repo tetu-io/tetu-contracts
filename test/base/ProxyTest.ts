@@ -20,13 +20,13 @@ describe("Proxy tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
-  let signer1: SignerWithAddress;
+  let user1: SignerWithAddress;
   let core: CoreContractsWrapper;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
-    signer1 = (await ethers.getSigners())[1];
+    user1 = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
   });
 
@@ -114,9 +114,18 @@ describe("Proxy tests", function () {
         ]
     );
 
+    await TokenUtils.transfer(vault.address, signer, user1.address, '10');
+    await TokenUtils.transfer(vault.address, user1, signer.address, '10');
+
     await core.announcer.announceVaultStopBatch([vault.address]);
+
     await TimeUtils.advanceBlocksOnTs(999);
+
+    await vault.getAllRewards();
+
     await core.vaultController.stopVaultsBatch([vault.address]);
+
+    await TimeUtils.advanceBlocksOnTs(999);
 
     expect(await vault.name()).is.eq('TETU_PS1');
 
@@ -125,8 +134,14 @@ describe("Proxy tests", function () {
     expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
     .is.equal(10);
     expect(+utils.formatUnits(await vault.earned(core.rewardToken.address, signer.address))).is.eq(0);
+    const balanceBefore = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+
     await vault.exit();
+
     expect(+utils.formatUnits(await vault.earned(core.rewardToken.address, signer.address))).is.eq(0);
+
+    const balanceAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    expect(balanceAfter.sub(balanceBefore).toString()).is.eq('10');
   });
 
 });
