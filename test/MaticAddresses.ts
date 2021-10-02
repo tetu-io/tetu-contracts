@@ -42,6 +42,8 @@ export class MaticAddresses {
   public static IRIS_TOKEN = "0xdaB35042e63E93Cc8556c9bAE482E5415B5Ac4B1".toLowerCase(); // Hermes
   public static DFYN_TOKEN = "0xc168e40227e4ebd8c1cae80f7a55a4f0e6d66c97".toLowerCase();
   public static pBREW_TOKEN = "0xb5106A3277718eCaD2F20aB6b86Ce0Fee7A21F09".toLowerCase();
+  public static dxTETU = "0xacee7bd17e7b04f7e48b29c0c91af67758394f0f".toLowerCase();
+  public static xTETU = "0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
