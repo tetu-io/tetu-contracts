@@ -22,7 +22,7 @@ abstract contract ForwarderStorage is Initializable {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
 
   // don't change names or ordering!
   mapping(bytes32 => uint256) private uintStorage;

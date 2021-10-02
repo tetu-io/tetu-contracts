@@ -36,7 +36,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.3.0";
+  string public constant VERSION = "1.3.1";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
 
@@ -467,7 +467,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
         // move shares to current contract for using as rewards
         _transfer(msg.sender, address(this), lockedSharesToReward);
         // vault should have itself as reward token for recirculation process
-        notifyRewardWithoutPeriodChange(lockedSharesToReward, address(this));
+        _notifyRewardWithoutPeriodChange(lockedSharesToReward, address(this));
       }
     }
     return numberOfShares;
@@ -634,6 +634,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     emit RewardAdded(_rewardToken, amount);
   }
 
+  /// @dev Assume approve
+  ///      Add reward amount without changing reward duration
+  function notifyRewardWithoutPeriodChange(address _rewardToken, uint256 _amount)
+  external override updateRewards(address(0)) onlyRewardDistribution {
+    IERC20Upgradeable(_rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+    _notifyRewardWithoutPeriodChange(_amount, _rewardToken);
+  }
+
   /// @notice Transfer earned rewards to caller
   function _payReward(address rt) internal {
     uint256 reward = earned(rt, msg.sender);
@@ -658,7 +666,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
           uint256 change = reward.sub(toClaim);
           reward = toClaim;
 
-          notifyRewardWithoutPeriodChange(change, rt);
+          _notifyRewardWithoutPeriodChange(change, rt);
         }
       }
 
@@ -673,7 +681,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /// @dev Add reward amount without changing reward duration
-  function notifyRewardWithoutPeriodChange(uint256 _amount, address _rewardToken) internal {
+  function _notifyRewardWithoutPeriodChange(uint256 _amount, address _rewardToken) internal {
     require(getRewardTokenIndex(_rewardToken) != type(uint256).max, "SV: RT not found");
     if (_amount > 1 && _amount < type(uint256).max / 1e18) {
       rewardPerTokenStoredForToken[_rewardToken] = rewardPerToken(_rewardToken);

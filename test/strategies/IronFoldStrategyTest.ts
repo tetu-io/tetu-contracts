@@ -95,6 +95,8 @@ async function startIronFoldStrategyTest(
       const strategy = data[1];
       const lpForTargetToken = data[2];
 
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
+
       await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
       strategyInfo = new StrategyInfo(
@@ -274,7 +276,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
 
     // *********** DO HARD WORK **************
     await TimeUtils.advanceNBlocks(loopBlocks);
-    await info.vault.doHardWork();
+    await VaultUtils.doHardWorkAndCheck(info.vault);
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 

@@ -50,7 +50,7 @@ export class DoHardWorkLoop {
 
       // *********** DO HARD WORK **************
       await TimeUtils.advanceBlocksOnTs(loopTime);
-      await info.vault.doHardWork();
+      await VaultUtils.doHardWorkAndCheck(info.vault);
 
       const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
@@ -107,7 +107,7 @@ export class DoHardWorkLoop {
     }
 
     // liquidate rewards after user withdraw
-    await info.vault.doHardWork();
+    await VaultUtils.doHardWorkAndCheck(info.vault);
     // *************** POST LOOPS CHECKING **************
 
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);

@@ -210,7 +210,7 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
     ISmartVault(psVault()).deposit(targetTokenBalance);
     uint256 amountToSend = IERC20(psToken).balanceOf(address(this));
     IERC20(psToken).safeApprove(_rewardPool, amountToSend);
-    smartVault.notifyTargetRewardAmount(psToken, amountToSend);
+    smartVault.notifyRewardWithoutPeriodChange(psToken, amountToSend);
     emit FeeMovedToVault(_rewardPool, psToken, amountToSend);
     return targetTokenBalance;
   }

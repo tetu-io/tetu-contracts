@@ -28,6 +28,8 @@ interface ISmartVault {
 
   function notifyTargetRewardAmount(address _rewardToken, uint256 reward) external;
 
+  function notifyRewardWithoutPeriodChange(address _rewardToken, uint256 reward) external;
+
   function deposit(uint256 amount) external;
 
   function depositAndInvest(uint256 amount) external;

@@ -101,7 +101,7 @@ export class StrategyTestUtils {
     const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
     // ** doHardWork
-    await info.vault.doHardWork();
+    await VaultUtils.doHardWorkAndCheck(info.vault);
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
     if (await info.vault.ppfsDecreaseAllowed()) {

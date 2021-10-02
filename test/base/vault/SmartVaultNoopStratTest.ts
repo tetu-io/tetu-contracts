@@ -173,20 +173,12 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.bookkeeper.vaultUsersQuantity(vault.address)).at.eq("0");
     });
     it("Add reward to the vault", async () => {
-      await TokenUtils.approve(core.rewardToken.address, signer,
-          core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
-      await core.feeRewardForwarder.notifyCustomPool(
-          core.rewardToken.address,
-          vault.address,
-          utils.parseUnits("100", 18)
-      );
-      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("25000000000000000");
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
+      expect(await vault.rewardRateForToken(vaultRewardToken0)).is.not.eq(0);
       expect(await vault.rewardPerToken(vaultRewardToken0)).to.eq(0);
       expect((await vault.periodFinishForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect((await vault.lastUpdateTimeForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
-      expect(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address))
-      .is.eq(9066108);
 
       // ***************** CLAIM REWARDS ****************
       await TokenUtils.approve(underlying, signer, vault.address, "1000000");
@@ -209,21 +201,11 @@ describe("SmartVaultNoopStrat", () => {
       expect(+utils.formatUnits(rewardBalance, 18)).at.greaterThanOrEqual(+utils.formatUnits(rewards, 18));
 
       // *********** notify again
-      await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
-      await TokenUtils.approve(core.rewardToken.address, signer,
-          core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
-      await core.feeRewardForwarder.notifyCustomPool(
-          core.rewardToken.address,
-          vault.address,
-          utils.parseUnits("50", 18)
-      );
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 50);
       expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).is.greaterThan(0.01);
-      await core.feeRewardForwarder.notifyCustomPool(
-          core.rewardToken.address,
-          vault.address,
-          utils.parseUnits("50", 18)
-      );
-      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.02);
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 50);
+      expect(+utils.formatUnits(await vault.rewardRateForToken(vaultRewardToken0))).greaterThan(0.013);
     });
     it("Active status", async () => {
       await core.vaultController.changeVaultsStatuses([vault.address], [false]);
@@ -242,14 +224,8 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("Add reward to the vault and exit", async () => {
-      await TokenUtils.approve(core.rewardToken.address, signer,
-          core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
-      await core.feeRewardForwarder.notifyCustomPool(
-          core.rewardToken.address,
-          vault.address,
-          utils.parseUnits("100", 18)
-      );
-      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("25000000000000000");
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
+      expect(await vault.rewardRateForToken(vaultRewardToken0)).at.eq("27777777777777777");
       expect(await vault.rewardPerToken(vaultRewardToken0)).to.eq(0);
       expect((await vault.periodFinishForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
       expect((await vault.lastUpdateTimeForToken(vaultRewardToken0)).toNumber()).is.not.eq(0);
@@ -314,11 +290,7 @@ describe("SmartVaultNoopStrat", () => {
     it("should not remove not finished reward token", async () => {
       await TokenUtils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
-      await core.feeRewardForwarder.notifyCustomPool(
-          core.rewardToken.address,
-          vault.address,
-          utils.parseUnits("100", 18)
-      );
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
       await expect(core.vaultController.removeRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('SV: Not finished');
     });
 

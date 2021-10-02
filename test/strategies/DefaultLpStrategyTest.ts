@@ -11,6 +11,7 @@ import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy, IUniswapV2Pair} from "../../typechain";
+import {VaultUtils} from "../VaultUtils";
 
 
 const {expect} = chai;
@@ -74,6 +75,8 @@ async function startDefaultLpStrategyTest(
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       strategyInfo = new StrategyInfo(
           underlying,
