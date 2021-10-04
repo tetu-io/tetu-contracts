@@ -15,12 +15,13 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/IWexPolyMaster.sol";
 import "../StrategyBase.sol";
+import "../../../third_party/wault/IWexPolyMaster.sol";
+import "../../interface/IMasterChefStrategyV2.sol";
 
 /// @title Abstract contract for Wault strategy implementation
 /// @author belbix
-abstract contract WaultStrategyFullBuyback is StrategyBase {
+abstract contract WaultStrategyFullBuyback is StrategyBase, IMasterChefStrategyV2 {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -29,14 +30,14 @@ abstract contract WaultStrategyFullBuyback is StrategyBase {
   string public constant override STRATEGY_NAME = "WaultStrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
   /// @notice Wault rewards pool
-  address public pool;
+  address public override pool;
   /// @notice WexPolyMaster rewards pool ID
-  uint256 public poolID;
+  uint256 public override poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -84,28 +85,6 @@ abstract contract WaultStrategyFullBuyback is StrategyBase {
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return IERC20(_underlyingToken).balanceOf(pool);
-  }
-
-  /// @notice Calculate approximately weekly reward amounts for each reward tokens
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Array of weekly reward amounts, 0 - WEX
-  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = computeWaultWeeklyPoolReward();
-    return rewards;
-  }
-
-  /// @notice Calculate approximately weekly reward amounts for WEX
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Weekly reward amount of WEX
-  function computeWaultWeeklyPoolReward() public view returns (uint256) {
-    (, uint256 allocPoint, uint256 lastRewardBlock,) = IWexPolyMaster(pool).poolInfo(poolID);
-    uint256 time = block.number - lastRewardBlock;
-    uint256 wexPerBlock = IWexPolyMaster(pool).wexPerBlock();
-    uint256 totalAllocPoint = IWexPolyMaster(pool).totalAllocPoint();
-    uint256 sushiReward = time.mul(wexPerBlock).mul(allocPoint).div(totalAllocPoint);
-    uint256 averageBlockTime = 5;
-    return sushiReward * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
   }
 
   // ************ GOVERNANCE ACTIONS **************************

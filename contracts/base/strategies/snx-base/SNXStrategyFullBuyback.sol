@@ -16,11 +16,12 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
-import "./interfaces/SNXRewardInterface.sol";
+import "../../../third_party/synthetix/SNXRewardInterface.sol";
+import "../../interface/ISNXStrategy.sol";
 
 /// @title Abstract contract for Synthetix strategy implementation
 /// @author belbix
-abstract contract SNXStrategyFullBuyback is StrategyBase {
+abstract contract SNXStrategyFullBuyback is StrategyBase, ISNXStrategy {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -29,12 +30,12 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
   string public constant override STRATEGY_NAME = "SNXStrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
 
   /// @notice Synthetix like poll with rewards
-  SNXRewardInterface public rewardPool;
+  SNXRewardInterface public override rewardPool;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -77,19 +78,6 @@ abstract contract SNXStrategyFullBuyback is StrategyBase {
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return rewardPool.totalSupply();
-  }
-
-  /// @notice Calculate approximately weekly reward amounts for each reward tokens
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Array of weekly reward amounts
-  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-
-    uint256 rtBalance = IERC20(rewardTokens()[0]).balanceOf(address(rewardPool));
-    uint256 time = rewardPool.periodFinish() - rewardPool.lastUpdateTime();
-    rewards[0] = rtBalance * (1 weeks * 1e18 / time) / 1e18;
-
-    return rewards;
   }
 
   // ************ GOVERNANCE ACTIONS **************************

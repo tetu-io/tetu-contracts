@@ -220,7 +220,6 @@ describe("SmartVaultNoopStrat", () => {
       await core.psEmptyStrategy.withdrawAllToVault();
       await core.psEmptyStrategy.readyToClaim();
       await core.psEmptyStrategy.poolTotalAmount();
-      await core.psEmptyStrategy.poolWeeklyRewardsAmount();
     });
 
     it("Add reward to the vault and exit", async () => {

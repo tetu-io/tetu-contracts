@@ -15,7 +15,7 @@ import {CurveUtils} from "./utils/CurveUtils";
 chai.use(chaiAsPromised);
 
 
-describe('Curve aave tests', async () => {
+describe.skip('Curve aave tests', async () => {
     if (Settings.disableStrategyTests) {
         return;
     }

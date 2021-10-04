@@ -8,7 +8,7 @@ import {Settings} from "../../../../settings";
 
 chai.use(chaiAsPromised);
 
-describe('Universal Hermes tests', async () => {
+describe.skip('Universal Hermes tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }

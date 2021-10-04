@@ -14,9 +14,9 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../base/governance/Controllable.sol";
-import "../base/interface/ISmartVault.sol";
-import "../base/interface/IController.sol";
+import "../../base/governance/Controllable.sol";
+import "../../base/interface/ISmartVault.sol";
+import "../../base/interface/IController.sol";
 
 /// @title Disperse weekly rewards to vaults
 /// @author belbix
@@ -24,7 +24,7 @@ contract NotifyHelper is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.2.1";
 
   mapping(address => bool) public alreadyNotified;
   address[] public alreadyNotifiedList;

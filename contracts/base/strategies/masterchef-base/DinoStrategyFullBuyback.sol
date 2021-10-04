@@ -17,10 +17,11 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../third_party/dino/IFossilFarms.sol";
 import "../StrategyBase.sol";
+import "../../interface/IMasterChefStrategyV2.sol";
 
 /// @title Abstract contract for Dino strategy implementation
 /// @author belbix, bogdoslav
-abstract contract DinoStrategyFullBuyback is StrategyBase {
+abstract contract DinoStrategyFullBuyback is StrategyBase, IMasterChefStrategyV2 {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -29,14 +30,14 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
   string public constant override STRATEGY_NAME = "DinoStrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
   /// @notice Dino rewards pool
-  address public pool;
+  address public override pool;
   /// @notice Dino FossilFarms rewards pool ID
-  uint256 public poolID;
+  uint256 public override poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -97,14 +98,6 @@ abstract contract DinoStrategyFullBuyback is StrategyBase {
     uint256 sushiReward = time.mul(dinoPerBlock).mul(allocPoint).div(totalAllocPoint);
     uint256 averageBlockTime = 5;
     return sushiReward * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
-  }
-
-  /// @notice Stubbed to zero
-  /// @return [0]
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = 0;
-    return rewards;
   }
 
   // ************ GOVERNANCE ACTIONS **************************

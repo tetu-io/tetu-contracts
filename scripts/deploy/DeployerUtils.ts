@@ -16,7 +16,7 @@ import {
   NoopStrategy,
   NotifyHelper,
   PayrollClerk,
-  PriceCalculator,
+  PriceCalculator, RewardCalculator,
   RewardToken,
   SmartVault,
   TetuProxyControlled,
@@ -239,6 +239,15 @@ export class DeployerUtils {
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as ContractReader;
+    await contract.initialize(controller, calculator);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployRewardCalculator(signer: SignerWithAddress, controller: string, calculator: string)
+      : Promise<[RewardCalculator, TetuProxyGov, RewardCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "RewardCalculator") as RewardCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const contract = logic.attach(proxy.address) as RewardCalculator;
     await contract.initialize(controller, calculator);
     return [contract, proxy, logic];
   }
