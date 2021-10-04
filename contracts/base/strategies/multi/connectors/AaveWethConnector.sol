@@ -27,11 +27,13 @@ contract AaveWethConnector {
         lendingPool = _lendingPool;
     }
 
-    function aaveDepositETH() public payable {
-        wethGateway.depositETH.value(msg.value)(lendingPool, address(this), 0);
+    function _aaveDepositETH(uint256 amount) internal payable {
+        //TODO try catch with gas limit
+        wethGateway.depositETH.value(amount)(lendingPool, address(this), 0);
     }
 
-    function aaveWithdrawETH(uint256 amount) public {
+    function _aaveWithdrawETH(uint256 amount) internal {
+        //TODO try catch with gas limit
         wethGateway.depositETH(lendingPool, amount, address(this));
     }
 
