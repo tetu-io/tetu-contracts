@@ -24,17 +24,20 @@ contract MaiConnector {
     address public sourceTokenAddress;
     address public camWMaticPoolAddress;
     uint256 public vaultID;
+    address public maiBorrowTokenAddress;
 
     constructor(
         address _erc20StableCoin,
         address _sourceTokenAddress,
         address _camWMaticPoolAddress,
-        uint256 _vaultID
+        uint256 _vaultID,
+        address maiBorrowTokenAddress
     ) public {
         erc20StableCoin = _erc20StableCoin;
         sourceTokenAddress = _sourceTokenAddress;
         camWMaticPoolAddress = _camWMaticPoolAddress;
         vaultID = _vaultID;
+        maiBorrowTokenAddress = _maiBorrowTokenAddress;
     }
 
     function _maiCreateVault() internal {
@@ -59,6 +62,8 @@ contract MaiConnector {
     function _maiBorrowToken(uint256 vaultID, uint256 amount) internal {
         //TODO try catch with gas limit
         IErc20Stablecoin(erc20StableCoin).borrowToken(vaultID, amount);
+        require(IERC20(maiBorrowTokenAddress).balanceOf(address(this)==maiBorrowAmount), 'MAI: not borrowed');
+
     }
 
 }

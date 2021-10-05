@@ -12,4 +12,36 @@
 
 pragma solidity 0.8.4;
 
-import "./../../third_party/balancer/IBVault.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./../../../../third_party/balancer/IBVault.sol";
+
+contract BalancerConnector {
+    using SafeERC20 for IERC20;
+
+    address public balancerVaultAddress;
+    address public sourceTokenAddress;
+    uint256 public balancerPoolID;
+
+    constructor(
+        address _balancerVaultAddress,
+        address _sourceTokenAddress,
+        uint256 _balancerPoolID
+    ) public {
+        balancerVaultAddress = _balancerVaultAddress;
+        sourceTokenAddress = _sourceTokenAddress;
+        balancerPoolID = _balancerPoolID;
+    }
+
+    function _balancerJoinPool(uint256 amount) internal {
+        IERC20(sourceTokenAddress).safeApprove(balancerVaultAddress, 0);
+        IERC20(sourceTokenAddress).safeApprove(balancerVaultAddress, amount);
+
+        //TODO try catch with gas limit
+        //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
+        JoinPoolRequest memory request; //TODO fill in tis record
+
+        IBVault(balancerV2Address).joinPool(_balancerPoolID, address(this), address(this), request); //TODO
+    }
+}
+
