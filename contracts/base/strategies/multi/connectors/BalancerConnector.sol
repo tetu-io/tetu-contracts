@@ -39,9 +39,15 @@ contract BalancerConnector {
 
         //TODO try catch with gas limit
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
-        JoinPoolRequest memory request; //TODO fill in tis record
+        JoinPoolRequest memory request;
+        JoinPoolRequest.assets = new IAsset[](4);
+        JoinPoolRequest.assets[2] = sourceTokenAddress;
+        JoinPoolRequest.maxAmountsIn = new uint256[](4);
+        JoinPoolRequest.maxAmountsIn.assets[2] = amount;
+        JoinPoolRequest.userData = 0x0; //TODO fill correctly
+        JoinPoolRequest.fromInternalBalance = false;
 
-        IBVault(balancerV2Address).joinPool(_balancerPoolID, address(this), address(this), request); //TODO
+        IBVault(balancerV2Address).joinPool(_balancerPoolID, address(this), address(this), request);
     }
 }
 

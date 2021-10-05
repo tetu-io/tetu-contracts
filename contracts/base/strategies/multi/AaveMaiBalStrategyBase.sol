@@ -147,8 +147,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  https://dashboard.tenderly.co/tx/polygon/0x201dbe56a9843bc2a64d327fa0d2a9b81957af52681da6d85b4a3e17a64bf3dd
 //  Contract 0xba12222222228d8ba445958a75a0704d566bf2c8 (Balancer V2)
 //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
-    _balancerJoinPool(maiBorrowAmount);
 
+    _balancerJoinPool(maiBorrowAmount);
 
   }
 
