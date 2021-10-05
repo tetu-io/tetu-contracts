@@ -1,8 +1,9 @@
 import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Contract, ContractFactory, utils} from "ethers";
+import {BigNumber, Contract, ContractFactory, utils} from "ethers";
 import {
   Announcer,
+  AutoRewarder,
   Bookkeeper,
   ContractReader,
   Controller,
@@ -16,7 +17,8 @@ import {
   NoopStrategy,
   NotifyHelper,
   PayrollClerk,
-  PriceCalculator, RewardCalculator,
+  PriceCalculator,
+  RewardCalculator,
   RewardToken,
   SmartVault,
   TetuProxyControlled,
@@ -33,6 +35,7 @@ import axios from "axios";
 import {Secrets} from "../../secrets";
 import {RunHelper} from "../utils/RunHelper";
 import {MaticAddresses} from "../../test/MaticAddresses";
+import {TokenUtils} from "../../test/TokenUtils";
 
 const hre = require("hardhat");
 
@@ -250,6 +253,14 @@ export class DeployerUtils {
     const contract = logic.attach(proxy.address) as RewardCalculator;
     await contract.initialize(controller, calculator);
     return [contract, proxy, logic];
+  }
+
+  public static async deployAutoRewarder(
+      signer: SignerWithAddress,
+      controller: string,
+      rewardCalculator: string
+  ): Promise<AutoRewarder> {
+    return await DeployerUtils.deployContract(signer, "AutoRewarder", controller, rewardCalculator) as AutoRewarder;
   }
 
   public static async deployZapContract(
@@ -588,6 +599,18 @@ export class DeployerUtils {
       throw Error('No config for ' + net.name);
     }
     return mocks;
+  }
+
+  public static async impersonate(address: string, fundSender: SignerWithAddress) {
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [address],
+    });
+    await fundSender.sendTransaction({
+      to: address,
+      value: BigNumber.from('10000000000000000000') // send 10 matic
+    })
+    return await ethers.getSigner(address);
   }
 
   // ****************** WAIT ******************

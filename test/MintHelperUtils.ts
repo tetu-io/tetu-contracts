@@ -17,7 +17,7 @@ export class MintHelperUtils {
 
     await announcer.announceMint(0, destination, destination, true);
 
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7 + 1);
 
     await controller.mintAndDistribute(0, destination, destination, true);
   }

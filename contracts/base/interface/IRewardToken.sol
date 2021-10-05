@@ -12,23 +12,20 @@
 
 pragma solidity 0.8.4;
 
-interface IRewardCalculator {
+interface IRewardToken {
 
-  event ToolAddressUpdated(string name, address newValue);
+  function MINTING_PERIOD() external view returns (uint256);
 
-  function getPrice(address _token) external view returns (uint256);
+  function HARD_CAP() external view returns (uint256);
 
-  function strategyRewardsUsd(address _strategy, uint256 _period) external view returns (uint256);
+  function startMinting() external;
 
-  function rewardsPerTvl(address _vault, uint256 _period) external view returns (uint256);
+  function mint(address to, uint256 amount) external;
 
-  function vaultTVLRatio(address _vault) external view returns (uint256);
+  function currentWeek() external view returns (uint256);
 
-  function kpi(address _vault) external view returns (uint256);
+  function maxTotalSupplyForCurrentBlock() external view returns (uint256);
 
-  function vaultLastReward(address _vault) external view returns (uint256);
-
-  function strategyEarnedSinceLastDistribution(address strategy)
-  external view returns (uint256 earned, uint256 lastEarnedTs);
+  function _log2(uint256 x) external pure returns (uint256 result);
 
 }

@@ -40,12 +40,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
   uint256 public constant PRECISION = 1e18;
+  uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
   mapping(bytes32 => address) internal tools;
+  mapping(IStrategy.Platform => uint256) internal platformMultiplier;
 
   function initialize(address _controller, address _calculator) external initializer {
     Controllable.initializeControllable(_controller);
@@ -58,14 +60,20 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     return IPriceCalculator(tools[keccak256(abi.encodePacked(_CALCULATOR))]);
   }
 
-  function strategyRewardsUsd(address _strategy, uint256 _period) public view returns (uint256) {
+  function getPrice(address _token) public view override returns (uint256) {
+    return priceCalculator().getPriceWithDefaultOutput(_token);
+  }
+
+  function strategyRewardsUsd(address _strategy, uint256 _period) public view override returns (uint256) {
     IStrategy strategy = IStrategy(_strategy);
     if (strategy.rewardTokens().length == 0) {
       return 0;
     }
-    uint256 rtPrice = priceCalculator().getPriceWithDefaultOutput(strategy.rewardTokens()[0]);
+    uint256 rtPrice = getPrice(strategy.rewardTokens()[0]);
     uint256 rewardsPerSecond = 0;
-    if (strategy.platform() == IStrategy.Platform.QUICK) {
+    if (strategy.platform() == IStrategy.Platform.TETU || strategy.platform() == IStrategy.Platform.UNKNOWN) {
+      return 0;
+    } else if (strategy.platform() == IStrategy.Platform.QUICK) {
 
       rewardsPerSecond = quick(address(ISNXStrategy(_strategy).rewardPool()));
 
@@ -114,6 +122,18 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       rewardsPerSecond = cafe(address(mc.masterChefPool()), mc.poolID());
 
     }
+
+    uint256 _kpi = kpi(strategy.vault());
+    if (_kpi != 0) {
+      rewardsPerSecond = rewardsPerSecond * _kpi / PRECISION;
+    }
+
+    uint256 multiplier = platformMultiplier[strategy.platform()];
+
+    if (multiplier != 0) {
+      rewardsPerSecond = rewardsPerSecond * multiplier / MULTIPLIER_DENOMINATOR;
+    }
+
     uint256 result = _period * rewardsPerSecond * rtPrice / 1e18;
     if (strategy.rewardTokens().length == 2) {
       if (strategy.platform() == IStrategy.Platform.SUSHI) {
@@ -127,14 +147,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   }
 
   /// @dev Return recommended USD amount of rewards for this vault based on TVL ratio
-  function rewardsPerTvl(address _vault, uint256 _period) public view returns (uint256) {
+  function rewardsPerTvl(address _vault, uint256 _period) public view override returns (uint256) {
     ISmartVault vault = ISmartVault(_vault);
     uint256 rewardAmount = strategyRewardsUsd(vault.strategy(), _period);
     uint256 ratio = vaultTVLRatio(_vault);
     return rewardAmount * ratio / PRECISION;
   }
 
-  function vaultTVLRatio(address _vault) public view returns (uint256) {
+  function vaultTVLRatio(address _vault) public view override returns (uint256) {
     ISmartVault vault = ISmartVault(_vault);
     uint256 poolTvl = IStrategy(vault.strategy()).poolTotalAmount();
     if (poolTvl == 0) {
@@ -155,7 +175,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     return rewardPerSecond * allocPoint / totalAllocPoint;
   }
 
-  function kpi(address _vault) external view returns (uint256) {
+  function kpi(address _vault) public view override returns (uint256) {
     ISmartVault vault = ISmartVault(_vault);
     if (vault.duration() == 0) {
       return 0;
@@ -176,7 +196,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     return PRECISION * earned / reward;
   }
 
-  function vaultLastReward(address _vault) public view returns (uint256) {
+  function vaultLastReward(address _vault) public view override returns (uint256) {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
     address rt = IController(controller()).rewardToken();
     uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, rt);
@@ -187,7 +207,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   }
 
   function strategyEarnedSinceLastDistribution(address strategy)
-  public view returns (uint256 earned, uint256 lastEarnedTs){
+  public view override returns (uint256 earned, uint256 lastEarnedTs){
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
     uint256 lastEarned = 0;
     lastEarnedTs = 0;
@@ -308,5 +328,10 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   function setPriceCalculator(address newValue) external onlyControllerOrGovernance {
     tools[keccak256(abi.encodePacked(_CALCULATOR))] = newValue;
     emit ToolAddressUpdated(_CALCULATOR, newValue);
+  }
+
+  function setPlatformMultiplier(IStrategy.Platform _platform, uint256 _value) external onlyControllerOrGovernance {
+    require(_value < MULTIPLIER_DENOMINATOR * 10, "RC: Too high value");
+    platformMultiplier[_platform] = _value;
   }
 }
