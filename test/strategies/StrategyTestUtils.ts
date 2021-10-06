@@ -162,8 +162,9 @@ export class StrategyTestUtils {
   public static async checkStrategyRewardsBalance(strategy: IStrategy, balances: string[]) {
     const tokens = await strategy.rewardTokens();
     for (let i = 0; i < tokens.length; i++) {
-      expect((await TokenUtils.balanceOf(tokens[i], strategy.address)).toString())
-      .is.eq(balances[i], 'strategy has wrong reward balance for ' + i);
+      const rtDec = await TokenUtils.decimals(tokens[i]);
+      expect(+utils.formatUnits(await TokenUtils.balanceOf(tokens[i], strategy.address), rtDec))
+      .is.approximately(+utils.formatUnits(balances[i], rtDec), 0.0000000001, 'strategy has wrong reward balance for ' + i);
     }
   }
 
