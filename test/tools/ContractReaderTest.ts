@@ -173,19 +173,19 @@ describe("contract reader tests", function () {
 
     await notifyPsPool("1234", core.rewardToken.address, core.feeRewardForwarder, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(1).and.is.lessThan(3);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(200).and.is.lessThan(1000);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(100).and.is.lessThan(1000);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60);
 
     await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
-    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(10000).and.is.lessThan(12000);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(400).and.is.lessThan(1000);
+    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(5000).and.is.lessThan(6000);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(200).and.is.lessThan(500);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 30);
 
     await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
-    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(300).and.is.lessThan(500);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(400).and.is.lessThan(1000);
+    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(150).and.is.lessThan(300);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(200).and.is.lessThan(500);
   });
 
 
