@@ -406,9 +406,6 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
   function swap(address _router, address[] memory _route, uint256 _amount) internal returns (uint256) {
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
-    console.log("SWAP: amount", _amount);
-    console.log("SWAP: tokenIn", _route[0]);
-    console.log("SWAP: tokenOut", _route[_route.length - 1]);
     uint256[] memory resultAmounts = IUniswapV2Router02(_router).swapExactTokensForTokens(
       _amount,
       1,
