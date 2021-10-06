@@ -86,6 +86,9 @@ describe("SmartVaultNoopStrat", () => {
         [core.rewardToken.address, MaticAddresses.USDC_TOKEN],
         [MaticAddresses.QUICK_ROUTER]
     );
+
+    await core.feeRewardForwarder.setLiquidityNumerator(50);
+    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
   });
 
   after(async function () {

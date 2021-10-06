@@ -52,6 +52,9 @@ async function startIronSwapStrategyTest(
         );
       }
 
+      await core.feeRewardForwarder.setLiquidityNumerator(50);
+      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+
 
       const data = await StrategyTestUtils.deploy(
           signer,

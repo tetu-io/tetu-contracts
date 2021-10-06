@@ -33,6 +33,9 @@ describe("Fee reward forwarder tests", function () {
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
     await UniswapUtils.createPairForRewardToken(signer, core, '100000');
+
+    await core.feeRewardForwarder.setLiquidityNumerator(50);
+    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
   });
 
   after(async function () {

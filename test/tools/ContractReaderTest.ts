@@ -164,6 +164,9 @@ describe("contract reader tests", function () {
         [MaticAddresses.QUICK_ROUTER]
     );
 
+    await core.feeRewardForwarder.setLiquidityNumerator(50);
+    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address);
 
     await deposit("25863", core.rewardToken.address, core.psVault, signer);

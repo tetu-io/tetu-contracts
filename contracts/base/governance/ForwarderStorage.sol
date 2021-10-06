@@ -23,6 +23,7 @@ abstract contract ForwarderStorage is Initializable {
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.2.0";
+  uint256 public constant LIQUIDITY_DENOMINATOR = 100;
 
   // don't change names or ordering!
   mapping(bytes32 => uint256) private uintStorage;
@@ -39,6 +40,26 @@ abstract contract ForwarderStorage is Initializable {
   event UpdatedUint256Slot(string indexed name, uint256 oldValue, uint256 newValue);
 
   // ******************* SETTERS AND GETTERS **********************
+
+  function _setLiquidityRouter(address _address) internal {
+    emit UpdatedAddressSlot("liquidityRouter", liquidityRouter(), _address);
+    setAddress("liquidityRouter", _address);
+  }
+
+  /// @notice Router address for adding liquidity
+  function liquidityRouter() public view returns (address) {
+    return getAddress("liquidityRouter");
+  }
+
+  function _setLiquidityNumerator(uint256 _value) internal {
+    emit UpdatedUint256Slot("liquidityNumerator", liquidityNumerator(), _value);
+    setUint256("liquidityNumerator", _value);
+  }
+
+  /// @notice Numerator for part of profit that goes to TETU liquidity
+  function liquidityNumerator() public view returns (uint256) {
+    return getUint256("liquidityNumerator");
+  }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
