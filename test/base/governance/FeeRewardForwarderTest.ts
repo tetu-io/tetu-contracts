@@ -2,7 +2,13 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Controller, FeeRewardForwarder, IStrategy, SmartVault} from "../../../typechain";
+import {
+  Controller,
+  FeeRewardForwarder,
+  IStrategy,
+  IUniswapV2Factory,
+  SmartVault
+} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
@@ -33,6 +39,9 @@ describe("Fee reward forwarder tests", function () {
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
     await UniswapUtils.createPairForRewardToken(signer, core, '100000');
+
+    await core.feeRewardForwarder.setLiquidityNumerator(50);
+    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
   });
 
   after(async function () {
@@ -121,12 +130,38 @@ describe("Fee reward forwarder tests", function () {
   });
 
   it("should distribute", async () => {
+    const psRatioNom = (await core.controller.psNumerator()).toNumber();
+    const psRatioDen = (await core.controller.psDenominator()).toNumber();
+    const psRatio = psRatioNom / psRatioDen;
+    console.log('psRatio', psRatio);
+
     await core.feeRewardForwarder.setConversionPathMulti(
         [[MaticAddresses.USDC_TOKEN, core.rewardToken.address]],
         [[MaticAddresses.QUICK_ROUTER]]
     );
+
+    const amount = utils.parseUnits('1000', 6);
+
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
-    expect(await forwarder.callStatic.distribute(utils.parseUnits('1000', 6), MaticAddresses.USDC_TOKEN, core.psVault.address)).is.not.eq(0);
+    await forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address);
+
+    const qsFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', MaticAddresses.QUICK_FACTORY) as IUniswapV2Factory;
+
+    const lpToken = await qsFactory.getPair(MaticAddresses.USDC_TOKEN, core.rewardToken.address);
+    expect(lpToken.toLowerCase()).is.not.eq(MaticAddresses.ZERO_ADDRESS);
+
+    const fundKeeperUSDCBal = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address), 6);
+    const fundKeeperLPBal = +utils.formatUnits(await TokenUtils.balanceOf(lpToken, core.fundKeeper.address));
+    const psVaultBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken.address, core.psVault.address));
+
+    console.log('fundKeeperUSDCBal', fundKeeperUSDCBal);
+    console.log('fundKeeperLPBal', fundKeeperLPBal);
+    console.log('psVaultBal', psVaultBal);
+
+    expect(fundKeeperUSDCBal).is.eq(100);
+    expect(fundKeeperLPBal).is.greaterThan(0);
+    expect(psVaultBal).is.greaterThan(0);
+
   });
 
 });

@@ -25,7 +25,8 @@ interface IStrategy {
     CURVE, // 7
     DINO, // 8
     IRON_LEND, // 9
-    HERMES // 10
+    HERMES, // 10
+    CAFE // 11
   }
 
   // *************** GOVERNANCE ACTIONS **************
@@ -71,6 +72,4 @@ interface IStrategy {
   function readyToClaim() external view returns (uint256[] memory);
 
   function poolTotalAmount() external view returns (uint256);
-
-  function poolWeeklyRewardsAmount() external view returns (uint256[] memory);
 }

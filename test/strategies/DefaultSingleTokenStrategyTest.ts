@@ -11,6 +11,7 @@ import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy} from "../../typechain";
+import {VaultUtils} from "../VaultUtils";
 
 
 const {expect} = chai;
@@ -50,6 +51,8 @@ async function startDefaultSingleTokenStrategyTest(
         );
       }
 
+      await core.feeRewardForwarder.setLiquidityNumerator(50);
+      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
       const data = await StrategyTestUtils.deploy(
           signer,
@@ -69,6 +72,8 @@ async function startDefaultSingleTokenStrategyTest(
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       strategyInfo = new StrategyInfo(
           underlying,

@@ -15,13 +15,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../base/governance/Controllable.sol";
-import "../base/interface/ISmartVault.sol";
-import "../base/interface/IStrategy.sol";
-import "../base/interface/IController.sol";
-import "../third_party/uniswap/IUniswapV2Pair.sol";
-import "../third_party/uniswap/IUniswapV2Router02.sol";
-import "./IPriceCalculator.sol";
+import "../../base/governance/Controllable.sol";
+import "../../base/interface/ISmartVault.sol";
+import "../../base/interface/IStrategy.sol";
+import "../../base/interface/IController.sol";
+import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "../price/IPriceCalculator.sol";
 import "./IMultiSwap.sol";
 
 /// @title Dedicated solution for interacting with Tetu vaults.

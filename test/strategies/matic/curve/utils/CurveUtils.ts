@@ -21,6 +21,8 @@ export class CurveUtils {
                 [MaticAddresses.SUSHI_ROUTER]
             );
         }
+        await feeRewardForwarder.setLiquidityNumerator(50);
+        await feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
     }
 
     public static async addLiquidityAave(investor: SignerWithAddress) {

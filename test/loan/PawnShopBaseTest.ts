@@ -45,6 +45,9 @@ describe("Tetu pawnshop base tests", function () {
         [MaticAddresses.QUICK_ROUTER]
     );
 
+    await core.feeRewardForwarder.setLiquidityNumerator(50);
+    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+
     await nft.mint(user1.address);
     await nft.mint(user1.address);
     await nft.mint(user2.address);

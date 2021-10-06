@@ -20,14 +20,14 @@ import "../base/governance/Controllable.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IStrategy.sol";
-import "../infrastructure/IPriceCalculator.sol";
+import "../infrastructure/price/IPriceCalculator.sol";
 
 /// @title View data reader for using on website UI and other integrations
 /// @author belbix
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.2";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -324,6 +324,14 @@ contract ContractReader is Initializable, Controllable {
     uint256 result = 0;
     for (uint256 i = 0; i < _vaults.length; i++) {
       result += strategyEarned(ISmartVault(_vaults[i]).strategy());
+    }
+    return result;
+  }
+
+  function totalTetuBoughBack2(address[] memory _strategies) external view returns (uint256) {
+    uint256 result = 0;
+    for (uint256 i = 0; i < _strategies.length; i++) {
+      result += strategyEarned(_strategies[i]);
     }
     return result;
   }

@@ -301,13 +301,14 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     address lender
   ) internal {
     uint256 feeAmount = amount * platformFee / DENOMINATOR;
-    _transferFee(pos.acquired.acquiredToken, acquiredMoneyHolder, feeAmount);
     uint256 toSend = amount - feeAmount;
     if (acquiredMoneyHolder == address(this)) {
       IERC20(pos.acquired.acquiredToken).safeTransfer(pos.borrower, toSend);
     } else {
       IERC20(pos.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, pos.borrower, toSend);
+      IERC20(pos.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, address(this), feeAmount);
     }
+    _transferFee(pos.acquired.acquiredToken, feeAmount);
 
     pos.execution.lender = lender;
     pos.execution.posStartBlock = block.number;
@@ -385,9 +386,9 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     }
   }
 
-  /// @dev Transfer fee to platform.
+  /// @dev Transfer fee to platform. Assume that token inside this contract
   ///      Do buyback if possible, otherwise just send to controller for manual handling
-  function _transferFee(address token, address from, uint256 amount) internal {
+  function _transferFee(address token, uint256 amount) internal {
     // little deals can have zero fees
     if (amount == 0) {
       return;
@@ -395,7 +396,6 @@ contract TetuPawnShop is ERC721Holder, Controllable, ReentrancyGuard, ITetuPawnS
     IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(controller()).feeRewardForwarder());
     address targetToken = IController(controller()).rewardToken();
 
-    IERC20(token).safeTransferFrom(from, address(this), amount);
     IERC20(token).safeApprove(address(forwarder), 0);
     IERC20(token).safeApprove(address(forwarder), amount);
 

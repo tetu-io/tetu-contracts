@@ -42,7 +42,7 @@ export class CurveDoHardWorkLoop {
         let totalToClaim = await StrategyTestUtils.calculateTotalToClaim(strategyInfo.calculator, 
           strategyInfo.strategy, strategyInfo.core.rewardToken);
 
-        await strategyInfo.vault.doHardWork();
+        await VaultUtils.doHardWorkAndCheck(strategyInfo.vault);
 
         const earned = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategyInfo.strategy.address));
         console.log('earned', earned, totalToClaim);

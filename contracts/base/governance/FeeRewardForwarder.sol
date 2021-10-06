@@ -20,6 +20,7 @@ import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "./ForwarderStorage.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
@@ -44,6 +45,13 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
   event Liquidated(address indexed tokenIn, address indexed tokenOut, uint256 amount);
   /// @notice Added or changed a route with routers
   event RouteAdded(address indexed tokenIn, address indexed tokenOut);
+  event LiquidityAdded(
+    address router,
+    address token0,
+    uint256 token0Amount,
+    address token1,
+    uint256 token1Amount
+  );
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -125,6 +133,19 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
     emit RouteAdded(from, to);
   }
 
+  /// @notice Only Governance or Controller can call it.
+  ///         Sets numerator for a part of profit that goes instead of PS to TETU liquidity
+  function setLiquidityNumerator(uint256 _value) external onlyControllerOrGovernance {
+    require(_value <= LIQUIDITY_DENOMINATOR, "FRF: Too high value");
+    _setLiquidityNumerator(_value);
+  }
+
+  /// @notice Only Governance or Controller can call it.
+  ///         Sets router for a pair with TETU liquidity
+  function setLiquidityRouter(address _value) external onlyControllerOrGovernance {
+    _setLiquidityRouter(_value);
+  }
+
   // ***************** EXTERNAL *******************************
 
   /// @notice Only Reward Distributor or Governance or Controller can call it.
@@ -145,14 +166,10 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
 
     uint256 targetTokenDistributed = 0;
     if (toPsAmount > 0) {
-      targetTokenDistributed = targetTokenDistributed.add(
-        notifyPsPool(_token, toPsAmount)
-      );
+      targetTokenDistributed += notifyPsPool(_token, toPsAmount);
     }
     if (toVaultAmount > 0) {
-      targetTokenDistributed = targetTokenDistributed.add(
-        notifyCustomPool(_token, _vault, toVaultAmount)
-      );
+      targetTokenDistributed += notifyCustomPool(_token, _vault, toVaultAmount);
     }
 
     return plusFundAmountToDistributedAmount(targetTokenDistributed);
@@ -168,7 +185,13 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
 
     uint256 toFund = toFundAmount(_amount);
     sendToFund(_token, toFund);
-    uint256 toPs = _amount.sub(toFund);
+
+    uint256 toPsAndLiquidityAmount = _amount.sub(toFund);
+
+    uint256 toLiquidity = toTetuLiquidityAmount(toPsAndLiquidityAmount);
+    uint256 forwardedAmount = sendToLiquidity(_token, toLiquidity);
+
+    uint256 toPs = toPsAndLiquidityAmount.sub(toLiquidity);
 
     uint256 amountToSend = liquidateTokenForTargetToken(_token, toPs, targetToken());
 
@@ -179,7 +202,7 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
     IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(psVault(), ppfs);
     emit FeeMovedToPs(psVault(), targetToken(), amountToSend);
 
-    return amountToSend;
+    return amountToSend + forwardedAmount;
   }
 
   /// @notice Liquidate the token amount and send to the given vault.
@@ -210,7 +233,7 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
     ISmartVault(psVault()).deposit(targetTokenBalance);
     uint256 amountToSend = IERC20(psToken).balanceOf(address(this));
     IERC20(psToken).safeApprove(_rewardPool, amountToSend);
-    smartVault.notifyTargetRewardAmount(psToken, amountToSend);
+    smartVault.notifyRewardWithoutPeriodChange(psToken, amountToSend);
     emit FeeMovedToVault(_rewardPool, psToken, amountToSend);
     return targetTokenBalance;
   }
@@ -255,6 +278,39 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
     emit FeeMovedToFund(fund(), fundToken(), amountToSend);
   }
 
+  /// @dev Assume that we use a pair TETU-fund_token
+  ///      Sell given token for fundToken, add liquidity and send to FundKeeper
+  /// @dev Return forwarded amount in Target token cost
+  function sendToLiquidity(address _token, uint256 _amount) internal returns (uint256) {
+    // no actions if we don't have a fee for liquidity
+    if (_amount == 0) {
+      return 0;
+    }
+    require(fundToken() != address(0), "FRF: Fund token is zero");
+
+    uint256 fundTokenAmount = liquidateTokenForTargetToken(_token, _amount / 2, fundToken());
+    uint256 targetTokenAmount = liquidateTokenForTargetToken(_token, _amount / 2, targetToken());
+
+    require(fundTokenAmount > 0, "FRF: Liquidation path not found for fund token");
+    require(targetTokenAmount > 0, "FRF: Liquidation path not found for target token");
+
+    uint256 lpAmount = _addLiquidity(
+      liquidityRouter(),
+      fundToken(),
+      targetToken(),
+      fundTokenAmount,
+      targetTokenAmount
+    );
+
+    require(lpAmount != 0, "FRF: Zero LP amount");
+
+    address liquidityPair = IUniswapV2Factory(IUniswapV2Router02(liquidityRouter()).factory())
+    .getPair(fundToken(), targetToken());
+
+    IERC20(liquidityPair).safeTransfer(fund(), lpAmount);
+    return targetTokenAmount * 2;
+  }
+
   /// @dev Compute amount for FundKeeper based on Fund ratio from Controller
   /// @param _amount 100% Amount
   /// @return Percent of total amount
@@ -262,6 +318,11 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
     uint256 fundNumerator = IController(controller()).fundNumerator();
     uint256 fundDenominator = IController(controller()).fundDenominator();
     return _amount.mul(fundNumerator).div(fundDenominator);
+  }
+
+  /// @dev Compute amount for TETU liquidity
+  function toTetuLiquidityAmount(uint256 _amount) internal view returns (uint256) {
+    return _amount.mul(liquidityNumerator()).div(LIQUIDITY_DENOMINATOR);
   }
 
   /// @dev Compute Approximate Total amount normalized to TETU token
@@ -278,24 +339,23 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
   /// @param _token Token for liquidation
   /// @param _amount Amount for liquidation
   /// @param _targetToken Target token (TETU or Fund token)
-  /// @return Target token balance after liquidation
+  /// @return Target token amount
   function liquidateTokenForTargetToken(address _token, uint256 _amount, address _targetToken)
   internal returns (uint256) {
     if (_token == _targetToken) {
       // this is already the right token
-      // move reward to this contract
+      // move tokens to this contract
       IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-      return IERC20(_targetToken).balanceOf(address(this));
+      return _amount;
     } else if (hasValidRoute(_token, _targetToken)) {
       // move reward to this contract
       IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
       //liquidate depends on routers count
       if (isMultiRouter(_token, _targetToken)) {
-        liquidateMultiRouter(_token, _amount, _targetToken);
+        return liquidateMultiRouter(_token, _amount, _targetToken);
       } else {
-        liquidate(_token, _amount, _targetToken);
+        return liquidate(_token, _amount, _targetToken);
       }
-      return IERC20(_targetToken).balanceOf(address(this));
     }
     // in case when it is unknown token and we don't have a router
     // don't transfer tokens to this contracts
@@ -306,18 +366,22 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
   /// @param _from Start token
   /// @param balanceToSwap Amount for swapping
   /// @param _targetToken Final destination for swap
-  function liquidate(address _from, uint256 balanceToSwap, address _targetToken) internal {
+  function liquidate(address _from, uint256 balanceToSwap, address _targetToken) internal returns (uint256) {
+    uint256 amountOut = 0;
     if (balanceToSwap > 0) {
       address router = routers[_from][_targetToken][0];
-      swap(router, routes[_from][_targetToken], balanceToSwap);
+      amountOut = swap(router, routes[_from][_targetToken], balanceToSwap);
     }
+    return amountOut;
   }
 
   /// @dev Choose liquidation path for `_from` token to `_targetToken` and make swap for each router
   /// @param _from Start token
   /// @param balanceToSwap Amount for swapping
   /// @param _targetToken Final destination for swap
-  function liquidateMultiRouter(address _from, uint256 balanceToSwap, address _targetToken) internal {
+  function liquidateMultiRouter(address _from, uint256 balanceToSwap, address _targetToken) internal returns (uint256) {
+    uint256 amountIn = balanceToSwap;
+    uint256 amountOut = 0;
     if (balanceToSwap > 0) {
       address[] memory _routers = routers[_from][_targetToken];
       address[] memory _route = routes[_from][_targetToken];
@@ -326,10 +390,11 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
         address[] memory route = new address[](2);
         route[0] = _route[i];
         route[1] = _route[i + 1];
-        uint256 amount = IERC20(route[0]).balanceOf(address(this));
-        swap(router, route, amount);
+        amountOut = swap(router, route, amountIn);
+        amountIn = amountOut;
       }
     }
+    return amountOut;
   }
 
   /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
@@ -338,16 +403,45 @@ contract FeeRewardForwarder is Controllable, IFeeRewardForwarder, ForwarderStora
   /// @param _router Uniswap router address
   /// @param _route Path for swap
   /// @param _amount Amount for swap
-  function swap(address _router, address[] memory _route, uint256 _amount) internal {
+  function swap(address _router, address[] memory _route, uint256 _amount) internal returns (uint256) {
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
-    //slither-disable-next-line unused-return
-    IUniswapV2Router02(_router).swapExactTokensForTokens(
+    console.log("SWAP: amount", _amount);
+    console.log("SWAP: tokenIn", _route[0]);
+    console.log("SWAP: tokenOut", _route[_route.length - 1]);
+    uint256[] memory resultAmounts = IUniswapV2Router02(_router).swapExactTokensForTokens(
       _amount,
-      0,
+      1,
       _route,
       address(this),
       block.timestamp
     );
+    return resultAmounts[_route.length - 1];
+  }
+
+  function _addLiquidity(
+    address _router,
+    address _token0,
+    address _token1,
+    uint256 _token0Amount,
+    uint256 _token1Amount
+  ) internal returns (uint256){
+    IERC20(_token0).safeApprove(_router, 0);
+    IERC20(_token0).safeApprove(_router, _token0Amount);
+    IERC20(_token1).safeApprove(_router, 0);
+    IERC20(_token1).safeApprove(_router, _token1Amount);
+
+    (,, uint256 liquidity) = IUniswapV2Router02(_router).addLiquidity(
+      _token0,
+      _token1,
+      _token0Amount,
+      _token1Amount,
+      1,
+      1,
+      address(this),
+      block.timestamp
+    );
+    emit LiquidityAdded(_router, _token0, _token0Amount, _token1, _token1Amount);
+    return liquidity;
   }
 }

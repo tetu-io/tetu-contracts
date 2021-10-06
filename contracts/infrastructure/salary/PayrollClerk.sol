@@ -20,9 +20,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../third_party/uniswap/IUniswapV2Pair.sol";
-import "../third_party/uniswap/IUniswapV2Router02.sol";
-import "./IPriceCalculator.sol";
+import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "../price/IPriceCalculator.sol";
 import "./PayrollClerkStorage.sol";
 
 /// @title Disperse salary to workers

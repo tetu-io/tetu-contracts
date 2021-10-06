@@ -135,6 +135,7 @@ describe.skip('TETU LP test', async () => {
 
     expect(await tetuLpVault.rewardTokensLength()).at.eq(1);
     await tetuLpVault.doHardWork();
+    await VaultUtils.doHardWorkAndCheck(tetuLpVault);
     await tetuLpVault.rebalance();
 
     // ************** WITHDRAW *******************************

@@ -41,6 +41,9 @@ export class MaticAddresses {
   public static BTCCRV_TOKEN = "0xf8a57c1d3b9629b77b6726a042ca48990A84Fb49".toLowerCase();
   public static IRIS_TOKEN = "0xdaB35042e63E93Cc8556c9bAE482E5415B5Ac4B1".toLowerCase(); // Hermes
   public static DFYN_TOKEN = "0xc168e40227e4ebd8c1cae80f7a55a4f0e6d66c97".toLowerCase();
+  public static pBREW_TOKEN = "0xb5106A3277718eCaD2F20aB6b86Ce0Fee7A21F09".toLowerCase();
+  public static dxTETU = "0xacee7bd17e7b04f7e48b29c0c91af67758394f0f".toLowerCase();
+  public static xTETU = "0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -69,6 +72,7 @@ export class MaticAddresses {
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
   public static QUICK_QI_miMATIC = "0x7AfcF11F3e2f01e71B7Cc6b8B5e707E42e6Ea397".toLowerCase();
   public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
+  public static QUICK_TETU_USDC = "0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B".toLowerCase();
 
   //sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
@@ -134,6 +138,11 @@ export class MaticAddresses {
   public static HERMES_IRIS_USDC = "0x277D9B07671eB9ac0d5D63E15BeEdc0aDBE3e9Fd".toLowerCase();
   public static HERMES_IRIS_TETU = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
 
+  // CafeSwap
+  public static CAFE_MASTERCHEF = "0xca2DeAc853225f5a4dfC809Ae0B7c6e39104fCe5".toLowerCase();
+  public static CAFE_FACTORY = "0x5eDe3f4e7203Bf1F12d57aF1810448E5dB20f46C".toLowerCase();
+  public static CAFE_ROUTER = "0x9055682E58C74fc8DdBFC55Ad2428aB1F96098Fc".toLowerCase();
+
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
       case MaticAddresses.QUICK_FACTORY:
@@ -146,6 +155,8 @@ export class MaticAddresses {
         return MaticAddresses.FIREBIRD_ROUTER;
       case MaticAddresses.DFYN_FACTORY:
         return MaticAddresses.DFYN_ROUTER;
+      case MaticAddresses.CAFE_FACTORY:
+        return MaticAddresses.CAFE_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

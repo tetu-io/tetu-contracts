@@ -5,8 +5,6 @@ import {SmartVault} from "../../../typechain";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
 
   const logic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
 

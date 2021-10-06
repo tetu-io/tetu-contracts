@@ -92,20 +92,4 @@ contract MockStrategySelfFarm is StrategyBase {
   function poolTotalAmount() external view override returns (uint256) {
     return ISmartVault(pool).underlyingBalanceWithInvestment();
   }
-
-  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
-    address[] memory rts = ISmartVault(pool).rewardTokens();
-    uint256[] memory _rewards = new uint256[](rts.length);
-
-    for (uint256 i = 0; i < rts.length; i++) {
-
-      uint256 rtBalance = IERC20(rts[i]).balanceOf(pool);
-      uint256 time = ISmartVault(pool).periodFinishForToken(rts[i])
-      - ISmartVault(pool).lastUpdateTimeForToken(rts[i]);
-
-      _rewards[i] = rtBalance * (1 weeks * 1e18 / time) / 1e18;
-    }
-
-    return _rewards;
-  }
 }

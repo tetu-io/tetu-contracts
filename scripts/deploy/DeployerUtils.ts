@@ -1,8 +1,9 @@
 import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Contract, ContractFactory, utils} from "ethers";
+import {BigNumber, Contract, ContractFactory, utils} from "ethers";
 import {
   Announcer,
+  AutoRewarder,
   Bookkeeper,
   ContractReader,
   Controller,
@@ -17,6 +18,7 @@ import {
   NotifyHelper,
   PayrollClerk,
   PriceCalculator,
+  RewardCalculator,
   RewardToken,
   SmartVault,
   TetuProxyControlled,
@@ -33,6 +35,7 @@ import axios from "axios";
 import {Secrets} from "../../secrets";
 import {RunHelper} from "../utils/RunHelper";
 import {MaticAddresses} from "../../test/MaticAddresses";
+import {TokenUtils} from "../../test/TokenUtils";
 
 const hre = require("hardhat");
 
@@ -191,6 +194,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.WAULT_FACTORY, "WaultSwap LP"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.FIREBIRD_FACTORY, "FireBird Liquidity Provider"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.CAFE_FACTORY, "CafeSwap LPs"), true, wait);
 
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.modifyReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
@@ -240,6 +244,23 @@ export class DeployerUtils {
     const contract = logic.attach(proxy.address) as ContractReader;
     await contract.initialize(controller, calculator);
     return [contract, proxy, logic];
+  }
+
+  public static async deployRewardCalculator(signer: SignerWithAddress, controller: string, calculator: string)
+      : Promise<[RewardCalculator, TetuProxyGov, RewardCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "RewardCalculator") as RewardCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const contract = logic.attach(proxy.address) as RewardCalculator;
+    await contract.initialize(controller, calculator);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployAutoRewarder(
+      signer: SignerWithAddress,
+      controller: string,
+      rewardCalculator: string
+  ): Promise<AutoRewarder> {
+    return await DeployerUtils.deployContract(signer, "AutoRewarder", controller, rewardCalculator) as AutoRewarder;
   }
 
   public static async deployZapContract(
@@ -412,8 +433,7 @@ export class DeployerUtils {
   public static async deployVaultAndStrategy<T>(
       vaultName: string,
       strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
-      controller: Controller,
-      vaultController: VaultController,
+      controllerAddress: string,
       vaultRewardToken: string,
       signer: SignerWithAddress,
       rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
@@ -430,7 +450,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
         "TETU_" + vaultName,
         "x" + vaultName,
-        controller.address,
+        controllerAddress,
         strategyUnderlying,
         rewardDuration,
         false,
@@ -579,6 +599,18 @@ export class DeployerUtils {
       throw Error('No config for ' + net.name);
     }
     return mocks;
+  }
+
+  public static async impersonate(address: string, fundSender: SignerWithAddress) {
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [address],
+    });
+    await fundSender.sendTransaction({
+      to: address,
+      value: BigNumber.from('10000000000000000000') // send 10 matic
+    })
+    return await ethers.getSigner(address);
   }
 
   // ****************** WAIT ******************

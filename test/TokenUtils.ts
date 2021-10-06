@@ -23,7 +23,7 @@ export class TokenUtils {
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    await TokenUtils.checkBalance(tokenAddress, signer.address, amount);
+    // await TokenUtils.checkBalance(tokenAddress, signer.address, amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
     return await token.approve(spender, BigNumber.from(amount));
   }

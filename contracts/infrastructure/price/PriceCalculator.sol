@@ -16,15 +16,15 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../base/governance/Controllable.sol";
-import "../third_party/uniswap/IUniswapV2Factory.sol";
-import "../third_party/uniswap/IUniswapV2Pair.sol";
-import "../third_party/firebird/IFireBirdPair.sol";
-import "../third_party/firebird/IFireBirdFactory.sol";
+import "../../base/governance/Controllable.sol";
+import "../../third_party/uniswap/IUniswapV2Factory.sol";
+import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/firebird/IFireBirdPair.sol";
+import "../../third_party/firebird/IFireBirdFactory.sol";
+import "../../base/interface/ISmartVault.sol";
+import "../../third_party/iron/IIronSwap.sol";
+import "../../third_party/iron/IIronLpToken.sol";
 import "./IPriceCalculator.sol";
-import "../base/interface/ISmartVault.sol";
-import "../third_party/iron/IIronSwap.sol";
-import "../third_party/iron/IIronLpToken.sol";
 
 pragma solidity 0.8.4;
 
@@ -37,7 +37,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.2.1";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;

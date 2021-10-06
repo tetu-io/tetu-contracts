@@ -11,6 +11,7 @@ import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy, IUniswapV2Pair} from "../../typechain";
+import {VaultUtils} from "../VaultUtils";
 
 
 const {expect} = chai;
@@ -53,6 +54,8 @@ async function startDefaultLpStrategyTest(
         );
       }
 
+      await core.feeRewardForwarder.setLiquidityNumerator(50);
+      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
       const data = await StrategyTestUtils.deploy(
           signer,
@@ -74,6 +77,8 @@ async function startDefaultLpStrategyTest(
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       strategyInfo = new StrategyInfo(
           underlying,
@@ -103,9 +108,9 @@ async function startDefaultLpStrategyTest(
       const dec0 = await TokenUtils.decimals(token0Opposite);
       const dec1 = await TokenUtils.decimals(token1Opposite);
       const price0 = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(token0Opposite)));
-      console.log('token0Opposite Price', price0, name0);
+      console.log('token0Opposite Price', price0, name0, '-', token0Name);
       const price1 = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(token1Opposite)));
-      console.log('token1Opposite Price', price1, name1);
+      console.log('token1Opposite Price', price1, name1, '-', token1Name);
       const amountForSell0 = baseAmount / price0;
       const amountForSell1 = baseAmount / price1;
       console.log('amountForSell0', amountForSell0, 'amountForSell1', amountForSell1);

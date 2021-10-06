@@ -17,10 +17,11 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../third_party/hermes/IIrisMasterChef.sol";
 import "../StrategyBase.sol";
+import "../../interface/IMasterChefStrategyV2.sol";
 
 /// @title Abstract contract for Hermes strategy implementation
 /// @author belbix, bogdoslav
-abstract contract HermesStrategyFullBuyback is StrategyBase {
+abstract contract HermesStrategyFullBuyback is StrategyBase, IMasterChefStrategyV2 {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -29,13 +30,13 @@ abstract contract HermesStrategyFullBuyback is StrategyBase {
   string public constant override STRATEGY_NAME = "HermesStrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @notice Hermes rewards pool
-  address public pool;
+  address public override pool;
   /// @notice Hermes MasterChef rewards pool ID
-  uint256 public poolID;
+  uint256 public override poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -83,22 +84,6 @@ abstract contract HermesStrategyFullBuyback is StrategyBase {
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return IERC20(_underlyingToken).balanceOf(pool);
-  }
-
-  /// @notice Calculate approximately weekly reward amounts for HERMES
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Weekly reward amount of HERMES
-  function poolWeeklyRewardsAmount() external view override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    (, uint256 allocPoint, uint256 lastRewardBlock,,,) = IIrisMasterChef(pool).poolInfo(poolID);
-    uint256 time = block.number - lastRewardBlock;
-    uint256 rewardPerBlock = IIrisMasterChef(pool).irisPerBlock();
-    uint256 totalAllocPoint = IIrisMasterChef(pool).totalAllocPoint();
-    uint256 rewardAmount = time.mul(rewardPerBlock).mul(allocPoint).div(totalAllocPoint);
-    uint256 averageBlockTime = 2;
-    // don't simplify computation for keep the logic clear
-    rewards[0] = rewardAmount * (1 weeks * 1e18 / time / averageBlockTime) / 1e18;
-    return rewards;
   }
 
   // ************ GOVERNANCE ACTIONS **************************

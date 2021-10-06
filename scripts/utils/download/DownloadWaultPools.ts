@@ -130,7 +130,7 @@ function computeWeekReward(
     allocPoint: BigNumber,
     totalAllocPoint: BigNumber,
     tokenPrice: BigNumber,
-    averageBlockTime = 5
+    averageBlockTime = 2.25
 ): number {
   const reward = BigNumber.from(block).mul(tokenPerBlock).mul(allocPoint).div(totalAllocPoint);
   const timeWeekRate = (60 * 60 * 24 * 7) / (block * averageBlockTime);

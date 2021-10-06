@@ -58,7 +58,7 @@ async function startIronFoldStrategyTest(
         } else {
           await core.feeRewardForwarder.setConversionPath(
               [rt, MaticAddresses.USDC_TOKEN, underlying],
-              [MaticAddresses.getRouterByFactory(factory), MaticAddresses.getRouterByFactory(factory)]
+              [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
           );
         }
 
@@ -73,6 +73,9 @@ async function startIronFoldStrategyTest(
             [MaticAddresses.QUICK_ROUTER]
         );
       }
+
+      await core.feeRewardForwarder.setLiquidityNumerator(50);
+      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
       const data = await StrategyTestUtils.deploy(
           signer,
@@ -94,6 +97,8 @@ async function startIronFoldStrategyTest(
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
@@ -193,13 +198,14 @@ async function startIronFoldStrategyTest(
       const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
       const undDec = await TokenUtils.decimals(strategyInfo.underlying);
       const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
+      console.log('depositBN', utils.formatUnits(depositBN, undDec))
       const bal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
       // remove excess balance
       await TokenUtils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
       await doHardWorkLoopFolding(
           strategyInfo,
           depositBN.div(2).toString(),
-          10,
+          3,
           3000
       );
     });
@@ -224,8 +230,8 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
 
   const signerUnderlyingBalance = await TokenUtils.balanceOf(info.underlying, info.signer.address);
 
-  console.log("deposit", deposit);
-  await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
+  console.log("deposit", userUnderlyingBalance.toString());
+  await VaultUtils.deposit(info.user, info.vault, userUnderlyingBalance);
 
   const signerDeposit = await TokenUtils.balanceOf(info.underlying, info.signer.address);
   await VaultUtils.deposit(info.signer, info.vault, signerDeposit);
@@ -273,7 +279,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
 
     // *********** DO HARD WORK **************
     await TimeUtils.advanceNBlocks(loopBlocks);
-    await info.vault.doHardWork();
+    await VaultUtils.doHardWorkAndCheck(info.vault);
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
