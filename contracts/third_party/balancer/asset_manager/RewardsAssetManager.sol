@@ -145,6 +145,8 @@ abstract contract RewardsAssetManager is IAssetManager {
      * @param amount - the amount of tokens being deposited
      */
     function _capitalIn(uint256 amount) private {
+        console.log("_capitalIn => %s", amount);
+
         uint256 aum = _getAUM();
 
         IVault.PoolBalanceOp[] memory ops = new IVault.PoolBalanceOp[](2);
@@ -163,6 +165,8 @@ abstract contract RewardsAssetManager is IAssetManager {
      * @param amount - the amount of tokens to withdraw to the vault
      */
     function _capitalOut(uint256 amount) private {
+        console.log("_capitalOut => %s", amount);
+
         uint256 aum = _getAUM();
         uint256 tokensOut = _divest(amount, aum);
 
