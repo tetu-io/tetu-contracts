@@ -34,6 +34,8 @@ contract IronRTokenAssetManager is RewardsAssetManager {
 
     address public underlyingToken; // wbtc
 
+    uint256 private _aum;
+
     // @notice rewards distributor for pool which owns this asset manager
     // IMultiRewards public distributor;  // todo Strategy
 
@@ -68,6 +70,9 @@ contract IronRTokenAssetManager is RewardsAssetManager {
         IERC20(underlyingToken).safeApprove(rToken, 0);
         IERC20(underlyingToken).safeApprove(rToken, balance);
         require(CompleteRToken(rToken).mint(balance) == 0, "IFS: Supplying failed");
+         _aum = CompleteRToken(rToken).balanceOfUnderlying(address(this));
+        console.log("invest > AUM: %s", _aum);
+
         console.log("invested %s of  %s", balance, underlyingToken);
         return balance;
     }
@@ -78,11 +83,16 @@ contract IronRTokenAssetManager is RewardsAssetManager {
      * @return the number of tokens to return to the vault
      */
     function _divest(uint256 amountUnderlying, uint256) internal override returns (uint256) {
-        amountUnderlying = Math.min(amountUnderlying, CompleteRToken(rToken).balanceOfUnderlying(address(this)));
+        console.log("_divest request amountUnderlying: %s", amountUnderlying);
+        amountUnderlying = Math.min(amountUnderlying, _aum);
         if (amountUnderlying > 0) {
             CompleteRToken(rToken).redeemUnderlying(amountUnderlying);
         }
         // what to do if can't withdraw?
+        _aum = CompleteRToken(rToken).balanceOfUnderlying(address(this));
+        console.log("divest > AUM: %s", _aum);
+        console.log("divested %s of  %s", amountUnderlying, underlyingToken);
+
         return amountUnderlying;
     }
 
@@ -91,7 +101,7 @@ contract IronRTokenAssetManager is RewardsAssetManager {
      * @dev Checks RToken balance (ever growing)
      */
     function _getAUM() internal view override returns (uint256) {
-        return IERC20(rToken).balanceOf(address(this));
+        return _aum;
     }
 
     function claimRewards() public {

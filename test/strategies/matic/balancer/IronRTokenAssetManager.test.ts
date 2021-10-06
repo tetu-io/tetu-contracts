@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import {BigNumber, Contract, utils} from 'ethers';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
-import {CompleteRToken, IERC20, IVault, MockAssetManagedPool, MockRewardsAssetManager} from "../../../../typechain";
+import {IERC20, IVault, MockAssetManagedPool, MockRewardsAssetManager} from "../../../../typechain";
 import {BytesLike} from "@ethersproject/bytes";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../../../MaticAddresses";
@@ -10,25 +10,12 @@ import {UniswapUtils} from "../../../UniswapUtils";
 import {Erc20Utils} from "../../../Erc20Utils";
 import {bn, fp} from "./helpers/numbers";
 import {encodeInvestmentConfig} from "./helpers/rebalance";
-import {encodeJoin} from "./helpers/mockPool";
+import {encodeJoin, encodeExit} from "./helpers/mockPool";
 import {MAX_UINT256} from "./helpers/constants";
 import {TimeUtils} from "../../../TimeUtils";
 
-// import TokenList from '@balancer-labs/v2-helpers/src/models/tokens/TokenList';
-//
-// import { bn, fp } from '@balancer-labs/v2-helpers/src/numbers';
-// import { MAX_UINT256 } from '@balancer-labs/v2-helpers/src/constants';
-// import { actionId } from '@balancer-labs/v2-helpers/src/models/misc/actions';
-//
-// import { deploy } from '@balancer-labs/v2-helpers/src/contract';
-// import { WeightedPoolEncoder } from '@balancer-labs/balancer-js';
-// import { advanceTime } from '@balancer-labs/v2-helpers/src/time';
-
 const tokenInitialBalance = bn(200e18);
 
-// let vault: IVault;
-// let assetManager: MockRewardsAssetManager;
-// let otherUser: SignerWithAddress;
 
 enum PoolSpecialization {
   GeneralPool = 0,
@@ -42,9 +29,6 @@ const setup = async () => {
   // Connect to balancer vault
   let vault = await ethers.getContractAt(
       "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8") as IVault;
-
-  // Connect to Iron lending pool
-  //???
 
   // Deploy Pool
   let pool = await DeployerUtils.deployContract(
@@ -63,7 +47,7 @@ const setup = async () => {
   await pool.registerTokens(tokensAddresses, assetManagers);
 
   const config = {
-    targetPercentage: fp(0.45),
+    targetPercentage: fp(0.5),
     upperCriticalPercentage: fp(0.6),
     lowerCriticalPercentage: fp(0.4),
   };
@@ -88,8 +72,6 @@ const setup = async () => {
   const wmaticDec = await Erc20Utils.decimals(wmaticToken.address);
   const oppositeTokenBal2 = +utils.formatUnits(wmaticBal, wmaticDec);
   console.log("wmatic bal :", oppositeTokenBal2);
-
-
 
   vault = await ethers.getContractAt(
       "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8", investor) as IVault;
@@ -159,5 +141,57 @@ describe('Iron Asset manager', function () {
 
     });
 
+    it('AM should rebalace properly after withdraw funds.', async () => {
+
+      await assetManager.rebalance(poolId, false);
+
+      let poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
+      const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, investor) as IERC20;
+
+      let usdcBefore = await usdcToken.balanceOf(investor.address);
+
+
+      await vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
+        assets: poolTokens,
+        minAmountsOut: Array(poolTokens.length).fill(0),
+        toInternalBalance: false,
+        userData: encodeExit([BigNumber.from(5000000000), BigNumber.from(0)], Array(poolTokens.length).fill(0)),
+      });
+
+
+
+      let usdcBal = await usdcToken.balanceOf(investor.address);
+
+      expect(usdcBefore.add(BigNumber.from(5000000000))).to.be.eq(usdcBal);
+
+      await assetManager.rebalance(poolId, false);
+
+
+      await vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
+        assets: poolTokens,
+        minAmountsOut: Array(poolTokens.length).fill(0),
+        toInternalBalance: false,
+        userData: encodeExit([BigNumber.from(2500000000), BigNumber.from(0)], Array(poolTokens.length).fill(0)),
+      });
+
+      let usdcBal1 = await usdcToken.balanceOf(investor.address);
+      expect(usdcBal.add(BigNumber.from(2500000000))).to.be.eq(usdcBal1);
+
+    });
+
+
+    it('AM should return error when withdraw more funds than in vault', async () => {
+      await assetManager.rebalance(poolId, false);
+      // after rebalance 5000 usds should be invested by AM and 5000 usdc available in the vault
+
+      let poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
+
+      await expect(vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
+        assets: poolTokens,
+        minAmountsOut: Array(poolTokens.length).fill(0),
+        toInternalBalance: false,
+        userData: encodeExit([BigNumber.from(5000000001), BigNumber.from(0)], Array(poolTokens.length).fill(0)),
+      })).to.be.revertedWith('BAL#001');
+    });
   });
 });
