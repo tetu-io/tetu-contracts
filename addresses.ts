@@ -15,7 +15,6 @@ export class Addresses {
         '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
         '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2',// fund keeper
         '0xC5b3aF6FB4b2ff14642e337F41B86C9494f70b43',// vault controller
-        '0x52646dfb3E1D540D85DC32223A220a6F9c7eD759',// vault logic new 0xc8C72A619e24415f65d4D00360bD474053C36C7d
         '0xDE9aeB389A74b32a66D960b38c1B453A4ff4bDC0',// pawnshop
     )],
     ['rinkeby', new CoreAddresses(
@@ -29,7 +28,6 @@ export class Addresses {
         '0xAec561cF4F54756EBB9E897b7fdbb444DE8783bA', // ps vault
         '0x1b6E2a7AcB8f79044bE4b384fa7A1Cac1259bb72',// fund keeper
         '0xb990e66DAbda0a30a6d79fe9e7f5aeD36E59156b',// vault controller
-        '0x57E9994EC192d9661a2a1e3A84a38c8aaD013937',// vault logic
         '',// pawnshop
     )]
   ]);

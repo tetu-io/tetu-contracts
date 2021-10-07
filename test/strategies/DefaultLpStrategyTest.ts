@@ -78,7 +78,7 @@ async function startDefaultLpStrategyTest(
       const strategy = data[1];
       const lpForTargetToken = data[2];
 
-      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1, 1);
 
       strategyInfo = new StrategyInfo(
           underlying,

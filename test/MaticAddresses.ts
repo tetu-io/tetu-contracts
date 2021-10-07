@@ -44,6 +44,7 @@ export class MaticAddresses {
   public static pBREW_TOKEN = "0xb5106A3277718eCaD2F20aB6b86Ce0Fee7A21F09".toLowerCase();
   public static dxTETU = "0xacee7bd17e7b04f7e48b29c0c91af67758394f0f".toLowerCase();
   public static xTETU = "0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454".toLowerCase();
+  public static dQUICK_TOKEN = "0xf28164A485B0B2C90639E47b0f377b4a438a16B1".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -67,6 +68,7 @@ export class MaticAddresses {
   public static QUICK_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff".toLowerCase();
   public static QUICK_FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32".toLowerCase();
   public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
+  public static QUICK_STAKING_FACTORY_V2 = "0x8aAA5e259F74c8114e0a471d9f2ADFc66Bfe09ed".toLowerCase();
   public static QUICK_WMATIC_USDC = "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827".toLowerCase();
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();

@@ -9,7 +9,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const vaultLogicAdr = core.vaultLogic;
+  const vaultLogicAdr = '';
   const batch = 30;
 
   const controller = await DeployerUtils.connectInterface(signer, 'Controller', core.controller) as Controller;

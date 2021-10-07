@@ -58,7 +58,7 @@ async function main() {
         vaultNameWithoutPrefix,
         vaultAddress => DeployerUtils.deployContract(
             signer,
-            'StrategyQuickSwapLp',
+            'StrategyQuickSwapLpV2',
             core.controller,
             vaultAddress,
             lp_address,

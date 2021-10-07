@@ -26,6 +26,9 @@ async function downloadSushi() {
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (let vInfo of vaultInfos) {
+    if (vInfo.platform !== '3') {
+      continue;
+    }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {

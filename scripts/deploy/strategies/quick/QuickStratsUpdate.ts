@@ -4,10 +4,10 @@ import {
   ContractReader,
   Controller,
   IStrategy,
-  StrategyIronFold,
+  SmartVault,
   VaultController
 } from "../../../../typechain";
-import {mkdir, readFileSync, writeFileSync} from "fs";
+import {appendFileSync, mkdir, readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -16,7 +16,11 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const infos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
+  mkdir('./tmp/update', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
+
+  const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
 
   const cReader = await DeployerUtils.connectContract(
       signer, "ContractReader", tools.reader) as ContractReader;
@@ -29,24 +33,25 @@ async function main() {
     vaultsMap.set(await cReader.vaultName(vAdr), vAdr);
   }
 
-  // *********** DEPLOY
   for (let info of infos) {
     const strat = info.split(',');
 
-    const idx = strat[0];
-    const rToken_name = strat[1];
-    const rToken_address = strat[2];
-    const token = strat[3];
-    const tokenName = strat[4];
-    const collateralFactor = strat[5];
-    const borrowTarget = strat[6];
+    const ids = strat[0];
+    const lp_name = strat[1];
+    const lp_address = strat[2];
+    const token0 = strat[3];
+    const token0_name = strat[4];
+    const token1 = strat[5];
+    const token1_name = strat[6];
+    const pool = strat[7];
+    const duration = strat[9];
 
-    if (idx === 'idx' || !token) {
-      console.log('skip', idx);
+    if (+duration <= 0 || !token0 || ids === 'idx') {
+      console.log('skip', ids);
       continue;
     }
 
-    const vaultNameWithoutPrefix = `IRON_LOAN_${tokenName}`;
+    const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
 
     const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
 
@@ -55,31 +60,42 @@ async function main() {
       return;
     }
 
-    console.log('strat', idx, rToken_name, vaultNameWithoutPrefix, vAdr);
+    const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
+
+    if (!(await vCtr.active())) {
+      console.log('vault not active', vAdr)
+      continue;
+    }
+
+    console.log('strat', pool, lp_name, vAdr, lp_address, token0, token1);
 
     const strategy = await DeployerUtils.deployContract(
         signer,
-        'StrategyIronFold',
+        'StrategyQuickSwapLpV2',
         core.controller,
         vAdr,
-        token,
-        rToken_address,
-        borrowTarget,
-        collateralFactor
+        lp_address,
+        token0,
+        token1,
+        pool
     ) as IStrategy;
+
+    const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
+    await appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
-      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold', [
+      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/quick/StrategyQuickSwapLpV2.sol:StrategyQuickSwapLpV2', [
         core.controller,
         vAdr,
-        token,
-        rToken_address,
-        borrowTarget,
-        collateralFactor
+        lp_address,
+        token0,
+        token1,
+        pool
       ]);
     }
   }
+
 
 }
 

@@ -138,11 +138,12 @@ export class VaultUtils {
       signer: SignerWithAddress,
       vault: SmartVault,
       core: CoreContractsWrapper,
-      amount: number
+      amount: number,
+      period = 60 * 60 * 24 * 7 +1
   ) {
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    await MintHelperUtils.mint(core.controller, core.announcer, amount + '', signer.address);
+    await MintHelperUtils.mint(core.controller, core.announcer, amount + '', signer.address, period);
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));
     await TokenUtils.approve(rtAdr, signer, vault.address, utils.parseUnits(amount + '').toString());

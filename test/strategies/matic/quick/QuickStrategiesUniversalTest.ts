@@ -13,9 +13,9 @@ describe('Universal Quick tests', async () => {
   if (Settings.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/generate/quick_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
 
-  const strategyName = 'StrategyQuickSwapLp';
+  const strategyName = 'StrategyQuickSwapLpV2';
 
   infos.forEach(info => {
     const strat = info.split(',');
