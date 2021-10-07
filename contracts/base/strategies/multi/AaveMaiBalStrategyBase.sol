@@ -51,6 +51,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 
   address public constant balancerVaultAddress   = 0xba12222222228d8ba445958a75a0704d566bf2c8;
   uint256 public constant balancerPoolID         = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012;
+  uint256 public constant balancerTokenIndexAtPool = 2;
   address public constant balancerLPToken        = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42;
   address public constant balancerRewardToken    = 0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3; // BAL
 
@@ -66,7 +67,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
     AaveWethConnector(aaveWethGatewayAddress, aavePoolAddress)
     MaiConnector(maiVaultAddress, aaveLPTokenAddress, maiLPTokenAddress, maiVaultID)
-    BalancerConnector(balancerVaultAddress, maiBorrowToken, balancerPoolID)
+    BalancerConnector(balancerVaultAddress, maiBorrowToken, balancerPoolID, balancerTokenIndexAtPool)
   {
     assert(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
     _assets = __assets;
@@ -75,7 +76,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //    https://polygonscan.com/tx/0x3f69c39b4ff0f3280d4277e0cc82d9dba3ff384a2ddad5890eb0960d55019dc2
 //    contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //    Function: createVault()
-    _maiCreateVault();
+    _maiCreateVault(); // ERC721Enumerable NFT token issued
 
   }
 
@@ -102,8 +103,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
     assert(underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC );  //TODO extend for other tokens later
 
-    maiVaultID = 0x53e; //TODO !!! get actual vault id created by _maiCreateVault()
-    assert(maiVaultID!=0, "MS: MAI vault id not set" );
+    maiVaultID = _maiGetVaultID();
 
     IWETH(WMATIC).withdraw(amount); // Unwrap WMATIC
     _aaveDepositETH(amount);
@@ -139,7 +139,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     _maiBorrowToken(aiVaultID, maiBorrowAmount);
 
 
-//  TODO - BAL: approve, join pool deposit MAI to USDC-DAI-MAI-USDT pool to BPSP https://polygonscan.com/token/0x06df3b2bbb68adc8b0e302443692037ed9f91b42
+//  BAL: approve, join pool deposit MAI to USDC-DAI-MAI-USDT pool to BPSP https://polygonscan.com/token/0x06df3b2bbb68adc8b0e302443692037ed9f91b42
 //  https://polygonscan.com/tx/0x1793ae9eded0050f3b74a79e77dfad3a5db7f40a7a148b2373450802dbab220d
 //  Contract 0xa3fa99a148fa48d14ed51d610c367c61876997f1 (Qi DAO: miMATIC Token)
 //  Function: approve(address spender, uint256 amount)

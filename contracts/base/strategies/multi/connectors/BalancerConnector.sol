@@ -22,32 +22,47 @@ contract BalancerConnector {
     address public balancerVaultAddress;
     address public sourceTokenAddress;
     uint256 public balancerPoolID;
+    uint256 public sourceTokenIndexAtPool;
 
     constructor(
         address _balancerVaultAddress,
         address _sourceTokenAddress,
-        uint256 _balancerPoolID
+        uint256 _balancerPoolID,
+        uint256 _sourceTokenIndexAtPool
     ) public {
         balancerVaultAddress = _balancerVaultAddress;
         sourceTokenAddress = _sourceTokenAddress;
         balancerPoolID = _balancerPoolID;
+        sourceTokenIndexAtPool = _sourceTokenIndexAtPool;
+    }
+
+    // from https://github.com/balancer-labs/balancer-v2-monorepo/blob/f45076067b68b27ea023632e69349e3051746cd4/pkg/solidity-utils/contracts/helpers/ERC20Helpers.sol
+    function _asIAsset(IERC20[] memory tokens) pure returns (IAsset[] memory assets) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            assets := tokens
+        }
     }
 
     function _balancerJoinPool(uint256 amount) internal {
         IERC20(sourceTokenAddress).safeApprove(balancerVaultAddress, 0);
         IERC20(sourceTokenAddress).safeApprove(balancerVaultAddress, amount);
 
-        //TODO try catch with gas limit
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
-        JoinPoolRequest memory request;
-        JoinPoolRequest.assets = new IAsset[](4);
-        JoinPoolRequest.assets[2] = sourceTokenAddress;
-        JoinPoolRequest.maxAmountsIn = new uint256[](4);
-        JoinPoolRequest.maxAmountsIn.assets[2] = amount;
-        JoinPoolRequest.userData = 0x0; //TODO fill correctly
-        JoinPoolRequest.fromInternalBalance = false;
+        IERC20[] memory tokens = IBVault(balancerVaultAddress).getPoolTokens(_balancerPoolID);
+        require( sourceTokenAddress==address(tokens[sourceTokenIndexAtPool]), "BC: wrong source token or its index");
+        uint256[] maxAmountsIn = [0,0,0,0];
+        maxAmountsIn[sourceTokenIndexAtPool] = amount;
 
-        IBVault(balancerV2Address).joinPool(_balancerPoolID, address(this), address(this), request);
+        IBVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
+            assets: _asIAsset(tokens),
+            maxAmountsIn: maxAmountsIn,
+            userData: "",
+            fromInternalBalance: false
+        });
+
+        //TODO try catch with gas limit
+        IBVault(balancerVaultAddress).joinPool(_balancerPoolID, address(this), address(this), request);
     }
 }
 

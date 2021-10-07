@@ -45,6 +45,14 @@ contract MaiConnector {
         IErc20Stablecoin(erc20StableCoin).createVault(); //TODO add try w gas limit
     }
 
+    function _maiGetVaultID(uint256 index) public view returns (uint256) {
+        return IErc20Stablecoin(erc20StableCoin).tokenOfOwnerByIndex(address(this), index);
+    }
+
+    function _maiGetVaultID() {
+        return _maiGetVaultID(0);
+    }
+
     function _maiEnterCamWMatic(uint256 amount) internal {
         IERC20(sourceTokenAddress).safeApprove(camWMaticPoolAddress, 0);
         IERC20(sourceTokenAddress).safeApprove(camWMaticPoolAddress, amount);
