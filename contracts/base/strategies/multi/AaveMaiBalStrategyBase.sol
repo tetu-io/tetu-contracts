@@ -52,10 +52,10 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   address public constant balancerVaultAddress   = 0xba12222222228d8ba445958a75a0704d566bf2c8;
   uint256 public constant balancerPoolID         = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012;
   uint256 public constant balancerTokenIndexAtPool = 2;
-  address public constant balancerLPToken        = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42;
+  address public constant balancerLPToken        = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42; // Balancer Polygon Stable Pool (BPSP)
   address public constant balancerRewardToken    = 0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3; // BAL
 
-  uint256 public maiVaultID;
+  address public constant deepUnderlying         = balancerLPToken;
 
   /// @notice Contract constructor
   constructor(
@@ -65,11 +65,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     address[] memory __rewardTokens,
     address[] memory __assets
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
-    AaveWethConnector(aaveWethGatewayAddress, aavePoolAddress)
-    MaiConnector(maiVaultAddress, aaveLPTokenAddress, maiLPTokenAddress, maiVaultID)
+    AaveWethConnector(aaveWethGatewayAddress, aavePoolAddress, aaveLPTokenAddress)
+    MaiConnector(maiVaultAddress, aaveLPTokenAddress, maiLPTokenAddress, maiBorrowToken)
     BalancerConnector(balancerVaultAddress, maiBorrowToken, balancerPoolID, balancerTokenIndexAtPool)
   {
-    assert(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
+//    assert(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
     _assets = __assets;
 
 //    MAI: create camMATIC vault
@@ -78,6 +78,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //    Function: createVault()
     _maiCreateVault(); // ERC721Enumerable NFT token issued
 
+    rewardTokens = [maiRewardToken, balancerRewardToken]; //TODO check if there is some other reward tokens
   }
 
   /// @dev Stub function for Strategy Base implementation
@@ -95,6 +96,10 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     liquidateReward();
   }
 
+  function _balance(address token) returns (uint256) {
+    return IERC20(token).balanceOf(address(this));
+  }
+
   /// @dev Stub function for Strategy Base implementation
   function depositToPool(uint256 amount) internal override {
 //  AAVE: deposit MATIC -> amMATIC {WMATIC rewards}
@@ -103,7 +108,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
     assert(underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC );  //TODO extend for other tokens later
 
-    maiVaultID = _maiGetVaultID();
+    uint256 maiVaultID = _maiGetVaultID();
 
     IWETH(WMATIC).withdraw(amount); // Unwrap WMATIC
     _aaveDepositETH(amount);
@@ -116,7 +121,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract camWMATIC 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b
 //  Function: enter(uint256 _amount)
 
-    uint256 aaveLPTokensAmount = IERC20(aavePoolAddress).balanceOf(address(this));
+    uint256 aaveLPTokensAmount = _balance(aavePoolAddress);
     _maiEnterCamWMatic(aaveLPTokensAmount);
 
 //  MAI: approve, deposit camMATIC to collateral
@@ -127,16 +132,17 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //  Function: depositCollateral(uint256 vaultID 0x53e, uint256 amount db037b6c4b33e8b)
 
-    uint256 maiLPTokensAmount = IERC20(maiLPTokenAddress).balanceOf(address(this));
-    _maiDepositCollateral(maiVaultID, maiLPTokensAmount);
+    uint256 maiLPTokensAmount = _balance(maiLPTokenAddress);
+    _maiDepositCollateral(maiLPTokensAmount);
 
 //  MAI: borrow MAI (miMATIC) 33%  {QI airdrop}
 //  https://polygonscan.com/tx/0x61a10463ecd073c6d9e67a33d6c29c14909916bfbf076d870840d962516763da
 //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //  Function: borrowToken(uint256 vaultID 0x53e, uint256 amount 368a5a82c9a940e)
 
+    //TODO calc borrow amount more precise (get max from contract, then mul to maiBorrowPercentage)
     uint256 maiBorrowAmount = maiLPTokensAmount.mul(maiBorrowPercentage).div(100);
-    _maiBorrowToken(aiVaultID, maiBorrowAmount);
+    _maiBorrowToken(maiBorrowAmount);
 
 
 //  BAL: approve, join pool deposit MAI to USDC-DAI-MAI-USDT pool to BPSP https://polygonscan.com/token/0x06df3b2bbb68adc8b0e302443692037ed9f91b42
@@ -154,9 +160,37 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 
   /// @dev Stub function for Strategy Base implementation
   function withdrawAndClaimFromPool(uint256 amount) internal override {
+    //TODO convert amount (WMATIC) to deepUnderlying (BPSP)
+    uint256 exitAmount = amount; //TODO !!!
 
+    // BAL: withdraw miMATIC
+    // https://polygonscan.com/tx/0xc114039567b12bc2128bfe54eab0e742620a4200587525ce512c489805966055
+    // https://dashboard.tenderly.co/tx/polygon/0xc114039567b12bc2128bfe54eab0e742620a4200587525ce512c489805966055
+    _balancerExitPool(exitAmount);
 
-    //TODO AAVE: wrap matic back
+    // MAI: repay miMATIC/MAI (0.5% fee)
+    // https://polygonscan.com/tx/0x81e483a29d3ec3b3265db7d013eeb97968233cfae2d3989bc325e8b24ebc6e0f
+    uint256 repayAmount = _balance(maiBorrowToken);
+    _maiRepayToken(repayAmount);
+
+    // MAI: withdraw camWMATIC
+    // https://polygonscan.com/tx/0xfcd83b5c444e537b6f569dac7ae6dd82cb011d80cb00d790f2e1814c8175d437
+    uint256 maiWithdrawAmount = repayAmount.mul(100).div(maiBorrowPercentage);
+    _maiWithdrawCollateral(maiWithdrawAmount);
+
+    // MAI: withdraw amWMATIC
+    // https://polygonscan.com/tx/0x72c13585c9c35f85b6fa70882f8bad80745689f09070df3eb1c54a8027c89f30
+    _maiLeaveCamWMatic(maiWithdrawAmount);
+
+    // AAVE: approve amWMATIC for AAVE
+    // https://polygonscan.com/tx/0x4a82adcdd3fc296eb1945a3339d5785ecd2b6c50cbf6c960ab7dd4a367fae6bd
+    // AAVE: withdraw MATIC
+    // https://polygonscan.com/tx/0x517e48dc212f1980a5e79ec1d1f4e3360519596e7119a921916cc7122df3867c
+    _aaveWithdrawETH(); // Withdraw MATIC from AAVE
+
+    IWETH(WMATIC).deposit(amount); // Wrap MATIC to WMATIC
+
+    //TODO add some checks?
   }
 
   /// @dev Stub function for Strategy Base implementation
@@ -167,10 +201,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   /// @dev Stub function for Strategy Base implementation
   //slither-disable-next-line dead-code
   function liquidateReward() internal override {
-    // noop
-    //TODO
-    //TODO liquidate QI maiRewardToken
-    //TODO liquidate BAL balancerRewardToken
+    liquidateRewardDefault();
   }
 
   /// @dev Stub function for Strategy Base implementation

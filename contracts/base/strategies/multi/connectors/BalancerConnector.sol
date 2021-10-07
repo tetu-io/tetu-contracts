@@ -19,6 +19,8 @@ import "./../../../../third_party/balancer/IBVault.sol";
 contract BalancerConnector {
     using SafeERC20 for IERC20;
 
+    string private constant _WRONG_SOURCE_TOKEN = "BC: wrong source token or its index";
+
     address public balancerVaultAddress;
     address public sourceTokenAddress;
     uint256 public balancerPoolID;
@@ -50,13 +52,30 @@ contract BalancerConnector {
 
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
         IERC20[] memory tokens = IBVault(balancerVaultAddress).getPoolTokens(_balancerPoolID);
-        require( sourceTokenAddress==address(tokens[sourceTokenIndexAtPool]), "BC: wrong source token or its index");
+        require( sourceTokenAddress==address(tokens[sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
         uint256[] maxAmountsIn = [0,0,0,0];
         maxAmountsIn[sourceTokenIndexAtPool] = amount;
 
         IBVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
             assets: _asIAsset(tokens),
             maxAmountsIn: maxAmountsIn,
+            userData: "",
+            fromInternalBalance: false
+        });
+
+        //TODO try catch with gas limit
+        IBVault(balancerVaultAddress).joinPool(_balancerPoolID, address(this), address(this), request);
+    }
+
+    function _balancerExitPool(uint256 amount) internal {
+        IERC20[] memory tokens = IBVault(balancerVaultAddress).getPoolTokens(_balancerPoolID);
+        require( sourceTokenAddress==address(tokens[sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        uint256[] minAmountsOut = [0,0,0,0];
+        minAmountsOut[sourceTokenIndexAtPool] = amount;
+
+        IBVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
+            assets: _asIAsset(tokens),
+            minAmountsOut: minAmountsOut,
             userData: "",
             fromInternalBalance: false
         });

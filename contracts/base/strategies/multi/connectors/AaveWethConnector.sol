@@ -12,19 +12,25 @@
 
 pragma solidity 0.8.4;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./../../../../third_party/aave/IWETHGateway.sol";
 
 contract AaveWethConnector {
+    using SafeERC20 for IERC20;
 
     IWETHGateway wethGateway;
     address public lendingPool;
+    address public lpToken;
 
     constructor(
         address _wethGateway,
-        address _lendingPool
+        address _lendingPool,
+        address _lpToken
     ) public {
         wethGateway = IWETHGateway(_wethGateway);
         lendingPool = _lendingPool;
+        lpToken     = _lpToken;
     }
 
     function _aaveDepositETH(uint256 amount) internal payable {
@@ -33,8 +39,10 @@ contract AaveWethConnector {
     }
 
     function _aaveWithdrawETH(uint256 amount) internal {
+        IERC20(lpToken).safeApprove(address(wethGateway), 0);
+        IERC20(lpToken).safeApprove(address(wethGateway), amount);
         //TODO try catch with gas limit
-        wethGateway.depositETH(lendingPool, amount, address(this));
+        wethGateway.withdrawETH(lendingPool, amount, address(this));
     }
 
 //    function repayETH(
