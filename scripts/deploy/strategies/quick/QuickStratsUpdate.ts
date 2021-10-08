@@ -20,6 +20,8 @@ async function main() {
     if (err) throw err;
   });
 
+  await appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
+
   const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
 
   const cReader = await DeployerUtils.connectContract(

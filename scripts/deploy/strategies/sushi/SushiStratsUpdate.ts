@@ -20,6 +20,8 @@ async function main() {
     if (err) throw err;
   });
 
+  await appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
+
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
   const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
 

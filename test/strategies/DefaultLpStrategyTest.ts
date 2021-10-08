@@ -167,7 +167,7 @@ async function startDefaultLpStrategyTest(
           strategyInfo,
           (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
           3,
-          60
+          60 * 60
       );
     });
 

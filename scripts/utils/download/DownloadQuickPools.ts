@@ -46,8 +46,8 @@ async function downloadQuick() {
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
 
   const dQuickCtr = await DeployerUtils.connectInterface(signer, 'IDragonLair', MaticAddresses.dQUICK_TOKEN) as IDragonLair;
-  const dQuickRatio = await dQuickCtr.dQUICKForQUICK();
-  const dQuickPrice = quickPrice.mul(dQuickRatio);
+  const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
+  const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
   console.log('dQuickPrice', utils.formatUnits(dQuickPrice));
   console.log('quickPrice', utils.formatUnits(quickPrice));
 
