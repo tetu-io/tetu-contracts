@@ -38,11 +38,11 @@ async function main() {
 
       let toClaimUsd = 0;
 
-      for (let i = 0; i < rts.length; i++) {
-        const rtDec = await TokenUtils.decimals(rts[i]);
-        const toClaim = readyToClaim[i];
+      for (let j = 0; j < rts.length; j++) {
+        const rtDec = await TokenUtils.decimals(rts[j]);
+        const toClaim = readyToClaim[j];
 
-        const rtPrice = await calculator.getPriceWithDefaultOutput(rts[i]);
+        const rtPrice = await calculator.getPriceWithDefaultOutput(rts[j]);
 
         toClaimUsd += +utils.formatUnits(toClaim.mul(rtPrice), rtDec + 18);
       }

@@ -17,7 +17,7 @@ async function main() {
   const vaults = await bookkeeper.vaults();
   console.log('vaults ', vaults.length);
 
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     let vInfoWithUser;
     try {
       vInfoWithUser = await cReader.vaultWithUserInfos(signer.address, [vault]);

@@ -28,7 +28,7 @@ async function main() {
 
   const vaults: string[] = [];
 
-  for (let vault of vaultsPure) {
+  for (const vault of vaultsPure) {
     const v = vault.toLowerCase();
     if (
         v === core.psVault.address.toLowerCase()
@@ -44,8 +44,7 @@ async function main() {
   }
 
   let data = 'Vault, Name, Duration, Full Reward, Reward, Earned, KPI\n';
-  for (let i = 0; i < vaults.length; i++) {
-    const vault = vaults[i];
+  for (const vault of vaults) {
     try {
       const currentTs = Math.floor(Date.now() / 1000);
       const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
@@ -93,7 +92,7 @@ async function main() {
           + '\n';
       console.log(info);
       data += info;
-      await writeFileSync(`./tmp/stats/kpi.txt`, data, 'utf8');
+      writeFileSync(`./tmp/stats/kpi.txt`, data, 'utf8');
     } catch (e) {
       console.log('Error write vault', vault, e);
     }

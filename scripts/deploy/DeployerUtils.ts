@@ -37,6 +37,7 @@ import {RunHelper} from "../utils/RunHelper";
 import {MaticAddresses} from "../../test/MaticAddresses";
 import {TokenUtils} from "../../test/TokenUtils";
 
+// tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
 
 export class DeployerUtils {
@@ -52,7 +53,7 @@ export class DeployerUtils {
         name,
         signer
     )) as T;
-    const instance = await factory.connect(signer);
+    const instance = factory.connect(signer);
     return instance.attach(address);
   }
 
@@ -61,7 +62,7 @@ export class DeployerUtils {
       name: string,
       address: string
   ) {
-    return await ethers.getContractAt(name, address, signer);
+    return ethers.getContractAt(name, address, signer);
   }
 
   public static async connectVault(address: string, signer: SignerWithAddress): Promise<SmartVault> {
@@ -71,7 +72,7 @@ export class DeployerUtils {
     return logic.attach(proxy.address);
   }
 
-  public static async connectProxy(address: string, signer: SignerWithAddress, name: string): Promise<any> {
+  public static async connectProxy(address: string, signer: SignerWithAddress, name: string): Promise<Contract> {
     const proxy = await DeployerUtils.connectInterface(signer, "ITetuProxy", address) as ITetuProxy;
     const logicAddress = await proxy.callStatic.implementation();
     const logic = await DeployerUtils.connectContract(signer, name, logicAddress);
@@ -83,7 +84,8 @@ export class DeployerUtils {
   public static async deployContract<T extends ContractFactory>(
       signer: SignerWithAddress,
       name: string,
-      ...args: Array<any>
+      // tslint:disable-next-line:no-any
+      ...args: any[]
   ) {
     console.log(`Deploying ${name}`);
     console.log("Account balance:", utils.formatUnits(await signer.getBalance(), 18));
@@ -335,7 +337,7 @@ export class DeployerUtils {
     const psEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
         controller.address, rewardToken.address, psVault.address, [], [rewardToken.address], 1) as NoopStrategy;
 
-    //!########### INIT ##############
+    // !########### INIT ##############
     await RunHelper.runAndWait(() => psVault.initializeSmartVault(
         "TETU_PS",
         "xTETU",
@@ -406,9 +408,9 @@ export class DeployerUtils {
       signer: SignerWithAddress,
       rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
       wait = false
-  ): Promise<any[]> {
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+  ): Promise<[SmartVault, SmartVault, IStrategy]> {
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     const strategy = await strategyDeployer(vault.address);
@@ -438,8 +440,8 @@ export class DeployerUtils {
       signer: SignerWithAddress,
       rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
       wait = false
-  ): Promise<any[]> {
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+  ): Promise<[SmartVault, SmartVault, IStrategy]> {
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
@@ -464,37 +466,40 @@ export class DeployerUtils {
   public static async verify(address: string) {
     try {
       await hre.run("verify:verify", {
-        address: address
+        address
       })
     } catch (e) {
       console.log('error verify', e);
     }
   }
 
+  // tslint:disable-next-line:no-any
   public static async verifyWithArgs(address: string, args: any[]) {
     try {
       await hre.run("verify:verify", {
-        address: address, constructorArguments: args
+        address, constructorArguments: args
       })
     } catch (e) {
       console.log('error verify', e);
     }
   }
 
+  // tslint:disable-next-line:no-any
   public static async verifyWithContractName(address: string, contractPath: string, args?: any[]) {
     try {
       await hre.run("verify:verify", {
-        address: address, contract: contractPath, constructorArguments: args
+        address, contract: contractPath, constructorArguments: args
       })
     } catch (e) {
       console.log('error verify', e);
     }
   }
 
+  // tslint:disable-next-line:no-any
   public static async verifyWithArgsAndContractName(address: string, args: any[], contractPath: string) {
     try {
       await hre.run("verify:verify", {
-        address: address, constructorArguments: args, contract: contractPath
+        address, constructorArguments: args, contract: contractPath
       })
     } catch (e) {
       console.log('error verify', e);
@@ -610,12 +615,12 @@ export class DeployerUtils {
       to: address,
       value: BigNumber.from('10000000000000000000') // send 10 matic
     })
-    return await ethers.getSigner(address);
+    return ethers.getSigner(address);
   }
 
   // ****************** WAIT ******************
 
-  public static delay(ms: number) {
+  public static async delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 

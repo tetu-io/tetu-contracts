@@ -3,6 +3,7 @@ import axios, {AxiosResponse} from "axios";
 import Common from "ethereumjs-common";
 import {Secrets} from "../../secrets";
 
+// tslint:disable-next-line:no-var-requires
 const EthereumTx = require('ethereumjs-tx').Transaction
 
 const MATIC_CHAIN = Common.forCustomChain(
@@ -16,7 +17,7 @@ const MATIC_CHAIN = Common.forCustomChain(
 
 async function main() {
   const txHash = '0x471c157e4258c4cde0f7046de5f25c197c7a110d469c3548f7be352b156192de'.trim();
-  let response: AxiosResponse<any>;
+  let response: AxiosResponse;
   try {
     response = await axios.post(Secrets.maticRpcUrl,
         `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["${txHash}"],"id":1}`,
@@ -30,10 +31,10 @@ async function main() {
     console.error('error request', e);
     return;
   }
-  const result = response.data['result'];
+  const result = response.data.result;
   console.log('response', result);
 
-  const nonce = web3.utils.hexToNumber(result['nonce']);
+  const nonce = web3.utils.hexToNumber(result.nonce);
   console.log('nonce', nonce);
 
   const gasPrice = await web3.eth.getGasPrice();
@@ -44,8 +45,8 @@ async function main() {
   const tx = new EthereumTx(
       {
         nonce: web3.utils.numberToHex(nonce),
-        to: result['to'],
-        data: result['input'],
+        to: result.to,
+        data: result.input,
         gasPrice: web3.utils.numberToHex(gasPriceAdjusted),
         gasLimit: web3.utils.numberToHex(10_000_000),
       },

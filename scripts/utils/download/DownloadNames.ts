@@ -24,16 +24,17 @@ async function main() {
 
   const assetsNames = {};
   const vaultsNames = {};
-  for (let vault of vaults) {
+  for (const vault of vaults) {
 
     const vInfo = await cReader.vaultInfo(vault);
 
     console.info('vInfo.name', vInfo.name);
-
+    // tslint:disable-next-line:ban-ts-ignore
     // @ts-ignore
     vaultsNames[vault.toLowerCase()] = vInfo.name;
 
-    for (let asset of vInfo.assets) {
+    for (const asset of vInfo.assets) {
+      // tslint:disable-next-line:ban-ts-ignore
       // @ts-ignore
       assetsNames[asset.toLowerCase()] = await TokenUtils.tokenSymbol(asset);
     }
@@ -43,8 +44,8 @@ async function main() {
     if (err) throw err;
   });
 
-  await writeFileSync('./tmp/download/assets_names.json', JSON.stringify(assetsNames), 'utf8');
-  await writeFileSync('./tmp/download/vaults_names.json', JSON.stringify(vaultsNames), 'utf8');
+  writeFileSync('./tmp/download/assets_names.json', JSON.stringify(assetsNames), 'utf8');
+  writeFileSync('./tmp/download/vaults_names.json', JSON.stringify(vaultsNames), 'utf8');
   console.log('done');
 }
 

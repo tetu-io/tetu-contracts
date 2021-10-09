@@ -23,15 +23,15 @@ async function main() {
   const vaultsFiltered: string[] = [];
   const amounts: BigNumber[] = [];
   let sum = BigNumber.from(0);
-  for (let i = 0; i < vaults.length; i++) {
-    if (vaults[i].toLowerCase() === core.psVault.toLowerCase()) {
+  for (const item of vaults) {
+    if (item.toLowerCase() === core.psVault.toLowerCase()) {
       continue;
     }
-    const vaultContract = await DeployerUtils.connectVault(vaults[i], signer);
-    if(!(await vaultContract.active())) {
+    const vaultContract = await DeployerUtils.connectVault(item, signer);
+    if (!(await vaultContract.active())) {
       continue;
     }
-    vaultsFiltered.push(vaults[i]);
+    vaultsFiltered.push(item);
     const amount = utils.parseUnits(basePerVault.toFixed(), 18);
     console.log("amount", amount.toString());
     amounts.push(amount);

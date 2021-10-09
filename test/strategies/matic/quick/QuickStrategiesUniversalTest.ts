@@ -21,12 +21,12 @@ describe('Universal Quick tests', async () => {
     const strat = info.split(',');
 
     const ids = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const pool = strat[7];
     const rewardAmount = strat[8];
     const duration = strat[9];
@@ -39,17 +39,17 @@ describe('Universal Quick tests', async () => {
       console.log('only one strat', ids, Settings.onlyOneQuickStrategyTest);
       return;
     }
-    console.log('strat', ids, lp_name);
+    console.log('strat', ids, lpName);
 
-
+    /* tslint:disable:no-floating-promises */
     startDefaultLpStrategyTest(
         strategyName,
         MaticAddresses.QUICK_FACTORY,
-        lp_address.toLowerCase(),
+        lpAddress.toLowerCase(),
         token0,
-        token0_name,
+        token0Name,
         token1,
-        token1_name,
+        token1Name,
         pool,
         [MaticAddresses.QUICK_TOKEN]
     );

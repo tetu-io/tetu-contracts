@@ -19,7 +19,7 @@ async function main() {
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
 
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
@@ -27,16 +27,16 @@ async function main() {
     if (err) throw err;
   });
 
-  for (let info of infos) {
+  for (const info of infos) {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpAame = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const alloc = strat[7];
 
     if (+alloc <= 0 || idx === 'idx' || !idx) {
@@ -44,23 +44,25 @@ async function main() {
       continue;
     }
 
-    const vaultNameWithoutPrefix = `CAFE_${token0_name}_${token1_name}`;
+    const vaultNameWithoutPrefix = `CAFE_${token0Name}_${token1Name}`;
 
     if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
       console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log('strat', idx, lp_name);
+    console.log('strat', idx, lpAame);
 
-    const data = await DeployerUtils.deployVaultAndStrategy(
+    // tslint:disable-next-line:no-any
+    const data: any[] = [];
+    data.push(await DeployerUtils.deployVaultAndStrategy(
         vaultNameWithoutPrefix,
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyCafeSwapLp',
             core.controller,
             vaultAddress,
-            lp_address,
+            lpAddress,
             token0,
             token1,
             idx
@@ -70,11 +72,11 @@ async function main() {
         signer,
         60 * 60 * 24 * 28,
         true
-    );
+    ));
     data.push([
       core.controller,
       data[1].address,
-      lp_address,
+      lpAddress,
       token0,
       token1,
       idx
@@ -82,13 +84,13 @@ async function main() {
     deployed.push(data);
 
     const txt = `vault: ${data[1].address}\nstrategy: ${data[2].address}`;
-    await writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
   }
 
 
   await DeployerUtils.wait(5);
 
-  for (let data of deployed) {
+  for (const data of deployed) {
     await DeployerUtils.verify(data[0].address);
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);

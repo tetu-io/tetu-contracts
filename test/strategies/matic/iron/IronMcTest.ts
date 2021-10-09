@@ -25,8 +25,8 @@ describe('Universal Iron tests', async () => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const tokens = strat[4].split(' | ');
     const tokenNames = strat[5].split(' | ');
     const alloc = strat[6];
@@ -40,23 +40,25 @@ describe('Universal Iron tests', async () => {
       return;
     }
 
-    console.log('strat', idx, lp_name);
+    console.log('strat', idx, lpName);
 
     if (ironSwapIds.has(idx)) {
+      /* tslint:disable:no-floating-promises */
       startIronSwapStrategyTest(
           'StrategyIronSwap',
           MaticAddresses.DFYN_FACTORY,
-          lp_address.toLowerCase(),
+          lpAddress.toLowerCase(),
           tokens,
           tokenNames.join('_'),
           idx,
           [MaticAddresses.ICE_TOKEN]
       );
     } else {
+      /* tslint:disable:no-floating-promises */
       startDefaultLpStrategyTest(
           'StrategyIronUniPair',
           MaticAddresses.DFYN_FACTORY,
-          lp_address.toLowerCase(),
+          lpAddress.toLowerCase(),
           tokens[0],
           tokenNames[0],
           tokens[1],

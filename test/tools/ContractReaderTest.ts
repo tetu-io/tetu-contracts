@@ -53,7 +53,7 @@ describe("contract reader tests", function () {
     for (let i = 0; i < 3; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(
           "WAULT_WEX_" + i,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               'StrategyWaultSingle',
               core.controller.address,
@@ -208,13 +208,13 @@ describe("contract reader tests", function () {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.mintHelper.address))
-        .rejected;
+        .rejectedWith('Transaction reverted without a reason string');
   });
   it("should not update proxy with wrong contract", async () => {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.bookkeeper.address))
-        .rejected;
+        .rejectedWith('Transaction reverted without a reason string');
   });
 
   it("vault + user infos", async () => {
@@ -369,7 +369,7 @@ async function notifyPsPool(amount: string, token: string,
 }
 
 async function deposit(amount: string, token: string, vault: SmartVault, signer: SignerWithAddress) {
-  const deposit = utils.parseUnits(amount, 18);
-  await TokenUtils.approve(token, signer, vault.address, deposit.toString());
-  await vault.depositAndInvest(deposit);
+  const _deposit = utils.parseUnits(amount, 18);
+  await TokenUtils.approve(token, signer, vault.address, _deposit.toString());
+  await vault.depositAndInvest(_deposit);
 }

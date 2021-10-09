@@ -32,7 +32,7 @@ async function main() {
     const annInfo = await announcer.timeLockInfo(annIdx);
     console.log('annInfo', annInfo);
 
-    if (annInfo.opCode != 16) {
+    if (annInfo.opCode !== 16) {
       throw Error('Wrong opcode!');
     }
 

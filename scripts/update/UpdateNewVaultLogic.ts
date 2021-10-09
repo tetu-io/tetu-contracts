@@ -36,7 +36,7 @@ async function main() {
 
   let vaultBatch: string[] = [];
   let logicBatch: string[] = [];
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     vaultBatch.push(vault)
     logicBatch.push(vaultLogicAdr);
     if (vaultBatch.length === batch) {
@@ -49,7 +49,7 @@ async function main() {
 
   vaultBatch = [];
   logicBatch = [];
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     vaultBatch.push(vault)
     logicBatch.push(vaultLogicAdr);
     if (vaultBatch.length === batch) {

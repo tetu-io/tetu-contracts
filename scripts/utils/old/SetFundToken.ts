@@ -8,7 +8,6 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tokens = await DeployerUtils.getTokenAddresses();
   const signer = (await ethers.getSigners())[0];
-  const controller = await DeployerUtils.connectContract(signer, 'Controller', core.controller) as Controller;
   const announcer = await DeployerUtils.connectContract(signer, "Announcer", core.announcer) as Announcer;
 
   // only for first time setting for mocks
@@ -27,7 +26,7 @@ async function main() {
     const annInfo = await announcer.timeLockInfo(annIdx);
     console.log('annInfo', annInfo);
 
-    if (annInfo.opCode != +opCode) {
+    if (annInfo.opCode !== +opCode) {
       throw Error('Wrong opcode!');
     }
 

@@ -58,10 +58,8 @@ async function main() {
   }
 
   let sumFinal = BigNumber.from(0);
-  for (let i = 0; i < batches.length; i++) {
-    const b = batches[i];
-
-    for (let v of b.v) {
+  for (const b of batches) {
+    for (const v of b.v) {
       if (excluded.has(v.toLowerCase())) {
         throw Error("v exist " + v);
       }

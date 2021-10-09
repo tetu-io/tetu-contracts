@@ -106,7 +106,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.positionCounter();
 
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -125,7 +125,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.openPositionsSize();
 
     let i = EXECUTED_POSITION_COUNT;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -144,7 +144,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.positionsByCollateralSize(MaticAddresses.WMATIC_TOKEN);
 
     let i = EXECUTED_POSITION_COUNT;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -163,7 +163,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.positionsByAcquiredSize(MaticAddresses.USDC_TOKEN);
 
     let i = EXECUTED_POSITION_COUNT;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -182,7 +182,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.borrowerPositionsSize(user1.address);
 
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -201,7 +201,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.lenderPositionsSize(user2.address);
 
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -221,7 +221,7 @@ describe("pawnshop reader tests", function () {
     console.log('positions', positions)
     console.log('allPosSize', allPosSize)
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }

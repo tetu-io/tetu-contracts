@@ -19,8 +19,8 @@ describe('Universal Iron Fold tests', async () => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const rToken_name = strat[1];
-    const rToken_address = strat[2];
+    const rTokenName = strat[1];
+    const rTokenAddress = strat[2];
     const token = strat[3];
     const tokenName = strat[4];
     const collateralFactor = strat[5];
@@ -35,15 +35,16 @@ describe('Universal Iron Fold tests', async () => {
       return;
     }
 
-    console.log('strat', idx, rToken_name);
+    console.log('strat', idx, rTokenName);
 
+    /* tslint:disable:no-floating-promises */
     startIronFoldStrategyTest(
         'StrategyIronFold',
         MaticAddresses.DFYN_FACTORY,
         token.toLowerCase(),
         tokenName,
         [MaticAddresses.ICE_TOKEN],
-        rToken_address,
+        rTokenAddress,
         borrowTarget,
         collateralFactor
     );

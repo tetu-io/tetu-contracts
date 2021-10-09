@@ -13,68 +13,68 @@ export class TokenUtils {
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
     const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
-    return await token.balanceOf(account);
+    return token.balanceOf(account);
   }
 
   public static async totalSupply(tokenAddress: string): Promise<BigNumber> {
     const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
-    return await token.totalSupply();
+    return token.totalSupply();
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
     // await TokenUtils.checkBalance(tokenAddress, signer.address, amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return await token.approve(spender, BigNumber.from(amount));
+    return token.approve(spender, BigNumber.from(amount));
   }
 
   public static async approveNFT(tokenAddress: string, signer: SignerWithAddress, spender: string, id: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), id);
     await TokenUtils.checkNftBalance(tokenAddress, signer.address, id);
     const token = await ethers.getContractAt("ERC721", tokenAddress, signer) as ERC721;
-    return await token.approve(spender, id);
+    return token.approve(spender, id);
   }
 
   public static async allowance(tokenAddress: string, signer: SignerWithAddress, spender: string): Promise<BigNumber> {
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return await token.allowance(signer.address, spender);
+    return token.allowance(signer.address, spender);
   }
 
   public static async transfer(tokenAddress: string, signer: SignerWithAddress, destination: string, amount: string) {
     console.log('transfer', await TokenUtils.tokenSymbol(tokenAddress), amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return await token.transfer(destination, BigNumber.from(amount))
+    return token.transfer(destination, BigNumber.from(amount))
   }
 
   public static async wrapMatic(signer: SignerWithAddress, amount: string) {
     const token = await ethers.getContractAt("IWmatic", MaticAddresses.WMATIC_TOKEN, signer) as IWmatic;
-    return await token.deposit({value: utils.parseUnits(amount, 18).toString()})
+    return token.deposit({value: utils.parseUnits(amount, 18).toString()})
   }
 
   public static async decimals(tokenAddress: string): Promise<number> {
     const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return await token.decimals();
+    return token.decimals();
   }
 
   public static async tokenName(tokenAddress: string): Promise<string> {
     const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return await token.name();
+    return token.name();
   }
 
   public static async tokenSymbol(tokenAddress: string): Promise<string> {
     const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return await token.symbol();
+    return token.symbol();
   }
 
   public static async checkBalance(tokenAddress: string, account: string, amount: string) {
     const bal = await TokenUtils.balanceOf(tokenAddress, account);
-    expect(bal.gt(BigNumber.from(amount))).is.true;
+    expect(bal.gt(BigNumber.from(amount))).is.eq(true);
     return bal;
   }
 
   public static async tokenOfOwnerByIndex(tokenAddress: string, account: string, index: number) {
     const token = await ethers.getContractAt("IERC721Enumerable", tokenAddress) as IERC721Enumerable;
-    return await token.tokenOfOwnerByIndex(account, index);
+    return token.tokenOfOwnerByIndex(account, index);
   }
 
   public static async checkNftBalance(tokenAddress: string, account: string, id: string) {
@@ -89,7 +89,7 @@ export class TokenUtils {
         break;
       }
     }
-    expect(found).is.true;
+    expect(found).is.eq(true);
     return tokenId;
   }
 

@@ -43,7 +43,7 @@ export class TimeUtils {
       try {
         expect(blockNumber).is.greaterThan(0);
         const block = await ethers.provider.getBlock(blockNumber);
-        expect(block.timestamp > 0).is.true;
+        expect(block.timestamp > 0).is.eq(true);
         if (!!block) {
           return block;
         }
@@ -52,7 +52,7 @@ export class TimeUtils {
       }
       console.log('wrong last block!', blockNumber);
       await TimeUtils.advanceBlocksOnTs(1);
-      expect(count < 100000).is.true;
+      expect(count < 100000).is.eq(true);
     }
   }
 
@@ -68,7 +68,7 @@ export class TimeUtils {
 
   public static async rollback(id: string) {
     console.log("restore snapshot", id);
-    return await ethers.provider.send("evm_revert", [id]);
+    return ethers.provider.send("evm_revert", [id]);
   }
 
 }

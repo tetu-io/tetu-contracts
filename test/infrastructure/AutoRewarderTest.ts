@@ -148,8 +148,7 @@ describe("Reward calculator tests", function () {
 
     let distributedSum = BigNumber.from(0)
     let strategyRewardsSum = BigNumber.from(0)
-    for (let i = 0; i < vaults.length; i++) {
-      const vault = vaults[i]
+    for (const vault of vaults) {
       const distributed = await rewarder.lastDistributedAmount(vault)
       const info = await rewarder.lastInfo(vault)
       strategyRewardsSum = strategyRewardsSum.add(info.strategyRewardsUsd);
@@ -161,8 +160,7 @@ describe("Reward calculator tests", function () {
     console.log('distributed sum', utils.formatUnits(distributedSum));
     console.log('strategyRewardsSum', utils.formatUnits(strategyRewardsSum));
 
-    for (let i = 0; i < vaults.length; i++) {
-      const vault = vaults[i]
+    for (const vault of vaults) {
       const info = await rewarder.lastInfo(vault)
       const distributed = +utils.formatUnits(await rewarder.lastDistributedAmount(vault))
       const toDistribute = +utils.formatUnits(rewardsPerDay) * (
@@ -201,8 +199,7 @@ describe("Reward calculator tests", function () {
     expect(await rewarder.distributed()).is.eq(0);
 
     distributedSum = BigNumber.from(0)
-    for (let i = 0; i < vaults.length; i++) {
-      const vault = vaults[i]
+    for (const vault of vaults) {
       const distributed = await rewarder.lastDistributedAmount(vault)
       distributedSum = distributedSum.add(distributed)
       console.log('distributed', utils.formatUnits(distributed));
@@ -227,14 +224,14 @@ async function distribute(rewarder: AutoRewarder, count: number) {
     const vault = await rewarder.vaults(i);
     // console.log('vault', i, vault);
     data.push({
-      vault: vault,
+      vault,
       bal: await xTetuVault.underlyingBalanceWithInvestmentForHolder(vault)
     });
   }
   // console.log('DISTRIBUTE', count);
   await rewarder.distribute(count);
 
-  for (let d of data) {
+  for (const d of data) {
     const vault = d.vault;
     // console.log('vault', vault);
     const distributed = await rewarder.lastDistributedAmount(vault);

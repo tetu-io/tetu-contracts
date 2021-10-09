@@ -8,6 +8,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {utils} from "ethers";
 import {Addresses} from "../../addresses";
+import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -67,11 +68,10 @@ describe("Reward calculator tests", function () {
   });
 
   it.skip("strategy reward usd for all", async () => {
-    // @ts-ignore
-    const bkAdr = Addresses.CORE.get('matic').bookkeeper;
+    const bkAdr = (Addresses.CORE.get('matic') as CoreAddresses).bookkeeper;
     const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', bkAdr) as Bookkeeper;
     const strats = await bookkeeper.strategies();
-    for (let strategy of strats) {
+    for (const strategy of strats) {
       const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', strategy) as IStrategy;
       const name = await strCtr.STRATEGY_NAME();
       if (exclude.has(name)) {

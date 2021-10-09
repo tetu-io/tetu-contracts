@@ -19,12 +19,12 @@ describe('Universal Sushi tests', async () => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const alloc = strat[7];
 
     if (+alloc <= 0 || idx === 'idx') {
@@ -35,16 +35,16 @@ describe('Universal Sushi tests', async () => {
       return;
     }
 
-    console.log('strat', idx, lp_name);
-
+    console.log('strat', idx, lpName);
+    /* tslint:disable:no-floating-promises */
     startDefaultLpStrategyTest(
         'StrategySushiSwapLp',
         MaticAddresses.SUSHI_FACTORY,
-        lp_address.toLowerCase(),
+        lpAddress.toLowerCase(),
         token0,
-        token0_name,
+        token0Name,
         token1,
-        token1_name,
+        token1Name,
         idx,
         [MaticAddresses.SUSHI_TOKEN, MaticAddresses.WMATIC_TOKEN]
     );

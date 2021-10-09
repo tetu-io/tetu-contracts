@@ -42,7 +42,7 @@ async function startDefaultLpStrategyTest(
       const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-      for (let rt of rewardTokens) {
+      for (const rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(
             [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
             [MaticAddresses.getRouterByFactory(factoryForLiquidation), MaticAddresses.QUICK_ROUTER]
@@ -61,7 +61,7 @@ async function startDefaultLpStrategyTest(
           signer,
           core,
           token0Name + "_" + token1Name,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               strategyName,
               core.controller.address,
@@ -100,7 +100,7 @@ async function startDefaultLpStrategyTest(
       const token1OppositeFactory = await calculator.swapFactories(data1[1])
 
 
-      //************** add funds for investing ************
+      // ************** add funds for investing ************
       const baseAmount = 10_000;
       await UniswapUtils.buyAllBigTokens(user);
       const name0 = await TokenUtils.tokenSymbol(token0Opposite);

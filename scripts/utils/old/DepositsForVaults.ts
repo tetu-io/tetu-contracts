@@ -30,7 +30,7 @@ async function main() {
   const vaults = await bookkeeper.vaults();
   console.log('vaults ', vaults.length);
 
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     let vInfoWithUser;
     try {
       vInfoWithUser = await cReader.vaultWithUserInfos(signer.address, [vault]);
@@ -123,9 +123,9 @@ async function main() {
         const token1Price = +utils.formatUnits(await priceCalculator.getPriceWithDefaultOutput(token1));
 
         let token0Bal = await TokenUtils.balanceOf(token0, signer.address);
-        let token0BalN = +utils.formatUnits(token0Bal, tokenDec0);
+        const token0BalN = +utils.formatUnits(token0Bal, tokenDec0);
         let token1Bal = await TokenUtils.balanceOf(token1, signer.address);
-        let token1BalN = +utils.formatUnits(token1Bal, tokenDec1);
+        const token1BalN = +utils.formatUnits(token1Bal, tokenDec1);
 
         const amountForDeposit0N = expectedDeposit / 2 / token0Price;
         const amountForDeposit1N = expectedDeposit / 2 / token1Price;
@@ -253,5 +253,5 @@ async function buyToken(
 
   await UniswapUtils.buyToken(signer, MaticAddresses.getRouterByFactory(tokenOppositeFactory), token,
       amountForSell0, tokenOpposite, true);
-  return await TokenUtils.balanceOf(token, signer.address)
+  return TokenUtils.balanceOf(token, signer.address)
 }

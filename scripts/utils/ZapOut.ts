@@ -83,7 +83,7 @@ async function zapOutVaultWithLp(
   const assets = await cReader.strategyAssets(strategy);
   const assetsLpRoute: string[][] = [];
 
-  for (let asset of assets) {
+  for (const asset of assets) {
     const lps = [...await multiSwap.findLpsForSwaps(tokenOut, asset)].reverse();
     assetsLpRoute.push(lps);
   }

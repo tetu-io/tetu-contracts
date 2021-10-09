@@ -74,10 +74,12 @@ describe("Proxy tests", function () {
         utils.parseUnits("100")
     );
 
+    // tslint:disable-next-line:ban-ts-ignore
     // @ts-ignore
     await VaultUtils.deposit(signer, vault, BigNumber.from('10'));
     await TimeUtils.advanceBlocksOnTs(999);
     await vault.exit();
+    // tslint:disable-next-line:ban-ts-ignore
     // @ts-ignore
     await VaultUtils.deposit(signer, vault, BigNumber.from('10'));
     await TimeUtils.advanceBlocksOnTs(999);

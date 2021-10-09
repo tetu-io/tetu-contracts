@@ -29,7 +29,7 @@ export class StrategyTestUtils {
       vaultName: string,
       strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
       underlying: string
-  ): Promise<any[]> {
+  ): Promise<[SmartVault, IStrategy, string]> {
 
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
         vaultName,
@@ -206,9 +206,9 @@ export class StrategyTestUtils {
 
     await info.strategy.emergencyExit();
 
-    expect(await info.strategy.pausedInvesting()).is.true;
+    expect(await info.strategy.pausedInvesting()).is.eq(true);
     await info.strategy.continueInvesting();
-    expect(await info.strategy.pausedInvesting()).is.false;
+    expect(await info.strategy.pausedInvesting()).is.eq(false);
 
     expect(await info.strategy.rewardPoolBalance())
     .is.eq("0", "assets in the pool");
@@ -238,8 +238,8 @@ export class StrategyTestUtils {
   public static async saveBalances(rewardReceiver: string, strategy: IStrategy): Promise<BigNumber[]> {
     const tokens = await strategy.rewardTokens();
     const balances: BigNumber[] = [];
-    for (let i = 0; i < tokens.length; i++) {
-      balances.push(await TokenUtils.balanceOf(tokens[i], rewardReceiver));
+    for (const item of tokens) {
+      balances.push(await TokenUtils.balanceOf(item, rewardReceiver));
     }
     return balances;
   }
@@ -252,11 +252,11 @@ export class StrategyTestUtils {
   }
 
   public static async commonTests(info: StrategyInfo) {
-    expect(await info.strategy.unsalvageableTokens(info.underlying)).is.true;
-    expect(await info.strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.false;
+    expect(await info.strategy.unsalvageableTokens(info.underlying)).is.eq(true);
+    expect(await info.strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.eq(false);
     expect(await info.strategy.buyBackRatio()).is.eq("10000");
     expect(await info.strategy.platform()).is.not.eq(0);
-    expect(await info.strategy.assets()).is.not.empty;
+    expect((await info.strategy.assets()).length).is.not.eq(0);
     expect(await info.strategy.poolTotalAmount()).is.not.eq('0');
     // expect(await info.strategy.poolWeeklyRewardsAmount()).is.not.eq('0');
   }
@@ -279,7 +279,7 @@ export class StrategyTestUtils {
         signer,
         coreContracts,
         underlyingName,
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             strategyName,
             coreContracts.controller.address,

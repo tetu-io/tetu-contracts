@@ -20,7 +20,7 @@ async function main() {
     if (err) throw err;
   });
 
-  await appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
+  appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
 
   const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
   const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
@@ -36,20 +36,20 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   const vaultsMap = new Map<string, string>();
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultsMap.set(await cReader.vaultName(vAdr), vAdr);
   }
 
-  for (let info of infos) {
+  for (const info of infos) {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const alloc = strat[7];
 
     if (+alloc <= 0 || idx === 'idx' || !idx) {
@@ -57,7 +57,7 @@ async function main() {
       continue;
     }
 
-    const vaultNameWithoutPrefix = `SUSHI_${token0_name}_${token1_name}`;
+    const vaultNameWithoutPrefix = `SUSHI_${token0Name}_${token1Name}`;
 
     const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
 
@@ -73,28 +73,28 @@ async function main() {
       continue;
     }
 
-    console.log('strat', idx, lp_name);
+    console.log('strat', idx, lpName);
 
     const strategy = await DeployerUtils.deployContract(
         signer,
         'StrategySushiSwapLp',
         core.controller,
         vAdr,
-        lp_address,
+        lpAddress,
         token0,
         token1,
         idx
     ) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
-    await appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
+    appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
       await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/sushiswap/StrategySushiSwapLp.sol:StrategySushiSwapLp', [
         core.controller,
         vAdr,
-        lp_address,
+        lpAddress,
         token0,
         token1,
         idx

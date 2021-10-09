@@ -18,7 +18,7 @@ async function main() {
   ]);
   const absent = new Map<string, string>();
 
-  for (let info of quickInfos) {
+  for (const info of quickInfos) {
     const strat = info.split(',');
     if (+strat[9] <= 0 || strat[0] === 'idx' || !strat[3]) {
       // console.log('skip', strat[0]);
@@ -34,7 +34,7 @@ async function main() {
     assets.set(token1.toLowerCase(), token1Name);
   }
 
-  for (let info of sushiInfos) {
+  for (const info of sushiInfos) {
     const strat = info.split(',');
     if (+strat[7] <= 0 || strat[0] === 'idx' || !strat[3]) {
       // console.log('skip', strat[0]);
@@ -50,9 +50,9 @@ async function main() {
     assets.set(token1.toLowerCase(), token1Name);
   }
 
-  for (let info of waultInfos) {
+  for (const info of waultInfos) {
     const strat = info.split(',');
-    if (+strat[7] <= 0 || strat[0] === 'idx' || strat[0] == '0' || !strat[1]) {
+    if (+strat[7] <= 0 || strat[0] === 'idx' || strat[0] === '0' || !strat[1]) {
       console.log('skip', strat[0]);
       continue;
     }
@@ -68,13 +68,13 @@ async function main() {
     }
   }
 
-  for (let address of Array.from(assets.keys())) {
+  for (const address of Array.from(assets.keys())) {
 
     const name = assets.get(address) as string;
 
     const url = 'https://api.coingecko.com/api/v3/coins/polygon-pos/contract/' + address;
 
-    let response: AxiosResponse<any>;
+    let response: AxiosResponse;
     try {
       response = await axios.get(url);
     } catch (e) {
@@ -83,7 +83,7 @@ async function main() {
       continue;
     }
 
-    let imgUrl = response.data['image']['large'].toString() as string;
+    let imgUrl = response.data.image.large.toString() as string;
     console.log('imgUrl', name, address, imgUrl);
 
     if (imgUrl.indexOf('?') !== -1) {
@@ -93,7 +93,7 @@ async function main() {
     await downloadImage(imgUrl, outputPath, name);
   }
 
-  for (let address of Array.from(absent.keys())) {
+  for (const address of Array.from(absent.keys())) {
     console.log(address, absent.get(address));
   }
 

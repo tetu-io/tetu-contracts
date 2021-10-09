@@ -25,7 +25,7 @@ async function downloadSushi() {
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
-  for (let vInfo of vaultInfos) {
+  for (const vInfo of vaultInfos) {
     if (vInfo.platform !== '3') {
       continue;
     }
@@ -114,7 +114,7 @@ async function downloadSushi() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/download/sushi_pools.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/sushi_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

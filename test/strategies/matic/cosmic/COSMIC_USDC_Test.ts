@@ -14,12 +14,12 @@ describe('Cosmic COSMIC-USDC Test', async () => {
     return;
   }
 
-  const lp_address = '0x71E600Fe09d1d8EfCb018634Ac3Ee53f8380c94A';
+  const lpAddress = '0x71E600Fe09d1d8EfCb018634Ac3Ee53f8380c94A';
 
   await startDefaultLpStrategyTest(
       'StrategyCosmicSwapLp',
       MaticAddresses.QUICK_FACTORY,
-      lp_address.toLowerCase(),
+      lpAddress.toLowerCase(),
       MaticAddresses.USDC_TOKEN,
       "USDC",
       MaticAddresses.COSMIC_TOKEN,

@@ -10,10 +10,8 @@ async function main() {
 
   let data: [PriceCalculator, TetuProxyGov, PriceCalculator];
   if (net.name === "matic") {
-    // @ts-ignore
     data = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller, true);
   } else {
-    // @ts-ignore
     data = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller);
   }
 
