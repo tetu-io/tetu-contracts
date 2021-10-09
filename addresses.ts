@@ -7,7 +7,7 @@ export class Addresses {
     ['matic', new CoreAddresses(
         '0x6678814c273d5088114B6E40cC49C8DB04F9bC29', // controller
         '0x286c02C93f3CF48BB759A93756779A1C78bCF833', // announcer
-        '0xcc2102a214cd1fbf6284F39c9CB02896319d89fE', // forwarder old 0xd055b086180cB6dac888792C9307970Ed10CF137
+        '0xcc2102a214cd1fbf6284F39c9CB02896319d89fE', // forwarder
         '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F', // bookkeeper
         '0x560471ab39C3Eb26D63aB3b2A5b9835764C998ea', // notifier new 0x265b28905493812F99a0cBc27186369875a5c4bc
         '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // mint helper
