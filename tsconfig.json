@@ -10,7 +10,12 @@
   "include": [
     "./scripts",
     "./test",
-    "./typechain"
+    "./typechain",
+    "typechain",
+    "typechain/**/*.d.ts",
+    "typechain/**/*.ts",
+    "./typechain/**/*.d.ts",
+    "./typechain/**/*.ts",
   ],
   "files": [
     "./hardhat.config.ts",
