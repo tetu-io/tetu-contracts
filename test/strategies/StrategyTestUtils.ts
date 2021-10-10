@@ -5,7 +5,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Announcer,
-  Controller,
+  Controller, IERC20,
   IStrategy,
   PriceCalculator,
   RewardToken,
@@ -297,7 +297,6 @@ export class StrategyTestUtils {
     await controller.setPSNumeratorDenominator(numenator, denumenatior);
   }
 
-
   public static async calculateTotalToClaim(calculator: PriceCalculator, strategy: IStrategy, rewardToken: RewardToken) {
     const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rewardToken.address));
     console.log('targetTokenPrice', targetTokenPrice);
@@ -315,5 +314,20 @@ export class StrategyTestUtils {
     }
     return totalToClaim
   }
+
+  public static async buyAndApproveTokens(tokens: string[], amounts: number[], singer: SignerWithAddress, contractToApprove:string): Promise<void> {
+  for (const token of tokens) {
+    const i = tokens.indexOf(token);
+    let tokenContract = await ethers.getContractAt("IERC20", token, singer) as IERC20;
+    let targetBalance = amounts[i];
+    let tokenBalance = await tokenContract.balanceOf(singer.address);
+    while (tokenBalance < BigNumber.from(amounts[i])){
+      console.log(`Target bal: ${targetBalance}, current balance: ${tokenBalance}`);
+      await UniswapUtils.buyToken(singer, MaticAddresses.SUSHI_ROUTER, token, utils.parseUnits(amounts[i].toString()));
+      tokenBalance = await tokenContract.balanceOf(singer.address);
+    }
+    await tokenContract.approve(contractToApprove, tokenBalance, {from: singer.address});
+  }
+}
 
 }
