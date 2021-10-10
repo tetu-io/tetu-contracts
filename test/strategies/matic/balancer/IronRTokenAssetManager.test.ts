@@ -182,7 +182,7 @@ describe('Iron Asset manager', function () {
 
     it('AM should return error when withdraw more funds than in vault', async () => {
       await assetManager.rebalance(poolId, false);
-      // after rebalance 5000 usds should be invested by AM and 5000 usdc available in the vault
+      // after re balance 5000 usdc should be invested by AM and 5000 usdc available in the vault
 
       let poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
 
