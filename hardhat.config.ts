@@ -13,9 +13,29 @@ import "hardhat-tracer";
 import "hardhat-etherscan-abi";
 import "solidity-coverage"
 import "@tenderly/hardhat-tenderly"
-import {Secrets} from "./secrets";
 
 dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  maticRpcUrl: {
+    type: "string",
+  },
+  infuraKey: {
+    type: "string",
+  },
+  networkScanKey: {
+    type: "string",
+  },
+  privateKey: {
+    type: "string",
+  },
+  forkBlock: {
+    type: "number",
+    default: 19950000
+  },
+}).argv;
 
 
 export default {
@@ -26,78 +46,46 @@ export default {
       chainId: 137,
       timeout: 99999,
       forking: {
-        url: Secrets.maticRpcUrl,
+        url: argv.maticRpcUrl,
+        blockNumber: argv.forkBlock
       },
-      accounts: [
-        {
-          privateKey: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e", // random account
-          balance: "100000000000000000000000000000",
-        },
-        {
-          privateKey: "72d01b39db439c2c5b89f20013298079161cf0acfbd8b9aec933810439d8e83f", // random account
-          balance: "100000000000000000000000000000",
-        },
-        {
-          privateKey: "0aa11e3181585907868e05ac1c4c5adb3bcdb5cbf06a1b82e92cd82318debe3d", // random account
-          balance: "100000000000000000000000000000",
-        },
-        {
-          privateKey: "2fa47ef2cc8a29842081ce03948d4039538a320068cad021036ffd8accec879d", // random account
-          balance: "100000000000000000000000000000",
-        },
-        {
-          privateKey: Secrets.maticPrivateKey,
-          balance: "100000000000000000000000000000",
-        },
-        {
-          privateKey: Secrets.maticPrivateKey2,
-          balance: "100000000000000000000000000000",
-        }
-      ],
+      accounts: {
+        mnemonic: "test test test test test test test test test test test junk",
+        path: "m/44'/60'/0'/0",
+        accountsBalance: "100000000000000000000000000000"
+      },
     },
     matic: {
-      url: Secrets.maticRpcUrl,
+      url: argv.maticRpcUrl,
       timeout: 99999,
       chainId: 137,
       gas: 19_000_000,
       gasPrice: 35_000_000_000,
       // gasMultiplier: 2,
-      accounts: [
-        Secrets.maticPrivateKey,
-        "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e", // random account
-        Secrets.maticPrivateKey2,
-      ],
+      accounts: [argv.privateKey],
     },
     mumbai: {
-      url: "https://polygon-mumbai.infura.io/v3/" + Secrets.infuraKey,
+      url: "https://polygon-mumbai.infura.io/v3/" + argv.infuraKey,
       chainId: 80001,
       gasPrice: 1,
-      accounts: [Secrets.mumbaiPrivateKey],
+      accounts: [argv.privateKey],
     },
     ropsten: {
-      url: "https://ropsten.infura.io/v3/" + Secrets.infuraKey,
+      url: "https://ropsten.infura.io/v3/" + argv.infuraKey,
       chainId: 3,
       gas: 8_000_000,
-      accounts: [
-        Secrets.ropstenPrivateKey,
-        Secrets.ropstenPrivateKey2,
-        "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
-      ],
+      accounts: [argv.privateKey],
     },
     rinkeby: {
-      url: "https://rinkeby.infura.io/v3/" + Secrets.infuraKey,
+      url: "https://rinkeby.infura.io/v3/" + argv.infuraKey,
       chainId: 4,
       gas: 8_000_000,
       gasPrice: 1_100_000_000,
-      accounts: [
-        Secrets.ropstenPrivateKey,
-        Secrets.ropstenPrivateKey2,
-        "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
-      ],
+      accounts: [argv.privateKey],
     },
   },
   etherscan: {
-    apiKey: Secrets.getNetworkScanKey()
+    apiKey: argv.networkScanKey
   },
   solidity: {
     compilers: [

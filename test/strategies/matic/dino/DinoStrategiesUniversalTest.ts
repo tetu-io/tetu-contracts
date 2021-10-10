@@ -3,13 +3,27 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneDinoStrategyTest: {
+    type: "number",
+    default: 10,
+  }
+}).argv;
 
 chai.use(chaiAsPromised);
 
 describe('Universal Dino tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/dino_pools.csv', 'utf8').split(/\r?\n/);
@@ -31,7 +45,7 @@ describe('Universal Dino tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneDinoStrategyTest && +strat[0] !== Settings.onlyOneDinoStrategyTest) {
+    if (argv.onlyOneDinoStrategyTest !== -1 && +strat[0] !== argv.onlyOneDinoStrategyTest) {
       return;
     }
 

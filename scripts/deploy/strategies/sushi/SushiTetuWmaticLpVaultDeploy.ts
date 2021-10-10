@@ -1,13 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {
-  ContractReader,
-  Controller,
-  IUniswapV2Pair,
-  NoopStrategy,
-  SmartVault,
-  VaultController
-} from "../../../../typechain";
+import {ContractReader, IUniswapV2Pair, NoopStrategy, SmartVault} from "../../../../typechain";
 import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {TokenUtils} from "../../../../test/TokenUtils";
 

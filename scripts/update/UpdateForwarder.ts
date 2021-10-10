@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, FeeRewardForwarder} from "../../typechain";
+import {FeeRewardForwarder} from "../../typechain";
 
 
 async function main() {

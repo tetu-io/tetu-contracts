@@ -32,13 +32,22 @@ import {Addresses} from "../../addresses";
 import {CoreAddresses} from "../models/CoreAddresses";
 import {ToolsAddresses} from "../models/ToolsAddresses";
 import axios from "axios";
-import {Secrets} from "../../secrets";
 import {RunHelper} from "../utils/RunHelper";
 import {MaticAddresses} from "../../test/MaticAddresses";
-import {TokenUtils} from "../../test/TokenUtils";
+import {config as dotEnvConfig} from "dotenv";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
+
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  networkScanKey: {
+    type: "string",
+  },
+}).argv;
 
 export class DeployerUtils {
 
@@ -513,7 +522,7 @@ export class DeployerUtils {
       const resp =
           await axios.post(
               (await DeployerUtils.getNetworkScanUrl()) +
-              `?module=contract&action=verifyproxycontract&apikey=${Secrets.getNetworkScanKey()}`,
+              `?module=contract&action=verifyproxycontract&apikey=${argv.networkScanKey}`,
               `address=${adr}`);
       // console.log("proxy verify resp", resp.data);
     } catch (e) {
@@ -606,15 +615,16 @@ export class DeployerUtils {
     return mocks;
   }
 
-  public static async impersonate(address: string, fundSender: SignerWithAddress) {
+  public static async impersonate(address: string) {
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [address],
     });
-    await fundSender.sendTransaction({
-      to: address,
-      value: BigNumber.from('10000000000000000000') // send 10 matic
-    })
+
+    await hre.network.provider.request({
+      method: "hardhat_setBalance",
+      params: [address, "0x52B7D2DCC80CD2E4000000"],
+    });
     return ethers.getSigner(address);
   }
 

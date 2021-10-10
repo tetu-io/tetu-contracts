@@ -1,13 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {
-  ContractReader,
-  Controller,
-  IStrategy,
-  StrategyIronFold,
-  VaultController
-} from "../../../../typechain";
-import {mkdir, readFileSync, writeFileSync} from "fs";
+import {ContractReader, IStrategy, StrategyIronFold} from "../../../../typechain";
+import {readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([]);
 

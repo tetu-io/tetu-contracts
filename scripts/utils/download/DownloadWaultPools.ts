@@ -11,7 +11,6 @@ import {
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 

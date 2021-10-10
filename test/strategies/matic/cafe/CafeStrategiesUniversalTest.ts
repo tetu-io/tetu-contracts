@@ -3,13 +3,27 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneCafeStrategyTest: {
+    type: "number",
+    default: 1,
+  }
+}).argv;
 
 chai.use(chaiAsPromised);
 
 describe('Universal Cafe tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/cafe_pools.csv', 'utf8').split(/\r?\n/);
@@ -31,7 +45,7 @@ describe('Universal Cafe tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneCafeStrategyTest && +strat[0] !== Settings.onlyOneCafeStrategyTest) {
+    if (argv.onlyOneCafeStrategyTest !== -1 && +strat[0] !== argv.onlyOneCafeStrategyTest) {
       return;
     }
 

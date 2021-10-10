@@ -9,7 +9,8 @@ import {
   Bookkeeper,
   Controller,
   PriceCalculator,
-  RewardCalculator, SmartVault
+  RewardCalculator,
+  SmartVault
 } from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {Addresses} from "../../addresses";
@@ -43,7 +44,7 @@ describe("Reward calculator tests", function () {
   before(async function () {
     this.timeout(12000000000);
     snapshot = await TimeUtils.snapshot();
-    gov = await DeployerUtils.impersonate('0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B', (await ethers.getSigners())[0]);
+    gov = await DeployerUtils.impersonate('0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B');
 
     coreAddresses = Addresses.CORE.get('matic') as CoreAddresses;
     const controllerAdr = coreAddresses.controller;

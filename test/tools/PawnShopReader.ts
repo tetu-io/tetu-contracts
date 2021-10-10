@@ -10,7 +10,6 @@ import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
-import {MintHelperUtils} from "../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);

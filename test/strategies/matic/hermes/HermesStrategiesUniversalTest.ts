@@ -3,13 +3,27 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneHermesStrategyTest: {
+    type: "number",
+    default: -1,
+  }
+}).argv;
 
 chai.use(chaiAsPromised);
 
 describe.skip('Universal Hermes tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/hermes_pools.csv', 'utf8').split(/\r?\n/);
@@ -31,7 +45,7 @@ describe.skip('Universal Hermes tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneHermesStrategyTest && +strat[0] !== Settings.onlyOneHermesStrategyTest) {
+    if (argv.onlyOneHermesStrategyTest !== -1 && +strat[0] !== argv.onlyOneHermesStrategyTest) {
       return;
     }
 

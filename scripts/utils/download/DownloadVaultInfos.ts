@@ -1,8 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ContractReader, SmartVault} from "../../../typechain";
-import {VaultInfoModel} from "../../models/VaultInfoModel";
-import {UserInfoModel} from "../../models/UserInfoModel";
 import {mkdir, writeFileSync} from 'fs';
 import {utils} from "ethers";
 import {VaultUtils} from "../../../test/VaultUtils";

@@ -2,15 +2,29 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
 import {startIronFoldStrategyTest} from "../../IronFoldStrategyTest";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneIronFoldStrategyTest: {
+    type: "number",
+    default: -1,
+  }
+}).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Iron Fold tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
@@ -31,7 +45,7 @@ describe('Universal Iron Fold tests', async () => {
       return;
     }
 
-    if (Settings.onlyOneIronFoldStrategyTest !== null && parseFloat(idx) !== Settings.onlyOneIronFoldStrategyTest) {
+    if (argv.onlyOneIronFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneIronFoldStrategyTest) {
       return;
     }
 

@@ -14,7 +14,6 @@ import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 

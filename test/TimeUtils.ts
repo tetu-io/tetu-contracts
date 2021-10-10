@@ -5,6 +5,7 @@ import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 export class TimeUtils {
 
   public static async advanceBlocksOnTs(add: number) {
+    console.log('Block advanced on', add);
     // const block = await TimeUtils.currentBlock();
     await ethers.provider.send('evm_increaseTime', [add]);
     await ethers.provider.send('evm_mine', []);

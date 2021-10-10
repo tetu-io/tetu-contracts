@@ -1,7 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
-import {Settings} from "../../../../settings";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {utils} from "ethers";
 import {ethers} from "hardhat";
@@ -13,11 +12,23 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {DoHardWorkLoop} from "../../DoHardWorkLoop";
 import {CurveDoHardWorkLoop} from "./utils/CurveDoHardWorkLoop";
 import {CurveUtils} from "./utils/CurveUtils";
+import {config as dotEnvConfig} from "dotenv";
+
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+}).argv;
 
 chai.use(chaiAsPromised);
 
 describe.skip('Curve ren tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   let snapshotBefore: string;

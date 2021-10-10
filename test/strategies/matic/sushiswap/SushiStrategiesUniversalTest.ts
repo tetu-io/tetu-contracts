@@ -3,14 +3,28 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneSushiStrategyTest: {
+    type: "number",
+    default: 1,
+  }
+}).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Sushi tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/sushi_pools.csv', 'utf8').split(/\r?\n/);
@@ -31,7 +45,7 @@ describe('Universal Sushi tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneSushiStrategyTest && +strat[0] !== Settings.onlyOneSushiStrategyTest) {
+    if (argv.onlyOneSushiStrategyTest !== -1 && +strat[0] !== argv.onlyOneSushiStrategyTest) {
       return;
     }
 

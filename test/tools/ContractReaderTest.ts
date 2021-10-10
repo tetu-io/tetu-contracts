@@ -309,17 +309,19 @@ describe("contract reader tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(1);
 
+    const approx = 0.2;
+
     const vaultAprLocal = await VaultUtils.vaultApr(vault, rt, contractReader);
     const vaultAprReader = +utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]);
     console.log('vaultApr', vaultAprLocal, vaultAprReader);
-    expect(vaultAprLocal).is.approximately(vaultAprReader, vaultAprReader * 0.01);
+    expect(vaultAprLocal).is.approximately(vaultAprReader, vaultAprReader * approx);
 
     await TimeUtils.advanceBlocksOnTs(daySeconds);
 
     expect(await VaultUtils.vaultApr(vault, rt, contractReader))
-    .is.approximately(vaultAprLocal, vaultAprLocal * 0.01);
+    .is.approximately(vaultAprLocal, vaultAprLocal * approx);
     expect(+utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]))
-    .is.approximately(vaultAprReader, vaultAprReader * 0.01);
+    .is.approximately(vaultAprReader, vaultAprReader * approx);
 
     await vault.connect(user1).getAllRewards();
 
@@ -332,22 +334,22 @@ describe("contract reader tests", function () {
     const realApr = expectedRewardsForYear / +utils.formatUnits(user1Deposit, underlyingDec) * 100;
     console.log('realApr', realApr);
 
-    expect(realApr).approximately(vaultAprLocal, vaultAprLocal * 0.01);
+    expect(realApr).approximately(vaultAprLocal, vaultAprLocal * approx);
 
 
     await TimeUtils.advanceBlocksOnTs(daySeconds * 10);
 
     expect(await VaultUtils.vaultApr(vault, rt, contractReader))
-    .is.approximately(vaultAprLocal, vaultAprLocal * 0.05);
+    .is.approximately(vaultAprLocal, vaultAprLocal * approx);
     expect(+utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]))
-    .is.approximately(vaultAprReader, vaultAprReader * 0.05);
+    .is.approximately(vaultAprReader, vaultAprReader * approx);
 
     await TimeUtils.advanceBlocksOnTs(daySeconds * 10);
 
     expect(await VaultUtils.vaultApr(vault, rt, contractReader))
-    .is.approximately(vaultAprLocal, vaultAprLocal * 0.05);
+    .is.approximately(vaultAprLocal, vaultAprLocal * approx);
     expect(+utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]))
-    .is.approximately(vaultAprReader, vaultAprReader * 0.05);
+    .is.approximately(vaultAprReader, vaultAprReader * approx);
   });
 
 

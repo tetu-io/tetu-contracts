@@ -3,14 +3,28 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneQuickStrategyTest: {
+    type: "number",
+    default: 1,
+  }
+}).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Quick tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
@@ -35,8 +49,8 @@ describe('Universal Quick tests', async () => {
       console.log('skip', ids, duration);
       return;
     }
-    if (Settings.onlyOneQuickStrategyTest && +ids !== Settings.onlyOneQuickStrategyTest) {
-      console.log('only one strat', ids, Settings.onlyOneQuickStrategyTest);
+    if (argv.onlyOneQuickStrategyTest !== -1 && +ids !== argv.onlyOneQuickStrategyTest) {
+      console.log('only one strat', ids, argv.onlyOneQuickStrategyTest);
       return;
     }
     console.log('strat', ids, lpName);

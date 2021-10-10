@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {TetuProxyGov, PriceCalculator} from "../../../typechain";
+import {PriceCalculator, TetuProxyGov} from "../../../typechain";
 
 
 async function main() {

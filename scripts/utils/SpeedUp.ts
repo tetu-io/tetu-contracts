@@ -1,10 +1,23 @@
-import {ethers, web3} from "hardhat";
+import {web3} from "hardhat";
 import axios, {AxiosResponse} from "axios";
 import Common from "ethereumjs-common";
-import {Secrets} from "../../secrets";
+import {config as dotEnvConfig} from "dotenv";
 
 // tslint:disable-next-line:no-var-requires
 const EthereumTx = require('ethereumjs-tx').Transaction
+
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  maticRpcUrl: {
+    type: "string",
+  },
+  privateKey: {
+    type: "string",
+  }
+}).argv;
 
 const MATIC_CHAIN = Common.forCustomChain(
     'mainnet', {
@@ -19,7 +32,7 @@ async function main() {
   const txHash = '0x471c157e4258c4cde0f7046de5f25c197c7a110d469c3548f7be352b156192de'.trim();
   let response: AxiosResponse;
   try {
-    response = await axios.post(Secrets.maticRpcUrl,
+    response = await axios.post(argv.maticRpcUrl,
         `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["${txHash}"],"id":1}`,
         {
           headers: {
@@ -53,7 +66,7 @@ async function main() {
       {common: MATIC_CHAIN});
 
 
-  tx.sign(Buffer.from(Secrets.maticPrivateKey3, 'hex'));
+  tx.sign(Buffer.from(argv.privateKey, 'hex'));
 
   const txRaw = '0x' + tx.serialize().toString('hex');
 

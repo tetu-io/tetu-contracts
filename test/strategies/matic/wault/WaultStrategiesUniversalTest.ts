@@ -3,15 +3,29 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
 import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrategyTest";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneWaultStrategyTest: {
+    type: "number",
+    default: 1,
+  }
+}).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Wault tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/wault_pools.csv', 'utf8').split(/\r?\n/);
@@ -32,7 +46,7 @@ describe('Universal Wault tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneWaultStrategyTest && +strat[0] !== Settings.onlyOneWaultStrategyTest) {
+    if (argv.onlyOneWaultStrategyTest !== -1 && +strat[0] !== argv.onlyOneWaultStrategyTest) {
       return;
     }
 
