@@ -2,6 +2,7 @@ import {web3} from "hardhat";
 import axios, {AxiosResponse} from "axios";
 import Common from "ethereumjs-common";
 import {config as dotEnvConfig} from "dotenv";
+import {utils} from "ethers";
 
 // tslint:disable-next-line:no-var-requires
 const EthereumTx = require('ethereumjs-tx').Transaction
@@ -16,6 +17,13 @@ const argv = require('yargs/yargs')()
   },
   privateKey: {
     type: "string",
+  },
+  speedUpTx: {
+    type: "string",
+  },
+  speedUpGasPrice: {
+    type: "string",
+    default: utils.parseUnits(333 + '', 9).toString()
   }
 }).argv;
 
@@ -29,7 +37,7 @@ const MATIC_CHAIN = Common.forCustomChain(
 );
 
 async function main() {
-  const txHash = '0x471c157e4258c4cde0f7046de5f25c197c7a110d469c3548f7be352b156192de'.trim();
+  const txHash = argv.speedUpTx.trim();
   let response: AxiosResponse;
   try {
     response = await axios.post(argv.maticRpcUrl,
@@ -60,8 +68,8 @@ async function main() {
         nonce: web3.utils.numberToHex(nonce),
         to: result.to,
         data: result.input,
-        gasPrice: web3.utils.numberToHex(gasPriceAdjusted),
-        gasLimit: web3.utils.numberToHex(10_000_000),
+        gasPrice: web3.utils.numberToHex(argv.speedUpGasPrice),
+        gasLimit: web3.utils.numberToHex(19_000_000),
       },
       {common: MATIC_CHAIN});
 
@@ -73,7 +81,6 @@ async function main() {
   await web3.eth.sendSignedTransaction(txRaw, (err, res) => {
     console.log('result', err, res);
   });
-
 
 
 }

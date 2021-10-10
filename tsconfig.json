@@ -8,9 +8,12 @@
     "resolveJsonModule": true
   },
   "include": [
-    "./scripts",
-    "./test",
-    "./typechain"
+    "./scripts/**/*",
+    "./test/**/*",
+    "./typechain/**/*"
   ],
-  "files": ["./hardhat.config.ts"]
+  "files": [
+    "./hardhat.config.ts",
+    "./addresses.ts"
+  ]
 }
