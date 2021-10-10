@@ -8,8 +8,8 @@ on:
     branches:
       - master
       - release-*
-  pull_request: {}
-  workflow_dispatch: {}
+  pull_request: { }
+  workflow_dispatch: { }
 
 jobs:
   test:
@@ -29,6 +29,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
       - run: npm run lint
       - run: npm run test
+        env:
+          TETU_INFURA_KEY: "${{secrets.TETU_INFURA_KEY}}"
+          TETU_MATIC_RPC_URL: "${{secrets.TETU_MATIC_RPC_URL}}"
 
   coverage:
     runs-on: ubuntu-latest
