@@ -30,8 +30,9 @@ jobs:
       - run: npm run lint
       - run: npm run test
         env:
-          TETU_INFURA_KEY: "${{secrets.TETU_INFURA_KEY}}"
-          TETU_MATIC_RPC_URL: "${{secrets.TETU_MATIC_RPC_URL}}"
+          TETU_INFURA_KEY: ${{secrets.TETU_INFURA_KEY}}
+          TETU_MATIC_RPC_URL: https://polygon-mainnet.g.alchemy.com/v2/123
+          _TETU_MATIC_RPC_URL: "${{secrets.TETU_MATIC_RPC_URL}}"
 
   coverage:
     runs-on: ubuntu-latest
