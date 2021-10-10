@@ -28,6 +28,7 @@ jobs:
       - run: npm ci
         if: steps.cache.outputs.cache-hit != 'true'
       - run: npm run lint
+      - run: npm run build
       - run: npm run test
         env:
           TETU_INFURA_KEY: ${{secrets.TETU_INFURA_KEY}}
@@ -50,6 +51,7 @@ jobs:
           restore-keys: npm-v2-
       - run: npm ci
         if: steps.cache.outputs.cache-hit != 'true'
+      - run: npm run build
       - run: npm run coverage
         env:
           NODE_OPTIONS: --max_old_space_size=4096
