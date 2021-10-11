@@ -75,11 +75,11 @@ describe("Multi swap tests", function () {
 
     const strategies = await contractReader.strategies();
 
-    for (let strategy of strategies) {
+    for (const strategy of strategies) {
 
       const assets = await cReader.strategyAssets(strategy);
 
-      for (let asset of assets) {
+      for (const asset of assets) {
         if (asset.toLowerCase() === MaticAddresses.USDC_TOKEN) {
           continue;
         }
@@ -102,7 +102,7 @@ async function tryToSwap(signer: SignerWithAddress, multiSwap: MultiSwap, tokenI
   const lps = await multiSwap.findLpsForSwaps(tokenIn, tokenOut);
 
   console.log('===== PATH =======', await TokenUtils.tokenSymbol(tokenIn), '=>', await TokenUtils.tokenSymbol(tokenOut))
-  for (let lp of lps) {
+  for (const lp of lps) {
     const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();

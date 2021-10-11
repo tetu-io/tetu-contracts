@@ -6,7 +6,6 @@ import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {Addresses} from "../../../addresses";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 
@@ -25,7 +24,10 @@ async function downloadSushi() {
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
-  for (let vInfo of vaultInfos) {
+  for (const vInfo of vaultInfos) {
+    if (vInfo.platform !== '3') {
+      continue;
+    }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
@@ -111,7 +113,7 @@ async function downloadSushi() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/download/sushi_pools.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/sushi_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

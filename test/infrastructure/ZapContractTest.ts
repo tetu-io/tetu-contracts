@@ -65,7 +65,7 @@ describe("Zap contract tests", function () {
 
     grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategySushiSwapLp',
             core.controller.address,
@@ -83,7 +83,7 @@ describe("Zap contract tests", function () {
 
     wmaticEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategySushiSwapLp',
             core.controller.address,
@@ -101,7 +101,7 @@ describe("Zap contract tests", function () {
 
     btcWexVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyWaultLp',
             core.controller.address,
@@ -119,7 +119,7 @@ describe("Zap contract tests", function () {
 
     wexPearVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyWaultLp',
             core.controller.address,
@@ -137,7 +137,7 @@ describe("Zap contract tests", function () {
 
     grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategySushiSwapLp',
             core.controller.address,
@@ -155,7 +155,7 @@ describe("Zap contract tests", function () {
 
     wexVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyWaultSingle',
             core.controller.address,
@@ -410,7 +410,7 @@ async function zapIntoVaultWihSingleToken(
   }
 
   console.log('============')
-  for (let lp of lps) {
+  for (const lp of lps) {
     const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();
@@ -460,14 +460,14 @@ async function zapIntoVaultWithLp(
   const tokensOut = [];
   const tokensOutLps = [];
 
-  for (let asset of assets) {
+  for (const asset of assets) {
     let lps: string[] = [];
     if (tokenIn.toLowerCase() !== asset.toLowerCase()) {
       lps = await multiSwap.findLpsForSwaps(tokenIn, asset);
     }
 
     console.log('============')
-    for (let lp of lps) {
+    for (const lp of lps) {
       const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
       const t0 = await lpCtr.token0();
       const t1 = await lpCtr.token1();
@@ -527,7 +527,7 @@ async function zapOutVaultWithSingleToken(
   }
 
   console.log('============')
-  for (let lp of lps) {
+  for (const lp of lps) {
     const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();
@@ -572,14 +572,14 @@ async function zapOutVaultWithLp(
 
   const assetsLpRoute = [];
 
-  for (let asset of assets) {
+  for (const asset of assets) {
     let lps: string[] = [];
     if (tokenOut.toLowerCase() !== asset.toLowerCase()) {
       lps = [...await multiSwap.findLpsForSwaps(tokenOut, asset)].reverse();
     }
 
     console.log('============')
-    for (let lp of lps) {
+    for (const lp of lps) {
       const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
       const t0 = await lpCtr.token0();
       const t1 = await lpCtr.token1();

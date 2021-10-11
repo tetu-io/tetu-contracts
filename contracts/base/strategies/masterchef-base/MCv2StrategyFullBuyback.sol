@@ -30,9 +30,10 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase, IMasterChefStrategyV3
   string public constant override STRATEGY_NAME = "MCv2StrategyFullBuyback";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
+  address private constant _SUSHI = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
 
   /// @notice MasterChef rewards pool
   address public override mcRewardPool;
@@ -143,12 +144,14 @@ abstract contract MCv2StrategyFullBuyback is StrategyBase, IMasterChefStrategyV3
     IRewarder rewarder = IMiniChefV2(mcRewardPool).rewarder(poolID);
     (IERC20[] memory tokens,) = rewarder.pendingTokens(poolID, address(this), 0);
     uint256 rewarderBal = tokens[0].balanceOf(address(rewarder));
+    uint256 sushiBal = IERC20(_SUSHI).balanceOf(mcRewardPool);
 
     if (
     // sushi has a bug with rounding, in some cases we can't withdrawAndHarvest
       accumulatedSushi < debt
-      // if rewarder doesn't have enough balance make emergency withdraw
+      // if mc or rewarder doesn't have enough balance make emergency withdraw
       || rewarderBal < 10 * 1e18
+      || sushiBal < 10 * 1e18
     ) {
       IMiniChefV2(mcRewardPool).emergencyWithdraw(poolID, address(this));
     } else {

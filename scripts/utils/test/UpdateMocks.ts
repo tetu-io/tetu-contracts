@@ -12,7 +12,7 @@ async function main() {
 
   const vaults = await bookkeeper.vaults();
 
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
 
     const name = await vaultContract.name();

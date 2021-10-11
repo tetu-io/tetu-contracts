@@ -1,11 +1,12 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
+  IDragonLair,
+  IStakingRewards,
   IStakingRewardsFactory,
   IUniswapV2Pair,
   PriceCalculator,
-  SmartVault,
-  SNXRewardInterface
+  SmartVault
 } from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../../test/MaticAddresses";
@@ -20,8 +21,7 @@ async function downloadQuick() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
-
-  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactory', MaticAddresses.QUICK_STAKING_FACTORY) as IStakingRewardsFactory;
+  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactory', MaticAddresses.QUICK_STAKING_FACTORY_V2) as IStakingRewardsFactory;
   console.log('rewardsToken', await factory.rewardsToken());
 
   const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
@@ -30,7 +30,10 @@ async function downloadQuick() {
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
-  for (let vInfo of vaultInfos) {
+  for (const vInfo of vaultInfos) {
+    if (vInfo.platform !== '2') {
+      continue;
+    }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
@@ -41,6 +44,11 @@ async function downloadQuick() {
   console.log('loaded vaults', underlyingStatuses.size);
   const poolLength = 10000;
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
+
+  const dQuickCtr = await DeployerUtils.connectInterface(signer, 'IDragonLair', MaticAddresses.dQUICK_TOKEN) as IDragonLair;
+  const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
+  const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
+  console.log('dQuickPrice', utils.formatUnits(dQuickPrice));
   console.log('quickPrice', utils.formatUnits(quickPrice));
 
   let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
@@ -58,6 +66,8 @@ async function downloadQuick() {
       console.log('looks like we dont have more lps', i);
       break;
     }
+
+    console.log('lp', lp);
 
     const status = underlyingStatuses.get(lp.toLowerCase());
     if (!status) {
@@ -80,7 +90,7 @@ async function downloadQuick() {
     // factory doesn't hold duration, suppose that it is a week
     const durationSec = 60 * 60 * 24 * 7;
 
-    const poolContract = await DeployerUtils.connectInterface(signer, 'SNXRewardInterface', info[0]) as SNXRewardInterface;
+    const poolContract = await DeployerUtils.connectInterface(signer, 'IStakingRewards', info[0]) as IStakingRewards;
 
     const rewardRate = await poolContract.rewardRate();
     const notifiedAmount = rewardRate.mul(durationSec);
@@ -88,7 +98,7 @@ async function downloadQuick() {
 
     let durationDays = (durationSec) / 60 / 60 / 24;
     const weekDurationRatio = 7 / durationDays;
-    let notifiedAmountUsd = notifiedAmountN * +utils.formatUnits(quickPrice);
+    let notifiedAmountUsd = notifiedAmountN * +utils.formatUnits(dQuickPrice);
 
     const finish = (await poolContract.periodFinish()).toNumber();
     const currentTime = Math.floor(Date.now() / 1000);
@@ -135,7 +145,7 @@ async function downloadQuick() {
     if (err) throw err;
   });
 
-  await writeFileSync('./tmp/download/quick_pools.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/quick_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

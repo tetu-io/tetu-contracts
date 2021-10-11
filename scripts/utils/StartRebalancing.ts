@@ -4,8 +4,22 @@ import {IUniswapV2Pair, LiquidityBalancer} from "../../typechain";
 import {TokenUtils} from "../../test/TokenUtils";
 import {utils} from "ethers";
 import {RunHelper} from "./RunHelper";
-import {Settings} from "../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  lbSkipUseless: {
+    type: "boolean",
+    default: false,
+  },
+  lbFastMod: {
+    type: "boolean",
+    default: false,
+  }
+}).argv;
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
@@ -13,7 +27,7 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const balancer = await DeployerUtils.connectContract(signer, 'LiquidityBalancer', tools.rebalancer) as LiquidityBalancer;
   const targetToken = core.rewardToken;
-  const skipUseless = Settings.lbSkipUseless;
+  const skipUseless = argv.lbSkipUseless;
   const targetLpAddress = (await DeployerUtils.getTokenAddresses()).get('sushi_lp_token_usdc') as string;
   const targetLp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', targetLpAddress) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
@@ -26,7 +40,7 @@ async function main() {
   let lastTvl;
   // noinspection InfiniteLoopJS
   while (true) {
-    if (!Settings.lbFastMod) {
+    if (!argv.lbFastMod) {
       const lpData = await computePrice(
           targetLp,
           targetToken,

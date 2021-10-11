@@ -20,7 +20,7 @@ async function main() {
   const weth = await DeployerUtils.deployContract(signer, "MockWETH") as MockWETH;
   await weth.mint(signer.address, utils.parseUnits('10000000'));
 
-  await writeFileSync('./token_addresses.txt',
+  writeFileSync('./token_addresses.txt',
       quick.address + ', // quick\n' +
       sushi.address + ', // sushi\n' +
       usdc.address + ', // usdc\n' +

@@ -36,7 +36,7 @@ export class DoHardWorkLoop {
         const newNum = +(den / i).toFixed()
         console.log('new ps ratio', newNum, den)
         await info.core.announcer.announceRatioChange(9, newNum, den);
-        await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+        await TimeUtils.advanceBlocksOnTs(1);
         await info.core.controller.setPSNumeratorDenominator(newNum, den);
       }
       const loopStart = await StrategyTestUtils.getBlockTime();
@@ -80,7 +80,7 @@ export class DoHardWorkLoop {
       const earnedUsdcThisCycle = earnedThiCycle * targetTokenPrice;
       console.log('earned USDC: ' + earnedUsdcThisCycle, 'earned total usdc: ' + earnedUsdc);
 
-      const tvl = +utils.formatUnits(await info.vault.underlyingBalanceWithInvestment(),);
+      const tvl = +utils.formatUnits(await info.vault.underlyingBalanceWithInvestment());
       console.log('tvl', tvl);
       console.log('time', currentTs - start);
       const tvlUsdc = tvl * underlyingPrice;

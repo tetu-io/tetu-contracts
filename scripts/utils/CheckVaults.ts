@@ -31,7 +31,7 @@ async function main() {
   await cReader.vaultWithUserInfosLight(signer.address, vaults.slice(0, Math.floor(batch / 2)), {gasLimit: 100_000_000});
   console.log('uv ok');
 
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     let vInfoWithUser;
     try {
       vInfoWithUser = await cReader.vaultWithUserInfos(signer.address, [vault]);
@@ -106,7 +106,7 @@ async function checkVaultFields(vaultAddress: string) {
   console.log('userRewards', await cReader.userRewards(signer.address, vaultAddress));
   console.log('userRewardsUsdc', await cReader.userRewardsUsdc(signer.address, vaultAddress));
 
-  for (let rt of rewardTokens) {
+  for (const rt of rewardTokens) {
     console.log('earned', rt, await vaultContract.earnedWithBoost(rt, signer.address));
   }
 

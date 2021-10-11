@@ -1,8 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ContractReader, SmartVault} from "../../../typechain";
-import {VaultInfoModel} from "../../models/VaultInfoModel";
-import {UserInfoModel} from "../../models/UserInfoModel";
 import {mkdir, writeFileSync} from 'fs';
 import {utils} from "ethers";
 import {VaultUtils} from "../../../test/VaultUtils";
@@ -45,33 +43,33 @@ async function main() {
       '\n';
   for (let i = 1; i < vaults.length; i++) {
     const info = await contractReader.vaultInfo(vaults[i]);
-    console.log(info['name'].toString());
+    console.log(info.name.toString());
     const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaults[i]) as SmartVault;
     const estRew = await VaultUtils.vaultRewardsAmountCurrent(vaultCtr, core.psVault)
-    console.log('estRew', estRew, 'realRew', utils.formatUnits(info['rewardTokensBal'][0]), estRew - +utils.formatUnits(info['rewardTokensBal'][0]));
+    console.log('estRew', estRew, 'realRew', utils.formatUnits(info.rewardTokensBal[0]), estRew - +utils.formatUnits(info.rewardTokensBal[0]));
     data +=
-        info['addr'].toString() + ',' +
-        info['name'].toString() + ',' +
-        info['created'].toString() + ',' +
-        info['active'].toString() + ',' +
-        utils.formatUnits(info['tvl']) + ',' +
-        utils.formatUnits(info['tvlUsdc']) + ',' +
-        info['decimals'].toString() + ',' +
-        info['underlying'].toString() + ',' +
-        info['rewardTokens'][0].toString() + ',' +
-        utils.formatUnits(info['rewardTokensBal'][0]) + ',' +
-        utils.formatUnits(info['rewardTokensBalUsdc'][0]) + ',' +
-        info['duration'].toString() + ',' +
+        info.addr.toString() + ',' +
+        info.name.toString() + ',' +
+        info.created.toString() + ',' +
+        info.active.toString() + ',' +
+        utils.formatUnits(info.tvl) + ',' +
+        utils.formatUnits(info.tvlUsdc) + ',' +
+        info.decimals.toString() + ',' +
+        info.underlying.toString() + ',' +
+        info.rewardTokens[0].toString() + ',' +
+        utils.formatUnits(info.rewardTokensBal[0]) + ',' +
+        utils.formatUnits(info.rewardTokensBalUsdc[0]) + ',' +
+        info.duration.toString() + ',' +
         // info['rewardsApr'].toString() + ',' +
-        info['ppfsApr'].toString() + ',' +
-        info['users'].toString() + ',' +
-        info['strategy'].toString() + ',' +
-        info['strategyCreated'].toString() + ',' +
-        info['platform'].toString() + ',' +
+        info.ppfsApr.toString() + ',' +
+        info.users.toString() + ',' +
+        info.strategy.toString() + ',' +
+        info.strategyCreated.toString() + ',' +
+        info.platform.toString() + ',' +
         // info['assets'].toString() + ',' +
         // info['strategyRewards'].toString() + ',' +
-        info['strategyOnPause'].toString() + ',' +
-        utils.formatUnits(info['earned']) + ',' +
+        info.strategyOnPause.toString() + ',' +
+        utils.formatUnits(info.earned) + ',' +
         estRew + ',' +
         '\n'
   }
@@ -81,7 +79,7 @@ async function main() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/download/infos.json', data, 'utf8');
+  writeFileSync('./tmp/download/infos.json', data, 'utf8');
   console.log('done');
 }
 
@@ -91,40 +89,3 @@ main()
   console.error(error);
   process.exit(1);
 });
-
-function vaultInfo(info: any) {
-  return new VaultInfoModel(
-      info['addr'].toString(),
-      info['name'].toString(),
-      info['created'].toString(),
-      info['active'].toString(),
-      info['tvl'].toString(),
-      info['tvlUsdc'].toString(),
-      info['decimals'].toString(),
-      info['underlying'].toString(),
-      info['rewardTokens'].toString(),
-      info['rewardTokensBal'].toString(),
-      info['rewardTokensBalUsdc'].toString(),
-      info['duration'].toString(),
-      info['rewardsApr'].toString(),
-      info['ppfsApr'].toString(),
-      info['strategy'].toString(),
-      info['strategyCreated'].toString(),
-      info['platform'].toString(),
-      info['assets'].toString(),
-      info['strategyRewards'].toString(),
-      info['strategyOnPause'].toString(),
-      info['earned'].toString(),
-  );
-}
-
-function userInfo(info: any) {
-  return new UserInfoModel(
-      info['wallet'].toString(),
-      info['vault'].toString(),
-      info['balance'].toString(),
-      info['balanceUsdc'].toString(),
-      info['rewardTokens'].toString(),
-      info['rewards'].toString(),
-  );
-}

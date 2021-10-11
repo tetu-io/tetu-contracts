@@ -2,7 +2,7 @@ import {ContractReader, Controller, SmartVault} from "../typechain";
 import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TokenUtils} from "./TokenUtils";
-import {BigNumber, utils} from "ethers";
+import {BigNumber, ContractTransaction, utils} from "ethers";
 import axios from "axios";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
@@ -60,7 +60,7 @@ export class VaultUtils {
       vault: SmartVault,
       amount: BigNumber,
       invest = true
-  ) {
+  ): Promise<ContractTransaction> {
     const vaultForUser = vault.connect(user);
     const underlying = await vaultForUser.underlying();
     const dec = await TokenUtils.decimals(underlying);
@@ -72,10 +72,18 @@ export class VaultUtils {
     await TokenUtils.approve(underlying, user, vault.address, amount.toString());
     console.log('deposit', BigNumber.from(amount).toString());
     if (invest) {
-      return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+      return vaultForUser.depositAndInvest(BigNumber.from(amount));
     } else {
-      return await vaultForUser.deposit(BigNumber.from(amount));
+      return vaultForUser.deposit(BigNumber.from(amount));
     }
+  }
+
+  public static async exit(
+      user: SignerWithAddress,
+      vault: SmartVault
+  ): Promise<ContractTransaction> {
+    const vaultForUser = vault.connect(user);
+    return vaultForUser.exit();
   }
 
   public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader): Promise<number> {
@@ -138,11 +146,12 @@ export class VaultUtils {
       signer: SignerWithAddress,
       vault: SmartVault,
       core: CoreContractsWrapper,
-      amount: number
+      amount: number,
+      period = 60 * 60 * 24 * 7 + 1
   ) {
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    await MintHelperUtils.mint(core.controller, core.announcer, amount + '', signer.address);
+    await MintHelperUtils.mint(core.controller, core.announcer, amount + '', signer.address, period);
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));
     await TokenUtils.approve(rtAdr, signer, vault.address, utils.parseUnits(amount + '').toString());
@@ -190,9 +199,9 @@ export class VaultUtils {
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 
-    if(positive) {
+    if (positive) {
       expect(psPpfsAfter).is.greaterThan(psPpfs);
-      if(psRatio !== 1) {
+      if (psRatio !== 1) {
         expect(rtBalAfter).is.greaterThan(rtBal);
       }
     }

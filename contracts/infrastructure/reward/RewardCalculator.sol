@@ -30,6 +30,7 @@ import "../../third_party/cosmic/ICosmicMasterChef.sol";
 import "../../third_party/dino/IFossilFarms.sol";
 import "../price/IPriceCalculator.sol";
 import "./IRewardCalculator.sol";
+import "../../third_party/quick/IDragonLair.sol";
 
 /// @title Calculate estimated strategy rewards
 /// @author belbix
@@ -43,6 +44,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
+  address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
@@ -320,7 +322,8 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     if (SNXRewardInterface(_pool).periodFinish() < block.timestamp) {
       return 0;
     }
-    return SNXRewardInterface(_pool).rewardRate();
+    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(1e18);
+    return SNXRewardInterface(_pool).rewardRate() * dQuickRatio / 1e18;
   }
 
   // *********** GOVERNANCE ACTIONS *****************

@@ -20,7 +20,7 @@ async function main() {
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
 
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     console.log(vAdr);
     vaultNames.add(await cReader.vaultName(vAdr));
   }
@@ -31,9 +31,9 @@ async function main() {
     console.log('Strategy already exist', vaultNameWithoutPrefix);
   }
 
-  let [vaultLogic, vault, strategy] = await DeployerUtils.deployVaultAndStrategy(
+  const [vaultLogic, vault, strategy] = await DeployerUtils.deployVaultAndStrategy(
       vaultNameWithoutPrefix,
-      vaultAddress => DeployerUtils.deployContract(
+      async vaultAddress => DeployerUtils.deployContract(
           signer,
           'CurveAaveStrategy',
           core.controller,
@@ -59,7 +59,7 @@ async function main() {
     ]);
   }
 
-  await writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`,
+  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`,
       JSON.stringify([vaultLogic, vault, strategy]), 'utf8');
 
 }

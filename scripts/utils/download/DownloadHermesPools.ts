@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {IIrisMasterChef} from "../../../typechain";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
 
 
@@ -19,7 +19,7 @@ async function main() {
       chef.poolLength,
       chef.irisPerBlock,
       chef.totalAllocPoint,
-      (id) => {
+      async (id) => {
         return chef.poolInfo(id)
         .then(info => {
           return {

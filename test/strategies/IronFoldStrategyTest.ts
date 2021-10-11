@@ -40,7 +40,7 @@ async function startIronFoldStrategyTest(
       const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-      for (let rt of rewardTokens) {
+      for (const rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(
             [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
             [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
@@ -81,7 +81,7 @@ async function startIronFoldStrategyTest(
           signer,
           core,
           tokenName,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               strategyName,
               core.controller.address,
@@ -118,7 +118,7 @@ async function startIronFoldStrategyTest(
       const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
       console.log('largest', largest);
 
-      //************** add funds for investing ************
+      // ************** add funds for investing ************
       const baseAmount = 100_000;
       await UniswapUtils.buyAllBigTokens(user);
       const name = await TokenUtils.tokenSymbol(tokenOpposite);
@@ -186,9 +186,9 @@ async function startIronFoldStrategyTest(
       expect(+utils.formatUnits(await strategy.investedUnderlyingBalance())).is.eq(0, "0 strat balance");
       expect(await vault.underlyingBalanceInVault()).at.eq(0, "0 vault bal");
 
-      expect(await info.strategy.pausedInvesting()).is.true;
+      expect(await info.strategy.pausedInvesting()).is.eq(true);
       await info.strategy.continueInvesting();
-      expect(await info.strategy.pausedInvesting()).is.false;
+      expect(await info.strategy.pausedInvesting()).is.eq(false);
     });
     it("common test should be ok", async () => {
       await StrategyTestUtils.commonTests(strategyInfo);
@@ -251,13 +251,13 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
     if (i === Math.floor(loops / 3) && folding) {
       await foldContract.stopFolding();
       folding = await foldContract.fold();
-      expect(folding).is.false;
+      expect(folding).is.eq(false);
     }
     // switch on folding on the 2/3 of cycles
     if (i === Math.floor(loops / 3) * 2 && !folding) {
       await foldContract.startFolding();
       folding = await foldContract.fold();
-      expect(folding).is.true;
+      expect(folding).is.eq(true);
     }
     console.log('------ FOLDING ENABLED', i, folding, await foldContract.isFoldingProfitable());
     if (i > 1) {
@@ -328,19 +328,19 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
     if (deposited && i % 3 === 0) {
       deposited = false;
       const vBal = await vaultForUser.underlyingBalanceWithInvestment();
-      const bal = await TokenUtils.balanceOf(vaultForUser.address, info.user.address);
-      //* INVESTOR CAN WITHDRAW A VERY LITTLE AMOUNT LOWER OR HIGHER
+      const uBal = await TokenUtils.balanceOf(vaultForUser.address, info.user.address);
+      // * INVESTOR CAN WITHDRAW A VERY LITTLE AMOUNT LOWER OR HIGHER
       // depends on ppfs fluctuation
       if (i % 2 === 0) {
-        console.log('user exit', bal.toString(), vBal.toString());
+        console.log('user exit', uBal.toString(), vBal.toString());
         console.log('ppfs', utils.formatUnits(await info.vault.getPricePerFullShare(), undDec));
         await vaultForUser.exit();
         // some pools have auto compounding so user balance can increase
         expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
         .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "should have all underlying");
       } else {
-        console.log('user withdraw', bal.toString(), vBal.toString());
-        await vaultForUser.withdraw(BigNumber.from(bal).mul(90).div(100));
+        console.log('user withdraw', uBal.toString(), vBal.toString());
+        await vaultForUser.withdraw(BigNumber.from(uBal).mul(90).div(100));
         // some pools have auto compounding so user balance can increase
         expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
         .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance.mul(90).div(100), undDec) * 0.999, "should have all underlying");
@@ -349,10 +349,10 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
 
     } else if (!deposited && i % 2 === 0) {
       deposited = true;
-      const bal = await TokenUtils.balanceOf(info.underlying, info.user.address);
-      console.log('user deposit', bal.toString());
-      await VaultUtils.deposit(info.user, info.vault, BigNumber.from(bal).div(3));
-      await VaultUtils.deposit(info.user, info.vault, BigNumber.from(bal).div(3), false);
+      const uBal = await TokenUtils.balanceOf(info.underlying, info.user.address);
+      console.log('user deposit', uBal.toString());
+      await VaultUtils.deposit(info.user, info.vault, BigNumber.from(uBal).div(3));
+      await VaultUtils.deposit(info.user, info.vault, BigNumber.from(uBal).div(3), false);
     }
 
   }

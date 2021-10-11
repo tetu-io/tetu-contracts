@@ -82,7 +82,7 @@ describe("Fee reward forwarder tests", function () {
   it("should not notify vault without xTETU", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyWaultSingle',
             core.controller.address,
@@ -96,13 +96,13 @@ describe("Fee reward forwarder tests", function () {
         signer
     );
     const vault = data[1] as SmartVault;
-    await expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('psToken not added to vault');
+    expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('psToken not added to vault');
   });
 
   it("should not notify vault without liq path", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
         't',
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyWaultSingle',
             core.controller.address,

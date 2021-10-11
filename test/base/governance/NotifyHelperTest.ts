@@ -11,7 +11,7 @@ import {MintHelperUtils} from "../../MintHelperUtils";
 import {MaticAddresses} from "../../MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 import {NotifyHelper} from "../../../typechain/NotifyHelper";
-import {IStrategy, NoopStrategy, SmartVault} from "../../../typechain";
+import {IStrategy, NoopStrategy} from "../../../typechain";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -41,7 +41,7 @@ describe("Notify Helper test", () => {
     for (let i = 0; i < 2; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(
           't',
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               'StrategyWaultSingle',
               core.controller.address,
@@ -76,7 +76,7 @@ describe("Notify Helper test", () => {
     const vaults: string[] = [];
     const amounts: BigNumber[] = [];
     let sum = BigNumber.from("0");
-    for (let vault of allVaults) {
+    for (const vault of allVaults) {
       if (vault === core.psVault.address) {
         continue;
       }
@@ -91,7 +91,7 @@ describe("Notify Helper test", () => {
     console.log("rtBalance", utils.formatUnits(tokenBal, 18));
     await core.notifyHelper.notifyVaults(amounts, vaults, sum, core.rewardToken.address);
 
-    for (let vault of vaults) {
+    for (const vault of vaults) {
       expect(await TokenUtils.balanceOf(core.psVault.address, vault)).is.eq(utils.parseUnits("1", 18).toString());
     }
 
@@ -136,7 +136,7 @@ describe("Notify Helper test", () => {
     const vaults: string[] = [];
     const amounts: BigNumber[] = [];
     let sum = BigNumber.from("0");
-    for (let vault of allVaults) {
+    for (const vault of allVaults) {
       vaults.push(vault);
       const amount = utils.parseUnits("1", 6);
       amounts.push(amount);
@@ -157,7 +157,7 @@ describe("Notify Helper test", () => {
 
     await core.notifyHelper.notifyVaults(amounts, vaults, sum, rt);
 
-    for (let vault of vaults) {
+    for (const vault of vaults) {
       expect(await TokenUtils.balanceOf(rt, vault)).is.eq(utils.parseUnits("1", 6).toString());
     }
 
@@ -173,7 +173,7 @@ describe("Notify Helper test", () => {
   });
 
   // it("should not move funds to zero address", async () => {
-  //   await expect(notifier.moveFunds(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS))
+  //   expect(notifier.moveFunds(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS))
   //   .rejectedWith('address is zero');
   // });
 

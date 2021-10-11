@@ -10,7 +10,7 @@ async function main() {
   const mocks = await DeployerUtils.getTokenAddresses();
   const contract = await DeployerUtils.deployContract(signer, "MockFaucet") as MockFaucet;
 
-  for (let mockName of Array.from(mocks.keys())) {
+  for (const mockName of Array.from(mocks.keys())) {
     const mock = mocks.get(mockName) as string;
     await RunHelper.runAndWait(() => contract.addToken(mock));
 
@@ -18,7 +18,7 @@ async function main() {
     if (balance.isZero()) {
       continue;
     }
-    //send a half
+    // send a half
     await RunHelper.runAndWait(() =>
         TokenUtils.transfer(mock, signer, contract.address, balance.div(2).toString()));
   }

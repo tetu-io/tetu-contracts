@@ -9,7 +9,6 @@ export class CoreAddresses {
   public readonly psVault: string;
   public readonly fundKeeper: string;
   public readonly vaultController: string;
-  public readonly vaultLogic: string;
   public readonly pawnshop: string;
 
 
@@ -24,7 +23,6 @@ export class CoreAddresses {
       psVault: string,
       fundKeeper: string,
       vaultController: string,
-      vaultLogic: string,
       pawnshop: string
   ) {
     this.controller = controller;
@@ -37,7 +35,6 @@ export class CoreAddresses {
     this.psVault = psVault;
     this.fundKeeper = fundKeeper;
     this.vaultController = vaultController;
-    this.vaultLogic = vaultLogic;
     this.pawnshop = pawnshop;
   }
 }

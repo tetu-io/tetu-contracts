@@ -57,9 +57,9 @@ async function main() {
   const users = new Map<string, Map<string, string>>();
   let vaultUnclaimed = "";
 
-  for (let vault of vaultsPure) {
+  for (const vault of vaultsPure) {
     const v = vault.toLowerCase();
-    if (v == core.psVault.toLowerCase()
+    if (v === core.psVault.toLowerCase()
         // || !vaultsForParsing.has(v)
     ) {
       continue;
@@ -79,7 +79,7 @@ async function main() {
   console.log('logs', logs.length);
 
 
-  for (let log of logs) {
+  for (const log of logs) {
     const logDecoded = web3.eth.abi.decodeLog([
           {
             "indexed": true,
@@ -100,14 +100,14 @@ async function main() {
   }
   console.log('users', users.size);
 
-  for (let vaultAddress of Array.from(users.keys())) {
+  for (const vaultAddress of Array.from(users.keys())) {
     try {
 
       let totalToClaim = 0;
       const vaultName = await cReader.vaultName(vaultAddress);
       console.log('vault name', vaultName);
       const u = users.get(vaultAddress) as Map<string, string>;
-      for (let userAddress of Array.from(u.keys())) {
+      for (const userAddress of Array.from(u.keys())) {
         const userToClaim = utils.formatUnits((await cReader.userRewards(userAddress, vaultAddress))[0]);
         if (+userToClaim === 0) {
           continue;
@@ -116,8 +116,8 @@ async function main() {
         data += `${vaultName},${vaultAddress},${userAddress},${userToClaim}\n`;
       }
       vaultUnclaimed += `${vaultName},${vaultAddress},${totalToClaim}\n`;
-      await writeFileSync(`./tmp/stats/to_claim_partially.txt`, data, 'utf8');
-      await writeFileSync(`./tmp/stats/unclaimed_partially.txt`, vaultUnclaimed, 'utf8');
+      writeFileSync(`./tmp/stats/to_claim_partially.txt`, data, 'utf8');
+      writeFileSync(`./tmp/stats/unclaimed_partially.txt`, vaultUnclaimed, 'utf8');
     } catch (e) {
       console.error('error with vault ', vaultAddress, e);
     }
@@ -125,8 +125,8 @@ async function main() {
 
   data += await collectPs(usersTotal, core.psVault, vaults, signer, tools.utils);
 
-  await writeFileSync(`./tmp/stats/to_claim.txt`, data, 'utf8');
-  await writeFileSync(`./tmp/stats/unclaimed.txt`, vaultUnclaimed, 'utf8');
+  writeFileSync(`./tmp/stats/to_claim.txt`, data, 'utf8');
+  writeFileSync(`./tmp/stats/unclaimed.txt`, vaultUnclaimed, 'utf8');
 }
 
 
@@ -159,7 +159,7 @@ async function collectPs(
   let i = 0;
   let batch = [];
   const usersTotal = usersTotalAll.get(psAdr) as Set<string>;
-  for (let user of Array.from(usersTotal.keys())) {
+  for (const user of Array.from(usersTotal.keys())) {
     if (exclude.has(user) || !user || !psAdr) {
       continue;
     }
@@ -174,22 +174,22 @@ async function collectPs(
     }
   }
 
-  for (let batch of usersBatches) {
+  for (const _batch of usersBatches) {
 
-    const balances = await contractUtils.erc20BalancesForAddresses(psAdr, batch);
+    const balances = await contractUtils.erc20BalancesForAddresses(psAdr, _batch);
 
-    for (let i = 0; i < balances.length; i++) {
+    for (let j = 0; j < balances.length; j++) {
 
-      const toClaim = +utils.formatUnits(balances[i]);
+      const toClaim = +utils.formatUnits(balances[j]);
       if (toClaim > 0) {
-        data += `TETU_PS,${psAdr},${batch[i]},${toClaim * ppfs}\n`;
+        data += `TETU_PS,${psAdr},${_batch[j]},${toClaim * ppfs}\n`;
       }
     }
 
   }
 
 
-  await writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, 'utf8');
+  writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, 'utf8');
 
   return data;
 }

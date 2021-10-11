@@ -5,9 +5,9 @@ import {Web3Utils} from "./Web3Utils";
 import {TokenUtils} from "../../test/TokenUtils";
 import {utils} from "ethers";
 import {mkdir, writeFileSync} from "fs";
+import {MaticAddresses} from "../../test/MaticAddresses";
 
 const EVENT_NOTIFY = '0xac24935fd910bc682b5ccb1a07b718cadf8cf2f6d1404c4f3ddc3662dae40e29';
-const xTETU = '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454'.toLowerCase();
 const START_BLOCK = 17462342;
 
 async function main() {
@@ -30,9 +30,9 @@ async function main() {
 
   const vaults: string[] = [];
 
-  for (let vault of vaultsPure) {
+  for (const vault of vaultsPure) {
     const v = vault.toLowerCase();
-    if (v == core.psVault.address.toLowerCase()
+    if (v === core.psVault.address.toLowerCase()
         // || !vaultsForParsing.has(v)
         // || !(await reader.vaultActive(vault))
     ) {
@@ -49,7 +49,7 @@ async function main() {
       currentBlock
   );
 
-  for (let log of logs) {
+  for (const log of logs) {
     const logDecoded = web3.eth.abi.decodeLog([
           {
             "indexed": false,
@@ -76,8 +76,7 @@ async function main() {
   }
 
   let data = 'vault, name, rewards, earned, kpi\n';
-  for (let i = 0; i < vaults.length; i++) {
-    const vault = vaults[i];
+  for (const vault of vaults) {
     try {
       const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
       const vaultName = await vaultCtr.name();
@@ -85,18 +84,18 @@ async function main() {
       const earned = +utils.formatUnits(await reader.strategyEarned(strategy));
 
       const rewardPerToken = rewards.get(vault) as Map<string, number>;
-      const kpi = (earned / (rewardPerToken.get(xTETU) ?? 0)) * 100;
+      const kpi = (earned / (rewardPerToken.get(MaticAddresses.xTETU) ?? 0)) * 100;
 
       const info =
           vault + ',' +
           vaultName + ',' +
-          rewardPerToken.get(xTETU) + ',' +
+          rewardPerToken.get(MaticAddresses.xTETU) + ',' +
           earned + ',' +
           kpi
           + '\n';
       console.log(info);
       data += info;
-      await writeFileSync(`./tmp/stats/kpi.txt`, data, 'utf8');
+      writeFileSync(`./tmp/stats/kpi.txt`, data, 'utf8');
     } catch (e) {
       console.log('Error write vault', vault, e);
     }
