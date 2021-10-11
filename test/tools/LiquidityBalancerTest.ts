@@ -44,7 +44,7 @@ describe("liquidity balancer tsets", function () {
     await liquidityBalancer.setTargetTvlUpdateNumerator(1000);
     await liquidityBalancer.setRemoveLiqRatioNumerator(1000);
 
-    expect(await liquidityBalancer.isGovernance(signer.address)).is.true;
+    expect(await liquidityBalancer.isGovernance(signer.address)).is.eq(true);
 
   });
 
@@ -108,8 +108,8 @@ describe("liquidity balancer tsets", function () {
       await liquidityBalancer.changeLiquidity(core.rewardToken.address, lp);
 
       const lpInfoAfter = await UniswapUtils.getLpInfo(lp, signer, token);
-      const price = lpInfoAfter[3];
-      expect(price).is.approximately(targetPrice, targetPrice * 0.01, 'target price was not reached')
+      const priceAfter = lpInfoAfter[3];
+      expect(priceAfter).is.approximately(targetPrice, targetPrice * 0.01, 'target price was not reached')
 
       compareLpInfo(lpInfoBefore, lpInfoAfter, false);
     }
@@ -215,7 +215,7 @@ describe("liquidity balancer tsets", function () {
 });
 
 
-function compareLpInfo(before: any[], after: any[], priceShouldIncrease: boolean) {
+function compareLpInfo(before: [number, string, number, number], after: [number, string, number, number], priceShouldIncrease: boolean) {
 
   const tokenStacked = after[0] - before[0];
   const oppositeTokenStacked = after[2] - before[2];

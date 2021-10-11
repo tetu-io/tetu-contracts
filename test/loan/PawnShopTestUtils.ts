@@ -154,7 +154,7 @@ export class PawnShopTestUtils {
     if (posListLength > 1) {
       expect(lastLoanListIndexAfter).is.eq(loanListIndex);
     }
-    expect(posAfter.open).is.false;
+    expect(posAfter.open).is.eq(false);
   }
 
   public static async bidAndCheck(loanId: number, amount: string, signer: SignerWithAddress, shop: TetuPawnShop) {
@@ -268,7 +268,7 @@ export class PawnShopTestUtils {
     expect(aBalanceAfter.sub(aBalanceBefore).toString()).is.eq(bid.amount);
 
     expect(await shop.lenderOpenBids(bid.lender, l.id)).is.eq(0);
-    expect((await shop.auctionBids(bidId)).open).is.false;
+    expect((await shop.auctionBids(bidId)).open).is.eq(false);
   }
 
   public static async acceptAuctionBidAndCheck(loanId: number, signer: SignerWithAddress, shop: TetuPawnShop) {
@@ -284,7 +284,7 @@ export class PawnShopTestUtils {
     expect(aBalanceBefore.sub(aBalanceAfter).toString()).is.eq(bid.amount);
 
     expect(await shop.lenderOpenBids(bid.lender, loanId)).is.eq(0);
-    expect((await shop.auctionBids(lastBidId)).open).is.false;
+    expect((await shop.auctionBids(lastBidId)).open).is.eq(false);
 
     await PawnShopTestUtils.checkExecution(loanId, bid.amount.toString(), bid.lender, shop, cBalanceBefore);
   }

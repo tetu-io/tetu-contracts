@@ -1,12 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {
-  ContractReader,
-  Controller,
-  IStrategy,
-  SmartVault,
-  VaultController
-} from "../../../../typechain";
+import {ContractReader, IStrategy, SmartVault} from "../../../../typechain";
 import {appendFileSync, mkdir, readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([]);
@@ -20,7 +14,7 @@ async function main() {
     if (err) throw err;
   });
 
-  await appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
+  appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
 
   const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
 
@@ -31,20 +25,20 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   const vaultsMap = new Map<string, string>();
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultsMap.set(await cReader.vaultName(vAdr), vAdr);
   }
 
-  for (let info of infos) {
+  for (const info of infos) {
     const strat = info.split(',');
 
     const ids = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const pool = strat[7];
     const duration = strat[9];
 
@@ -53,7 +47,7 @@ async function main() {
       continue;
     }
 
-    const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
+    const vaultNameWithoutPrefix = `QUICK_${token0Name}_${token1Name}`;
 
     const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
 
@@ -69,28 +63,28 @@ async function main() {
       continue;
     }
 
-    console.log('strat', pool, lp_name, vAdr, lp_address, token0, token1);
+    console.log('strat', pool, lpName, vAdr, lpAddress, token0, token1);
 
     const strategy = await DeployerUtils.deployContract(
         signer,
         'StrategyQuickSwapLpV2',
         core.controller,
         vAdr,
-        lp_address,
+        lpAddress,
         token0,
         token1,
         pool
     ) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
-    await appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
+    appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
       await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/quick/StrategyQuickSwapLpV2.sol:StrategyQuickSwapLpV2', [
         core.controller,
         vAdr,
-        lp_address,
+        lpAddress,
         token0,
         token1,
         pool

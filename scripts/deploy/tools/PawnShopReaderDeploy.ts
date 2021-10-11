@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {ContractReader, PawnShopReader, TetuPawnShop} from "../../../typechain";
+import {PawnShopReader} from "../../../typechain";
 import {RunHelper} from "../../utils/RunHelper";
 
 

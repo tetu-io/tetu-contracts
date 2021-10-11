@@ -73,7 +73,7 @@ describe("Payroll Clerk tests", function () {
     expect(await clerk.earned(newWallet.address)).is.eq('100000000000000000000');
     expect(await clerk.workerNames(newWallet.address)).is.eq('Signer0');
     expect(await clerk.workerRoles(newWallet.address)).is.eq('TEST');
-    expect(await clerk.boostActivated(newWallet.address)).is.true;
+    expect(await clerk.boostActivated(newWallet.address)).is.eq(true);
   });
 
   it("should pay salary with multiple tokens", async () => {
@@ -180,9 +180,9 @@ describe("Payroll Clerk tests", function () {
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
     const govBal = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
     const bal = await TokenUtils.balanceOf(core.rewardToken.address, clerk.address);
-    expect(bal.isZero()).is.false;
+    expect(bal.isZero()).is.eq(false);
     await clerk.moveTokensToGovernance(core.rewardToken.address, bal);
-    expect((await TokenUtils.balanceOf(core.rewardToken.address, clerk.address)).isZero()).is.true;
+    expect((await TokenUtils.balanceOf(core.rewardToken.address, clerk.address)).isZero()).is.eq(true);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
     .is.eq(govBal.add(bal));
   });

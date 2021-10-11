@@ -1,10 +1,13 @@
+/* tslint:disable:variable-name */
+// noinspection JSUnusedGlobalSymbols
+
 export class MaticAddresses {
 
   // useful places where you can find addresses
   // https://github.com/sushiswap/default-token-list/blob/master/src/tokens/matic.json#L153
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  //tokens
+  // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
   public static USDC_TOKEN = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174".toLowerCase();
@@ -48,7 +51,7 @@ export class MaticAddresses {
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
-  //iron
+  // iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
   public static IRON_CONTROLLER = "0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c".toLowerCase();
   public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
@@ -64,7 +67,7 @@ export class MaticAddresses {
   public static DFYN_ROUTER = "0xA102072A4C07F06EC3B4900FDC4C7B80b6c57429".toLowerCase();
   public static DFYN_USDC_ICE = "0x34832D9AC4127a232C1919d840f7aaE0fcb7315B".toLowerCase();
 
-  //quick
+  // quick
   public static QUICK_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff".toLowerCase();
   public static QUICK_FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32".toLowerCase();
   public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
@@ -76,7 +79,7 @@ export class MaticAddresses {
   public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
   public static QUICK_TETU_USDC = "0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B".toLowerCase();
 
-  //sushi
+  // sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
   public static SUSHI_FACTORY = "0xc35dadb65012ec5796536bd9864ed8773abc74c4".toLowerCase();
   public static SUSHI_MINISHEFV2 = "0x0769fd68dFb93167989C6f7254cd0D766Fb2841F".toLowerCase();

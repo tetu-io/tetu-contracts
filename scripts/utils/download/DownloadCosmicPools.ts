@@ -18,7 +18,7 @@ async function main() {
       chef.poolLength,
       chef.cosmicPerBlock,
       chef.totalAllocPoint,
-      (id) => {
+      async (id) => {
         return chef.poolInfo(id)
         .then(info => {
           return {

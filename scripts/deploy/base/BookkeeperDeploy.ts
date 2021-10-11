@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {Bookkeeper, ContractReader, Controller} from "../../../typechain";
+import {Bookkeeper, Controller} from "../../../typechain";
 
 
 async function main() {

@@ -38,17 +38,16 @@ async function main() {
         false,
         MaticAddresses.ZERO_ADDRESS
     );
-    await vaultController.addRewardTokens([vault.address],vaultRewardToken);
-    await vaultController.addRewardTokens([vault.address],mocks.get('weth') as string);
-    await vaultController.addRewardTokens([vault.address],mocks.get('sushi') as string);
+    await vaultController.addRewardTokens([vault.address], vaultRewardToken);
+    await vaultController.addRewardTokens([vault.address], mocks.get('weth') as string);
+    await vaultController.addRewardTokens([vault.address], mocks.get('sushi') as string);
 
     await controller.addVaultAndStrategy(vault.address, strategy.address);
 
     datas.push([vaultLogic, vault, strategy]);
   }
 
-  for (let i = 0; i < datas.length; i++) {
-    const data = datas[i];
+  for (const data of datas) {
     const vaultLogic = data[0];
     const vaultProxy = data[1];
     const strategy = data[2];

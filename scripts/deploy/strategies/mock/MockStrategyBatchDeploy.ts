@@ -5,18 +5,33 @@ import {
   ERC20PresetMinterPauser,
   IStrategy,
   IUniswapV2Factory,
-  SmartVault, VaultController
+  SmartVault,
+  VaultController
 } from "../../../../typechain";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../../test/TokenUtils";
 import {RunHelper} from "../../../utils/RunHelper";
-import {Settings} from "../../../../settings";
 import {RopstenAddresses} from "../../../../test/RopstenAddresses";
 import {MaticAddresses} from "../../../../test/MaticAddresses";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  mockBatchDeployVersion: {
+    type: "string",
+    default: "1",
+  },
+  mockBatchDeployCount: {
+    type: "number",
+    default: 1,
+  }
+}).argv;
 
 async function main() {
-  const VERSION = Settings.mockBatchDeployVersion;
+  const VERSION = argv.mockBatchDeployVersion;
   const signer = (await ethers.getSigners())[0];
   const net = (await ethers.provider.getNetwork()).name;
   const core = await DeployerUtils.getCoreAddresses();
@@ -50,7 +65,7 @@ async function main() {
 
   const sushiFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', RopstenAddresses.SUSHI_FACTORY) as IUniswapV2Factory;
 
-  for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
+  for (let i = 0; i < argv.mockBatchDeployCount; i++) {
     const t1Rand = Math.floor(Math.random() * (possibleTokens.length - 1));
     let t2Rand = t1Rand + 1;
     if (t2Rand > possibleTokens.length - 1) {
@@ -149,7 +164,7 @@ async function main() {
 
   await DeployerUtils.wait(5);
 
-  for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
+  for (let i = 0; i < argv.mockBatchDeployCount; i++) {
     const undrData = underlyingByIdx.get(i) as string[];
     const data = datas[i];
     const vaultLogic = data[0];
@@ -166,7 +181,7 @@ async function main() {
           platform, [poolReward]]);
   }
 
-  for (let i = 0; i < Settings.mockBatchDeployCount; i++) {
+  for (let i = 0; i < argv.mockBatchDeployCount; i++) {
     const undrData = underlyingByIdx.get(i) as string[];
     const data = datasPools[i];
     const vaultLogic = data[0];

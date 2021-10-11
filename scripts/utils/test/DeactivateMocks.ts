@@ -12,7 +12,7 @@ async function main() {
   const vaults = await bookkeeper.vaults();
   console.log('vaults ', vaults.length);
 
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
     if (!(await vaultContract.active()) || vault === core.psVault) {
       console.log('inactive ', await vaultContract.name());

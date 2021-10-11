@@ -167,9 +167,9 @@ describe("Mint helper tests", () => {
     .at.eq(utils.parseUnits(devExpected.toFixed(), 18));
   });
   it("log2 test", async () => {
-    const signer = (await ethers.getSigners())[0];
+    const _signer = (await ethers.getSigners())[0];
     const rewardToken = await DeployerUtils.deployContract(
-        signer, "RewardToken", MaticAddresses.USDC_TOKEN) as RewardToken;
+        _signer, "RewardToken", MaticAddresses.USDC_TOKEN) as RewardToken;
     expect((await rewardToken._log2(utils.parseUnits("1", 18))).toString())
     .at.eq("0");
 

@@ -49,7 +49,7 @@ describe("Controller tests", function () {
 
   it("should change vault statuses", async () => {
     await vaultController.changeVaultsStatuses([core.psVault.address], [false]);
-    expect(await core.psVault.active()).is.false;
+    expect(await core.psVault.active()).is.eq(false);
   });
 
   it("should change reward tokens", async () => {

@@ -40,7 +40,7 @@ async function startIronSwapStrategyTest(
       const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-      for (let rt of rewardTokens) {
+      for (const rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(
             [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
             [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
@@ -60,7 +60,7 @@ async function startIronSwapStrategyTest(
           signer,
           core,
           tokenNames,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               strategyName,
               core.controller.address,
@@ -89,7 +89,7 @@ async function startIronSwapStrategyTest(
           calculator
       );
 
-      //************** add funds for investing ************
+      // ************** add funds for investing ************
       const baseAmount = 10_000;
       const targetTokenIdx = 1;
       const token = tokens[targetTokenIdx];
@@ -111,9 +111,9 @@ async function startIronSwapStrategyTest(
           token, utils.parseUnits(amountForSell0.toFixed(dec0), dec0), token0Opposite);
 
 
-      //************** add liq ************
+      // ************** add liq ************
       const amounts = [];
-      for (let i = 0; i < tokens.length; i++) {
+      for (const item of tokens) {
         amounts.push(0);
       }
 
@@ -123,7 +123,7 @@ async function startIronSwapStrategyTest(
       const availBal = await TokenUtils.balanceOf(token, user.address);
       console.log('availBal', availBal.toString());
       // amounts[0]  = utils.parseUnits((baseAmount/10).toFixed(0), await Erc20Utils.decimals(token));
-      amounts[targetTokenIdx]  = availBal;
+      amounts[targetTokenIdx] = availBal;
       await TokenUtils.approve(token, user, swapCtr.address, amounts[targetTokenIdx].toString());
 
       console.log('try to add liq to iron swap', amounts)

@@ -13,7 +13,7 @@ async function main() {
 
   const vaults = await bookkeeper.vaults();
 
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     console.log(await cReader.vaultName(vault));
     const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
     const strategy = await vaultCtr.strategy();

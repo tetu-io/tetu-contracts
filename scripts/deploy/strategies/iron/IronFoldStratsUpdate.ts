@@ -1,13 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {
-  ContractReader,
-  Controller,
-  IStrategy,
-  StrategyIronFold,
-  VaultController
-} from "../../../../typechain";
-import {mkdir, readFileSync, writeFileSync} from "fs";
+import {ContractReader, IStrategy, StrategyIronFold} from "../../../../typechain";
+import {readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -25,17 +19,17 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   const vaultsMap = new Map<string, string>();
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultsMap.set(await cReader.vaultName(vAdr), vAdr);
   }
 
   // *********** DEPLOY
-  for (let info of infos) {
+  for (const info of infos) {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const rToken_name = strat[1];
-    const rToken_address = strat[2];
+    const rTokenName = strat[1];
+    const rTokenAddress = strat[2];
     const token = strat[3];
     const tokenName = strat[4];
     const collateralFactor = strat[5];
@@ -55,7 +49,7 @@ async function main() {
       return;
     }
 
-    console.log('strat', idx, rToken_name, vaultNameWithoutPrefix, vAdr);
+    console.log('strat', idx, rTokenName, vaultNameWithoutPrefix, vAdr);
 
     const strategy = await DeployerUtils.deployContract(
         signer,
@@ -63,7 +57,7 @@ async function main() {
         core.controller,
         vAdr,
         token,
-        rToken_address,
+        rTokenAddress,
         borrowTarget,
         collateralFactor
     ) as IStrategy;
@@ -74,7 +68,7 @@ async function main() {
         core.controller,
         vAdr,
         token,
-        rToken_address,
+        rTokenAddress,
         borrowTarget,
         collateralFactor
       ]);

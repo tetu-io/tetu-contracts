@@ -14,7 +14,6 @@ import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 
@@ -33,7 +32,7 @@ async function main() {
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
-  for (let vInfo of vaultInfos) {
+  for (const vInfo of vaultInfos) {
     if (vInfo.platform !== '5') {
       continue;
     }
@@ -76,7 +75,7 @@ async function main() {
     const tokens = await collectTokensInfo(signer, lp, i);
     let poolName = 'IRON';
     const tokenNames = [];
-    for (let token of tokens) {
+    for (const token of tokens) {
       const tokenName = await TokenUtils.tokenSymbol(token);
       tokenNames.push(tokenName);
       poolName += '_' + tokenName;
@@ -104,7 +103,7 @@ async function main() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/download/iron_pools.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/iron_pools.csv', infos, 'utf8');
   console.log('done');
 }
 
@@ -117,9 +116,9 @@ main()
 
 async function collectTokensInfo(signer: SignerWithAddress, lp: string, id: number): Promise<string[]> {
   if (id === 0 || id === 3) {
-    return await collectTokensInfoIronSwap(signer, lp);
+    return collectTokensInfoIronSwap(signer, lp);
   } else {
-    return await collectTokensInfoUniswap(signer, lp);
+    return collectTokensInfoUniswap(signer, lp);
   }
 }
 
@@ -127,7 +126,7 @@ async function collectTokensInfoIronSwap(signer: SignerWithAddress, lp: string):
   const lpContract = await DeployerUtils.connectInterface(signer, 'IIronLpToken', lp) as IIronLpToken;
   const swapAddress = await lpContract.swap();
   const swapContract = await DeployerUtils.connectInterface(signer, 'IIronSwap', swapAddress) as IIronSwap;
-  return await swapContract.getTokens();
+  return swapContract.getTokens();
 }
 
 async function collectTokensInfoUniswap(signer: SignerWithAddress, lp: string): Promise<string[]> {

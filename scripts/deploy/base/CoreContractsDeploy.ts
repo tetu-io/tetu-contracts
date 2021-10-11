@@ -16,7 +16,7 @@ export default async function main() {
 
   const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, timeLock, true);
 
-  await writeFileSync('./core_addresses.txt',
+  writeFileSync('./core_addresses.txt',
       core.controller.address + ', // controller\n' +
       core.announcer.address + ', // announcer\n' +
       core.feeRewardForwarder.address + ', // feeRewardForwarder\n' +
@@ -63,7 +63,7 @@ export default async function main() {
   // reward token
   await DeployerUtils.verifyWithArgs(core.rewardToken.address, [core.mintHelper.address]);
 
-  //ps
+  // ps
   await DeployerUtils.verify(core.psVaultLogic);
   await DeployerUtils.wait(1);
   await DeployerUtils.verifyWithArgs(core.psVault.address, [core.psVaultLogic]);

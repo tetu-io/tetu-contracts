@@ -23,33 +23,33 @@ async function main() {
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
 
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
 
-  for (let info of infos) {
+  for (const info of infos) {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx' || idx == '0' || !lp_name) {
+    if (+alloc <= 0 || idx === 'idx' || idx === '0' || !lpName) {
       console.log('skip', idx);
       continue;
     }
 
     let vaultNameWithoutPrefix: string;
     if (token1) {
-      vaultNameWithoutPrefix = `WAULT_${token0_name}_${token1_name}`;
+      vaultNameWithoutPrefix = `WAULT_${token0Name}_${token1Name}`;
     } else {
-      vaultNameWithoutPrefix = `WAULT_${token0_name}`;
+      vaultNameWithoutPrefix = `WAULT_${token0Name}`;
     }
 
     if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
@@ -57,18 +57,19 @@ async function main() {
       continue;
     }
 
-    console.log('strat', idx, lp_name);
+    console.log('strat', idx, lpName);
 
+    // tslint:disable-next-line:no-any
     let data: any[];
-    if(token1) {
+    if (token1) {
       data = await DeployerUtils.deployAndInitVaultAndStrategy(
           vaultNameWithoutPrefix,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               'StrategyWaultLp',
               core.controller,
               vaultAddress,
-              lp_address,
+              lpAddress,
               token0,
               token1,
               idx
@@ -83,7 +84,7 @@ async function main() {
       data.push([
         core.controller,
         data[1].address,
-        lp_address,
+        lpAddress,
         token0,
         token1,
         idx
@@ -91,12 +92,12 @@ async function main() {
     } else {
       data = await DeployerUtils.deployAndInitVaultAndStrategy(
           vaultNameWithoutPrefix,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               'StrategyWaultSingle',
               core.controller,
               vaultAddress,
-              lp_address,
+              lpAddress,
               idx
           ) as Promise<IStrategy>,
           controller,
@@ -109,7 +110,7 @@ async function main() {
       data.push([
         core.controller,
         data[1].address,
-        lp_address,
+        lpAddress,
         token0,
         token1,
         idx
@@ -122,7 +123,7 @@ async function main() {
 
   await DeployerUtils.wait(5);
 
-  for (let data of deployed) {
+  for (const data of deployed) {
     await DeployerUtils.verify(data[0].address);
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);

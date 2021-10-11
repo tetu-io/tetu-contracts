@@ -80,7 +80,7 @@ export class DoHardWorkLoop {
       const earnedUsdcThisCycle = earnedThiCycle * targetTokenPrice;
       console.log('earned USDC: ' + earnedUsdcThisCycle, 'earned total usdc: ' + earnedUsdc);
 
-      const tvl = +utils.formatUnits(await info.vault.underlyingBalanceWithInvestment(),);
+      const tvl = +utils.formatUnits(await info.vault.underlyingBalanceWithInvestment());
       console.log('tvl', tvl);
       console.log('time', currentTs - start);
       const tvlUsdc = tvl * underlyingPrice;
