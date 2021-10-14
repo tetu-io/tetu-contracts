@@ -51,20 +51,26 @@ async function main() {
       console.log(i, await contractReader.vaultName(vault));
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
 
-      const undPrice = +utils.formatUnits(await contractReader.getPrice(await vCtr.underlying()));
-      const undDec = await TokenUtils.decimals(await vCtr.underlying());
+      const und = await vCtr.underlying();
+      const undPrice = +utils.formatUnits(await contractReader.getPrice(und));
+      const undDec = await TokenUtils.decimals(und);
       const undBal = +utils.formatUnits(await vCtr.underlyingBalanceInVault(), undDec);
-      if (undBal * undPrice < 100) {
-        console.log('too low und balance', vault, (undBal * undPrice).toFixed(2));
+
+      const strategy = await vCtr.strategy();
+      const undBalStrat = +utils.formatUnits(await TokenUtils.balanceOf(und, strategy), undDec);
+      if (undBal * undPrice < 100 && undBalStrat * undPrice < 100) {
+        console.log('too low und balance', vault,
+            (undBal * undPrice).toFixed(2), (undBalStrat * undPrice).toFixed(2));
         continue;
       }
-      console.log('undBal * undPrice', (undBal * undPrice).toFixed(2));
+      console.log('vault bal', (undBal * undPrice).toFixed(2));
+      console.log('strat bal', (undBalStrat * undPrice).toFixed(2));
 
       const platform = await contractReader.strategyPlatform(await vCtr.strategy())
       if ((await contractReader.strategyAssets(await vCtr.strategy())).length !== 2
           || exclude.has(vault.toLowerCase())
           || !(await contractReader.vaultActive(vault))
-          // || (platform !== 2 && platform !== 3)
+          || (platform !== 3)
       ) {
         continue;
       }

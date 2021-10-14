@@ -12,16 +12,18 @@
 
 pragma solidity 0.8.4;
 
-import "../third_party/uniswap/IUniswapV2Factory.sol";
-import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "./TetuSwapPair.sol";
+import "../base/interface/ISmartVault.sol";
+import "./interfaces/ITetuSwapFactory.sol";
 
-contract UniswapV2Factory is IUniswapV2Factory {
+contract TetuSwapFactory is ITetuSwapFactory {
   address public override feeTo;
   address public override feeToSetter;
 
   mapping(address => mapping(address => address)) public override getPair;
   address[] public override allPairs;
+
+  event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
   constructor(address _feeToSetter) {
     feeToSetter = _feeToSetter;
@@ -32,17 +34,17 @@ contract UniswapV2Factory is IUniswapV2Factory {
   }
 
   function createPair(address tokenA, address tokenB) external override returns (address pair) {
-    require(tokenA != tokenB, 'UniswapV2: IDENTICAL_ADDRESSES');
+    require(tokenA != tokenB, "TSF: IDENTICAL_ADDRESSES");
     (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-    require(token0 != address(0), 'UniswapV2: ZERO_ADDRESS');
-    require(getPair[token0][token1] == address(0), 'UniswapV2: PAIR_EXISTS');
+    require(token0 != address(0), "TSF: ZERO_ADDRESS");
+    require(getPair[token0][token1] == address(0), "TSF: PAIR_EXISTS");
     // single check is sufficient
     bytes memory bytecode = type(TetuSwapPair).creationCode;
     bytes32 salt = keccak256(abi.encodePacked(token0, token1));
     assembly {
       pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
     }
-    IUniswapV2Pair(pair).initialize(token0, token1);
+    TetuSwapPair(pair).initialize(token0, token1);
     getPair[token0][token1] = pair;
     getPair[token1][token0] = pair;
     // populate mapping in the reverse direction
@@ -51,12 +53,12 @@ contract UniswapV2Factory is IUniswapV2Factory {
   }
 
   function setFeeTo(address _feeTo) external {
-    require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+    require(msg.sender == feeToSetter, "TSF: FORBIDDEN");
     feeTo = _feeTo;
   }
 
   function setFeeToSetter(address _feeToSetter) external {
-    require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+    require(msg.sender == feeToSetter, "TSF: FORBIDDEN");
     feeToSetter = _feeToSetter;
   }
 
@@ -64,5 +66,16 @@ contract UniswapV2Factory is IUniswapV2Factory {
   function calcHash() external view returns (bytes32) {
     bytes memory bytecode = type(TetuSwapPair).creationCode;
     return keccak256(abi.encodePacked(bytecode));
+  }
+
+  function setVaultsForPair(address _vaultA, address _vaultB) external {
+    require(msg.sender == feeToSetter, "TSF: FORBIDDEN");
+    address _tokenA = ISmartVault(_vaultA).underlying();
+    address _tokenB = ISmartVault(_vaultB).underlying();
+    address _pair = getPair[_tokenA][_tokenB];
+    require(_pair != address(0), "TSF: Pair not found");
+
+    (address _vault0, address _vault1) = _tokenA < _tokenB ? (_vaultA, _vaultB) : (_vaultB, _vaultA);
+    TetuSwapPair(_pair).setVaults(_vault0, _vault1);
   }
 }

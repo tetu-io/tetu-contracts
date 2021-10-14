@@ -569,28 +569,28 @@ export class DeployerUtils {
       throw Error('No config for ' + net.name);
     }
 
-    const ps = await DeployerUtils.connectContract(signer, "SmartVault", core.psVault) as SmartVault;
+    const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
     const str = await ps.strategy();
 
     return new CoreContractsWrapper(
-        await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller,
+        await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
         '',
-        await DeployerUtils.connectContract(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+        await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
         '',
-        await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
+        await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
         '',
-        await DeployerUtils.connectContract(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
-        await DeployerUtils.connectContract(signer, "MintHelper", core.mintHelper) as MintHelper,
+        await DeployerUtils.connectInterface(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
+        await DeployerUtils.connectInterface(signer, "MintHelper", core.mintHelper) as MintHelper,
         '',
-        await DeployerUtils.connectContract(signer, "RewardToken", core.rewardToken) as RewardToken,
+        await DeployerUtils.connectInterface(signer, "RewardToken", core.rewardToken) as RewardToken,
         ps,
         '',
-        await DeployerUtils.connectContract(signer, "NoopStrategy", str) as NoopStrategy,
-        await DeployerUtils.connectContract(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
+        await DeployerUtils.connectInterface(signer, "NoopStrategy", str) as NoopStrategy,
+        await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
         '',
-        await DeployerUtils.connectContract(signer, "Announcer", core.announcer) as Announcer,
+        await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
         '',
-        await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController,
+        await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
         '',
     );
   }
@@ -615,7 +615,7 @@ export class DeployerUtils {
     return mocks;
   }
 
-  public static async impersonate(address: string) {
+  public static async impersonate(address = MaticAddresses.GOV_ADDRESS) {
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [address],
@@ -623,7 +623,7 @@ export class DeployerUtils {
 
     await hre.network.provider.request({
       method: "hardhat_setBalance",
-      params: [address, "0x52B7D2DCC80CD2E4000000"],
+      params: [address, "0x1431E0FAE6D7217CAA0000000"],
     });
     return ethers.getSigner(address);
   }

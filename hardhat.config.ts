@@ -34,7 +34,7 @@ const argv = require('yargs/yargs')()
   },
   forkBlock: {
     type: "number",
-    default: 19950000
+    default: 20149000
   },
 }).argv;
 
