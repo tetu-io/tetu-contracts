@@ -14,10 +14,13 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "./../../../../third_party/balancer/IBVault.sol";
 
 contract BalancerConnector {
     using SafeERC20 for IERC20;
+    using SafeMath for uint256;
 
     string private constant _WRONG_SOURCE_TOKEN = "BC: wrong source token or its index";
 
@@ -25,17 +28,23 @@ contract BalancerConnector {
     address public sourceTokenAddress;
     uint256 public balancerPoolID;
     uint256 public sourceTokenIndexAtPool;
+    address public balancerLPToken;
+
+    enum JoinKind { INIT, EXACT_TOKENS_IN_FOR_BPT_OUT, TOKEN_IN_FOR_EXACT_BPT_OUT }
+    enum ExitKind { EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, EXACT_BPT_IN_FOR_TOKENS_OUT, BPT_IN_FOR_EXACT_TOKENS_OUT }
 
     constructor(
         address _balancerVaultAddress,
         address _sourceTokenAddress,
         uint256 _balancerPoolID,
-        uint256 _sourceTokenIndexAtPool
+        uint256 _sourceTokenIndexAtPool,
+        uint256 _balancerLPToken
     ) public {
         balancerVaultAddress = _balancerVaultAddress;
         sourceTokenAddress = _sourceTokenAddress;
         balancerPoolID = _balancerPoolID;
         sourceTokenIndexAtPool = _sourceTokenIndexAtPool;
+        balancerLPToken = _balancerLPToken;
     }
 
     // from https://github.com/balancer-labs/balancer-v2-monorepo/blob/f45076067b68b27ea023632e69349e3051746cd4/pkg/solidity-utils/contracts/helpers/ERC20Helpers.sol
@@ -59,7 +68,7 @@ contract BalancerConnector {
         IBVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
             assets: _asIAsset(tokens),
             maxAmountsIn: maxAmountsIn,
-            userData: "",
+            userData: bytes(JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT),
             fromInternalBalance: false
         });
 
@@ -73,15 +82,21 @@ contract BalancerConnector {
         uint256[] minAmountsOut = [0,0,0,0];
         minAmountsOut[sourceTokenIndexAtPool] = amount;
 
-        IBVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
+        IBVault.ExitPoolRequest memory request = IVault.ExitPoolRequest({
             assets: _asIAsset(tokens),
             minAmountsOut: minAmountsOut,
-            userData: "",
+            userData: bytes(ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT),
             fromInternalBalance: false
         });
 
         //TODO try catch with gas limit
-        IBVault(balancerVaultAddress).joinPool(_balancerPoolID, address(this), address(this), request);
+        IBVault(balancerVaultAddress).exitPool(balancerPoolID, address(this), address(this), request);
+    }
+
+    function _balancerGetExitAmount() internal {
+        uint256 total = IERC20(balancerLPToken).balanceOf(address(this));
+        ////TODO !!! Convert BPT LP Tokens to MAI amount -> StableMath._calcTokenOutGivenExactBptIn
+        return total;
     }
 }
 

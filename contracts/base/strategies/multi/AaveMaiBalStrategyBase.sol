@@ -16,7 +16,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./../StrategyBase.sol";
 
 import "../../../third_party/uniswap/IWETH.sol";
-import "./connectors/AaveConnector.sol";
+//import "./connectors/AaveConnector.sol";
+import "./connectors/AaveWethConnector.sol";
 import "./connectors/MaiConnector.sol";
 import "./connectors/BalancerConnector.sol";
 
@@ -39,17 +40,17 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   address constant WMATIC = 0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270;
 
   //TODO move to constructor
-  address public constant aaveWethGatewayAddress = 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97; // for MATIC deposits
-  address public constant aavePoolAddress        = 0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf; // LendingPool
-  address public constant aaveLPTokenAddress     = 0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4; // Aave Matic Market WMATIC (amWMATIC)
+  address public constant aaveWethGateway        = 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97; // for MATIC deposits
+  address public constant aavePool               = 0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf; // LendingPool
+  address public constant aaveLPToken            = 0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4; // Aave Matic Market WMATIC (amWMATIC)
 
-  address public constant maiVaultAddress        = 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a; // camWMATIC MAI Vault (cMVT)
-  address public constant maiLPTokenAddress      = 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b; // Compounding Aave Market Matic (camWMATIC)
+  address public constant maiVault               = 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a; // camWMATIC MAI Vault (cMVT)
+  address public constant maiLPToken             = 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b; // Compounding Aave Market Matic (camWMATIC)
   uint256 public constant maiBorrowPercentage    = 33;
   address public constant maiBorrowToken         = 0xa3fa99a148fa48d14ed51d610c367c61876997f1; // miMATIC/MAI Token
   address public constant maiRewardToken         = 0x580a84c73811e1839f75d86d75d88cca0c241ff4; // QI/MAI Token
 
-  address public constant balancerVaultAddress   = 0xba12222222228d8ba445958a75a0704d566bf2c8;
+  address public constant balancerVault          = 0xba12222222228d8ba445958a75a0704d566bf2c8;
   uint256 public constant balancerPoolID         = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012;
   uint256 public constant balancerTokenIndexAtPool = 2;
   address public constant balancerLPToken        = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42; // Balancer Polygon Stable Pool (BPSP)
@@ -65,11 +66,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     address[] memory __rewardTokens,
     address[] memory __assets
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
-    AaveWethConnector(aaveWethGatewayAddress, aavePoolAddress, aaveLPTokenAddress)
-    MaiConnector(maiVaultAddress, aaveLPTokenAddress, maiLPTokenAddress, maiBorrowToken)
-    BalancerConnector(balancerVaultAddress, maiBorrowToken, balancerPoolID, balancerTokenIndexAtPool)
+    AaveWethConnector(aaveWethGateway, aavePool, aaveLPToken)
+    MaiConnector(maiVault, aaveLPToken, maiLPToken, maiBorrowToken)
+    BalancerConnector(balancerVault, maiBorrowToken, balancerPoolID, balancerTokenIndexAtPool, balancerLPToken)
   {
-//    assert(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
+    assert(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
     _assets = __assets;
 
 //    MAI: create camMATIC vault
@@ -96,7 +97,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     liquidateReward();
   }
 
-  function _balance(address token) returns (uint256) {
+  function _balance(address token) internal returns (uint256) {
     return IERC20(token).balanceOf(address(this));
   }
 
@@ -121,7 +122,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract camWMATIC 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b
 //  Function: enter(uint256 _amount)
 
-    uint256 aaveLPTokensAmount = _balance(aavePoolAddress);
+    uint256 aaveLPTokensAmount = _balance(aavePool);
     _maiEnterCamWMatic(aaveLPTokensAmount);
 
 //  MAI: approve, deposit camMATIC to collateral
@@ -132,7 +133,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //  Function: depositCollateral(uint256 vaultID 0x53e, uint256 amount db037b6c4b33e8b)
 
-    uint256 maiLPTokensAmount = _balance(maiLPTokenAddress);
+    uint256 maiLPTokensAmount = _balance(maiLPToken);
     _maiDepositCollateral(maiLPTokensAmount);
 
 //  MAI: borrow MAI (miMATIC) 33%  {QI airdrop}
@@ -212,7 +213,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 
   /// @dev Stub function for Strategy Base implementation
   function poolTotalAmount() external pure override returns (uint256) {
-    return 0;
+
+    uint256 maiBorrowTokenAmount = _balancerGetExitAmount();
+    return 0; //TODO
   }
 
   /// @dev Stub function for Strategy Base implementation
