@@ -14,11 +14,19 @@ pragma solidity 0.8.4;
 
 interface ITetuSwapPair {
 
+  function setFee(uint _fee) external;
+
   function setVaults(address _vault0, address _vault1) external;
+
+  function setRewardRecipient(address _recipient) external;
 
   function MINIMUM_LIQUIDITY() external pure returns (uint);
 
   function factory() external view returns (address);
+
+  function rewardRecipient() external view returns (address);
+
+  function fee() external view returns (uint);
 
   function token0() external view returns (address);
 
@@ -34,8 +42,6 @@ interface ITetuSwapPair {
 
   function price1CumulativeLast() external view returns (uint);
 
-  function kLast() external view returns (uint);
-
   function mint(address to) external returns (uint liquidity);
 
   function burn(address to) external returns (uint amount0, uint amount1);
@@ -44,6 +50,11 @@ interface ITetuSwapPair {
 
   function sync() external;
 
-  function initialize(address, address) external;
+  function initialize(
+    address _token0,
+    address _token1,
+    address _controller,
+    uint _fee
+  ) external;
 
 }

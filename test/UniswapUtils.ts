@@ -139,6 +139,30 @@ export class UniswapUtils {
     return UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, factory.address);
   }
 
+  public static async removeLiquidity(
+      sender: SignerWithAddress,
+      lpToken: string,
+      tokenA: string,
+      tokenB: string,
+      lpTokenAmount: string,
+      _router: string,
+      wait = false
+  ) {
+
+    await RunHelper.runAndWait(() => TokenUtils.approve(lpToken, sender, _router, lpTokenAmount), true, wait);
+
+    const router = await UniswapUtils.connectRouter(_router, sender);
+    await RunHelper.runAndWait(() => router.removeLiquidity(
+        tokenA,
+        tokenB,
+        lpTokenAmount,
+        1,
+        1,
+        sender.address,
+        UniswapUtils.deadline
+    ), true, wait);
+  }
+
   public static async connectRouter(router: string, signer: SignerWithAddress): Promise<IUniswapV2Router02> {
     return await ethers.getContractAt("IUniswapV2Router02", router, signer) as IUniswapV2Router02;
   }

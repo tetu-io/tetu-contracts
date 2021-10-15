@@ -17,6 +17,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libraries/TransferHelper.sol";
 import "./libraries/TetuSwapLibrary.sol";
+import "./interfaces/ITetuSwapERC20.sol";
+import "./interfaces/ITetuSwapPair.sol";
 import "./interfaces/ITetuSwapRouter.sol";
 import "./interfaces/ITetuSwapFactory.sol";
 import "./interfaces/IWETH.sol";
@@ -52,10 +54,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     uint amountAMin,
     uint amountBMin
   ) internal virtual returns (uint amountA, uint amountB) {
-    // create the pair if it doesn"t exist yet
-    if (ITetuSwapFactory(factory).getPair(tokenA, tokenB) == address(0)) {
-      ITetuSwapFactory(factory).createPair(tokenA, tokenB);
-    }
+    require(ITetuSwapFactory(factory).getPair(tokenA, tokenB) != address(0), "TSR: Pair not exist");
     (uint reserveA, uint reserveB) = TetuSwapLibrary.getReserves(factory, tokenA, tokenB);
     if (reserveA == 0 && reserveB == 0) {
       (amountA, amountB) = (amountADesired, amountBDesired);
@@ -87,7 +86,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     address pair = TetuSwapLibrary.pairFor(factory, tokenA, tokenB);
     TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
     TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-    liquidity = IUniswapV2Pair(pair).mint(to);
+    liquidity = ITetuSwapPair(pair).mint(to);
   }
 
   function addLiquidityETH(
@@ -110,7 +109,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
     IWETH(WETH).deposit{value : amountETH}();
     assert(IWETH(WETH).transfer(pair, amountETH));
-    liquidity = IUniswapV2Pair(pair).mint(to);
+    liquidity = ITetuSwapPair(pair).mint(to);
     // refund dust eth, if any
     if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
   }
@@ -126,9 +125,9 @@ contract TetuSwapRouter is ITetuSwapRouter {
     uint deadline
   ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
     address pair = TetuSwapLibrary.pairFor(factory, tokenA, tokenB);
-    IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity);
+    ITetuSwapERC20(pair).transferFrom(msg.sender, pair, liquidity);
     // send liquidity to pair
-    (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
+    (uint amount0, uint amount1) = ITetuSwapPair(pair).burn(to);
     (address token0,) = TetuSwapLibrary.sortTokens(tokenA, tokenB);
     (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
     require(amountA >= amountAMin, "TSR: INSUFFICIENT_A_AMOUNT");
@@ -169,7 +168,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ) external virtual override returns (uint amountA, uint amountB) {
     address pair = TetuSwapLibrary.pairFor(factory, tokenA, tokenB);
     uint value = approveMax ? type(uint).max : liquidity;
-    IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+    ITetuSwapERC20(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
     (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
   }
 
@@ -184,7 +183,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ) external virtual override returns (uint amountToken, uint amountETH) {
     address pair = TetuSwapLibrary.pairFor(factory, token, WETH);
     uint value = approveMax ? type(uint).max : liquidity;
-    IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+    ITetuSwapERC20(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
     (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
   }
 
@@ -222,7 +221,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ) external virtual override returns (uint amountETH) {
     address pair = TetuSwapLibrary.pairFor(factory, token, WETH);
     uint value = approveMax ? type(uint).max : liquidity;
-    IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+    ITetuSwapERC20(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
     amountETH = removeLiquidityETHSupportingFeeOnTransferTokens(
       token, liquidity, amountTokenMin, amountETHMin, to, deadline
     );
@@ -237,7 +236,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
       uint amountOut = amounts[i + 1];
       (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
       address to = i < path.length - 2 ? TetuSwapLibrary.pairFor(factory, output, path[i + 2]) : _to;
-      IUniswapV2Pair(TetuSwapLibrary.pairFor(factory, input, output)).swap(
+      ITetuSwapPair(TetuSwapLibrary.pairFor(factory, input, output)).swap(
         amount0Out, amount1Out, to, new bytes(0)
       );
     }
@@ -349,14 +348,19 @@ contract TetuSwapRouter is ITetuSwapRouter {
     for (uint i; i < path.length - 1; i++) {
       (address input, address output) = (path[i], path[i + 1]);
       (address token0,) = TetuSwapLibrary.sortTokens(input, output);
-      IUniswapV2Pair pair = IUniswapV2Pair(TetuSwapLibrary.pairFor(factory, input, output));
+      ITetuSwapPair pair = ITetuSwapPair(TetuSwapLibrary.pairFor(factory, input, output));
       uint amountInput;
       uint amountOutput;
       {// scope to avoid stack too deep errors
         (uint reserve0, uint reserve1,) = pair.getReserves();
         (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
         amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
-        amountOutput = TetuSwapLibrary.getAmountOut(amountInput, reserveInput, reserveOutput);
+        amountOutput = TetuSwapLibrary.getAmountOut(
+          amountInput,
+          reserveInput,
+          reserveOutput,
+          pair.fee()
+        );
       }
       (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
       address to = i < path.length - 2 ? TetuSwapLibrary.pairFor(factory, output, path[i + 2]) : _to;
@@ -434,24 +438,24 @@ contract TetuSwapRouter is ITetuSwapRouter {
     return TetuSwapLibrary.quote(amountA, reserveA, reserveB);
   }
 
-  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut)
+  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee)
   public
   pure
   virtual
   override
   returns (uint amountOut)
   {
-    return TetuSwapLibrary.getAmountOut(amountIn, reserveIn, reserveOut);
+    return TetuSwapLibrary.getAmountOut(amountIn, reserveIn, reserveOut, fee);
   }
 
-  function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
+  function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint fee)
   public
   pure
   virtual
   override
   returns (uint amountIn)
   {
-    return TetuSwapLibrary.getAmountIn(amountOut, reserveIn, reserveOut);
+    return TetuSwapLibrary.getAmountIn(amountOut, reserveIn, reserveOut, fee);
   }
 
   function getAmountsOut(uint amountIn, address[] memory path)

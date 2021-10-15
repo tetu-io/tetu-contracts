@@ -1,6 +1,6 @@
 import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {BigNumber, Contract, ContractFactory, utils} from "ethers";
+import {Contract, ContractFactory, utils} from "ethers";
 import {
   Announcer,
   AutoRewarder,
@@ -23,6 +23,7 @@ import {
   SmartVault,
   TetuProxyControlled,
   TetuProxyGov,
+  TetuSwapFactory,
   VaultController,
   ZapContract,
 } from "../../typechain";
@@ -118,6 +119,15 @@ export class DeployerUtils {
     const contract = logic.attach(proxy.address) as Controller;
     await contract.initialize();
     return contract;
+  }
+
+  public static async deploySwapFactory(signer: SignerWithAddress, controller: string)
+      : Promise<[TetuSwapFactory, TetuProxyControlled, TetuSwapFactory]> {
+    const logic = await DeployerUtils.deployContract(signer, "TetuSwapFactory") as TetuSwapFactory;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as TetuSwapFactory;
+    await contract.initialize(controller);
+    return [contract, proxy, logic];
   }
 
   public static async deployAnnouncer(signer: SignerWithAddress, controller: string, timeLock: number)

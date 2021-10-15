@@ -12,16 +12,20 @@
 
 pragma solidity 0.8.4;
 
-interface ITetuSwapFactory {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./interfaces/ITetuSwapFactory.sol";
 
-  function getPair(address tokenA, address tokenB) external view returns (address pair);
+/// @title Eternal storage + getters and setters pattern
+/// @dev If you will change a key value it will require setup it again
+/// @author belbix
+abstract contract FactoryStorage is Initializable, ITetuSwapFactory {
 
-  function allPairs(uint) external view returns (address pair);
 
-  function allPairsLength() external view returns (uint);
+  mapping(address => mapping(address => address)) public override getPair;
+  address[] public override allPairs;
+  mapping(address => bool) public override validPairs;
+  mapping(address => uint256) timeLocks;
 
-  function createPair(address tokenA, address tokenB) external returns (address pair);
-
-  function validPairs(address _pair) external view returns (bool);
-
+  //slither-disable-next-line unused-state
+  uint256[50] private ______gap;
 }

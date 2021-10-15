@@ -13,8 +13,8 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../TetuSwapPair.sol";
+import "../interfaces/ITetuSwapPair.sol";
 
 /// @title UniswapV2Library https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
 library TetuSwapLibrary {
@@ -37,7 +37,7 @@ library TetuSwapLibrary {
         hex"ff",
         factory,
         keccak256(abi.encodePacked(token0, token1)),
-      //todo past pair hash
+      //todo put pair hash
         keccak256(abi.encodePacked(type(TetuSwapPair).creationCode))
       //        hex"dc3bab25b474432017e449cb94418ee79990d9242485629e5df7c8887d937e8c" // init code hash
       )))));
@@ -46,7 +46,7 @@ library TetuSwapLibrary {
   // fetches and sorts the reserves for a pair
   function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
     (address token0,) = sortTokens(tokenA, tokenB);
-    (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReserves();
+    (uint reserve0, uint reserve1,) = ITetuSwapPair(pairFor(factory, tokenA, tokenB)).getReserves();
     (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
   }
 
@@ -58,21 +58,21 @@ library TetuSwapLibrary {
   }
 
   // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee) internal pure returns (uint amountOut) {
     require(amountIn > 0, "TSL: INSUFFICIENT_INPUT_AMOUNT");
     require(reserveIn > 0 && reserveOut > 0, "TSL: INSUFFICIENT_LIQUIDITY");
-    uint amountInWithFee = amountIn.mul(_PRECISION - _FEE);
+    uint amountInWithFee = amountIn.mul(_PRECISION - fee);
     uint numerator = amountInWithFee.mul(reserveOut);
     uint denominator = reserveIn.mul(_PRECISION).add(amountInWithFee);
     amountOut = numerator / denominator;
   }
 
   // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-  function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+  function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint fee) internal pure returns (uint amountIn) {
     require(amountOut > 0, "TSL: INSUFFICIENT_OUTPUT_AMOUNT");
     require(reserveIn > 0 && reserveOut > 0, "TSL: INSUFFICIENT_LIQUIDITY");
     uint numerator = reserveIn.mul(amountOut).mul(_PRECISION);
-    uint denominator = reserveOut.sub(amountOut).mul(_PRECISION - _FEE);
+    uint denominator = reserveOut.sub(amountOut).mul(_PRECISION - fee);
     amountIn = (numerator / denominator).add(1);
   }
 
@@ -83,7 +83,12 @@ library TetuSwapLibrary {
     amounts[0] = amountIn;
     for (uint i; i < path.length - 1; i++) {
       (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-      amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+      amounts[i + 1] = getAmountOut(
+        amounts[i],
+        reserveIn,
+        reserveOut,
+        ITetuSwapPair(pairFor(factory, path[i], path[i + 1])).fee()
+      );
     }
   }
 
@@ -94,7 +99,12 @@ library TetuSwapLibrary {
     amounts[amounts.length - 1] = amountOut;
     for (uint i = path.length - 1; i > 0; i--) {
       (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-      amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+      amounts[i - 1] = getAmountIn(
+        amounts[i],
+        reserveIn,
+        reserveOut,
+        ITetuSwapPair(pairFor(factory, path[i - 1], path[i])).fee()
+      );
     }
   }
 }
