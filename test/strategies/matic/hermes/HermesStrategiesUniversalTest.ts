@@ -3,13 +3,27 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {Settings} from "../../../../settings";
+import {config as dotEnvConfig} from "dotenv";
 
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  },
+  onlyOneHermesStrategyTest: {
+    type: "number",
+    default: -1,
+  }
+}).argv;
 
 chai.use(chaiAsPromised);
 
-describe('Universal Hermes tests', async () => {
-  if (Settings.disableStrategyTests) {
+describe.skip('Universal Hermes tests', async () => {
+  if (argv.disableStrategyTests) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/hermes_pools.csv', 'utf8').split(/\r?\n/);
@@ -19,32 +33,33 @@ describe('Universal Hermes tests', async () => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const lp_name = strat[1];
-    const lp_address = strat[2];
+    const lpName = strat[1];
+    const lpAddress = strat[2];
     const token0 = strat[3];
-    const token0_name = strat[4];
+    const token0Name = strat[4];
     const token1 = strat[5];
-    const token1_name = strat[6];
+    const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx' || !token1_name) {
+    if (+alloc <= 0 || idx === 'idx' || !token1Name) {
       console.log('skip', idx);
       return;
     }
-    if (Settings.onlyOneHermesStrategyTest && +strat[0] !== Settings.onlyOneHermesStrategyTest) {
+    if (argv.onlyOneHermesStrategyTest !== -1 && +strat[0] !== argv.onlyOneHermesStrategyTest) {
       return;
     }
 
-    console.log('strat', idx, lp_name);
+    console.log('strat', idx, lpName);
 
+    /* tslint:disable:no-floating-promises */
     startDefaultLpStrategyTest(
         'StrategyHermesSwapLp',
         MaticAddresses.QUICK_FACTORY,
-        lp_address.toLowerCase(),
+        lpAddress.toLowerCase(),
         token0,
-        token0_name,
+        token0Name,
         token1,
-        token1_name,
+        token1Name,
         idx,
         [MaticAddresses.IRIS_TOKEN]
     );

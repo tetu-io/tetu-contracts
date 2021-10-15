@@ -16,7 +16,7 @@ async function main() {
   console.log('vaults ', vaults.length);
 
   const vaultsForStop = [];
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
     const name = await vaultContract.name();
     console.log('vault', name, vault);
@@ -37,7 +37,7 @@ async function main() {
 
   let i = 0;
   let vaultBatch: string[] = [];
-  for (let vault of vaultsForStop) {
+  for (const vault of vaultsForStop) {
     i++;
     vaultBatch.push(vault)
     if (vaultBatch.length === batch || i === vaultsForStop.length) {
@@ -52,7 +52,7 @@ async function main() {
 
   i = 0;
   vaultBatch = [];
-  for (let vault of vaultsForStop) {
+  for (const vault of vaultsForStop) {
     i++;
     vaultBatch.push(vault)
     if (vaultBatch.length === batch || i === vaultsForStop.length) {

@@ -9,7 +9,6 @@ import {PriceCalculator} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {TokenUtils} from "../TokenUtils";
-import {utils} from "ethers";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -184,7 +183,7 @@ describe("Price calculator tests", function () {
         MaticAddresses.BTCCRV_TOKEN, MaticAddresses.USDC_TOKEN);
     const expectedTokenPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.WBTC_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(expectedTokenPrice == tokenPrice, "BTCCRV_TOKEN token price should be equal WBTC_TOKEN token price")
+    expect(expectedTokenPrice === tokenPrice, "BTCCRV_TOKEN token price should be equal WBTC_TOKEN token price")
   });
 
   it("calculate AM3CRV_TOKEN price", async () => {
@@ -192,7 +191,7 @@ describe("Price calculator tests", function () {
         MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
     const expectedTokenPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.USDC_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(expectedTokenPrice == tokenPrice, "AM3CRV_TOKEN token price should be equal USDC_TOKEN token price")
+    expect(expectedTokenPrice === tokenPrice, "AM3CRV_TOKEN token price should be equal USDC_TOKEN token price")
   });
 
   it("calculate IRON_USDC_USDT_DAI, price and check", async () => {

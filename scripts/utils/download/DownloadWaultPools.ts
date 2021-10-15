@@ -11,7 +11,6 @@ import {
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {BigNumber, utils} from "ethers";
-import axios from "axios";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 
@@ -28,7 +27,10 @@ async function downloadWault() {
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
-  for (let vInfo of vaultInfos) {
+  for (const vInfo of vaultInfos) {
+    if (vInfo.platform !== '4') {
+      continue;
+    }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
@@ -77,9 +79,9 @@ async function downloadWault() {
     let token1Name: string = '';
 
     try {
-      const lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
-      token0 = await lpContract.token0();
-      token1 = await lpContract.token1();
+      const _lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
+      token0 = await _lpContract.token0();
+      token1 = await _lpContract.token1();
       token0Name = await TokenUtils.tokenSymbol(token0);
       token1Name = await TokenUtils.tokenSymbol(token1);
     } catch (e) {
@@ -113,7 +115,7 @@ async function downloadWault() {
   });
 
   // console.log('data', data);
-  await writeFileSync('./tmp/download/wault_pools.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/wault_pools.csv', infos, 'utf8');
   console.log('done');
 }
 

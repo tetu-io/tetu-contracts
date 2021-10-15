@@ -16,14 +16,14 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../base/governance/Controllable.sol";
-import "../infrastructure/IPriceCalculator.sol";
+import "../infrastructure/price/IPriceCalculator.sol";
 import "../loan/ITetuPawnShop.sol";
 
 /// @title View data reader for using on website UI and other integrations
 /// @author belbix
 contract PawnShopReader is Initializable, Controllable {
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint256 constant public PRECISION = 1e18;
   string private constant _CALCULATOR = "calculator";
   string private constant _SHOP = "shop";

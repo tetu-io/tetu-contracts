@@ -2,7 +2,6 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {MaticAddresses} from "../../../test/MaticAddresses";
 import {ICafeMasterChef} from "../../../typechain";
-import {BigNumber, utils} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
 
 
@@ -19,7 +18,7 @@ async function main() {
       chef.poolLength,
       chef.brewPerBlock,
       chef.totalAllocPoint,
-      (id) => {
+      async (id) => {
         return chef.poolInfo(id)
         .then(info => {
           return {
@@ -29,7 +28,8 @@ async function main() {
             "depositFeeBP": info.depositFeeBP
           };
         });
-      }
+      },
+      true
   );
 }
 

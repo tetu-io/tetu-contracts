@@ -1,10 +1,13 @@
+/* tslint:disable:variable-name */
+// noinspection JSUnusedGlobalSymbols
+
 export class MaticAddresses {
 
   // useful places where you can find addresses
   // https://github.com/sushiswap/default-token-list/blob/master/src/tokens/matic.json#L153
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  //tokens
+  // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
   public static USDC_TOKEN = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174".toLowerCase();
@@ -42,10 +45,13 @@ export class MaticAddresses {
   public static IRIS_TOKEN = "0xdaB35042e63E93Cc8556c9bAE482E5415B5Ac4B1".toLowerCase(); // Hermes
   public static DFYN_TOKEN = "0xc168e40227e4ebd8c1cae80f7a55a4f0e6d66c97".toLowerCase();
   public static pBREW_TOKEN = "0xb5106A3277718eCaD2F20aB6b86Ce0Fee7A21F09".toLowerCase();
+  public static dxTETU = "0xacee7bd17e7b04f7e48b29c0c91af67758394f0f".toLowerCase();
+  public static xTETU = "0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454".toLowerCase();
+  public static dQUICK_TOKEN = "0xf28164A485B0B2C90639E47b0f377b4a438a16B1".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
-  //iron
+  // iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
   public static IRON_CONTROLLER = "0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c".toLowerCase();
   public static IRON_IS3USD = "0xb4d09ff3dA7f9e9A2BA029cb0A81A989fd7B8f17".toLowerCase();
@@ -61,17 +67,19 @@ export class MaticAddresses {
   public static DFYN_ROUTER = "0xA102072A4C07F06EC3B4900FDC4C7B80b6c57429".toLowerCase();
   public static DFYN_USDC_ICE = "0x34832D9AC4127a232C1919d840f7aaE0fcb7315B".toLowerCase();
 
-  //quick
+  // quick
   public static QUICK_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff".toLowerCase();
   public static QUICK_FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32".toLowerCase();
   public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
+  public static QUICK_STAKING_FACTORY_V2 = "0x8aAA5e259F74c8114e0a471d9f2ADFc66Bfe09ed".toLowerCase();
   public static QUICK_WMATIC_USDC = "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827".toLowerCase();
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
   public static QUICK_QI_miMATIC = "0x7AfcF11F3e2f01e71B7Cc6b8B5e707E42e6Ea397".toLowerCase();
   public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
+  public static QUICK_TETU_USDC = "0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B".toLowerCase();
 
-  //sushi
+  // sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
   public static SUSHI_FACTORY = "0xc35dadb65012ec5796536bd9864ed8773abc74c4".toLowerCase();
   public static SUSHI_MINISHEFV2 = "0x0769fd68dFb93167989C6f7254cd0D766Fb2841F".toLowerCase();

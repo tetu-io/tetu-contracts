@@ -53,7 +53,7 @@ describe("contract reader tests", function () {
     for (let i = 0; i < 3; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(
           "WAULT_WEX_" + i,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               'StrategyWaultSingle',
               core.controller.address,
@@ -164,25 +164,28 @@ describe("contract reader tests", function () {
         [MaticAddresses.QUICK_ROUTER]
     );
 
+    await core.feeRewardForwarder.setLiquidityNumerator(50);
+    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address);
 
     await deposit("25863", core.rewardToken.address, core.psVault, signer);
 
     await notifyPsPool("1234", core.rewardToken.address, core.feeRewardForwarder, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(1).and.is.lessThan(3);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(200).and.is.lessThan(1000);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(100).and.is.lessThan(1000);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60);
 
     await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
-    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(10000).and.is.lessThan(12000);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(400).and.is.lessThan(1000);
+    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(5000).and.is.lessThan(6000);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(200).and.is.lessThan(500);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 30);
 
     await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
-    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(300).and.is.lessThan(500);
-    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(400).and.is.lessThan(1000);
+    expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(150).and.is.lessThan(300);
+    expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(200).and.is.lessThan(500);
   });
 
 
@@ -205,13 +208,13 @@ describe("contract reader tests", function () {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.mintHelper.address))
-        .rejected;
+        .rejectedWith('Transaction reverted without a reason string');
   });
   it("should not update proxy with wrong contract", async () => {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.bookkeeper.address))
-        .rejected;
+        .rejectedWith('Transaction reverted without a reason string');
   });
 
   it("vault + user infos", async () => {
@@ -306,17 +309,19 @@ describe("contract reader tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(1);
 
+    const approx = 0.2;
+
     const vaultAprLocal = await VaultUtils.vaultApr(vault, rt, contractReader);
     const vaultAprReader = +utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]);
     console.log('vaultApr', vaultAprLocal, vaultAprReader);
-    expect(vaultAprLocal).is.approximately(vaultAprReader, vaultAprReader * 0.01);
+    expect(vaultAprLocal).is.approximately(vaultAprReader, vaultAprReader * approx);
 
     await TimeUtils.advanceBlocksOnTs(daySeconds);
 
     expect(await VaultUtils.vaultApr(vault, rt, contractReader))
-    .is.approximately(vaultAprLocal, vaultAprLocal * 0.01);
+    .is.approximately(vaultAprLocal, vaultAprLocal * approx);
     expect(+utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]))
-    .is.approximately(vaultAprReader, vaultAprReader * 0.01);
+    .is.approximately(vaultAprReader, vaultAprReader * approx);
 
     await vault.connect(user1).getAllRewards();
 
@@ -329,22 +334,22 @@ describe("contract reader tests", function () {
     const realApr = expectedRewardsForYear / +utils.formatUnits(user1Deposit, underlyingDec) * 100;
     console.log('realApr', realApr);
 
-    expect(realApr).approximately(vaultAprLocal, vaultAprLocal * 0.01);
+    expect(realApr).approximately(vaultAprLocal, vaultAprLocal * approx);
 
 
     await TimeUtils.advanceBlocksOnTs(daySeconds * 10);
 
     expect(await VaultUtils.vaultApr(vault, rt, contractReader))
-    .is.approximately(vaultAprLocal, vaultAprLocal * 0.05);
+    .is.approximately(vaultAprLocal, vaultAprLocal * approx);
     expect(+utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]))
-    .is.approximately(vaultAprReader, vaultAprReader * 0.05);
+    .is.approximately(vaultAprReader, vaultAprReader * approx);
 
     await TimeUtils.advanceBlocksOnTs(daySeconds * 10);
 
     expect(await VaultUtils.vaultApr(vault, rt, contractReader))
-    .is.approximately(vaultAprLocal, vaultAprLocal * 0.05);
+    .is.approximately(vaultAprLocal, vaultAprLocal * approx);
     expect(+utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]))
-    .is.approximately(vaultAprReader, vaultAprReader * 0.05);
+    .is.approximately(vaultAprReader, vaultAprReader * approx);
   });
 
 
@@ -366,7 +371,7 @@ async function notifyPsPool(amount: string, token: string,
 }
 
 async function deposit(amount: string, token: string, vault: SmartVault, signer: SignerWithAddress) {
-  const deposit = utils.parseUnits(amount, 18);
-  await TokenUtils.approve(token, signer, vault.address, deposit.toString());
-  await vault.depositAndInvest(deposit);
+  const _deposit = utils.parseUnits(amount, 18);
+  await TokenUtils.approve(token, signer, vault.address, _deposit.toString());
+  await vault.depositAndInvest(_deposit);
 }

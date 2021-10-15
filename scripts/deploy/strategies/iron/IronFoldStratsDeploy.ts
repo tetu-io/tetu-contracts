@@ -29,17 +29,17 @@ async function main() {
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
 
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
   // *********** DEPLOY VAULT
-  for (let info of infos) {
+  for (const info of infos) {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const rToken_name = strat[1];
-    const rToken_address = strat[2];
+    const rTokenName = strat[1];
+    const rTokenAddress = strat[2];
     const token = strat[3];
     const tokenName = strat[4];
     const collateralFactor = strat[5];
@@ -62,17 +62,17 @@ async function main() {
       continue;
     }
 
-    console.log('strat', idx, rToken_name, vaultNameWithoutPrefix);
+    console.log('strat', idx, rTokenName, vaultNameWithoutPrefix);
 
     const data = await DeployerUtils.deployVaultAndStrategy(
         vaultNameWithoutPrefix,
-        vaultAddress => DeployerUtils.deployContract(
+        async vaultAddress => DeployerUtils.deployContract(
             signer,
             'StrategyIronFold',
             core.controller,
             vaultAddress,
             token,
-            rToken_address,
+            rTokenAddress,
             borrowTarget,
             collateralFactor
         ) as Promise<IStrategy>,
@@ -89,7 +89,7 @@ async function main() {
         core.controller,
         data[1].address,
         token,
-        rToken_address,
+        rTokenAddress,
         borrowTarget,
         collateralFactor
       ]);
@@ -104,7 +104,7 @@ async function main() {
       if (err) throw err;
     });
 
-    await writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, JSON.stringify(data), 'utf8');
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, JSON.stringify(data), 'utf8');
   }
 
 }

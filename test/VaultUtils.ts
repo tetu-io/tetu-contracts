@@ -2,8 +2,11 @@ import {ContractReader, Controller, SmartVault} from "../typechain";
 import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TokenUtils} from "./TokenUtils";
-import {BigNumber, utils} from "ethers";
+import {BigNumber, ContractTransaction, utils} from "ethers";
 import axios from "axios";
+import {MintHelperUtils} from "./MintHelperUtils";
+import {CoreContractsWrapper} from "./CoreContractsWrapper";
+import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 
 export class VaultUtils {
 
@@ -57,7 +60,7 @@ export class VaultUtils {
       vault: SmartVault,
       amount: BigNumber,
       invest = true
-  ) {
+  ): Promise<ContractTransaction> {
     const vaultForUser = vault.connect(user);
     const underlying = await vaultForUser.underlying();
     const dec = await TokenUtils.decimals(underlying);
@@ -68,11 +71,19 @@ export class VaultUtils {
 
     await TokenUtils.approve(underlying, user, vault.address, amount.toString());
     console.log('deposit', BigNumber.from(amount).toString());
-    if(invest) {
-      return await vaultForUser.depositAndInvest(BigNumber.from(amount));
+    if (invest) {
+      return vaultForUser.depositAndInvest(BigNumber.from(amount));
     } else {
-      return await vaultForUser.deposit(BigNumber.from(amount));
+      return vaultForUser.deposit(BigNumber.from(amount));
     }
+  }
+
+  public static async exit(
+      user: SignerWithAddress,
+      vault: SmartVault
+  ): Promise<ContractTransaction> {
+    const vaultForUser = vault.connect(user);
+    return vaultForUser.exit();
   }
 
   public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader): Promise<number> {
@@ -129,6 +140,71 @@ export class VaultUtils {
 
   public static async getVaultInfoFromServer() {
     return (await axios.get("https://tetu-server-staging.herokuapp.com//api/v1/reader/vaultInfos?network=MATIC")).data;
+  }
+
+  public static async addRewardsXTetu(
+      signer: SignerWithAddress,
+      vault: SmartVault,
+      core: CoreContractsWrapper,
+      amount: number,
+      period = 60 * 60 * 24 * 7 + 1
+  ) {
+    console.log("Add xTETU as reward to vault: ", amount.toString())
+    const rtAdr = core.psVault.address;
+    await MintHelperUtils.mint(core.controller, core.announcer, amount + '', signer.address, period);
+    await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
+    await core.psVault.deposit(utils.parseUnits(amount + ''));
+    await TokenUtils.approve(rtAdr, signer, vault.address, utils.parseUnits(amount + '').toString());
+    await vault.notifyTargetRewardAmount(rtAdr, utils.parseUnits(amount + ''));
+  }
+
+  public static async addRewards(
+      signer: SignerWithAddress,
+      vault: SmartVault,
+      rtAdr: string,
+      amount: BigNumber
+  ) {
+    console.log("Add rewards to vault: ", amount.toString())
+    await TokenUtils.approve(rtAdr, signer, vault.address, amount.toString());
+    await vault.notifyTargetRewardAmount(rtAdr, amount);
+  }
+
+  public static async doHardWorkAndCheck(vault: SmartVault, positive = true) {
+    const controller = await vault.controller();
+    const controllerCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'Controller', controller) as Controller;
+    const psVault = await controllerCtr.psVault();
+    const psVaultCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'SmartVault', psVault) as SmartVault;
+    const und = await vault.underlying();
+    const undDec = await TokenUtils.decimals(und);
+    const rt = (await vault.rewardTokens())[0];
+    const psRatio = (await controllerCtr.psNumerator()).toNumber() / (await controllerCtr.psDenominator()).toNumber()
+
+    const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
+    const undBal = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
+    const psPpfs = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
+    const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
+
+    await vault.doHardWork();
+
+    const ppfsAfter = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
+    const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
+    const psPpfsAfter = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
+    const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
+
+    console.log('-------- HARDWORK --------');
+    console.log('- PPFS change:', ppfsAfter - ppfs);
+    console.log('- BALANCE change:', undBalAfter - undBal);
+    console.log('- RT change:', rtBalAfter - rtBal);
+    console.log('- PS change:', psPpfsAfter - psPpfs);
+    console.log('- PS ratio:', psRatio);
+    console.log('--------------------------');
+
+    if (positive) {
+      expect(psPpfsAfter).is.greaterThan(psPpfs);
+      if (psRatio !== 1) {
+        expect(rtBalAfter).is.greaterThan(rtBal);
+      }
+    }
   }
 
 }

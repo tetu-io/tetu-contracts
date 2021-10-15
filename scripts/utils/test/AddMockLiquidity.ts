@@ -16,7 +16,7 @@ async function main() {
   let prevMock;
   let prevMockName;
 
-  for (let mockName of Array.from(mocks.keys())) {
+  for (const mockName of Array.from(mocks.keys())) {
     const mock = mocks.get(mockName) as string;
     if (!mock) {
       console.log('empty mock', mockName);
@@ -31,7 +31,7 @@ async function main() {
     // await mockContract.mint(signer.address, utils.parseUnits("10000", decimals));
 
 
-    let mockBal = await TokenUtils.balanceOf(mock, signer.address);
+    const mockBal = await TokenUtils.balanceOf(mock, signer.address);
     console.log("mockBal", mockName, utils.formatUnits(mockBal, decimals));
 
     const lp = await UniswapUtils.addLiquidity(
@@ -47,7 +47,7 @@ async function main() {
     console.log('liquidity added to Reward TOKEN and', mockName, lp);
 
     if (mockName !== 'usdc') {
-      const lp = await UniswapUtils.addLiquidity(
+      const nonUsdclp = await UniswapUtils.addLiquidity(
           signer,
           mocks.get('usdc') as string,
           mock,
@@ -57,12 +57,12 @@ async function main() {
           RopstenAddresses.SUSHI_ROUTER,
           true
       );
-      console.log('liquidity added to usdc ', mockName, lp);
+      console.log('liquidity added to usdc ', mockName, nonUsdclp);
     }
 
     if (prevMock) {
       const prevMockDecimals = await TokenUtils.decimals(prevMock);
-      const lp = await UniswapUtils.addLiquidity(
+      const prevMocklp = await UniswapUtils.addLiquidity(
           signer,
           prevMock,
           mock,
@@ -72,7 +72,7 @@ async function main() {
           RopstenAddresses.SUSHI_ROUTER,
           true
       );
-      console.log('liquidity added to', mockName, prevMockName, lp);
+      console.log('liquidity added to', mockName, prevMockName, prevMocklp);
     }
 
     prevMock = mock;

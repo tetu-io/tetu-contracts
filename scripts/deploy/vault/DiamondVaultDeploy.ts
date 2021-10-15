@@ -3,7 +3,7 @@ import {DeployerUtils} from "../DeployerUtils";
 import {NoopStrategy, SmartVault} from "../../../typechain";
 import {RunHelper} from "../../utils/RunHelper";
 
-const REWARDS_DURATION = 60 * 60 * 24 * 28; //28 days
+const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 
 async function main() {
   const signer = (await ethers.getSigners())[0];

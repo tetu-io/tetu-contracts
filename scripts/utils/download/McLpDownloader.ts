@@ -28,7 +28,8 @@ export class McLpDownloader {
         "allocPoint": BigNumber,
         "lastUpdateTime": number,
         "depositFeeBP"?: number
-      }>
+      }>,
+      onlyDeployed = false
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -40,7 +41,7 @@ export class McLpDownloader {
     const underlyingStatuses = new Map<string, boolean>();
     const currentRewards = new Map<string, number>();
     const underlyingToVault = new Map<string, string>();
-    for (let vInfo of vaultInfos) {
+    for (const vInfo of vaultInfos) {
       if (vInfo.platform !== platformId) {
         continue;
       }
@@ -79,6 +80,10 @@ export class McLpDownloader {
           console.log('deactivated');
           continue;
         }
+        if (onlyDeployed && !status) {
+          console.log('not deployed');
+          continue;
+        }
         const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
 
         const allocPoint = poolInfo.allocPoint;
@@ -105,9 +110,9 @@ export class McLpDownloader {
         let token1Name: string = '';
 
         try {
-          const lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
-          token0 = await lpContract.token0();
-          token1 = await lpContract.token1();
+          const _lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
+          token0 = await _lpContract.token0();
+          token1 = await _lpContract.token1();
           token0Name = await TokenUtils.tokenSymbol(token0);
           token1Name = await TokenUtils.tokenSymbol(token1);
         } catch (e) {
@@ -144,7 +149,7 @@ export class McLpDownloader {
       if (err) throw err;
     });
 
-    await writeFileSync(`./tmp/download/${prefix.toLowerCase()}_pools.csv`, infos, 'utf8');
+    writeFileSync(`./tmp/download/${prefix.toLowerCase()}_pools.csv`, infos, 'utf8');
     console.log('downloaded', prefix, counter);
   }
 

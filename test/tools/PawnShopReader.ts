@@ -42,15 +42,15 @@ describe("pawnshop reader tests", function () {
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, core.rewardToken.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, MaticAddresses.ZERO_ADDRESS) as TetuPawnShop;
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     await reader.initialize(core.controller.address, calculator.address, shop.address);
 
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
-    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
-    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
-    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
+    await UniswapUtils.buyToken(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
+    await UniswapUtils.buyToken(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
 
     for (let i = 0; i < EXECUTED_POSITION_COUNT; i++) {
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
@@ -105,7 +105,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.positionCounter();
 
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -124,7 +124,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.openPositionsSize();
 
     let i = EXECUTED_POSITION_COUNT;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -143,7 +143,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.positionsByCollateralSize(MaticAddresses.WMATIC_TOKEN);
 
     let i = EXECUTED_POSITION_COUNT;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -162,7 +162,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.positionsByAcquiredSize(MaticAddresses.USDC_TOKEN);
 
     let i = EXECUTED_POSITION_COUNT;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -181,7 +181,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.borrowerPositionsSize(user1.address);
 
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -200,7 +200,7 @@ describe("pawnshop reader tests", function () {
     const allPosSize = await shop.lenderPositionsSize(user2.address);
 
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }
@@ -220,7 +220,7 @@ describe("pawnshop reader tests", function () {
     console.log('positions', positions)
     console.log('allPosSize', allPosSize)
     let i = 0;
-    for (let pos of positions) {
+    for (const pos of positions) {
       i++;
       expect(pos.id).is.eq(i);
     }

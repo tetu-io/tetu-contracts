@@ -29,7 +29,7 @@ async function main() {
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
 
-  for (let vAdr of deployedVaultAddresses) {
+  for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
@@ -37,9 +37,9 @@ async function main() {
 
   const lpCont = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', tetuLp) as IUniswapV2Pair
   const token0 = await lpCont.token0();
-  const token0_name = await TokenUtils.tokenSymbol(token0);
+  const token0Name = await TokenUtils.tokenSymbol(token0);
   const token1 = await lpCont.token1();
-  const token1_name = await TokenUtils.tokenSymbol(token1);
+  const token1Name = await TokenUtils.tokenSymbol(token1);
 
   // *********** DEPLOY VAULT
   const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
@@ -48,7 +48,7 @@ async function main() {
   const tetuLpEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
       core.controller, tetuLp, tetuLpVault.address, [], [MaticAddresses.USDC_TOKEN, core.rewardToken], 2) as NoopStrategy;
 
-  const vaultNameWithoutPrefix = `QUICK_${token0_name}_${token1_name}`;
+  const vaultNameWithoutPrefix = `QUICK_${token0Name}_${token1Name}`;
 
   console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
 
@@ -57,7 +57,7 @@ async function main() {
     return;
   }
 
-  await RunHelper.runAndWait(() =>tetuLpVault.initializeSmartVault(
+  await RunHelper.runAndWait(() => tetuLpVault.initializeSmartVault(
       `TETU_${vaultNameWithoutPrefix}`,
       `x${vaultNameWithoutPrefix}`,
       controller.address,

@@ -72,6 +72,4 @@ interface IStrategy {
   function readyToClaim() external view returns (uint256[] memory);
 
   function poolTotalAmount() external view returns (uint256);
-
-  function poolWeeklyRewardsAmount() external view returns (uint256[] memory);
 }

@@ -86,7 +86,7 @@ describe("Diamond vault test", () => {
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
     const time = 60 * 60 * 6;
-    let rewardsToDistribute = utils.parseUnits('10000', rtDecimals);
+    const rewardsToDistribute = utils.parseUnits('10000', rtDecimals);
     let rewardsTotalAmount = rewardsToDistribute;
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
@@ -105,7 +105,7 @@ describe("Diamond vault test", () => {
     await TokenUtils.transfer(underlying, signer, user1.address, utils.parseUnits(user1Balance.toString(), underlyingDec).toString());
     await TokenUtils.transfer(underlying, signer, user2.address, utils.parseUnits(user2Balance.toString(), underlyingDec).toString());
 
-    //*************** CYCLES *************
+    // *************** CYCLES *************
     let claimedTotal = 0;
     const cyclesBase = +(duration / (time + 3)).toFixed(0);
     const cycles = cyclesBase * 2;
@@ -119,7 +119,7 @@ describe("Diamond vault test", () => {
       const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec);
       console.log('cycle', i, cycles, ppfs);
 
-      if (i == 50) {
+      if (i === 50) {
         console.log("!!!!!!!!!!add rewards", finish)
         await TokenUtils.approve(rt, signer, vault.address, rewardsToDistribute.toString());
         await vault.notifyTargetRewardAmount(rt, rewardsToDistribute);
@@ -141,7 +141,7 @@ describe("Diamond vault test", () => {
           expect(+user1Balance).is.approximately(undBalBeforeExit, undBalBeforeExit * 0.001);
 
           await vault.connect(user1).exit();
-          expect((await vault.underlyingBalanceWithInvestmentForHolder(user1.address)).isZero()).is.true;
+          expect((await vault.underlyingBalanceWithInvestmentForHolder(user1.address)).isZero()).is.eq(true);
           const lastWithdrawTs = (await vault.userLastWithdrawTs(user1.address)).toNumber();
 
           const curUndBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, user1.address), underlyingDec);

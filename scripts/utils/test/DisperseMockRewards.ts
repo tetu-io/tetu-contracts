@@ -19,9 +19,9 @@ async function main() {
 
   const vaultsPerRt = new Map<string, string[]>();
   const allAmounts: Map<string, BigNumber[]> = new Map<string, BigNumber[]>();
-  let allSum: Map<string, BigNumber> = new Map<string, BigNumber>();
+  const allSum: Map<string, BigNumber> = new Map<string, BigNumber>();
   let i = 0;
-  for (let vault of vaults) {
+  for (const vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
 
     if (!(await vaultContract.active())) {
@@ -31,7 +31,7 @@ async function main() {
     const rts: string[] = await vaultContract.rewardTokens();
 
 
-    for (let rt of rts) {
+    for (const rt of rts) {
 
       if (rt === core.psVault) {
         continue;
@@ -74,7 +74,7 @@ async function main() {
     i++;
 
     if (i >= 50 || i === vaults.length - 1) {
-      for (let rt of Array.from(allSum.keys())) {
+      for (const rt of Array.from(allSum.keys())) {
         const rtDecimals = await TokenUtils.decimals(rt);
         const amounts = allAmounts.get(rt) as BigNumber[];
         const sum = allSum.get(rt) as BigNumber;

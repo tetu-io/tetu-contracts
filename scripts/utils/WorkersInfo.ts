@@ -16,7 +16,7 @@ async function main() {
   console.log('workers', workers.length);
 
   let data = 'address, name, role, base rate, rate, boost, hours, earned\n';
-  for (let workerAdr of workers) {
+  for (const workerAdr of workers) {
     let workerInfo = '';
     workerInfo += workerAdr + ',';
     workerInfo += await clerk.workerNames(workerAdr) + ',';
@@ -34,7 +34,7 @@ async function main() {
     if (err) throw err;
   });
 
-  await writeFileSync(`./tmp/workers.csv`, data, 'utf8');
+  writeFileSync(`./tmp/workers.csv`, data, 'utf8');
 }
 
 main()

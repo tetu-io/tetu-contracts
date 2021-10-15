@@ -105,11 +105,4 @@ contract NoopStrategy is StrategyBase {
     return 0;
   }
 
-  /// @dev Stub function for Strategy Base implementation
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = 0;
-    return rewards;
-  }
-
 }

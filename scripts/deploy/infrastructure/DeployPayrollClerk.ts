@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {ContractReader, PayrollClerk} from "../../../typechain";
+import {PayrollClerk} from "../../../typechain";
 import {RunHelper} from "../../utils/RunHelper";
 
 

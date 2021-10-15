@@ -1,11 +1,15 @@
-# TETU
+# <img src="tetu_contracts.svg" alt="Tetu.io">
 
-TETU is a collaboration between developers and investors around the whole world to create the best
+[![codecov](https://codecov.io/gh/tetu-io/tetu-contracts/branch/master/graph/badge.svg?token=7Q5OZP6NNP)](https://codecov.io/gh/tetu-io/tetu-contracts)
+
+Tetu.io is a collaboration between developers and investors around the whole world to create the best
 DeFi product out there.
 
 ## Audits
 
 [DeFiYield.App 28 July 2021](audits/DeFiYieldApp_28Jul2021.pdf)
+
+[PeckShield-Audit_19Sept2021.pdf](audits/PeckShield-Audit_19Sept2021.pdf)
 
 ## Addresses
 
@@ -15,9 +19,11 @@ All addresses you can find in `addresses.ts`
 
 Run `npm install`
 
-Remove .exmaple from `secrets.example.ts` and `settings.example.ts` and fill properties.
+Create .env file from .env.example
 
 ## Links
+
+Web: https://tetu.io/
 
 Docs: https://docs.tetu.io/
 

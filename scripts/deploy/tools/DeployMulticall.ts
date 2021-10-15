@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {ContractUtils, Multicall} from "../../../typechain";
+import {Multicall} from "../../../typechain";
 
 
 async function main() {

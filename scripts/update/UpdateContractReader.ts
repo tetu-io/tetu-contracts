@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, TetuProxyGov} from "../../typechain";
+import {ContractReader} from "../../typechain";
 
 
 async function main() {

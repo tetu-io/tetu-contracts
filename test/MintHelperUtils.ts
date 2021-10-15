@@ -4,20 +4,20 @@ import {TimeUtils} from "./TimeUtils";
 
 export class MintHelperUtils {
 
-  public static async mint(controller: Controller, announcer: Announcer, amount: string, destination: string) {
+  public static async mint(controller: Controller, announcer: Announcer, amount: string, destination: string, period = 60 * 60 * 48) {
 
     await announcer.announceMint(utils.parseUnits(amount), destination, destination, false);
 
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await TimeUtils.advanceBlocksOnTs(period);
 
     await controller.mintAndDistribute(utils.parseUnits(amount), destination, destination, false);
   }
 
-  public static async mintAll(controller: Controller, announcer: Announcer, destination: string) {
+  public static async mintAll(controller: Controller, announcer: Announcer, destination: string, period = 60 * 60 * 24 * 7 + 1) {
 
     await announcer.announceMint(0, destination, destination, true);
 
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await TimeUtils.advanceBlocksOnTs(period);
 
     await controller.mintAndDistribute(0, destination, destination, true);
   }

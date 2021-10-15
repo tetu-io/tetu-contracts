@@ -17,10 +17,11 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/cafe/ICafeMasterChef.sol";
+import "../../interface/IMasterChefStrategyCafe.sol";
 
 /// @title Abstract contract for CafeSwap strategy implementation
 /// @author belbix
-abstract contract CafeStrategyBase is StrategyBase {
+abstract contract CafeStrategyBase is StrategyBase, IMasterChefStrategyCafe {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -29,14 +30,14 @@ abstract contract CafeStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "CafeStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
   /// @notice MasterChef rewards pool
-  ICafeMasterChef public masterChefPool;
+  ICafeMasterChef public override masterChefPool;
   /// @notice MasterChef rewards pool ID
-  uint256 public poolID;
+  uint256 public override poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -84,14 +85,6 @@ abstract contract CafeStrategyBase is StrategyBase {
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
     return IERC20(_underlyingToken).balanceOf(address(masterChefPool));
-  }
-
-  /// @notice Stubbed to zero
-  /// @return [0]
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = 0;
-    return rewards;
   }
 
   // ************ GOVERNANCE ACTIONS **************************

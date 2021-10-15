@@ -16,7 +16,7 @@ export class Web3Utils {
           fromBlock: from,
           toBlock: to,
           address: contracts,
-          topics: topics
+          "topics": topics
         })));
 
         console.log('logs', from, to, logs.length);

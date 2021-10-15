@@ -85,14 +85,6 @@ abstract contract CurveStrategyFullBuyback is StrategyBase {
     return IERC20(_underlyingToken).balanceOf(gague);
   }
 
-  /// @notice Hard to calculate for Curve.
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return []
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
-    uint256[] memory dummyResult = new uint256[](1);
-    return dummyResult;
-  }
-
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder

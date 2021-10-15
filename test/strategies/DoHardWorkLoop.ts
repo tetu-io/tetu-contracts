@@ -36,7 +36,7 @@ export class DoHardWorkLoop {
         const newNum = +(den / i).toFixed()
         console.log('new ps ratio', newNum, den)
         await info.core.announcer.announceRatioChange(9, newNum, den);
-        await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+        await TimeUtils.advanceBlocksOnTs(1);
         await info.core.controller.setPSNumeratorDenominator(newNum, den);
       }
       const loopStart = await StrategyTestUtils.getBlockTime();
@@ -50,7 +50,7 @@ export class DoHardWorkLoop {
 
       // *********** DO HARD WORK **************
       await TimeUtils.advanceBlocksOnTs(loopTime);
-      await info.vault.doHardWork();
+      await VaultUtils.doHardWorkAndCheck(info.vault);
 
       const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
@@ -80,7 +80,7 @@ export class DoHardWorkLoop {
       const earnedUsdcThisCycle = earnedThiCycle * targetTokenPrice;
       console.log('earned USDC: ' + earnedUsdcThisCycle, 'earned total usdc: ' + earnedUsdc);
 
-      const tvl = +utils.formatUnits(await info.vault.underlyingBalanceWithInvestment(),);
+      const tvl = +utils.formatUnits(await info.vault.underlyingBalanceWithInvestment());
       console.log('tvl', tvl);
       console.log('time', currentTs - start);
       const tvlUsdc = tvl * underlyingPrice;
@@ -107,7 +107,7 @@ export class DoHardWorkLoop {
     }
 
     // liquidate rewards after user withdraw
-    await info.vault.doHardWork();
+    await VaultUtils.doHardWorkAndCheck(info.vault);
     // *************** POST LOOPS CHECKING **************
 
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);

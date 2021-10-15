@@ -33,7 +33,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.3";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Maximum folding loops
@@ -139,12 +139,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     return CompleteRToken(rToken).getCash()
     .add(CompleteRToken(rToken).totalBorrows())
     .sub(CompleteRToken(rToken).totalReserves());
-  }
-
-  /// @notice stub to zero
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    return rewards;
   }
 
   /// @dev Calculate expected rewards rate for reward token
@@ -381,7 +375,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       // it should not decrease old ppfs
       liquidateExcessUnderlying();
       // in case of ppfs decreasing we will get revert in vault anyway
-      require(ppfs < ISmartVault(_smartVault).getPricePerFullShare(), "IFS: Ppfs decreased after compound");
+      require(ppfs <= ISmartVault(_smartVault).getPricePerFullShare(), "IFS: Ppfs decreased after compound");
     }
   }
 

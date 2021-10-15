@@ -18,7 +18,7 @@ async function main() {
       [
         MaticAddresses.SUSHI_ROUTER
       ]
-  ) as MultiSwap;;
+  ) as MultiSwap;
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verifyWithArgs(multiSwap.address, [

@@ -449,7 +449,7 @@ describe("Announcer tests", function () {
   it("should fund token salvage with time-lock", async () => {
     const opCode = 13;
     const amount = 1000;
-    const contract = await core.fundKeeper.address;
+    const contract = core.fundKeeper.address;
 
     await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
 
@@ -701,7 +701,7 @@ describe("Announcer tests", function () {
     // announcer.closeAnnounce(opCodeMint, )
 
 
-    //mint 2
+    // mint 2
     balanceSigner = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
     balanceNotifier = await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address);
     balanceFund = await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address);
@@ -765,7 +765,7 @@ describe("Announcer tests", function () {
 
     await announcer.connect(signer1).closeAnnounce(opCodeMint, '0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33', MaticAddresses.ZERO_ADDRESS);
 
-    //*************** CHANGE ANNOUNCER
+    // *************** CHANGE ANNOUNCER
     const changeAnnouncer = 17;
 
     const newAnnouncer = (await DeployerUtils.deployAnnouncer(signer, core.controller.address, 1))[0];
@@ -782,19 +782,19 @@ describe("Announcer tests", function () {
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
-    //mint 2
+    // mint 2
     await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
     await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
-    //mint 3
+    // mint 3
     await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
     await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
-    //mint 4
+    // mint 4
     await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
     await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
   });

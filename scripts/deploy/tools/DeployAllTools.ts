@@ -11,10 +11,8 @@ async function main() {
 
   let calculatorData: [PriceCalculator, TetuProxyGov, PriceCalculator];
   if (net.name === "matic") {
-    // @ts-ignore
     calculatorData = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller, true);
   } else {
-    // @ts-ignore
     calculatorData = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller);
   }
 
@@ -28,7 +26,7 @@ async function main() {
 
   const utils = await DeployerUtils.deployContract(signer, "ContractUtils") as ContractUtils;
 
-  await writeFileSync('./tool_addresses.txt',
+  writeFileSync('./tool_addresses.txt',
       calculatorData[0].address + ', // calculator\n' +
       contractReader.address + ', // contractReader\n' +
       utils.address + ', // utils\n' +

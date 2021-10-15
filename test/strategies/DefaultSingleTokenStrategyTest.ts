@@ -11,6 +11,7 @@ import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy} from "../../typechain";
+import {VaultUtils} from "../VaultUtils";
 
 
 const {expect} = chai;
@@ -39,7 +40,7 @@ async function startDefaultSingleTokenStrategyTest(
       const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-      for (let rt of rewardTokens) {
+      for (const rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(
             [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
             [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
@@ -50,12 +51,14 @@ async function startDefaultSingleTokenStrategyTest(
         );
       }
 
+      await core.feeRewardForwarder.setLiquidityNumerator(50);
+      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
       const data = await StrategyTestUtils.deploy(
           signer,
           core,
           tokenName,
-          vaultAddress => DeployerUtils.deployContract(
+          async vaultAddress => DeployerUtils.deployContract(
               signer,
               strategyName,
               core.controller.address,
@@ -69,6 +72,8 @@ async function startDefaultSingleTokenStrategyTest(
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       strategyInfo = new StrategyInfo(
           underlying,
@@ -86,7 +91,7 @@ async function startDefaultSingleTokenStrategyTest(
       const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
       console.log('largest', largest);
 
-      //************** add funds for investing ************
+      // ************** add funds for investing ************
       const baseAmount = 10_000;
       await UniswapUtils.buyAllBigTokens(user);
       const name = await TokenUtils.tokenSymbol(tokenOpposite);
