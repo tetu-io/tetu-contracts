@@ -24,31 +24,31 @@ contract BalancerConnector {
 
     string private constant _WRONG_SOURCE_TOKEN = "BC: wrong source token or its index";
 
-    address public balancerVaultAddress;
-    address public sourceTokenAddress;
-    uint256 public balancerPoolID;
-    uint256 public sourceTokenIndexAtPool;
-    address public balancerLPToken;
+    address private _balancerVault;
+    address private _sourceToken;
+    bytes32 private _balancerPoolID;
+    uint256 private _sourceTokenIndexAtPool;
+    address private _balancerLPToken;
 
     enum JoinKind { INIT, EXACT_TOKENS_IN_FOR_BPT_OUT, TOKEN_IN_FOR_EXACT_BPT_OUT }
     enum ExitKind { EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, EXACT_BPT_IN_FOR_TOKENS_OUT, BPT_IN_FOR_EXACT_TOKENS_OUT }
 
     constructor(
-        address _balancerVaultAddress,
-        address _sourceTokenAddress,
-        uint256 _balancerPoolID,
-        uint256 _sourceTokenIndexAtPool,
-        uint256 _balancerLPToken
+        address balancerVaultAddress,
+        address sourceTokenAddress,
+        bytes32 balancerPoolID,
+        uint256 sourceTokenIndexAtPool,
+        address balancerLPToken
     ) public {
-        balancerVaultAddress = _balancerVaultAddress;
-        sourceTokenAddress = _sourceTokenAddress;
-        balancerPoolID = _balancerPoolID;
-        sourceTokenIndexAtPool = _sourceTokenIndexAtPool;
-        balancerLPToken = _balancerLPToken;
+        _balancerVault = balancerVaultAddress;
+        _sourceToken = sourceTokenAddress;
+        _balancerPoolID         = balancerPoolID;
+        _sourceTokenIndexAtPool = sourceTokenIndexAtPool;
+        _balancerLPToken        = balancerLPToken;
     }
 
     // from https://github.com/balancer-labs/balancer-v2-monorepo/blob/f45076067b68b27ea023632e69349e3051746cd4/pkg/solidity-utils/contracts/helpers/ERC20Helpers.sol
-    function _asIAsset(IERC20[] memory tokens) pure returns (IAsset[] memory assets) {
+    function _asIAsset(IERC20[] memory tokens) public pure returns (IAsset[] memory assets) {
         // solhint-disable-next-line no-inline-assembly
         assembly {
             assets := tokens
@@ -56,16 +56,16 @@ contract BalancerConnector {
     }
 
     function _balancerJoinPool(uint256 amount) internal {
-        IERC20(sourceTokenAddress).safeApprove(balancerVaultAddress, 0);
-        IERC20(sourceTokenAddress).safeApprove(balancerVaultAddress, amount);
+        IERC20(_sourceToken).safeApprove(_balancerVault, 0);
+        IERC20(_sourceToken).safeApprove(_balancerVault, amount);
 
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
-        IERC20[] memory tokens = IBVault(balancerVaultAddress).getPoolTokens(_balancerPoolID);
-        require( sourceTokenAddress==address(tokens[sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
-        uint256[] maxAmountsIn = [0,0,0,0];
-        maxAmountsIn[sourceTokenIndexAtPool] = amount;
+        (IERC20[] memory tokens,,) = IBVault(_balancerVault).getPoolTokens(_balancerPoolID);
+        require( _sourceToken ==address(tokens[_sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        uint256[] memory maxAmountsIn = new uint256[](4);
+        maxAmountsIn[_sourceTokenIndexAtPool] = amount;
 
-        IBVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
+        IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
             assets: _asIAsset(tokens),
             maxAmountsIn: maxAmountsIn,
             userData: bytes(JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT),
@@ -73,16 +73,17 @@ contract BalancerConnector {
         });
 
         //TODO try catch with gas limit
-        IBVault(balancerVaultAddress).joinPool(_balancerPoolID, address(this), address(this), request);
+        IBVault(_balancerVault).joinPool(_balancerPoolID, address(this), address(this), request);
     }
 
     function _balancerExitPool(uint256 amount) internal {
-        IERC20[] memory tokens = IBVault(balancerVaultAddress).getPoolTokens(_balancerPoolID);
-        require( sourceTokenAddress==address(tokens[sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
-        uint256[] minAmountsOut = [0,0,0,0];
-        minAmountsOut[sourceTokenIndexAtPool] = amount;
+        IERC20[] memory tokens = IBVault(_balancerVault).getPoolTokens(_balancerPoolID);
+        require( _sourceToken ==address(tokens[_sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        uint256[] memory minAmountsOut = new uint256[](4);
+        minAmountsOut[_sourceTokenIndexAtPool] = amount;
 
-        IBVault.ExitPoolRequest memory request = IVault.ExitPoolRequest({
+        //TODO !!! use code from deployed contract (see example transaction at AaveMaiBalStrategyBase), not from master branch
+        IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
             assets: _asIAsset(tokens),
             minAmountsOut: minAmountsOut,
             userData: bytes(ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT),
@@ -90,12 +91,12 @@ contract BalancerConnector {
         });
 
         //TODO try catch with gas limit
-        IBVault(balancerVaultAddress).exitPool(balancerPoolID, address(this), address(this), request);
+        IBVault(_balancerVault).exitPool(_balancerPoolID, address(this), address(this), request);
     }
 
     function _balancerGetExitAmount() internal {
-        uint256 total = IERC20(balancerLPToken).balanceOf(address(this));
-        ////TODO !!! Convert BPT LP Tokens to MAI amount -> StableMath._calcTokenOutGivenExactBptIn
+        uint256 total = IERC20(_balancerLPToken).balanceOf(address(this));
+        //TODO !!! Convert BPT LP Tokens to MAI amount -> StableMath._calcTokenOutGivenExactBptIn
         return total;
     }
 }

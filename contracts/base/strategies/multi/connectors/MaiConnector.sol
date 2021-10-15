@@ -14,8 +14,9 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "./../../../../third_party/qudao-mai/ICamWMATIC.sol";
-import "./../../../../third_party/qudao-mai/IErc20StableCoin.sol";
+import "./../../../../third_party/qudao-mai/IErc20Stablecoin.sol";
 
 contract MaiConnector {
     using SafeERC20 for IERC20;
@@ -23,7 +24,7 @@ contract MaiConnector {
     address private erc20StableCoin;
     address private sourceTokenAddress;
     address private camWMaticPoolAddress;
-    uint256 private vaultID = 0;
+    uint256 private cachedVaultID = 0;
     address private maiBorrowTokenAddress;
 
     constructor(
@@ -40,18 +41,18 @@ contract MaiConnector {
 
     function _maiCreateVault() internal {
         //TODO try catch with gas limit
-        IErc20Stablecoin(erc20StableCoin).createVault(); //TODO add try w gas limit
+        IErc20Stablecoin(erc20StableCoin).createVault();
     }
 
     function _maiGetVaultID(uint256 index) public view returns (uint256) {
-        return IErc20Stablecoin(erc20StableCoin).tokenOfOwnerByIndex(address(this), index);
+        return ERC721Enumerable(erc20StableCoin).tokenOfOwnerByIndex(address(this), index);
     }
 
-    function _maiGetVaultID() {
-        if (vaultID==0) {
-          vaultID = _maiGetVaultID(0);
+    function _maiGetVaultID() public view returns (uint256) {
+        if (cachedVaultID == 0 ) {
+          cachedVaultID = _maiGetVaultID(0); // 0 - index of our vaults, suppose we use only one vault
         }
-        return vaultID;
+        return cachedVaultID;
     }
 
     function _maiEnterCamWMatic(uint256 amount) internal {
@@ -66,20 +67,20 @@ contract MaiConnector {
         ICamWMATIC(camWMaticPoolAddress).leave(amount);
     }
 
-    function _maiDepositCollateral(uint256 amount, uint256 vaultID) internal {
+    function _maiDepositCollateral(uint256 amount, uint256 _vaultID) internal {
         IERC20(camWMaticPoolAddress).safeApprove(erc20StableCoin, 0);
         IERC20(camWMaticPoolAddress).safeApprove(erc20StableCoin, amount);
         //TODO try catch with gas limit
-        IErc20Stablecoin(erc20StableCoin).depositCollateral(vaultID, amount);
+        IErc20Stablecoin(erc20StableCoin).depositCollateral(_vaultID, amount);
     }
 
     function _maiDepositCollateral(uint256 amount) internal {
         _maiDepositCollateral(amount, _maiGetVaultID());
     }
 
-    function _maiBorrowToken(uint256 amount, uint256 vaultID) internal {
+    function _maiBorrowToken(uint256 amount, uint256 _vaultID) internal {
         //TODO try catch with gas limit
-        IErc20Stablecoin(erc20StableCoin).borrowToken(vaultID, amount);
+        IErc20Stablecoin(erc20StableCoin).borrowToken(_vaultID, amount);
     }
 
     function _maiBorrowToken(uint256 amount) internal {
@@ -87,9 +88,9 @@ contract MaiConnector {
     }
 
 
-    function _maiRepayToken(uint256 amount, uint256 vaultID) internal {
+    function _maiRepayToken(uint256 amount, uint256 _vaultID) internal {
         //TODO try catch with gas limit
-        IErc20Stablecoin(erc20StableCoin).payBackToken(vaultID, amount);
+        IErc20Stablecoin(erc20StableCoin).payBackToken(_vaultID, amount);
     }
 
     function _maiRepayToken(uint256 amount) internal {
@@ -97,11 +98,11 @@ contract MaiConnector {
     }
 
 
-    function _maiWithdrawCollateral(uint256 amount, uint256 vaultID) internal {
+    function _maiWithdrawCollateral(uint256 amount, uint256 _vaultID) internal {
         IERC20(camWMaticPoolAddress).safeApprove(erc20StableCoin, 0);
         IERC20(camWMaticPoolAddress).safeApprove(erc20StableCoin, amount);
         //TODO try catch with gas limit
-        IErc20Stablecoin(erc20StableCoin).withdrawCollateral(vaultID, amount);
+        IErc20Stablecoin(erc20StableCoin).withdrawCollateral(_vaultID, amount);
     }
 
     function _maiWithdrawCollateral(uint256 amount) internal {

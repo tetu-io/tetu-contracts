@@ -12,18 +12,20 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/math/Math.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../../../../third_party/aave/ILendingPool.sol";
-import "../../../../../third_party/aave/ILendingPoolAddressesProvider.sol";
-import "../../../../../third_party/aave/IAaveProtocolDataProvider.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./../../../../third_party/aave/ILendingPool.sol";
+import "./../../../../third_party/aave/ILendingPoolAddressesProvider.sol";
+import "./../../../../third_party/aave/IAaveProtocolDataProvider.sol";
 
 contract AaveConnector {
 
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
+    uint256 private constant _MAX_UINT256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     address public aaveUnderlying;
     address public aTokenAddress;
@@ -66,7 +68,7 @@ contract AaveConnector {
     }
 
     function _aaveWithdrawAll() internal {
-        _aaveWithdraw(uint256(-1));
+        _aaveWithdraw(_MAX_UINT256);
     }
 
     function _aaveWithdraw(uint256 amount) internal {
@@ -83,7 +85,7 @@ contract AaveConnector {
 
         require(
             amountWithdrawn == amount ||
-            (amount == uint256(-1) && maxAmount == IERC20(aaveUnderlying).balanceOf(address(this))),
+            (amount == _MAX_UINT256 && maxAmount == IERC20(aaveUnderlying).balanceOf(address(this))),
             "Did not withdraw requested amount"
         );
     }

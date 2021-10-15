@@ -13,6 +13,8 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "./../StrategyBase.sol";
 
 import "../../../third_party/uniswap/IWETH.sol";
@@ -23,8 +25,8 @@ import "./connectors/BalancerConnector.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
-contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector {
-
+contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector, BalancerConnector {
+  using SafeMath for uint256;
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
@@ -51,7 +53,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   address public constant maiRewardToken         = 0x580a84c73811e1839f75d86d75d88cca0c241ff4; // QI/MAI Token
 
   address public constant balancerVault          = 0xba12222222228d8ba445958a75a0704d566bf2c8;
-  uint256 public constant balancerPoolID         = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012;
+  bytes32 public constant balancerPoolID         = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012;
   uint256 public constant balancerTokenIndexAtPool = 2;
   address public constant balancerLPToken        = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42; // Balancer Polygon Stable Pool (BPSP)
   address public constant balancerRewardToken    = 0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3; // BAL
@@ -107,7 +109,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  https://polygonscan.com/tx/0xab73bb28961fcee75cb5865c8cad0ff1aa7235461e8505dc9acea50078b1b12c
 //  contract WETHGateway 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97
 //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
-    assert(underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC );  //TODO extend for other tokens later
+    assert(_underlyingToken==WMATIC, _UNDERLYING_MUST_BE_WMATIC );  //TODO extend for other tokens later
 
     uint256 maiVaultID = _maiGetVaultID();
 
@@ -141,7 +143,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //  Function: borrowToken(uint256 vaultID 0x53e, uint256 amount 368a5a82c9a940e)
 
-    //TODO calc borrow amount more precise (get max from contract, then mul to maiBorrowPercentage)
+    //TODO !!! calc borrow amount more precise (get max from contract, then mul to maiBorrowPercentage)
     uint256 maiBorrowAmount = maiLPTokensAmount.mul(maiBorrowPercentage).div(100);
     _maiBorrowToken(maiBorrowAmount);
 
@@ -218,11 +220,12 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     return 0; //TODO
   }
 
-  /// @dev Stub function for Strategy Base implementation
-  function poolWeeklyRewardsAmount() external pure override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = 0;
-    return rewards;
+  function assets() external view override returns (address[] memory) {
+    return _assets;
+  }
+
+  function platform() external view override returns (Platform) {
+    return Platform.UNKNOWN; //TODO
   }
 
 }

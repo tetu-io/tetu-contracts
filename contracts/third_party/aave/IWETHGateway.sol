@@ -8,7 +8,7 @@ interface IWETHGateway {
 
   //IWETH internal immutable WETH;
 
-  function authorizeLendingPool(address lendingPool) public;
+  function authorizeLendingPool(address lendingPool) external;
 
   /**
    * @dev deposits WETH into the reserve, using native ETH. A corresponding amount of the overlying asset (aTokens)
@@ -21,7 +21,7 @@ interface IWETHGateway {
     address lendingPool,
     address onBehalfOf,
     uint16 referralCode
-  ) public payable;
+  ) external payable;
 
   /**
    * @dev withdraws the WETH _reserves of msg.sender.
@@ -33,7 +33,7 @@ interface IWETHGateway {
     address lendingPool,
     uint256 amount,
     address to
-  ) public;
+  ) external;
 
   /**
    * @dev repays a borrow on the WETH reserve, for the specified amount (or for the whole amount, if uint256(-1) is specified).
@@ -47,7 +47,7 @@ interface IWETHGateway {
     uint256 amount,
     uint256 rateMode,
     address onBehalfOf
-  ) public payable;
+  ) external payable;
 
   /**
    * @dev borrow WETH, unwraps to ETH and send both the ETH and DebtTokens to msg.sender, via `approveDelegation` and onBehalf argument in `LendingPool.borrow`.
@@ -61,7 +61,7 @@ interface IWETHGateway {
     uint256 amount,
     uint256 interesRateMode,
     uint16 referralCode
-  ) public;
+  ) external;
 
   /**
    * @dev transfer ERC20 from the utility contract, for ERC20 recovery in case of stuck tokens due
@@ -74,7 +74,7 @@ interface IWETHGateway {
     address token,
     address to,
     uint256 amount
-  ) public;
+  ) external;
 
   /**
    * @dev transfer native Ether from the utility contract, for native Ether recovery in case of stuck Ether
@@ -82,11 +82,11 @@ interface IWETHGateway {
    * @param to recipient of the transfer
    * @param amount amount to send
    */
-  function emergencyEtherTransfer(address to, uint256 amount) public;
+  function emergencyEtherTransfer(address to, uint256 amount) external;
 
   /**
    * @dev Get WETH address used by WETHGateway
    */
-  function getWETHAddress() public view returns (address);
+  function getWETHAddress() external view returns (address);
 
 }

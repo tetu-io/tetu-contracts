@@ -37,17 +37,17 @@ interface ICamWMATIC {
 //    }
 
 
-    function updateOperator(address _operator) public;
+    function updateOperator(address _operator) external;
 
-    function updateTreasury(address _treasury) public;
+    function updateTreasury(address _treasury) external;
 
-    function updateDepositFee(uint16 _depositFee) public;
+    function updateDepositFee(uint16 _depositFee) external;
 
     // Locks amToken and mints camToken (shares)
-    function enter(uint256 _amount) public;
+    function enter(uint256 _amount) external;
 
-    function claimAaveRewards() public;
+    function claimAaveRewards() external;
 
     // claim amToken by burning camToken
-    function leave(uint256 _share) public;
+    function leave(uint256 _share) external;
 }

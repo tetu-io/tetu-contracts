@@ -33,9 +33,9 @@ contract AaveWethConnector {
         lpToken     = _lpToken;
     }
 
-    function _aaveDepositETH(uint256 amount) internal payable {
+    function _aaveDepositETH(uint256 amount) public payable {
         //TODO try catch with gas limit
-        wethGateway.depositETH.value(amount)(lendingPool, address(this), 0);
+        wethGateway.depositETH{value:amount}(lendingPool, address(this), 0);
     }
 
     function _aaveWithdrawETH(uint256 amount) internal {

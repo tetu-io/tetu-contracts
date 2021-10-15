@@ -2,67 +2,67 @@
 pragma solidity 0.8.4;
 
 interface IErc20Stablecoin {
-//    PriceSource public ethPriceSource;
+//    PriceSource external ethPriceSource;
 //
-//    uint256 public _minimumCollateralPercentage;
+//    uint256 external _minimumCollateralPercentage;
 //
-//    uint256 public vaultCount;
-//    uint256 public closingFee;
-//    uint256 public openingFee;
+//    uint256 external vaultCount;
+//    uint256 external closingFee;
+//    uint256 external openingFee;
 //
-//    uint256 public treasury;
-//    uint256 public tokenPeg;
+//    uint256 external treasury;
+//    uint256 external tokenPeg;
 //
-//    mapping(uint256 => uint256) public vaultCollateral;
-//    mapping(uint256 => uint256) public vaultDebt;
+//    mapping(uint256 => uint256) external vaultCollateral;
+//    mapping(uint256 => uint256) external vaultDebt;
 //
-//    uint256 public debtRatio;
-//    uint256 public gainRatio;
+//    uint256 external debtRatio;
+//    uint256 external gainRatio;
 //
-//    address public stabilityPool;
+//    address external stabilityPool;
 //
-//    ERC20Detailed public collateral;
+//    ERC20Detailed external collateral;
 //
-//    ERC20Detailed public mai;
+//    ERC20Detailed external mai;
 //
-//    uint8 public priceSourceDecimals;
+//    uint8 external priceSourceDecimals;
 
-//    mapping(address => uint256) public maticDebt;
+//    mapping(address => uint256) external maticDebt;
 
 
-    function getDebtCeiling() public view returns (uint256);
+    function getDebtCeiling() external view returns (uint256);
 
-    function exists(uint256 vaultID) public view returns (bool);
+    function exists(uint256 vaultID) external view returns (bool);
 
-    function getClosingFee() public view returns (uint256);
+    function getClosingFee() external view returns (uint256);
 
-    function getOpeningFee() public view returns (uint256);
+    function getOpeningFee() external view returns (uint256);
 
-    function getTokenPriceSource() public view returns (uint256);
+    function getTokenPriceSource() external view returns (uint256);
 
-    function getEthPriceSource() public view returns (uint256);
+    function getEthPriceSource() external view returns (uint256);
 
-    function createVault() public returns (uint256);
+    function createVault() external returns (uint256);
 
-    function destroyVault(uint256 vaultID) public;
+    function destroyVault(uint256 vaultID) external;
 
-    function depositCollateral(uint256 vaultID, uint256 amount) public;
+    function depositCollateral(uint256 vaultID, uint256 amount) external;
 
-    function withdrawCollateral(uint256 vaultID, uint256 amount) public;
+    function withdrawCollateral(uint256 vaultID, uint256 amount) external;
 
-    function borrowToken(uint256 vaultID, uint256 amount) public;
+    function borrowToken(uint256 vaultID, uint256 amount) external;
 
-    function payBackToken(uint256 vaultID, uint256 amount) public;
+    function payBackToken(uint256 vaultID, uint256 amount) external;
 
-    function getPaid() public;
+    function getPaid() external;
 
-    function checkCost(uint256 vaultID) public view returns (uint256);
+    function checkCost(uint256 vaultID) external view returns (uint256);
 
-    function checkExtract(uint256 vaultID) public view returns (uint256);
+    function checkExtract(uint256 vaultID) external view returns (uint256);
 
-    function checkCollateralPercentage(uint256 vaultID) public view returns(uint256);
+    function checkCollateralPercentage(uint256 vaultID) external view returns(uint256);
 
-    function checkLiquidation(uint256 vaultID) public view returns (bool);
+    function checkLiquidation(uint256 vaultID) external view returns (bool);
 
-    function liquidateVault(uint256 vaultID) public;
+    function liquidateVault(uint256 vaultID) external;
 }
