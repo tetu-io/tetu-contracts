@@ -17,6 +17,7 @@ import {TokenUtils} from "../TokenUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers} from "hardhat";
 import {TestAsserts} from "../TestAsserts";
+import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -94,23 +95,23 @@ describe("Tetu Swap base tests", function () {
         router.address
     );
 
-    // const data = await StrategyTestUtils.deploy(
-    //     signer,
-    //     core,
-    //     'TETU_LP_VAULT',
-    //     async vaultAddress => DeployerUtils.deployContract(
-    //         signer,
-    //         'StrategyTetuSwap',
-    //         core.controller.address,
-    //         vaultAddress,
-    //         lp
-    //     ) as Promise<IStrategy>,
-    //     lp
-    // );
-    // lpVault = data[0];
-    // lpStrategy = data[1];
-    //
-    // await factory.setPairRewardRecipient(lp, lpStrategy.address);
+    const data = await StrategyTestUtils.deploy(
+        signer,
+        core,
+        'TETU_LP_VAULT',
+        async vaultAddress => DeployerUtils.deployContract(
+            signer,
+            'StrategyTetuSwap',
+            core.controller.address,
+            vaultAddress,
+            lp
+        ) as Promise<IStrategy>,
+        lp
+    );
+    lpVault = data[0];
+    lpStrategy = data[1];
+
+    await factory.setPairRewardRecipient(lp, lpStrategy.address);
 
   });
 

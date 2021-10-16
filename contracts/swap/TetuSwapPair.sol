@@ -188,10 +188,10 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external nonReentrant override {
     require(amount0Out > 0 || amount1Out > 0, "TSP: Insufficient output amount");
     (uint112 _reserve0, uint112 _reserve1,) = getReserves();
-    require(amount0Out < reserve0 && amount1Out < reserve1, "TSP: Insufficient liquidity");
+    require(amount0Out < _reserve0 && amount1Out < _reserve1, "TSP: Insufficient liquidity");
 
-    uint expectedAmountIn0 = getAmountIn(amount1Out, reserve0, reserve1);
-    uint expectedAmountIn1 = getAmountIn(amount0Out, reserve1, reserve0);
+    uint expectedAmountIn0 = getAmountIn(amount1Out, _reserve0, _reserve1);
+    uint expectedAmountIn1 = getAmountIn(amount0Out, _reserve1, _reserve0);
 
     // assume we invested all funds and have on balance only new tokens for current swap
     uint amount0In = IERC20(token0).balanceOf(address(this));
@@ -212,7 +212,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
       uint balance0 = vaultReserve0();
       uint balance1 = vaultReserve1();
       // check K without care about fees
-      require(balance0 * balance1 >= uint(reserve0) * uint(reserve1), "TSP: K too low");
+      require(balance0 * balance1 >= uint(_reserve0) * uint(_reserve1), "TSP: K too low");
     }
 
     _update();

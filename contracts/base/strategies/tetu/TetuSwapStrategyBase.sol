@@ -58,7 +58,7 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   // ************* VIEWS *******************
 
   /// @notice Stabbed to 0
-  function rewardPoolBalance() public override view returns (uint256) {
+  function rewardPoolBalance() public override pure returns (uint256) {
     return 0;
   }
 
