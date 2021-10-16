@@ -27,8 +27,6 @@ import "../base/interface/ISmartVault.sol";
 import "./interfaces/ITetuSwapPair.sol";
 import "../base/governance/Controllable.sol";
 
-import "hardhat/console.sol";
-
 /// @title Tetu swap pair based on Uniswap solution
 /// @author belbix
 contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
@@ -48,8 +46,8 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   address public override vault0;
   address public override vault1;
 
-  uint112 private shareReserve0;
-  uint112 private shareReserve1;
+  uint112 private reserve0;
+  uint112 private reserve1;
 
   uint32 private blockTimestampLast; // uses single storage slot, accessible via getReserves
   uint public override price0CumulativeLast;
@@ -101,40 +99,38 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   }
 
   function getReserves() public view override returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-    _reserve0 = vaultReserve0();
-    _reserve1 = vaultReserve1();
+    _reserve0 = reserve0;
+    _reserve1 = reserve1;
     _blockTimestampLast = blockTimestampLast;
   }
 
   /// @dev Update reserves and, on the first call per block, price accumulators
   function _update() private {
-    uint _shareBalance0 = IERC20(vault0).balanceOf(address(this));
-    uint _shareBalance1 = IERC20(vault1).balanceOf(address(this));
-    require(_shareBalance0 <= type(uint112).max && _shareBalance1 <= type(uint112).max, "TSP: OVERFLOW");
+    uint _balance0 = vaultReserve0();
+    uint _balance1 = vaultReserve1();
+    require(_balance0 <= type(uint112).max && _balance1 <= type(uint112).max, "TSP: OVERFLOW");
 
     uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
     uint32 timeElapsed = blockTimestamp - blockTimestampLast;
 
-    if (timeElapsed > 0 && shareReserve0 != 0 && shareReserve1 != 0) {
-      price0CumulativeLast += uint(UQ112x112.encode(shareReserve1).uqdiv(shareReserve0)) * timeElapsed;
-      price1CumulativeLast += uint(UQ112x112.encode(shareReserve0).uqdiv(shareReserve1)) * timeElapsed;
+    if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
+      price0CumulativeLast += uint(UQ112x112.encode(reserve1).uqdiv(reserve0)) * timeElapsed;
+      price1CumulativeLast += uint(UQ112x112.encode(reserve0).uqdiv(reserve1)) * timeElapsed;
     }
 
-    shareReserve0 = uint112(_shareBalance0);
-    shareReserve1 = uint112(_shareBalance1);
+    reserve0 = uint112(_balance0);
+    reserve1 = uint112(_balance1);
     blockTimestampLast = blockTimestamp;
-    emit Sync(vaultReserve0(), vaultReserve1());
+    emit Sync(reserve0, reserve1);
   }
 
+  /// @dev Assume underlying tokens already sent to this contract
   function mint(address to) external nonReentrant override returns (uint liquidity) {
-    uint underlyingAmount0 = IERC20(token0).balanceOf(address(this));
-    uint underlyingAmount1 = IERC20(token1).balanceOf(address(this));
-
     uint shareAmount0 = IERC20(vault0).balanceOf(address(this));
     uint shareAmount1 = IERC20(vault1).balanceOf(address(this));
 
-    ISmartVault(vault0).deposit(underlyingAmount0);
-    ISmartVault(vault1).deposit(underlyingAmount1);
+    uint underlyingAmount0 = depositAllToVault(vault0);
+    uint underlyingAmount1 = depositAllToVault(vault1);
 
     uint depositedAmount0 = IERC20(vault0).balanceOf(address(this)) - shareAmount0;
     uint depositedAmount1 = IERC20(vault1).balanceOf(address(this)) - shareAmount1;
@@ -157,10 +153,10 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     _mint(to, liquidity);
 
     _update();
-    // reserve0 and reserve1 are up-to-date
     emit Mint(msg.sender, underlyingAmount0, underlyingAmount1);
   }
 
+  /// @dev Assume lp token already sent to this contract
   function burn(address to) external nonReentrant override returns (uint amount0, uint amount1) {
     uint shareAmount0 = IERC20(vault0).balanceOf(address(this));
     uint shareAmount1 = IERC20(vault1).balanceOf(address(this));
@@ -173,7 +169,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     _burn(address(this), liquidity);
 
     require(shareToWithdraw0 <= IERC20(vault0).balanceOf(address(this)), "TSP: Insufficient shares 0");
-    require(shareToWithdraw1 <= IERC20(vault1).balanceOf(address(this)), "TSP: Insufficient shares 0");
+    require(shareToWithdraw1 <= IERC20(vault1).balanceOf(address(this)), "TSP: Insufficient shares 1");
 
     ISmartVault(vault0).withdraw(shareToWithdraw0);
     ISmartVault(vault1).withdraw(shareToWithdraw1);
@@ -192,10 +188,10 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external nonReentrant override {
     require(amount0Out > 0 || amount1Out > 0, "TSP: Insufficient output amount");
     (uint112 _reserve0, uint112 _reserve1,) = getReserves();
-    require(amount0Out < _reserve0 && amount1Out < _reserve1, "TSP: Insufficient liquidity");
+    require(amount0Out < reserve0 && amount1Out < reserve1, "TSP: Insufficient liquidity");
 
-    uint expectedAmountIn0 = getAmountIn(amount1Out, _reserve0, _reserve1);
-    uint expectedAmountIn1 = getAmountIn(amount0Out, _reserve1, _reserve0);
+    uint expectedAmountIn0 = getAmountIn(amount1Out, reserve0, reserve1);
+    uint expectedAmountIn1 = getAmountIn(amount0Out, reserve1, reserve0);
 
     // assume we invested all funds and have on balance only new tokens for current swap
     uint amount0In = IERC20(token0).balanceOf(address(this));
@@ -216,7 +212,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
       uint balance0 = vaultReserve0();
       uint balance1 = vaultReserve1();
       // check K without care about fees
-      require(balance0 * balance1 >= uint(_reserve0) * uint(_reserve1), "TSP: K too low");
+      require(balance0 * balance1 >= uint(reserve0) * uint(reserve1), "TSP: K too low");
     }
 
     _update();
@@ -239,11 +235,20 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     return TetuSwapLibrary.getAmountIn(amountOut, reserveIn, reserveOut, fee);
   }
 
-  function vaultReserve0() private view returns (uint112) {
+  function balanceOfVaultUnderlying(address _token) external view override returns (uint){
+    if (_token == ISmartVault(vault0).underlying()) {
+      return ISmartVault(vault0).underlyingBalanceWithInvestmentForHolder(address(this));
+    } else if (_token == ISmartVault(vault1).underlying()) {
+      return ISmartVault(vault1).underlyingBalanceWithInvestmentForHolder(address(this));
+    }
+    return 0;
+  }
+
+  function vaultReserve0() public view returns (uint112) {
     return uint112(ISmartVault(vault0).underlyingBalanceWithInvestmentForHolder(address(this)));
   }
 
-  function vaultReserve1() private view returns (uint112){
+  function vaultReserve1() public view returns (uint112){
     return uint112(ISmartVault(vault1).underlyingBalanceWithInvestmentForHolder(address(this)));
   }
 
@@ -267,6 +272,9 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
 
     IERC20(token0).safeApprove(_vault0, type(uint).max);
     IERC20(token1).safeApprove(_vault1, type(uint).max);
+
+    depositAllToVault(vault0);
+    depositAllToVault(vault1);
   }
 
   function setRewardRecipient(address _recipient) external override onlyFactory {
@@ -274,11 +282,10 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     rewardRecipient = _recipient;
   }
 
-  function claimAll() external {
-    require(rewardRecipient != address(0), "TSP: Zero reward recipient");
-    require(msg.sender == ISmartVault(rewardRecipient).strategy(), "TSP: Only recipient strategy can claim");
-    claim(vault0);
-    claim(vault1);
+  function claimAll() external override {
+    require(msg.sender == rewardRecipient, "TSP: Only recipient can claim");
+    _claim(vault0);
+    _claim(vault1);
   }
 
   // ***************** INTERNAL LOGIC ****************
@@ -300,6 +307,13 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     }
   }
 
+  function depositAllToVault(address _vault) private returns (uint) {
+    uint underlyingAmount = IERC20(ISmartVault(_vault).underlying()).balanceOf(address(this));
+    if (underlyingAmount > 0) {
+      ISmartVault(_vault).deposit(underlyingAmount);
+    }
+    return underlyingAmount;
+  }
 
   function exitFromVault(address _vault) private {
     if (_vault == address(0)) {
@@ -323,7 +337,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     return string(abi.encodePacked("TLP_", name0, "_", name1));
   }
 
-  function claim(address _vault) internal {
+  function _claim(address _vault) internal {
     require(_vault != address(0), "TSP: Zero vault");
     ISmartVault sv = ISmartVault(_vault);
 
@@ -332,8 +346,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
       uint bal = IERC20(rt).balanceOf(address(this));
       sv.getReward(rt);
       uint claimed = IERC20(rt).balanceOf(address(this)) - bal;
-
-      ISmartVault(rewardRecipient).notifyTargetRewardAmount(rt, claimed);
+      IERC20(rt).safeTransfer(msg.sender, claimed);
     }
   }
 }

@@ -3,7 +3,13 @@ import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {SmartVault, TetuSwapFactory, TetuSwapPair, TetuSwapRouter} from "../../typechain";
+import {
+  IStrategy,
+  SmartVault,
+  TetuSwapFactory,
+  TetuSwapPair,
+  TetuSwapRouter
+} from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {BigNumber, utils} from "ethers";
@@ -24,7 +30,7 @@ const tokenB = MaticAddresses.USDT_TOKEN;
 
 const TEST_AMOUNT = BigNumber.from(100);
 
-describe("Tetu pawnshop base tests", function () {
+describe("Tetu Swap base tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -38,6 +44,8 @@ describe("Tetu pawnshop base tests", function () {
   let tokenBDec: number;
   let lp: string;
   let lpCtr: TetuSwapPair;
+  let lpVault: SmartVault;
+  let lpStrategy: IStrategy;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
@@ -68,7 +76,6 @@ describe("Tetu pawnshop base tests", function () {
     expect(lp.toLowerCase()).is.not.eq(MaticAddresses.ZERO_ADDRESS);
 
     await core.controller.addToWhiteList(lp);
-    await core.controller.setRewardDistribution([lp], true);
 
     lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
 
@@ -86,6 +93,24 @@ describe("Tetu pawnshop base tests", function () {
         factory.address,
         router.address
     );
+
+    // const data = await StrategyTestUtils.deploy(
+    //     signer,
+    //     core,
+    //     'TETU_LP_VAULT',
+    //     async vaultAddress => DeployerUtils.deployContract(
+    //         signer,
+    //         'StrategyTetuSwap',
+    //         core.controller.address,
+    //         vaultAddress,
+    //         lp
+    //     ) as Promise<IStrategy>,
+    //     lp
+    // );
+    // lpVault = data[0];
+    // lpStrategy = data[1];
+    //
+    // await factory.setPairRewardRecipient(lp, lpStrategy.address);
 
   });
 
@@ -205,6 +230,10 @@ describe("Tetu pawnshop base tests", function () {
           signer.address,
           router.address
       );
+
+      await factory.announceVaultsChange(IRON_FOLD_USDC, IRON_FOLD_USDT);
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+      await factory.setVaultsForPair(IRON_FOLD_USDC, IRON_FOLD_USDT);
 
       const userTokenABalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenA, signer.address), tokenADec);
       const userTokenBBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, signer.address), tokenBDec);
@@ -328,5 +357,72 @@ describe("Tetu pawnshop base tests", function () {
     expect(await lpCtr.balanceOf(signer.address)).to.eq(balance.sub(TEST_AMOUNT))
     expect(await lpCtr.balanceOf(user.address)).to.eq(TEST_AMOUNT)
   });
+
+  it('set fee directly forbidden', async () => {
+    await expect(lpCtr.setFee(0)).rejectedWith('TSP: Not factory')
+  });
+
+  it('set fee too high', async () => {
+    await expect(factory.setPairFee(lp, 100)).rejectedWith('TSP: Too high fee')
+  });
+
+  it('set fee', async () => {
+    await factory.setPairFee(lp, 0);
+    expect(await lpCtr.fee()).is.eq(0);
+  });
+
+  it("claim", async () => {
+
+    await UniswapUtils.addLiquidity(
+        signer,
+        tokenA,
+        tokenB,
+        utils.parseUnits('1000', tokenADec).toString(),
+        utils.parseUnits('2000', tokenBDec).toString(),
+        factory.address,
+        router.address
+    );
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60);
+
+    const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(core.psVault.address, lpVault.address));
+    await lpVault.doHardWork();
+    const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(core.psVault.address, lpVault.address));
+
+    console.log('rtBal', rtBal);
+    console.log('rtBalAfter', rtBalAfter);
+    expect(rtBalAfter).is.greaterThan(rtBal);
+  });
+
+  it('price{0,1}CumulativeLast', async () => {
+    const token0Amount = utils.parseUnits('100', tokenADec);
+    const token1Amount = utils.parseUnits('200', tokenBDec);
+
+    const blockTimestamp = (await lpCtr.getReserves())[2];
+    await TimeUtils.advanceBlocksOnTs(1);
+    await lpCtr.sync();
+    const blockTimestamp2 = (await lpCtr.getReserves())[2];
+
+    const initialPrice = UniswapUtils.encodePrice(token0Amount.sub(1), token1Amount.sub(1));
+    const cumPrice0 = await lpCtr.price0CumulativeLast();
+    const cumPrice1 = await lpCtr.price1CumulativeLast();
+
+    const elapsedTime = blockTimestamp2 - blockTimestamp;
+    console.log('time elapsed', elapsedTime);
+
+    expect(cumPrice0).to.eq(initialPrice[0].mul(elapsedTime))
+    expect(cumPrice1).to.eq(initialPrice[1].mul(elapsedTime))
+
+    const swapAmount = utils.parseUnits('3', tokenADec);
+    await TokenUtils.transfer(tokenA, signer, lp, swapAmount.toString());
+    // swap to a new price eagerly instead of syncing
+    await lpCtr.swap(0, utils.parseUnits('1', tokenBDec), signer.address, '0x')
+
+    const blockTimestamp3 = (await lpCtr.getReserves())[2];
+    const elapsedTime2 = blockTimestamp3 - blockTimestamp;
+
+    expect(await lpCtr.price0CumulativeLast()).to.eq(initialPrice[0].mul(elapsedTime2));
+    expect(await lpCtr.price1CumulativeLast()).to.eq(initialPrice[1].mul(elapsedTime2));
+  })
 
 });

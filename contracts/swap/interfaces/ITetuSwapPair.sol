@@ -14,11 +14,15 @@ pragma solidity 0.8.4;
 
 interface ITetuSwapPair {
 
+  function balanceOfVaultUnderlying(address _token) external view returns (uint);
+
   function setFee(uint _fee) external;
 
   function setVaults(address _vault0, address _vault1) external;
 
   function setRewardRecipient(address _recipient) external;
+
+  function claimAll() external;
 
   function MINIMUM_LIQUIDITY() external pure returns (uint);
 

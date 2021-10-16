@@ -354,7 +354,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
       {// scope to avoid stack too deep errors
         (uint reserve0, uint reserve1,) = pair.getReserves();
         (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-        amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
+        amountInput = pair.balanceOfVaultUnderlying(input).sub(reserveInput);
         amountOutput = TetuSwapLibrary.getAmountOut(
           amountInput,
           reserveInput,

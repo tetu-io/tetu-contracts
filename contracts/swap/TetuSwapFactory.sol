@@ -67,9 +67,14 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
     return keccak256(abi.encodePacked(bytecode));
   }
 
-  function setPairFee(uint256 _fee, address _pair) external onlyControllerOrGovernance {
+  function setPairFee(address _pair, uint256 _fee) external onlyControllerOrGovernance {
     require(validPairs[_pair], "TSF: Pair not found");
     TetuSwapPair(_pair).setFee(_fee);
+  }
+
+  function setPairRewardRecipient(address _pair, address _recipient) external onlyControllerOrGovernance {
+    require(validPairs[_pair], "TSF: Pair not found");
+    TetuSwapPair(_pair).setRewardRecipient(_recipient);
   }
 
   function announceVaultsChange(address _vaultA, address _vaultB) external onlyControllerOrGovernance {

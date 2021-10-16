@@ -49,8 +49,8 @@ export class StrategyTestUtils {
         signer, core, "1000000"
     );
 
-    expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
-    expect((await vault.underlying()).toLowerCase()).is.eq(underlying);
+    expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
+    expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
 
     return [vault, strategy, rewardTokenLp];
   }
