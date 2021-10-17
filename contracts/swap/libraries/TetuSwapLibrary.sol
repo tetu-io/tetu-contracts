@@ -13,7 +13,6 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../TetuSwapPair.sol";
 import "../interfaces/ITetuSwapPair.sol";
 
 /// @title UniswapV2Library https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
@@ -37,9 +36,7 @@ library TetuSwapLibrary {
         hex"ff",
         factory,
         keccak256(abi.encodePacked(token0, token1)),
-      //todo put pair hash
-        keccak256(abi.encodePacked(type(TetuSwapPair).creationCode))
-      //        hex"dc3bab25b474432017e449cb94418ee79990d9242485629e5df7c8887d937e8c" // init code hash
+        hex"99c449cea8fe7e3359cf07b306292054e5402de6d068fd40c34c0081fa1cde8e" // init code hash
       )))));
   }
 

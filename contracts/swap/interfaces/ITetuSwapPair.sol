@@ -57,7 +57,6 @@ interface ITetuSwapPair {
   function initialize(
     address _token0,
     address _token1,
-    address _controller,
     uint _fee
   ) external;
 

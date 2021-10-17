@@ -25,11 +25,11 @@ import "../third_party/uniswap/IUniswapV2Factory.sol";
 import "../third_party/IERC20Name.sol";
 import "../base/interface/ISmartVault.sol";
 import "./interfaces/ITetuSwapPair.sol";
-import "../base/governance/Controllable.sol";
 
 /// @title Tetu swap pair based on Uniswap solution
+///        Invest underlying assets to Tetu SmartVaults
 /// @author belbix
-contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
+contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using UQ112x112 for uint224;
 
@@ -54,6 +54,8 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   uint public override price1CumulativeLast;
   string private _symbol;
   uint public override fee;
+  uint public createdTs;
+  uint public createdBlock;
 
   // ********** EVENTS ********************
 
@@ -68,6 +70,10 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     address indexed to
   );
   event Sync(uint112 reserve0, uint112 reserve1);
+  event FeeChanged(uint oldFee, uint newFee);
+  event VaultsChanged(address vault0, address vault1);
+  event RewardRecipientChanged(address oldRecipient, address newRecipient);
+  event Claimed(uint blockTs);
 
   /// @dev Should be create only from factory
   constructor() {
@@ -83,21 +89,25 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   function initialize(
     address _token0,
     address _token1,
-    address _controller,
     uint _fee
-  ) external override onlyFactory initializer {
+  ) external override onlyFactory {
     require(_fee <= MAX_FEE, "TSP: Too high fee");
-    Controllable.initializeControllable(_controller);
+    require(token0 == address(0), "TSP: Already initialized");
+    require(token1 == address(0), "TSP: Already initialized");
     token0 = _token0;
     token1 = _token1;
     fee = _fee;
     _symbol = createPairSymbol(IERC20Name(_token0).symbol(), IERC20Name(_token1).symbol());
+    createdTs = block.timestamp;
+    createdBlock = block.number;
   }
 
   function symbol() external override view returns (string memory) {
     return _symbol;
   }
 
+  /// @dev Return saved reserves. Be aware that reserves always fluctuate!
+  ///      For actual values need to call update
   function getReserves() public view override returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
     _reserve0 = reserve0;
     _reserve1 = reserve1;
@@ -125,6 +135,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   }
 
   /// @dev Assume underlying tokens already sent to this contract
+  ///      Mint new LP tokens to sender. Based on vault shares
   function mint(address to) external nonReentrant override returns (uint liquidity) {
     uint shareAmount0 = IERC20(vault0).balanceOf(address(this));
     uint shareAmount1 = IERC20(vault1).balanceOf(address(this));
@@ -137,12 +148,10 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
 
     uint _totalSupply = totalSupply;
     if (_totalSupply == 0) {
-
       liquidity = Math.sqrt(depositedAmount0 * depositedAmount1) - MINIMUM_LIQUIDITY;
-      _mint(address(0), MINIMUM_LIQUIDITY);
       // permanently lock the first MINIMUM_LIQUIDITY tokens
+      _mint(address(0), MINIMUM_LIQUIDITY);
     } else {
-
       liquidity = Math.min(
         depositedAmount0 * _totalSupply / shareAmount0,
         depositedAmount1 * _totalSupply / shareAmount1
@@ -157,6 +166,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   }
 
   /// @dev Assume lp token already sent to this contract
+  ///      Burn LP tokens and send back underlying assets. Based on vault shares
   function burn(address to) external nonReentrant override returns (uint amount0, uint amount1) {
     uint shareAmount0 = IERC20(vault0).balanceOf(address(this));
     uint shareAmount1 = IERC20(vault1).balanceOf(address(this));
@@ -185,6 +195,9 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   }
 
   /// @dev Assume tokenIn already sent to this contract
+  ///      During swap process underlying assets will be deposited and withdrew from vaults
+  ///      Depends on vault logic, underlying asset can be deposited with little reducing of amount
+  ///      For keeping healthy K we are auto-compounding 1/10 of fees
   function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external nonReentrant override {
     require(amount0Out > 0 || amount1Out > 0, "TSP: Insufficient output amount");
     (uint112 _reserve0, uint112 _reserve1,) = getReserves();
@@ -205,13 +218,21 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
       ISmartVault(vault1).deposit(amount1In);
     }
 
-    _optimisticallyTransfer(amount0Out, amount1Out, to, data);
+    {// scope for optimistically transfer output amount
+      uint amountFee = 0;
+      if (amount0In > amount1In) {
+        amountFee = getFeeAmount(amount0In, _reserve0, _reserve1, amount1Out);
+      } else {
+        amountFee = getFeeAmount(amount1In, _reserve1, _reserve0, amount0Out);
+      }
+      _optimisticallyTransfer(amount0Out, amount1Out, to, data, amountFee);
+    }
 
     // K value should be in healthy range
-    {// scope for reserve{0,1}Adjusted, avoids stack too deep errors
+    {// scope for K checking
       uint balance0 = vaultReserve0();
       uint balance1 = vaultReserve1();
-      // check K without care about fees
+      // check K without fees
       require(balance0 * balance1 >= uint(_reserve0) * uint(_reserve1), "TSP: K too low");
     }
 
@@ -228,6 +249,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
   // ************ NON UNISWAP FUNCTIONS *******************
   // ******************************************************
 
+  /// @dev Returns expected input amount for given output amount
   function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) public view returns (uint amountIn){
     if (amountOut == 0) {
       return 0;
@@ -235,6 +257,22 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     return TetuSwapLibrary.getAmountIn(amountOut, reserveIn, reserveOut, fee);
   }
 
+  /// @dev Calculates fee amount assuming that amountOutWithFee includes actual fee
+  ///      Keep 1/10 of fee for auto-compounding
+  ///      In case of 0 fees we will not able to use vaults with deposited amount fluctuations
+  function getFeeAmount(uint amountIn, uint reserveIn, uint reserveOut, uint amountOutWithFee) public pure returns (uint amountFee){
+    if (amountIn == 0) {
+      return 0;
+    }
+    uint amountOutWithoutFee = TetuSwapLibrary.getAmountOut(amountIn, reserveIn, reserveOut, 0);
+    if (amountOutWithoutFee <= amountOutWithFee) {
+      return 0;
+    }
+    // keep 10% for auto compounding
+    amountFee = (amountOutWithoutFee - amountOutWithFee) * 9 / 10;
+  }
+
+  /// @dev Returns vault underlying balance, or zero if it is not a underlying token
   function balanceOfVaultUnderlying(address _token) external view override returns (uint){
     if (_token == ISmartVault(vault0).underlying()) {
       return ISmartVault(vault0).underlyingBalanceWithInvestmentForHolder(address(this));
@@ -244,18 +282,22 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     return 0;
   }
 
+  /// @dev Returns vault underlying balance for this contract
   function vaultReserve0() public view returns (uint112) {
     return uint112(ISmartVault(vault0).underlyingBalanceWithInvestmentForHolder(address(this)));
   }
 
+  /// @dev Returns vault underlying balance for this contract
   function vaultReserve1() public view returns (uint112){
     return uint112(ISmartVault(vault1).underlyingBalanceWithInvestmentForHolder(address(this)));
   }
 
   // ********* GOVERNANCE FUNCTIONS ****************
 
+  /// @dev Set fee in range 0-0.3%
   function setFee(uint _fee) external override onlyFactory {
     require(_fee <= MAX_FEE, "TSP: Too high fee");
+    emit FeeChanged(fee, _fee);
     fee = _fee;
   }
 
@@ -275,38 +317,57 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
 
     depositAllToVault(vault0);
     depositAllToVault(vault1);
+    emit VaultsChanged(vault0, vault1);
   }
 
+  /// @dev Set rewards recipient. This address will able to claim vault rewards and get swap fees
   function setRewardRecipient(address _recipient) external override onlyFactory {
-    require(msg.sender == factory, "TSP: Not factory");
+    emit RewardRecipientChanged(rewardRecipient, _recipient);
     rewardRecipient = _recipient;
   }
 
+  /// @dev Only reward recipient able to call it
+  ///      Claims vaults rewards and send it to recipient
   function claimAll() external override {
     require(msg.sender == rewardRecipient, "TSP: Only recipient can claim");
     _claim(vault0);
     _claim(vault1);
+    emit Claimed(block.timestamp);
   }
 
   // ***************** INTERNAL LOGIC ****************
 
-  function _optimisticallyTransfer(uint amount0Out, uint amount1Out, address to, bytes calldata data) private {
+  /// @dev Transfers output amount + fees
+  function _optimisticallyTransfer(
+    uint amount0Out,
+    uint amount1Out,
+    address to,
+    bytes calldata data,
+    uint amountFee
+  ) private {
     address _token0 = token0;
     address _token1 = token1;
     require(to != _token0 && to != _token1, "TSP: Invalid to");
     if (amount0Out > 0) {
-      withdrawFromVault(vault0, amount0Out);
+      withdrawFromVault(vault0, amount0Out + amountFee);
       IERC20(_token0).safeTransfer(to, amount0Out);
+      if (amountFee > 0) {
+        IERC20(_token0).safeTransfer(rewardRecipient, amountFee);
+      }
     }
     if (amount1Out > 0) {
-      withdrawFromVault(vault1, amount1Out);
+      withdrawFromVault(vault1, amount1Out + amountFee);
       IERC20(_token1).safeTransfer(to, amount1Out);
+      if (amountFee > 0) {
+        IERC20(_token1).safeTransfer(rewardRecipient, amountFee);
+      }
     }
     if (data.length > 0) {
       IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
     }
   }
 
+  /// @dev Deposit all underlying tokens to given vault
   function depositAllToVault(address _vault) private returns (uint) {
     uint underlyingAmount = IERC20(ISmartVault(_vault).underlying()).balanceOf(address(this));
     if (underlyingAmount > 0) {
@@ -315,6 +376,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     return underlyingAmount;
   }
 
+  /// @dev Exit from given vault and set approve to zero for underlying token
   function exitFromVault(address _vault) private {
     if (_vault == address(0)) {
       return;
@@ -326,6 +388,7 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     IERC20(ISmartVault(_vault).underlying()).safeApprove(_vault, 0);
   }
 
+  /// @dev Withdraw approx amount of underlying amount from given vault
   function withdrawFromVault(address _vault, uint _underlyingAmount) private {
     ISmartVault sv = ISmartVault(_vault);
     uint shareToWithdraw = _underlyingAmount * sv.underlyingUnit() / sv.getPricePerFullShare();
@@ -333,11 +396,13 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
     sv.withdraw(shareToWithdraw);
   }
 
+  /// @dev Creates symbol string from given names
   function createPairSymbol(string memory name0, string memory name1) private pure returns (string memory) {
     return string(abi.encodePacked("TLP_", name0, "_", name1));
   }
 
-  function _claim(address _vault) internal {
+  /// @dev Claim all rewards from given vault and send to reward recipient
+  function _claim(address _vault) private {
     require(_vault != address(0), "TSP: Zero vault");
     ISmartVault sv = ISmartVault(_vault);
 
@@ -346,7 +411,9 @@ contract TetuSwapPair is Controllable, TetuSwapERC20, ITetuSwapPair, ReentrancyG
       uint bal = IERC20(rt).balanceOf(address(this));
       sv.getReward(rt);
       uint claimed = IERC20(rt).balanceOf(address(this)) - bal;
-      IERC20(rt).safeTransfer(msg.sender, claimed);
+      if (claimed > 0) {
+        IERC20(rt).safeTransfer(rewardRecipient, claimed);
+      }
     }
   }
 }

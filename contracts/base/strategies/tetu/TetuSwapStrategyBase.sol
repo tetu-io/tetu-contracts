@@ -53,6 +53,8 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     require(_vault != address(0), "Zero vault");
     require(_underlying != address(0), "Zero underlying");
     pair = _underlying;
+    _rewardTokens.push(ITetuSwapPair(pair).token0());
+    _rewardTokens.push(ITetuSwapPair(pair).token1());
   }
 
   // ************* VIEWS *******************
@@ -103,11 +105,14 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     // assume only xTetu rewards exist
     address rt = IController(controller()).psVault();
 
+    // it is redirected rewards - PS already had their part of income
+    // in case of pair with xTETU-XXX we not able to separate it
     uint256 amount = IERC20(rt).balanceOf(address(this));
     if (amount > 0) {
       IERC20(rt).safeApprove(_smartVault, 0);
       IERC20(rt).safeApprove(_smartVault, amount);
       ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
     }
+    liquidateRewardDefault();
   }
 }

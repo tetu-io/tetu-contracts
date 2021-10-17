@@ -113,6 +113,14 @@ describe("Tetu Swap base tests", function () {
 
     await factory.setPairRewardRecipient(lp, lpStrategy.address);
 
+    await StrategyTestUtils.setupForwarder(
+        core.feeRewardForwarder,
+        [tokenA, tokenB],
+        lp,
+        core.rewardToken.address,
+        MaticAddresses.QUICK_FACTORY
+    );
+
   });
 
   after(async function () {
@@ -166,7 +174,7 @@ describe("Tetu Swap base tests", function () {
     expect(userTokenBBalAfter - userTokenBBal).is.eq(19.029477000000043);
 
     expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(209.999998);
-    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(380.970507);
+    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(380.954181);
 
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.lessThan(0.0001);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.lessThan(0.0001);
@@ -372,7 +380,7 @@ describe("Tetu Swap base tests", function () {
     expect(await lpCtr.fee()).is.eq(0);
   });
 
-  it("claim", async () => {
+  it("claim + hardwork", async () => {
 
     await UniswapUtils.addLiquidity(
         signer,
@@ -384,14 +392,25 @@ describe("Tetu Swap base tests", function () {
         router.address
     );
 
+    const strategyBal = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, lpStrategy.address));
+
+    await UniswapUtils.swapExactTokensForTokens(
+        signer,
+        [tokenA, tokenB],
+        utils.parseUnits("100", tokenADec).toString(),
+        signer.address,
+        router.address
+    );
+
+    const strategyBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, lpStrategy.address));
+    expect(strategyBalAfter).is.greaterThan(strategyBal);
+
     await TimeUtils.advanceBlocksOnTs(60 * 60);
 
     const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(core.psVault.address, lpVault.address));
     await lpVault.doHardWork();
     const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(core.psVault.address, lpVault.address));
 
-    console.log('rtBal', rtBal);
-    console.log('rtBalAfter', rtBalAfter);
     expect(rtBalAfter).is.greaterThan(rtBal);
   });
 

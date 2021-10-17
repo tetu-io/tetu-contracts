@@ -51,7 +51,7 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
     assembly {
       pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
     }
-    TetuSwapPair(pair).initialize(token0, token1, controller(), DEFAULT_FEE);
+    TetuSwapPair(pair).initialize(token0, token1, DEFAULT_FEE);
     getPair[token0][token1] = pair;
     // populate mapping in the reverse direction
     getPair[token1][token0] = pair;
