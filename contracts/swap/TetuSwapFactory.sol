@@ -17,6 +17,9 @@ import "../base/interface/ISmartVault.sol";
 import "../base/governance/Controllable.sol";
 import "./FactoryStorage.sol";
 
+/// @title Tetu swap factory based on Uniswap code
+/// @dev Use with TetuProxyControlled.sol
+/// @author belbix
 contract TetuSwapFactory is Controllable, FactoryStorage {
 
   /// @notice Version of the contract
@@ -59,12 +62,6 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
     validPairs[pair] = true;
     _setVaultsForPair(pair, vaultA, vaultB);
     emit PairCreated(token0, token1, pair, allPairs.length);
-  }
-
-  // todo REMOVE
-  function calcHash() external view returns (bytes32) {
-    bytes memory bytecode = type(TetuSwapPair).creationCode;
-    return keccak256(abi.encodePacked(bytecode));
   }
 
   function setPairFee(address _pair, uint256 _fee) external onlyControllerOrGovernance {

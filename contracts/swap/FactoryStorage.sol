@@ -27,5 +27,5 @@ abstract contract FactoryStorage is Initializable, ITetuSwapFactory {
   mapping(address => uint256) timeLocks;
 
   //slither-disable-next-line unused-state
-  uint256[50] private ______gap;
+  uint256[46] private ______gap;
 }

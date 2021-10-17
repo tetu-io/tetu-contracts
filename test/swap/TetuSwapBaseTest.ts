@@ -69,7 +69,6 @@ describe("Tetu Swap base tests", function () {
     tokenADec = await TokenUtils.decimals(tokenA);
     tokenBDec = await TokenUtils.decimals(tokenB);
 
-    console.log('hash', await factory.calcHash());
     await factory.createPair(IRON_FOLD_USDC, IRON_FOLD_USDT);
     console.log('pair created')
 

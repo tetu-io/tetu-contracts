@@ -23,7 +23,8 @@ import "./interfaces/ITetuSwapRouter.sol";
 import "./interfaces/ITetuSwapFactory.sol";
 import "./interfaces/IWETH.sol";
 
-
+/// @title UniswapV2Router02 https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
+/// @dev Few changes for compatability with Tetu Swap
 contract TetuSwapRouter is ITetuSwapRouter {
   using SafeMath for uint;
 
