@@ -171,12 +171,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     //TODO add some checks?
   }
 
-  function _convertUnderlyingToDeepUnderlying(uint256 underlyingAmount) internal view returns (uint256 matic) {
-    uint256 maiAmount = _balancerGetExitAmount(underlyingAmount);
-    uint256 repayFee = maiAmount.mul(5).div(1000); // (0.5% fee)
-    uint256 camMatic = maiAmount.sub(repayFee).mul(100).div(mai.borrowPercentage);
-    uint256 amMatic = camMatic; //TODO check
-    matic = amMatic; //TODO check
+  function _convertUnderlyingToDeepUnderlying(uint256 underlyingAmount) internal view returns (uint256) {
+   return 0; //TODO !!!
   }
 
   /// @dev Stub function for Strategy Base implementation
