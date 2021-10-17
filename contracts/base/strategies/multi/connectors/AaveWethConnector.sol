@@ -19,41 +19,41 @@ import "./../../../../third_party/aave/IWETHGateway.sol";
 contract AaveWethConnector {
     using SafeERC20 for IERC20;
 
-    IWETHGateway wethGateway;
-    address public lendingPool;
-    address public lpToken;
+    struct AaveWethData {
+        address wethGateway;
+        address pool;
+        address lpToken;
+    }
+
+    AaveWethData private d;
 
     constructor(
-        address _wethGateway,
-        address _lendingPool,
-        address _lpToken
-    ) public {
-        wethGateway = IWETHGateway(_wethGateway);
-        lendingPool = _lendingPool;
-        lpToken     = _lpToken;
+        AaveWethData memory aaveWethData
+    ) {
+        d = aaveWethData;
     }
 
     function _aaveDepositETH(uint256 amount) public payable {
         //TODO try catch with gas limit
-        wethGateway.depositETH{value:amount}(lendingPool, address(this), 0);
+        IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
     }
 
     function _aaveWithdrawETH(uint256 amount) internal {
-        IERC20(lpToken).safeApprove(address(wethGateway), 0);
-        IERC20(lpToken).safeApprove(address(wethGateway), amount);
+        IERC20(d.lpToken).safeApprove(address(d.wethGateway), 0);
+        IERC20(d.lpToken).safeApprove(address(d.wethGateway), amount);
         //TODO try catch with gas limit
-        wethGateway.withdrawETH(lendingPool, amount, address(this));
+        IWETHGateway(d.wethGateway).withdrawETH(d.pool, amount, address(this));
     }
 
 //    function repayETH(
-//        address lendingPool,
+//        address d.Pool,
 //        uint256 amount,
 //        uint256 rateMode,
 //        address onBehalfOf
 //    ) public payable;
 //
 //    function borrowETH(
-//        address lendingPool,
+//        address d.Pool,
 //        uint256 amount,
 //        uint256 interesRateMode,
 //        uint16 referralCode

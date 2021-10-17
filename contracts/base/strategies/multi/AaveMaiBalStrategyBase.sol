@@ -39,26 +39,35 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   /// @dev Assets should reflect underlying tokens for investing
   address[] private _assets;
 
-  address constant WMATIC = 0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270;
+  address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
 
   //TODO move to constructor
-  address public constant aaveWethGateway        = 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97; // for MATIC deposits
-  address public constant aavePool               = 0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf; // LendingPool
-  address public constant aaveLPToken            = 0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4; // Aave Matic Market WMATIC (amWMATIC)
 
-  address public constant maiVault               = 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a; // camWMATIC MAI Vault (cMVT)
-  address public constant maiLPToken             = 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b; // Compounding Aave Market Matic (camWMATIC)
-  uint256 public constant maiBorrowPercentage    = 33;
-  address public constant maiBorrowToken         = 0xa3fa99a148fa48d14ed51d610c367c61876997f1; // miMATIC/MAI Token
-  address public constant maiRewardToken         = 0x580a84c73811e1839f75d86d75d88cca0c241ff4; // QI/MAI Token
+  // using structs to avoid "pool to deep" compiler error
 
-  address public constant balancerVault          = 0xba12222222228d8ba445958a75a0704d566bf2c8;
-  bytes32 public constant balancerPoolID         = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012;
-  uint256 public constant balancerTokenIndexAtPool = 2;
-  address public constant balancerLPToken        = 0x06df3b2bbb68adc8b0e302443692037ed9f91b42; // Balancer Polygon Stable Pool (BPSP)
-  address public constant balancerRewardToken    = 0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3; // BAL
+  AaveWethData aave = AaveWethData({
+    wethGateway        : 0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97, // for MATIC deposits
+    pool               : 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf, // LendingPool
+    lpToken            : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4 // Aave Matic Market WMATIC (amWMATIC)
+  });
 
-  address public constant deepUnderlying         = balancerLPToken;
+  MaiData mai = MaiData({
+    vault               : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
+    sourceToken         : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4, // Aave Matic Market WMATIC (amWMATIC)
+    lpToken             : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B, // Compounding Aave Market Matic (camWMATIC)
+    borrowPercentage    : 33,
+    borrowToken         : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
+    rewardToken         : 0x580A84C73811E1839F75d86d75d88cCa0c241fF4 // QI/MAI Token
+  });
+
+  BalancerData balancer = BalancerData({
+    vault          : 0xBA12222222228d8Ba445958a75a0704d566BF2C8,
+    sourceToken    : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
+    poolID         : 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012,
+    tokenIndexAtPool : 2,
+    lpToken        : 0x06Df3b2bbB68adc8B0e302443692037ED9f91b42, // Balancer Polygon Stable Pool (BPSP)
+    rewardToken    : 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3 // BAL
+  });
 
   /// @notice Contract constructor
   constructor(
@@ -68,11 +77,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     address[] memory __rewardTokens,
     address[] memory __assets
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
-    AaveWethConnector(aaveWethGateway, aavePool, aaveLPToken)
-    MaiConnector(maiVault, aaveLPToken, maiLPToken, maiBorrowToken)
-    BalancerConnector(balancerVault, maiBorrowToken, balancerPoolID, balancerTokenIndexAtPool, balancerLPToken)
+    AaveWethConnector(aave)
+    MaiConnector(mai)
+    BalancerConnector(balancer)
   {
-    assert(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
+    require(_underlying==WMATIC, _UNDERLYING_MUST_BE_WMATIC ); //TODO extend for other tokens later
     _assets = __assets;
 
 //    MAI: create camMATIC vault
@@ -81,7 +90,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //    Function: createVault()
     _maiCreateVault(); // ERC721Enumerable NFT token issued
 
-    rewardTokens = [maiRewardToken, balancerRewardToken]; //TODO check if there is some other reward tokens
+    //TODO check if there is some other reward tokens
+    _rewardTokens.push(mai.rewardToken);
+    _rewardTokens.push(balancer.rewardToken);
   }
 
   /// @dev Stub function for Strategy Base implementation
@@ -94,12 +105,12 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     // call empty functions for getting 100% test coverage
     //TODO claim AAVE rewards
     //TODO check erc20QiStablecoin Collateral to Debt Ratio checkCollateralPercentage: at 135 vault will be liquidated
-    withdrawAndClaimFromPool(0);
-    emergencyWithdrawFromPool();
+    // withdrawAndClaimFromPool(0);
+    //emergencyWithdrawFromPool();
     liquidateReward();
   }
 
-  function _balance(address token) internal returns (uint256) {
+  function _balance(address token) internal view returns (uint256) {
     return IERC20(token).balanceOf(address(this));
   }
 
@@ -109,9 +120,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  https://polygonscan.com/tx/0xab73bb28961fcee75cb5865c8cad0ff1aa7235461e8505dc9acea50078b1b12c
 //  contract WETHGateway 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97
 //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
-    assert(_underlyingToken==WMATIC, _UNDERLYING_MUST_BE_WMATIC );  //TODO extend for other tokens later
-
-    uint256 maiVaultID = _maiGetVaultID();
+    require(_underlyingToken==WMATIC, _UNDERLYING_MUST_BE_WMATIC );  //TODO extend for other tokens later
 
     IWETH(WMATIC).withdraw(amount); // Unwrap WMATIC
     _aaveDepositETH(amount);
@@ -124,7 +133,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract camWMATIC 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b
 //  Function: enter(uint256 _amount)
 
-    uint256 aaveLPTokensAmount = _balance(aavePool);
+    uint256 aaveLPTokensAmount = _balance(aave.pool);
     _maiEnterCamWMatic(aaveLPTokensAmount);
 
 //  MAI: approve, deposit camMATIC to collateral
@@ -135,7 +144,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
 //  Function: depositCollateral(uint256 vaultID 0x53e, uint256 amount db037b6c4b33e8b)
 
-    uint256 maiLPTokensAmount = _balance(maiLPToken);
+    uint256 maiLPTokensAmount = _balance(mai.lpToken);
     _maiDepositCollateral(maiLPTokensAmount);
 
 //  MAI: borrow MAI (miMATIC) 33%  {QI airdrop}
@@ -144,7 +153,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 //  Function: borrowToken(uint256 vaultID 0x53e, uint256 amount 368a5a82c9a940e)
 
     //TODO !!! calc borrow amount more precise (get max from contract, then mul to maiBorrowPercentage)
-    uint256 maiBorrowAmount = maiLPTokensAmount.mul(maiBorrowPercentage).div(100);
+    uint256 maiBorrowAmount = maiLPTokensAmount.mul(mai.borrowPercentage).div(100);
     _maiBorrowToken(maiBorrowAmount);
 
 
@@ -159,12 +168,22 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 
     _balancerJoinPool(maiBorrowAmount);
 
+    //TODO add some checks?
+  }
+
+  function _convertUnderlyingToDeepUnderlying(uint256 underlyingAmount) internal view returns (uint256 matic) {
+    uint256 maiAmount = _balancerGetExitAmount(underlyingAmount);
+    uint256 repayFee = maiAmount.mul(5).div(1000); // (0.5% fee)
+    uint256 camMatic = maiAmount.sub(repayFee).mul(100).div(mai.borrowPercentage);
+    uint256 amMatic = camMatic; //TODO check
+    matic = amMatic; //TODO check
   }
 
   /// @dev Stub function for Strategy Base implementation
-  function withdrawAndClaimFromPool(uint256 amount) internal override {
+  function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
+
     //TODO convert amount (WMATIC) to deepUnderlying (BPSP)
-    uint256 exitAmount = amount; //TODO !!!
+    uint256 exitAmount = _convertUnderlyingToDeepUnderlying(underlyingAmount);
 
     // BAL: withdraw miMATIC
     // https://polygonscan.com/tx/0xc114039567b12bc2128bfe54eab0e742620a4200587525ce512c489805966055
@@ -173,25 +192,26 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
 
     // MAI: repay miMATIC/MAI (0.5% fee)
     // https://polygonscan.com/tx/0x81e483a29d3ec3b3265db7d013eeb97968233cfae2d3989bc325e8b24ebc6e0f
-    uint256 repayAmount = _balance(maiBorrowToken);
+    uint256 repayAmount = _balance(mai.borrowToken);
     _maiRepayToken(repayAmount);
 
     // MAI: withdraw camWMATIC
     // https://polygonscan.com/tx/0xfcd83b5c444e537b6f569dac7ae6dd82cb011d80cb00d790f2e1814c8175d437
-    uint256 maiWithdrawAmount = repayAmount.mul(100).div(maiBorrowPercentage);
-    _maiWithdrawCollateral(maiWithdrawAmount);
+    uint256 camWMATICAmount = repayAmount.mul(100).div(mai.borrowPercentage);
+    _maiWithdrawCollateral(camWMATICAmount);
 
     // MAI: withdraw amWMATIC
     // https://polygonscan.com/tx/0x72c13585c9c35f85b6fa70882f8bad80745689f09070df3eb1c54a8027c89f30
-    _maiLeaveCamWMatic(maiWithdrawAmount);
+    _maiLeaveCamWMatic(camWMATICAmount);
 
     // AAVE: approve amWMATIC for AAVE
     // https://polygonscan.com/tx/0x4a82adcdd3fc296eb1945a3339d5785ecd2b6c50cbf6c960ab7dd4a367fae6bd
     // AAVE: withdraw MATIC
     // https://polygonscan.com/tx/0x517e48dc212f1980a5e79ec1d1f4e3360519596e7119a921916cc7122df3867c
-    _aaveWithdrawETH(); // Withdraw MATIC from AAVE
+    uint256 aaveLPTokenAmount = _balance(aave.lpToken);
+    _aaveWithdrawETH(aaveLPTokenAmount); // Withdraw MATIC from AAVE
 
-    IWETH(WMATIC).deposit(amount); // Wrap MATIC to WMATIC
+    IWETH(WMATIC).deposit{value:address(this).balance}(); // Wrap MATIC to WMATIC
 
     //TODO add some checks?
   }
@@ -216,7 +236,6 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   /// @dev Stub function for Strategy Base implementation
   function poolTotalAmount() external pure override returns (uint256) {
 
-    uint256 maiBorrowTokenAmount = _balancerGetExitAmount();
     return 0; //TODO
   }
 
@@ -224,8 +243,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     return _assets;
   }
 
-  function platform() external view override returns (Platform) {
-    return Platform.UNKNOWN; //TODO
+  function platform() external pure override returns (Platform) {
+    return Platform.UNKNOWN; //TODO What platform we have to use?
   }
 
 }

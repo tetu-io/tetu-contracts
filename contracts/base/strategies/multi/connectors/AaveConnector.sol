@@ -25,7 +25,7 @@ contract AaveConnector {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 private constant _MAX_UINT256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint256 private constant _MAX_UINT256 = ~uint256(0); //0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     address public aaveUnderlying;
     address public aTokenAddress;
@@ -37,7 +37,7 @@ contract AaveConnector {
         address _underlying,
         address _lendingPoolProvider,
         address _protocolDataProvider
-    ) public {
+    ) {
         aaveUnderlying = _underlying;
         lendingPoolProvider = _lendingPoolProvider;
         protocolDataProvider = _protocolDataProvider;

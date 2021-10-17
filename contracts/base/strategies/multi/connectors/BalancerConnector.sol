@@ -22,29 +22,23 @@ contract BalancerConnector {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
+    struct BalancerData {
+        address vault;
+        address sourceToken;
+        bytes32 poolID;
+        uint256 tokenIndexAtPool;
+        address lpToken;
+        address rewardToken;
+    }
+
     string private constant _WRONG_SOURCE_TOKEN = "BC: wrong source token or its index";
 
-    address private _balancerVault;
-    address private _sourceToken;
-    bytes32 private _balancerPoolID;
-    uint256 private _sourceTokenIndexAtPool;
-    address private _balancerLPToken;
-
-    enum JoinKind { INIT, EXACT_TOKENS_IN_FOR_BPT_OUT, TOKEN_IN_FOR_EXACT_BPT_OUT }
-    enum ExitKind { EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, EXACT_BPT_IN_FOR_TOKENS_OUT, BPT_IN_FOR_EXACT_TOKENS_OUT }
+    BalancerData private d;
 
     constructor(
-        address balancerVaultAddress,
-        address sourceTokenAddress,
-        bytes32 balancerPoolID,
-        uint256 sourceTokenIndexAtPool,
-        address balancerLPToken
-    ) public {
-        _balancerVault = balancerVaultAddress;
-        _sourceToken = sourceTokenAddress;
-        _balancerPoolID         = balancerPoolID;
-        _sourceTokenIndexAtPool = sourceTokenIndexAtPool;
-        _balancerLPToken        = balancerLPToken;
+        BalancerData memory balancerData
+    ) {
+        d = balancerData;
     }
 
     // from https://github.com/balancer-labs/balancer-v2-monorepo/blob/f45076067b68b27ea023632e69349e3051746cd4/pkg/solidity-utils/contracts/helpers/ERC20Helpers.sol
@@ -56,46 +50,51 @@ contract BalancerConnector {
     }
 
     function _balancerJoinPool(uint256 amount) internal {
-        IERC20(_sourceToken).safeApprove(_balancerVault, 0);
-        IERC20(_sourceToken).safeApprove(_balancerVault, amount);
+        IERC20(d.sourceToken).safeApprove(d.vault, 0);
+        IERC20(d.sourceToken).safeApprove(d.vault, amount);
 
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
-        (IERC20[] memory tokens,,) = IBVault(_balancerVault).getPoolTokens(_balancerPoolID);
-        require( _sourceToken ==address(tokens[_sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
+        require( d.sourceToken ==address(tokens[d.tokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
         uint256[] memory maxAmountsIn = new uint256[](4);
-        maxAmountsIn[_sourceTokenIndexAtPool] = amount;
+        maxAmountsIn[d.tokenIndexAtPool] = amount;
 
+        // example found at https://etherscan.io/address/0x5C6361f4cC18Df63D07Abd1D59A282d82C27Ad17#code#F2#L162
+        uint256 minAmountOut = 1;
+        bytes memory userData = abi.encode(IBVault.JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT, maxAmountsIn, minAmountOut); //TODO check
         IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
             assets: _asIAsset(tokens),
             maxAmountsIn: maxAmountsIn,
-            userData: bytes(JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT),
+            userData: userData,
             fromInternalBalance: false
         });
 
         //TODO try catch with gas limit
-        IBVault(_balancerVault).joinPool(_balancerPoolID, address(this), address(this), request);
+        IBVault(d.vault).joinPool(d.poolID, address(this), address(this), request);
     }
 
     function _balancerExitPool(uint256 amount) internal {
-        IERC20[] memory tokens = IBVault(_balancerVault).getPoolTokens(_balancerPoolID);
-        require( _sourceToken ==address(tokens[_sourceTokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
+        require( d.sourceToken ==address(tokens[d.tokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
         uint256[] memory minAmountsOut = new uint256[](4);
-        minAmountsOut[_sourceTokenIndexAtPool] = amount;
+        minAmountsOut[d.tokenIndexAtPool] = amount;
+        uint256 bptAmountIn = _balancerGetExitAmount(amount);
 
         //TODO !!! use code from deployed contract (see example transaction at AaveMaiBalStrategyBase), not from master branch
+        bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, bptAmountIn, d.tokenIndexAtPool); //TODO check
         IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
             assets: _asIAsset(tokens),
             minAmountsOut: minAmountsOut,
-            userData: bytes(ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT),
-            fromInternalBalance: false
+            userData: userData,
+            toInternalBalance: false
         });
 
         //TODO try catch with gas limit
-        IBVault(_balancerVault).exitPool(_balancerPoolID, address(this), address(this), request);
+        IBVault(d.vault).exitPool(d.poolID, address(this), payable(address(this)), request);
     }
 
-    function _balancerGetExitAmount() internal {
-        uint256 total = IERC20(_balancerLPToken).balanceOf(address(this));
+    function _balancerGetExitAmount(uint256 amount) internal view returns (uint256) {
+        uint256 total = IERC20(d.lpToken).balanceOf(address(this));
         //TODO !!! Convert BPT LP Tokens to MAI amount -> StableMath._calcTokenOutGivenExactBptIn
         return total;
     }

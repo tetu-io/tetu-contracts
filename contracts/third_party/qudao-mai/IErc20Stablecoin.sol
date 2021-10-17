@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: ISC
 //https://github.com/0xlaozi/qidao/blob/main/contracts/erc20Stablecoin/erc20Stablecoin.sol
 pragma solidity 0.8.4;
 
