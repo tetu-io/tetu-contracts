@@ -24,20 +24,20 @@ export class StrategyTestUtils {
   public static readonly SECONDS_OF_YEAR = StrategyTestUtils.SECONDS_OF_DAY * 365;
 
   public static async deploy(
-      signer: SignerWithAddress,
-      core: CoreContractsWrapper,
-      vaultName: string,
-      strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
-      underlying: string
+    signer: SignerWithAddress,
+    core: CoreContractsWrapper,
+    vaultName: string,
+    strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
+    underlying: string
   ): Promise<[SmartVault, IStrategy, string]> {
 
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        vaultName,
-        strategyDeployer,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
+      vaultName,
+      strategyDeployer,
+      core.controller,
+      core.vaultController,
+      core.psVault.address,
+      signer
     );
 
     const vault = data[1] as SmartVault;
@@ -45,7 +45,7 @@ export class StrategyTestUtils {
 
 
     const rewardTokenLp = await UniswapUtils.createPairForRewardToken(
-        signer, core, "1000000"
+      signer, core, "1000000"
     );
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
@@ -134,7 +134,7 @@ export class StrategyTestUtils {
     await vaultForUser.getAllRewards();
     const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
     expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
-    .is.not.eq("0", "should have earned iToken rewards");
+      .is.not.eq("0", "should have earned iToken rewards");
 
     // ************* EXIT ***************
     await vaultForUser.exit();
@@ -142,20 +142,20 @@ export class StrategyTestUtils {
 
     if (await info.vault.ppfsDecreaseAllowed()) {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-      .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999,
-          "should have more or equal underlying than deposited");
+        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999,
+        "should have more or equal underlying than deposited");
     } else {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-      .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec),
-          "should have more or equal underlying than deposited");
+        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec),
+        "should have more or equal underlying than deposited");
     }
 
 
     const userEarnedTotalAfter = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
     console.log('user total earned rt0', +utils.formatUnits(userEarnedTotal), +utils.formatUnits(userEarnedTotalAfter),
-        +utils.formatUnits(userEarnedTotalAfter) - +utils.formatUnits(userEarnedTotal))
+      +utils.formatUnits(userEarnedTotalAfter) - +utils.formatUnits(userEarnedTotal))
     expect(+utils.formatUnits(userEarnedTotalAfter))
-    .is.greaterThan(+utils.formatUnits(userEarnedTotal));
+      .is.greaterThan(+utils.formatUnits(userEarnedTotal));
     await info.strategy.continueInvesting();
   }
 
@@ -164,7 +164,7 @@ export class StrategyTestUtils {
     for (let i = 0; i < tokens.length; i++) {
       const rtDec = await TokenUtils.decimals(tokens[i]);
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokens[i], strategy.address), rtDec))
-      .is.approximately(+utils.formatUnits(balances[i], rtDec), 0.0000000001, 'strategy has wrong reward balance for ' + i);
+        .is.approximately(+utils.formatUnits(balances[i], rtDec), 0.0000000001, 'strategy has wrong reward balance for ' + i);
     }
   }
 
@@ -174,23 +174,23 @@ export class StrategyTestUtils {
     expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
     const stratInvested = await strategy.investedUnderlyingBalance();
     expect(+utils.formatUnits(stratInvested))
-    .is.greaterThanOrEqual(+utils.formatUnits(invested),
-        "assets in the pool should be more or equal than invested");
+      .is.greaterThanOrEqual(+utils.formatUnits(invested),
+      "assets in the pool should be more or equal than invested");
     expect(await vault.underlyingBalanceInVault())
-    .at.eq(deposit.sub(invested), "all assets in strategy");
+      .at.eq(deposit.sub(invested), "all assets in strategy");
   }
 
   public static async deposit(
-      user: SignerWithAddress,
-      vault: SmartVault,
-      underlying: string,
-      deposit: string
+    user: SignerWithAddress,
+    vault: SmartVault,
+    underlying: string,
+    deposit: string
   ) {
     const dec = await TokenUtils.decimals(underlying);
     const bal = await TokenUtils.balanceOf(underlying, user.address);
     console.log('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec))
-    .is.greaterThanOrEqual(+utils.formatUnits(deposit, dec), 'not enough balance')
+      .is.greaterThanOrEqual(+utils.formatUnits(deposit, dec), 'not enough balance')
     const vaultForUser = vault.connect(user);
     await TokenUtils.approve(underlying, user, vault.address, deposit);
     console.log('deposit', BigNumber.from(deposit).toString())
@@ -211,15 +211,15 @@ export class StrategyTestUtils {
     expect(await info.strategy.pausedInvesting()).is.eq(false);
 
     expect(await info.strategy.rewardPoolBalance())
-    .is.eq("0", "assets in the pool");
+      .is.eq("0", "assets in the pool");
   }
 
   public static async exit(
-      vaultForUser: SmartVault,
-      userAddress: string,
-      deposit: string,
-      underlying: string,
-      userUnderlyingBalance: BigNumber
+    vaultForUser: SmartVault,
+    userAddress: string,
+    deposit: string,
+    underlying: string,
+    userUnderlyingBalance: BigNumber
   ) {
     console.log('try withdraw')
     await vaultForUser.withdraw(BigNumber.from(deposit).div(2));
@@ -227,11 +227,11 @@ export class StrategyTestUtils {
     const currentBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, userAddress), undDec);
     const expectedBal = +utils.formatUnits(userUnderlyingBalance.sub(BigNumber.from(deposit).div(2)), undDec);
     expect(currentBal)
-    .is.approximately(expectedBal, expectedBal * 0.01, "should have a half of underlying");
+      .is.approximately(expectedBal, expectedBal * 0.01, "should have a half of underlying");
     console.log('try exit')
     await vaultForUser.exit();
     expect(await TokenUtils.balanceOf(underlying, userAddress))
-    .is.eq(userUnderlyingBalance, "should have all underlying");
+      .is.eq(userUnderlyingBalance, "should have all underlying");
     console.log('user exited');
   }
 
@@ -247,7 +247,7 @@ export class StrategyTestUtils {
   public static checkBalances(balancesBefore: BigNumber[], balancesAfter: BigNumber[]) {
     balancesAfter.forEach((after, i) => {
       expect(after.sub(balancesBefore[i]).isZero())
-      .is.eq(false, "should have earned rewards for " + i);
+        .is.eq(false, "should have earned rewards for " + i);
     })
   }
 
@@ -269,24 +269,24 @@ export class StrategyTestUtils {
   }
 
   public static async deployStrategy(
-      strategyName: string,
-      signer: SignerWithAddress,
-      coreContracts: CoreContractsWrapper,
-      underlying: string,
-      underlyingName: string) {
+    strategyName: string,
+    signer: SignerWithAddress,
+    coreContracts: CoreContractsWrapper,
+    underlying: string,
+    underlyingName: string) {
 
     return StrategyTestUtils.deploy(
+      signer,
+      coreContracts,
+      underlyingName,
+      async vaultAddress => DeployerUtils.deployContract(
         signer,
-        coreContracts,
-        underlyingName,
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            strategyName,
-            coreContracts.controller.address,
-            underlying,
-            vaultAddress
-        ) as Promise<IStrategy>,
-        underlying
+        strategyName,
+        coreContracts.controller.address,
+        underlying,
+        vaultAddress
+      ) as Promise<IStrategy>,
+      underlying
     );
   }
 
@@ -315,19 +315,19 @@ export class StrategyTestUtils {
     return totalToClaim
   }
 
-  public static async buyAndApproveTokens(tokens: string[], amounts: number[], singer: SignerWithAddress, contractToApprove:string): Promise<void> {
-  for (const token of tokens) {
-    const i = tokens.indexOf(token);
-    let tokenContract = await ethers.getContractAt("IERC20", token, singer) as IERC20;
-    let targetBalance = amounts[i];
-    let tokenBalance = await tokenContract.balanceOf(singer.address);
-    while (tokenBalance < BigNumber.from(amounts[i])){
-      console.log(`Target bal: ${targetBalance}, current balance: ${tokenBalance}`);
-      await UniswapUtils.buyToken(singer, MaticAddresses.SUSHI_ROUTER, token, utils.parseUnits(amounts[i].toString()));
-      tokenBalance = await tokenContract.balanceOf(singer.address);
+  public static async buyAndApproveTokens(tokens: string[], amounts: number[], singer: SignerWithAddress, contractToApprove: string): Promise<void> {
+    for (const token of tokens) {
+      const i = tokens.indexOf(token);
+      const tokenContract = await ethers.getContractAt("IERC20", token, singer) as IERC20;
+      const targetBalance = amounts[i];
+      let tokenBalance = await tokenContract.balanceOf(singer.address);
+      while (tokenBalance < BigNumber.from(amounts[i])) {
+        console.log(`Target bal: ${targetBalance}, current balance: ${tokenBalance}`);
+        await UniswapUtils.buyToken(singer, MaticAddresses.SUSHI_ROUTER, token, utils.parseUnits(amounts[i].toString()));
+        tokenBalance = await tokenContract.balanceOf(singer.address);
+      }
+      await tokenContract.approve(contractToApprove, tokenBalance, {from: singer.address});
     }
-    await tokenContract.approve(contractToApprove, tokenBalance, {from: singer.address});
   }
-}
 
 }

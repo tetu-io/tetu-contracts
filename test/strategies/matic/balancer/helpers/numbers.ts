@@ -26,7 +26,7 @@ export const maxInt = (e: number): BigNumber => bn(2).pow(bn(e).sub(1)).sub(1);
 
 export const minInt = (e: number): BigNumber => bn(2).pow(bn(e).sub(1)).mul(-1);
 
-export const pct = (x: BigNumberish, pct: BigNumberish): BigNumber => bn(decimal(x).mul(decimal(pct)));
+export const pct = (x: BigNumberish, _pct: BigNumberish): BigNumber => bn(decimal(x).mul(decimal(_pct)));
 
 export const max = (a: BigNumberish, b: BigNumberish): BigNumber => {
   a = bn(a);
@@ -74,7 +74,7 @@ function parseScientific(num: string): string {
   const [coefficient, exponent] = num.toLowerCase().split('e');
   let zeros = Math.abs(Number(exponent));
   const exponentSign = Math.sign(Number(exponent));
-  const [integer, decimals] = (coefficient.indexOf('.') != -1 ? coefficient : `${coefficient}.`).split('.');
+  const [integer, decimals] = (coefficient.indexOf('.') !== -1 ? coefficient : `${coefficient}.`).split('.');
 
   if (exponentSign === -1) {
     zeros -= integer.length;
