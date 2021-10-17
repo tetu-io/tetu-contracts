@@ -4,6 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {
+  Controller,
   IStrategy,
   SmartVault,
   TetuSwapFactory,
@@ -47,12 +48,30 @@ describe("Tetu Swap base tests", function () {
   let lpCtr: TetuSwapPair;
   let lpVault: SmartVault;
   let lpStrategy: IStrategy;
+  let vaultUsdcCtr: SmartVault;
+  let vaultUsdtCtr: SmartVault;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[0];
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
+
+    vaultUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDC) as SmartVault;
+    vaultUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDT) as SmartVault;
+
+    // * upgrade
+    const newController = await DeployerUtils.deployContract(signer, 'Controller') as Controller;
+    await core.announcer.announceTetuProxyUpgrade(core.controller.address, newController.address);
+    const newVaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
+    await core.announcer.announceTetuProxyUpgradeBatch([IRON_FOLD_USDC, IRON_FOLD_USDT], [newVaultLogic.address, newVaultLogic.address]);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await core.controller.upgradeTetuProxy(core.controller.address, newController.address);
+    await core.controller.upgradeTetuProxyBatch([IRON_FOLD_USDC, IRON_FOLD_USDT], [newVaultLogic.address, newVaultLogic.address]);
+
+    // * -----------------
 
     factory = (await DeployerUtils.deploySwapFactory(signer, core.controller.address))[0] as TetuSwapFactory;
     router = await DeployerUtils.deployContract(signer, 'TetuSwapRouter', factory.address, MaticAddresses.WMATIC_TOKEN) as TetuSwapRouter;
@@ -75,7 +94,8 @@ describe("Tetu Swap base tests", function () {
     lp = await factory.getPair(tokenA, tokenB);
     expect(lp.toLowerCase()).is.not.eq(MaticAddresses.ZERO_ADDRESS);
 
-    await core.controller.addToWhiteList(lp);
+    await core.controller.setPureRewardConsumers([lp], true);
+    expect(await core.controller.isPoorRewardConsumer(lp)).is.eq(true);
 
     lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
 
@@ -406,11 +426,15 @@ describe("Tetu Swap base tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(60 * 60);
 
-    const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(core.psVault.address, lpVault.address));
+    const rt = core.psVault.address;
+    const toClaim = +utils.formatUnits((await vaultUsdcCtr.earned(rt, lp)).add(await vaultUsdtCtr.earned(rt, lp)));
+
+    const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, lpVault.address));
     await lpVault.doHardWork();
-    const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(core.psVault.address, lpVault.address));
+    const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, lpVault.address));
 
     expect(rtBalAfter).is.greaterThan(rtBal);
+    expect(rtBalAfter).is.approximately(toClaim, toClaim * 0.001);
   });
 
   it('price{0,1}CumulativeLast', async () => {
