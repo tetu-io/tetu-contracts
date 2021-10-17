@@ -1,11 +1,11 @@
-import { ethers } from 'hardhat';
-import { Contract } from 'ethers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
+import {ethers} from 'hardhat';
+import {Contract} from 'ethers';
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
-import { Artifacts } from 'hardhat/internal/artifacts';
-import { Artifact } from 'hardhat/types';
+import {Artifacts} from 'hardhat/internal/artifacts';
+import {Artifact} from 'hardhat/types';
 import path from 'path';
-import { Dictionary } from 'lodash';
+import {Dictionary} from 'lodash';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -23,7 +23,7 @@ export type ContractDeploymentParams = {
 // a different package, use `deploy('v2-vault/Vault')`, assuming the Vault's package is @balancer-labs/v2-vault.
 export async function deploy(
   contract: string,
-  { from, args, libraries }: ContractDeploymentParams = {}
+  {from, args, libraries}: ContractDeploymentParams = {}
 ): Promise<Contract> {
   if (!args) args = [];
   if (!from) from = (await ethers.getSigners())[0];

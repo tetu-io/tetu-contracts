@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
+import {BigNumber, ethers} from 'ethers';
 import {BigNumberish, bn, fp} from "./numbers";
 
 export type InvestmentConfig = {
