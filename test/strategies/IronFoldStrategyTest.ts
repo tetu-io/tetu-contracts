@@ -40,42 +40,13 @@ async function startIronFoldStrategyTest(
       const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-      for (const rt of rewardTokens) {
-        await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-            [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-        );
-        await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN],
-            [MaticAddresses.getRouterByFactory(factory)]
-        );
-
-        if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
-          await core.feeRewardForwarder.setConversionPath(
-              [rt, MaticAddresses.USDC_TOKEN],
-              [MaticAddresses.getRouterByFactory(factory)]
-          );
-        } else {
-          await core.feeRewardForwarder.setConversionPath(
-              [rt, MaticAddresses.USDC_TOKEN, underlying],
-              [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-          );
-        }
-
-      }
-      if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
-        await core.feeRewardForwarder.setConversionPath(
-            [underlying, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-            [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
-        );
-        await core.feeRewardForwarder.setConversionPath(
-            [underlying, MaticAddresses.USDC_TOKEN],
-            [MaticAddresses.QUICK_ROUTER]
-        );
-      }
-
-      await core.feeRewardForwarder.setLiquidityNumerator(50);
-      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+      await StrategyTestUtils.setupForwarder(
+          core.feeRewardForwarder,
+          rewardTokens,
+          underlying,
+          core.rewardToken.address,
+          factory
+      );
 
       const data = await StrategyTestUtils.deploy(
           signer,

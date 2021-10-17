@@ -40,7 +40,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
 
   /// @dev Allowed contracts for deposit to vaults
   mapping(address => bool) public override whiteList;
@@ -52,6 +52,8 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   mapping(address => bool) public hardWorkers;
   /// @dev Allowed address for reward distributing
   mapping(address => bool) public rewardDistribution;
+  /// @dev Allowed address for getting 100% rewards without vesting
+  mapping(address => bool) public pureRewardConsumers;
 
   // ************ EVENTS **********************
 
@@ -446,6 +448,13 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     }
   }
 
+  /// @notice Only Governance can do it. Allow given addresses claim rewards without any penalty
+  function setPureRewardConsumers(address[] calldata _targets, bool _flag) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      pureRewardConsumers[_targets[i]] = _flag;
+    }
+  }
+
   /// @notice Only Governance can do it. Add HardWorker address.
   /// @param _worker New HardWorker address
   function addHardWorker(address _worker) external onlyGovernance {
@@ -567,6 +576,11 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     return rewardDistribution[_adr] || isGovernance(_adr) || isValidStrategy(_adr);
   }
 
+  /// @notice Return true if the given address is allowed for claim rewards without penalties
+  function isPoorRewardConsumer(address _adr) public override view returns (bool) {
+    return pureRewardConsumers[_adr];
+  }
+
   /// @notice Return true if the given address:
   ///         - not smart contract
   ///         - added to whitelist
@@ -583,6 +597,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     || isGovernance(_adr)
     || isHardWorker(_adr)
     || isRewardDistributor(_adr)
+    || isPoorRewardConsumer(_adr)
     || vaults[_adr]
     || strategies[_adr];
   }

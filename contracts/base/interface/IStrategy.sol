@@ -26,7 +26,8 @@ interface IStrategy {
     DINO, // 8
     IRON_LEND, // 9
     HERMES, // 10
-    CAFE // 11
+    CAFE, // 11
+    TETU_SWAP // 12
   }
 
   // *************** GOVERNANCE ACTIONS **************

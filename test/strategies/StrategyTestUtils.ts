@@ -6,6 +6,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Announcer,
   Controller,
+  FeeRewardForwarder,
   IStrategy,
   PriceCalculator,
   RewardToken,
@@ -48,8 +49,8 @@ export class StrategyTestUtils {
         signer, core, "1000000"
     );
 
-    expect((await strategy.underlying()).toLowerCase()).is.eq(underlying);
-    expect((await vault.underlying()).toLowerCase()).is.eq(underlying);
+    expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
+    expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
 
     return [vault, strategy, rewardTokenLp];
   }
@@ -315,5 +316,52 @@ export class StrategyTestUtils {
     }
     return totalToClaim
   }
+
+  public static async setupForwarder(
+      forwarder: FeeRewardForwarder,
+      rewardTokens: string[],
+      underlying: string,
+      tetu: string,
+      rtFactory: string
+  ) {
+    for (const rt of rewardTokens) {
+      await forwarder.setConversionPath(
+          [rt, MaticAddresses.USDC_TOKEN, tetu],
+          [MaticAddresses.getRouterByFactory(rtFactory), MaticAddresses.QUICK_ROUTER]
+      );
+      await forwarder.setConversionPath(
+          [rt, MaticAddresses.USDC_TOKEN],
+          [MaticAddresses.getRouterByFactory(rtFactory)]
+      );
+
+      if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
+        await forwarder.setConversionPath(
+            [rt, MaticAddresses.USDC_TOKEN],
+            [MaticAddresses.getRouterByFactory(rtFactory)]
+        );
+      } else {
+        await forwarder.setConversionPath(
+            [rt, MaticAddresses.USDC_TOKEN, underlying],
+            [MaticAddresses.getRouterByFactory(rtFactory), MaticAddresses.QUICK_ROUTER]
+        );
+      }
+
+    }
+
+    if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
+      await forwarder.setConversionPath(
+          [underlying, MaticAddresses.USDC_TOKEN, tetu],
+          [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
+      );
+      await forwarder.setConversionPath(
+          [underlying, MaticAddresses.USDC_TOKEN],
+          [MaticAddresses.QUICK_ROUTER]
+      );
+    }
+
+    await forwarder.setLiquidityNumerator(50);
+    await forwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+  }
+
 
 }

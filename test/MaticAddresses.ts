@@ -7,6 +7,7 @@ export class MaticAddresses {
   // https://github.com/sushiswap/default-token-list/blob/master/src/tokens/matic.json#L153
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+  public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B";
   // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
@@ -72,6 +73,7 @@ export class MaticAddresses {
   public static QUICK_FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32".toLowerCase();
   public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
   public static QUICK_STAKING_FACTORY_V2 = "0x8aAA5e259F74c8114e0a471d9f2ADFc66Bfe09ed".toLowerCase();
+  public static QUICK_STAKING_FACTORY_V3 = "0x9Dd12421C637689c3Fc6e661C9e2f02C2F61b3Eb".toLowerCase();
   public static QUICK_WMATIC_USDC = "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827".toLowerCase();
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
