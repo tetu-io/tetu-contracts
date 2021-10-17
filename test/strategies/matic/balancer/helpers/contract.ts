@@ -7,11 +7,10 @@ import {Artifact} from 'hardhat/types';
 import path from 'path';
 import {Dictionary} from 'lodash';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type ContractDeploymentParams = {
   from?: SignerWithAddress;
-  args?: Array<unknown>;
+  args?: unknown[];
   libraries?: Dictionary<string>;
 };
 

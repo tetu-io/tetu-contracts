@@ -63,13 +63,13 @@ describe('Balancer AM tests', async () => {
       [10000000000, 1000],
       investor, vault.address);
 
-    let tokensAddresses = [MaticAddresses.WBTC_TOKEN, MaticAddresses.WMATIC_TOKEN]
+    const tokensAddresses = [MaticAddresses.WBTC_TOKEN, MaticAddresses.WMATIC_TOKEN]
 
     vault = await ethers.getContractAt(
       "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8", investor) as IVault;
 
 
-    let ud = encodeJoin(
+    const ud = encodeJoin(
       tokensAddresses.map(() => 1000),
       tokensAddresses.map(() => 0)
     );
@@ -198,19 +198,19 @@ describe('Balancer AM tests', async () => {
       });
 
       it('transfers the expected number of tokens to the Vault', async () => {
-        const config = await assetManager.getInvestmentConfig(poolId);
+        const poolConfig = await assetManager.getInvestmentConfig(poolId);
         const {poolCash, poolManaged} = await assetManager.getPoolBalances(poolId);
-        const expectedRebalanceAmount = calcRebalanceAmount(poolCash, poolManaged, config);
+        const expectedRebalanceAmount = calcRebalanceAmount(poolCash, poolManaged, poolConfig);
 
         console.log("expected to transfer", expectedRebalanceAmount);
 
         const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN) as IERC20;
-        let wbtcBalAMB = await wbtcToken.balanceOf(assetManager.address);
-        let wbtcBalVaultB = await wbtcToken.balanceOf(vault.address);
+        const wbtcBalAMB = await wbtcToken.balanceOf(assetManager.address);
+        const wbtcBalVaultB = await wbtcToken.balanceOf(vault.address);
 
         await assetManager.rebalance(poolId, force);
-        let wbtcBalAMA = await wbtcToken.balanceOf(assetManager.address);
-        let wbtcBalVaultA = await wbtcToken.balanceOf(vault.address);
+        const wbtcBalAMA = await wbtcToken.balanceOf(assetManager.address);
+        const wbtcBalVaultA = await wbtcToken.balanceOf(vault.address);
 
         expect(wbtcBalAMB.add(expectedRebalanceAmount)).to.be.eq(wbtcBalAMA);
         expect(wbtcBalVaultB.add(expectedRebalanceAmount.mul(-1))).to.be.eq(wbtcBalVaultA);
@@ -266,14 +266,14 @@ describe('Balancer AM tests', async () => {
     context('when pool is above target investment level', () => {
       context('when pool is in non-critical range', () => {
         beforeEach(async () => {
-          let exUpperCriticalBalance = upperCriticalBalance.mul(99).div(100)
+          const exUpperCriticalBalance = upperCriticalBalance.mul(99).div(100)
           await StrategyTestUtils.buyAndApproveTokens(
             [MaticAddresses.WMATIC_TOKEN, MaticAddresses.WBTC_TOKEN],
             [10000000000, 200000],
             otherUser, vault.address);
           const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN, otherUser) as IERC20;
           await wbtcToken.transfer(assetManager.address, exUpperCriticalBalance);
-          let wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
+          const wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
           console.log("AM balance >>", wbtcBalAM.toString())
         });
 
@@ -291,7 +291,7 @@ describe('Balancer AM tests', async () => {
 
       context('when pool is above upper critical investment level', () => {
         beforeEach(async () => {
-          let exUpperCriticalBalance = upperCriticalBalance.mul(101).div(100);
+          const exUpperCriticalBalance = upperCriticalBalance.mul(101).div(100);
 
           await StrategyTestUtils.buyAndApproveTokens(
             [MaticAddresses.WMATIC_TOKEN, MaticAddresses.WBTC_TOKEN],
@@ -299,7 +299,7 @@ describe('Balancer AM tests', async () => {
             otherUser, vault.address);
           const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN, otherUser) as IERC20;
           await wbtcToken.transfer(assetManager.address, exUpperCriticalBalance);
-          let wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
+          const wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
           console.log("Upper Critical bal value", exUpperCriticalBalance.toString());
           console.log("AM balance >>", wbtcBalAM.toString());
         });
@@ -321,7 +321,7 @@ describe('Balancer AM tests', async () => {
     context('when pool is below target investment level', () => {
       context('when pool is in non-critical range', () => {
         beforeEach(async () => {
-          let exUpperCriticalBalance = lowerCriticalBalance.mul(101).div(100);
+          const exUpperCriticalBalance = lowerCriticalBalance.mul(101).div(100);
 
           await StrategyTestUtils.buyAndApproveTokens(
             [MaticAddresses.WMATIC_TOKEN, MaticAddresses.WBTC_TOKEN],
@@ -329,7 +329,7 @@ describe('Balancer AM tests', async () => {
             otherUser, vault.address);
           const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN, otherUser) as IERC20;
           await wbtcToken.transfer(assetManager.address, exUpperCriticalBalance);
-          let wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
+          const wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
           console.log("Upper Critical bal value", exUpperCriticalBalance.toString());
           console.log("AM balance >>", wbtcBalAM.toString());
         });
@@ -348,14 +348,14 @@ describe('Balancer AM tests', async () => {
 
       context('when pool is below lower critical investment level', () => {
         beforeEach(async () => {
-          let exUpperCriticalBalance = lowerCriticalBalance.mul(99).div(100);
+          const exUpperCriticalBalance = lowerCriticalBalance.mul(99).div(100);
           await StrategyTestUtils.buyAndApproveTokens(
             [MaticAddresses.WMATIC_TOKEN, MaticAddresses.WBTC_TOKEN],
             [10000000000, 200000],
             otherUser, vault.address);
           const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN, otherUser) as IERC20;
           await wbtcToken.transfer(assetManager.address, exUpperCriticalBalance);
-          let wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
+          const wbtcBalAM = await wbtcToken.balanceOf(assetManager.address);
           console.log("Upper Critical bal value", exUpperCriticalBalance.toString());
           console.log("AM balance >>", wbtcBalAM.toString());
         });

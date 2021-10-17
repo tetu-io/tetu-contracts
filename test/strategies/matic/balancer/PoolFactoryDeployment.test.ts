@@ -26,7 +26,9 @@ async function deployPoolWithFactory(vault: IVault, singer: SignerWithAddress): 
   const receipt = await tx.wait();
 
   // We need to get the new pool address out of the PoolCreated event
+  /* tslint:disable:no-any */
   const events = receipt.events.filter((e: any) => e.event === 'PoolCreated');
+  /* tslint:enable:no-any */
   const poolAddress = events[0].args.pool;
 
   // We're going to need the PoolId later, so ask the contract for it
@@ -39,7 +41,7 @@ const setup = async () => {
   const [signer] = (await ethers.getSigners());
 
   // Connect to balancer vault
-  let vault = await ethers.getContractAt(
+  const vault = await ethers.getContractAt(
     "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8") as IVault;
 
   // Deploy Pool
@@ -61,9 +63,12 @@ const setup = async () => {
 
 
 describe('Balancer WeightedPool', function () {
-  let vault: IVault, pool: Contract;
+  let vault: IVault;
+  let pool: Contract;
   let poolId: BytesLike;
-  let singer: SignerWithAddress, investor: SignerWithAddress, other: SignerWithAddress;
+  let singer: SignerWithAddress;
+  let investor: SignerWithAddress;
+  let other: SignerWithAddress;
 
   before('Get user to act', async () => {
     [singer, investor, other] = await ethers.getSigners();
@@ -108,7 +113,7 @@ describe('Balancer WeightedPool', function () {
       poolTokens.forEach((token, i) => {
         console.log(`  ${token}: ${formatFixed(balances[i], 18)}`);
       });
-      let bpt = await pool.balanceOf(singer.address);
+      const bpt = await pool.balanceOf(singer.address);
       expect(bpt).to.be.gt(0);
       console.log(`Pool initiator received ${formatFixed(bpt, 18)} (BPT) in return`);
     });

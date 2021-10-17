@@ -21,18 +21,18 @@ const setup = async () => {
     "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8") as IVault;
 
   // Deploy Pool
-  let pool = await DeployerUtils.deployContract(
+  const pool = await DeployerUtils.deployContract(
     signer, "MockAssetManagedPool", vault.address, PoolSpecialization.GeneralPool) as MockAssetManagedPool;
-  let poolId = await pool.getPoolId();
+  const poolId = await pool.getPoolId();
 
   // Deploy Asset manager
-  let assetManager = await DeployerUtils.deployContract(signer,
+  const assetManager = await DeployerUtils.deployContract(signer,
     'IronRTokenAssetManager', vault.address, poolId, MaticAddresses.USDC_TOKEN, MaticAddresses.IRON_RUSDC) as MockRewardsAssetManager;
 
   // Assign assetManager to the USDC_TOKEN token, and other to the other token
   const assetManagers = [assetManager.address, other.address];
 
-  let tokensAddresses = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
+  const tokensAddresses = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
 
   await pool.registerTokens(tokensAddresses, assetManagers);
 
@@ -53,7 +53,7 @@ const setup = async () => {
   vault = await ethers.getContractAt(
     "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8", investor) as IVault;
 
-  let ud = encodeJoin(
+  const ud = encodeJoin(
     tokensAddresses.map(() => BigNumber.from(10000000000)),
     tokensAddresses.map(() => 0)
   );
@@ -81,9 +81,12 @@ const setup = async () => {
 };
 
 describe('Iron Asset manager', function () {
-  let vault: Contract, assetManager: Contract, pool: Contract;
+  let vault: Contract;
+  let assetManager: Contract;
+  let pool: Contract;
   let poolId: BytesLike;
-  let investor: SignerWithAddress, other: SignerWithAddress;
+  let investor: SignerWithAddress;
+  let other: SignerWithAddress;
 
   before('deploy base contracts', async () => {
     [, investor, other] = await ethers.getSigners();
@@ -111,7 +114,7 @@ describe('Iron Asset manager', function () {
       await assetManager.claimRewards();
 
       // need to be updated to FeeForvarder?
-      let iceEarned = await iceToken.balanceOf(assetManager.address);
+      const iceEarned = await iceToken.balanceOf(assetManager.address);
 
       console.log("Ice token earned: ", iceEarned.toString());
       expect(iceEarned).to.be.gt(0, "We should earn rewards from lending protocol")
@@ -122,10 +125,10 @@ describe('Iron Asset manager', function () {
 
       await assetManager.rebalance(poolId, false);
 
-      let poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
+      const poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
       const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, investor) as IERC20;
 
-      let usdcBefore = await usdcToken.balanceOf(investor.address);
+      const usdcBefore = await usdcToken.balanceOf(investor.address);
 
       await vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
         assets: poolTokens,
@@ -135,7 +138,7 @@ describe('Iron Asset manager', function () {
       });
 
 
-      let usdcBal = await usdcToken.balanceOf(investor.address);
+      const usdcBal = await usdcToken.balanceOf(investor.address);
 
       expect(usdcBefore.add(BigNumber.from(5000000000))).to.be.eq(usdcBal);
 
@@ -148,7 +151,7 @@ describe('Iron Asset manager', function () {
         userData: encodeExit([BigNumber.from(2500000000), BigNumber.from(0)], Array(poolTokens.length).fill(0)),
       });
 
-      let usdcBal1 = await usdcToken.balanceOf(investor.address);
+      const usdcBal1 = await usdcToken.balanceOf(investor.address);
       expect(usdcBal.add(BigNumber.from(2500000000))).to.be.eq(usdcBal1);
 
     });
@@ -158,7 +161,7 @@ describe('Iron Asset manager', function () {
       await assetManager.rebalance(poolId, false);
       // after re balance 5000 usdc should be invested by AM and 5000 usdc available in the vault
 
-      let poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
+      const poolTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN]
 
       await expect(vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
         assets: poolTokens,

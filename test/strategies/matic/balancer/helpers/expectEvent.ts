@@ -6,21 +6,21 @@ import {Interface, LogDescription} from 'ethers/lib/utils';
 // yet have Typescript typings, so we're being lax about them here.
 // See https://github.com/OpenZeppelin/openzeppelin-test-helpers/issues/122
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* tslint:disable:no-any */
 
 export function inReceipt(receipt: ContractReceipt, eventName: string, eventArgs = {}): any {
-  if (receipt.events == undefined) {
+  if (receipt.events === undefined) {
     throw new Error('No events found in receipt');
   }
 
   const events = receipt.events.filter((e) => e.event === eventName);
   expect(events.length > 0).to.equal(true, `No '${eventName}' events found`);
 
-  const exceptions: Array<string> = [];
+  const exceptions: string[] = [];
   const event = events.find(function (e) {
     for (const [k, v] of Object.entries(eventArgs)) {
       try {
-        if (e.args == undefined) {
+        if (e.args === undefined) {
           throw new Error('Event has no arguments');
         }
 
@@ -58,14 +58,14 @@ export function inIndirectReceipt(
     })
     .filter((e): e is LogDescription => e !== undefined);
 
-  const expectedEvents = decodedEvents.filter((event) => event.name === eventName);
+  const expectedEvents = decodedEvents.filter((_event) => _event.name === eventName);
   expect(expectedEvents.length > 0).to.equal(true, `No '${eventName}' events found`);
 
-  const exceptions: Array<string> = [];
+  const exceptions: string[] = [];
   const event = expectedEvents.find(function (e) {
     for (const [k, v] of Object.entries(eventArgs)) {
       try {
-        if (e.args == undefined) {
+        if (e.args === undefined) {
           throw new Error('Event has no arguments');
         }
 
@@ -88,7 +88,7 @@ export function inIndirectReceipt(
 }
 
 export function notEmitted(receipt: ContractReceipt, eventName: string): void {
-  if (receipt.events != undefined) {
+  if (receipt.events !== undefined) {
     const events = receipt.events.filter((e) => e.event === eventName);
     expect(events.length > 0).to.equal(false, `'${eventName}' event found`);
   }
