@@ -26,11 +26,13 @@ import "../../base/interface/IMasterChefStrategyV1.sol";
 import "../../base/interface/IMasterChefStrategyV2.sol";
 import "../../base/interface/IMasterChefStrategyV3.sol";
 import "../../base/interface/ISNXStrategy.sol";
+import "../../base/interface/IStrategyWithPool.sol";
 import "../../third_party/cosmic/ICosmicMasterChef.sol";
 import "../../third_party/dino/IFossilFarms.sol";
 import "../price/IPriceCalculator.sol";
 import "./IRewardCalculator.sol";
 import "../../third_party/quick/IDragonLair.sol";
+import "../../third_party/quick/IStakingDualRewards.sol";
 
 /// @title Calculate estimated strategy rewards
 /// @author belbix
@@ -77,7 +79,11 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       return 0;
     } else if (strategy.platform() == IStrategy.Platform.QUICK) {
 
-      rewardsPerSecond = quick(address(ISNXStrategy(_strategy).rewardPool()));
+      if (strategy.rewardTokens().length == 2) {
+        rewardsPerSecond = quickDualFarm(IStrategyWithPool(_strategy).pool());
+      } else {
+        rewardsPerSecond = quick(address(ISNXStrategy(_strategy).rewardPool()));
+      }
 
     } else if (strategy.platform() == IStrategy.Platform.SUSHI) {
 
@@ -143,6 +149,9 @@ contract RewardCalculator is Controllable, IRewardCalculator {
         uint256 rewardsPerSecond2 = mcRewarder(mc.mcRewardPool(), mc.poolID());
         uint256 rtPrice2 = priceCalculator().getPriceWithDefaultOutput(strategy.rewardTokens()[1]);
         result += _period * rewardsPerSecond2 * rtPrice2 / 1e18;
+      } else if (strategy.platform() == IStrategy.Platform.QUICK) {
+        uint256 rtPrice2 = priceCalculator().getPriceWithDefaultOutput(strategy.rewardTokens()[1]);
+        result += IStakingDualRewards(IStrategyWithPool(_strategy).pool()).rewardRateB() * rtPrice2 / 1e18;
       }
     }
     return result;
@@ -324,6 +333,15 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
     uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(1e18);
     return SNXRewardInterface(_pool).rewardRate() * dQuickRatio / 1e18;
+  }
+
+  /// @notice Calculate approximately reward amounts for Quick swap
+  function quickDualFarm(address _pool) public view returns (uint256) {
+    if (IStakingDualRewards(_pool).periodFinish() < block.timestamp) {
+      return 0;
+    }
+    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(1e18);
+    return IStakingDualRewards(_pool).rewardRateA() * dQuickRatio / 1e18;
   }
 
   // *********** GOVERNANCE ACTIONS *****************

@@ -14,22 +14,22 @@ const argv = require('yargs/yargs')()
     type: "boolean",
     default: false,
   },
-  onlyOneQuickStrategyTest: {
+  onlyOneQuickDualStrategyTest: {
     type: "number",
-    default: 5,
+    default: 1,
   }
 }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Quick tests', async () => {
+describe('Universal Quick Dual tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/quick_pools_dual.csv', 'utf8').split(/\r?\n/);
 
-  const strategyName = 'StrategyQuickSwapLpV2';
+  const strategyName = 'StrategyQuickSwapLpDual';
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -49,8 +49,8 @@ describe('Universal Quick tests', async () => {
       console.log('skip', ids, duration);
       return;
     }
-    if (argv.onlyOneQuickStrategyTest !== -1 && +ids !== argv.onlyOneQuickStrategyTest) {
-      console.log('only one strat', ids, argv.onlyOneQuickStrategyTest);
+    if (argv.onlyOneQuickDualStrategyTest !== -1 && +ids !== argv.onlyOneQuickDualStrategyTest) {
+      console.log('only one strat', ids, argv.onlyOneQuickDualStrategyTest);
       return;
     }
     console.log('strat', ids, lpName);
@@ -65,7 +65,7 @@ describe('Universal Quick tests', async () => {
         token1,
         token1Name,
         pool,
-        [MaticAddresses.QUICK_TOKEN]
+        [MaticAddresses.QUICK_TOKEN, MaticAddresses.WMATIC_TOKEN]
     );
   });
 

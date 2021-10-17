@@ -208,13 +208,13 @@ describe("contract reader tests", function () {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.mintHelper.address))
-        .rejectedWith('Transaction reverted and Hardhat couldn\'t infer the reason. Please report this to help us improve Hardhat.');
+        .rejectedWith('Transaction reverted');
   });
   it("should not update proxy with wrong contract2", async () => {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.bookkeeper.address))
-        .rejectedWith('Transaction reverted and Hardhat couldn\'t infer the reason. Please report this to help us improve Hardhat.');
+        .rejectedWith('Transaction reverted');
   });
 
   it("vault + user infos", async () => {
