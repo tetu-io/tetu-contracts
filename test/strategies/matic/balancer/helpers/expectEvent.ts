@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { BigNumber, ContractReceipt } from 'ethers';
-import { Interface, LogDescription } from 'ethers/lib/utils';
+import {expect} from 'chai';
+import {BigNumber, ContractReceipt} from 'ethers';
+import {Interface, LogDescription} from 'ethers/lib/utils';
 
 // Ported from @openzeppelin/test-helpers to use with Ethers. The Test Helpers don't
 // yet have Typescript typings, so we're being lax about them here.

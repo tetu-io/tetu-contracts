@@ -73,7 +73,9 @@
     "tslint": "^6.1.3",
     "typechain": "^5.2.0",
     "typescript": "^4.4.4",
-    "yargs": "^17.2.1"
+    "yargs": "^17.2.1",
+    "decimal.js": "^10.2.1"
+
   },
   "dependencies": {
     "hardhat": "^2.6.6",

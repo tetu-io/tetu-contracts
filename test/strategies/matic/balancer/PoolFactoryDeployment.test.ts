@@ -1,16 +1,13 @@
 import {ethers} from 'hardhat';
-import {BigNumber, Contract, utils} from 'ethers';
+import {Contract} from 'ethers';
 import {expect} from 'chai';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
-import {IBasePool, IERC20, IVault, IWeightedPool, MockAssetManagedPool, MockRewardsAssetManager} from "../../../../typechain";
+import {IBasePool, IVault, IWeightedPool} from "../../../../typechain";
 import {BytesLike} from "@ethersproject/bytes";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {bn, fp} from "./helpers/numbers";
-import {UniswapUtils} from "../../../UniswapUtils";
-import {Erc20Utils} from "../../../Erc20Utils";
-import {encodeJoin} from "./helpers/mockPool";
 import {MAX_UINT256} from "./helpers/constants";
-import {formatFixed, parseFixed} from '@ethersproject/bignumber';
+import {formatFixed} from '@ethersproject/bignumber';
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 

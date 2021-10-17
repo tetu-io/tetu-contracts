@@ -1,6 +1,6 @@
-import { BigNumber } from 'ethers';
+import {BigNumber} from 'ethers';
 
-import { maxUint, maxInt, minInt } from './numbers';
+import {maxUint, maxInt, minInt} from './numbers';
 
 export const MAX_UINT256: BigNumber = maxUint(256);
 export const MAX_UINT112: BigNumber = maxUint(112);
@@ -20,3 +20,9 @@ export const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000
 
 export const MAX_GAS_LIMIT = 8e6;
 export const MAX_WEIGHTED_TOKENS = 100;
+
+export enum PoolSpecialization {
+  GeneralPool = 0,
+  MinimalSwapInfoPool,
+  TwoTokenPool,
+}

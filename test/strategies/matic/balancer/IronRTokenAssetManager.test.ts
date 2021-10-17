@@ -1,43 +1,33 @@
-import { ethers } from 'hardhat';
+import {ethers} from 'hardhat';
 import {BigNumber, Contract, utils} from 'ethers';
-import { expect } from 'chai';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
+import {expect} from 'chai';
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {IERC20, IVault, MockAssetManagedPool, MockRewardsAssetManager} from "../../../../typechain";
 import {BytesLike} from "@ethersproject/bytes";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../../../MaticAddresses";
-import {UniswapUtils} from "../../../UniswapUtils";
-import {Erc20Utils} from "../../../Erc20Utils";
-import {bn, fp} from "./helpers/numbers";
+import {fp} from "./helpers/numbers";
 import {encodeInvestmentConfig} from "./helpers/rebalance";
 import {encodeJoin, encodeExit} from "./helpers/mockPool";
-import {MAX_UINT256} from "./helpers/constants";
+import {MAX_UINT256, PoolSpecialization} from "./helpers/constants";
 import {TimeUtils} from "../../../TimeUtils";
-
-const tokenInitialBalance = bn(200e18);
-
-
-enum PoolSpecialization {
-  GeneralPool = 0,
-  MinimalSwapInfoPool,
-  TwoTokenPool,
-}
+import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 const setup = async () => {
   const [signer, investor, other] = (await ethers.getSigners());
 
   // Connect to balancer vault
   let vault = await ethers.getContractAt(
-      "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8") as IVault;
+    "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8") as IVault;
 
   // Deploy Pool
   let pool = await DeployerUtils.deployContract(
-      signer, "MockAssetManagedPool", vault.address, PoolSpecialization.GeneralPool) as MockAssetManagedPool;
+    signer, "MockAssetManagedPool", vault.address, PoolSpecialization.GeneralPool) as MockAssetManagedPool;
   let poolId = await pool.getPoolId();
 
   // Deploy Asset manager
   let assetManager = await DeployerUtils.deployContract(signer,
-      'IronRTokenAssetManager', vault.address, poolId, MaticAddresses.USDC_TOKEN, MaticAddresses.IRON_RUSDC) as MockRewardsAssetManager;
+    'IronRTokenAssetManager', vault.address, poolId, MaticAddresses.USDC_TOKEN, MaticAddresses.IRON_RUSDC) as MockRewardsAssetManager;
 
   // Assign assetManager to the USDC_TOKEN token, and other to the other token
   const assetManagers = [assetManager.address, other.address];
@@ -55,30 +45,17 @@ const setup = async () => {
   await pool.setAssetManagerPoolConfig(assetManager.address, encodeInvestmentConfig(config));
 
   // swap tokens to invest
-  await UniswapUtils.buyToken(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000000000')); // 100m wmatic
-  await UniswapUtils.buyToken(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10000'));
-
-
-  const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, investor) as IERC20;
-  await usdcToken.approve(vault.address, tokenInitialBalance, {from: investor.address});
-  let usdcBal = await usdcToken.balanceOf(investor.address);
-  const usdcDec = await Erc20Utils.decimals(usdcToken.address);
-  const usdcTokenBal = +utils.formatUnits(usdcBal, usdcDec);
-  console.log("usdcToken bal :", usdcTokenBal);
-
-  const wmaticToken = await ethers.getContractAt("IERC20", MaticAddresses.WMATIC_TOKEN, investor) as IERC20;
-  await wmaticToken.approve(vault.address, tokenInitialBalance, {from: investor.address});
-  let wmaticBal = await wmaticToken.balanceOf(investor.address);
-  const wmaticDec = await Erc20Utils.decimals(wmaticToken.address);
-  const oppositeTokenBal2 = +utils.formatUnits(wmaticBal, wmaticDec);
-  console.log("wmatic bal :", oppositeTokenBal2);
+  await StrategyTestUtils.buyAndApproveTokens(
+    [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
+    [10000000000, 200000],
+    investor, vault.address);
 
   vault = await ethers.getContractAt(
-      "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8", investor) as IVault;
+    "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8", investor) as IVault;
 
   let ud = encodeJoin(
-      tokensAddresses.map(() => BigNumber.from(10000000000)),
-      tokensAddresses.map(() => 0)
+    tokensAddresses.map(() => BigNumber.from(10000000000)),
+    tokensAddresses.map(() => 0)
   );
 
   await vault.joinPool(poolId, investor.address, investor.address, {
@@ -113,7 +90,7 @@ describe('Iron Asset manager', function () {
   });
 
   beforeEach('set up asset manager', async () => {
-    const { contracts, data } = await setup();
+    const {contracts, data} = await setup();
 
     assetManager = contracts.assetManager;
     vault = contracts.vault;
@@ -150,7 +127,6 @@ describe('Iron Asset manager', function () {
 
       let usdcBefore = await usdcToken.balanceOf(investor.address);
 
-
       await vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
         assets: poolTokens,
         minAmountsOut: Array(poolTokens.length).fill(0),
@@ -159,13 +135,11 @@ describe('Iron Asset manager', function () {
       });
 
 
-
       let usdcBal = await usdcToken.balanceOf(investor.address);
 
       expect(usdcBefore.add(BigNumber.from(5000000000))).to.be.eq(usdcBal);
 
       await assetManager.rebalance(poolId, false);
-
 
       await vault.connect(investor).exitPool(poolId, investor.address, investor.address, {
         assets: poolTokens,

@@ -1,5 +1,5 @@
-import { Decimal } from 'decimal.js';
-import { BigNumber } from 'ethers';
+import {Decimal} from 'decimal.js';
+import {BigNumber} from 'ethers';
 
 const SCALING_FACTOR = 1e18;
 
