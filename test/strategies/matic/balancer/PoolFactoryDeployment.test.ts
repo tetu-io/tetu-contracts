@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Contract} from 'ethers';
+import {Contract, Event} from 'ethers';
 import {expect} from 'chai';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {IBasePool, IVault, IWeightedPool} from "../../../../typechain";
@@ -9,6 +9,7 @@ import {bn, fp} from "./helpers/numbers";
 import {MAX_UINT256} from "./helpers/constants";
 import {formatFixed} from '@ethersproject/bignumber';
 import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {Result} from "@ethersproject/abi";
 
 
 async function deployPoolWithFactory(vault: IVault, singer: SignerWithAddress): Promise<IBasePool> {
@@ -26,10 +27,11 @@ async function deployPoolWithFactory(vault: IVault, singer: SignerWithAddress): 
   const receipt = await tx.wait();
 
   // We need to get the new pool address out of the PoolCreated event
-  /* tslint:disable:no-any */
-  const events = receipt.events.filter((e: any) => e.event === 'PoolCreated');
-  /* tslint:enable:no-any */
-  const poolAddress = events[0].args.pool;
+  // Some wired coding to satisfy ts.
+  const _events = receipt.events as Event[]
+  const events = _events.filter((e: Event) => e.event === 'PoolCreated');
+  const _args = events[0].args as Result
+  const poolAddress = _args.pool;
 
   // We're going to need the PoolId later, so ask the contract for it
   const pool = await ethers.getContractAt('IWeightedPool', poolAddress) as IWeightedPool;
