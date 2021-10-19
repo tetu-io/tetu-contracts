@@ -18,6 +18,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./../../../../third_party/balancer/IBVault.sol";
 import "./../../../../third_party/balancer/IMockStableMath.sol";
+import "./../../../../third_party/balancer/IStablePool.sol";
+import "./../../../../third_party/balancer/IBasePool.sol";
 
 contract BalancerConnector {
     using SafeERC20 for IERC20;
@@ -27,7 +29,7 @@ contract BalancerConnector {
         address vault;
         address sourceToken;
         bytes32 poolID;
-        uint256 tokenIndexAtPool;
+        uint256 tokenIndex;
         address lpToken;
         address rewardToken;
     }
@@ -66,9 +68,9 @@ contract BalancerConnector {
 
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
-        require( d.sourceToken ==address(tokens[d.tokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        require( d.sourceToken ==address(tokens[d.tokenIndex]), _WRONG_SOURCE_TOKEN);
         uint256[] memory maxAmountsIn = new uint256[](4);
-        maxAmountsIn[d.tokenIndexAtPool] = amount;
+        maxAmountsIn[d.tokenIndex] = amount;
 
         // example found at https://etherscan.io/address/0x5C6361f4cC18Df63D07Abd1D59A282d82C27Ad17#code#F2#L162
         uint256 minAmountOut = 1;
@@ -90,13 +92,13 @@ contract BalancerConnector {
         // https://dashboard.tenderly.co/tx/polygon/0xc114039567b12bc2128bfe54eab0e742620a4200587525ce512c489805966055
 
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
-        require( d.sourceToken ==address(tokens[d.tokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
+        require( d.sourceToken ==address(tokens[d.tokenIndex]), _WRONG_SOURCE_TOKEN);
         uint256[] memory minAmountsOut = new uint256[](4);
-        minAmountsOut[d.tokenIndexAtPool] = amount;
+        minAmountsOut[d.tokenIndex] = amount;
         uint256 bptAmountIn = _balancerGetExitAmount(amount);
 
         //TODO !!! use code from deployed contract (see example transaction at AaveMaiBalStrategyBase), not from master branch
-        bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, bptAmountIn, d.tokenIndexAtPool); //TODO check
+        bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, bptAmountIn, d.tokenIndex); //TODO check
         IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
             assets: _asIAsset(tokens),
             minAmountsOut: minAmountsOut,
@@ -114,9 +116,21 @@ contract BalancerConnector {
         return total;
     }
 
-    function _balancerToSourceTokenAmount(uint256 lpTokenAmount) internal pure returns (uint256) {
-//        IMockStableMath(d.lpToken).exactBPTInForTokenOut()
-        return 0; //TODO
+    function _balancerToSourceTokenAmount(uint256 lpTokenAmount) internal view returns (uint256) {
+        (uint256 currentAmp,,) = IStablePool(d.lpToken).getAmplificationParameter();
+        (,uint256[] memory balances,) = IBVault(d.vault).getPoolTokens(d.poolID);
+        uint256 totalSupply = IERC20(d.lpToken).totalSupply();
+        uint256 swapFeePercentage = IBasePool(d.lpToken).getSwapFeePercentage();
+
+        return IMockStableMath(d.lpToken).exactBPTInForTokenOut(
+            currentAmp,
+            balances,
+            d.tokenIndex,
+            lpTokenAmount,
+            totalSupply,
+            swapFeePercentage
+        );
     }
+
 }
 

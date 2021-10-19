@@ -64,7 +64,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     vault          : 0xBA12222222228d8Ba445958a75a0704d566BF2C8,
     sourceToken    : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
     poolID         : 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012,
-    tokenIndexAtPool : 2,
+    tokenIndex     : 2,
     lpToken        : 0x06Df3b2bbB68adc8B0e302443692037ED9f91b42, // Balancer Polygon Stable Pool (BPSP)
     rewardToken    : 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3 // BAL
   });
@@ -118,7 +118,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     if (target>current) {
       // borrow
       uint256 toBorrow = target.sub(current);
-      uint256 maiBorrowAmount = 0; //TODO !!!
+      uint256 maiBorrowAmount = toBorrow; //TODO !!!
       _maiBorrowToken(maiBorrowAmount);
       _balancerJoinPool(maiBorrowAmount);
 
@@ -149,9 +149,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   }
 
   function _convertUnderlyingToDeepUnderlying(uint256 underlyingAmount) internal view returns (uint256) {
-    uint256 maiAmount = 0; //TODO !!!
-    uint256 exitAmount = _balancerGetExitAmount(maiAmount);
-    return 0; //TODO !!!
+//    uint256 maiAmount = 0; //TODO !!!
+//    uint256 exitAmount = _balancerGetExitAmount(maiAmount);
+    return underlyingAmount; //TODO !!!
   }
 
   /// @dev Stub function for Strategy Base implementation

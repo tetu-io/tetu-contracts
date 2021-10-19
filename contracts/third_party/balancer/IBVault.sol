@@ -577,5 +577,6 @@ interface IBVault {
         bytes memory userData
     ) external returns (uint256 bptIn, uint256[] memory amountsOut);
 
-    function getSwapFeePercentage() external view returns (uint256);
+
+
 }
