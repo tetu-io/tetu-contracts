@@ -34,11 +34,21 @@ contract AaveWethConnector {
     }
 
     function _aaveDepositETH(uint256 amount) public payable {
+        //  AAVE: deposit MATIC -> amMATIC {WMATIC rewards}
+        //  https://polygonscan.com/tx/0xab73bb28961fcee75cb5865c8cad0ff1aa7235461e8505dc9acea50078b1b12c
+        //  contract WETHGateway 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97
+        //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
+
         //TODO try catch with gas limit
         IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
     }
 
     function _aaveWithdrawETH(uint256 amount) internal {
+        // AAVE: approve amWMATIC for AAVE
+        // https://polygonscan.com/tx/0x4a82adcdd3fc296eb1945a3339d5785ecd2b6c50cbf6c960ab7dd4a367fae6bd
+        // AAVE: withdraw MATIC
+        // https://polygonscan.com/tx/0x517e48dc212f1980a5e79ec1d1f4e3360519596e7119a921916cc7122df3867c
+
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), 0);
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), amount);
         //TODO try catch with gas limit

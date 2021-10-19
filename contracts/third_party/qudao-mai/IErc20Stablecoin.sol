@@ -9,13 +9,17 @@ interface IErc20Stablecoin {
 //
 //    uint256 external vaultCount;
 //    uint256 external closingFee;
+    function closingFee() external returns (uint256);
 //    uint256 external openingFee;
+    function openingFee() external returns (uint256);
 //
 //    uint256 external treasury;
 //    uint256 external tokenPeg;
 //
 //    mapping(uint256 => uint256) external vaultCollateral;
+    function vaultCollateral(uint256 vaultID) external returns (uint256);
 //    mapping(uint256 => uint256) external vaultDebt;
+    function vaultDebt(uint256 vaultID) external returns (uint256);
 //
 //    uint256 external debtRatio;
 //    uint256 external gainRatio;

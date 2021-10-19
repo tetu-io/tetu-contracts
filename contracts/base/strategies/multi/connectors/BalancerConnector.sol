@@ -17,6 +17,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./../../../../third_party/balancer/IBVault.sol";
+import "./../../../../third_party/balancer/IMockStableMath.sol";
 
 contract BalancerConnector {
     using SafeERC20 for IERC20;
@@ -50,6 +51,16 @@ contract BalancerConnector {
     }
 
     function _balancerJoinPool(uint256 amount) internal {
+
+        //  BAL: approve, join pool deposit MAI to USDC-DAI-MAI-USDT pool to BPSP https://polygonscan.com/token/0x06df3b2bbb68adc8b0e302443692037ed9f91b42
+        //  https://polygonscan.com/tx/0x1793ae9eded0050f3b74a79e77dfad3a5db7f40a7a148b2373450802dbab220d
+        //  Contract 0xa3fa99a148fa48d14ed51d610c367c61876997f1 (Qi DAO: miMATIC Token)
+        //  Function: approve(address spender, uint256 amount)
+        //  https://polygonscan.com/tx/0x201dbe56a9843bc2a64d327fa0d2a9b81957af52681da6d85b4a3e17a64bf3dd
+        //  https://dashboard.tenderly.co/tx/polygon/0x201dbe56a9843bc2a64d327fa0d2a9b81957af52681da6d85b4a3e17a64bf3dd
+        //  Contract 0xba12222222228d8ba445958a75a0704d566bf2c8 (Balancer V2)
+        //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
+
         IERC20(d.sourceToken).safeApprove(d.vault, 0);
         IERC20(d.sourceToken).safeApprove(d.vault, amount);
 
@@ -74,6 +85,10 @@ contract BalancerConnector {
     }
 
     function _balancerExitPool(uint256 amount) internal {
+        // BAL: withdraw miMATIC
+        // https://polygonscan.com/tx/0xc114039567b12bc2128bfe54eab0e742620a4200587525ce512c489805966055
+        // https://dashboard.tenderly.co/tx/polygon/0xc114039567b12bc2128bfe54eab0e742620a4200587525ce512c489805966055
+
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
         require( d.sourceToken ==address(tokens[d.tokenIndexAtPool]), _WRONG_SOURCE_TOKEN);
         uint256[] memory minAmountsOut = new uint256[](4);
@@ -97,6 +112,11 @@ contract BalancerConnector {
         uint256 total = IERC20(d.lpToken).balanceOf(address(this));
         //TODO !!! Convert BPT LP Tokens to MAI amount -> StableMath._calcTokenOutGivenExactBptIn
         return total;
+    }
+
+    function _balancerToSourceTokenAmount(uint256 lpTokenAmount) internal pure returns (uint256) {
+//        IMockStableMath(d.lpToken).exactBPTInForTokenOut()
+        return 0; //TODO
     }
 }
 

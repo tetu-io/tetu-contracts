@@ -22,6 +22,7 @@ interface ICamWMATIC {
 //    address public operator;
 //
 //    uint16 public depositFeeBP;
+    function depositFeeBP() external returns (uint16);
 
     // Define the compounding aave market token contract
 //    constructor() public {

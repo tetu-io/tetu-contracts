@@ -15,6 +15,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./../../../../third_party/qudao-mai/ICamWMATIC.sol";
 import "./../../../../third_party/qudao-mai/IErc20Stablecoin.sol";
 
@@ -30,6 +31,7 @@ contract MaiConnector {
     }
 
     using SafeERC20 for IERC20;
+    using SafeMath for uint256;
 
     MaiData private d;
 
@@ -40,6 +42,10 @@ contract MaiConnector {
     }
 
     function _maiCreateVault() internal {
+        //    MAI: create camMATIC vault
+        //    https://polygonscan.com/tx/0x3f69c39b4ff0f3280d4277e0cc82d9dba3ff384a2ddad5890eb0960d55019dc2
+        //    contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
+        //    Function: createVault()
         //TODO try catch with gas limit
         IErc20Stablecoin(d.vault).createVault();
     }
@@ -53,6 +59,14 @@ contract MaiConnector {
     }
 
     function _maiEnterCamWMatic(uint256 amount) internal {
+        //  MAI: approve, enter yield deposit amMATIC to camMATIC
+        //  https://polygonscan.com/tx/0xc48fd433ef7145089daabed2dedd98f1c4598a8f50d7f7644dc2b91a7d41aad4
+        //  Contract 0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4 (Aave: amWMATIC Token)
+        //  Function: approve(address spender, uint256 rawAmount)
+        //  https://polygonscan.com/tx/0xfb7358d4bb2ec1cbd59b83e5e18705ac87d2c07166b328694da2b28115e7c6af
+        //  Contract camWMATIC 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b
+        //  Function: enter(uint256 _amount)
+
         IERC20(d.sourceToken).safeApprove(d.lpToken, 0);
         IERC20(d.sourceToken).safeApprove(d.lpToken, amount);
         //TODO try catch with gas limit
@@ -60,11 +74,22 @@ contract MaiConnector {
     }
 
     function _maiLeaveCamWMatic(uint256 amount) internal {
+        // MAI: withdraw amWMATIC
+        // https://polygonscan.com/tx/0x72c13585c9c35f85b6fa70882f8bad80745689f09070df3eb1c54a8027c89f30
+
         //TODO try catch with gas limit
         ICamWMATIC(d.lpToken).leave(amount);
     }
 
     function _maiDepositCollateral(uint256 amount, uint256 _vaultID) internal {
+        //  MAI: approve, deposit camMATIC to collateral
+        //  https://polygonscan.com/tx/0x9f3040c242b164a4d28de2240c92375e59e17c90d24a584e7879d1b39a73a8ba
+        //  Contract (camWMATIC) 0x7068ea5255cb05931efa8026bd04b18f3deb8b0b
+        //  Function: approve(address spender, uint256 amount)
+        //  https://polygonscan.com/tx/0x79c84484e88d71783272e994ababc5fc133cb91239ecc3e688fcf4668f2fd323
+        //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
+        //  Function: depositCollateral(uint256 vaultID 0x53e, uint256 amount db037b6c4b33e8b)
+
         IERC20(d.lpToken).safeApprove(d.vault, 0);
         IERC20(d.lpToken).safeApprove(d.vault, amount);
         //TODO try catch with gas limit
@@ -76,6 +101,11 @@ contract MaiConnector {
     }
 
     function _maiBorrowToken(uint256 amount, uint256 _vaultID) internal {
+        //  MAI: borrow MAI (miMATIC) 33%  {QI airdrop}
+        //  https://polygonscan.com/tx/0x61a10463ecd073c6d9e67a33d6c29c14909916bfbf076d870840d962516763da
+        //  Contract erc20QiStablecoin(camWMATIC MAI Vault (cMVT)) 0x88d84a85a87ed12b8f098e8953b322ff789fcd1a
+        //  Function: borrowToken(uint256 vaultID 0x53e, uint256 amount 368a5a82c9a940e)
+
         //TODO try catch with gas limit
         IErc20Stablecoin(d.vault).borrowToken(_vaultID, amount);
     }
@@ -86,6 +116,9 @@ contract MaiConnector {
 
 
     function _maiRepayToken(uint256 amount, uint256 _vaultID) internal {
+        // MAI: repay miMATIC/MAI (0.5% fee)
+        // https://polygonscan.com/tx/0x81e483a29d3ec3b3265db7d013eeb97968233cfae2d3989bc325e8b24ebc6e0f
+
         //TODO try catch with gas limit
         IErc20Stablecoin(d.vault).payBackToken(_vaultID, amount);
     }
@@ -96,6 +129,9 @@ contract MaiConnector {
 
 
     function _maiWithdrawCollateral(uint256 amount, uint256 _vaultID) internal {
+        // MAI: withdraw camWMATIC
+        // https://polygonscan.com/tx/0xfcd83b5c444e537b6f569dac7ae6dd82cb011d80cb00d790f2e1814c8175d437
+
         IERC20(d.lpToken).safeApprove(d.vault, 0);
         IERC20(d.lpToken).safeApprove(d.vault, amount);
         //TODO try catch with gas limit
@@ -104,6 +140,31 @@ contract MaiConnector {
 
     function _maiWithdrawCollateral(uint256 amount) internal {
         _maiWithdrawCollateral(amount, _maiGetVaultID());
+    }
+
+    function _maiGetPaid() internal {
+        try IErc20Stablecoin(d.vault).getPaid() {} catch Error(string memory /*reason*/) {}
+    }
+
+    function _maiToLPTokenAmount(uint256 sourceTokenAmount) public returns (uint256){
+        uint256 totalTokenLocked = IERC20(d.sourceToken).balanceOf(address(this));
+        uint256 totalShares = IERC20(d.lpToken).totalSupply(); // Gets the amount of camToken in existence
+
+        uint16 depositFeeBP = ICamWMATIC(d.lpToken).depositFeeBP();
+
+        uint256 lpTokenAmount;
+        if (totalShares == 0 || totalTokenLocked == 0) {
+            lpTokenAmount = sourceTokenAmount;
+        } else {
+            lpTokenAmount = sourceTokenAmount.mul(totalShares).div(totalTokenLocked);
+        }
+
+        if(depositFeeBP > 0){
+            uint256 depositFee = lpTokenAmount.mul(depositFeeBP).div(10000);
+            return lpTokenAmount.sub(depositFee);
+        } else {
+           return lpTokenAmount;
+        }
     }
 
 }
