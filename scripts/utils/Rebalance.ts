@@ -60,7 +60,7 @@ async function main() {
       const undBalStrat = +utils.formatUnits(await TokenUtils.balanceOf(und, strategy), undDec);
       if (undBal * undPrice < 100 && undBalStrat * undPrice < 100) {
         console.log('too low und balance', vault,
-            (undBal * undPrice).toFixed(2), (undBalStrat * undPrice).toFixed(2));
+          (undBal * undPrice).toFixed(2), (undBalStrat * undPrice).toFixed(2));
         continue;
       }
       console.log('vault bal', (undBal * undPrice).toFixed(2));
@@ -68,22 +68,23 @@ async function main() {
 
       const platform = await contractReader.strategyPlatform(await vCtr.strategy())
       if ((await contractReader.strategyAssets(await vCtr.strategy())).length !== 2
-          || exclude.has(vault.toLowerCase())
-          || !(await contractReader.vaultActive(vault))
-          || (platform !== 3)
+        || exclude.has(vault.toLowerCase())
+        || !(await contractReader.vaultActive(vault))
+        || (undBal * undPrice) + (undBalStrat * undPrice) < 100
+        // || (platform !== 3)
       ) {
         continue;
       }
 
       await zapInVaultWithLp(
-          signer,
-          mSwap,
-          zap,
-          contractReader,
-          vault,
-          MaticAddresses.WMATIC_TOKEN,
-          0.01,
-          10
+        signer,
+        mSwap,
+        zap,
+        contractReader,
+        vault,
+        MaticAddresses.WMATIC_TOKEN,
+        0.01,
+        10
       );
 
       const amountShare = await TokenUtils.balanceOf(vault, signer.address);
@@ -93,13 +94,13 @@ async function main() {
       }
 
       await zapOutVaultWithLp(
-          signer,
-          mSwap,
-          zap,
-          contractReader,
-          vault,
-          MaticAddresses.WMATIC_TOKEN,
-          amountShare.toString()
+        signer,
+        mSwap,
+        zap,
+        contractReader,
+        vault,
+        MaticAddresses.WMATIC_TOKEN,
+        amountShare.toString()
       );
     } catch (e) {
       console.error('error with', vaults[i]);
@@ -112,27 +113,27 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
 
 async function zapInVaultWithLp(
-    signer: SignerWithAddress,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    cReader: ContractReader,
-    vault: string,
-    tokenIn: string,
-    amountN = 1000,
-    slippage: number
+  signer: SignerWithAddress,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  cReader: ContractReader,
+  vault: string,
+  tokenIn: string,
+  amountN = 1000,
+  slippage: number
 ) {
   console.log("zap lp in", amountN, slippage);
   const tokenInDec = await TokenUtils.decimals(tokenIn);
   const amount = utils.parseUnits(amountN.toString(), tokenInDec);
   expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
-  .is.greaterThanOrEqual(amountN);
+    .is.greaterThanOrEqual(amountN);
 
   const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
   const strategy = await smartVault.strategy()
@@ -164,26 +165,26 @@ async function zapInVaultWithLp(
 
   await RunHelper.runAndWait(() => TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString()));
   await RunHelper.runAndWait(() => zapContract.connect(signer).zapIntoLp(
-      vault,
-      tokenIn,
-      tokensOut[0],
-      tokensOutLps[0],
-      tokensOut[1],
-      tokensOutLps[1],
-      amount,
-      slippage
+    vault,
+    tokenIn,
+    tokensOut[0],
+    tokensOutLps[0],
+    tokensOut[1],
+    tokensOutLps[1],
+    amount,
+    slippage
   ));
 }
 
 
 async function zapOutVaultWithLp(
-    signer: SignerWithAddress,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    cReader: ContractReader,
-    vault: string,
-    tokenOut: string,
-    amountShare: string
+  signer: SignerWithAddress,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  cReader: ContractReader,
+  vault: string,
+  tokenOut: string,
+  amountShare: string
 ) {
   const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
   const strategy = await smartVault.strategy()
@@ -197,13 +198,13 @@ async function zapOutVaultWithLp(
 
   await RunHelper.runAndWait(() => TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString()));
   await RunHelper.runAndWait(() => zapContract.zapOutLp(
-      vault,
-      tokenOut,
-      assets[0],
-      assetsLpRoute[0],
-      assets[1],
-      assetsLpRoute[1],
-      amountShare,
-      9
+    vault,
+    tokenOut,
+    assets[0],
+    assetsLpRoute[0],
+    assets[1],
+    assetsLpRoute[1],
+    amountShare,
+    9
   ));
 }

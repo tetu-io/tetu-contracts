@@ -18,8 +18,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/iron/CompleteRToken.sol";
+import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
 import "../../interface/ISmartVault.sol";
+import "../../../third_party/IWmatic.sol";
 
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
@@ -33,13 +35,15 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.3";
+  string public constant VERSION = "1.2.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Maximum folding loops
   uint256 public constant MAX_DEPTH = 20;
   /// @dev ICE rToken address for reward price determination
   address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
+  address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+  address public constant R_ETHER = 0xCa0F37f73174a28a64552D426590d3eD601ecCa1;
 
   /// @notice RToken address
   address public rToken;
@@ -103,8 +107,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     rToken = _rToken;
     ironController = _ironController;
 
-    address _lpt = CompleteRToken(rToken).underlying();
-    require(_lpt == _underlyingToken, "IFS: Wrong underlying");
+    if (isMatic()) {
+      require(_underlyingToken == W_MATIC, "IFS: Only wmatic allowed");
+    } else {
+      address _lpt = CompleteRToken(rToken).underlying();
+      require(_lpt == _underlyingToken, "IFS: Wrong underlying");
+    }
 
     factorDenominator = _factorDenominator;
 
@@ -117,6 +125,22 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   }
 
   // ************* VIEWS *******************
+
+  function isMatic() private view returns (bool) {
+    return rToken == R_ETHER;
+  }
+
+  function decimals() private view returns (uint8) {
+    return CompleteRToken(rToken).decimals();
+  }
+
+  function underlyingDecimals() private view returns (uint8) {
+    if (isMatic()) {
+      return 18;
+    } else {
+      return ERC20(CompleteRToken(rToken).underlying()).decimals();
+    }
+  }
 
   /// @notice Strategy balance supplied minus borrowed
   /// @return bal Balance amount in underlying tokens
@@ -144,7 +168,6 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Calculate expected rewards rate for reward token
   function rewardsRateNormalised() public view returns (uint256){
     CompleteRToken rt = CompleteRToken(rToken);
-    uint8 underlyingDecimals = ERC20(rt.underlying()).decimals();
 
     // get reward per token for both - suppliers and borrowers
     uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(rToken);
@@ -154,8 +177,8 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
 
     // get total supply, cash and borrows, and normalize them to 18 decimals
-    uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** rt.decimals());
-    uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals);
+    uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** decimals());
+    uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals());
 
     // for avoiding revert for empty market
     if (totalSupply == 0 || totalBorrows == 0) {
@@ -163,7 +186,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     }
 
     // exchange rate between rToken and underlyingToken
-    uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** rt.decimals()) / (10 ** underlyingDecimals);
+    uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** decimals()) / (10 ** underlyingDecimals());
 
     // amount of reward tokens per block for 1 supplied underlyingToken
     uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / rTokenExchangeRate * 1e18 / totalSupply / 2;
@@ -190,13 +213,12 @@ abstract contract IronFoldStrategyBase is StrategyBase {
 
   /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
   function rTokenUnderlyingPrice(address _rToken) public view returns (uint256){
-    uint8 underlyingDecimals = ERC20(CompleteRToken(_rToken).underlying()).decimals();
     uint256 _rTokenPrice = IronPriceOracle(
       IronControllerInterface(ironController).oracle()
     ).getUnderlyingPrice(_rToken);
     // normalize token price to 1e18
-    if (underlyingDecimals < 18) {
-      _rTokenPrice = _rTokenPrice / (10 ** (18 - underlyingDecimals));
+    if (underlyingDecimals() < 18) {
+      _rTokenPrice = _rTokenPrice / (10 ** (18 - underlyingDecimals()));
     }
     return _rTokenPrice;
   }
@@ -433,9 +455,14 @@ abstract contract IronFoldStrategyBase is StrategyBase {
     if (amount < balance) {
       balance = amount;
     }
-    IERC20(_underlyingToken).safeApprove(rToken, 0);
-    IERC20(_underlyingToken).safeApprove(rToken, balance);
-    require(CompleteRToken(rToken).mint(balance) == 0, "IFS: Supplying failed");
+    if (isMatic()) {
+      wmaticWithdraw(balance);
+      IRMatic(rToken).mint{value : balance}();
+    } else {
+      IERC20(_underlyingToken).safeApprove(rToken, 0);
+      IERC20(_underlyingToken).safeApprove(rToken, balance);
+      require(CompleteRToken(rToken).mint(balance) == 0, "IFS: Supplying failed");
+    }
     return balance;
   }
 
@@ -443,6 +470,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   function _borrow(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // Borrow, check the balance for this contract's address
     require(CompleteRToken(rToken).borrow(amountUnderlying) == 0, "IFS: Borrow failed");
+    if (isMatic()) {
+      require(address(this).balance >= amountUnderlying, "IFS: Zero redeem");
+      IWmatic(W_MATIC).deposit{value : address(this).balance}();
+    }
   }
 
   /// @dev Redeem liquidity in underlying
@@ -462,6 +493,10 @@ abstract contract IronFoldStrategyBase is StrategyBase {
           _redeemRToken(rTokenRedeem);
         }
       }
+      if (isMatic()) {
+        require(address(this).balance >= amountUnderlying, "IFS: Zero redeem");
+        IWmatic(W_MATIC).deposit{value : address(this).balance}();
+      }
     }
   }
 
@@ -475,9 +510,14 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   /// @dev Repay a loan
   function _repay(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     if (amountUnderlying != 0) {
-      IERC20(_underlyingToken).safeApprove(rToken, 0);
-      IERC20(_underlyingToken).safeApprove(rToken, amountUnderlying);
-      require(CompleteRToken(rToken).repayBorrow(amountUnderlying) == 0, "IFS: Repay failed");
+      if (isMatic()) {
+        wmaticWithdraw(amountUnderlying);
+        IRMatic(rToken).repayBorrow{value : amountUnderlying}();
+      } else {
+        IERC20(_underlyingToken).safeApprove(rToken, 0);
+        IERC20(_underlyingToken).safeApprove(rToken, amountUnderlying);
+        require(CompleteRToken(rToken).repayBorrow(amountUnderlying) == 0, "IFS: Repay failed");
+      }
     }
   }
 
@@ -550,4 +590,11 @@ abstract contract IronFoldStrategyBase is StrategyBase {
       _redeemUnderlying(toRedeem);
     }
   }
+
+  function wmaticWithdraw(uint256 amount) private {
+    require(IERC20(W_MATIC).balanceOf(address(this)) >= amount, "IFS: Not enough wmatic");
+    IWmatic(W_MATIC).withdraw(amount);
+  }
+
+  receive() external payable {} // this is needed for the WMATIC unwrapping
 }

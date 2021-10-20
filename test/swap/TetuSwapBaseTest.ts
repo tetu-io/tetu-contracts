@@ -9,6 +9,7 @@ import {
   SmartVault,
   TetuSwapFactory,
   TetuSwapPair,
+  TetuSwapPair__factory,
   TetuSwapRouter
 } from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
@@ -16,7 +17,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {ethers} from "hardhat";
+import {ethers, web3} from "hardhat";
 import {TestAsserts} from "../TestAsserts";
 import {VaultUtils} from "../VaultUtils";
 import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
@@ -53,6 +54,16 @@ describe("Tetu Swap base tests", function () {
   let vaultUsdtCtr: SmartVault;
 
   before(async function () {
+    console.log(
+      web3.utils.keccak256(
+        web3.utils.encodePacked(
+          ((await ethers.getContractFactory(
+            'TetuSwapPair',
+            signer
+          )) as TetuSwapPair__factory).bytecode
+        ) as string
+      )
+    );
     snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[0];
