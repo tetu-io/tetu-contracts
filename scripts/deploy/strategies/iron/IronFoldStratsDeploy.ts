@@ -9,22 +9,24 @@ import {
 } from "../../../../typechain";
 import {mkdir, readFileSync, writeFileSync} from "fs";
 
-const alreadyDeployed = new Set<string>([]);
+const alreadyDeployed = new Set<string>([
+  '0',
+  '1',
+  '3',
+  '4',
+]);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
-
   const infos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
 
   const vaultNames = new Set<string>();
 
   const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+    signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -65,22 +67,22 @@ async function main() {
     console.log('strat', idx, rTokenName, vaultNameWithoutPrefix);
 
     const data = await DeployerUtils.deployVaultAndStrategy(
-        vaultNameWithoutPrefix,
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyIronFold',
-            core.controller,
-            vaultAddress,
-            token,
-            rTokenAddress,
-            borrowTarget,
-            collateralFactor
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.psVault,
+      vaultNameWithoutPrefix,
+      async vaultAddress => DeployerUtils.deployContract(
         signer,
-        60 * 60 * 24 * 28,
-        true
+        'StrategyIronFold',
+        core.controller,
+        vaultAddress,
+        token,
+        rTokenAddress,
+        borrowTarget,
+        collateralFactor
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.psVault,
+      signer,
+      60 * 60 * 24 * 28,
+      true
     );
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
@@ -103,15 +105,15 @@ async function main() {
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
-
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, JSON.stringify(data), 'utf8');
+    const txt = `vault: ${data[1].address}\nstrategy: ${data[2].address}`;
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
   }
 
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
