@@ -10,6 +10,18 @@ import {MAX_UINT256} from "./helpers/constants";
 import {formatFixed} from '@ethersproject/bignumber';
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {Result} from "@ethersproject/abi";
+import {config as dotEnvConfig} from "dotenv";
+
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  }
+}).argv;
 
 
 async function deployPoolWithFactory(vault: IVault, singer: SignerWithAddress): Promise<IBasePool> {
@@ -72,6 +84,9 @@ describe('Balancer WeightedPool', function () {
   let investor: SignerWithAddress;
   let other: SignerWithAddress;
 
+  if (argv.disableStrategyTests) {
+    return;
+  }
   before('Get user to act', async () => {
     [singer, investor, other] = await ethers.getSigners();
   });

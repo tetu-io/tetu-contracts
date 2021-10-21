@@ -12,6 +12,18 @@ import {encodeJoin, encodeExit} from "./helpers/mockPool";
 import {MAX_UINT256, PoolSpecialization} from "./helpers/constants";
 import {TimeUtils} from "../../../TimeUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {config as dotEnvConfig} from "dotenv";
+
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  }
+}).argv;
 
 const setup = async () => {
   const [signer, investor, other] = (await ethers.getSigners());
@@ -87,6 +99,10 @@ describe('Iron Asset manager', function () {
   let poolId: BytesLike;
   let investor: SignerWithAddress;
   let other: SignerWithAddress;
+
+  if (argv.disableStrategyTests) {
+    return;
+  }
 
   before('deploy base contracts', async () => {
     [, investor, other] = await ethers.getSigners();

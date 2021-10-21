@@ -1,6 +1,5 @@
 import chai, {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {Settings} from "../../../../settings";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../../../TimeUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
@@ -15,12 +14,24 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {calcRebalanceAmount, encodeInvestmentConfig} from "./helpers/rebalance";
 import * as expectEvent from "./helpers/expectEvent";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {config as dotEnvConfig} from "dotenv";
+
+dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+.env('TETU')
+.options({
+  disableStrategyTests: {
+    type: "boolean",
+    default: false,
+  }
+}).argv;
 
 chai.use(chaiAsPromised);
 
 
 describe('Balancer AM tests', async () => {
-  if (Settings.disableStrategyTests) {
+  if (argv.disableStrategyTests) {
     return;
   }
   let snapshotBefore: string;
