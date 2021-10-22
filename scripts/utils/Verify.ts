@@ -14,17 +14,17 @@ async function main() {
   const borrowTarget = 4500;
   const collateralFactor = 4999;
 
-  // await DeployerUtils.verify(vaultLogic);
+  await DeployerUtils.verify(vaultLogic);
   await DeployerUtils.verifyWithArgs(vaultProxy, [vaultLogic]);
-  // await DeployerUtils.verifyProxy(vaultProxy);
-  // await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold', [
-  //   core.controller,
-  //   vaultProxy,
-  //   token,
-  //   rTokenAddress,
-  //   borrowTarget,
-  //   collateralFactor
-  // ]);
+  await DeployerUtils.verifyProxy(vaultProxy);
+  await DeployerUtils.verifyWithContractName(strategy, 'contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold', [
+    core.controller,
+    vaultProxy,
+    token,
+    rTokenAddress,
+    borrowTarget,
+    collateralFactor
+  ]);
 
 }
 

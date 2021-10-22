@@ -22,11 +22,12 @@ import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
 import "../../interface/ISmartVault.sol";
 import "../../../third_party/IWmatic.sol";
+import "../../interface/IIronFoldStrategy.sol";
 
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
 /// @author belbix
-abstract contract IronFoldStrategyBase is StrategyBase {
+abstract contract IronFoldStrategyBase is StrategyBase, IIronFoldStrategy {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -35,7 +36,7 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.2.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Maximum folding loops
@@ -46,9 +47,9 @@ abstract contract IronFoldStrategyBase is StrategyBase {
   address public constant R_ETHER = 0xCa0F37f73174a28a64552D426590d3eD601ecCa1;
 
   /// @notice RToken address
-  address public rToken;
+  address public override rToken;
   /// @notice Iron Controller address
-  address public ironController;
+  address public override ironController;
 
   /// @notice Numerator value for the targeted borrow rate
   uint256 public borrowTargetFactorNumeratorStored;
