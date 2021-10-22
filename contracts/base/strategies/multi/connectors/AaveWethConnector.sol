@@ -39,7 +39,7 @@ contract AaveWethConnector {
         //  contract WETHGateway 0xbeadf48d62acc944a06eeae0a9054a90e5a7dc97
         //  Function: depositETH(address lendingPool, address onBehalfOf, uint16 referralCode)
 
-        //TODO try catch with gas limit
+
         IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
     }
 
@@ -51,7 +51,7 @@ contract AaveWethConnector {
 
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), 0);
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), amount);
-        //TODO try catch with gas limit
+
         IWETHGateway(d.wethGateway).withdrawETH(d.pool, amount, address(this));
     }
 

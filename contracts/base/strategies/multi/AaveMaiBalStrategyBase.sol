@@ -46,27 +46,31 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
   // using structs to avoid "stack to deep" compiler error
 
   AaveWethData aave = AaveWethData({
-    wethGateway        : 0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97, // for MATIC deposits
-    pool               : 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf, // LendingPool
-    lpToken            : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4 // Aave Matic Market WMATIC (amWMATIC)
+    wethGateway      : 0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97, // for MATIC deposits
+    pool             : 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf, // LendingPool
+    lpToken          : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4  // Aave Matic Market WMATIC (amWMATIC)
   });
 
   MaiData mai = MaiData({
-    vault               : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
-    sourceToken         : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4, // Aave Matic Market WMATIC (amWMATIC)
-    lpToken             : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B, // Compounding Aave Market Matic (camWMATIC)
-    borrowPercentage    : 50,
-    borrowToken         : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
-    rewardToken         : 0x580A84C73811E1839F75d86d75d88cCa0c241fF4 // QI/MAI Token
+    vault            : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
+    sourceToken      : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4, // Aave Matic Market WMATIC (amWMATIC)
+    lpToken          : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B, // Compounding Aave Market Matic (camWMATIC)
+    borrowPercentage : 50,
+    borrowToken      : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
+    rewardToken      : 0x580A84C73811E1839F75d86d75d88cCa0c241fF4,  // QI/MAI Token
+    // https://docs.mai.finance/borrowing-incentives
+    minPercentage    : 240, // 135 - liquidation, 135+25=160 - minimum for incentives
+    maxPercentage    : 280, // 135+270=405 max percentage for incentives
+    targetPercentage : 260
   });
 
   BalancerData balancer = BalancerData({
-    vault          : 0xBA12222222228d8Ba445958a75a0704d566BF2C8,
-    sourceToken    : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
-    poolID         : 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012,
-    tokenIndex     : 2,
-    lpToken        : 0x06Df3b2bbB68adc8B0e302443692037ED9f91b42, // Balancer Polygon Stable Pool (BPSP)
-    rewardToken    : 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3 // BAL
+    vault            : 0xBA12222222228d8Ba445958a75a0704d566BF2C8,
+    sourceToken      : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC/MAI Token
+    poolID           : 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012,
+    tokenIndex       : 2,
+    lpToken          : 0x06Df3b2bbB68adc8B0e302443692037ED9f91b42, // Balancer Polygon Stable Pool (BPSP)
+    rewardToken      : 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3 // BAL
   });
 
   /// @notice Contract constructor
@@ -148,7 +152,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, AaveWethConnector, MaiConnector
     reBalance(rewardPoolBalance()+ underlyingAmount);
   }
 
-  function _convertUnderlyingToDeepUnderlying(uint256 underlyingAmount) internal view returns (uint256) {
+  function _convertUnderlyingToDeepUnderlying(uint256 underlyingAmount) internal pure returns (uint256) {
 //    uint256 maiAmount = 0; //TODO !!!
 //    uint256 exitAmount = _balancerGetExitAmount(maiAmount);
     return underlyingAmount; //TODO !!!

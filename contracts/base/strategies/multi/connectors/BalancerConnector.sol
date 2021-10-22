@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./../../../../third_party/balancer/IBVault.sol";
@@ -82,7 +83,7 @@ contract BalancerConnector {
             fromInternalBalance: false
         });
 
-        //TODO try catch with gas limit
+
         IBVault(d.vault).joinPool(d.poolID, address(this), address(this), request);
     }
 
@@ -106,7 +107,7 @@ contract BalancerConnector {
             toInternalBalance: false
         });
 
-        //TODO try catch with gas limit
+
         IBVault(d.vault).exitPool(d.poolID, address(this), payable(address(this)), request);
     }
 
@@ -116,7 +117,7 @@ contract BalancerConnector {
         return total;
     }
 
-    function _balancerToSourceTokenAmount(uint256 lpTokenAmount) internal view returns (uint256) {
+    function _balancerLPToSourceTokenAmount(uint256 lpTokenAmount) internal view returns (uint256) {
         (uint256 currentAmp,,) = IStablePool(d.lpToken).getAmplificationParameter();
         (,uint256[] memory balances,) = IBVault(d.vault).getPoolTokens(d.poolID);
         uint256 totalSupply = IERC20(d.lpToken).totalSupply();
@@ -127,6 +128,23 @@ contract BalancerConnector {
             balances,
             d.tokenIndex,
             lpTokenAmount,
+            totalSupply,
+            swapFeePercentage
+        );
+    }
+
+    function _balancerSourceToLPTokenAmount(uint256 sourceTokenAmount) internal view returns (uint256) {
+        (uint256 currentAmp,,) = IStablePool(d.lpToken).getAmplificationParameter();
+        (,uint256[] memory balances,) = IBVault(d.vault).getPoolTokens(d.poolID);
+        uint256[] memory amountsIn = new uint256[](balances.length);
+        amountsIn[d.tokenIndex] = sourceTokenAmount;
+        uint256 totalSupply = IERC20(d.lpToken).totalSupply();
+        uint256 swapFeePercentage = IBasePool(d.lpToken).getSwapFeePercentage();
+
+        return IMockStableMath(d.lpToken).exactTokensInForBPTOut(
+            currentAmp,
+            balances,
+            amountsIn,
             totalSupply,
             swapFeePercentage
         );

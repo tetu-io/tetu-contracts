@@ -17,9 +17,9 @@ interface IErc20Stablecoin {
 //    uint256 external tokenPeg;
 //
 //    mapping(uint256 => uint256) external vaultCollateral;
-    function vaultCollateral(uint256 vaultID) external returns (uint256);
+    function vaultCollateral(uint256 vaultID) external view returns (uint256);
 //    mapping(uint256 => uint256) external vaultDebt;
-    function vaultDebt(uint256 vaultID) external returns (uint256);
+    function vaultDebt(uint256 vaultID) external view returns (uint256);
 //
 //    uint256 external debtRatio;
 //    uint256 external gainRatio;
@@ -27,8 +27,10 @@ interface IErc20Stablecoin {
 //    address external stabilityPool;
 //
 //    ERC20Detailed external collateral;
+    function collateral() external view returns (address);
 //
 //    ERC20Detailed external mai;
+    function mai() external view returns (address);
 //
 //    uint8 external priceSourceDecimals;
 
