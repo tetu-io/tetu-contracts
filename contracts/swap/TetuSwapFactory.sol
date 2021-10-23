@@ -24,7 +24,7 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint256 public constant TIME_LOCK = 48 hours;
   uint256 public constant DEFAULT_FEE = 10;
 
@@ -75,9 +75,12 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
     TetuSwapPair(_pair).setFee(_fee);
   }
 
-  function setPairRewardRecipient(address _pair, address _recipient) external onlyControllerOrGovernance {
-    require(validPairs[_pair], "TSF: Pair not found");
-    TetuSwapPair(_pair).setRewardRecipient(_recipient);
+  function setPairRewardRecipients(address[] memory _pairs, address[] memory _recipients) external onlyControllerOrGovernance {
+    require(_pairs.length == _recipients.length, "TSF: Wrong arrays");
+    for (uint i = 0; i < _pairs.length; i++) {
+      require(validPairs[_pairs[i]], "TSF: Pair not found");
+      TetuSwapPair(_pairs[i]).setRewardRecipient(_recipients[i]);
+    }
   }
 
   function announceVaultsChange(address _vaultA, address _vaultB) external onlyControllerOrGovernance {

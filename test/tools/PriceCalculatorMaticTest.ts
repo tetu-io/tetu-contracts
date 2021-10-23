@@ -17,18 +17,15 @@ describe("Price calculator tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
-  let signer1: SignerWithAddress;
   let core: CoreContractsWrapper;
   let calculator: PriceCalculator;
 
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
-    signer1 = (await ethers.getSigners())[1];
-    core = await DeployerUtils.deployAllCoreContracts(signer);
-    calculator = (await DeployerUtils
-    .deployPriceCalculatorMatic(signer, core.controller.address))[0];
+    signer = await DeployerUtils.impersonate();
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
   });
 
   after(async function () {
@@ -220,6 +217,13 @@ describe("Price calculator tests", function () {
         MaticAddresses.IRON_IRON_IS3USD, MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.99);
     expect(price).is.lessThan(1.01);
+  });
+
+  it("calculate tetu-swap-wmatic-tetu price and check", async () => {
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0xBe527f95815f906625F29fc084bFd783F4d00787', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(1);
   });
 
 });

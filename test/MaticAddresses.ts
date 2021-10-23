@@ -150,6 +150,10 @@ export class MaticAddresses {
   public static CAFE_FACTORY = "0x5eDe3f4e7203Bf1F12d57aF1810448E5dB20f46C".toLowerCase();
   public static CAFE_ROUTER = "0x9055682E58C74fc8DdBFC55Ad2428aB1F96098Fc".toLowerCase();
 
+  // TetuSwap
+  public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
+  public static TETU_SWAP_ROUTER = "0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c".toLowerCase();
+
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
       case MaticAddresses.QUICK_FACTORY:

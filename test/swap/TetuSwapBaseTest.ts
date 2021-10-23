@@ -72,19 +72,6 @@ describe("Tetu Swap base tests", function () {
     vaultUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDC) as SmartVault;
     vaultUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDT) as SmartVault;
 
-    // * upgrade
-    const newController = await DeployerUtils.deployContract(signer, 'Controller') as Controller;
-    await core.announcer.announceTetuProxyUpgrade(core.controller.address, newController.address);
-    const newVaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
-    await core.announcer.announceTetuProxyUpgradeBatch([IRON_FOLD_USDC, IRON_FOLD_USDT], [newVaultLogic.address, newVaultLogic.address]);
-
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
-
-    await core.controller.upgradeTetuProxy(core.controller.address, newController.address);
-    await core.controller.upgradeTetuProxyBatch([IRON_FOLD_USDC, IRON_FOLD_USDT], [newVaultLogic.address, newVaultLogic.address]);
-
-    // * -----------------
-
     factory = (await DeployerUtils.deploySwapFactory(signer, core.controller.address))[0] as TetuSwapFactory;
     router = await DeployerUtils.deployContract(signer, 'TetuSwapRouter', factory.address, MaticAddresses.WMATIC_TOKEN) as TetuSwapRouter;
 
@@ -142,7 +129,7 @@ describe("Tetu Swap base tests", function () {
     lpVault = data[0];
     lpStrategy = data[1];
 
-    await factory.setPairRewardRecipient(lp, lpStrategy.address);
+    await factory.setPairRewardRecipients([lp], [lpStrategy.address]);
 
     await StrategyTestUtils.setupForwarder(
       core.feeRewardForwarder,
@@ -178,8 +165,8 @@ describe("Tetu Swap base tests", function () {
       router.address
     );
 
-    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(199.999997);
-    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(399.999998);
+    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.approximately(200, 0.0001);
+    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.approximately(400, 0.0001);
 
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.eq(0);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.eq(0);
@@ -204,8 +191,8 @@ describe("Tetu Swap base tests", function () {
     expect(userTokenABalAfter - userTokenABal).is.eq(-10);
     expect(userTokenBBalAfter - userTokenBBal).is.eq(19.029477000000043);
 
-    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(209.999996);
-    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(380.954186);
+    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.approximately(210, 0.0001);
+    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.approximately(380.954186, 0.0001);
 
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.lessThan(0.0001);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.lessThan(0.0001);
@@ -316,8 +303,8 @@ describe("Tetu Swap base tests", function () {
     expect(name).to.eq('TetuSwap LP')
     expect(await lpCtr.symbol()).to.eq('TLP_USDC_USDT')
     expect(await lpCtr.decimals()).to.eq(18)
-    expect(await lpCtr.totalSupply()).to.eq(141307410)
-    expect(await lpCtr.balanceOf(signer.address)).to.eq(141306410)
+    expect((await lpCtr.totalSupply()).toNumber()).to.approximately(141307410, 400000)
+    expect((await lpCtr.balanceOf(signer.address)).toNumber()).to.approximately(141306410, 400000)
     expect(await lpCtr.DOMAIN_SEPARATOR()).to.eq(
       utils.keccak256(
         utils.defaultAbiCoder.encode(
@@ -507,7 +494,7 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('healthy K after vault manipulations', async () => {
-    await factory.setPairRewardRecipient(lp, core.controller.address);
+    await factory.setPairRewardRecipients([lp], [core.controller.address]);
 
     await VaultUtils.deposit(signer, vaultUsdcCtr, utils.parseUnits('800000', tokenADec));
 

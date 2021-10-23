@@ -216,6 +216,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.FIREBIRD_FACTORY, "FireBird Liquidity Provider"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.CAFE_FACTORY, "CafeSwap LPs"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
 
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.modifyReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
