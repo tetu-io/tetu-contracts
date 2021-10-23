@@ -9,6 +9,7 @@ import {
   SmartVault,
   TetuSwapFactory,
   TetuSwapPair,
+  TetuSwapPair__factory,
   TetuSwapRouter
 } from "../../typechain";
 import {MaticAddresses} from "../MaticAddresses";
@@ -16,8 +17,9 @@ import {UniswapUtils} from "../UniswapUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {ethers} from "hardhat";
+import {ethers, web3} from "hardhat";
 import {TestAsserts} from "../TestAsserts";
+import {VaultUtils} from "../VaultUtils";
 import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
 
 const {expect} = chai;
@@ -52,6 +54,16 @@ describe("Tetu Swap base tests", function () {
   let vaultUsdtCtr: SmartVault;
 
   before(async function () {
+    console.log(
+      web3.utils.keccak256(
+        web3.utils.encodePacked(
+          ((await ethers.getContractFactory(
+            'TetuSwapPair',
+            signer
+          )) as TetuSwapPair__factory).bytecode
+        ) as string
+      )
+    );
     snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[0];
@@ -105,27 +117,27 @@ describe("Tetu Swap base tests", function () {
     expect((await lpCtr.vault1()).toLowerCase()).is.eq(IRON_FOLD_USDT.toLowerCase());
 
     await UniswapUtils.addLiquidity(
-        signer,
-        tokenA,
-        tokenB,
-        utils.parseUnits('100', tokenADec).toString(),
-        utils.parseUnits('200', tokenBDec).toString(),
-        factory.address,
-        router.address
+      signer,
+      tokenA,
+      tokenB,
+      utils.parseUnits('100', tokenADec).toString(),
+      utils.parseUnits('200', tokenBDec).toString(),
+      factory.address,
+      router.address
     );
 
     const data = await StrategyTestUtils.deploy(
+      signer,
+      core,
+      'TETU_LP_VAULT',
+      async vaultAddress => DeployerUtils.deployContract(
         signer,
-        core,
-        'TETU_LP_VAULT',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyTetuSwap',
-            core.controller.address,
-            vaultAddress,
-            lp
-        ) as Promise<IStrategy>,
+        'StrategyTetuSwap',
+        core.controller.address,
+        vaultAddress,
         lp
+      ) as Promise<IStrategy>,
+      lp
     );
     lpVault = data[0];
     lpStrategy = data[1];
@@ -133,11 +145,11 @@ describe("Tetu Swap base tests", function () {
     await factory.setPairRewardRecipient(lp, lpStrategy.address);
 
     await StrategyTestUtils.setupForwarder(
-        core.feeRewardForwarder,
-        [tokenA, tokenB],
-        lp,
-        core.rewardToken.address,
-        MaticAddresses.QUICK_FACTORY
+      core.feeRewardForwarder,
+      [tokenA, tokenB],
+      lp,
+      core.rewardToken.address,
+      MaticAddresses.QUICK_FACTORY
     );
 
   });
@@ -157,17 +169,17 @@ describe("Tetu Swap base tests", function () {
 
   it("add-trade-remove", async () => {
     await UniswapUtils.addLiquidity(
-        signer,
-        tokenA,
-        tokenB,
-        utils.parseUnits('100', tokenADec).toString(),
-        utils.parseUnits('200', tokenBDec).toString(),
-        factory.address,
-        router.address
+      signer,
+      tokenA,
+      tokenB,
+      utils.parseUnits('100', tokenADec).toString(),
+      utils.parseUnits('200', tokenBDec).toString(),
+      factory.address,
+      router.address
     );
 
-    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(199.999998);
-    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(399.999999);
+    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(199.999997);
+    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(399.999998);
 
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.eq(0);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.eq(0);
@@ -176,11 +188,11 @@ describe("Tetu Swap base tests", function () {
     const userTokenBBal = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, signer.address), tokenBDec);
 
     await UniswapUtils.swapExactTokensForTokens(
-        signer,
-        [tokenA, tokenB],
-        utils.parseUnits("10", tokenADec).toString(),
-        signer.address,
-        router.address
+      signer,
+      [tokenA, tokenB],
+      utils.parseUnits("10", tokenADec).toString(),
+      signer.address,
+      router.address
     );
 
     const userTokenABalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenA, signer.address), tokenADec);
@@ -192,19 +204,19 @@ describe("Tetu Swap base tests", function () {
     expect(userTokenABalAfter - userTokenABal).is.eq(-10);
     expect(userTokenBBalAfter - userTokenBBal).is.eq(19.029477000000043);
 
-    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(209.999998);
-    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(380.954181);
+    expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(209.999996);
+    expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.eq(380.954186);
 
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.lessThan(0.0001);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.lessThan(0.0001);
 
     await UniswapUtils.removeLiquidity(
-        signer,
-        lp,
-        tokenA,
-        tokenB,
-        (await TokenUtils.balanceOf(lp, signer.address)).toString(),
-        router.address
+      signer,
+      lp,
+      tokenA,
+      tokenB,
+      (await TokenUtils.balanceOf(lp, signer.address)).toString(),
+      router.address
     );
 
     expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.lessThan(0.01);
@@ -217,9 +229,9 @@ describe("Tetu Swap base tests", function () {
 
   it("add-trade-remove loop", async () => {
     await TokenUtils.transfer(tokenA, signer, MaticAddresses.dQUICK_TOKEN,
-        (await TokenUtils.balanceOf(tokenA, signer.address)).sub(utils.parseUnits('1100', tokenADec)).toString());
+      (await TokenUtils.balanceOf(tokenA, signer.address)).sub(utils.parseUnits('1100', tokenADec)).toString());
     await TokenUtils.transfer(tokenB, signer, MaticAddresses.dQUICK_TOKEN,
-        (await TokenUtils.balanceOf(tokenB, signer.address)).sub(utils.parseUnits('2000', tokenBDec)).toString());
+      (await TokenUtils.balanceOf(tokenB, signer.address)).sub(utils.parseUnits('2000', tokenBDec)).toString());
     let count = 0;
     while (count < 5) {
       count++;
@@ -233,17 +245,14 @@ describe("Tetu Swap base tests", function () {
       expect(balB).is.greaterThan(1999.99)
 
       await UniswapUtils.addLiquidity(
-          signer,
-          tokenA,
-          tokenB,
-          utils.parseUnits('100', tokenADec).toString(),
-          utils.parseUnits('200', tokenBDec).toString(),
-          factory.address,
-          router.address
+        signer,
+        tokenA,
+        tokenB,
+        utils.parseUnits('100', tokenADec).toString(),
+        utils.parseUnits('200', tokenBDec).toString(),
+        factory.address,
+        router.address
       );
-
-      // expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.greaterThan(90);
-      // expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.greaterThan(190);
 
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.eq(0);
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.eq(0);
@@ -252,11 +261,11 @@ describe("Tetu Swap base tests", function () {
       const userTokenBBal = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, signer.address), tokenBDec);
 
       await UniswapUtils.swapExactTokensForTokens(
-          signer,
-          [tokenA, tokenB],
-          utils.parseUnits("10", tokenADec).toString(),
-          signer.address,
-          router.address
+        signer,
+        [tokenA, tokenB],
+        utils.parseUnits("10", tokenADec).toString(),
+        signer.address,
+        router.address
       );
 
       await factory.announceVaultsChange(IRON_FOLD_USDC, IRON_FOLD_USDT);
@@ -270,32 +279,28 @@ describe("Tetu Swap base tests", function () {
       console.log('bal B', userTokenBBalAfter - userTokenBBal);
 
       expect(userTokenABalAfter - userTokenABal).is.eq(-10);
-      // expect(userTokenBBalAfter - userTokenBBal).is.greaterThan(17);
-
-      // expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.greaterThan(100);
-      // expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.greaterThan(170);
 
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenA, lp), tokenADec)).is.lessThan(0.0001);
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenB, lp), tokenBDec)).is.lessThan(0.0001);
 
       const txSwap1 = await UniswapUtils.swapExactTokensForTokens(
-          signer,
-          [tokenB, tokenA],
-          utils.parseUnits((userTokenBBalAfter - userTokenBBal).toFixed(tokenBDec), tokenBDec).toString(),
-          signer.address,
-          router.address
+        signer,
+        [tokenB, tokenA],
+        utils.parseUnits((userTokenBBalAfter - userTokenBBal).toFixed(tokenBDec), tokenBDec).toString(),
+        signer.address,
+        router.address
       );
 
       const receiptSwap1 = await txSwap1.wait();
       console.log('receiptSwap1 gas', receiptSwap1.gasUsed.toString());
 
       await UniswapUtils.removeLiquidity(
-          signer,
-          lp,
-          tokenA,
-          tokenB,
-          (await TokenUtils.balanceOf(lp, signer.address)).toString(),
-          router.address
+        signer,
+        lp,
+        tokenA,
+        tokenB,
+        (await TokenUtils.balanceOf(lp, signer.address)).toString(),
+        router.address
       );
 
       expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.lessThan(0.01);
@@ -311,34 +316,34 @@ describe("Tetu Swap base tests", function () {
     expect(name).to.eq('TetuSwap LP')
     expect(await lpCtr.symbol()).to.eq('TLP_USDC_USDT')
     expect(await lpCtr.decimals()).to.eq(18)
-    expect(await lpCtr.totalSupply()).to.eq(141313436)
-    expect(await lpCtr.balanceOf(signer.address)).to.eq(141312436)
+    expect(await lpCtr.totalSupply()).to.eq(141307410)
+    expect(await lpCtr.balanceOf(signer.address)).to.eq(141306410)
     expect(await lpCtr.DOMAIN_SEPARATOR()).to.eq(
-        utils.keccak256(
-            utils.defaultAbiCoder.encode(
-                ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
-                [
-                  utils.keccak256(
-                      utils.toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
-                  ),
-                  utils.keccak256(utils.toUtf8Bytes(name)),
-                  utils.keccak256(utils.toUtf8Bytes('1')),
-                  137,
-                  lp
-                ]
-            )
+      utils.keccak256(
+        utils.defaultAbiCoder.encode(
+          ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
+          [
+            utils.keccak256(
+              utils.toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
+            ),
+            utils.keccak256(utils.toUtf8Bytes(name)),
+            utils.keccak256(utils.toUtf8Bytes('1')),
+            137,
+            lp
+          ]
         )
+      )
     )
     expect(await lpCtr.PERMIT_TYPEHASH()).to.eq(
-        utils.keccak256(utils.toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'))
+      utils.keccak256(utils.toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'))
     )
   });
 
   it('approve', async () => {
     await TestAsserts.assertEvent(
-        await lpCtr.approve(user.address, 1),
-        'Approval',
-        [signer.address, user.address, 1]
+      await lpCtr.approve(user.address, 1),
+      'Approval',
+      [signer.address, user.address, 1]
     );
     expect(await lpCtr.allowance(signer.address, user.address)).to.eq(1);
   });
@@ -346,9 +351,9 @@ describe("Tetu Swap base tests", function () {
   it('transfer', async () => {
     const balance = await lpCtr.balanceOf(signer.address);
     await TestAsserts.assertEvent(
-        await lpCtr.transfer(user.address, TEST_AMOUNT),
-        'Transfer',
-        [signer.address, user.address, TEST_AMOUNT]
+      await lpCtr.transfer(user.address, TEST_AMOUNT),
+      'Transfer',
+      [signer.address, user.address, TEST_AMOUNT]
     );
     expect(await lpCtr.balanceOf(signer.address)).to.eq(balance.sub(TEST_AMOUNT))
     expect(await lpCtr.balanceOf(user.address)).to.eq(TEST_AMOUNT)
@@ -364,9 +369,9 @@ describe("Tetu Swap base tests", function () {
     await lpCtr.approve(user.address, TEST_AMOUNT);
 
     await TestAsserts.assertEvent(
-        await lpCtr.connect(user).transferFrom(signer.address, user.address, TEST_AMOUNT),
-        'Transfer',
-        [signer.address, user.address, TEST_AMOUNT]
+      await lpCtr.connect(user).transferFrom(signer.address, user.address, TEST_AMOUNT),
+      'Transfer',
+      [signer.address, user.address, TEST_AMOUNT]
     );
     expect(await lpCtr.allowance(signer.address, user.address)).to.eq(0)
     expect(await lpCtr.balanceOf(signer.address)).to.eq(balance.sub(TEST_AMOUNT))
@@ -377,9 +382,9 @@ describe("Tetu Swap base tests", function () {
     const balance = await lpCtr.balanceOf(signer.address);
     await lpCtr.approve(user.address, ethers.constants.MaxUint256)
     await TestAsserts.assertEvent(
-        await lpCtr.connect(user).transferFrom(signer.address, user.address, TEST_AMOUNT),
-        'Transfer',
-        [signer.address, user.address, TEST_AMOUNT]
+      await lpCtr.connect(user).transferFrom(signer.address, user.address, TEST_AMOUNT),
+      'Transfer',
+      [signer.address, user.address, TEST_AMOUNT]
     );
     expect(await lpCtr.allowance(signer.address, user.address)).to.eq(ethers.constants.MaxUint256)
     expect(await lpCtr.balanceOf(signer.address)).to.eq(balance.sub(TEST_AMOUNT))
@@ -402,23 +407,23 @@ describe("Tetu Swap base tests", function () {
   it("claim + hardwork", async () => {
 
     await UniswapUtils.addLiquidity(
-        signer,
-        tokenA,
-        tokenB,
-        utils.parseUnits('1000', tokenADec).toString(),
-        utils.parseUnits('2000', tokenBDec).toString(),
-        factory.address,
-        router.address
+      signer,
+      tokenA,
+      tokenB,
+      utils.parseUnits('1000', tokenADec).toString(),
+      utils.parseUnits('2000', tokenBDec).toString(),
+      factory.address,
+      router.address
     );
 
     const strategyBal = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, lpStrategy.address));
 
     await UniswapUtils.swapExactTokensForTokens(
-        signer,
-        [tokenA, tokenB],
-        utils.parseUnits("100", tokenADec).toString(),
-        signer.address,
-        router.address
+      signer,
+      [tokenA, tokenB],
+      utils.parseUnits("100", tokenADec).toString(),
+      signer.address,
+      router.address
     );
 
     const strategyBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, lpStrategy.address));
@@ -466,6 +471,62 @@ describe("Tetu Swap base tests", function () {
 
     expect(await lpCtr.price0CumulativeLast()).to.eq(initialPrice[0].mul(elapsedTime2));
     expect(await lpCtr.price1CumulativeLast()).to.eq(initialPrice[1].mul(elapsedTime2));
-  })
+  });
+
+  it('fail on zero output amount', async () => {
+    await expect(lpCtr.swap(
+      0,
+      0,
+      signer.address,
+      '0x'
+    )).rejectedWith('TSP: Insufficient output amount');
+  });
+
+  it('fail on zero input amount', async () => {
+    await expect(lpCtr.swap(
+      0,
+      100,
+      signer.address,
+      '0x'
+    )).rejectedWith('TSP: Insufficient input amount');
+  });
+
+  it('healthy K', async () => {
+    const amountOut = 10000;
+    const reserves = await lpCtr.getReserves();
+    const inputIn = await lpCtr.getAmountIn(amountOut, reserves[0], reserves[1]);
+    console.log('inputIn', inputIn.toString());
+    await TokenUtils.transfer(tokenA, signer, lp, inputIn.sub(1).toString());
+    await expect(lpCtr.swap(
+      0,
+      amountOut,
+      signer.address,
+      '0x'
+    )).rejectedWith('TSP: Insufficient input amount');
+
+  });
+
+  it('healthy K after vault manipulations', async () => {
+    await factory.setPairRewardRecipient(lp, core.controller.address);
+
+    await VaultUtils.deposit(signer, vaultUsdcCtr, utils.parseUnits('800000', tokenADec));
+
+    await TimeUtils.advanceNBlocks(5);
+
+    await vaultUsdcCtr.doHardWork();
+
+    const amountOut = 10000;
+    const reserves = await lpCtr.getReserves();
+    const inputIn = await lpCtr.getAmountIn(amountOut, reserves[0], reserves[1]);
+    console.log('inputIn', inputIn.toString());
+    await TokenUtils.transfer(tokenA, signer, lp, inputIn.toString());
+    await lpCtr.swap(
+      0,
+      amountOut,
+      signer.address,
+      '0x'
+    );
+
+  });
 
 });

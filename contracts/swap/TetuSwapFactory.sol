@@ -30,6 +30,12 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
 
   event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
+  /// @dev Operations allowed for Governance or HardWorker addresses
+  modifier onlyHardWorker() {
+    require(IController(controller()).isHardWorker(msg.sender), "TSF: Forbidden");
+    _;
+  }
+
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
   ///      Initialize Controllable with sender address
@@ -41,7 +47,7 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
     return allPairs.length;
   }
 
-  function createPair(address vaultA, address vaultB) external override returns (address pair) {
+  function createPair(address vaultA, address vaultB) external override onlyHardWorker returns (address pair) {
     address tokenA = ISmartVault(vaultA).underlying();
     address tokenB = ISmartVault(vaultB).underlying();
     require(tokenA != tokenB, "TSF: IDENTICAL_ADDRESSES");

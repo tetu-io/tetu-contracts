@@ -212,6 +212,8 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
     // assume we invested all funds and have on balance only new tokens for current swap
     uint amount0In = IERC20(token0).balanceOf(address(this));
     uint amount1In = IERC20(token1).balanceOf(address(this));
+    // check amountIn for cases of vault reserves fluctuations
+    // we check accurate input value with required fees
     require(amount0In >= expectedAmountIn0 && amount1In >= expectedAmountIn1, "TSP: Insufficient input amount");
 
     if (amount0In > 0) {
@@ -231,7 +233,9 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
       _optimisticallyTransfer(amount0Out, amount1Out, to, data, amountFee);
     }
 
-    // K value should be in healthy range
+    // K value should be in a healthy range
+    // in a normal circumstance not required after input amount checking
+    // but kept for excluding for any possibilities of vault reserve manipulation
     {// scope for K checking
       uint balance0 = vaultReserve0();
       uint balance1 = vaultReserve1();
@@ -394,8 +398,11 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   /// @dev Withdraw approx amount of underlying amount from given vault
   function withdrawFromVault(address _vault, uint _underlyingAmount) private {
     ISmartVault sv = ISmartVault(_vault);
+    uint shareBalance = IERC20(_vault).balanceOf(address(this));
     uint shareToWithdraw = _underlyingAmount * sv.underlyingUnit() / sv.getPricePerFullShare();
-    require(shareToWithdraw <= IERC20(_vault).balanceOf(address(this)), "TSP: Insufficient shares");
+    // add 1 for avoiding rounding issues
+    shareToWithdraw = Math.min(shareToWithdraw + 1, shareBalance);
+    require(shareToWithdraw <= shareBalance, "TSP: Insufficient shares");
     sv.withdraw(shareToWithdraw);
   }
 
