@@ -208,13 +208,13 @@ describe("contract reader tests", function () {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.mintHelper.address))
-        .rejectedWith('Transaction reverted without a reason string');
+        .rejectedWith('Transaction reverted');
   });
-  it("should not update proxy with wrong contract", async () => {
+  it("should not update proxy with wrong contract2", async () => {
     const proxy = await DeployerUtils.connectContract(
         signer, 'TetuProxyGov', contractReader.address) as TetuProxyGov;
     await expect(proxy.upgrade(core.bookkeeper.address))
-        .rejectedWith('Transaction reverted without a reason string');
+        .rejectedWith('Transaction reverted');
   });
 
   it("vault + user infos", async () => {
@@ -309,7 +309,7 @@ describe("contract reader tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(1);
 
-    const approx = 0.2;
+    const approx = 0.25;
 
     const vaultAprLocal = await VaultUtils.vaultApr(vault, rt, contractReader);
     const vaultAprReader = +utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]);

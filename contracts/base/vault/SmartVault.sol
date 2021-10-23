@@ -36,7 +36,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.3.1";
+  string public constant VERSION = "1.4.0";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
 
@@ -101,7 +101,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     );
     // initialize reward token for easily deploy new vaults from deployer address
     if (_rewardToken != address(0)) {
-      require(_rewardToken != underlying(), "SV: Rt is underlying");
+      require(_rewardToken != underlying());
       _rewardTokens.push(_rewardToken);
     }
   }
@@ -179,8 +179,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Set lock period for funds. Can be called only once
   /// @param _value Timestamp value
   function setLockPeriod(uint256 _value) external override onlyControllerOrGovernance {
-    require(lockAllowed(), "SV: Lock not allowed");
-    require(lockPeriod() == 0, "SV: Already defined");
+    require(lockAllowed());
+    require(lockPeriod() == 0);
     _setLockPeriod(_value);
   }
 
@@ -201,6 +201,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Earn some money for honest work
   function doHardWork() external whenStrategyDefined onlyControllerOrGovernance override {
+    invest();
     uint256 sharePriceBeforeHardWork = getPricePerFullShare();
     IStrategy(strategy()).doHardWork();
     require(ppfsDecreaseAllowed() || sharePriceBeforeHardWork <= getPricePerFullShare(), "SV: PPFS decreased");
@@ -646,13 +647,17 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function _payReward(address rt) internal {
     uint256 reward = earned(rt, msg.sender);
     if (reward > 0 && IERC20Upgradeable(rt).balanceOf(address(this)) >= reward) {
-
       // calculate boosted amount
       uint256 boostStart = userBoostTs[msg.sender];
       // refresh boost
       userBoostTs[msg.sender] = block.timestamp;
       // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
-      if (boostStart != 0 && boostStart < block.timestamp) {
+      // allow claim without penalty to some addresses, TetuSwap pairs as example
+      if (
+        boostStart != 0
+        && boostStart < block.timestamp
+        && !IController(controller()).isPoorRewardConsumer(msg.sender)
+      ) {
         uint256 currentBoostDuration = block.timestamp.sub(boostStart);
         // not 100% boost
         uint256 boostDuration = _vaultController().rewardBoostDuration();

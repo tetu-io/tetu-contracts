@@ -40,7 +40,7 @@ describe('Universal Iron Fold tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (idx === 'idx' || collateralFactor === '0') {
+    if (!idx || idx === 'idx' || collateralFactor === '0') {
       console.log('skip', idx);
       return;
     }

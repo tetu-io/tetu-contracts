@@ -64,7 +64,28 @@ describe("Reward calculator tests", function () {
     const strategy = '0xD45347527c567244CfDca6c296D4F0940F747D98';
     const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
     console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.approximately(100000, 300000);
+    expect(rewardUsd).is.approximately(30000, 10000);
+  });
+
+  it("strategy reward QUICK_WMATIC_WETH dual ", async () => {
+    const strategy = '0xC6F0Db38F9ce099eEc13A456673d0a771fb1Ff79';
+    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
+    console.log('rewardUsd', rewardUsd)
+    expect(rewardUsd).is.approximately(100000, 50000);
+  });
+
+  it("strategy reward quick usdc-weth", async () => {
+    const strategy = '0x5af6a06Ce1444eF7A42B23FCEACdb783CCb265f4';
+    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
+    console.log('rewardUsd', rewardUsd)
+    expect(rewardUsd).is.approximately(100000, 50000);
+  });
+
+  it("strategy reward iron lend usdc", async () => {
+    const strategy = '0xc8940050A4ba18cf59f1a0b874a7d0b308F0dE16';
+    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
+    console.log('rewardUsd', rewardUsd)
+    expect(rewardUsd).is.approximately(15000, 5000);
   });
 
   it.skip("strategy reward usd for all", async () => {

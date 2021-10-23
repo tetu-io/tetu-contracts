@@ -44,7 +44,7 @@ describe("Reward calculator tests", function () {
   before(async function () {
     this.timeout(12000000000);
     snapshot = await TimeUtils.snapshot();
-    gov = await DeployerUtils.impersonate('0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B');
+    gov = await DeployerUtils.impersonate();
 
     coreAddresses = Addresses.CORE.get('matic') as CoreAddresses;
     const controllerAdr = coreAddresses.controller;
