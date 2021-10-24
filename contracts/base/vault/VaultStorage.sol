@@ -121,6 +121,11 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return getUint256("lockPenalty");
   }
 
+  function _disableLock() internal {
+    emit UpdatedBoolSlot("lockAllowed", lockAllowed(), false);
+    setBoolean("lockAllowed", false);
+  }
+
   /// @notice Lock functionality allowed for this contract or not
   function lockAllowed() public view override returns (bool) {
     return getBoolean("lockAllowed");

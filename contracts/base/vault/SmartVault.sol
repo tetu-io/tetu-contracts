@@ -36,7 +36,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.4.0";
+  string public constant VERSION = "1.4.1";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
 
@@ -187,10 +187,20 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Set lock initial penalty nominator. Can be called only once
   /// @param _value Penalty denominator, should be in range 0 - (LOCK_PENALTY_DENOMINATOR / 2)
   function setLockPenalty(uint256 _value) external override onlyControllerOrGovernance {
-    require(_value <= (LOCK_PENALTY_DENOMINATOR / 2), "SV: Wrong value");
-    require(lockAllowed(), "SV: Lock not allowed");
-    require(lockPenalty() == 0, "SV: Already defined");
+    require(_value <= (LOCK_PENALTY_DENOMINATOR / 2));
+    require(lockAllowed());
+    require(lockPenalty() == 0);
     _setLockPenalty(_value);
+  }
+
+  // we should be able to disable lock functionality for not initialized contract
+  function disableLock() external onlyControllerOrGovernance {
+    require(lockAllowed());
+    // should be not initialized
+    // initialized lock forbidden to change
+    require(lockPenalty() == 0);
+    require(lockPeriod() == 0);
+    _disableLock();
   }
 
   /// @notice Change the active state marker
@@ -483,7 +493,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     uint256 toMint = totalSupply() == 0
     ? amount
     : amount.mul(totalSupply()).div(underlyingBalanceWithInvestment());
-    require(toMint != 0, "SV: Zero mint");
+    // no revert for this case for keep compatability
+    if (toMint == 0) {
+      return;
+    }
     _mint(beneficiary, toMint);
 
     IERC20Upgradeable(underlying()).safeTransferFrom(sender, address(this), amount);

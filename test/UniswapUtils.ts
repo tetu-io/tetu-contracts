@@ -18,7 +18,7 @@ import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 
 export class UniswapUtils {
-  private static deadline = "1000000000000";
+  public static deadline = "1000000000000";
 
   public static async swapNETWORK_COINForExactTokens(
       signer: SignerWithAddress,
