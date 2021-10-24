@@ -8,6 +8,13 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/aave/IWETHGateway.sol";
 
+
+struct AaveWethPipeData {
+    address wethGateway;
+    address pool;
+    address lpToken;
+}
+
 /// @title Wrapping Pipe Contract
 /// @author bogdoslav
 contract AaveWethPipe is Pipe {
@@ -15,8 +22,8 @@ contract AaveWethPipe is Pipe {
     using SafeMath for uint256;
 
     /// @dev creates context
-    function create(address wethGateway, address pool, address lpToken) public pure returns (bytes memory){
-        return abi.encode(wethGateway, pool, lpToken);
+    function create(AaveWethPipeData memory d) public pure returns (bytes memory){
+        return abi.encode(d.wethGateway, d.pool, d.lpToken);
     }
 
     /// @dev decodes context

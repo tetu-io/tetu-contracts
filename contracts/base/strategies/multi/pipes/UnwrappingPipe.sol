@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "./Pipe.sol";
 import "../../../../third_party/uniswap/IWETH.sol";
 
-/// @title UnWrapping Pipe Contract
+/// @title Unwrapping Pipe Contract
 /// @author bogdoslav
-contract UnWrappingPipe is Pipe {
+contract UnwrappingPipe is Pipe {
     /// @dev creates context
     function create(address WETH) public pure returns (bytes memory){
         return abi.encode(WETH);
