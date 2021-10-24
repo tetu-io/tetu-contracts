@@ -16,7 +16,7 @@ const argv = require('yargs/yargs')()
   },
   onlyOneIronFoldStrategyTest: {
     type: "number",
-    default: -1,
+    default: 2,
   }
 }).argv;
 

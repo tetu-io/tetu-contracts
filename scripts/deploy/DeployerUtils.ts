@@ -304,12 +304,18 @@ export class DeployerUtils {
         [
           MaticAddresses.QUICK_FACTORY,
           MaticAddresses.SUSHI_FACTORY,
-          MaticAddresses.WAULT_FACTORY
+          MaticAddresses.WAULT_FACTORY,
+          MaticAddresses.TETU_SWAP_FACTORY,
+          MaticAddresses.CAFE_FACTORY,
+          MaticAddresses.DFYN_FACTORY,
         ],
         [
           MaticAddresses.QUICK_ROUTER,
           MaticAddresses.SUSHI_ROUTER,
-          MaticAddresses.WAULT_ROUTER
+          MaticAddresses.WAULT_ROUTER,
+          MaticAddresses.TETU_SWAP_ROUTER,
+          MaticAddresses.CAFE_ROUTER,
+          MaticAddresses.DFYN_ROUTER,
         ]
     ) as MultiSwap;
   }

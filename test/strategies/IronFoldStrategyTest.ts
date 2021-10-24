@@ -100,7 +100,7 @@ async function startIronFoldStrategyTest(
       console.log('amountForSell', amountForSell);
 
       await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-          underlying, utils.parseUnits(amountForSell.toString(), dec), tokenOpposite);
+          underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
       console.log('############## Preparations completed ##################');
     });
 
