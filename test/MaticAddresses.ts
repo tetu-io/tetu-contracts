@@ -172,6 +172,9 @@ export class MaticAddresses {
     MaticAddresses.WBTC_TOKEN,
   ]);
 
+  // AAVE
+  public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
+
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
       case MaticAddresses.QUICK_FACTORY:
