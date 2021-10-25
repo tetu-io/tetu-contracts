@@ -12,9 +12,9 @@
 pragma solidity 0.8.4;
 
 
-import "../../../base/strategies/iron-fold/IronFoldStrategyBase.sol";
+import "../../../base/strategies/aave/AaveFoldStrategyBase.sol";
 
-contract StrategyAaveFold is IronFoldStrategyBase {
+contract StrategyAaveFold is AaveFoldStrategyBase {
 
   // IRON CONTROLLER
   address public constant _IRON_CONTROLLER = address(0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c);
@@ -33,7 +33,7 @@ contract StrategyAaveFold is IronFoldStrategyBase {
     address _rToken,
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator
-  ) IronFoldStrategyBase(
+  ) AaveFoldStrategyBase(
       _controller,
       _underlying,
       _vault,

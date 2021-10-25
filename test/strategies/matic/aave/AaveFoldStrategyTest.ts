@@ -117,68 +117,73 @@ async function startAaveFoldStrategyTest(
     });
 
 
-    it("do hard work with liq path", async () => {
-      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          null
-      );
-    });
-    it("emergency exit", async () => {
-      const info = strategyInfo;
-      const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
+    // it("do hard work with liq path", async () => {
+    //   await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+    //       (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+    //       null
+    //   );
+    // });
+    // it("emergency exit", async () => {
+    //   const info = strategyInfo;
+    //   const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
+    //
+    //   const undDec = await TokenUtils.decimals(info.underlying);
+    //   const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+    //
+    //   await VaultUtils.deposit(info.user, info.vault, deposit);
+    //
+    //   const invested = deposit;
+    //   const strategy = info.strategy;
+    //   const vault = info.vault;
+    //   expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
+    //   const stratInvested = await strategy.investedUnderlyingBalance();
+    //   // loans return a bit less balance for deposited assets
+    //   expect(+utils.formatUnits(stratInvested))
+    //   .is.approximately(+utils.formatUnits(invested), +utils.formatUnits(stratInvested) * 0.001,
+    //       "assets in the pool should be more or equal than invested");
+    //   expect(await vault.underlyingBalanceInVault())
+    //   .at.eq(deposit.sub(invested), "all assets in strategy");
+    //
+    //
+    //   await info.strategy.emergencyExit();
+    //
+    //   await info.vault.connect(info.user).exit();
+    //
+    //   const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+    //
+    //   console.log('ppfs', oldPpfs, ppfs, oldPpfs - ppfs);
+    //
+    //   expect(await strategy.underlyingBalance()).at.eq("0", "all withdrew");
+    //   expect(+utils.formatUnits(await strategy.investedUnderlyingBalance())).is.eq(0, "0 strat balance");
+    //   expect(await vault.underlyingBalanceInVault()).at.eq(0, "0 vault bal");
+    //
+    //   expect(await info.strategy.pausedInvesting()).is.eq(true);
+    //   await info.strategy.continueInvesting();
+    //   expect(await info.strategy.pausedInvesting()).is.eq(false);
+    // });
+    // it("common test should be ok", async () => {
+    //   await StrategyTestUtils.commonTests(strategyInfo);
+    // });
+    // it("doHardWork loop", async function () {
+    //   const deposit = 100_000;
+    //   const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
+    //   const undDec = await TokenUtils.decimals(strategyInfo.underlying);
+    //   const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
+    //   console.log('depositBN', utils.formatUnits(depositBN, undDec))
+    //   const bal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
+    //   // remove excess balance
+    //   await TokenUtils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
+    //   await doHardWorkLoopFolding(
+    //       strategyInfo,
+    //       depositBN.div(2).toString(),
+    //       3,
+    //       3000
+    //   );
+    // });
 
-      const undDec = await TokenUtils.decimals(info.underlying);
-      const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+    it('should test',async () => {
+      console.log('Hello');
 
-      await VaultUtils.deposit(info.user, info.vault, deposit);
-
-      const invested = deposit;
-      const strategy = info.strategy;
-      const vault = info.vault;
-      expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
-      const stratInvested = await strategy.investedUnderlyingBalance();
-      // loans return a bit less balance for deposited assets
-      expect(+utils.formatUnits(stratInvested))
-      .is.approximately(+utils.formatUnits(invested), +utils.formatUnits(stratInvested) * 0.001,
-          "assets in the pool should be more or equal than invested");
-      expect(await vault.underlyingBalanceInVault())
-      .at.eq(deposit.sub(invested), "all assets in strategy");
-
-
-      await info.strategy.emergencyExit();
-
-      await info.vault.connect(info.user).exit();
-
-      const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
-
-      console.log('ppfs', oldPpfs, ppfs, oldPpfs - ppfs);
-
-      expect(await strategy.underlyingBalance()).at.eq("0", "all withdrew");
-      expect(+utils.formatUnits(await strategy.investedUnderlyingBalance())).is.eq(0, "0 strat balance");
-      expect(await vault.underlyingBalanceInVault()).at.eq(0, "0 vault bal");
-
-      expect(await info.strategy.pausedInvesting()).is.eq(true);
-      await info.strategy.continueInvesting();
-      expect(await info.strategy.pausedInvesting()).is.eq(false);
-    });
-    it("common test should be ok", async () => {
-      await StrategyTestUtils.commonTests(strategyInfo);
-    });
-    it("doHardWork loop", async function () {
-      const deposit = 100_000;
-      const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
-      const undDec = await TokenUtils.decimals(strategyInfo.underlying);
-      const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
-      console.log('depositBN', utils.formatUnits(depositBN, undDec))
-      const bal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
-      // remove excess balance
-      await TokenUtils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
-      await doHardWorkLoopFolding(
-          strategyInfo,
-          depositBN.div(2).toString(),
-          3,
-          3000
-      );
     });
 
   });

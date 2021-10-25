@@ -53,9 +53,10 @@ describe('Universal Aave Fold tests', async () => {
     const borrowTarget = '5850';   //todo add real data
 
     // if (!idx || idx === 'idx' || collateralFactor === '0') {
-    //   console.log('skip', idx);
-    //   return;
-    // }
+    if (!idx || idx === 'idx') {
+      console.log('skip', idx);
+      return;
+    }
 
     // if (argv.onlyOneAaveFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest) {
     //   return;
