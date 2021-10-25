@@ -4,7 +4,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {
-  Controller,
   IStrategy,
   SmartVault,
   TetuSwapFactory,
@@ -514,6 +513,36 @@ describe("Tetu Swap base tests", function () {
       '0x'
     );
 
+  });
+
+  it('swap btc-eth', async () => {
+
+    await factory.createPair('0xd051605e07c2b526ed9406a555601aa4db8490d9', '0x6781e4a6e6082186633130f08246a7af3a7b8b40');
+    const lp1 = await factory.getPair(MaticAddresses.WBTC_TOKEN, MaticAddresses.WETH_TOKEN);
+    await factory.setPairRewardRecipients([lp1], [core.controller.address]);
+    await core.controller.setPureRewardConsumers([lp1], true);
+
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100000'));
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WETH_TOKEN, utils.parseUnits('100000'));
+
+    await UniswapUtils.addLiquidity(
+      signer,
+      MaticAddresses.WBTC_TOKEN,
+      MaticAddresses.WETH_TOKEN,
+      utils.parseUnits('0.01', 8).toString(),
+      utils.parseUnits('0.1').toString(),
+      factory.address,
+      router.address
+    );
+
+    await UniswapUtils.swapExactTokensForTokens(
+      signer,
+      [MaticAddresses.WBTC_TOKEN, MaticAddresses.WETH_TOKEN],
+      utils.parseUnits("0.0001", 8).toString(),
+      signer.address,
+      router.address
+    );
   });
 
 });

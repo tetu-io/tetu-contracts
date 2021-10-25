@@ -78,7 +78,11 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
     uint256 rtPrice = getPrice(strategy.rewardTokens()[0]);
     uint256 rewardsPerSecond = 0;
-    if (strategy.platform() == IStrategy.Platform.TETU || strategy.platform() == IStrategy.Platform.UNKNOWN) {
+    if (
+      strategy.platform() == IStrategy.Platform.TETU
+      || strategy.platform() == IStrategy.Platform.TETU_SWAP
+      || strategy.platform() == IStrategy.Platform.UNKNOWN
+    ) {
       return 0;
     } else if (strategy.platform() == IStrategy.Platform.QUICK) {
 

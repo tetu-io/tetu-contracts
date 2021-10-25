@@ -1,8 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {
-  Bookkeeper,
-  Controller,
   IUniswapV2Factory,
   IUniswapV2Pair,
   PriceCalculator,
@@ -16,16 +14,15 @@ import {MaticAddresses} from "../../test/MaticAddresses";
 import {RunHelper} from "./RunHelper";
 import {UniswapUtils} from "../../test/UniswapUtils";
 
+const MIN_AMOUNT_TO_REBALANCE = 1;
+
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
   const signer = (await ethers.getSigners())[0];
 
-  const controller = await DeployerUtils.connectProxy(core.controller, signer, "Controller") as Controller;
-  const bookkeeper = await DeployerUtils.connectProxy(core.bookkeeper, signer, "Bookkeeper") as Bookkeeper;
   const calculator = await DeployerUtils.connectProxy(tools.calculator, signer, "PriceCalculator") as PriceCalculator;
-  const ps = await DeployerUtils.connectVault(core.psVault, signer);
   const factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', core.swapFactory) as TetuSwapFactory;
   const router = await DeployerUtils.connectInterface(signer, 'TetuSwapRouter', core.swapRouter) as TetuSwapRouter;
 
@@ -43,22 +40,17 @@ async function main() {
 
     const tokenName0 = await TokenUtils.tokenSymbol(token0);
     const tokenName1 = await TokenUtils.tokenSymbol(token1);
+    console.log('--', tokenName0, tokenName1);
 
     const tokenDec0 = await TokenUtils.decimals(token0);
     const tokenDec1 = await TokenUtils.decimals(token1);
 
     const tokenBal0 = +utils.formatUnits(await TokenUtils.balanceOf(token0, signer.address), tokenDec0);
     const tokenBal1 = +utils.formatUnits(await TokenUtils.balanceOf(token1, signer.address), tokenDec1);
-    console.log('tokenBal0', tokenBal0);
-    console.log('tokenBal1', tokenBal1);
 
     const reserves = await lpCtr.getReserves();
     const reserve0 = +utils.formatUnits(reserves[0], tokenDec0);
     const reserve1 = +utils.formatUnits(reserves[1], tokenDec1);
-    console.log('reserve0 ' + tokenName0, reserve0);
-    console.log('reserve1 ' + tokenName1, reserve1);
-    console.log('current price ' + tokenName0, (reserve1 / reserve0).toFixed(4));
-    console.log('current price ' + tokenName1, (reserve0 / reserve1).toFixed(4));
 
     let qsReserve0: number;
     let qsReserve1: number;
@@ -73,13 +65,9 @@ async function main() {
       continue;
     }
 
-
     const targetPrice0 = qsReserve1 / qsReserve0;
     const targetPrice1 = qsReserve0 / qsReserve1;
-    console.log('targetPrice0', targetPrice0);
-    console.log('targetPrice1', targetPrice1);
     const token0SwapAmount = calculate(reserve0, reserve1, targetPrice0);
-    console.log('swap amount 0 ' + tokenName0, token0SwapAmount);
     let toSwap: BigNumber;
 
     let path: string[];
@@ -87,10 +75,11 @@ async function main() {
       const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(token0));
       path = [token0, token1];
       toSwap = utils.parseUnits(token0SwapAmount.toFixed(tokenDec0), tokenDec0);
-      if (token0SwapAmount * price < 0.1) {
-        console.log('skip low amount 0', token0SwapAmount * price);
+      if (token0SwapAmount * price < MIN_AMOUNT_TO_REBALANCE) {
+        console.log('skip low amount 0', tokenName0, tokenName1, token0SwapAmount * price);
         continue;
       }
+      console.log('swap amount 0 ' + tokenName0, token0SwapAmount, token0SwapAmount * price);
       const allowance = +utils.formatUnits(await TokenUtils.allowance(token0, signer, router.address), tokenDec0);
       if (allowance < token0SwapAmount) {
         console.log('approve 0');
@@ -99,13 +88,14 @@ async function main() {
     } else {
       const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(token1));
       const token1SwapAmount = calculate(reserve1, reserve0, targetPrice1);
-      console.log('swap amount 1 ' + tokenName1, token1SwapAmount);
+
       path = [token1, token0];
       toSwap = utils.parseUnits(token1SwapAmount.toFixed(tokenDec1), tokenDec1);
-      if (token1SwapAmount * price < 0.1) {
-        console.log('skip low amount 1', token1SwapAmount * price);
+      if (token1SwapAmount * price < MIN_AMOUNT_TO_REBALANCE) {
+        console.log('skip low amount 1', tokenName0, tokenName1, token1SwapAmount * price);
         continue;
       }
+      console.log('swap amount 1 ' + tokenName1, token1SwapAmount, token1SwapAmount * price);
 
       const allowance = +utils.formatUnits(await TokenUtils.allowance(token1, signer, router.address), tokenDec1);
       if (allowance < token1SwapAmount) {
@@ -113,8 +103,16 @@ async function main() {
         await TokenUtils.approve(token1, signer, router.address, utils.parseUnits('10000000000', tokenDec1).toString());
       }
     }
-    continue;
+    console.log('reserve0 ' + tokenName0, reserve0);
+    console.log('reserve1 ' + tokenName1, reserve1);
+    console.log('current price ' + tokenName0, (reserve1 / reserve0).toFixed(4));
+    console.log('current price ' + tokenName1, (reserve0 / reserve1).toFixed(4));
+    console.log('tokenBal0', tokenBal0);
+    console.log('tokenBal1', tokenBal1);
+    console.log('targetPrice0', targetPrice0);
+    console.log('targetPrice1', targetPrice1);
 
+    await RunHelper.runAndWait(() => lpCtr.sync());
     await RunHelper.runAndWait(() => router.swapExactTokensForTokens(
       toSwap,
       BigNumber.from("0"),
@@ -123,7 +121,6 @@ async function main() {
       UniswapUtils.deadline
     ));
     console.log('-----------------------------');
-    return;
   }
 
 
