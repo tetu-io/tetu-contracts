@@ -112,7 +112,7 @@ async function main() {
     console.log('targetPrice0', targetPrice0);
     console.log('targetPrice1', targetPrice1);
 
-    await RunHelper.runAndWait(() => lpCtr.sync());
+    // await RunHelper.runAndWait(() => lpCtr.sync());
     await RunHelper.runAndWait(() => router.swapExactTokensForTokens(
       toSwap,
       BigNumber.from("0"),
