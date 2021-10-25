@@ -31,4 +31,19 @@ contract UnwrappingPipe is Pipe {
         output = amount;
     }
 
+    /// @dev available source balance (WETH, WMATIC etc)
+    /// @param c abi-encoded context
+    /// @return balance in source units
+    function _sourceBalance(bytes memory c) virtual public returns (uint256) {
+        (WETH) = context(c);
+        return IERC20(WETH).balanceOf(address(this));
+    }
+
+    /// @dev underlying balance (ETH, MATIC)
+    /// param c abi-encoded context
+    /// @return balance in underlying units
+    function _underlyingBalance(bytes memory) virtual public returns (uint256) {
+        return address(this).balance;
+    }
+
 }

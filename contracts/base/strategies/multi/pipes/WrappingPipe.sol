@@ -18,14 +18,16 @@ contract WrappingPipe is Pipe {
     }
 
     /// @dev function for investing, deposits, entering, borrowing
-    function _put(bytes memory c, uint256 amount) override public returns (uint256 output) {
+    function _put(bytes memory c, uint256 amount)
+    override public returns (uint256 output) {
         (address WMATIC) = context(c);
         IWETH(WMATIC).deposit{value:amount}();
         output = amount;
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
-    function _get(bytes memory c, uint256 amount) override public returns (uint256 output) {
+    function _get(bytes memory c, uint256 amount)
+    override public returns (uint256 output) {
         (address WMATIC) = context(c);
         IWETH(WMATIC).withdraw(amount);
         output = amount;

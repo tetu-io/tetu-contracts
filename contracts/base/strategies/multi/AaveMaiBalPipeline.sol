@@ -92,10 +92,10 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     // building pipeline
     UnwrappingPipe unwrappingPipe = new UnwrappingPipe();
-    pipes.push( PipeSegment(unwrappingPipe, unwrappingPipe.create(WMATIC)) );
+    segments.push( PipeSegment(unwrappingPipe, unwrappingPipe.create(WMATIC)) );
 
     AaveWethPipe aaveWethPipe = new AaveWethPipe();
-    pipes.push( PipeSegment(aaveWethPipe, aaveWethPipe.create(aaveWethPipeData)) );
+    segments.push( PipeSegment(aaveWethPipe, aaveWethPipe.create(aaveWethPipeData)) );
   }
 
   /// @dev Stub function for Strategy Base implementation

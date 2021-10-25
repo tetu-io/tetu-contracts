@@ -54,4 +54,19 @@ contract AaveWethPipe is Pipe {
         output = address(this).balance - before;
     }
 
+    /// @dev available ETH (MATIC) source balance
+    /// param c abi-encoded context
+    /// @return balance in source units
+    function _sourceBalance(bytes memory) override public returns (uint256) {
+        return address(this).balance;
+    }
+
+    /// @dev underlying balance (LP token)
+    /// @param c abi-encoded context
+    /// @return balance in underlying units
+    function _underlyingBalance(bytes memory c) override public returns (uint256) {
+        (,, address lpToken) = context(c);
+        return IERC20(lpToken).balanceOf(address(this));
+    }
+
 }

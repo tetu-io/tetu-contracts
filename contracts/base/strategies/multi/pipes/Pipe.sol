@@ -19,6 +19,8 @@ abstract contract Pipe {
     /// dev decode context to variables
     //function context(bytes memory c) private pure returns (...)
 
+    /// !!! All _ underscored functions should not be called directly, but delegatecall only
+
     /// @dev function for investing, deposits, entering, borrowing
     /// @param c abi-encoded context
     /// @param amount in source units
