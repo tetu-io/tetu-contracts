@@ -23,31 +23,34 @@ abstract contract Pipe {
     /// @param c abi-encoded context
     /// @param amount in source units
     /// @return output in underlying units
-    function put(bytes memory c, uint256 amount) virtual public returns (uint256 output);
+    function _put(bytes memory c, uint256 amount) virtual public returns (uint256 output);
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks. Amount in underlying units
     /// @param c abi-encoded context
     /// @param amount in underlying units
     /// @return output in source units
-    function get(bytes memory c, uint256 amount) virtual public returns (uint256 output);
+    function _get(bytes memory c, uint256 amount) virtual public returns (uint256 output);
 
-    /// @dev function for hardwork, claiming rewards, balancing
+    /// @dev function for re balancing. When rebalance
     /// @param c abi-encoded context
-    function work(bytes memory c) virtual public {
-        // do nothing by default
+    /// @return imbalance in underlying units
+    /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
+    function _rebalance(bytes memory c) virtual public returns (uint256 imbalance, bool deficit){
+        // balanced, no deficit by default
+        return (0,false);
     }
 
     /// @dev available source balance (tokens, matic etc)
     /// param c abi-encoded context
     /// @return balance in source units
-    function balance(bytes memory) virtual public returns (uint256) {
+    function _sourceBalance(bytes memory) virtual public returns (uint256) {
         revert(_NOT_IMPLEMENTED);
     }
 
     /// @dev underlying balance (LP tokens, collateral etc)
     /// param c abi-encoded context
     /// @return balance in underlying units
-    function underlyingBalance(bytes memory) virtual public returns (uint256) {
+    function _underlyingBalance(bytes memory) virtual public returns (uint256) {
         revert(_NOT_IMPLEMENTED);
     }
 

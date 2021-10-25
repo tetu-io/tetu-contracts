@@ -110,6 +110,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     //emergencyWithdrawFromPool();
     //_maiGetPaid(); //TODO do we need to call this?
     liquidateReward();
+
+    rebalanceAllPipes();
   }
 
   function _balance(address token) internal view returns (uint256) {

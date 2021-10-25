@@ -32,7 +32,7 @@ contract AaveWethPipe is Pipe {
     }
 
     /// @dev function for investing, deposits, entering, borrowing
-    function put(bytes memory c, uint256 amount) override public returns (uint256 output) {
+    function _put(bytes memory c, uint256 amount) override public returns (uint256 output) {
         (address wethGateway, address pool, address lpToken) = context(c);
         uint256 before = IERC20(lpToken).balanceOf(address(this));
 
@@ -43,7 +43,7 @@ contract AaveWethPipe is Pipe {
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
-    function get(bytes memory c, uint256 amount) override public returns (uint256 output) {
+    function _get(bytes memory c, uint256 amount) override public returns (uint256 output) {
         (address wethGateway, address pool, address lpToken) = context(c);
         IERC20(lpToken).safeApprove(address(wethGateway), 0);
         IERC20(lpToken).safeApprove(address(wethGateway), amount);
