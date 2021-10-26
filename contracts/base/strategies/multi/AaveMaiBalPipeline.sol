@@ -23,6 +23,7 @@ import "./pipes/UnwrappingPipe.sol";
 import "./pipes/AaveWethPipe.sol";
 import "./pipes/MaiCamWMaticPipe.sol";
 import "./pipes/MaiStablecoinCollateralPipe.sol";
+import "./pipes/MaiStablecoinBorrowPipe.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
@@ -58,7 +59,18 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
   MaiStablecoinCollateralPipeData maiStablecoinCollateralPipeData = MaiStablecoinCollateralPipeData({
     sourceToken      : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B, // Compounding Aave Market Matic (camWMATIC)
-    vault            : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a  // camWMATIC MAI Vault (cMVT)
+    stablecoin       : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
+    vaultID          : 0                                           // have to initialize later
+  });
+
+  MaiStablecoinBorrowPipeData maiStablecoinBorrowPipeData = MaiStablecoinBorrowPipeData({
+    stablecoin       : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
+    vaultID          : 0,                                          // have to initialize later
+    borrowedToken    : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1,
+    // https://docs.mai.finance/borrowing-incentives
+    minPercentage    : 240, // 135 - liquidation, 135+25=160 - minimum for incentives
+    maxPercentage    : 280, // 135+270=405 max percentage for incentives
+    targetPercentage : 260
   });
 
 
@@ -115,7 +127,14 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     segments.push( PipeSegment(maiCamWMaticPipe, maiCamWMaticPipe.create(maiCamWMaticPipeData)) );
 
     MaiStablecoinCollateralPipe maiStablecoinCollateralPipe = new MaiStablecoinCollateralPipe();
+    (,uint256 vaultID) = maiStablecoinCollateralPipe.createNewVault(maiStablecoinCollateralPipeData.stablecoin);
+    maiStablecoinCollateralPipeData.vaultID = vaultID;
     segments.push( PipeSegment(maiStablecoinCollateralPipe, maiStablecoinCollateralPipe.create(maiStablecoinCollateralPipeData)) );
+
+    maiStablecoinBorrowPipeData.vaultID = vaultID;
+    MaiStablecoinBorrowPipe maiStablecoinBorrowPipe = new MaiStablecoinBorrowPipe();
+    segments.push( PipeSegment(maiStablecoinBorrowPipe, maiStablecoinBorrowPipe.create(maiStablecoinBorrowPipeData)) );
+
   }
 
   /// @dev Stub function for Strategy Base implementation
