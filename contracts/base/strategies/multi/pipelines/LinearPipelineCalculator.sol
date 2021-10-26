@@ -41,7 +41,6 @@ contract LinearPipelineCalculator {
         amountIn = totalIn.mul(amountOut).div(totalOut);
     }
 
-
     /// @dev Parses a revert reason that should contain the numeric answer
     function parseRevertReason(bytes memory reason)
     private pure returns (uint256) {
@@ -54,6 +53,5 @@ contract LinearPipelineCalculator {
         }
         return abi.decode(reason, (uint256));
     }
-
 
 }

@@ -21,6 +21,7 @@ import "../../../third_party/uniswap/IWETH.sol";
 import "./pipelines/LinearPipeline.sol";
 import "./pipes/UnwrappingPipe.sol";
 import "./pipes/AaveWethPipe.sol";
+import "./pipes/MaiCamWMaticPipe.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
@@ -48,6 +49,13 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     pool             : 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf, // LendingPool
     lpToken          : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4  // Aave Matic Market WMATIC (amWMATIC)
   });
+
+  MaiCamWMaticPipeData maiCamWMaticPipeData = MaiCamWMaticPipeData({
+    sourceToken: 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4,
+    lpToken    : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B
+  });
+
+
 //
 //  MaiData mai = MaiData({
 //    vault            : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
@@ -90,12 +98,15 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 //    _rewardTokens.push(mai.rewardToken);
 //    _rewardTokens.push(balancer.rewardToken);
 
-    // building pipeline
+    // Build pipeline
     UnwrappingPipe unwrappingPipe = new UnwrappingPipe();
     segments.push( PipeSegment(unwrappingPipe, unwrappingPipe.create(WMATIC)) );
 
     AaveWethPipe aaveWethPipe = new AaveWethPipe();
     segments.push( PipeSegment(aaveWethPipe, aaveWethPipe.create(aaveWethPipeData)) );
+
+    MaiCamWMaticPipe maiCamWMaticPipe = new MaiCamWMaticPipe();
+    segments.push( PipeSegment(maiCamWMaticPipe, maiCamWMaticPipe.create(maiCamWMaticPipeData)) );
   }
 
   /// @dev Stub function for Strategy Base implementation
