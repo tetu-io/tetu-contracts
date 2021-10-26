@@ -22,6 +22,7 @@ import "./pipelines/LinearPipeline.sol";
 import "./pipes/UnwrappingPipe.sol";
 import "./pipes/AaveWethPipe.sol";
 import "./pipes/MaiCamWMaticPipe.sol";
+import "./pipes/MaiStablecoinCollateralPipe.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
@@ -51,8 +52,13 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   });
 
   MaiCamWMaticPipeData maiCamWMaticPipeData = MaiCamWMaticPipeData({
-    sourceToken: 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4,
-    lpToken    : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B
+    sourceToken      : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4, // Aave Matic Market WMATIC (amWMATIC)
+    lpToken          : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B  // Compounding Aave Market Matic (camWMATIC)
+  });
+
+  MaiStablecoinCollateralPipeData maiStablecoinCollateralPipeData = MaiStablecoinCollateralPipeData({
+    sourceToken      : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B, // Compounding Aave Market Matic (camWMATIC)
+    vault            : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a  // camWMATIC MAI Vault (cMVT)
   });
 
 
@@ -107,6 +113,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     MaiCamWMaticPipe maiCamWMaticPipe = new MaiCamWMaticPipe();
     segments.push( PipeSegment(maiCamWMaticPipe, maiCamWMaticPipe.create(maiCamWMaticPipeData)) );
+
+    MaiStablecoinCollateralPipe maiStablecoinCollateralPipe = new MaiStablecoinCollateralPipe();
+    segments.push( PipeSegment(maiStablecoinCollateralPipe, maiStablecoinCollateralPipe.create(maiStablecoinCollateralPipeData)) );
   }
 
   /// @dev Stub function for Strategy Base implementation
