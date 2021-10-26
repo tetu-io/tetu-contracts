@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../pipes/Pipe.sol";
-import "../pipes/PipeSegment.sol";
 import "../pipes/PipeDelegateCall.sol";
+import "./LinearPipelineCalculator.sol";
 
 
 /// @title Pipe Base Contract
@@ -13,14 +13,19 @@ contract LinearPipeline {
     using SafeMath for uint256;
     using PipeDelegateCall for PipeSegment;
 
+    LinearPipelineCalculator calculator;
     PipeSegment[] public segments;
 
+    constructor() {
+        calculator = new LinearPipelineCalculator(this);
+    }
+
     /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
-    /// @param amount in source units
-    /// @returns amount in underlying units
-    function pumpIn(uint256 amount, uint256 fromPipeIndex)
+    /// @param sourceAmount in source units
+    /// @return amountIn in most underlying units
+    function pumpIn(uint256 sourceAmount, uint256 fromPipeIndex)
     internal returns (uint256 amountIn)  {
-        amountIn = amount;
+        amountIn = sourceAmount;
         uint256 len = segments.length;
         for (uint256 i=fromPipeIndex; i<len; i++) {
             amountIn = segments[i].put(amountIn);
@@ -28,8 +33,9 @@ contract LinearPipeline {
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
-    /// @param amount in underlying units
-    /// @returns amount in source units
+    /// @param underlyingAmount in most underlying units
+    /// @param toPipeIndex pump out to pipe with this index
+    /// @return amountOut in source units
     function pumpOut(uint256 underlyingAmount, uint256 toPipeIndex)
     internal returns (uint256 amountOut) {
         amountOut = underlyingAmount;
@@ -40,50 +46,13 @@ contract LinearPipeline {
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
-    /// @param amount in source units
-    /// @returns amount in source units
+    /// @param sourceAmount in source units
+    /// @param toPipeIndex pump out to pipe with this index
+    /// @return amountOut in source units
     function pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex)
     internal returns (uint256 amountOut) {
-        uint256 underlyingAmount = getAmountInForAmountOut(sourceAmount, toPipeIndex);
+        uint256 underlyingAmount = calculator.getAmountInForAmountOut(sourceAmount, toPipeIndex);
         return pumpOut(underlyingAmount, toPipeIndex);
-    }
-
-    function getAmountOut_Reverted(uint256 amountIn, uint256 toPipeIndex)
-    private {
-        pumpOut(amountIn, toPipeIndex);
-        PipeSegment storage segment = segments[toPipeIndex];
-        uint256 amountOut = segment.sourceBalance();
-        // store answer in revert message data
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, amountOut)
-            revert(ptr, 32)
-        }
-    }
-
-    function getAmountOut(uint256 amountIn, uint256 toPipeIndex)
-    internal returns (uint256) {
-        try getAmountOut_Reverted(amountIn, toPipeIndex)
-        {} catch (bytes memory reason) {
-            return parseRevertReason(reason);
-        }
-        return 0;
-    }
-
-    function getTotalAmountOut(uint256 toPipeIndex)
-    internal returns (uint256) {
-        uint256 last = segments.length-1;
-        uint256 amountIn = segments[last].underlyingBalance();
-        return getAmountOut(amountIn, toPipeIndex);
-    }
-
-    function getAmountInForAmountOut(uint256 amountOut, uint256 toPipeIndex)
-    internal returns (uint256 amountIn) {
-        uint256 last = segments.length-1;
-        uint256 totalIn  = segments[last].underlyingBalance();
-        uint256 totalOut = getAmountOut(amountIn, toPipeIndex);
-
-        amountIn = totalIn.mul(amountOut).div(totalOut);
     }
 
     /// @dev re balance pipe segments
@@ -109,18 +78,22 @@ contract LinearPipeline {
         }
     }
 
-    /// @dev Parses a revert reason that should contain the numeric answer
-    function parseRevertReason(bytes memory reason)
-    private pure returns (uint256) {
-        if (reason.length != 32) {
-            if (reason.length < 68) revert('Unexpected revert');
-            assembly {
-                reason := add(reason, 0x04)
-            }
-            revert(abi.decode(reason, (string)));
+    function getAmountOut_Reverted(uint256 amountIn, uint256 toPipeIndex)
+    public {
+        pumpOut(amountIn, toPipeIndex);
+        PipeSegment storage segment = segments[toPipeIndex];
+        uint256 amountOut = segment.sourceBalance();
+        // store answer in revert message data
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, amountOut)
+            revert(ptr, 32)
         }
-        return abi.decode(reason, (uint256));
     }
 
+    function getMostUnderlyingBalance() public view returns (uint256) {
+        uint256 last = segments.length-1;
+        return segments[last].underlyingBalance();
+    }
 
 }

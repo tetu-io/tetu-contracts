@@ -6,7 +6,8 @@ pragma solidity ^0.8.0;
 abstract contract Pipe {
 
     //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    /// !!! WARNING! Ancestors must no have any storage variables !!!
+    //  !!! WARNING! Ancestors must no have any storage variables !!!
+    //  !!! Because _***() methods will be called by delegatecall !!!
     //  !!! It should receive all data trough abi-encoded context !!!
     //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -42,14 +43,14 @@ abstract contract Pipe {
         return (0,false);
     }
 
-    /// @dev available source balance (tokens, matic etc)
+    /// @dev available source balance (tokens, matic etc). Must be implemented for first pipe in line.
     /// param c abi-encoded context
     /// @return balance in source units
     function _sourceBalance(bytes memory) virtual public returns (uint256) {
         revert(_NOT_IMPLEMENTED);
     }
 
-    /// @dev underlying balance (LP tokens, collateral etc)
+    /// @dev underlying balance (LP tokens, collateral etc). Must be implemented for last pipe in line and all pipes after balancing pipes.
     /// param c abi-encoded context
     /// @return balance in underlying units
     function _underlyingBalance(bytes memory) virtual public returns (uint256) {

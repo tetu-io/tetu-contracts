@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: ISC
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Pipe.sol";
 import "../../../../third_party/uniswap/IWETH.sol";
 
@@ -34,15 +35,15 @@ contract UnwrappingPipe is Pipe {
     /// @dev available source balance (WETH, WMATIC etc)
     /// @param c abi-encoded context
     /// @return balance in source units
-    function _sourceBalance(bytes memory c) virtual public returns (uint256) {
-        (WETH) = context(c);
+    function _sourceBalance(bytes memory c) override public returns (uint256) {
+        (address  WETH) = context(c);
         return IERC20(WETH).balanceOf(address(this));
     }
 
     /// @dev underlying balance (ETH, MATIC)
     /// param c abi-encoded context
     /// @return balance in underlying units
-    function _underlyingBalance(bytes memory) virtual public returns (uint256) {
+    function _underlyingBalance(bytes memory) override public returns (uint256) {
         return address(this).balance;
     }
 
