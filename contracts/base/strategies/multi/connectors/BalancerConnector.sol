@@ -111,7 +111,7 @@ contract BalancerConnector {
         IBVault(d.vault).exitPool(d.poolID, address(this), payable(address(this)), request);
     }
 
-    function _balancerGetExitAmount(uint256 amount) internal view returns (uint256) {
+    function _balancerGetExitAmount(uint256) internal view returns (uint256) {
         uint256 total = IERC20(d.lpToken).balanceOf(address(this));
         //TODO !!! Convert BPT LP Tokens to MAI amount -> StableMath._calcTokenOutGivenExactBptIn
         return total;

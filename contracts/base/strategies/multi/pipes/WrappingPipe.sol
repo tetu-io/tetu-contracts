@@ -37,16 +37,19 @@ contract WrappingPipe is Pipe {
     /// @dev available source balance (ETH, MATIC)
     /// param c abi-encoded context
     /// @return balance in source units
-    function _sourceBalance(bytes memory) override public returns (uint256) {
+    function _sourceBalance(bytes memory) override public view returns (uint256) {
         return address(this).balance;
     }
 
     /// @dev underlying balance (WETH, WMATIC etc)
     /// param c abi-encoded context
     /// @return balance in underlying units
-    function _underlyingBalance(bytes memory c) override public returns (uint256) {
+    function _underlyingBalance(bytes memory c) override public view returns (uint256) {
         (address WETH) = context(c);
         return IERC20(WETH).balanceOf(address(this));
     }
+
+    /// @dev to receive Ether (Matic)
+    receive() external payable {}
 
 }

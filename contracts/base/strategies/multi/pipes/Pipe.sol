@@ -35,10 +35,10 @@ abstract contract Pipe {
     function _get(bytes memory c, uint256 amount) virtual public returns (uint256 output);
 
     /// @dev function for re balancing. When rebalance
-    /// @param c abi-encoded context
+    /// param c abi-encoded context
     /// @return imbalance in underlying units
     /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
-    function _rebalance(bytes memory c) virtual public returns (uint256 imbalance, bool deficit){
+    function _rebalance(bytes memory) virtual public returns (uint256 imbalance, bool deficit){
         // balanced, no deficit by default
         return (0,false);
     }
@@ -46,14 +46,14 @@ abstract contract Pipe {
     /// @dev available source balance (tokens, matic etc). Must be implemented for first pipe in line.
     /// param c abi-encoded context
     /// @return balance in source units
-    function _sourceBalance(bytes memory) virtual public returns (uint256) {
+    function _sourceBalance(bytes memory) virtual public view returns (uint256) {
         revert(_NOT_IMPLEMENTED);
     }
 
     /// @dev underlying balance (LP tokens, collateral etc). Must be implemented for last pipe in line and all pipes after balancing pipes.
     /// param c abi-encoded context
     /// @return balance in underlying units
-    function _underlyingBalance(bytes memory) virtual public returns (uint256) {
+    function _underlyingBalance(bytes memory) virtual public view returns (uint256) {
         revert(_NOT_IMPLEMENTED);
     }
 
