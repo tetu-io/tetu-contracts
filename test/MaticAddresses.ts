@@ -49,6 +49,7 @@ export class MaticAddresses {
   public static dxTETU = "0xacee7bd17e7b04f7e48b29c0c91af67758394f0f".toLowerCase();
   public static xTETU = "0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454".toLowerCase();
   public static dQUICK_TOKEN = "0xf28164A485B0B2C90639E47b0f377b4a438a16B1".toLowerCase();
+  public static TETU_TOKEN = "0x255707B70BF90aa112006E1b07B9AeA6De021424".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
