@@ -165,14 +165,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   }
 
   /// @dev Return recommended USD amount of rewards for this vault based on TVL ratio
-  function rewardsPerTvl(address _vault, uint256 _period) public view override returns (uint256) {
+  function rewardsPerTvl(address _vault, uint256 _period) public override returns (uint256) { // view modifier removed due usage of reverted swaps for precise calculations
     ISmartVault vault = ISmartVault(_vault);
     uint256 rewardAmount = strategyRewardsUsd(vault.strategy(), _period);
     uint256 ratio = vaultTVLRatio(_vault);
     return rewardAmount * ratio / PRECISION;
   }
 
-  function vaultTVLRatio(address _vault) public view override returns (uint256) {
+  function vaultTVLRatio(address _vault) public override returns (uint256) { // view modifier removed due usage of reverted swaps for precise calculations
     ISmartVault vault = ISmartVault(_vault);
     uint256 poolTvl = IStrategy(vault.strategy()).poolTotalAmount();
     if (poolTvl == 0) {

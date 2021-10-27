@@ -72,5 +72,5 @@ interface IStrategy {
 
   function readyToClaim() external view returns (uint256[] memory);
 
-  function poolTotalAmount() external view returns (uint256);
+  function poolTotalAmount() external returns (uint256); // view modifier removed due usage of reverted swaps for precise calculations
 }

@@ -13,7 +13,7 @@ contract LinearPipeline {
     using SafeMath for uint256;
     using PipeDelegateCall for PipeSegment;
 
-    LinearPipelineCalculator calculator;
+    LinearPipelineCalculator public calculator;
     PipeSegment[] public segments;
 
     constructor() {

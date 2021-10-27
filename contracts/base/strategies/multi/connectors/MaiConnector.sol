@@ -27,6 +27,7 @@ contract MaiConnector {
         address vault;
         address sourceToken;
         address lpToken;
+        uint256 borrowPercentage;
         address borrowToken;
         address rewardToken;
         uint256 minPercentage;

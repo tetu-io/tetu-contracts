@@ -20,9 +20,9 @@ interface IRewardCalculator {
 
   function strategyRewardsUsd(address _strategy, uint256 _period) external view returns (uint256);
 
-  function rewardsPerTvl(address _vault, uint256 _period) external view returns (uint256);
+  function rewardsPerTvl(address _vault, uint256 _period) external returns (uint256); // view modifier removed due usage of reverted swaps for precise calculations
 
-  function vaultTVLRatio(address _vault) external view returns (uint256);
+  function vaultTVLRatio(address _vault) external returns (uint256); // view modifier removed due usage of reverted swaps for precise calculations
 
   function kpi(address _vault) external view returns (uint256);
 
