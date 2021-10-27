@@ -58,12 +58,12 @@ contract LinearPipeline {
     /// @dev re balance pipe segments
     function rebalancePipe(uint256 pipeIndex) internal {
         PipeSegment storage segment = segments[pipeIndex];
-        (uint256 imbalance, bool deficit) = segment.rebalance();
+        (uint256 imbalance, bool deficit) = segment.rebalance(); //TODO add try catch?
         if (imbalance>0) {
             if (deficit) {
                 pumpOutSource(imbalance, pipeIndex.add(1));
                 // call rebalance again after we have closed deficit
-                segment.rebalance();
+                segment.rebalance(); //TODO add try catch?
             } else {
                 pumpIn(imbalance, pipeIndex.add(1));
             }
