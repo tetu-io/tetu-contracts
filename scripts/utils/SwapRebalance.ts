@@ -193,7 +193,9 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
 
   const multiswap = await DeployerUtils.connectInterface(signer, 'MultiSwap', multiswapAdr) as MultiSwap;
 
-  const [targetToken, maxBal] = await findMaxBalance(signer, calculator);
+  const data = await findMaxBalance(signer, calculator);
+  const targetToken = data[0];
+  const maxBal = data[1];
   const targetTokenDec = await TokenUtils.decimals(targetToken as string);
   const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(targetToken as string));
 
@@ -201,15 +203,23 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
   const tokenNameTarget = await TokenUtils.tokenSymbol(targetToken as string);
 
   const toSell = amountUSD / targetTokenPrice;
+  console.log('refuel token', tokenName, toBuy);
+  console.log('target token', tokenNameTarget, toSell);
+
   if (amountUSD > maxBal) {
     console.log('NOT ENOUGH BALANCE FOR REFUEL', tokenName, tokenNameTarget, toSell, maxBal);
     return;
   }
 
-  const lps = await multiswap.findLpsForSwaps(targetToken as string, token);
+  let lps: string[];
+  if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
+    || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
+    lps = ['0x80fF4e4153883d770204607eb4aF9994739C72DC'];
+  } else {
+    lps = await multiswap.findLpsForSwaps(targetToken as string, token);
+  }
 
-  console.log('refuel token', tokenName, toBuy);
-  console.log('target token', tokenNameTarget, toSell);
+
   const allowance = +utils.formatUnits(await TokenUtils.allowance(targetToken as string, signer, multiswapAdr), targetTokenDec);
   if (allowance < toSell) {
     console.log('approve');
@@ -226,7 +236,7 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
 
 }
 
-async function findMaxBalance(signer: SignerWithAddress, calculator: PriceCalculator) {
+async function findMaxBalance(signer: SignerWithAddress, calculator: PriceCalculator): Promise<[string, number]> {
   let maxBal = 0;
   let maxToken = MaticAddresses.ZERO_ADDRESS;
   for (const token of TOKENS) {
