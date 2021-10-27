@@ -460,6 +460,7 @@ export class DeployerUtils {
     ), true, wait);
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
+    await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
 
     return [vaultLogic, vault, strategy];
   }

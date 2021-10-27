@@ -202,7 +202,7 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
 
   const toSell = amountUSD / targetTokenPrice;
   if (toSell > maxBal) {
-    console.log('NOT ENOUGH BALANCE FOR REFUEL', tokenName, tokenNameTarget);
+    console.log('NOT ENOUGH BALANCE FOR REFUEL', tokenName, tokenNameTarget, toSell, maxBal);
     return;
   }
 
