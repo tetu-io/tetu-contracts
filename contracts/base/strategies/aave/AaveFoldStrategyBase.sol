@@ -23,6 +23,10 @@ import "../../interface/ISmartVault.sol";
 import "../../../third_party/IWmatic.sol";
 import "../../../third_party/aave/IAToken.sol";
 import "../../interface/IAveFoldStrategy.sol";
+import "../../../third_party/aave/ILendingPool.sol";
+
+import "hardhat/console.sol";
+
 
 /// @title Abstract contract for Aave lending strategy implementation with folding functionality
 /// @author JasperS13
@@ -47,6 +51,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant R_ETHER = 0xCa0F37f73174a28a64552D426590d3eD601ecCa1;
+  address public constant LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
 
   /// @notice RToken address
   address public override aToken;
@@ -136,9 +141,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   }
 
   function decimals() private view returns (uint8) {
-//    return IAToken(aToken).decimals();
-// todo: https://docs.aave.com/developers/the-core-protocol/protocol-data-provider
-    return ERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS()).decimals();
+    return ERC20(aToken).decimals();
   }
 
   function underlyingDecimals() private view returns (uint8) {
@@ -207,7 +210,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Return a normalized to 18 decimal cost of folding
   function foldCostRatePerToken() public view returns (uint256) {
-    IAToken rt = IAToken(aToken);
+//    IAToken rt = IAToken(aToken);
 
 //    // if for some reason supply rate higher than borrow we pay nothing for the borrows
 //    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
@@ -310,17 +313,22 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
-  /// @dev Deposit underlying to rToken contract
+  /// @dev Deposit underlying to aToken contract
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
-      liquidateExcessUnderlying();
+//      liquidateExcessUnderlying(); todo
       _supply(amount);
     }
     if (!fold || !isFoldingProfitable()) {
       return;
     }
+//    ILendingPool lPool = ILendingPool(LENDING_POOL);
+//    uint256 supplied = lPool.getUserAccountData(address(this)).totalCollateralETH;
+//    uint256 borrowed = lPool.getUserAccountData(address(this)).totalDebtETH;
+
+
 //    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
 //    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
 //    uint256 balance = supplied.sub(borrowed);
@@ -415,9 +423,10 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev We should keep PPFS ~1
   ///      This function must not ruin transaction
   function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
-//    // update balances for accurate ppfs calculation
-//    suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
-//    borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
+    // update balances for accurate ppfs calculation
+//    ILendingPool lPool = ILendingPool(LENDING_POOL);
+//    suppliedInUnderlying = lPool.getUserAccountData(address(this)).totalCollateralETH;
+//    borrowedInUnderlying = lPool.getUserAccountData(address(this)).totalDebtETH;
 //    address forwarder = IController(controller()).feeRewardForwarder();
 //    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
 //    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
@@ -460,22 +469,29 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 //    }
   }
 
-  /// @dev Supplies to Iron
+  /// @dev Supplies to Aave
   function _supply(uint256 amount) internal updateSupplyInTheEnd returns (uint256) {
-//    uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
-//    if (amount < balance) {
-//      balance = amount;
-//    }
+    uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
+    console.log(">> balance %s", balance);
+
+    if (amount < balance) {
+      balance = amount;
+    }
 //    if (isMatic()) {
 //      wmaticWithdraw(balance);
 //      IRMatic(aToken).mint{value : balance}();
 //    } else {
-//      IERC20(_underlyingToken).safeApprove(aToken, 0);
-//      IERC20(_underlyingToken).safeApprove(aToken, balance);
+      IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
+      IERC20(_underlyingToken).safeApprove(LENDING_POOL, balance);
+      ILendingPool lPool = ILendingPool(LENDING_POOL);
+      lPool.deposit(_underlyingToken, amount, address(this), 0); //todo referral code
+      uint256 aBalance = IERC20(aToken).balanceOf(address(this));
+      console.log(">> aBalance %s", aBalance);
+
+
 //      require(IAToken(aToken).mint(balance) == 0, "AFS: Supplying failed");
 //    }
-//    return balance;
-    return 42;
+    return balance;
   }
 
   /// @dev Borrows against the collateral

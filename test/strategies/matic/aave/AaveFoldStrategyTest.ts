@@ -10,7 +10,7 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import { StrategyAaveFold } from "../../../../typechain";
+import {AaveFoldStrategyBase, StrategyAaveFold} from "../../../../typechain";
 
 
 const {expect} = chai;
@@ -22,7 +22,7 @@ async function startAaveFoldStrategyTest(
     underlying: string,
     tokenName: string,
     rewardTokens: string[],
-    rToken: string,
+    aToken: string,
     borrowTargetFactorNumerator: string,
     collateralFactorNumerator: string
 ) {
@@ -58,7 +58,7 @@ async function startAaveFoldStrategyTest(
               core.controller.address,
               vaultAddress,
               underlying,
-              rToken,
+              aToken,
               borrowTargetFactorNumerator,
               collateralFactorNumerator
           ) as Promise<StrategyAaveFold>,
@@ -117,12 +117,12 @@ async function startAaveFoldStrategyTest(
     });
 
 
-    // it("do hard work with liq path", async () => {
-    //   await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-    //       (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-    //       null
-    //   );
-    // });
+    it("do hard work with liq path", async () => {
+      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+          null
+      );
+    });
     // it("emergency exit", async () => {
     //   const info = strategyInfo;
     //   const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
@@ -180,11 +180,6 @@ async function startAaveFoldStrategyTest(
     //       3000
     //   );
     // });
-
-    it('should test',async () => {
-      console.log('Hello');
-
-    });
 
   });
 }
