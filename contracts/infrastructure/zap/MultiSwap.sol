@@ -29,7 +29,7 @@ contract MultiSwap is Controllable, IMultiSwap, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   string public constant VERSION = "1.0.2";
-  uint256 constant public MAX_ROUTES = 20;
+  uint256 constant public MAX_ROUTES = 50;
 
   mapping(address => address) public factoryToRouter;
 
