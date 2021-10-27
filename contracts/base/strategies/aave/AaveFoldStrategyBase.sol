@@ -51,9 +51,12 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant R_ETHER = 0xCa0F37f73174a28a64552D426590d3eD601ecCa1;
-  address public constant LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
 
-  /// @notice RToken address
+
+  address public constant LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
+  ILendingPool lPool = ILendingPool(LENDING_POOL);
+
+  /// @notice aToken address
   address public override aToken;
   /// @notice Iron Controller address
   address public override ironController;
@@ -145,11 +148,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   }
 
   function underlyingDecimals() private view returns (uint8) {
-    if (isMatic()) {
-      return 18;
-    } else {
-      return ERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS()).decimals();
-    }
+    return ERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS()).decimals();
   }
 
   /// @notice Strategy balance supplied minus borrowed
@@ -318,39 +317,39 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
-//      liquidateExcessUnderlying(); todo
+      liquidateExcessUnderlying();
       _supply(amount);
     }
     if (!fold || !isFoldingProfitable()) {
       return;
     }
-//    ILendingPool lPool = ILendingPool(LENDING_POOL);
-//    uint256 supplied = lPool.getUserAccountData(address(this)).totalCollateralETH;
-//    uint256 borrowed = lPool.getUserAccountData(address(this)).totalDebtETH;
+    (uint256 supplied, uint256 borrowed,,,,) = lPool.getUserAccountData(address(this));
+    console.log(">> depositToPool: supplied %s", supplied);
+    console.log(">> depositToPool: borrowed %s", borrowed);
 
 
-//    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-//    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
-//    uint256 balance = supplied.sub(borrowed);
-//    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
-//    uint256 i = 0;
-//    while (borrowed < borrowTarget) {
-//      uint256 wantBorrow = borrowTarget.sub(borrowed);
-//      uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
-//      _borrow(Math.min(wantBorrow, maxBorrow));
-//      uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-//      if (underlyingBalance > 0) {
-//        _supply(underlyingBalance);
-//      }
-//      //update parameters
-//      supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-//      borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
-//      i++;
-//      if (i == MAX_DEPTH) {
-//        emit MaxDepthReached();
-//        break;
-//      }
-//    }
+    uint256 balance = supplied.sub(borrowed);
+    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    uint256 i = 0;
+    while (borrowed < borrowTarget) {
+      console.log(">> depositToPool: borrowed %s", borrowed);
+      console.log(">> depositToPool: borrowTarget %s", borrowTarget);
+
+      uint256 wantBorrow = borrowTarget.sub(borrowed);
+      uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
+      _borrow(Math.min(wantBorrow, maxBorrow));
+      uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      if (underlyingBalance > 0) {
+        _supply(underlyingBalance);
+      }
+      //update parameters
+      (supplied, borrowed,,,,) = lPool.getUserAccountData(address(this));
+      i++;
+      if (i == MAX_DEPTH) {
+        emit MaxDepthReached();
+        break;
+      }
+    }
   }
 
   /// @dev Withdraw underlying from Iron MasterChef finance
@@ -424,49 +423,49 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   ///      This function must not ruin transaction
   function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
     // update balances for accurate ppfs calculation
-//    ILendingPool lPool = ILendingPool(LENDING_POOL);
-//    suppliedInUnderlying = lPool.getUserAccountData(address(this)).totalCollateralETH;
-//    borrowedInUnderlying = lPool.getUserAccountData(address(this)).totalDebtETH;
-//    address forwarder = IController(controller()).feeRewardForwarder();
-//    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
-//    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
-//
-//    if (ppfs > ppfsPeg) {
-//      uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
-//      if (undBal == 0
-//      || ERC20(_smartVault).totalSupply() == 0
-//      || undBal < ERC20(_smartVault).totalSupply()
-//        || undBal - ERC20(_smartVault).totalSupply() < 2) {
-//        // no actions in case of no money
-//        emit NoMoneyForLiquidateUnderlying();
-//        return;
-//      }
-//      // ppfs = 1 if underlying balance = total supply
-//      // -1 for avoiding problem with rounding
-//      uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
-//      if (underlyingBalance() < toLiquidate) {
-//        _redeemPartialWithLoan(toLiquidate - underlyingBalance());
-//      }
-//      toLiquidate = Math.min(underlyingBalance(), toLiquidate);
-//      if (toLiquidate != 0) {
-//        IERC20(_underlyingToken).safeApprove(forwarder, 0);
-//        IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
-//
-//        // it will sell reward token to Target Token and distribute it to SmartVault and PS
-//        // we must not ruin transaction in any case
-//        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-//        try IFeeRewardForwarder(forwarder).distribute(toLiquidate, _underlyingToken, _smartVault)
-//        returns (uint256 targetTokenEarned) {
-//          if (targetTokenEarned > 0) {
-//            IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-//          }
-//        } catch {
-//          emit UnderlyingLiquidationFailed();
-//        }
-//        suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
-//        borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
-//      }
-//    }
+    (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
+    address forwarder = IController(controller()).feeRewardForwarder();
+    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
+    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
+
+    console.log(">> ppfs %s", ppfs);
+    console.log(">> ppfsPeg %s", ppfsPeg);
+
+    if (ppfs > ppfsPeg) {
+      uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
+      if (undBal == 0
+      || ERC20(_smartVault).totalSupply() == 0
+      || undBal < ERC20(_smartVault).totalSupply()
+        || undBal - ERC20(_smartVault).totalSupply() < 2) {
+        // no actions in case of no money
+        emit NoMoneyForLiquidateUnderlying();
+        return;
+      }
+      // ppfs = 1 if underlying balance = total supply
+      // -1 for avoiding problem with rounding
+      uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
+      if (underlyingBalance() < toLiquidate) {
+        _redeemPartialWithLoan(toLiquidate - underlyingBalance());
+      }
+      toLiquidate = Math.min(underlyingBalance(), toLiquidate);
+      if (toLiquidate != 0) {
+        IERC20(_underlyingToken).safeApprove(forwarder, 0);
+        IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
+
+        // it will sell reward token to Target Token and distribute it to SmartVault and PS
+        // we must not ruin transaction in any case
+        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
+        try IFeeRewardForwarder(forwarder).distribute(toLiquidate, _underlyingToken, _smartVault)
+        returns (uint256 targetTokenEarned) {
+          if (targetTokenEarned > 0) {
+            IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+          }
+        } catch {
+          emit UnderlyingLiquidationFailed();
+        }
+        (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
+      }
+    }
   }
 
   /// @dev Supplies to Aave
@@ -477,41 +476,35 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     if (amount < balance) {
       balance = amount;
     }
-//    if (isMatic()) {
-//      wmaticWithdraw(balance);
-//      IRMatic(aToken).mint{value : balance}();
-//    } else {
-      IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
-      IERC20(_underlyingToken).safeApprove(LENDING_POOL, balance);
-      ILendingPool lPool = ILendingPool(LENDING_POOL);
-      lPool.deposit(_underlyingToken, amount, address(this), 0); //todo referral code
-      uint256 aBalance = IERC20(aToken).balanceOf(address(this));
-      console.log(">> aBalance %s", aBalance);
-
-
-//      require(IAToken(aToken).mint(balance) == 0, "AFS: Supplying failed");
-//    }
+    IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
+    IERC20(_underlyingToken).safeApprove(LENDING_POOL, balance);
+    lPool.deposit(_underlyingToken, amount, address(this), 0); //todo referral code
+    uint256 aBalance = IERC20(aToken).balanceOf(address(this));
+    console.log(">> aBalance %s", aBalance);
     return balance;
   }
 
   /// @dev Borrows against the collateral
   function _borrow(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // Borrow, check the balance for this contract's address
-//    require(IAToken(aToken).borrow(amountUnderlying) == 0, "AFS: Borrow failed");
-//    if (isMatic()) {
-//      IWmatic(W_MATIC).deposit{value : address(this).balance}();
-//    }
+    console.log(">>borrow amountUnderlying %s:", amountUnderlying);
+    lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this)); //todo referral code
   }
 
   /// @dev Redeem liquidity in underlying
   function _redeemUnderlying(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-//    amountUnderlying = Math.min(amountUnderlying, IAToken(aToken).balanceOfUnderlying(address(this)));
-//    if (amountUnderlying > 0) {
-//      uint256 redeemCode = 999;
-//      try IAToken(aToken).redeemUnderlying(amountUnderlying) returns (uint256 code) {
-//        redeemCode = code;
-//      } catch{}
+    (uint256 suppliedUnderlying,,,,,) = lPool.getUserAccountData(address(this));
+
+    amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
+    if (amountUnderlying > 0) {
+      try lPool.withdraw(_underlyingToken, amountUnderlying, address(this)) returns (uint256 withdrawnAmount) {
+        console.log(">>withdrawnAmount %s:", withdrawnAmount);
+      } catch{
+        console.log(">> unable to withdraw amount %s:", amountUnderlying);
+      }
+
+      //todo figure out if needed
 //      if (redeemCode != 0) {
 //        // iron has verification function that can ruin tx with underlying, in this case redeem rToken will work
 //        (,,, uint256 exchangeRate) = IAToken(aToken).getAccountSnapshot(address(this));
@@ -520,10 +513,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 //          _redeemRToken(rTokenRedeem);
 //        }
 //      }
-//      if (isMatic()) {
-//        IWmatic(W_MATIC).deposit{value : address(this).balance}();
-//      }
-//    }
+
+    }
   }
 
   /// @dev Redeem liquidity in rToken
@@ -535,16 +526,12 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Repay a loan
   function _repay(uint256 amountUnderlying) internal updateSupplyInTheEnd {
-//    if (amountUnderlying != 0) {
-//      if (isMatic()) {
-//        wmaticWithdraw(amountUnderlying);
-//        IRMatic(aToken).repayBorrow{value : amountUnderlying}();
-//      } else {
-//        IERC20(_underlyingToken).safeApprove(aToken, 0);
-//        IERC20(_underlyingToken).safeApprove(aToken, amountUnderlying);
-//        require(IAToken(aToken).repayBorrow(amountUnderlying) == 0, "AFS: Repay failed");
-//      }
-//    }
+    if (amountUnderlying != 0) {
+      console.log(">> repay amountUnderlying %s:", amountUnderlying);
+      IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
+      IERC20(_underlyingToken).safeApprove(LENDING_POOL, amountUnderlying);
+      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
+    }
   }
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
@@ -571,50 +558,49 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   ///      This function must nor revert transaction
   function _redeemPartialWithLoan(uint256 amount) internal updateSupplyInTheEnd {
     // amount we supplied
-//    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-//    // amount we borrowed
-//    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
-//    uint256 oldBalance = supplied.sub(borrowed);
-//    uint256 newBalance = 0;
-//    if (amount < oldBalance) {
-//      newBalance = oldBalance.sub(amount);
-//    }
-//    uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
-//    uint256 underlyingBalance = 0;
-//    uint256 i = 0;
-//    while (borrowed > newBorrowTarget) {
-//      uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
-//      uint256 toRepay = borrowed.sub(newBorrowTarget);
-//      if (supplied < requiredCollateral) {
-//        break;
-//      }
-//      // redeem just as much as needed to repay the loan
-//      // supplied - requiredCollateral = max redeemable, amount + repay = needed
-//      uint256 toRedeem = Math.min(supplied.sub(requiredCollateral), amount.add(toRepay));
-//      _redeemUnderlying(toRedeem);
-//      // now we can repay our borrowed amount
-//      underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-//      toRepay = Math.min(toRepay, underlyingBalance);
-//      if (toRepay == 0) {
-//        // in case of we don't have money for repaying we can't do anything
-//        break;
-//      }
-//      _repay(toRepay);
-//      // update the parameters
-//      borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
-//      supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-//      i++;
-//      if (i == MAX_DEPTH) {
-//        emit MaxDepthReached();
-//        break;
-//      }
-//    }
-//    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-//    if (underlyingBalance < amount) {
-//      uint256 toRedeem = amount.sub(underlyingBalance);
-//      // redeem the most we can redeem
-//      _redeemUnderlying(toRedeem);
-//    }
+    // amount we borrowed
+    (uint256 supplied, uint256 borrowed,,,,) = lPool.getUserAccountData(address(this));
+
+    uint256 oldBalance = supplied.sub(borrowed);
+    uint256 newBalance = 0;
+    if (amount < oldBalance) {
+      newBalance = oldBalance.sub(amount);
+    }
+    uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    uint256 underlyingBalance = 0;
+    uint256 i = 0;
+    while (borrowed > newBorrowTarget) {
+      uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
+      uint256 toRepay = borrowed.sub(newBorrowTarget);
+      if (supplied < requiredCollateral) {
+        break;
+      }
+      // redeem just as much as needed to repay the loan
+      // supplied - requiredCollateral = max redeemable, amount + repay = needed
+      uint256 toRedeem = Math.min(supplied.sub(requiredCollateral), amount.add(toRepay));
+      _redeemUnderlying(toRedeem);
+      // now we can repay our borrowed amount
+      underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      toRepay = Math.min(toRepay, underlyingBalance);
+      if (toRepay == 0) {
+        // in case of we don't have money for repaying we can't do anything
+        break;
+      }
+      _repay(toRepay);
+      // update the parameters
+      (supplied, borrowed,,,,) = lPool.getUserAccountData(address(this));
+      i++;
+      if (i == MAX_DEPTH) {
+        emit MaxDepthReached();
+        break;
+      }
+    }
+    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (underlyingBalance < amount) {
+      uint256 toRedeem = amount.sub(underlyingBalance);
+      // redeem the most we can redeem
+      _redeemUnderlying(toRedeem);
+    }
   }
 
   function wmaticWithdraw(uint256 amount) private {
