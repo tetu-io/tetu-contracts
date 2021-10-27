@@ -3,6 +3,32 @@ import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Announcer} from "../../typechain";
 import {appendFileSync} from "fs";
 
+const IDS = new Map<string, string>([
+  ['0', 'Governance'],
+  ['1', 'Dao'],
+  ['2', 'FeeRewardForwarder'],
+  ['3', 'Bookkeeper'],
+  ['4', 'MintHelper'],
+  ['5', 'RewardToken'],
+  ['6', 'FundToken'],
+  ['7', 'PsVault'],
+  ['8', 'Fund'],
+  ['9', 'PsRatio'],
+  ['10', 'FundRatio'],
+  ['11', 'ControllerTokenMove'],
+  ['12', 'StrategyTokenMove'],
+  ['13', 'FundTokenMove'],
+  ['14', 'TetuProxyUpdate'],
+  ['15', 'StrategyUpgrade'],
+  ['16', 'Mint'],
+  ['17', 'Announcer'],
+  ['18', 'ZeroPlaceholder'],
+  ['19', 'VaultController'],
+  ['20', 'RewardBoostDuration'],
+  ['21', 'RewardRatioWithoutBoost'],
+  ['22', 'VaultStop'],
+]);
+
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -25,7 +51,9 @@ async function main() {
     if (ts !== 0) {
       console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
       console.info('timeLockInfo', timeLockInfo.opCode, timeLockInfo);
-      const txt = `${i},${new Date(ts * 1000)},${timeLockInfo.opCode},${timeLockInfo.opHash}, ${timeLockInfo.target}, ${timeLockInfo.adrValues},${timeLockInfo.numValues}\n`;
+      // tslint:disable-next-line
+      // @ts-ignore
+      const txt = `${i},${new Date(ts * 1000)},${IDS.get(timeLockInfo.opCode, timeLockInfo.opCode)},${timeLockInfo.opHash}, ${timeLockInfo.target}, ${timeLockInfo.adrValues},${timeLockInfo.numValues}\n`;
       appendFileSync(`./tmp/announces.txt`, txt, 'utf8');
     }
   }
