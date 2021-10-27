@@ -174,7 +174,7 @@ function calculate(
   targetPrice: number
 ) {
   const result = Math.sqrt(tokenReserve * oppReserve / targetPrice) - tokenReserve;
-  return result - (result * 0.001);
+  return result - (result * 0.0001);
 }
 
 async function refuel(signer: SignerWithAddress, token: string, calculator: PriceCalculator, multiswapAdr: string) {
