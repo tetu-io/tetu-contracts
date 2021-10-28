@@ -211,16 +211,17 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
     return;
   }
 
-  const lps: string[] = [await quickFactory.getPair(targetToken, token)];
-  // if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
-  //   || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
-  //   lps = [MaticAddresses.QUICK_TETU_USDC];
-  // } else if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
-  //   || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
-  //   lps = [MaticAddresses.QUICK_TETU_USDC];
-  // } else {
-  //   lps = await multiswap.findLpsForSwaps(targetToken as string, token);
-  // }
+  let lps: string[];
+  // const lps: string[] = [await quickFactory.getPair(targetToken, token)];
+  if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
+    || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
+    lps = [MaticAddresses.QUICK_TETU_USDC];
+  } else if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
+    || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
+    lps = [MaticAddresses.QUICK_TETU_USDC];
+  } else {
+    lps = await multiswap.findLpsForSwaps(targetToken as string, token);
+  }
 
 
   const allowance = +utils.formatUnits(await TokenUtils.allowance(targetToken as string, signer, multiswapAdr), targetTokenDec);
