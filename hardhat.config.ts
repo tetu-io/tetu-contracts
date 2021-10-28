@@ -46,6 +46,7 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: 137,
       timeout: 99999,
+      gas: 19_000_000,
       forking: {
         url: argv.maticRpcUrl,
         blockNumber: argv.forkBlock

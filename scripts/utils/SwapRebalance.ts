@@ -93,7 +93,7 @@ async function main() {
             console.log('skip low amount 0', tokenName0, tokenName1, token0SwapAmount * price);
             continue;
           }
-          await refuel(signer, token0, calculator, tools.multiSwap, quickFactory);
+          await refuel(signer, token0, calculator, tools.multiSwap);
           tokenBal0 = +utils.formatUnits(await TokenUtils.balanceOf(token0, signer.address), tokenDec0);
           if (token0SwapAmount > tokenBal0) {
             console.log('TOO LOW AMOUNT ' + tokenName0, token0SwapAmount, tokenBal0)
@@ -115,7 +115,7 @@ async function main() {
             console.log('skip low amount 1', tokenName0, tokenName1, token1SwapAmount * price);
             continue;
           }
-          await refuel(signer, token1, calculator, tools.multiSwap, quickFactory);
+          await refuel(signer, token1, calculator, tools.multiSwap);
           tokenBal1 = +utils.formatUnits(await TokenUtils.balanceOf(token1, signer.address), tokenDec1);
           if (token1SwapAmount > tokenBal1) {
             console.log('TOO LOW AMOUNT ' + tokenName1, token1SwapAmount, tokenBal1)
@@ -177,7 +177,8 @@ function calculate(
   return result - (result * 0.0001);
 }
 
-async function refuel(signer: SignerWithAddress, token: string, calculator: PriceCalculator, multiswapAdr: string, quickFactory: IUniswapV2Factory) {
+async function refuel(signer: SignerWithAddress, token: string, calculator: PriceCalculator, multiswapAdr: string) {
+  const tokenName = await TokenUtils.tokenSymbol(token);
   const tokenDec = await TokenUtils.decimals(token);
   const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(token));
   const amountUSD = 500;
@@ -188,6 +189,7 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
   const toBuyUsd = toBuy * price;
 
   if (toBuyUsd < amountUSD / 2) {
+    console.log('REFUEL too low', tokenName, toBuyUsd, amountUSD, bal);
     return;
   }
 
@@ -198,8 +200,6 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
   const maxBal = data[1];
   const targetTokenDec = await TokenUtils.decimals(targetToken as string);
   const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(targetToken as string));
-
-  const tokenName = await TokenUtils.tokenSymbol(token);
   const tokenNameTarget = await TokenUtils.tokenSymbol(targetToken as string);
 
   const toSell = amountUSD / targetTokenPrice;
