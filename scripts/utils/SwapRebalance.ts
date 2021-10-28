@@ -188,10 +188,10 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
   const toBuy = amount - bal;
   const toBuyUsd = toBuy * price;
 
-  if (toBuyUsd < amountUSD / 2) {
-    console.log('REFUEL too low', tokenName, toBuyUsd, amountUSD, bal);
-    return;
-  }
+  // if (toBuyUsd < amountUSD / 2) {
+  //   console.log('REFUEL too low', tokenName, toBuyUsd, amountUSD, bal);
+  //   return;
+  // }
 
   const multiswap = await DeployerUtils.connectInterface(signer, 'MultiSwap', multiswapAdr) as MultiSwap;
 
