@@ -26,6 +26,8 @@ import "../../interface/IAveFoldStrategy.sol";
 import "../../../third_party/aave/ILendingPool.sol";
 
 import "hardhat/console.sol";
+import "../../../third_party/aave/IAaveIncentivesController.sol";
+import "../../../third_party/aave/IProtocolDataProvider.sol";
 
 
 /// @title Abstract contract for Aave lending strategy implementation with folding functionality
@@ -54,7 +56,13 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
 
   address public constant LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
+  address public constant AAVE_CONTROLLER = 0x357D51124f59836DeD84c8a1730D72B749d8BC23;
+  address public constant AAVE_DATA_PROVIDER= 0x7551b5D2763519d4e37e8B81929D336De671d46d;
+
   ILendingPool lPool = ILendingPool(LENDING_POOL);
+  IAaveIncentivesController aaveController = IAaveIncentivesController(AAVE_CONTROLLER);
+  IProtocolDataProvider dataProvider = IProtocolDataProvider(AAVE_DATA_PROVIDER);
+
 
   /// @notice aToken address
   address public override aToken;
@@ -91,6 +99,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     //https://docs.aave.com/developers/the-core-protocol/lendingpool#getuseraccountdata
 //    suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
 //    borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
+      (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
   }
 
   /// @notice Contract constructor using on strategy implementation
@@ -204,7 +213,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 //    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows / 2;
 //
 //    return rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken;
-    return 0;
+    return 2;
   }
 
   /// @dev Return a normalized to 18 decimal cost of folding
@@ -220,7 +229,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 //
 //    // let's calculate profit for 1 token
 //    return foldRateCost * _rTokenPrice / 1e18;
-    return 42;
+    return 1;
   }
 
   /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
@@ -263,14 +272,16 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   function rebalance() public restricted updateSupplyInTheEnd {
 //    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
 //    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
-//    uint256 balance = supplied.sub(borrowed);
-//    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
-//    if (borrowed > borrowTarget) {
-//      _redeemPartialWithLoan(0);
-//    } else if (borrowed < borrowTarget) {
-//      depositToPool(0);
-//    }
-//    emit Rebalanced(supplied, borrowed, borrowTarget);
+    console.log(">> rebalance");
+    (uint256 supplied, uint256 borrowed,,,,) = lPool.getUserAccountData(address(this));
+    uint256 balance = supplied.sub(borrowed);
+    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    if (borrowed > borrowTarget) {
+      _redeemPartialWithLoan(0);
+    } else if (borrowed < borrowTarget) {
+      depositToPool(0);
+    }
+    emit Rebalanced(supplied, borrowed, borrowTarget);
   }
 
   /// @dev Set use folding
@@ -323,10 +334,9 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     if (!fold || !isFoldingProfitable()) {
       return;
     }
-    (uint256 supplied, uint256 borrowed,,,,) = lPool.getUserAccountData(address(this));
+    (uint256 supplied,uint256 borrowed) = _getInvestmentData();
     console.log(">> depositToPool: supplied %s", supplied);
     console.log(">> depositToPool: borrowed %s", borrowed);
-
 
     uint256 balance = supplied.sub(borrowed);
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
@@ -343,7 +353,9 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
         _supply(underlyingBalance);
       }
       //update parameters
-      (supplied, borrowed,,,,) = lPool.getUserAccountData(address(this));
+      (supplied, borrowed) = _getInvestmentData();
+      console.log(">> depositToPool: supplied %s", supplied);
+      console.log(">> depositToPool: borrowed %s", borrowed);
       i++;
       if (i == MAX_DEPTH) {
         emit MaxDepthReached();
@@ -381,42 +393,45 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Claim distribution rewards
   function claimReward() internal {
-    address[] memory markets = new address[](1);
-    markets[0] = aToken;
-//    IronControllerInterface(ironController).claimReward(address(this), markets);
+    address[] memory assets = new address[](1);
+    assets[0] = aToken;
+    uint256 claimed = aaveController.claimRewards(assets, type(uint256).max, address(this));
+    console.log("Claimed: %s", claimed);
   }
 
   function compound() internal {
+    (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
 //    suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
 //    borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
-//    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
-//    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
-//
-//    // in case of negative ppfs compound all profit to underlying
-//    if (ppfs < ppfsPeg) {
-//      for (uint256 i = 0; i < _rewardTokens.length; i++) {
-//        uint256 amount = rewardBalance(i);
-//        address rt = _rewardTokens[i];
-//        // it will sell reward token to Target Token and send back
-//        if (amount != 0) {
-//          address forwarder = IController(controller()).feeRewardForwarder();
-//          // keep a bit for for distributing for catch all necessary events
-//          amount = amount * 90 / 100;
-//          IERC20(rt).safeApprove(forwarder, 0);
-//          IERC20(rt).safeApprove(forwarder, amount);
-//          uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
-//          // supply profit for correct ppfs calculation
-//          if (underlyingProfit != 0) {
-//            _supply(underlyingProfit);
-//          }
-//        }
-//      }
-//      // safe way to keep ppfs peg is sell excess after reward liquidation
-//      // it should not decrease old ppfs
-//      liquidateExcessUnderlying();
-//      // in case of ppfs decreasing we will get revert in vault anyway
-//      require(ppfs <= ISmartVault(_smartVault).getPricePerFullShare(), "AFS: Ppfs decreased after compound");
-//    }
+    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
+    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
+
+    // in case of negative ppfs compound all profit to underlying
+    if (ppfs < ppfsPeg) {
+      for (uint256 i = 0; i < _rewardTokens.length; i++) {
+        uint256 amount = rewardBalance(i);
+        console.log(">>compound: rewardBalance: %s", amount);
+        address rt = _rewardTokens[i];
+        // it will sell reward token to Target Token and send back
+        if (amount != 0) {
+          address forwarder = IController(controller()).feeRewardForwarder();
+          // keep a bit for for distributing for catch all necessary events
+          amount = amount * 90 / 100;
+          IERC20(rt).safeApprove(forwarder, 0);
+          IERC20(rt).safeApprove(forwarder, amount);
+          uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
+          // supply profit for correct ppfs calculation
+          if (underlyingProfit != 0) {
+            _supply(underlyingProfit);
+          }
+        }
+      }
+      // safe way to keep ppfs peg is sell excess after reward liquidation
+      // it should not decrease old ppfs
+      liquidateExcessUnderlying();
+      // in case of ppfs decreasing we will get revert in vault anyway
+      require(ppfs <= ISmartVault(_smartVault).getPricePerFullShare(), "AFS: Ppfs decreased after compound");
+    }
   }
 
   /// @dev We should keep PPFS ~1
@@ -471,7 +486,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Supplies to Aave
   function _supply(uint256 amount) internal updateSupplyInTheEnd returns (uint256) {
     uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
-    console.log(">> balance %s", balance);
+    console.log(">> supply: balance %s", balance);
 
     if (amount < balance) {
       balance = amount;
@@ -553,6 +568,13 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 //      _redeemRToken(rTokenBalance);
 //    }
   }
+
+  /// @dev Helper function to get suppliedUnderlying and borrowedUnderlying
+  function _getInvestmentData() internal view returns (uint256, uint256){
+    (uint256 suppliedUnderlying,,uint256 borrowedUnderlying,,,,,,) = dataProvider.getUserReserveData(_underlyingToken, address(this));
+    return (suppliedUnderlying, borrowedUnderlying);
+  }
+
 
   /// @dev Redeems a set amount of underlying tokens while keeping the borrow ratio healthy.
   ///      This function must nor revert transaction

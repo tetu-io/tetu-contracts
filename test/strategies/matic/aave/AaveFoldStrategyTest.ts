@@ -101,6 +101,7 @@ async function startAaveFoldStrategyTest(
 
       await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
           underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
+
       console.log('############## Preparations completed ##################');
     });
 
@@ -118,10 +119,7 @@ async function startAaveFoldStrategyTest(
 
 
     it("do hard work with liq path", async () => {
-      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          null
-      );
+      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,"10000000", null);
     });
     // it("emergency exit", async () => {
     //   const info = strategyInfo;
