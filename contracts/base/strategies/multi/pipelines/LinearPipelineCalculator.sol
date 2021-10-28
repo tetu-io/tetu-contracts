@@ -7,7 +7,7 @@ import "../pipes/PipeDelegateCall.sol";
 import "./LinearPipeline.sol";
 
 
-/// @title Pipe Base Contract
+/// @title Linear Pipeline Calculator
 /// @author bogdoslav
 contract LinearPipelineCalculator {
     using SafeMath for uint256;

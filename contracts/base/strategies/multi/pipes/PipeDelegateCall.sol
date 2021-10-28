@@ -12,7 +12,7 @@ struct PipeSegment {
 /// @author bogdoslav
 library PipeDelegateCall {
 
-    string private constant _DELEGATECALL_ERROR = "PL: delegatecall error";
+    string private constant _DELEGATECALL_ERROR = "PDC: delegatecall error";
 
     /// @dev calls Pipe.put()
     function put(PipeSegment memory segment, uint256 amount)
