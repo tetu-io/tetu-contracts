@@ -40,9 +40,10 @@ async function main() {
   const lpCount = (await factory.allPairsLength()).toNumber();
 
   while (true) {
-    try {
 
-      for (let i = 0; i < lpCount; i++) {
+
+    for (let i = 0; i < lpCount; i++) {
+      try {
         console.log('-----------------------------');
         const quickFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', MaticAddresses.QUICK_FACTORY) as IUniswapV2Factory;
 
@@ -153,9 +154,9 @@ async function main() {
 
 
         console.log('-----------------------------');
+      } catch (e) {
+        console.log('Loop Error', e);
       }
-    } catch (e) {
-      console.log('Loop Error', e);
     }
   }
 }
@@ -195,7 +196,7 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
 
   const multiswap = await DeployerUtils.connectInterface(signer, 'MultiSwap', multiswapAdr) as MultiSwap;
 
-  const data = await findMaxBalance(signer, calculator);
+  const data = await findMaxBalance(signer, calculator, token);
   const targetToken = data[0];
   const maxBal = data[1];
   const targetTokenDec = await TokenUtils.decimals(targetToken as string);
@@ -240,10 +241,13 @@ async function refuel(signer: SignerWithAddress, token: string, calculator: Pric
 
 }
 
-async function findMaxBalance(signer: SignerWithAddress, calculator: PriceCalculator): Promise<[string, number]> {
+async function findMaxBalance(signer: SignerWithAddress, calculator: PriceCalculator, exclude: string): Promise<[string, number]> {
   let maxBal = 0;
   let maxToken = MaticAddresses.ZERO_ADDRESS;
   for (const token of TOKENS) {
+    if (exclude.toLowerCase() === token.toLowerCase()) {
+      continue;
+    }
     const tokenDec = await TokenUtils.decimals(token);
     const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(token));
     const bal = +utils.formatUnits(await TokenUtils.balanceOf(token, signer.address), tokenDec);
