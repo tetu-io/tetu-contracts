@@ -43,6 +43,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
 
+    uint256 private _totalAmount = 0;
+
     /// @notice Contract constructor
     constructor(
         address _controller,
@@ -94,6 +96,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         //emergencyWithdrawFromPool();
         liquidateReward();
         rebalanceAllPipes();
+        _totalAmount = calculator.getTotalAmountOut(0);
     }
 
     function _balance(address token) internal view returns (uint256) {
@@ -103,11 +106,13 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @dev Stub function for Strategy Base implementation
     function depositToPool(uint256 underlyingAmount) internal override {
         pumpIn(underlyingAmount, 0);
+        _totalAmount = calculator.getTotalAmountOut(0);
     }
 
     /// @dev Stub function for Strategy Base implementation
     function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
         pumpOutSource(underlyingAmount, 0);
+        _totalAmount = calculator.getTotalAmountOut(0);
     }
 
     /// @dev Stub function for Strategy Base implementation
@@ -128,8 +133,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     }
 
     /// @dev Stub function for Strategy Base implementation
-    function poolTotalAmount() external override returns (uint256) {
-        return calculator.getTotalAmountOut(0);
+    function poolTotalAmount() external view override returns (uint256) {
+        return _totalAmount;
     }
 
     function assets() external view override returns (address[] memory) {
