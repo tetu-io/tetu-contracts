@@ -21,9 +21,11 @@ import {
   RewardCalculator,
   RewardToken,
   SmartVault,
+  TetuPawnShop,
   TetuProxyControlled,
   TetuProxyGov,
   TetuSwapFactory,
+  TetuSwapRouter,
   VaultController,
   ZapContract,
 } from "../../typechain";
@@ -427,7 +429,7 @@ export class DeployerUtils {
       announcerData[0],
       announcerData[2].address,
       vaultControllerData[0],
-      vaultControllerData[2].address
+      vaultControllerData[2].address,
     );
   }
 

@@ -81,6 +81,7 @@ export class MaticAddresses {
   public static QUICK_QI_miMATIC = "0x7AfcF11F3e2f01e71B7Cc6b8B5e707E42e6Ea397".toLowerCase();
   public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
   public static QUICK_TETU_USDC = "0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B".toLowerCase();
+  public static QUICK_USDC_WETH = "0x853ee4b2a13f8a742d64c8f088be7ba2131f670d".toLowerCase();
 
   // sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();

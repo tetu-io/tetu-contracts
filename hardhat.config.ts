@@ -34,7 +34,7 @@ const argv = require('yargs/yargs')()
   },
   forkBlock: {
     type: "number",
-    default: 20677494
+    default: 20740290
   },
 }).argv;
 
@@ -62,7 +62,7 @@ export default {
       timeout: 99999,
       chainId: 137,
       gas: 19_000_000,
-      gasPrice: 50_000_000_000,
+      gasPrice: 100_000_000_000,
       // gasMultiplier: 2,
       accounts: [argv.privateKey],
     },

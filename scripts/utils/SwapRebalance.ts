@@ -94,7 +94,7 @@ async function main() {
             console.log('skip low amount 0', tokenName0, tokenName1, token0SwapAmount * price);
             continue;
           }
-          await refuel(signer, token0, calculator, tools.multiSwap);
+          await buyToken(signer, token0, calculator, tools.multiSwap, token0SwapAmount * price);
           tokenBal0 = +utils.formatUnits(await TokenUtils.balanceOf(token0, signer.address), tokenDec0);
           if (token0SwapAmount > tokenBal0) {
             console.log('TOO LOW AMOUNT ' + tokenName0, token0SwapAmount, tokenBal0)
@@ -116,7 +116,7 @@ async function main() {
             console.log('skip low amount 1', tokenName0, tokenName1, token1SwapAmount * price);
             continue;
           }
-          await refuel(signer, token1, calculator, tools.multiSwap);
+          await buyToken(signer, token1, calculator, tools.multiSwap, token1SwapAmount * price);
           tokenBal1 = +utils.formatUnits(await TokenUtils.balanceOf(token1, signer.address), tokenDec1);
           if (token1SwapAmount > tokenBal1) {
             console.log('TOO LOW AMOUNT ' + tokenName1, token1SwapAmount, tokenBal1)
@@ -178,64 +178,62 @@ function calculate(
   return result - (result * 0.0001);
 }
 
-async function refuel(signer: SignerWithAddress, token: string, calculator: PriceCalculator, multiswapAdr: string) {
-  const tokenName = await TokenUtils.tokenSymbol(token);
-  const tokenDec = await TokenUtils.decimals(token);
-  const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(token));
-  const amountUSD = 500;
-  const amount = amountUSD / price;
+async function buyToken(signer: SignerWithAddress, tokenToBuy: string, calculator: PriceCalculator, multiswapAdr: string, toBuyAmountUSD: number) {
+  const tokenToBuyName = await TokenUtils.tokenSymbol(tokenToBuy);
+  const tokenToBuyDec = await TokenUtils.decimals(tokenToBuy);
+  const tokenToBuyPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenToBuy));
 
-  const bal = +utils.formatUnits(await TokenUtils.balanceOf(token, signer.address), tokenDec);
-  const toBuy = amount - bal;
-  const toBuyUsd = toBuy * price;
-
-  // if (toBuyUsd < amountUSD / 2) {
-  //   console.log('REFUEL too low', tokenName, toBuyUsd, amountUSD, bal);
-  //   return;
-  // }
+  const tokenToBuyBalance = +utils.formatUnits(await TokenUtils.balanceOf(tokenToBuy, signer.address), tokenToBuyDec);
 
   const multiswap = await DeployerUtils.connectInterface(signer, 'MultiSwap', multiswapAdr) as MultiSwap;
 
-  const data = await findMaxBalance(signer, calculator, token);
-  const targetToken = data[0];
+  const data = await findMaxBalance(signer, calculator, tokenToBuy);
+  const tokenToSell = data[0];
   const maxBal = data[1];
-  const targetTokenDec = await TokenUtils.decimals(targetToken as string);
-  const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(targetToken as string));
-  const tokenNameTarget = await TokenUtils.tokenSymbol(targetToken as string);
+  const tokenToSellDec = await TokenUtils.decimals(tokenToSell as string);
+  const tokenToSellPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenToSell as string));
+  const tokenToSellName = await TokenUtils.tokenSymbol(tokenToSell as string);
 
-  const toSell = amountUSD / targetTokenPrice;
-  console.log('refuel token', tokenName, toBuy);
-  console.log('target token', tokenNameTarget, toSell);
+  const toSell = (toBuyAmountUSD * 1.1) / tokenToSellPrice;
+  console.log('-----------------------------');
+  console.log('TO BUY', tokenToBuyName);
+  console.log('toBuyAmountUSD', toBuyAmountUSD);
+  console.log('tokenToBuyBalance', tokenToBuyBalance);
+  console.log('to buy token balance usd', tokenToBuyBalance * tokenToBuyPrice);
+  console.log('TO SELL', tokenToSellName);
+  console.log('to sell amount', toSell);
+  console.log('-----------------------------');
 
-  if (amountUSD > maxBal) {
-    console.log('NOT ENOUGH BALANCE FOR REFUEL', tokenName, tokenNameTarget, toSell, maxBal);
+  if (toBuyAmountUSD > maxBal) {
+    console.log('NOT ENOUGH BALANCE FOR REFUEL', tokenToBuyName, tokenToSellName, toSell, maxBal);
     return;
   }
 
   let lps: string[];
   // const lps: string[] = [await quickFactory.getPair(targetToken, token)];
-  if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
-    || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
+  if ((MaticAddresses.TETU_TOKEN === tokenToSell.toLowerCase() && MaticAddresses.USDC_TOKEN === tokenToBuy.toLowerCase())
+    || (MaticAddresses.USDC_TOKEN === tokenToSell.toLowerCase() && MaticAddresses.TETU_TOKEN === tokenToBuy.toLowerCase())) {
     lps = [MaticAddresses.QUICK_TETU_USDC];
-  } else if ((MaticAddresses.TETU_TOKEN === targetToken.toLowerCase() && MaticAddresses.USDC_TOKEN === token.toLowerCase())
-    || (MaticAddresses.USDC_TOKEN === targetToken.toLowerCase() && MaticAddresses.TETU_TOKEN === token.toLowerCase())) {
-    lps = [MaticAddresses.QUICK_TETU_USDC];
+  } else if ((MaticAddresses.TETU_TOKEN === tokenToSell.toLowerCase() && MaticAddresses.WMATIC_TOKEN === tokenToBuy.toLowerCase())) {
+    lps = [MaticAddresses.QUICK_TETU_USDC, MaticAddresses.QUICK_WMATIC_USDC];
+  } else if ((MaticAddresses.TETU_TOKEN === tokenToSell.toLowerCase() && MaticAddresses.WETH_TOKEN === tokenToBuy.toLowerCase())) {
+    lps = [MaticAddresses.QUICK_TETU_USDC, MaticAddresses.QUICK_USDC_WETH];
   } else {
-    lps = await multiswap.findLpsForSwaps(targetToken as string, token);
+    lps = await multiswap.findLpsForSwaps(tokenToSell as string, tokenToBuy);
   }
+  console.log('lps for refuel', lps);
 
-
-  const allowance = +utils.formatUnits(await TokenUtils.allowance(targetToken as string, signer, multiswapAdr), targetTokenDec);
+  const allowance = +utils.formatUnits(await TokenUtils.allowance(tokenToSell as string, signer, multiswapAdr), tokenToSellDec);
   if (allowance < toSell) {
     console.log('approve');
-    await TokenUtils.approve(targetToken as string, signer, multiswapAdr, utils.parseUnits('10000000000', targetTokenDec).toString());
+    await TokenUtils.approve(tokenToSell as string, signer, multiswapAdr, utils.parseUnits('10000000000', tokenToSellDec).toString());
   }
 
   await RunHelper.runAndWait(() => multiswap.multiSwap(
     lps,
-    targetToken as string,
-    token,
-    utils.parseUnits(toSell.toFixed(targetTokenDec), targetTokenDec),
+    tokenToSell,
+    tokenToBuy,
+    utils.parseUnits(toSell.toFixed(tokenToSellDec), tokenToSellDec),
     5
   ));
 

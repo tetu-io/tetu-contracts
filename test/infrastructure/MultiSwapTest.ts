@@ -66,6 +66,10 @@ describe("Multi swap tests", function () {
     await tryToSwap(signer, multiSwap, MaticAddresses.USDC_TOKEN, MaticAddresses.WETH_TOKEN);
   });
 
+  it("should swap tokens with route wmatic to tetu", async () => {
+    await tryToSwap(signer, multiSwap, MaticAddresses.WMATIC_TOKEN, MaticAddresses.TETU_TOKEN);
+  });
+
   it.skip("should be able to buy all assets", async () => {
 
     const contractReader = await DeployerUtils.connectInterface(

@@ -27,8 +27,8 @@ describe("Reward calculator tests", function () {
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
-    core = await DeployerUtils.deployAllCoreContracts(signer);
+    signer = await DeployerUtils.impersonate();
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
     priceCalculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
     rewardCalculator = (await DeployerUtils.deployRewardCalculator(signer, core.controller.address, priceCalculator.address))[0] as RewardCalculator;
@@ -86,6 +86,13 @@ describe("Reward calculator tests", function () {
     const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
     console.log('rewardUsd', rewardUsd)
     expect(rewardUsd).is.approximately(15000, 5000);
+  });
+
+  it("USDC vault kpi", async () => {
+    const strategy = '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7';
+    const kpi = +utils.formatUnits(await rewardCalculator.kpi(strategy));
+    console.log('kpi', kpi)
+    expect(kpi).is.approximately(1, 0.5);
   });
 
   it.skip("strategy reward usd for all", async () => {

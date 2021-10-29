@@ -26,7 +26,7 @@ interface IRewardCalculator {
 
   function kpi(address _vault) external view returns (uint256);
 
-  function vaultLastReward(address _vault) external view returns (uint256);
+  function vaultLastTetuReward(address _vault) external view returns (uint256);
 
   function strategyEarnedSinceLastDistribution(address strategy)
   external view returns (uint256 earned, uint256 lastEarnedTs);

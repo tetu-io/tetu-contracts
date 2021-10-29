@@ -44,7 +44,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
@@ -203,27 +203,25 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       return 0;
     }
 
-    uint256 lastRewards = vaultLastReward(_vault);
+    uint256 lastRewards = vaultLastTetuReward(_vault);
     if (lastRewards == 0) {
       return 0;
     }
 
-    (uint256 earned, uint256 lastEarnedTs) = strategyEarnedSinceLastDistribution(vault.strategy());
+    (uint256 earned,) = strategyEarnedSinceLastDistribution(vault.strategy());
 
-    // lastEarnedTs can not be higher than current block
-    uint256 timeSinceDistribution = block.timestamp - lastEarnedTs;
-
-    uint256 reward = Math.min(lastRewards * timeSinceDistribution / vault.duration(), lastRewards);
-
-    return PRECISION * earned / reward;
+    return PRECISION * earned / lastRewards;
   }
 
-  function vaultLastReward(address _vault) public view override returns (uint256) {
+  function vaultLastTetuReward(address _vault) public view override returns (uint256) {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
-    address rt = IController(controller()).rewardToken();
-    uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, rt);
+    ISmartVault ps = ISmartVault(IController(controller()).psVault());
+    uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, address(ps));
     if (rewardsSize > 0) {
-      return bookkeeper.vaultRewards(_vault, rt, rewardsSize - 1);
+      uint amount = bookkeeper.vaultRewards(_vault, address(ps), rewardsSize - 1);
+      // we distributed xTETU, need to calculate approx TETU amount
+      // assume that xTETU ppfs didn't change dramatically
+      return amount * ps.getPricePerFullShare() / ps.underlyingUnit();
     }
     return 0;
   }
