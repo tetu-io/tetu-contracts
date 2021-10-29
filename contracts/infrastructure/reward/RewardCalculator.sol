@@ -142,6 +142,9 @@ contract RewardCalculator is Controllable, IRewardCalculator {
 
     if (_kpi != 0) {
       rewardsPerSecond = rewardsPerSecond * _kpi / PRECISION;
+    } else {
+      // no rewards for strategies without profit
+      return 0;
     }
 
     if (multiplier != 0) {
