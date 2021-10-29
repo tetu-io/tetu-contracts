@@ -44,7 +44,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
@@ -234,6 +234,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
     uint256 lastEarned = 0;
     lastEarnedTs = 0;
+    earned = 0;
 
     uint256 earnedSize = bookkeeper.strategyEarnedSnapshotsLength(strategy);
     if (earnedSize > 0) {
@@ -242,8 +243,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
 
     uint256 currentEarned = bookkeeper.targetTokenEarned(strategy);
-    earned = currentEarned;
-    if (currentEarned > lastEarned) {
+    if (currentEarned >= lastEarned) {
       earned = currentEarned - lastEarned;
     }
   }

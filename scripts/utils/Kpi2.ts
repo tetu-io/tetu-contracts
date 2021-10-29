@@ -51,7 +51,7 @@ async function main() {
     rewards.set(vault, new Map<string, number>());
   }
 
-  let data = 'Vault, Name, Reward, EarnedTotal, Earned, KPI, KPI2\n';
+  let data = 'Vault, Name, Duration, Reward, EarnedTotal, Earned, KPI, KPI2\n';
   for (const vault of vaults) {
     try {
       const currentTs = Math.floor(Date.now() / 1000);
@@ -85,7 +85,7 @@ async function main() {
       const kpi = (earned / lastRewards) * 100;
       console.log('kpi', kpi);
 
-      const kpiFromCalc = await rewardCalculator.kpi(vault);
+      const kpiFromCalc = utils.formatUnits(await rewardCalculator.kpi(vault));
 
       const info =
         vault + ',' +

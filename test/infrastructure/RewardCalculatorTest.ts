@@ -50,7 +50,7 @@ describe("Reward calculator tests", function () {
     const strategy = '0x3bDbd2Ed1A214Ca4ba4421ddD7236ccA3EF088b6';
     const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
     console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.approximately(200000, 100000);
+    expect(rewardUsd).is.approximately(50000, 10000);
   });
 
   // it("strategy reward usd QUICK_WMATIC_WETH", async () => {
@@ -78,7 +78,7 @@ describe("Reward calculator tests", function () {
     const strategy = '0x5af6a06Ce1444eF7A42B23FCEACdb783CCb265f4';
     const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
     console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.approximately(100000, 50000);
+    expect(rewardUsd).is.approximately(20000, 5000);
   });
 
   it("strategy reward iron lend usdc", async () => {
@@ -88,11 +88,25 @@ describe("Reward calculator tests", function () {
     expect(rewardUsd).is.approximately(15000, 5000);
   });
 
+  it("strategy reward TETU_SUSHI_LINK_WETH", async () => {
+    const strategy = '0xcfA38e6c2fbD8607509CDC02fC0050e11DDafD60';
+    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
+    console.log('rewardUsd', rewardUsd)
+    expect(rewardUsd).is.approximately(0, 0); // todo change on another block
+  });
+
+  it("strategy KPI TETU_SUSHI_LINK_WETH", async () => {
+    const vault = '0xd98320bb02f29d4f714c5f1741a42680dd19461d';
+    const rewardUsd = +utils.formatUnits(await rewardCalculator.kpi(vault));
+    console.log('rewardUsd', rewardUsd)
+    expect(rewardUsd).is.approximately(0, 0); // todo change on another block
+  });
+
   it("USDC vault kpi", async () => {
-    const strategy = '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7';
-    const kpi = +utils.formatUnits(await rewardCalculator.kpi(strategy));
+    const vault = '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7';
+    const kpi = +utils.formatUnits(await rewardCalculator.kpi(vault));
     console.log('kpi', kpi)
-    expect(kpi).is.approximately(1, 0.5);
+    expect(kpi).is.approximately(2, 0.5);
   });
 
   it.skip("strategy reward usd for all", async () => {

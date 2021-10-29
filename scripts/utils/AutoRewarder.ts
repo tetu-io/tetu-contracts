@@ -1,6 +1,13 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {AutoRewarder, Bookkeeper, ContractReader, Controller, SmartVault} from "../../typechain";
+import {
+  AutoRewarder,
+  Bookkeeper,
+  ContractReader,
+  Controller,
+  RewardCalculator,
+  SmartVault
+} from "../../typechain";
 import {UniswapUtils} from "../../test/UniswapUtils";
 import {MaticAddresses} from "../../test/MaticAddresses";
 import {BigNumber, utils} from "ethers";
@@ -18,6 +25,8 @@ const EXCLUDED_PLATFORM = new Set<string>([
 ]);
 
 const START_FROM_BATCH = 0;
+const START_FROM_BATCH_INFO = 0;
+const BATCH_INFO = 1;
 const BATCH = 1;
 const FORK = false;
 
@@ -38,6 +47,7 @@ async function main() {
   const reader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
   const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
   const rewarder = await DeployerUtils.connectInterface(signer, 'AutoRewarder', core.autoRewarder) as AutoRewarder;
+  const rewardCalculator = await DeployerUtils.connectInterface(signer, 'RewardCalculator', core.rewardCalculator) as RewardCalculator;
 
   const allVaults = await bookkeeper.vaults();
   // const vaultsLength = (await bookkeeper.vaultsLength()).toNumber();
@@ -49,29 +59,34 @@ async function main() {
   // for (let i = 0; i < vaultsLength; i++) {
   //   const vault = await bookkeeper._vaults(i);
   for (const vault of allVaults) {
-    const vName = await reader.vaultName(vault)
-    vaultNames.set(vault.toLowerCase(), vName);
-    // console.log('vault', i, vault);
     const isActive = await reader.vaultActive(vault);
     if (!isActive) {
-      // console.log('not active', vName);
       continue;
     }
     const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
     const platform = (await reader.strategyPlatform(await vCtr.strategy())).toString();
     if (EXCLUDED_PLATFORM.has(platform)) {
-      // console.log('platform excluded', vName, platform);
       continue;
     }
+    const vName = await reader.vaultName(vault)
+    vaultNames.set(vault.toLowerCase(), vName);
     vaults.push(vault);
   }
 
   console.log('sorted vaults', vaults.length);
 
-  for (let i = 0; i < vaults.length / BATCH; i++) {
-    const tmp = vaults.slice((i * BATCH), (i * BATCH) + BATCH);
-    console.log('collect', i, tmp);
-    await RunHelper.runAndWait(() => rewarder.collectAndStoreInfo(tmp));
+  for (let i = START_FROM_BATCH_INFO; i < vaults.length / BATCH_INFO; i++) {
+    const vaultBatch = vaults.slice((i * BATCH_INFO), (i * BATCH_INFO) + BATCH_INFO);
+    console.log('collect', i, vaultBatch);
+    const rewardInfo: BigNumber[] = [];
+    for (const v of vaultBatch) {
+      const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', v) as SmartVault;
+      const info = await rewardCalculator.strategyRewardsUsd(await vCtr.strategy(), 60 * 60 * 24);
+      console.log('reward', vaultNames.get(v.toLowerCase()), utils.formatUnits(info));
+      rewardInfo.push(info);
+    }
+    await RunHelper.runAndWait(() => rewarder.storeInfo(vaultBatch, rewardInfo));
+    // await RunHelper.runAndWait(() => rewarder.collectAndStoreInfo(tmp, {gasPrice: 40_000_000_000}));
   }
 
   if (FORK) {

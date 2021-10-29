@@ -28,7 +28,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   uint256 public constant PERIOD = 1 days;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
@@ -52,7 +52,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
     AutoRewarderStorage.initializeAutoRewarderStorage(
       _rewardCalculator,
       _networkRatio,
-        _rewardPerDay
+      _rewardPerDay
     );
   }
 
@@ -133,6 +133,23 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
 
       uint256 rewards = rc.strategyRewardsUsd(ISmartVault(_vaults[i]).strategy(), PERIOD);
 
+      // new vault
+      if (info.vault == address(0)) {
+        vaults.push(_vaults[i]);
+      } else {
+        _setTotalStrategyRewards(totalStrategyRewards() - info.strategyRewardsUsd);
+      }
+      _setTotalStrategyRewards(totalStrategyRewards() + rewards);
+      lastInfo[_vaults[i]] = RewardInfo(_vaults[i], block.timestamp, rewards);
+    }
+  }
+
+  /// @dev Store rewards information without calling reward calculator
+  function storeInfo(address[] memory _vaults, uint[] memory _strategyRewards) external onlyRewardDistribution {
+    require(_vaults.length == _strategyRewards.length, "AR: Wrong arrays");
+    for (uint256 i = 0; i < _vaults.length; i++) {
+      RewardInfo memory info = lastInfo[_vaults[i]];
+      uint256 rewards = _strategyRewards[i];
       // new vault
       if (info.vault == address(0)) {
         vaults.push(_vaults[i]);
