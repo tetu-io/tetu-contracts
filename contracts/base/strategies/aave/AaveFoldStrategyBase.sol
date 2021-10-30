@@ -99,7 +99,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     //https://docs.aave.com/developers/the-core-protocol/lendingpool#getuseraccountdata
 //    suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
 //    borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
-      (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
+      (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
   }
 
   /// @notice Contract constructor using on strategy implementation
@@ -144,6 +144,13 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     require(_borrowTargetFactorNumerator < collateralFactorNumerator, "AFS: Target should be lower than collateral limit");
     borrowTargetFactorNumeratorStored = _borrowTargetFactorNumerator;
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
+
+    console.log(">>>>>>>>>>>>>>>>");
+    console.log(">> borrowTargetFactorNumerator: %s", borrowTargetFactorNumerator);
+    console.log(">> collateralFactorNumerator: %s", collateralFactorNumerator);
+    console.log(">> factorDenominator: %s", factorDenominator);
+    console.log(">>>>>>>>>>>>>>>>");
+
   }
 
   // ************* VIEWS *******************
@@ -256,16 +263,16 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
     claimReward();
-    compound();
+//    compound();
     liquidateReward();
-    investAllUnderlying();
-    if (!isFoldingProfitable() && fold) {
-      stopFolding();
-    } else if (isFoldingProfitable() && !fold) {
-      startFolding();
-    } else {
-      rebalance();
-    }
+//    investAllUnderlying();
+//    if (!isFoldingProfitable() && fold) {
+//      stopFolding();
+//    } else if (isFoldingProfitable() && !fold) {
+//      startFolding();
+//    } else {
+//      rebalance();
+//    }
   }
 
   /// @dev Rebalances the borrow ratio
@@ -273,12 +280,21 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 //    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
 //    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
     console.log(">> rebalance");
-    (uint256 supplied, uint256 borrowed,,,,) = lPool.getUserAccountData(address(this));
+    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
+    console.log(">> supplied: %s", supplied);
+    console.log(">> borrowed: %s", borrowed);
+
     uint256 balance = supplied.sub(borrowed);
+    console.log(">> balance: %s", balance);
+
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    console.log(">> borrowTarget: %s", borrowTarget);
     if (borrowed > borrowTarget) {
+      console.log(">> _redeemPartialWithLoan");
+
       _redeemPartialWithLoan(0);
     } else if (borrowed < borrowTarget) {
+      console.log(">> depositToPool");
       depositToPool(0);
     }
     emit Rebalanced(supplied, borrowed, borrowTarget);
@@ -342,7 +358,6 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
     uint256 i = 0;
     while (borrowed < borrowTarget) {
-      console.log(">> depositToPool: borrowed %s", borrowed);
       console.log(">> depositToPool: borrowTarget %s", borrowTarget);
 
       uint256 wantBorrow = borrowTarget.sub(borrowed);
@@ -396,13 +411,11 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     address[] memory assets = new address[](1);
     assets[0] = aToken;
     uint256 claimed = aaveController.claimRewards(assets, type(uint256).max, address(this));
-    console.log("Claimed: %s", claimed);
+    console.log("Claimed: %s of %s", claimed, _rewardTokens[0]);
   }
 
   function compound() internal {
-    (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
-//    suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
-//    borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
+    (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
 
@@ -438,7 +451,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   ///      This function must not ruin transaction
   function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
     // update balances for accurate ppfs calculation
-    (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
+    (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     address forwarder = IController(controller()).feeRewardForwarder();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
@@ -478,7 +491,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
         } catch {
           emit UnderlyingLiquidationFailed();
         }
-        (suppliedInUnderlying, borrowedInUnderlying,,,,) = lPool.getUserAccountData(address(this));
+        (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
       }
     }
   }
@@ -509,7 +522,10 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Redeem liquidity in underlying
   function _redeemUnderlying(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    (uint256 suppliedUnderlying,,,,,) = lPool.getUserAccountData(address(this));
+    console.log(">> _redeemUnderlying amountUnderlying %s:", amountUnderlying);
+
+    (uint256 suppliedUnderlying,) = _getInvestmentData();
+    console.log(">> _redeemUnderlying suppliedUnderlying %s:", suppliedUnderlying);
 
     amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
     if (amountUnderlying > 0) {
@@ -545,7 +561,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       console.log(">> repay amountUnderlying %s:", amountUnderlying);
       IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
       IERC20(_underlyingToken).safeApprove(LENDING_POOL, amountUnderlying);
-      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
+      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this)); //todo not works???
     }
   }
 
@@ -581,25 +597,33 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   function _redeemPartialWithLoan(uint256 amount) internal updateSupplyInTheEnd {
     // amount we supplied
     // amount we borrowed
-    (uint256 supplied, uint256 borrowed,,,,) = lPool.getUserAccountData(address(this));
+    console.log(">> _redeemPartialWithLoan amount: %s ", amount);
+
+    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
 
     uint256 oldBalance = supplied.sub(borrowed);
     uint256 newBalance = 0;
     if (amount < oldBalance) {
       newBalance = oldBalance.sub(amount);
     }
+    console.log(">> newBalance %s ", newBalance);
+
     uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
+    console.log(">> newBorrowTarget %s ", newBorrowTarget);
+
     uint256 underlyingBalance = 0;
     uint256 i = 0;
     while (borrowed > newBorrowTarget) {
       uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
       uint256 toRepay = borrowed.sub(newBorrowTarget);
+      console.log(">> toRepay %s ", toRepay);
       if (supplied < requiredCollateral) {
         break;
       }
       // redeem just as much as needed to repay the loan
       // supplied - requiredCollateral = max redeemable, amount + repay = needed
       uint256 toRedeem = Math.min(supplied.sub(requiredCollateral), amount.add(toRepay));
+      console.log(">> toRedeem %s ", toRedeem);
       _redeemUnderlying(toRedeem);
       // now we can repay our borrowed amount
       underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
@@ -610,7 +634,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       }
       _repay(toRepay);
       // update the parameters
-      (supplied, borrowed,,,,) = lPool.getUserAccountData(address(this));
+      (uint256 supplied, uint256 borrowed) = _getInvestmentData();
       i++;
       if (i == MAX_DEPTH) {
         emit MaxDepthReached();

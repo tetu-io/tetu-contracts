@@ -49,8 +49,8 @@ describe('Universal Aave Fold tests', async () => {
     // const collateralFactor = strat[5];
     // const borrowTarget = strat[6];
 
-    const collateralFactor = '6499'; //todo add real data
-    const borrowTarget = '5850';   //todo add real data
+    const collateralFactor = '6000'; //todo add real data
+    const borrowTarget = '5000';   //todo add real data
 
     // if (!idx || idx === 'idx' || collateralFactor === '0') {
     if (!idx || idx === 'idx') {
@@ -67,10 +67,10 @@ describe('Universal Aave Fold tests', async () => {
     /* tslint:disable:no-floating-promises */
     startAaveFoldStrategyTest(
         'StrategyAaveFold',
-        MaticAddresses.DFYN_FACTORY,
+        MaticAddresses.SUSHI_FACTORY,
         token.toLowerCase(),
         tokenName,
-        [MaticAddresses.ICE_TOKEN],
+        [MaticAddresses.WMATIC_TOKEN],
         aTokenAddress,
         borrowTarget,
         collateralFactor
