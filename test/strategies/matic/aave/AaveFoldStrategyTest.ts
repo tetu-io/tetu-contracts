@@ -117,9 +117,8 @@ async function startAaveFoldStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-
     it("do hard work with liq path", async () => {
-      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,"10000000", null);
+      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,"1000000000000000000000", null);
     });
     // it("emergency exit", async () => {
     //   const info = strategyInfo;

@@ -263,16 +263,16 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
     claimReward();
-//    compound();
+    compound();
     liquidateReward();
-//    investAllUnderlying();
-//    if (!isFoldingProfitable() && fold) {
-//      stopFolding();
-//    } else if (isFoldingProfitable() && !fold) {
-//      startFolding();
-//    } else {
-//      rebalance();
-//    }
+    investAllUnderlying();
+    if (!isFoldingProfitable() && fold) {
+      stopFolding();
+    } else if (isFoldingProfitable() && !fold) {
+      startFolding();
+    } else {
+      rebalance();
+    }
   }
 
   /// @dev Rebalances the borrow ratio
@@ -342,6 +342,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Deposit underlying to aToken contract
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
+    console.log(">> depositToPool: amount %s", amount);
     if (amount > 0) {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
       liquidateExcessUnderlying();
@@ -418,12 +419,14 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
-
+    console.log(">> compound begin<<");
+    console.log(">> ppfs %s", ppfs);
+    console.log(">> ppfsPeg %s", ppfsPeg);
     // in case of negative ppfs compound all profit to underlying
     if (ppfs < ppfsPeg) {
       for (uint256 i = 0; i < _rewardTokens.length; i++) {
         uint256 amount = rewardBalance(i);
-        console.log(">>compound: rewardBalance: %s", amount);
+        console.log(">>rewardBalance: %s", amount);
         address rt = _rewardTokens[i];
         // it will sell reward token to Target Token and send back
         if (amount != 0) {
@@ -435,6 +438,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
           uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
           // supply profit for correct ppfs calculation
           if (underlyingProfit != 0) {
+            console.log(">>underlyingProfit: %s", underlyingProfit);
             _supply(underlyingProfit);
           }
         }
@@ -444,6 +448,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       liquidateExcessUnderlying();
       // in case of ppfs decreasing we will get revert in vault anyway
       require(ppfs <= ISmartVault(_smartVault).getPricePerFullShare(), "AFS: Ppfs decreased after compound");
+      console.log(">> compound end<<");
+
     }
   }
 
@@ -460,6 +466,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     console.log(">> ppfsPeg %s", ppfsPeg);
 
     if (ppfs > ppfsPeg) {
+      console.log(">> liquidateExcessUnderlying begin");
+
       uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
       if (undBal == 0
       || ERC20(_smartVault).totalSupply() == 0
@@ -473,6 +481,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       // -1 for avoiding problem with rounding
       uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
       if (underlyingBalance() < toLiquidate) {
+        console.log(">> go to -> _redeemPartialWithLoan %s", toLiquidate - underlyingBalance());
+
         _redeemPartialWithLoan(toLiquidate - underlyingBalance());
       }
       toLiquidate = Math.min(underlyingBalance(), toLiquidate);
