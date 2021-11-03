@@ -44,12 +44,13 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.2.0";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
+  uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
@@ -135,6 +136,10 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       IMasterChefStrategyCafe mc = IMasterChefStrategyCafe(_strategy);
       rewardsPerSecond = cafe(address(mc.masterChefPool()), mc.poolID());
 
+    }
+
+    if (strategy.buyBackRatio() < _BUY_BACK_DENOMINATOR) {
+      rewardsPerSecond = rewardsPerSecond * strategy.buyBackRatio() / _BUY_BACK_DENOMINATOR;
     }
 
     uint256 _kpi = kpi(strategy.vault());

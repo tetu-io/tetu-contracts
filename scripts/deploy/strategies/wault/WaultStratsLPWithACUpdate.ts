@@ -48,7 +48,7 @@ async function main() {
     const alloc = strat[7];
 
     if (+alloc <= 0 || idx === 'idx' || !idx || !strat[5]) {
-      console.log('skip', idx);
+      console.log('skip', idx, lpName, token0Name, token1Name);
       continue;
     }
 
@@ -64,13 +64,6 @@ async function main() {
     if (!vAdr) {
       console.log('Vault not found!', vaultNameWithoutPrefix);
       return;
-    }
-
-    const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
-
-    if (!(await vCtr.active())) {
-      console.log('vault not active', vAdr)
-      continue;
     }
 
     console.log('strat', idx, lpName);
@@ -91,7 +84,7 @@ async function main() {
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
-      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/sushiswap/StrategyWaultLpWithAc.sol:StrategyWaultLpWithAc', [
+      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/wault/StrategyWaultLpWithAc.sol:StrategyWaultLpWithAc', [
         core.controller,
         vAdr,
         lpAddress,

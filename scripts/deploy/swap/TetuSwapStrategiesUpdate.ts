@@ -31,15 +31,14 @@ async function main() {
 
   const length = (await factory.allPairsLength()).toNumber();
 
-  const vaultNames = new Set<string>();
-
   const cReader = await DeployerUtils.connectContract(signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
 
+  const vaultsMap = new Map<string, string>();
   for (const vAdr of deployedVaultAddresses) {
-    vaultNames.add(await cReader.vaultName(vAdr));
+    vaultsMap.set(await cReader.vaultName(vAdr), vAdr);
   }
 
   for (let i = 0; i < length; i++) {
@@ -58,38 +57,21 @@ async function main() {
       continue;
     }
 
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
-    const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
+    const vAdr = vaultsMap.get(vaultNameWithoutPrefix);
 
-    const strategyArgs = [core.controller, vault.address, pair];
+    if (!vAdr) {
+      console.log('Vault not found!', vaultNameWithoutPrefix);
+      return;
+    }
+
+    const strategyArgs = [core.controller, vAdr, pair];
 
     const strategy = await DeployerUtils.deployContract(signer, STRATEGY_NAME, ...strategyArgs) as IStrategy;
 
-    const strategyUnderlying = await strategy.underlying();
-
-    if (vaultNames.has(vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
-      continue;
-    }
-
-    await RunHelper.runAndWait(() => vault.initializeSmartVault(
-      vaultNameWithoutPrefix,
-      "x" + vaultNameWithoutPrefix,
-      core.controller,
-      strategyUnderlying,
-      REWARDS_DURATION,
-      false,
-      core.psVault
-    ));
-
-    const txt = `${vaultNameWithoutPrefix} vault: ${vault.address} strategy: ${strategy.address} pair ${pair}\n`;
-    appendFileSync(`./tmp/deployed/TETU_SWAP_VAULTS.txt`, txt, 'utf8');
+    const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
+    appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
-    await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
-    await DeployerUtils.verifyProxy(vaultProxy.address);
     await DeployerUtils.verifyWithContractName(strategy.address, `contracts/strategies/matic/tetu/${STRATEGY_NAME}.sol:${STRATEGY_NAME}`, [
       ...strategyArgs
     ]);
