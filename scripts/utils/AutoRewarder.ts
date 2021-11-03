@@ -26,8 +26,8 @@ const EXCLUDED_PLATFORM = new Set<string>([
 
 const START_FROM_BATCH = 0;
 const START_FROM_BATCH_INFO = 0;
-const BATCH_INFO = 1;
-const BATCH = 1;
+const BATCH_INFO = 30;
+const BATCH = 30;
 const FORK = false;
 
 async function main() {

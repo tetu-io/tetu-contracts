@@ -51,7 +51,7 @@ async function main() {
     rewards.set(vault, new Map<string, number>());
   }
 
-  let data = 'Vault, Name, Duration, Reward, EarnedTotal, Earned, KPI, KPI2\n';
+  let data = 'Vault, Name, Duration, Reward, EarnedTotal, Earned, KPI, KPI on-chain, est rewards\n';
   for (const vault of vaults) {
     try {
       const currentTs = Math.floor(Date.now() / 1000);
@@ -85,7 +85,8 @@ async function main() {
       const kpi = (earned / lastRewards) * 100;
       console.log('kpi', kpi);
 
-      const kpiFromCalc = utils.formatUnits(await rewardCalculator.kpi(vault));
+      const kpiFromCalc = +utils.formatUnits(await rewardCalculator.kpi(vault)) * 100;
+      const estRewards = utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
 
       const info =
         vault + ',' +
@@ -95,7 +96,8 @@ async function main() {
         currentEarned + ',' +
         earned + ',' +
         kpi + ',' +
-        kpiFromCalc
+        kpiFromCalc + ',' +
+        estRewards
         + '\n';
       console.log(info);
       data += info;

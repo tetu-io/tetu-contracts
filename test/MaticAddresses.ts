@@ -170,6 +170,8 @@ export class MaticAddresses {
         return MaticAddresses.DFYN_ROUTER;
       case MaticAddresses.CAFE_FACTORY:
         return MaticAddresses.CAFE_ROUTER;
+      case MaticAddresses.TETU_SWAP_FACTORY:
+        return MaticAddresses.TETU_SWAP_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

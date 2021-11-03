@@ -1,4 +1,4 @@
-import {ContractReader, Controller, SmartVault} from "../typechain";
+import {ContractReader, Controller, IStrategy, SmartVault} from "../typechain";
 import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TokenUtils} from "./TokenUtils";
@@ -14,13 +14,13 @@ export class VaultUtils {
   }
 
   public async checkEmptyVault(
-      strategy: string,
-      unerlying: string,
-      vaultRewardToken0: string,
-      deployer: string,
-      toInvestNumerator: number,
-      toInvestDenominator: number,
-      duration: number
+    strategy: string,
+    unerlying: string,
+    vaultRewardToken0: string,
+    deployer: string,
+    toInvestNumerator: number,
+    toInvestDenominator: number,
+    duration: number
   ) {
     const vault = this.vault;
     // vault storage initial stats
@@ -49,17 +49,17 @@ export class VaultUtils {
 
   public static async profitSharingRatio(controller: Controller): Promise<number> {
     const ratio = (await controller.psNumerator()).toNumber()
-        / (await controller.psDenominator()).toNumber();
+      / (await controller.psDenominator()).toNumber();
     expect(ratio).is.not.lessThan(0);
     expect(ratio).is.not.greaterThan(100);
     return ratio;
   }
 
   public static async deposit(
-      user: SignerWithAddress,
-      vault: SmartVault,
-      amount: BigNumber,
-      invest = true
+    user: SignerWithAddress,
+    vault: SmartVault,
+    amount: BigNumber,
+    invest = true
   ): Promise<ContractTransaction> {
     const vaultForUser = vault.connect(user);
     const underlying = await vaultForUser.underlying();
@@ -67,7 +67,7 @@ export class VaultUtils {
     const bal = await TokenUtils.balanceOf(underlying, user.address);
     console.log('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec))
-    .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
+      .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
 
     await TokenUtils.approve(underlying, user, vault.address, amount.toString());
     console.log('deposit', BigNumber.from(amount).toString());
@@ -79,8 +79,8 @@ export class VaultUtils {
   }
 
   public static async exit(
-      user: SignerWithAddress,
-      vault: SmartVault
+    user: SignerWithAddress,
+    vault: SmartVault
   ): Promise<ContractTransaction> {
     const vaultForUser = vault.connect(user);
     return vaultForUser.exit();
@@ -143,11 +143,11 @@ export class VaultUtils {
   }
 
   public static async addRewardsXTetu(
-      signer: SignerWithAddress,
-      vault: SmartVault,
-      core: CoreContractsWrapper,
-      amount: number,
-      period = 60 * 60 * 24 * 7 + 1
+    signer: SignerWithAddress,
+    vault: SmartVault,
+    core: CoreContractsWrapper,
+    amount: number,
+    period = 60 * 60 * 24 * 7 + 1
   ) {
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
@@ -159,10 +159,10 @@ export class VaultUtils {
   }
 
   public static async addRewards(
-      signer: SignerWithAddress,
-      vault: SmartVault,
-      rtAdr: string,
-      amount: BigNumber
+    signer: SignerWithAddress,
+    vault: SmartVault,
+    rtAdr: string,
+    amount: BigNumber
   ) {
     console.log("Add rewards to vault: ", amount.toString())
     await TokenUtils.approve(rtAdr, signer, vault.address, amount.toString());
@@ -178,6 +178,8 @@ export class VaultUtils {
     const undDec = await TokenUtils.decimals(und);
     const rt = (await vault.rewardTokens())[0];
     const psRatio = (await controllerCtr.psNumerator()).toNumber() / (await controllerCtr.psDenominator()).toNumber()
+    const strategy = await vault.strategy();
+    const strategyCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'IStrategy', strategy) as IStrategy
 
     const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBal = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
@@ -190,6 +192,7 @@ export class VaultUtils {
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
     const psPpfsAfter = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
     const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
+    const bbRatio = +utils.formatUnits(await strategyCtr.buyBackRatio());
 
     console.log('-------- HARDWORK --------');
     console.log('- PPFS change:', ppfsAfter - ppfs);
@@ -199,11 +202,14 @@ export class VaultUtils {
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 
-    if (positive) {
+    if (positive && bbRatio > 1000) {
       expect(psPpfsAfter).is.greaterThan(psPpfs);
       if (psRatio !== 1) {
         expect(rtBalAfter).is.greaterThan(rtBal);
       }
+    }
+    if (bbRatio !== 10000) {
+      expect(ppfsAfter).is.greaterThan(ppfs);
     }
   }
 

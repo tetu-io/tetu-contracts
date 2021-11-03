@@ -18,12 +18,16 @@ import "../interface/IStrategy.sol";
 import "../governance/Controllable.sol";
 import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
+import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/uniswap/IUniswapV2Router02.sol";
 
 /// @title Abstract contract for base strategy functionality
 /// @author belbix
 abstract contract StrategyBase is IStrategy, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
+
+  uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
 
   //************************ VARIABLES **************************
   address internal _underlyingToken;
@@ -217,6 +221,14 @@ abstract contract StrategyBase is IStrategy, Controllable {
   /// @dev Default implementation of liquidation process
   ///      Send all profit to FeeRewardForwarder
   function liquidateRewardDefault() internal {
+    _liquidateReward(true);
+  }
+
+  function liquidateRewardSilently() internal {
+    _liquidateReward(false);
+  }
+
+  function _liquidateReward(bool revertOnErrors) internal {
     address forwarder = IController(controller()).feeRewardForwarder();
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
@@ -225,12 +237,73 @@ abstract contract StrategyBase is IStrategy, Controllable {
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, amount);
         // it will sell reward token to Target Token and distribute it to SmartVault and PS
-        uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault);
+        uint256 targetTokenEarned = 0;
+        if (revertOnErrors) {
+          targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault);
+        } else {
+          //slither-disable-next-line unused-return,variable-scope,uninitialized-local
+          try IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault) returns (uint r) {
+            targetTokenEarned = r;
+          } catch {}
+        }
         if (targetTokenEarned > 0) {
           IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
         }
       }
     }
+  }
+
+  /// @dev Default implementation of auto-compounding
+  ///      Liquidate rewards, buy assets and send back to vault
+  function autocompoundLP(address _router) internal {
+    address forwarder = IController(controller()).feeRewardForwarder();
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      if (amount != 0) {
+        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        address rt = _rewardTokens[i];
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, toCompound);
+
+        IUniswapV2Pair pair = IUniswapV2Pair(_underlyingToken);
+        if (rt != pair.token0()) {
+          uint256 token0Amount = IFeeRewardForwarder(forwarder).liquidate(rt, pair.token0(), toCompound / 2);
+          require(token0Amount != 0, "SB: Token0 zero amount");
+        }
+        if (rt != pair.token1()) {
+          uint256 token1Amount = IFeeRewardForwarder(forwarder).liquidate(rt, pair.token1(), toCompound / 2);
+          require(token1Amount != 0, "SB: Token1 zero amount");
+        }
+        addLiquidity(_underlyingToken, _router);
+      }
+    }
+  }
+
+  /// @dev Add all available tokens to given pair
+  function addLiquidity(address _pair, address _router) internal {
+    IUniswapV2Router02 router = IUniswapV2Router02(_router);
+    IUniswapV2Pair pair = IUniswapV2Pair(_pair);
+    address _token0 = pair.token0();
+    address _token1 = pair.token1();
+
+    uint256 amount0 = IERC20(_token0).balanceOf(address(this));
+    uint256 amount1 = IERC20(_token1).balanceOf(address(this));
+
+    IERC20(_token0).safeApprove(_router, 0);
+    IERC20(_token0).safeApprove(_router, amount0);
+    IERC20(_token1).safeApprove(_router, 0);
+    IERC20(_token1).safeApprove(_router, amount1);
+    //slither-disable-next-line unused-return
+    router.addLiquidity(
+      _token0,
+      _token1,
+      amount0,
+      amount1,
+      1,
+      1,
+      address(this),
+      block.timestamp
+    );
   }
 
   //******************** VIRTUAL *********************

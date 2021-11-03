@@ -1,7 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {ContractReader, IUniswapV2Pair, MultiSwap, PriceCalculator} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
@@ -27,15 +26,16 @@ describe("Multi swap tests", function () {
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
-    core = await DeployerUtils.deployAllCoreContracts(signer);
+    signer = await DeployerUtils.impersonate();
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
     multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
-    await UniswapUtils.buyAllBigTokens(signer);
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
   });
 
   after(async function () {
@@ -50,6 +50,11 @@ describe("Multi swap tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
+  it.skip("should swap tokens with route wex to matic", async () => {
+    await UniswapUtils.buyToken(signer, MaticAddresses.WAULT_ROUTER, MaticAddresses.WEXpoly_TOKEN, utils.parseUnits('1000', 6), MaticAddresses.USDC_TOKEN);
+    await tryToSwap(signer, multiSwap, MaticAddresses.WEXpoly_TOKEN, MaticAddresses.WMATIC_TOKEN, '0.1');
+  });
+
   it("should swap tokens with route usdc to QI", async () => {
     await tryToSwap(signer, multiSwap, MaticAddresses.USDC_TOKEN, MaticAddresses.QI_TOKEN);
   });
@@ -59,6 +64,7 @@ describe("Multi swap tests", function () {
   });
 
   it("should swap tokens with route btc to qi", async () => {
+    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('200'), MaticAddresses.WETH_TOKEN);
     await tryToSwap(signer, multiSwap, MaticAddresses.WBTC_TOKEN, MaticAddresses.QI_TOKEN, '0.1');
   });
 
@@ -73,8 +79,8 @@ describe("Multi swap tests", function () {
   it.skip("should be able to buy all assets", async () => {
 
     const contractReader = await DeployerUtils.connectInterface(
-        signer, 'ContractReader',
-        Addresses.TOOLS.get('matic')?.reader as string
+      signer, 'ContractReader',
+      Addresses.TOOLS.get('matic')?.reader as string
     ) as ContractReader;
 
     const strategies = await contractReader.strategies();
@@ -101,7 +107,7 @@ async function tryToSwap(signer: SignerWithAddress, multiSwap: MultiSwap, tokenI
   const amount = utils.parseUnits(amountRaw, tokenInDec);
 
   expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
-  .is.greaterThan(+utils.formatUnits(amount, tokenInDec));
+    .is.greaterThan(+utils.formatUnits(amount, tokenInDec));
 
   const lps = await multiSwap.findLpsForSwaps(tokenIn, tokenOut);
 
