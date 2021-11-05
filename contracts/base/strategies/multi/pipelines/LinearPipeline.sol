@@ -6,6 +6,8 @@ import "../pipes/Pipe.sol";
 import "../pipes/PipeDelegateCall.sol";
 import "./LinearPipelineCalculator.sol";
 
+import "hardhat/console.sol";
+
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
@@ -28,6 +30,7 @@ contract LinearPipeline {
         amountIn = sourceAmount;
         uint256 len = segments.length;
         for (uint256 i=fromPipeIndex; i<len; i++) {
+            console.log('put i, amountIn', i, amountIn);
             amountIn = segments[i].put(amountIn);
         }
     }
@@ -58,12 +61,12 @@ contract LinearPipeline {
     /// @dev re balance pipe segments
     function rebalancePipe(uint256 pipeIndex) internal {
         PipeSegment storage segment = segments[pipeIndex];
-        (uint256 imbalance, bool deficit) = segment.rebalance(); //TODO add try catch?
+        (uint256 imbalance, bool deficit) = segment.rebalance();
         if (imbalance>0) {
             if (deficit) {
                 pumpOutSource(imbalance, pipeIndex.add(1));
                 // call rebalance again after we have closed deficit
-                segment.rebalance(); //TODO add try catch?
+                segment.rebalance();
             } else {
                 pumpIn(imbalance, pipeIndex.add(1));
             }

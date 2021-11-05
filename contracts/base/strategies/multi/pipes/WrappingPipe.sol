@@ -18,7 +18,7 @@ contract WrappingPipe is Pipe {
       (WETH) = abi.decode(c, (address));
     }
 
-    /// @dev function for investing, deposits, entering, borrowing
+    /// @dev wraps WETH
     function _put(bytes memory c, uint256 amount)
     override public returns (uint256 output) {
         (address WMATIC) = context(c);
@@ -26,7 +26,7 @@ contract WrappingPipe is Pipe {
         output = amount;
     }
 
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks
+    /// @dev unwraps WETH
     function _get(bytes memory c, uint256 amount)
     override public returns (uint256 output) {
         (address WMATIC) = context(c);
@@ -49,7 +49,7 @@ contract WrappingPipe is Pipe {
         return IERC20(WETH).balanceOf(address(this));
     }
 
-    /// @dev to receive Ether (Matic)
+    /// @dev to receive Ether (Matic). Caller contract must have receive() to receive unwrapped ether
     receive() external payable {}
 
 }

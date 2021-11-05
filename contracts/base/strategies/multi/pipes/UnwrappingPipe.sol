@@ -5,9 +5,15 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Pipe.sol";
 import "../../../../third_party/uniswap/IWETH.sol";
 
+import "hardhat/console.sol";
+
 /// @title Unwrapping Pipe Contract
 /// @author bogdoslav
 contract UnwrappingPipe is Pipe {
+//    function name() virtual public view returns (string) {
+//        return 'UnwrappingPipe';
+//    }
+
     /// @dev creates context
     function create(address WETH) public pure returns (bytes memory){
         return abi.encode(WETH);
@@ -18,17 +24,18 @@ contract UnwrappingPipe is Pipe {
       (WETH) = abi.decode(c, (address));
     }
 
-    /// @dev function for investing, deposits, entering, borrowing
+    /// @dev unwraps WETH
     function _put(bytes memory c, uint256 amount) override public returns (uint256 output) {
         (address WETH) = context(c);
-        IWETH(WETH).deposit{value:amount}();
+        console.log('UnwrappingPipe_put WETH, amount', WETH, amount);
+        IWETH(WETH).withdraw(amount);
         output = amount;
     }
 
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks
+    /// @dev wraps WETH
     function _get(bytes memory c, uint256 amount) override public returns (uint256 output) {
         (address WETH) = context(c);
-        IWETH(WETH).withdraw(amount);
+        IWETH(WETH).deposit{value:amount}();
         output = amount;
     }
 
@@ -47,7 +54,7 @@ contract UnwrappingPipe is Pipe {
         return address(this).balance;
     }
 
-    /// @dev to receive Ether (Matic)
+    /// @dev to receive Ether (Matic). Caller contract must have receive() to receive unwrapped ether
     receive() external payable {}
 
 }

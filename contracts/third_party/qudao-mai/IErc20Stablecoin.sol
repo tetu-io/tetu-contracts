@@ -72,4 +72,6 @@ interface IErc20Stablecoin {
     function checkLiquidation(uint256 vaultID) external view returns (bool);
 
     function liquidateVault(uint256 vaultID) external;
+
+    function ownerOf(uint256 vaultID) external view returns (address);
 }

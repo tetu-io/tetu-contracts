@@ -25,11 +25,13 @@ import "./pipes/MaiCamWMaticPipe.sol";
 import "./pipes/MaiStablecoinCollateralPipe.sol";
 import "./pipes/MaiStablecoinBorrowPipe.sol";
 import "./pipes/BalVaultPipe.sol";
+import "./pipes/PipeDelegateCall.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
 contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     using SafeMath for uint256;
+    using PipeDelegateCall for PipeSegment;
     /// @notice Strategy type for statistical purposes
     string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
     /// @notice Version of the contract
@@ -41,9 +43,10 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @dev Assets should reflect underlying tokens for investing
     address[] private _assets;
 
-    address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; //TODO move to impl
 
     uint256 private _totalAmount = 0;
+
 
     /// @notice Contract constructor
     constructor(
@@ -62,30 +65,39 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         _rewardTokens = __rewardTokens;
 
         // Build pipeline
+        // 0
         UnwrappingPipe unwrappingPipe = new UnwrappingPipe();
         segments.push(PipeSegment(unwrappingPipe, unwrappingPipe.create(WMATIC)));
-
+        // 1
         AaveWethPipe aaveWethPipe = new AaveWethPipe();
         segments.push(PipeSegment(aaveWethPipe, aaveWethPipe.create(aaveWethPipeData)));
-
+        // 2
         MaiCamWMaticPipe maiCamWMaticPipe = new MaiCamWMaticPipe();
         segments.push(PipeSegment(maiCamWMaticPipe, maiCamWMaticPipe.create(maiCamWMaticPipeData)));
-
+        // 3
         MaiStablecoinCollateralPipe maiStablecoinCollateralPipe = new MaiStablecoinCollateralPipe();
-        (,uint256 vaultID) = maiStablecoinCollateralPipe.createNewVault(maiStablecoinCollateralPipeData.stablecoin);
-        maiStablecoinCollateralPipeData.vaultID = vaultID;
-        segments.push(PipeSegment(maiStablecoinCollateralPipe, maiStablecoinCollateralPipe.create(maiStablecoinCollateralPipeData)));
-
-        maiStablecoinBorrowPipeData.vaultID = vaultID;
+        PipeSegment memory maiCollateral = PipeSegment(maiStablecoinCollateralPipe, maiStablecoinCollateralPipe.create(maiStablecoinCollateralPipeData));
+        maiCollateral.context = maiCollateral.init();
+        segments.push(maiCollateral);
+        // 4
+        (,, maiStablecoinBorrowPipeData.vaultID) = maiStablecoinCollateralPipe.context(maiCollateral.context);
+        console.log('maiStablecoinBorrowPipeData.vaultID', maiStablecoinBorrowPipeData.vaultID);
         MaiStablecoinBorrowPipe maiStablecoinBorrowPipe = new MaiStablecoinBorrowPipe();
         segments.push(PipeSegment(maiStablecoinBorrowPipe, maiStablecoinBorrowPipe.create(maiStablecoinBorrowPipeData)));
-
-        BalVaultPipe balVaultPipe = new BalVaultPipe();
-        segments.push(PipeSegment(balVaultPipe, balVaultPipe.create(balVaultPipeData)));
-
+        // 5
+//        BalVaultPipe balVaultPipe = new BalVaultPipe();
+//        segments.push(PipeSegment(balVaultPipe, balVaultPipe.create(balVaultPipeData)));
+//        console.log('Initialized+++');
     }
 
-    /// @dev Stub function for Strategy Base implementation
+  /*  /// @dev creates segment and initializes its context //TODO move this function to appropriate base file
+    function initSegment(Pipe pipe, bytes memory context) internal returns (PipeSegment memory segment) {
+        segment = PipeSegment(pipe, context);
+        segment.context = segment.init(); //TODO
+    }*/
+
+
+/// @dev Stub function for Strategy Base implementation
     function rewardPoolBalance() public override pure returns (uint256 bal) {
         bal = 0;
     }
@@ -144,5 +156,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     function platform() external pure override returns (Platform) {
         return Platform.UNKNOWN; //TODO What platform we have to use?
     }
+
+    receive() external payable {}
 
 }

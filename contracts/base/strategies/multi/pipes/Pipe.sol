@@ -22,6 +22,16 @@ abstract contract Pipe {
 
     /// !!! All _ underscored functions should not be called directly, but delegatecall only
 
+/*  /// @dev function to get pipe's name (for debugging etc.)
+    /// @return name of the pipe
+    function name() virtual public view returns (string);
+*/
+
+    /// @dev initializes context. By default it does nothing.
+    function _init(bytes memory c) virtual public returns (bytes memory) {
+        return c;
+    }
+
     /// @dev function for investing, deposits, entering, borrowing
     /// @param c abi-encoded context
     /// @param amount in source units

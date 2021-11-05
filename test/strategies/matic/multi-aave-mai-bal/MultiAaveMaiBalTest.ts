@@ -1,14 +1,13 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
-import {readFileSync} from "fs";
-import {startIronFoldStrategyTest} from "../../IronFoldStrategyTest";
+// import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {TimeUtils} from "../../../TimeUtils";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {AaveMaiBalStrategyBase} from "../../../../typechain";
+import {StrategyAaveMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {StrategyInfo} from "../../StrategyInfo";
 import {UniswapUtils} from "../../../UniswapUtils";
@@ -49,39 +48,39 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-    // for (const rt of rewardTokens) {
-    //   await core.feeRewardForwarder.setConversionPath(
-    //     [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-    //     [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-    //   );
-    //   await core.feeRewardForwarder.setConversionPath(
-    //     [rt, MaticAddresses.USDC_TOKEN],
-    //     [MaticAddresses.getRouterByFactory(factory)]
-    //   );
-    //
-    //   if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
-    //     await core.feeRewardForwarder.setConversionPath(
-    //       [rt, MaticAddresses.USDC_TOKEN],
-    //       [MaticAddresses.getRouterByFactory(factory)]
-    //     );
-    //   } else {
-    //     await core.feeRewardForwarder.setConversionPath(
-    //       [rt, MaticAddresses.USDC_TOKEN, underlying],
-    //       [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-    //     );
-    //   }
-    //
-    // }
-    // if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
-    //   await core.feeRewardForwarder.setConversionPath(
-    //     [underlying, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-    //     [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
-    //   );
-    //   await core.feeRewardForwarder.setConversionPath(
-    //     [underlying, MaticAddresses.USDC_TOKEN],
-    //     [MaticAddresses.QUICK_ROUTER]
-    //   );
-    // }
+/*    for (const rt of rewardTokens) {
+      await core.feeRewardForwarder.setConversionPath(
+        [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
+        [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
+      );
+      await core.feeRewardForwarder.setConversionPath(
+        [rt, MaticAddresses.USDC_TOKEN],
+        [MaticAddresses.getRouterByFactory(factory)]
+      );
+
+      if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
+        await core.feeRewardForwarder.setConversionPath(
+          [rt, MaticAddresses.USDC_TOKEN],
+          [MaticAddresses.getRouterByFactory(factory)]
+        );
+      } else {
+        await core.feeRewardForwarder.setConversionPath(
+          [rt, MaticAddresses.USDC_TOKEN, underlying],
+          [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
+        );
+      }
+
+    }
+    if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
+      await core.feeRewardForwarder.setConversionPath(
+        [underlying, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
+        [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
+      );
+      await core.feeRewardForwarder.setConversionPath(
+        [underlying, MaticAddresses.USDC_TOKEN],
+        [MaticAddresses.QUICK_ROUTER]
+      );
+    }*/
 
     let underlying = MaticAddresses.WMATIC_TOKEN;
     await core.feeRewardForwarder.setLiquidityNumerator(50);
@@ -93,13 +92,11 @@ describe('Universal MultiAaveMaiBal tests', async () => {
       "WETH",
       async vaultAddress => DeployerUtils.deployContract(
         signer,
-        "AaveMaiBalStrategyBase",
+        "StrategyAaveMaiBal",
         core.controller.address,
-        underlying,
         vaultAddress,
-        ["0x580A84C73811E1839F75d86d75d88cCa0c241fF4"], //todo add another tokens
-        [] //todo to figure out what __assets are
-      ) as Promise<AaveMaiBalStrategyBase>,
+        underlying
+      ) as Promise<StrategyAaveMaiBal>,
       underlying
     );
 

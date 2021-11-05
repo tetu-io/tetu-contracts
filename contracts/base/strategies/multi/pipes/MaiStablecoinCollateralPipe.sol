@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qudao-mai/IErc20Stablecoin.sol";
 
+import "hardhat/console.sol"; //TODO rm
+
 struct MaiStablecoinCollateralPipeData {
     address sourceToken;
     address stablecoin; //Erc20Stablecoin contract address
@@ -21,22 +23,31 @@ contract MaiStablecoinCollateralPipe is Pipe {
     using SafeMath for uint256;
 
     /// @dev creates context
-    function create(MaiStablecoinCollateralPipeData memory d) public pure returns (bytes memory) {
+    function create(MaiStablecoinCollateralPipeData memory d)
+    public pure returns (bytes memory) {
         return abi.encode(d.sourceToken, d.stablecoin, d.vaultID);
     }
 
     /// @dev decodes context
     /// @param c abi-encoded context
     function context(bytes memory c)
-    internal pure returns (address sourceToken, address stablecoin, uint256 vaultID) {
+    public pure returns (address sourceToken, address stablecoin, uint256 vaultID) {
         (sourceToken, stablecoin, vaultID) = abi.decode(c, (address, address, uint256));
     }
 
-    /// @dev create new vault
-    function createNewVault(address stablecoin)
-    public returns (uint256 vaultIndex, uint256 vaultID) {
-        vaultIndex = IErc20Stablecoin(stablecoin).createVault();
-        vaultID = ERC721Enumerable(stablecoin).tokenOfOwnerByIndex(address(this), vaultIndex);
+    /// @dev initializes context. Creates new vault and stores in vaultId
+    function _init(bytes memory c)
+    override public returns (bytes memory) {
+        MaiStablecoinCollateralPipeData memory d;
+        (d.sourceToken, d.stablecoin, d.vaultID) = context(c);
+        d.vaultID = IErc20Stablecoin(d.stablecoin).createVault();
+        address owner = IErc20Stablecoin(d.stablecoin).ownerOf(d.vaultID);
+
+        console.log('ownerOf(vaultID)', owner);
+        console.log('address(this)   ', address(this));
+        console.log('msg.sender      ', msg.sender);
+
+        return create(d);
     }
 
     /// @dev function for investing, deposits, entering, borrowing
