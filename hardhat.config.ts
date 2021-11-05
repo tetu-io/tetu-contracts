@@ -34,7 +34,7 @@ const argv = require('yargs/yargs')()
   },
   forkBlock: {
     type: "number",
-    default: 20432038
+    default: 20740290
   },
 }).argv;
 
@@ -46,6 +46,7 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: 137,
       timeout: 99999,
+      gas: 19_000_000,
       forking: {
         url: argv.maticRpcUrl,
         blockNumber: argv.forkBlock
@@ -61,7 +62,7 @@ export default {
       timeout: 99999,
       chainId: 137,
       gas: 19_000_000,
-      gasPrice: 35_000_000_000,
+      gasPrice: 100_000_000_000,
       // gasMultiplier: 2,
       accounts: [argv.privateKey],
     },
@@ -95,7 +96,7 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
+            runs: 150
           }
         }
       },

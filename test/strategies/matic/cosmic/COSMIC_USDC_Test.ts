@@ -18,7 +18,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Cosmic COSMIC-USDC Test', async () => {
+describe.skip('Cosmic COSMIC-USDC Test', async () => {
   if (argv.disableStrategyTests) {
     return;
   }

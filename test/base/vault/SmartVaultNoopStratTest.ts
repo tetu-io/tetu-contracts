@@ -54,6 +54,7 @@ describe("SmartVaultNoopStrat", () => {
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
+    await core.vaultController.setToInvest([vault.address], 1000);
 
     await new VaultUtils(vault).checkEmptyVault(
         strategy.address,
@@ -128,11 +129,10 @@ describe("SmartVaultNoopStrat", () => {
       // ************** GOV ACTIONS *******************************
       await core.vaultController.addRewardTokens([vault.address], MaticAddresses.WMATIC_TOKEN);
       await core.vaultController.removeRewardTokens([vault.address], MaticAddresses.WMATIC_TOKEN);
-      await expect(core.vaultController.removeRewardTokens([vault.address], core.psVault.address)).rejectedWith('SV: Last rt');
+      await expect(core.vaultController.removeRewardTokens([vault.address], core.psVault.address)).rejectedWith('');
 
       expect(await vault.rewardTokensLength()).at.eq(1);
       await vault.doHardWork();
-      await vault.rebalance();
 
       // ************** WITHDRAW *******************************
       balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
@@ -213,7 +213,7 @@ describe("SmartVaultNoopStrat", () => {
     it("Active status", async () => {
       await core.vaultController.changeVaultsStatuses([vault.address], [false]);
       await TokenUtils.approve(underlying, signer, vault.address, "1000000");
-      await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV: Not active');
+      await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV:03');
     });
     it("investedUnderlyingBalance with zero pool", async () => {
       expect(await core.psEmptyStrategy.investedUnderlyingBalance()).is.eq("0");
@@ -278,22 +278,22 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not add underlying reward token", async () => {
-      await expect(core.vaultController.addRewardTokens([vault.address], underlying)).rejectedWith('SV: RT is underlying');
+      await expect(core.vaultController.addRewardTokens([vault.address], underlying)).rejectedWith('');
     });
 
     it("should not add exist reward token", async () => {
-      await expect(core.vaultController.addRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('SV: RT exist');
+      await expect(core.vaultController.addRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('');
     });
 
     it("should not remove not exist reward token", async () => {
-      await expect(core.vaultController.removeRewardTokens([vault.address], MaticAddresses.QUICK_TOKEN)).rejectedWith('SV: Not exist');
+      await expect(core.vaultController.removeRewardTokens([vault.address], MaticAddresses.QUICK_TOKEN)).rejectedWith('');
     });
 
     it("should not remove not finished reward token", async () => {
       await TokenUtils.approve(core.rewardToken.address, signer,
           core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
-      await expect(core.vaultController.removeRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('SV: Not finished');
+      await expect(core.vaultController.removeRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('');
     });
 
     it("tests without strategy", async () => {
@@ -308,42 +308,42 @@ describe("SmartVaultNoopStrat", () => {
           MaticAddresses.ZERO_ADDRESS
       );
       expect(await vault1.underlyingBalanceWithInvestment()).is.eq(0);
-      await expect(vault1.doHardWork()).rejectedWith('SV: Zero strat')
+      await expect(vault1.doHardWork()).rejectedWith('')
     });
 
     it("should not withdraw when supply is zero", async () => {
-      await expect(vault.withdraw(1)).rejectedWith('SV: No shares');
+      await expect(vault.withdraw(1)).rejectedWith('SV:10');
     });
 
     it("should not withdraw zero amount", async () => {
       await VaultUtils.deposit(signer, vault, BigNumber.from("1"));
-      await expect(vault.withdraw(0)).rejectedWith('SV: Zero amount');
+      await expect(vault.withdraw(0)).rejectedWith('SV:11');
     });
 
     it("should not deposit zero amount", async () => {
-      await expect(vault.deposit(0)).rejectedWith('SV: Zero amount');
+      await expect(vault.deposit(0)).rejectedWith('SV:12');
     });
 
     it("should not deposit for zero address", async () => {
-      await expect(vault.depositFor(1, MaticAddresses.ZERO_ADDRESS)).rejectedWith('SV: Zero beneficiary');
+      await expect(vault.depositFor(1, MaticAddresses.ZERO_ADDRESS)).rejectedWith('SV:13');
     });
 
     it("rebalance with zero amount", async () => {
-      await vault.rebalance();
+      await core.vaultController.rebalance([vault.address]);
     });
 
     it("should not notify with amount overflow", async () => {
       await expect(vault.notifyTargetRewardAmount(
           core.rewardToken.address,
           '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-      )).rejectedWith('SV: Amount overflow');
+      )).rejectedWith('SV:14');
     });
 
     it("should not notify with unknown token", async () => {
       await expect(vault.notifyTargetRewardAmount(
           MaticAddresses.ZERO_ADDRESS,
           '1'
-      )).rejectedWith('SV: RT not found');
+      )).rejectedWith('SV:15');
     });
 
   });

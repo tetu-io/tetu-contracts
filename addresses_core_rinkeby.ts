@@ -16,6 +16,8 @@ export class RinkebyCoreAddress {
     '', // pawnshop
     '', // swapFactory
     '', // swapRouter
+    '', // rewardCalculator
+    '', // autoRewarder
   );
 
 }

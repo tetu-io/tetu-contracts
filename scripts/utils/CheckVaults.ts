@@ -20,16 +20,16 @@ async function main() {
   const i = await cReader.vaultWithUserInfos(signer.address, ['0x1B8A847b8e46F803AD6750a26C06b8bC1f0032ea'], {gasLimit: 100_000_000});
   console.log('i', i[0].vault.name);
 
-  const vInfos = await cReader.vaultWithUserInfoPagesLight(signer.address, 0, 11, {gasLimit: 100_000_000});
-  console.log('light is ok');
+  // const vInfos = await cReader.vaultWithUserInfoPagesLight(signer.address, 0, 11, {gasLimit: 100_000_000});
+  // console.log('light is ok');
 
-  const batch = 20;
-  await cReader.vaultInfosLight(vaults.slice(0, batch), {gasLimit: 100_000_000});
-  console.log('v ok');
-  await cReader.userInfosLight(signer.address, vaults.slice(0, batch), {gasLimit: 100_000_000});
-  console.log('u ok');
-  await cReader.vaultWithUserInfosLight(signer.address, vaults.slice(0, Math.floor(batch / 2)), {gasLimit: 100_000_000});
-  console.log('uv ok');
+  // const batch = 20;
+  // await cReader.vaultInfosLight(vaults.slice(0, batch), {gasLimit: 100_000_000});
+  // console.log('v ok');
+  // await cReader.userInfosLight(signer.address, vaults.slice(0, batch), {gasLimit: 100_000_000});
+  // console.log('u ok');
+  // await cReader.vaultWithUserInfosLight(signer.address, vaults.slice(0, Math.floor(batch / 2)), {gasLimit: 100_000_000});
+  // console.log('uv ok');
 
   for (const vault of vaults) {
     let vInfoWithUser;

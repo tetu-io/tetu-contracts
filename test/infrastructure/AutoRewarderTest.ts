@@ -1,7 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {
   Announcer,
@@ -57,11 +56,13 @@ describe("Reward calculator tests", function () {
 
     priceCalculator = (await DeployerUtils.deployPriceCalculatorMatic(gov, controllerAdr))[0] as PriceCalculator;
     rewardCalculator = (await DeployerUtils.deployRewardCalculator(gov, controllerAdr, priceCalculator.address))[0] as RewardCalculator;
-    rewarder = await DeployerUtils.deployAutoRewarder(gov, controllerAdr, rewardCalculator.address);
-
-    await rewarder.setNetworkRatio(utils.parseUnits('0.231'));
-    await rewarder.setRewardPerDay(utils.parseUnits('1000'));
-
+    rewarder = (await DeployerUtils.deployAutoRewarder(
+      gov,
+      controllerAdr,
+      rewardCalculator.address,
+      utils.parseUnits('0.231').toString(),
+      utils.parseUnits('1000').toString()
+    ))[0];
 
     // await rewardCalculator.set
     await controller.setRewardDistribution([rewarder.address], true);
@@ -165,7 +166,7 @@ describe("Reward calculator tests", function () {
       const info = await rewarder.lastInfo(vault)
       const distributed = +utils.formatUnits(await rewarder.lastDistributedAmount(vault))
       const toDistribute = +utils.formatUnits(rewardsPerDay) * (
-          +utils.formatUnits(info.strategyRewardsUsd) / +utils.formatUnits(strategyRewardsSum)
+        +utils.formatUnits(info.strategyRewardsUsd) / +utils.formatUnits(strategyRewardsSum)
       )
       console.log('toDistribute', toDistribute)
       console.log('distributed', distributed)

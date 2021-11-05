@@ -44,12 +44,13 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.2.0";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
+  uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
@@ -78,7 +79,11 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
     uint256 rtPrice = getPrice(strategy.rewardTokens()[0]);
     uint256 rewardsPerSecond = 0;
-    if (strategy.platform() == IStrategy.Platform.TETU || strategy.platform() == IStrategy.Platform.UNKNOWN) {
+    if (
+      strategy.platform() == IStrategy.Platform.TETU
+      || strategy.platform() == IStrategy.Platform.TETU_SWAP
+      || strategy.platform() == IStrategy.Platform.UNKNOWN
+    ) {
       return 0;
     } else if (strategy.platform() == IStrategy.Platform.QUICK) {
 
@@ -133,11 +138,18 @@ contract RewardCalculator is Controllable, IRewardCalculator {
 
     }
 
+    if (strategy.buyBackRatio() < _BUY_BACK_DENOMINATOR) {
+      rewardsPerSecond = rewardsPerSecond * strategy.buyBackRatio() / _BUY_BACK_DENOMINATOR;
+    }
+
     uint256 _kpi = kpi(strategy.vault());
     uint256 multiplier = platformMultiplier[strategy.platform()];
 
     if (_kpi != 0) {
       rewardsPerSecond = rewardsPerSecond * _kpi / PRECISION;
+    } else {
+      // no rewards for strategies without profit
+      return 0;
     }
 
     if (multiplier != 0) {
@@ -199,27 +211,25 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       return 0;
     }
 
-    uint256 lastRewards = vaultLastReward(_vault);
+    uint256 lastRewards = vaultLastTetuReward(_vault);
     if (lastRewards == 0) {
       return 0;
     }
 
-    (uint256 earned, uint256 lastEarnedTs) = strategyEarnedSinceLastDistribution(vault.strategy());
+    (uint256 earned,) = strategyEarnedSinceLastDistribution(vault.strategy());
 
-    // lastEarnedTs can not be higher than current block
-    uint256 timeSinceDistribution = block.timestamp - lastEarnedTs;
-
-    uint256 reward = Math.min(lastRewards * timeSinceDistribution / vault.duration(), lastRewards);
-
-    return PRECISION * earned / reward;
+    return PRECISION * earned / lastRewards;
   }
 
-  function vaultLastReward(address _vault) public view override returns (uint256) {
+  function vaultLastTetuReward(address _vault) public view override returns (uint256) {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
-    address rt = IController(controller()).rewardToken();
-    uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, rt);
+    ISmartVault ps = ISmartVault(IController(controller()).psVault());
+    uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, address(ps));
     if (rewardsSize > 0) {
-      return bookkeeper.vaultRewards(_vault, rt, rewardsSize - 1);
+      uint amount = bookkeeper.vaultRewards(_vault, address(ps), rewardsSize - 1);
+      // we distributed xTETU, need to calculate approx TETU amount
+      // assume that xTETU ppfs didn't change dramatically
+      return amount * ps.getPricePerFullShare() / ps.underlyingUnit();
     }
     return 0;
   }
@@ -229,6 +239,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
     uint256 lastEarned = 0;
     lastEarnedTs = 0;
+    earned = 0;
 
     uint256 earnedSize = bookkeeper.strategyEarnedSnapshotsLength(strategy);
     if (earnedSize > 0) {
@@ -237,8 +248,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
 
     uint256 currentEarned = bookkeeper.targetTokenEarned(strategy);
-    earned = currentEarned;
-    if (currentEarned > lastEarned) {
+    if (currentEarned >= lastEarned) {
       earned = currentEarned - lastEarned;
     }
   }

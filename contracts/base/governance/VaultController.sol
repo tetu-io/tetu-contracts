@@ -32,7 +32,7 @@ contract VaultController is Initializable, Controllable, VaultControllerStorage 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -148,6 +148,27 @@ contract VaultController is Initializable, Controllable, VaultControllerStorage 
   function removeRewardTokens(address[] calldata _vaults, address _rt) external onlyGovernance {
     for (uint256 i = 0; i < _vaults.length; i++) {
       ISmartVault(_vaults[i]).removeRewardToken(_rt);
+    }
+  }
+
+  /// @notice Only Governance can do it. Change invest numerator for given vaults
+  function setToInvest(address[] calldata _targets, uint _value) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).setToInvest(_value);
+    }
+  }
+
+  /// @notice Only Governance can do it. Rebalance given vaults
+  function rebalance(address[] calldata _targets) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).rebalance();
+    }
+  }
+
+  /// @notice Only Governance can do it. Disable not inited locks
+  function disableLocks(address[] calldata _targets) external onlyGovernance {
+    for (uint256 i = 0; i < _targets.length; i++) {
+      ISmartVault(_targets[i]).disableLock();
     }
   }
 

@@ -18,7 +18,7 @@ import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 
 export class UniswapUtils {
-  private static deadline = "1000000000000";
+  public static deadline = "1000000000000";
 
   public static async swapNETWORK_COINForExactTokens(
       signer: SignerWithAddress,
@@ -354,8 +354,8 @@ export class UniswapUtils {
     await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('2000000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_TOKEN, utils.parseUnits('4000000'));
     await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.FRAX_TOKEN, utils.parseUnits('400'), MaticAddresses.QUICK_TOKEN);
-    await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.ANY_TOKEN, utils.parseUnits('200'), MaticAddresses.QUICK_TOKEN);
-    await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.QuickChart_TOKEN, utils.parseUnits('10'), MaticAddresses.QUICK_TOKEN);
+    // await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.ANY_TOKEN, utils.parseUnits('200'), MaticAddresses.QUICK_TOKEN);
+    // await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.QuickChart_TOKEN, utils.parseUnits('10'), MaticAddresses.QUICK_TOKEN);
 
   }
 

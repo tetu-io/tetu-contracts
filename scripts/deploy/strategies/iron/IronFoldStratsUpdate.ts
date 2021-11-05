@@ -3,7 +3,9 @@ import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy, StrategyIronFold} from "../../../../typechain";
 import {readFileSync} from "fs";
 
-const alreadyDeployed = new Set<string>([]);
+const needToDeploy = new Set<string>([
+  '2'
+]);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -13,7 +15,7 @@ async function main() {
   const infos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
 
   const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+    signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -40,6 +42,11 @@ async function main() {
       continue;
     }
 
+    if (!needToDeploy.has(idx)) {
+      console.log('skip', idx);
+      continue;
+    }
+
     const vaultNameWithoutPrefix = `IRON_LOAN_${tokenName}`;
 
     const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
@@ -52,14 +59,14 @@ async function main() {
     console.log('strat', idx, rTokenName, vaultNameWithoutPrefix, vAdr);
 
     const strategy = await DeployerUtils.deployContract(
-        signer,
-        'StrategyIronFold',
-        core.controller,
-        vAdr,
-        token,
-        rTokenAddress,
-        borrowTarget,
-        collateralFactor
+      signer,
+      'StrategyIronFold',
+      core.controller,
+      vAdr,
+      token,
+      rTokenAddress,
+      borrowTarget,
+      collateralFactor
     ) as IStrategy;
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
@@ -78,8 +85,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
