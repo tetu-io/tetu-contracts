@@ -38,15 +38,12 @@ contract MaiStablecoinCollateralPipe is Pipe {
     /// @dev initializes context. Creates new vault and stores in vaultId
     function _init(bytes memory c)
     override public returns (bytes memory) {
+        console.log('MaiStablecoinCollateralPipe _init');
         MaiStablecoinCollateralPipeData memory d;
         (d.sourceToken, d.stablecoin, d.vaultID) = context(c);
+        console.log('d.vaultID', d.vaultID);
         d.vaultID = IErc20Stablecoin(d.stablecoin).createVault();
-        address owner = IErc20Stablecoin(d.stablecoin).ownerOf(d.vaultID);
-
-        console.log('ownerOf(vaultID)', owner);
-        console.log('address(this)   ', address(this));
-        console.log('msg.sender      ', msg.sender);
-
+        console.log('d.vaultID', d.vaultID);
         return create(d);
     }
 

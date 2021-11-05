@@ -18,11 +18,15 @@ library PipeDelegateCall {
     /// @dev calls Pipe.init()
     function init(PipeSegment memory segment)
     internal returns (bytes memory context) {
+        console.log('before _init call');
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_init(bytes)", segment.context)
         );
-        require(success, _getRevertMsg(data));
+        console.log('after _init call success:', success);
+        console.log('data.length', data.length);
+        if (!success) { revert(_getRevertMsg(data)); }
         context = abi.decode(data, (bytes));
+        console.log('context decoded');
     }
 
     /// @dev calls Pipe.put()
@@ -32,7 +36,7 @@ library PipeDelegateCall {
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_put(bytes,uint256)", segment.context, amount)
         );
-        require(success, _getRevertMsg(data));
+        if (!success) { revert(_getRevertMsg(data)); }
         output = abi.decode(data, (uint256));
     }
 
@@ -42,7 +46,7 @@ library PipeDelegateCall {
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_get(bytes,uint256)", segment.context, amount)
         );
-        require(success, _getRevertMsg(data));
+        if (!success) { revert(_getRevertMsg(data)); }
         output = abi.decode(data, (uint256));
     }
 
@@ -52,7 +56,7 @@ library PipeDelegateCall {
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_rebalance(bytes)", segment.context)
         );
-        require(success, _getRevertMsg(data));
+        if (!success) { revert(_getRevertMsg(data)); }
         (imbalance, deficit) = abi.decode(data, (uint256,bool));
     }
 
@@ -62,7 +66,7 @@ library PipeDelegateCall {
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_sourceBalance(bytes)", segment.context)
         );
-        require(success, _getRevertMsg(data));
+        if (!success) { revert(_getRevertMsg(data)); }
         return abi.decode(data, (uint256));
     }
 
@@ -72,7 +76,7 @@ library PipeDelegateCall {
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_underlyingBalance(bytes)", segment.context)
         );
-        require(success, _getRevertMsg(data));
+        if (!success) { revert(_getRevertMsg(data)); }
         return abi.decode(data, (uint256));
     }
 

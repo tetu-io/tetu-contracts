@@ -85,9 +85,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         MaiStablecoinBorrowPipe maiStablecoinBorrowPipe = new MaiStablecoinBorrowPipe();
         segments.push(PipeSegment(maiStablecoinBorrowPipe, maiStablecoinBorrowPipe.create(maiStablecoinBorrowPipeData)));
         // 5
-//        BalVaultPipe balVaultPipe = new BalVaultPipe();
-//        segments.push(PipeSegment(balVaultPipe, balVaultPipe.create(balVaultPipeData)));
-//        console.log('Initialized+++');
+        BalVaultPipe balVaultPipe = new BalVaultPipe();
+        segments.push(PipeSegment(balVaultPipe, balVaultPipe.create(balVaultPipeData)));
+        console.log('Initialized+++');
     }
 
   /*  /// @dev creates segment and initializes its context //TODO move this function to appropriate base file

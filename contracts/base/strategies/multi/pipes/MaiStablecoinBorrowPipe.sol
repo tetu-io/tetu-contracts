@@ -64,9 +64,6 @@ contract MaiStablecoinBorrowPipe is Pipe {
         .mul(10 ** (maiDecimals.sub(collateralDecimals))).div(_stablecoin.getTokenPriceSource());
         uint256 borrowAmount = collateralUsdValue.mul(100).div(targetPercentage);
         console.log('borrowAmount', borrowAmount);
-        console.log('ownerOf(vaultID)', _stablecoin.ownerOf(vaultID));
-        console.log('address(this)   ', address(this));
-        console.log('msg.sender      ', msg.sender);
         IErc20Stablecoin(stablecoin).borrowToken(vaultID, borrowAmount);
 
         uint256 current = IERC20(borrowedToken).balanceOf(address(this));
