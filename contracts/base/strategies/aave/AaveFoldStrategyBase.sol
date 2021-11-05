@@ -559,10 +559,13 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   }
 
   /// @dev Redeem liquidity in rToken
-  function _redeemRToken(uint256 amountRToken) internal updateSupplyInTheEnd {
-//    if (amountRToken > 0) {
-//      require(IAToken(aToken).redeem(amountRToken) == 0, "AFS: Redeem failed");
-//    }
+  function _redeemAToken(uint256 amountAToken) internal updateSupplyInTheEnd {
+    if (amountAToken > 0) {
+      uint256 wd = lPool.withdraw(_underlyingToken, amountAToken, address(this));
+      console.log(">> wd %s:", wd);
+      uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
+      require(aTokenBalance == 0, "AFS: Redeem failed");
+    }
   }
 
   /// @dev Repay a loan
@@ -571,28 +574,40 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       console.log(">> repay amountUnderlying %s:", amountUnderlying);
       IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
       IERC20(_underlyingToken).safeApprove(LENDING_POOL, amountUnderlying);
-      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this)); //todo not works???
+      uint256 reapyed = lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
+      console.log(">> reapyed %s:", reapyed);
     }
   }
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
   function _redeemMaximumWithLoan() internal updateSupplyInTheEnd {
+     console.log(">> _redeemMaximumWithLoan");
     // amount of liquidity
-//    uint256 available = IAToken(aToken).getCash();
-//    // amount we supplied
-//    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-//    // amount we borrowed
-//    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
-//    uint256 balance = supplied.sub(borrowed);
-//
-//    _redeemPartialWithLoan(Math.min(available, balance));
-//
-//    // we have a little amount of supply after full exit
-//    // better to redeem rToken amount for avoid rounding issues
-//    (,uint256 rTokenBalance,,) = IAToken(aToken).getAccountSnapshot(address(this));
-//    if (rTokenBalance > 0) {
-//      _redeemRToken(rTokenBalance);
-//    }
+    (uint256 availableLiquidity,,,,,,,,,) = dataProvider.getReserveData(_underlyingToken);
+    console.log(">> availableLiquidity %s:", availableLiquidity);
+
+    // amount we supplied
+    // amount we borrowed
+    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
+
+    uint256 balance = supplied.sub(borrowed);
+
+    _redeemPartialWithLoan(Math.min(availableLiquidity, balance));
+
+    // we have a little amount of supply after full exit
+    // better to redeem rToken amount for avoid rounding issues
+
+    (supplied, borrowed) = _getInvestmentData();
+    console.log(">> _redeemMaximumWithLoan supplied %s", supplied);
+    console.log(">> _redeemMaximumWithLoan borrowed %s", borrowed);
+
+    uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
+    console.log(">> _redeemMaximumWithLoan aTokenBalance %s", aTokenBalance);
+
+    //todo not sure if it needed.
+    if (aTokenBalance > 0) {
+      _redeemAToken(aTokenBalance);
+    }
   }
 
   /// @dev Helper function to get suppliedUnderlying and borrowedUnderlying
@@ -637,14 +652,18 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       _redeemUnderlying(toRedeem);
       // now we can repay our borrowed amount
       underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      console.log(">> underlyingBalance %s ", underlyingBalance);
+
       toRepay = Math.min(toRepay, underlyingBalance);
+      console.log(">> toRepay %s ", toRepay);
+
       if (toRepay == 0) {
         // in case of we don't have money for repaying we can't do anything
         break;
       }
       _repay(toRepay);
       // update the parameters
-      (uint256 supplied, uint256 borrowed) = _getInvestmentData();
+      (supplied, borrowed) = _getInvestmentData();
       i++;
       if (i == MAX_DEPTH) {
         emit MaxDepthReached();
