@@ -18,15 +18,11 @@ library PipeDelegateCall {
     /// @dev calls Pipe.init()
     function init(PipeSegment memory segment)
     internal returns (bytes memory context) {
-        console.log('before _init call');
         (bool success, bytes memory data) = address(segment.pipe).delegatecall(
             abi.encodeWithSignature("_init(bytes)", segment.context)
         );
-        console.log('after _init call success:', success);
-        console.log('data.length', data.length);
         if (!success) { revert(_getRevertMsg(data)); }
         context = abi.decode(data, (bytes));
-        console.log('context decoded');
     }
 
     /// @dev calls Pipe.put()
