@@ -1,4 +1,5 @@
 /* tslint:disable:variable-name */
+
 // noinspection JSUnusedGlobalSymbols
 
 export class MaticAddresses {
@@ -50,6 +51,7 @@ export class MaticAddresses {
   public static xTETU = "0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454".toLowerCase();
   public static dQUICK_TOKEN = "0xf28164A485B0B2C90639E47b0f377b4a438a16B1".toLowerCase();
   public static TETU_TOKEN = "0x255707B70BF90aa112006E1b07B9AeA6De021424".toLowerCase();
+  public static IRON_TOKEN = "0xD86b5923F3AD7b585eD81B448170ae026c65ae9a".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -133,6 +135,7 @@ export class MaticAddresses {
   // curve
   public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
   public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
+  public static CURVE_aTricrypto3_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
 
@@ -156,6 +159,15 @@ export class MaticAddresses {
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c".toLowerCase();
 
+  public static BLUE_CHIPS = new Set<string>([
+    MaticAddresses.USDC_TOKEN,
+    MaticAddresses.USDT_TOKEN,
+    MaticAddresses.DAI_TOKEN,
+    MaticAddresses.WETH_TOKEN,
+    MaticAddresses.WMATIC_TOKEN,
+    MaticAddresses.WBTC_TOKEN,
+  ]);
+
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
       case MaticAddresses.QUICK_FACTORY:
@@ -174,5 +186,9 @@ export class MaticAddresses {
         return MaticAddresses.TETU_SWAP_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
+  }
+
+  public static isBlueChip(address: string): boolean {
+    return MaticAddresses.BLUE_CHIPS.has(address.toLowerCase())
   }
 }

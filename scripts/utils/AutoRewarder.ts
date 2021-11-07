@@ -143,6 +143,7 @@ async function main() {
     }
   }
   console.log('---------DISTRIBUTED-------------')
+  await DeployerUtils.delay(1000 * 60 * 60 * 23);
 }
 
 main()

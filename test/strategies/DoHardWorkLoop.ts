@@ -7,11 +7,15 @@ import {expect} from "chai";
 import {StrategyInfo} from "./StrategyInfo";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {VaultUtils} from "../VaultUtils";
+import {ITetuSwapFactory, ITetuSwapPair} from "../../typechain";
 
 
 export class DoHardWorkLoop {
 
   public static async doHardWorkLoop(info: StrategyInfo, deposit: string, loops: number, loopTime: number) {
+    const tetuLp = await DeployerUtils.connectInterface(info.signer, 'ITetuSwapPair',
+      await (await DeployerUtils.connectInterface(info.signer, 'ITetuSwapFactory', MaticAddresses.TETU_SWAP_FACTORY) as ITetuSwapFactory)
+        .getPair(MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN)) as ITetuSwapPair;
     const calculator = (await DeployerUtils
       .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
     const vaultForUser = info.vault.connect(info.user);
@@ -50,6 +54,7 @@ export class DoHardWorkLoop {
 
       // *********** DO HARD WORK **************
       await TimeUtils.advanceBlocksOnTs(loopTime);
+      await tetuLp.sync();
       await VaultUtils.doHardWorkAndCheck(info.vault);
 
       const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);

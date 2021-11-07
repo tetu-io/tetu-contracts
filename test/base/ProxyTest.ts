@@ -45,8 +45,9 @@ describe("Proxy tests", function () {
 
 
   it("upgrade proxy v 1-1-0", async () => {
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
+    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('1000'));
 
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV110") as SmartVaultV110;
 

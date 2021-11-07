@@ -9,17 +9,17 @@ import {config as dotEnvConfig} from "dotenv";
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  disableStrategyTests: {
-    type: "boolean",
-    default: false,
-  },
-  onlyOneIronStrategyTest: {
-    type: "number",
-    default: -1,
-  }
-}).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+    onlyOneIronStrategyTest: {
+      type: "number",
+      default: -1,
+    }
+  }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -59,26 +59,26 @@ describe('Universal Iron tests', async () => {
     if (ironSwapIds.has(idx)) {
       /* tslint:disable:no-floating-promises */
       startIronSwapStrategyTest(
-          'StrategyIronSwap',
-          MaticAddresses.DFYN_FACTORY,
-          lpAddress.toLowerCase(),
-          tokens,
-          tokenNames.join('_'),
-          idx,
-          [MaticAddresses.ICE_TOKEN]
+        'StrategyIronSwap',
+        MaticAddresses.DFYN_FACTORY,
+        lpAddress.toLowerCase(),
+        tokens,
+        tokenNames.join('_'),
+        idx,
+        [MaticAddresses.ICE_TOKEN]
       );
     } else {
       /* tslint:disable:no-floating-promises */
       startDefaultLpStrategyTest(
-          'StrategyIronUniPair',
-          MaticAddresses.DFYN_FACTORY,
-          lpAddress.toLowerCase(),
-          tokens[0],
-          tokenNames[0],
-          tokens[1],
-          tokenNames[1],
-          idx,
-          [MaticAddresses.ICE_TOKEN]
+        'StrategyIronUniPair',
+        MaticAddresses.DFYN_FACTORY,
+        lpAddress.toLowerCase(),
+        tokens[0],
+        tokenNames[0],
+        tokens[1],
+        tokenNames[1],
+        idx,
+        [MaticAddresses.ICE_TOKEN]
       );
     }
 

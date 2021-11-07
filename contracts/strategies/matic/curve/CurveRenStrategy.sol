@@ -11,7 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-import "../../../base/strategies/curve/CurveStrategyFullBuyback.sol";
+import "../../../base/strategies/curve/CurveStrategy.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../third_party/curve/IGauge.sol";
 import "../../../base/strategies/StrategyBase.sol";
@@ -19,14 +19,8 @@ import "../../../base/strategies/StrategyBase.sol";
 
 /// @title Contract for Curve REN strategy implementation
 /// @author Oleg N
-contract CurveRenStrategy is CurveStrategyFullBuyback {
-
+contract CurveRenStrategy is CurveStrategy {
   using SafeERC20 for IERC20;
-
-  // ************ VARIABLES **********************
-
-  /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "CurveRenStrategy";
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -39,7 +33,7 @@ contract CurveRenStrategy is CurveStrategyFullBuyback {
   address private constant RENBTC = address(0xDBf31dF14B66535aF65AaC99C32e9eA844e14501);
 
   /// @notice Curve gauge rewards pool
-  address public constant CURVE_REN_GAUGE = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
+  address private constant _GAUGE = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
 
   address[] private _assets = [WBTC, RENBTC];
 
@@ -52,7 +46,7 @@ contract CurveRenStrategy is CurveStrategyFullBuyback {
     address _controller,
     address _underlying,
     address _vault
-  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_REN_GAUGE) {}
+  ) CurveStrategy(_controller, _underlying, _vault, poolRewards, _GAUGE, WBTC, 2) {}
 
   /// assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {

@@ -74,9 +74,9 @@ describe("Tetu Swap base tests", function () {
     factory = (await DeployerUtils.deploySwapFactory(signer, core.controller.address))[0] as TetuSwapFactory;
     router = await DeployerUtils.deployContract(signer, 'TetuSwapRouter', factory.address, MaticAddresses.WMATIC_TOKEN) as TetuSwapRouter;
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('2000000'));
 
     ironFoldUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDC) as SmartVault;
     ironFoldUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDT) as SmartVault;
@@ -188,7 +188,7 @@ describe("Tetu Swap base tests", function () {
     console.log('bal B', userTokenBBalAfter - userTokenBBal);
 
     expect(userTokenABalAfter - userTokenABal).is.eq(-10);
-    expect(userTokenBBalAfter - userTokenBBal).is.eq(19.029477000000043);
+    expect(userTokenBBalAfter - userTokenBBal).is.approximately(19.029477, 0.00001);
 
     expect(+utils.formatUnits(await ironFoldUsdcCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.approximately(210, 0.0001);
     expect(+utils.formatUnits(await ironFoldUsdtCtr.underlyingBalanceWithInvestmentForHolder(lp), tokenADec)).is.approximately(380.954186, 0.0001);
@@ -522,9 +522,9 @@ describe("Tetu Swap base tests", function () {
     await factory.setPairRewardRecipients([lp1], [core.controller.address]);
     await core.controller.setPureRewardConsumers([lp1], true);
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WETH_TOKEN, utils.parseUnits('100000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WETH_TOKEN, utils.parseUnits('100000'));
 
     await UniswapUtils.addLiquidity(
       signer,

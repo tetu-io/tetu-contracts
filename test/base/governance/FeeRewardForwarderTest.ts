@@ -16,6 +16,7 @@ import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
+import {MintHelperUtils} from "../../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -37,8 +38,37 @@ describe("Fee reward forwarder tests", function () {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     forwarder = core.feeRewardForwarder;
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
-    await UniswapUtils.createPairForRewardToken(signer, core, '100000');
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
+
+    const amount = '10000';
+
+    await UniswapUtils.swapNETWORK_COINForExactTokens(
+      signer,
+      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
+      utils.parseUnits(amount, 6).toString(),
+      MaticAddresses.QUICK_ROUTER
+    );
+    const rewardTokenAddress = core.rewardToken.address;
+
+    const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
+    console.log('USDC bought', usdcBal.toString());
+    expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
+
+    await MintHelperUtils.mint(core.controller, core.announcer, amount, signer.address);
+
+    const tokenBal = await TokenUtils.balanceOf(rewardTokenAddress, signer.address);
+    console.log('Token minted', tokenBal.toString());
+    expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
+
+    await UniswapUtils.addLiquidity(
+      signer,
+      rewardTokenAddress,
+      MaticAddresses.USDC_TOKEN,
+      utils.parseUnits(amount, 18).toString(),
+      utils.parseUnits(amount, 6).toString(),
+      MaticAddresses.QUICK_FACTORY,
+      MaticAddresses.QUICK_ROUTER
+    );
 
     await core.feeRewardForwarder.setLiquidityNumerator(50);
     await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
@@ -63,7 +93,7 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not setup wrong conv path", async () => {
     await expect(forwarder.setConversionPath([MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS],
-        [MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS])).rejectedWith('FRF: Wrong data');
+      [MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS])).rejectedWith('FRF: Wrong data');
   });
 
   it("should not notify ps with zero target token", async () => {
@@ -81,19 +111,19 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not notify vault without xTETU", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyWaultSingle',
-            core.controller.address,
-            vaultAddress,
-            MaticAddresses.WEXpoly_TOKEN,
-            1
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        MaticAddresses.WMATIC_TOKEN,
-        signer
+      't',
+      async vaultAddress => DeployerUtils.deployContract(
+        signer,
+        'StrategyWaultSingle',
+        core.controller.address,
+        vaultAddress,
+        MaticAddresses.WEXpoly_TOKEN,
+        1
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.vaultController,
+      MaticAddresses.WMATIC_TOKEN,
+      signer
     );
     const vault = data[1] as SmartVault;
     expect(forwarder.notifyCustomPool(MaticAddresses.WMATIC_TOKEN, vault.address, '1')).rejectedWith('psToken not added to vault');
@@ -101,19 +131,19 @@ describe("Fee reward forwarder tests", function () {
 
   it("should not notify vault without liq path", async () => {
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyWaultSingle',
-            core.controller.address,
-            vaultAddress,
-            MaticAddresses.WEXpoly_TOKEN,
-            1
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        MaticAddresses.WMATIC_TOKEN,
-        signer
+      't',
+      async vaultAddress => DeployerUtils.deployContract(
+        signer,
+        'StrategyWaultSingle',
+        core.controller.address,
+        vaultAddress,
+        MaticAddresses.WEXpoly_TOKEN,
+        1
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.vaultController,
+      MaticAddresses.WMATIC_TOKEN,
+      signer
     );
     const vault = data[1] as SmartVault;
     await core.vaultController.addRewardTokens([vault.address], core.psVault.address);
@@ -122,8 +152,8 @@ describe("Fee reward forwarder tests", function () {
 
   it("should notify ps single liq path", async () => {
     await core.feeRewardForwarder.setConversionPath(
-        [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-        [MaticAddresses.QUICK_ROUTER]
+      [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
+      [MaticAddresses.QUICK_ROUTER]
     );
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
     expect(await forwarder.callStatic.notifyPsPool(MaticAddresses.USDC_TOKEN, utils.parseUnits('1000', 6))).is.not.eq(0);
@@ -136,8 +166,8 @@ describe("Fee reward forwarder tests", function () {
     console.log('psRatio', psRatio);
 
     await core.feeRewardForwarder.setConversionPathMulti(
-        [[MaticAddresses.USDC_TOKEN, core.rewardToken.address]],
-        [[MaticAddresses.QUICK_ROUTER]]
+      [[MaticAddresses.USDC_TOKEN, core.rewardToken.address]],
+      [[MaticAddresses.QUICK_ROUTER]]
     );
 
     const amount = utils.parseUnits('1000', 6);

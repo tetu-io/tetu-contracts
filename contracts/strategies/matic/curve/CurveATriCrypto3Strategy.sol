@@ -17,9 +17,9 @@ import "../../../third_party/curve/IGauge.sol";
 import "../../../base/strategies/StrategyBase.sol";
 
 
-/// @title Contract for Curve aave strategy implementation
-/// @author Oleg N
-contract CurveAaveStrategy is CurveStrategy {
+/// @title Contract for Curve atricrypto3 strategy implementation
+/// @author belbix
+contract CurveATriCrypto3Strategy is CurveStrategy {
   using SafeERC20 for IERC20;
 
   /// rewards
@@ -32,11 +32,13 @@ contract CurveAaveStrategy is CurveStrategy {
   address private constant DAI = address(0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063);
   address private constant USDC = address(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
   address private constant USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
+  address private constant WBTC = address(0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6);
+  address private constant WETH = address(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619);
 
   /// @notice Curve gauge rewards pool
-  address private constant _GAUGE = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
+  address private constant _GAUGE = address(0x1d8b86e3D88cDb2d34688e87E72F388Cb541B7C8);
 
-  address[] private _assets = [DAI, USDC, USDT];
+  address[] private _assets = [DAI, USDC, USDT, WBTC, WETH];
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter

@@ -7,12 +7,15 @@ import {StrategyInfo} from "../../../StrategyInfo";
 import {TimeUtils} from "../../../../TimeUtils";
 import {StrategyTestUtils} from "../../../StrategyTestUtils";
 import {VaultUtils} from "../../../../VaultUtils";
-import {IGauge} from "../../../../../typechain";
+import {ICurveStrategy, IGauge} from "../../../../../typechain";
 import {CurveUtils} from "./CurveUtils";
 
 export class CurveDoHardWorkLoop {
 
-  public static async doHardWorkWithLiqPath(strategyInfo: StrategyInfo, gagueAddress: string) {
+  public static async doHardWorkWithLiqPath(strategyInfo: StrategyInfo) {
+    // tslint:disable-next-line
+    // @ts-ignore
+    const gaugeAddress = await (strategyInfo.strategy as ICurveStrategy).gauge();
     await StrategyTestUtils.updatePSRatio(strategyInfo.core.announcer, strategyInfo.core.controller, 500, 1000)
     const vaultForUser = strategyInfo.vault.connect(strategyInfo.user);
 
@@ -34,13 +37,13 @@ export class CurveDoHardWorkLoop {
     await TimeUtils.advanceBlocksOnTs(sevenDays);
 
     // we need to call claimable_reward_write to checkpoint rewards (curve mechanic)
-    const gaugeContract = await ethers.getContractAt("IGauge", gagueAddress) as IGauge;
+    const gaugeContract = await ethers.getContractAt("IGauge", gaugeAddress) as IGauge;
 
     await gaugeContract.claimable_reward_write(strategyInfo.strategy.address, MaticAddresses.WMATIC_TOKEN);
     await gaugeContract.claimable_reward_write(strategyInfo.strategy.address, MaticAddresses.CRV_TOKEN);
 
     const totalToClaim = await StrategyTestUtils.calculateTotalToClaim(strategyInfo.calculator,
-        strategyInfo.strategy, strategyInfo.core.rewardToken);
+      strategyInfo.strategy, strategyInfo.core.rewardToken);
 
     await VaultUtils.doHardWorkAndCheck(strategyInfo.vault);
 
@@ -72,7 +75,7 @@ export class CurveDoHardWorkLoop {
 
     const userEarnedTotalAfterRt0 = await strategyInfo.core.bookkeeper.userEarned(strategyInfo.user.address, strategyInfo.vault.address, xTetu);
     console.log('user total earned xTetu', +utils.formatUnits(userEarnedTotalxTetu),
-        +utils.formatUnits(userEarnedTotalAfterRt0), +utils.formatUnits(userEarnedTotalAfterRt0) - +utils.formatUnits(userEarnedTotalxTetu))
+      +utils.formatUnits(userEarnedTotalAfterRt0), +utils.formatUnits(userEarnedTotalAfterRt0) - +utils.formatUnits(userEarnedTotalxTetu))
     expect(+utils.formatUnits(userEarnedTotalAfterRt0)).is.greaterThan(+utils.formatUnits(userEarnedTotalxTetu));
 
   };

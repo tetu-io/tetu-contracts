@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Wault tests', async () => {
+describe.skip('Universal Wault tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }

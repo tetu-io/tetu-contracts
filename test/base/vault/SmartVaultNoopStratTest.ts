@@ -67,7 +67,7 @@ describe("SmartVaultNoopStrat", () => {
     );
 
     await UniswapUtils.wrapMatic(signer);
-    await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER,
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.QUICK_ROUTER,
         MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);

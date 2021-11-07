@@ -62,23 +62,23 @@ describe("Smart vault rewards test", () => {
 
   it("check reward vesting for multiple accounts with SUSHI rewards and LP underlying", async () => {
     const underlying = await UniswapUtils.addLiquidity(signer, MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN,
-        utils.parseUnits('10000').toString(), utils.parseUnits('10000', 6).toString(),
-        MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
+      utils.parseUnits('10000').toString(), utils.parseUnits('10000', 6).toString(),
+      MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
 
     const rt = MaticAddresses.SUSHI_TOKEN;
 
     // ******** DEPLOY VAULT *******
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], 1) as NoopStrategy;
     await vault.initializeSmartVault(
-        "NOOP",
-        "tNOOP",
-        core.controller.address,
-        underlying,
-        60 * 60 * 24 * 28,
-        false,
-        MaticAddresses.ZERO_ADDRESS
+      "NOOP",
+      "tNOOP",
+      core.controller.address,
+      underlying,
+      60 * 60 * 24 * 28,
+      false,
+      MaticAddresses.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);
@@ -92,12 +92,12 @@ describe("Smart vault rewards test", () => {
     const rtDecimals = await TokenUtils.decimals(rt);
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
-    const time = 60 * 60 * 6;
-    let rewardsTotalAmount = utils.parseUnits('10000', rtDecimals);
+    const time = 60 * 60 * 24 * 7;
+    let rewardsTotalAmount = utils.parseUnits('10', rtDecimals);
 
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits('300'), MaticAddresses.WETH_TOKEN);
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits('300'), MaticAddresses.WETH_TOKEN);
     await TokenUtils.approve(rt, signer, vault.address, rewardsTotalAmount.toString());
     await vault.notifyTargetRewardAmount(rt, rewardsTotalAmount);
 
@@ -163,27 +163,27 @@ describe("Smart vault rewards test", () => {
         if (user2Deposited) {
           const user2Staked = await TokenUtils.balanceOf(vault.address, user2.address);
           await ZapUtils.zapLpOut(
-              user2,
-              multiSwap,
-              zapContract,
-              contractReader,
-              vault.address,
-              MaticAddresses.WMATIC_TOKEN,
-              user2Staked.toString(),
-              2
+            user2,
+            multiSwap,
+            zapContract,
+            contractReader,
+            vault.address,
+            MaticAddresses.WMATIC_TOKEN,
+            user2Staked.toString(),
+            2
           );
 
           user2Deposited = false;
         } else {
           await ZapUtils.zapLpIn(
-              user2,
-              multiSwap,
-              zapContract,
-              contractReader,
-              vault.address,
-              MaticAddresses.WMATIC_TOKEN,
-              1000,
-              2
+            user2,
+            multiSwap,
+            zapContract,
+            contractReader,
+            vault.address,
+            MaticAddresses.WMATIC_TOKEN,
+            1000,
+            2
           );
 
           user2Deposited = true;
@@ -194,7 +194,7 @@ describe("Smart vault rewards test", () => {
       await TimeUtils.advanceBlocksOnTs(time);
 
       console.log('vaultApr', await VaultUtils.vaultApr(vault, rt, contractReader),
-          utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]));
+        utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]));
       console.log('rewardPerToken', utils.formatUnits(await vault.rewardPerToken(rt)));
 
 
@@ -306,30 +306,30 @@ describe("Smart vault rewards test", () => {
     console.log('claimedTotal with contr', claimedTotal + controllerBal, +utils.formatUnits(rewardsTotalAmount, rtDecimals));
 
     expect(claimedTotal + controllerBal).is.approximately(+utils.formatUnits(rewardsTotalAmount, rtDecimals),
-        +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01, 'total claimed not enough');
+      +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01, 'total claimed not enough');
   });
 
 
   it("check reward with transfers", async () => {
 
     const underlying = await UniswapUtils.addLiquidity(signer, MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN,
-        utils.parseUnits('100000').toString(), utils.parseUnits('100000', 6).toString(),
-        MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
+      utils.parseUnits('100000').toString(), utils.parseUnits('100000', 6).toString(),
+      MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
 
     const rt = MaticAddresses.SUSHI_TOKEN;
 
     // ******** DEPLOY VAULT *******
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], 1) as NoopStrategy;
     await vault.initializeSmartVault(
-        "NOOP",
-        "tNOOP",
-        core.controller.address,
-        underlying,
-        60 * 60 * 24 * 28,
-        false,
-        MaticAddresses.ZERO_ADDRESS
+      "NOOP",
+      "tNOOP",
+      core.controller.address,
+      underlying,
+      60 * 60 * 24 * 28,
+      false,
+      MaticAddresses.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);
@@ -339,12 +339,12 @@ describe("Smart vault rewards test", () => {
     const rtDecimals = await TokenUtils.decimals(rt);
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
-    const time = 60 * 60 * 6;
-    const rewardsTotalAmount = utils.parseUnits('10000', rtDecimals);
+    const time = 60 * 60 * 24 * 7;
+    const rewardsTotalAmount = utils.parseUnits('10', rtDecimals);
 
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits('300'), MaticAddresses.WETH_TOKEN);
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits('300'), MaticAddresses.WETH_TOKEN);
     await TokenUtils.approve(rt, signer, vault.address, rewardsTotalAmount.toString());
     await vault.notifyTargetRewardAmount(rt, rewardsTotalAmount);
 
@@ -370,7 +370,7 @@ describe("Smart vault rewards test", () => {
 
       // send a part of share to user1
       await TokenUtils.transfer(vault.address, signer, user1.address,
-          signerShareBal.div((cycles * 2).toFixed(0)).toString());
+        signerShareBal.div((cycles * 2).toFixed(0)).toString());
 
       const vaultRtBalance = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address), rtDecimals);
 
@@ -428,7 +428,7 @@ describe("Smart vault rewards test", () => {
     console.log('controller bal', controllerBal);
     console.log('claimedTotal', claimedTotal, +utils.formatUnits(rewardsTotalAmount, rtDecimals));
     expect(claimedTotal + controllerBal).is.approximately(+utils.formatUnits(rewardsTotalAmount, rtDecimals),
-        +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01, 'total claimed not enough');
+      +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01, 'total claimed not enough');
 
     await vault.exit();
   });

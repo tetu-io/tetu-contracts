@@ -18,13 +18,13 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 async function startIronSwapStrategyTest(
-    strategyName: string,
-    factory: string,
-    underlying: string,
-    tokens: string[],
-    tokenNames: string,
-    platformPoolIdentifier: string,
-    rewardTokens: string[]
+  strategyName: string,
+  factory: string,
+  underlying: string,
+  tokens: string[],
+  tokenNames: string,
+  platformPoolIdentifier: string,
+  rewardTokens: string[]
 ) {
 
   describe(strategyName + " " + tokenNames + " IronSwapTest", async function () {
@@ -34,21 +34,21 @@ async function startIronSwapStrategyTest(
 
     before(async function () {
       snapshotBefore = await TimeUtils.snapshot();
-      const signer = (await ethers.getSigners())[0];
+      const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
+      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
       for (const rt of rewardTokens) {
         await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-            [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
+          [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
+          [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
         );
 
         await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN],
-            [MaticAddresses.getRouterByFactory(factory)]
+          [rt, MaticAddresses.USDC_TOKEN],
+          [MaticAddresses.getRouterByFactory(factory)]
         );
       }
 
@@ -57,19 +57,19 @@ async function startIronSwapStrategyTest(
 
 
       const data = await StrategyTestUtils.deploy(
+        signer,
+        core,
+        tokenNames,
+        async vaultAddress => DeployerUtils.deployContract(
           signer,
-          core,
-          tokenNames,
-          async vaultAddress => DeployerUtils.deployContract(
-              signer,
-              strategyName,
-              core.controller.address,
-              vaultAddress,
-              underlying,
-              tokens,
-              platformPoolIdentifier
-          ) as Promise<IStrategy>,
-          underlying
+          strategyName,
+          core.controller.address,
+          vaultAddress,
+          underlying,
+          tokens,
+          platformPoolIdentifier
+        ) as Promise<IStrategy>,
+        underlying
       );
 
       const vault = data[0];
@@ -79,14 +79,14 @@ async function startIronSwapStrategyTest(
       await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       strategyInfo = new StrategyInfo(
-          underlying,
-          signer,
-          user,
-          core,
-          vault,
-          strategy,
-          lpForTargetToken,
-          calculator
+        underlying,
+        signer,
+        user,
+        core,
+        vault,
+        strategy,
+        lpForTargetToken,
+        calculator
       );
 
       // ************** add funds for investing ************
@@ -95,7 +95,7 @@ async function startIronSwapStrategyTest(
       const token = tokens[targetTokenIdx];
 
 
-      await UniswapUtils.buyAllBigTokens(user);
+      // await UniswapUtils.buyAllBigTokens(user);
       const data0 = (await calculator.getLargestPool(token, []));
       const token0Opposite = data0[0];
       const token0OppositeFactory = await calculator.swapFactories(data0[1]);
@@ -107,8 +107,8 @@ async function startIronSwapStrategyTest(
       const amountForSell0 = baseAmount / price0;
 
 
-      await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(token0OppositeFactory),
-          token, utils.parseUnits(amountForSell0.toFixed(dec0), dec0), token0Opposite);
+      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(token0OppositeFactory),
+        token, utils.parseUnits(amountForSell0.toFixed(dec0), dec0), token0Opposite);
 
 
       // ************** add liq ************
@@ -147,8 +147,8 @@ async function startIronSwapStrategyTest(
 
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          strategyInfo.strategy.readyToClaim
+        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+        strategyInfo.strategy.readyToClaim
       );
     });
     it("emergency exit", async () => {
@@ -159,10 +159,10 @@ async function startIronSwapStrategyTest(
     });
     it("doHardWork loop", async function () {
       await DoHardWorkLoop.doHardWorkLoop(
-          strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          3,
-          60
+        strategyInfo,
+        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+        3,
+        60
       );
     });
 

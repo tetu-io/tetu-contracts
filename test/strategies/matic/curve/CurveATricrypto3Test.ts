@@ -1,6 +1,8 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
+import {UniswapUtils} from "../../../UniswapUtils";
+import {utils} from "ethers";
 import {ethers} from "hardhat";
 import {TokenUtils} from "../../../TokenUtils";
 import {StrategyInfo} from "../../StrategyInfo";
@@ -23,11 +25,9 @@ const argv = require('yargs/yargs')()
   },
 }).argv;
 
-
 chai.use(chaiAsPromised);
 
-
-describe.skip('Curve aave tests', async () => {
+describe.skip('Curve aTricrypto3 tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }
@@ -37,12 +37,18 @@ describe.skip('Curve aave tests', async () => {
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
-    const [signer, investor, ] = (await ethers.getSigners());
-    const coreContracts = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, coreContracts.controller.address))[0];
-    const underlying = MaticAddresses.AM3CRV_TOKEN;
+    const [signer, investor, trader] = (await ethers.getSigners());
+    const coreContracts = await DeployerUtils.deployAllCoreContracts(
+        signer, 60 * 60 * 24 * 28, 1);
+    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(
+        signer, coreContracts.controller.address))[0];
+
+    const underlying = MaticAddresses.BTCCRV_TOKEN;
+
     const underlyingName = await TokenUtils.tokenSymbol(underlying);
-    const strategyName = 'CurveAaveStrategy';
+
+    const strategyName = 'CurveATriCrypto3Strategy';
+
     await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
 
     const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
@@ -60,7 +66,12 @@ describe.skip('Curve aave tests', async () => {
     );
 
     // swap tokens to invest
-    await CurveUtils.addLiquidityAave(investor);
+    await UniswapUtils.getTokenFromHolder(
+        trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000000'));
+    await UniswapUtils.getTokenFromHolder(
+        trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
+
+    await CurveUtils.addLiquidityTrirypto(investor);
 
     console.log('############## Preparations completed ##################');
   });
@@ -97,5 +108,6 @@ describe.skip('Curve aave tests', async () => {
   it("common test should be ok", async () => {
     await StrategyTestUtils.commonTests(strategyInfo);
   });
+
 
 });

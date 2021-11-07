@@ -32,22 +32,24 @@ describe("Zap contract tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
+  let user: SignerWithAddress;
   let core: CoreContractsWrapper;
   let calculator: PriceCalculator;
   let zapContract: ZapContract;
   let multiSwap: MultiSwap;
   let cReader: ContractReader;
-  let grtEthVault: SmartVault;
+  // let grtEthVault: SmartVault;
   let wmaticEthVault: SmartVault;
-  let btcWexVault: SmartVault;
-  let wexPearVault: SmartVault;
-  let wexVault: SmartVault;
+  // let btcWexVault: SmartVault;
+  // let wexPearVault: SmartVault;
+  // let wexVault: SmartVault;
 
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
-    core = await DeployerUtils.deployAllCoreContracts(signer);
+    user = (await ethers.getSigners())[1];
+    signer = await DeployerUtils.impersonate();
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
@@ -57,117 +59,118 @@ describe("Zap contract tests", function () {
 
     await core.controller.addToWhiteList(zapContract.address);
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WETH_TOKEN, utils.parseUnits('5000000')); // ~500eth
+    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, utils.parseUnits('1000'))
+    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, user.address, utils.parseUnits('1000'))
+    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, user.address, utils.parseUnits('100000', 6))
+    await TokenUtils.getToken(MaticAddresses.WETH_TOKEN, user.address, utils.parseUnits('1000'))
 
-    await UniswapUtils.createPairForRewardToken(signer, core, '100000');
+    await UniswapUtils.createPairForRewardToken(user, core, '10000');
 
-    grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategySushiSwapLp',
-            core.controller.address,
-            vaultAddress,
-            '0x1cedA73C034218255F50eF8a2c282E6B4c301d60', // grt weth
-            MaticAddresses.GRT_TOKEN,
-            MaticAddresses.WETH_TOKEN,
-            16
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
-    ))[1];
+    // grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+    //   't',
+    //   async vaultAddress => DeployerUtils.deployContract(
+    //     signer,
+    //     'StrategySushiSwapLp',
+    //     core.controller.address,
+    //     vaultAddress,
+    //     '0x1cedA73C034218255F50eF8a2c282E6B4c301d60', // grt weth
+    //     MaticAddresses.GRT_TOKEN,
+    //     MaticAddresses.WETH_TOKEN,
+    //     16
+    //   ) as Promise<IStrategy>,
+    //   core.controller,
+    //   core.vaultController,
+    //   core.psVault.address,
+    //   signer
+    // ))[1];
 
     wmaticEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategySushiSwapLp',
-            core.controller.address,
-            vaultAddress,
-            '0xc4e595acDD7d12feC385E5dA5D43160e8A0bAC0E', // SUSHI_WMATIC_WETH
-            MaticAddresses.WMATIC_TOKEN,
-            MaticAddresses.WETH_TOKEN,
-            0
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
+      't',
+      async vaultAddress => DeployerUtils.deployContract(
+        signer,
+        'StrategySushiSwapLp',
+        core.controller.address,
+        vaultAddress,
+        '0xc4e595acDD7d12feC385E5dA5D43160e8A0bAC0E', // SUSHI_WMATIC_WETH
+        MaticAddresses.WMATIC_TOKEN,
+        MaticAddresses.WETH_TOKEN,
+        0
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.vaultController,
+      core.psVault.address,
+      signer
     ))[1];
-
-    btcWexVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyWaultLp',
-            core.controller.address,
-            vaultAddress,
-            '0xaE183DB956FAf760Aa29bFcfDa4BDDdB02fbdd0E', // btc wex lp
-            MaticAddresses.WBTC_TOKEN,
-            MaticAddresses.WEXpoly_TOKEN,
-            24
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
-    ))[1];
-
-    wexPearVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyWaultLp',
-            core.controller.address,
-            vaultAddress,
-            '0xcF35da701ffD92027f798fF7D28B4CB3b424111d', // pear wex lp
-            MaticAddresses.PEAR_TOKEN,
-            MaticAddresses.WEXpoly_TOKEN,
-            26
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
-    ))[1];
-
-    grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategySushiSwapLp',
-            core.controller.address,
-            vaultAddress,
-            '0x1cedA73C034218255F50eF8a2c282E6B4c301d60', // grt weth
-            MaticAddresses.GRT_TOKEN,
-            MaticAddresses.WETH_TOKEN,
-            16
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
-    ))[1];
-
-    wexVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
-        't',
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyWaultSingle',
-            core.controller.address,
-            vaultAddress,
-            MaticAddresses.WEXpoly_TOKEN,
-            1
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.vaultController,
-        core.psVault.address,
-        signer
-    ))[1];
+    //
+    // btcWexVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+    //   't',
+    //   async vaultAddress => DeployerUtils.deployContract(
+    //     signer,
+    //     'StrategyWaultLp',
+    //     core.controller.address,
+    //     vaultAddress,
+    //     '0xaE183DB956FAf760Aa29bFcfDa4BDDdB02fbdd0E', // btc wex lp
+    //     MaticAddresses.WBTC_TOKEN,
+    //     MaticAddresses.WEXpoly_TOKEN,
+    //     24
+    //   ) as Promise<IStrategy>,
+    //   core.controller,
+    //   core.vaultController,
+    //   core.psVault.address,
+    //   signer
+    // ))[1];
+    //
+    // wexPearVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+    //   't',
+    //   async vaultAddress => DeployerUtils.deployContract(
+    //     signer,
+    //     'StrategyWaultLp',
+    //     core.controller.address,
+    //     vaultAddress,
+    //     '0xcF35da701ffD92027f798fF7D28B4CB3b424111d', // pear wex lp
+    //     MaticAddresses.PEAR_TOKEN,
+    //     MaticAddresses.WEXpoly_TOKEN,
+    //     26
+    //   ) as Promise<IStrategy>,
+    //   core.controller,
+    //   core.vaultController,
+    //   core.psVault.address,
+    //   signer
+    // ))[1];
+    //
+    // grtEthVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+    //   't',
+    //   async vaultAddress => DeployerUtils.deployContract(
+    //     signer,
+    //     'StrategySushiSwapLp',
+    //     core.controller.address,
+    //     vaultAddress,
+    //     '0x1cedA73C034218255F50eF8a2c282E6B4c301d60', // grt weth
+    //     MaticAddresses.GRT_TOKEN,
+    //     MaticAddresses.WETH_TOKEN,
+    //     16
+    //   ) as Promise<IStrategy>,
+    //   core.controller,
+    //   core.vaultController,
+    //   core.psVault.address,
+    //   signer
+    // ))[1];
+    //
+    // wexVault = (await DeployerUtils.deployAndInitVaultAndStrategy(
+    //   't',
+    //   async vaultAddress => DeployerUtils.deployContract(
+    //     signer,
+    //     'StrategyWaultSingle',
+    //     core.controller.address,
+    //     vaultAddress,
+    //     MaticAddresses.WEXpoly_TOKEN,
+    //     1
+    //   ) as Promise<IStrategy>,
+    //   core.controller,
+    //   core.vaultController,
+    //   core.psVault.address,
+    //   signer
+    // ))[1];
 
   });
 
@@ -193,153 +196,60 @@ describe("Zap contract tests", function () {
     expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address)).is.eq(bal);
   });
 
-  it("should zap grtEthVault twice with eth", async () => {
-    await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        grtEthVault.address,
-        MaticAddresses.WETH_TOKEN,
-        '0.1',
-        1
-    );
-
-    await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        grtEthVault.address,
-        MaticAddresses.WETH_TOKEN,
-        '0.05',
-        1
-    );
-  });
-
   it("should zap wmaticEthVault with eth", async () => {
     await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        wmaticEthVault.address,
-        MaticAddresses.WETH_TOKEN,
-        '0.1',
-        1
+      user,
+      cReader,
+      multiSwap,
+      zapContract,
+      wmaticEthVault.address,
+      MaticAddresses.WETH_TOKEN,
+      '0.1',
+      1
     );
   });
 
   it("should zap wmaticEthVault with btc", async () => {
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'), MaticAddresses.WETH_TOKEN);
+    await UniswapUtils.getTokenFromHolder(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'), MaticAddresses.WETH_TOKEN);
     await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        wmaticEthVault.address,
-        MaticAddresses.WBTC_TOKEN,
-        '0.001',
-        1
+      user,
+      cReader,
+      multiSwap,
+      zapContract,
+      wmaticEthVault.address,
+      MaticAddresses.WBTC_TOKEN,
+      '0.001',
+      1
     );
   });
-
-  it("should zap btcWexVault with btc", async () => {
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'), MaticAddresses.WETH_TOKEN);
-    await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        btcWexVault.address,
-        MaticAddresses.WBTC_TOKEN,
-        '0.001',
-        2
-    );
-  });
-
-  // probably liquidity changed
-  it.skip("should zap btcWexVault with usdt", async () => {
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('1000000'));
-    await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        btcWexVault.address,
-        MaticAddresses.USDT_TOKEN,
-        '1000',
-        3
-    );
-  });
-
-  it("should zap btcWexVault with wmatic", async () => {
-    await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        btcWexVault.address,
-        MaticAddresses.WMATIC_TOKEN,
-        '1000',
-        2
-    );
-  });
-
-  it("should zap btcWexVault with usdc", async () => {
-    await vaultLpTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        btcWexVault.address,
-        MaticAddresses.USDC_TOKEN,
-        '1000',
-        3
-    );
-  });
-
   it("should zap ps with usdc", async () => {
     await vaultSingleTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        core.psVault.address,
-        MaticAddresses.USDC_TOKEN,
-        '1000',
-        3
-    );
-  });
-
-  it("should zap wex vault with usdc", async () => {
-    await vaultSingleTest(
-        signer,
-        cReader,
-        multiSwap,
-        zapContract,
-        wexVault.address,
-        MaticAddresses.USDC_TOKEN,
-        '1000',
-        3
+      user,
+      cReader,
+      multiSwap,
+      zapContract,
+      core.psVault.address,
+      MaticAddresses.USDC_TOKEN,
+      '10',
+      3
     );
   });
 
   it.skip("should be able to invest to all vaults with 2 assets", async () => {
 
     const deployedZap = await DeployerUtils.connectInterface(
-        signer, 'ZapContract',
-        Addresses.TOOLS.get('matic')?.zapContract as string
+      user, 'ZapContract',
+      Addresses.TOOLS.get('matic')?.zapContract as string
     ) as ZapContract;
 
     const deployedMultiSwap = await DeployerUtils.connectInterface(
-        signer, 'MultiSwap',
-        Addresses.TOOLS.get('matic')?.multiSwap as string
+      user, 'MultiSwap',
+      Addresses.TOOLS.get('matic')?.multiSwap as string
     ) as MultiSwap;
 
     const contractReader = await DeployerUtils.connectInterface(
-        signer, 'ContractReader',
-        Addresses.TOOLS.get('matic')?.reader as string
+      user, 'ContractReader',
+      Addresses.TOOLS.get('matic')?.reader as string
     ) as ContractReader;
 
     const vaults = await contractReader.vaults();
@@ -354,24 +264,24 @@ describe("Zap contract tests", function () {
     for (let i = 0; i < vaults.length; i++) {
       const vault = vaults[i];
       console.log(i, await contractReader.vaultName(vault));
-      const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+      const vCtr = await DeployerUtils.connectInterface(user, 'SmartVault', vault) as SmartVault;
       if ((await contractReader.strategyAssets(await vCtr.strategy())).length !== 2
-          || exclude.has(vault.toLowerCase())) {
+        || exclude.has(vault.toLowerCase())) {
         continue;
       }
 
       // await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10'));
-      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10'));
+      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10'));
 
       await vaultLpTest(
-          signer,
-          contractReader,
-          deployedMultiSwap,
-          deployedZap,
-          vault,
-          MaticAddresses.WMATIC_TOKEN,
-          '10',
-          3
+        user,
+        contractReader,
+        deployedMultiSwap,
+        deployedZap,
+        vault,
+        MaticAddresses.WMATIC_TOKEN,
+        '10',
+        3
       );
     }
 
@@ -381,19 +291,19 @@ describe("Zap contract tests", function () {
 });
 
 async function zapIntoVaultWihSingleToken(
-    signer: SignerWithAddress,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    cReader: ContractReader,
-    vault: string,
-    tokenIn: string,
-    amountRaw = '1000',
-    slippage: number
+  signer: SignerWithAddress,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  cReader: ContractReader,
+  vault: string,
+  tokenIn: string,
+  amountRaw = '1000',
+  slippage: number
 ) {
   const tokenInDec = await TokenUtils.decimals(tokenIn);
   const amount = utils.parseUnits(amountRaw, tokenInDec);
   expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
-  .is.greaterThanOrEqual(+utils.formatUnits(amount, tokenInDec));
+    .is.greaterThanOrEqual(+utils.formatUnits(amount, tokenInDec));
 
 
   const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
@@ -420,13 +330,13 @@ async function zapIntoVaultWihSingleToken(
 
 
   await TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString())
-  await zapContract.zapInto(
-      vault,
-      tokenIn,
-      asset,
-      lps,
-      amount,
-      slippage
+  await zapContract.connect(signer).zapInto(
+    vault,
+    tokenIn,
+    asset,
+    lps,
+    amount,
+    slippage
   );
 
   expect(await TokenUtils.balanceOf(vault, signer.address)).is.not.eq(0);
@@ -436,19 +346,19 @@ async function zapIntoVaultWihSingleToken(
 }
 
 async function zapIntoVaultWithLp(
-    signer: SignerWithAddress,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    cReader: ContractReader,
-    vault: string,
-    tokenIn: string,
-    amountRaw = '1000',
-    slippage: number
+  signer: SignerWithAddress,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  cReader: ContractReader,
+  vault: string,
+  tokenIn: string,
+  amountRaw = '1000',
+  slippage: number
 ) {
   const tokenInDec = await TokenUtils.decimals(tokenIn);
   const amount = utils.parseUnits(amountRaw, tokenInDec);
   expect(+utils.formatUnits(await TokenUtils.balanceOf(tokenIn, signer.address), tokenInDec))
-  .is.greaterThanOrEqual(+utils.formatUnits(amount, tokenInDec));
+    .is.greaterThanOrEqual(+utils.formatUnits(amount, tokenInDec));
 
 
   const smartVault = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
@@ -480,15 +390,15 @@ async function zapIntoVaultWithLp(
   }
 
   await TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString())
-  await zapContract.zapIntoLp(
-      vault,
-      tokenIn,
-      tokensOut[0],
-      tokensOutLps[0],
-      tokensOut[1],
-      tokensOutLps[1],
-      amount,
-      slippage
+  await zapContract.connect(signer).zapIntoLp(
+    vault,
+    tokenIn,
+    tokensOut[0],
+    tokensOutLps[0],
+    tokensOut[1],
+    tokensOutLps[1],
+    amount,
+    slippage
   );
 
 
@@ -499,14 +409,14 @@ async function zapIntoVaultWithLp(
 }
 
 async function zapOutVaultWithSingleToken(
-    signer: SignerWithAddress,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    cReader: ContractReader,
-    vault: string,
-    tokenOut: string,
-    amountShare: string,
-    slippage: number
+  signer: SignerWithAddress,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  cReader: ContractReader,
+  vault: string,
+  tokenOut: string,
+  amountShare: string,
+  slippage: number
 ) {
   const tokenOutDec = await TokenUtils.decimals(tokenOut);
   const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec)
@@ -537,13 +447,13 @@ async function zapOutVaultWithSingleToken(
 
 
   await TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString())
-  await zapContract.zapOut(
-      vault,
-      tokenOut,
-      asset,
-      lps,
-      amountShare,
-      slippage
+  await zapContract.connect(signer).zapOut(
+    vault,
+    tokenOut,
+    asset,
+    lps,
+    amountShare,
+    slippage
   );
 
   const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec);
@@ -552,14 +462,14 @@ async function zapOutVaultWithSingleToken(
 }
 
 async function zapOutVaultWithLp(
-    signer: SignerWithAddress,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    cReader: ContractReader,
-    vault: string,
-    tokenOut: string,
-    amountShare: string,
-    slippage: number
+  signer: SignerWithAddress,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  cReader: ContractReader,
+  vault: string,
+  tokenOut: string,
+  amountShare: string,
+  slippage: number
 ) {
   const tokenOutDec = await TokenUtils.decimals(tokenOut);
   const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec)
@@ -591,15 +501,15 @@ async function zapOutVaultWithLp(
   }
 
   await TokenUtils.approve(vault, signer, zapContract.address, amountShare.toString())
-  await zapContract.zapOutLp(
-      vault,
-      tokenOut,
-      assets[0],
-      assetsLpRoute[0],
-      assets[1],
-      assetsLpRoute[1],
-      amountShare,
-      slippage
+  await zapContract.connect(signer).zapOutLp(
+    vault,
+    tokenOut,
+    assets[0],
+    assetsLpRoute[0],
+    assets[1],
+    assetsLpRoute[1],
+    amountShare,
+    slippage
   );
 
   const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenOut, signer.address), tokenOutDec);
@@ -608,14 +518,14 @@ async function zapOutVaultWithLp(
 }
 
 async function vaultSingleTest(
-    signer: SignerWithAddress,
-    cReader: ContractReader,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    vaultAddress: string,
-    inputToken: string,
-    amount: string,
-    slippage: number
+  signer: SignerWithAddress,
+  cReader: ContractReader,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  vaultAddress: string,
+  inputToken: string,
+  amount: string,
+  slippage: number
 ) {
   const dec = await TokenUtils.decimals(inputToken);
   const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
@@ -623,21 +533,22 @@ async function vaultSingleTest(
 
   const tokenInDec = await TokenUtils.decimals(inputToken);
   await TokenUtils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
-      (await TokenUtils.balanceOf(inputToken, signer.address))
+    (await TokenUtils.balanceOf(inputToken, signer.address))
       .sub(utils.parseUnits(amount, tokenInDec)).toString());
 
   const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
-
+  console.log('balance xTETU before', await TokenUtils.balanceOf(vaultAddress, signer.address))
   await zapIntoVaultWihSingleToken(
-      signer,
-      multiSwap,
-      zapContract,
-      cReader,
-      vaultAddress,
-      inputToken,
-      amount,
-      slippage
+    signer,
+    multiSwap,
+    zapContract,
+    cReader,
+    vaultAddress,
+    inputToken,
+    amount,
+    slippage
   );
+  console.log('balance xTETU after', await TokenUtils.balanceOf(vaultAddress, signer.address))
 
   expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
   expect(await TokenUtils.balanceOf(inputToken, multiSwap.address)).is.eq(0);
@@ -650,14 +561,14 @@ async function vaultSingleTest(
   const amountShare = await TokenUtils.balanceOf(vaultAddress, signer.address);
 
   await zapOutVaultWithSingleToken(
-      signer,
-      multiSwap,
-      zapContract,
-      cReader,
-      vaultAddress,
-      inputToken,
-      amountShare.toString(),
-      slippage
+    signer,
+    multiSwap,
+    zapContract,
+    cReader,
+    vaultAddress,
+    inputToken,
+    amountShare.toString(),
+    slippage
   );
 
   expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
@@ -669,18 +580,18 @@ async function vaultSingleTest(
   const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
   console.log(balanceBefore, balanceAfter, balanceAfter * ((100 - slippage) / 100));
   expect(balanceAfter)
-  .is.greaterThan(balanceBefore * ((100 - slippage) / 100));
+    .is.greaterThan(balanceBefore * ((100 - slippage) / 100));
 }
 
 async function vaultLpTest(
-    signer: SignerWithAddress,
-    cReader: ContractReader,
-    multiSwap: MultiSwap,
-    zapContract: ZapContract,
-    vaultAddress: string,
-    inputToken: string,
-    amount: string,
-    slippage: number
+  signer: SignerWithAddress,
+  cReader: ContractReader,
+  multiSwap: MultiSwap,
+  zapContract: ZapContract,
+  vaultAddress: string,
+  inputToken: string,
+  amount: string,
+  slippage: number
 ) {
   const dec = await TokenUtils.decimals(inputToken);
   const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
@@ -693,20 +604,20 @@ async function vaultLpTest(
 
   const tokenInDec = await TokenUtils.decimals(inputToken);
   await TokenUtils.transfer(inputToken, signer, MaticAddresses.SUSHI_ROUTER,
-      (await TokenUtils.balanceOf(inputToken, signer.address))
+    (await TokenUtils.balanceOf(inputToken, signer.address))
       .sub(utils.parseUnits(amount, tokenInDec)).toString());
 
   const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
 
   await zapIntoVaultWithLp(
-      signer,
-      multiSwap,
-      zapContract,
-      cReader,
-      vaultAddress,
-      inputToken,
-      amount,
-      slippage
+    signer,
+    multiSwap,
+    zapContract,
+    cReader,
+    vaultAddress,
+    inputToken,
+    amount,
+    slippage
   );
 
   expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
@@ -726,14 +637,14 @@ async function vaultLpTest(
   const amountShare = await TokenUtils.balanceOf(vaultAddress, signer.address);
 
   await zapOutVaultWithLp(
-      signer,
-      multiSwap,
-      zapContract,
-      cReader,
-      vaultAddress,
-      inputToken,
-      amountShare.toString(),
-      slippage
+    signer,
+    multiSwap,
+    zapContract,
+    cReader,
+    vaultAddress,
+    inputToken,
+    amountShare.toString(),
+    slippage
   );
 
   expect(await TokenUtils.balanceOf(inputToken, zapContract.address)).is.eq(0);
@@ -751,5 +662,5 @@ async function vaultLpTest(
   const balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(inputToken, signer.address), dec);
   console.log(balanceBefore, balanceAfter, balanceAfter * ((100 - slippage) / 100));
   expect(balanceAfter)
-  .is.greaterThan(balanceBefore * ((100 - slippage) / 100));
+    .is.greaterThan(balanceBefore * ((100 - slippage) / 100));
 }

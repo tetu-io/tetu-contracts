@@ -27,7 +27,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 internal constant _BUY_BACK_DENOMINATOR = 10000;
 
   //************************ VARIABLES **************************
   address internal _underlyingToken;
@@ -253,8 +253,23 @@ abstract contract StrategyBase is IStrategy, Controllable {
     }
   }
 
-  /// @dev Default implementation of auto-compounding
-  ///      Liquidate rewards, buy assets and send back to vault
+  /// @dev Liquidate rewards and buy underlying asset
+  function autocompound() internal {
+    address forwarder = IController(controller()).feeRewardForwarder();
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      if (amount != 0) {
+        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        address rt = _rewardTokens[i];
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, toCompound);
+        IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, toCompound);
+      }
+    }
+  }
+
+  /// @dev Default implementation of auto-compounding for swap pairs
+  ///      Liquidate rewards, buy assets and add to liquidity pool
   function autocompoundLP(address _router) internal {
     address forwarder = IController(controller()).feeRewardForwarder();
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
