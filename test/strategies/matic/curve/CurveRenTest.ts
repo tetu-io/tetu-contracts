@@ -89,7 +89,7 @@ describe.skip('Curve ren tests', async () => {
   });
 
   it("doHardWork loop with liq path", async () => {
-    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo);
+    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo, null);
   });
 
   it("doHardWork loop", async function () {

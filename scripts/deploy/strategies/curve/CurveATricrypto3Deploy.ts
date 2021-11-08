@@ -18,11 +18,10 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
-    console.log(vAdr);
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
-  const vaultNameWithoutPrefix = `CRV_AT3`;
+  const vaultNameWithoutPrefix = `CRV_ATC3`;
 
   if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
     console.log('Strategy already exist', vaultNameWithoutPrefix);
@@ -44,20 +43,18 @@ async function main() {
     true
   );
 
-  if ((await ethers.provider.getNetwork()).name !== "hardhat") {
-    await DeployerUtils.wait(5);
-    await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
-    await DeployerUtils.verifyProxy(vault.address);
-    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveATriCrypto3Strategy.sol:CurveATriCrypto3Strategy', [
-      core.controller,
-      MaticAddresses.USD_BTC_ETH_CRV_TOKEN,
-      vault.address
-    ]);
-  }
+  await DeployerUtils.wait(5);
+  await DeployerUtils.verify(vaultLogic.address);
+  await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
+  await DeployerUtils.verifyProxy(vault.address);
+  await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveATriCrypto3Strategy.sol:CurveATriCrypto3Strategy', [
+    core.controller,
+    MaticAddresses.USD_BTC_ETH_CRV_TOKEN,
+    vault.address
+  ]);
 
-  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`,
-    JSON.stringify([vaultLogic, vault, strategy]), 'utf8');
+  const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
+  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
 
 }
 
