@@ -62,6 +62,8 @@ interface IController {
 
   function isRewardDistributor(address _adr) external view returns (bool);
 
+  function isPoorRewardConsumer(address _adr) external view returns (bool);
+
   function isValidVault(address _vault) external view returns (bool);
 
   function isValidStrategy(address _strategy) external view returns (bool);

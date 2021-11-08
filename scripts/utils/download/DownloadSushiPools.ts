@@ -50,10 +50,10 @@ async function downloadSushi() {
     }
     const lp = await chef.lpToken(i);
 
-    const status = underlyingStatuses.get(lp.toLowerCase());
-    if (!status) {
-      continue;
-    }
+    // const status = underlyingStatuses.get(lp.toLowerCase());
+    // if (!status) {
+    //   continue;
+    // }
     console.log('id', i);
     const poolInfo = await chef.poolInfo(i);
     const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
@@ -61,6 +61,9 @@ async function downloadSushi() {
     const token1 = await lpContract.token1();
 
     const sushiAllocPoint = poolInfo[2];
+    if (sushiAllocPoint.toNumber() === 0) {
+      continue;
+    }
     const sushiDuration = +(((Date.now() / 1000) - poolInfo[1].toNumber()).toFixed(0));
 
     const sushiWeekRewardUsd = computeWeekReward(sushiDuration, sushiPerSecond, sushiAllocPoint, totalAllocPoint, sushiPrice);
@@ -89,20 +92,20 @@ async function downloadSushi() {
     const token0Name = await TokenUtils.tokenSymbol(token0);
     const token1Name = await TokenUtils.tokenSymbol(token1);
     const data = i + ',' +
-        'SUSHI_' + token0Name + '_' + token1Name + ',' +
-        lp + ',' +
-        token0 + ',' +
-        token0Name + ',' +
-        token1 + ',' +
-        token1Name + ',' +
-        sushiAllocPoint.toNumber() + ',' +
-        sushiWeekRewardUsd.toFixed(0) + ',' +
-        maticWeekRewardUsd.toFixed(0) + ',' +
-        allRewards.toFixed(0) + ',' +
-        (+tvlUsd).toFixed(0) + ',' +
-        apr.toFixed(0) + ',' +
-        currentRewards.get(lp.toLowerCase()) + ',' +
-        underlyingToVault.get(lp.toLowerCase())
+      'SUSHI_' + token0Name + '_' + token1Name + ',' +
+      lp + ',' +
+      token0 + ',' +
+      token0Name + ',' +
+      token1 + ',' +
+      token1Name + ',' +
+      sushiAllocPoint.toNumber() + ',' +
+      sushiWeekRewardUsd.toFixed(0) + ',' +
+      maticWeekRewardUsd.toFixed(0) + ',' +
+      allRewards.toFixed(0) + ',' +
+      (+tvlUsd).toFixed(0) + ',' +
+      apr.toFixed(0) + ',' +
+      currentRewards.get(lp.toLowerCase()) + ',' +
+      underlyingToVault.get(lp.toLowerCase())
     ;
     console.log(data);
     infos += data + '\n';
@@ -118,18 +121,18 @@ async function downloadSushi() {
 }
 
 downloadSushi()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
 
 function computeWeekReward(
-    time: number,
-    sushiPerSecond: BigNumber,
-    allocPoint: BigNumber,
-    totalAllocPoint: BigNumber,
-    sushiPrice: BigNumber
+  time: number,
+  sushiPerSecond: BigNumber,
+  allocPoint: BigNumber,
+  totalAllocPoint: BigNumber,
+  sushiPrice: BigNumber
 ): number {
   const sushiReward = BigNumber.from(time).mul(sushiPerSecond).mul(allocPoint).div(totalAllocPoint);
   const timeWeekRate = (60 * 60 * 24 * 7) / time;

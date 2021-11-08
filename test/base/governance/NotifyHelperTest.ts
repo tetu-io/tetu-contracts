@@ -36,7 +36,7 @@ describe("Notify Helper test", () => {
     await MintHelperUtils.mint(core.controller, core.announcer, '1000000', core.notifyHelper.address);
 
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
 
     for (let i = 0; i < 2; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(
@@ -144,9 +144,9 @@ describe("Notify Helper test", () => {
       await core.vaultController.addRewardTokens([vault], rt);
     }
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER,
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER,
         MaticAddresses.WMATIC_TOKEN, utils.parseUnits("10000", 18));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits("1000", 18));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits("1000", 18));
     expect(+utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), 6))
     .is.greaterThanOrEqual(1000);
 

@@ -11,7 +11,6 @@ import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MaticAddresses} from "../../MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
-import {MintHelperUtils} from "../../MintHelperUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -30,8 +29,8 @@ describe("Diamond vault test", () => {
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
-    core = await DeployerUtils.deployAllCoreContracts(signer);
+    signer = await DeployerUtils.impersonate();
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
@@ -65,15 +64,15 @@ describe("Diamond vault test", () => {
     console.log('vault.address', vault.address);
     const rt = vault.address;
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
     await vault.initializeSmartVault(
-        "NOOP",
-        "tNOOP",
-        core.controller.address,
-        underlying,
-        60 * 60 * 24 * 28,
-        true,
-        rt
+      "NOOP",
+      "tNOOP",
+      core.controller.address,
+      underlying,
+      60 * 60 * 24 * 28,
+      true,
+      rt
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await vault.setLockPenalty(LOCK_PENALTY);
@@ -89,7 +88,7 @@ describe("Diamond vault test", () => {
     const rewardsToDistribute = utils.parseUnits('10000', rtDecimals);
     let rewardsTotalAmount = rewardsToDistribute;
 
-    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
+    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('1000000'));
     await UniswapUtils.createPairForRewardToken(signer, core, '567111');
     await VaultUtils.deposit(signer, core.psVault, await TokenUtils.balanceOf(core.rewardToken.address, signer.address));
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
@@ -146,10 +145,10 @@ describe("Diamond vault test", () => {
 
           const curUndBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, user1.address), underlyingDec);
           await printBalance(user1.address, underlying, underlyingDec,
-              curUndBal,
-              undBalBeforeExit, // user claim rewards and withdraw it when exit
-              (await vault.userLastDepositTs(user1.address)).toNumber(),
-              lastWithdrawTs
+            curUndBal,
+            undBalBeforeExit, // user claim rewards and withdraw it when exit
+            (await vault.userLastDepositTs(user1.address)).toNumber(),
+            lastWithdrawTs
           );
           const diff = undBalBeforeExit - curUndBal;
           console.log('--USER 1 diff', diff, user1Balance, curUndBal);
@@ -171,10 +170,10 @@ describe("Diamond vault test", () => {
           await vault.connect(user2).withdraw(user2Staked);
           const curBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, user2.address), underlyingDec);
           const newDeposit = await printBalance(user2.address, underlying, underlyingDec,
-              curBal,
-              bal,
-              (await vault.userLastDepositTs(user2.address)).toNumber(),
-              (await vault.userLastWithdrawTs(user2.address)).toNumber()
+            curBal,
+            bal,
+            (await vault.userLastDepositTs(user2.address)).toNumber(),
+            (await vault.userLastWithdrawTs(user2.address)).toNumber()
           );
           const diff = bal - +newDeposit;
           console.log('--USER 2 diff', diff, bal, newDeposit);
@@ -195,7 +194,7 @@ describe("Diamond vault test", () => {
       console.log('ppfs after time machine', +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec));
 
       console.log('vaultApr', await VaultUtils.vaultApr(vault, rt, contractReader),
-          utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]));
+        utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]));
       console.log('rewardPerToken', utils.formatUnits(await vault.rewardPerToken(rt)));
 
       if (user1Deposited) {
@@ -248,19 +247,19 @@ describe("Diamond vault test", () => {
     console.log('claimedTotal with contr', claimedTotal + controllerBal, +utils.formatUnits(rewardsTotalAmount, rtDecimals));
 
     expect(claimedTotal + controllerBal).is.approximately(+utils.formatUnits(rewardsTotalAmount, rtDecimals),
-        +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01, 'total claimed not enough');
+      +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01, 'total claimed not enough');
   });
 
 });
 
 async function printBalance(
-    userAdr: string,
-    underlying: string,
-    underlyingDec: number,
-    curBal: number,
-    prevBal: number,
-    depositedTime: number,
-    withdrawTime: number
+  userAdr: string,
+  underlying: string,
+  underlyingDec: number,
+  curBal: number,
+  prevBal: number,
+  depositedTime: number,
+  withdrawTime: number
 ): Promise<string> {
   const currentLockDuration = withdrawTime - depositedTime;
   const sharesBase = prevBal * (1000 - LOCK_PENALTY) / 1000;
@@ -292,10 +291,10 @@ async function exit(vault: SmartVault, user: SignerWithAddress) {
 }
 
 async function claim(
-    vault: SmartVault,
-    signer: SignerWithAddress,
-    name: string,
-    allowedZero = false
+  vault: SmartVault,
+  signer: SignerWithAddress,
+  name: string,
+  allowedZero = false
 ) {
   const rt = (await vault.rewardTokens())[0];
   const rtDecimals = await TokenUtils.decimals(rt);

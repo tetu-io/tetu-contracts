@@ -16,7 +16,7 @@ const argv = require('yargs/yargs')()
   },
   onlyOneQuickStrategyTest: {
     type: "number",
-    default: 1,
+    default: 5,
   }
 }).argv;
 

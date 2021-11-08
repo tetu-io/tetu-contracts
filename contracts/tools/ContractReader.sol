@@ -27,7 +27,7 @@ import "../infrastructure/price/IPriceCalculator.sol";
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -362,6 +362,10 @@ contract ContractReader is Initializable, Controllable {
 
   function vaultName(address _vault) public view returns (string memory){
     return ERC20(_vault).name();
+  }
+
+  function vaultPlatform(address _vault) public view returns (IStrategy.Platform){
+    return IStrategy(ISmartVault(_vault).strategy()).platform();
   }
 
   // no decimals

@@ -1,7 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {
   Announcer,
@@ -24,12 +23,12 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 const vaultsSet = new Set<string>([
-  '0x0ed08c9A2EFa93C4bF3C8878e61D2B6ceD89E9d7',
-  '0x6f2fb669B52e4ED21a019e9db197F27f4B88eBf9',
-  '0x57205cC741f8787a5195B2126607ac505E11B650'
+  '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7',
+  '0xd051605E07C2B526ED9406a555601aA4DB8490D9',
+  '0xE680e0317402ad3CB37D5ed9fc642702658Ef57F'
 ]);
 
-describe("Reward calculator tests", function () {
+describe("auto rewarder tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let gov: SignerWithAddress;
@@ -42,9 +41,8 @@ describe("Reward calculator tests", function () {
   let coreAddresses: CoreAddresses;
 
   before(async function () {
-    this.timeout(12000000000);
     snapshot = await TimeUtils.snapshot();
-    gov = await DeployerUtils.impersonate('0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B');
+    gov = await DeployerUtils.impersonate();
 
     coreAddresses = Addresses.CORE.get('matic') as CoreAddresses;
     const controllerAdr = coreAddresses.controller;
@@ -57,11 +55,13 @@ describe("Reward calculator tests", function () {
 
     priceCalculator = (await DeployerUtils.deployPriceCalculatorMatic(gov, controllerAdr))[0] as PriceCalculator;
     rewardCalculator = (await DeployerUtils.deployRewardCalculator(gov, controllerAdr, priceCalculator.address))[0] as RewardCalculator;
-    rewarder = await DeployerUtils.deployAutoRewarder(gov, controllerAdr, rewardCalculator.address);
-
-    await rewarder.setNetworkRatio(utils.parseUnits('0.231'));
-    await rewarder.setRewardPerDay(utils.parseUnits('1000'));
-
+    rewarder = (await DeployerUtils.deployAutoRewarder(
+      gov,
+      controllerAdr,
+      rewardCalculator.address,
+      utils.parseUnits('0.231').toString(),
+      utils.parseUnits('1000').toString()
+    ))[0];
 
     // await rewardCalculator.set
     await controller.setRewardDistribution([rewarder.address], true);
@@ -137,8 +137,8 @@ describe("Reward calculator tests", function () {
       } catch (e) {
         console.log('error collect', e);
       }
-
     }
+    expect(await rewarder.totalStrategyRewards()).is.not.eq(0);
 
     console.log('totalStrategyRewards', utils.formatUnits(await rewarder.totalStrategyRewards()));
 
@@ -165,7 +165,7 @@ describe("Reward calculator tests", function () {
       const info = await rewarder.lastInfo(vault)
       const distributed = +utils.formatUnits(await rewarder.lastDistributedAmount(vault))
       const toDistribute = +utils.formatUnits(rewardsPerDay) * (
-          +utils.formatUnits(info.strategyRewardsUsd) / +utils.formatUnits(strategyRewardsSum)
+        +utils.formatUnits(info.strategyRewardsUsd) / +utils.formatUnits(strategyRewardsSum)
       )
       console.log('toDistribute', toDistribute)
       console.log('distributed', distributed)
@@ -182,18 +182,22 @@ describe("Reward calculator tests", function () {
     await expect(rewarder.distribute(1)).rejectedWith('AR: Info too old');
 
     for (let i = 0; i < vaults.length; i = i + step) {
-      console.log('collect', i, i + step);
-      console.log('vaults.slice(i, i + step)', vaults.slice(i, i + step))
+      console.log('collect2', i, i + step);
+      console.log('vaults.slice(i, i + step)2', vaults.slice(i, i + step))
+      for (const v of vaults) {
+        await controller.doHardWork(v);
+      }
       try {
         await rewarder.collectAndStoreInfo(vaults.slice(i, i + step));
       } catch (e) {
-        console.log('error collect', e);
+        console.log('error collect2', e);
       }
 
     }
+    expect(await rewarder.totalStrategyRewards()).is.not.eq(0);
 
     for (let i = 0; i < vaults.length; i = i + step) {
-      console.log('distribute', i, i + step);
+      console.log('distribute2', i, i + step);
       await distribute(rewarder, step);
     }
 
@@ -229,7 +233,7 @@ async function distribute(rewarder: AutoRewarder, count: number) {
       bal: await xTetuVault.underlyingBalanceWithInvestmentForHolder(vault)
     });
   }
-  // console.log('DISTRIBUTE', count);
+  console.log('DISTRIBUTE', count, (await rewarder.lastDistributedId()).toString());
   await rewarder.distribute(count);
 
   for (const d of data) {

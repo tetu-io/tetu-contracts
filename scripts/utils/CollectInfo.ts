@@ -38,7 +38,7 @@ async function main() {
 
   const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
   const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+    signer, "ContractReader", tools.reader) as ContractReader;
 
   mkdir('./tmp/stats', {recursive: true}, (err) => {
     if (err) throw err;
@@ -46,6 +46,7 @@ async function main() {
 
   const vaultsPure = await bookkeeper.vaults();
 
+  writeFileSync(`./tmp/stats/vaults.txt`, JSON.stringify(vaultsPure), 'utf8');
   console.log('vaults', vaultsPure.length);
 
   const currentBlock = await web3.eth.getBlockNumber();
@@ -60,7 +61,7 @@ async function main() {
   for (const vault of vaultsPure) {
     const v = vault.toLowerCase();
     if (v === core.psVault.toLowerCase()
-        // || !vaultsForParsing.has(v)
+      // || !vaultsForParsing.has(v)
     ) {
       continue;
     }
@@ -70,10 +71,10 @@ async function main() {
   }
 
   const logs = await Web3Utils.parseLogs(
-      vaults,
-      [EVENT_DEPOSIT],
-      START_BLOCK,
-      currentBlock
+    vaults,
+    [EVENT_DEPOSIT],
+    START_BLOCK,
+    currentBlock
   );
 
   console.log('logs', logs.length);
@@ -81,20 +82,20 @@ async function main() {
 
   for (const log of logs) {
     const logDecoded = web3.eth.abi.decodeLog([
-          {
-            "indexed": true,
-            "internalType": "address",
-            "name": "beneficiary",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }],
-        log.data,
-        log.topics.slice(1));
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "beneficiary",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }],
+      log.data,
+      log.topics.slice(1));
     usersTotal.get(log.address)?.add(logDecoded.beneficiary.toLowerCase());
     users.get(log.address)?.set(logDecoded.beneficiary.toLowerCase(), '0');
   }
@@ -131,19 +132,19 @@ async function main() {
 
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
 
 
 async function collectPs(
-    usersTotalAll: Map<string, Set<string>>,
-    psAdr: string,
-    vaults: string[],
-    signer: SignerWithAddress,
-    utilsAdr: string
+  usersTotalAll: Map<string, Set<string>>,
+  psAdr: string,
+  vaults: string[],
+  signer: SignerWithAddress,
+  utilsAdr: string
 ): Promise<string> {
 
   let data = '';

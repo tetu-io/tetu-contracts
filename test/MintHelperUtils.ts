@@ -5,7 +5,7 @@ import {TimeUtils} from "./TimeUtils";
 export class MintHelperUtils {
 
   public static async mint(controller: Controller, announcer: Announcer, amount: string, destination: string, period = 60 * 60 * 48) {
-
+    console.log("mint reward tokens", amount)
     await announcer.announceMint(utils.parseUnits(amount), destination, destination, false);
 
     await TimeUtils.advanceBlocksOnTs(period);

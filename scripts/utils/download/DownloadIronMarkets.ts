@@ -54,11 +54,6 @@ async function main() {
   for (let i = 0; i < markets.length; i++) {
     console.log('id', i);
 
-    if (i === 2) {
-      console.log('skip matic temporally')
-      continue;
-    }
-
     if (i === 5 || i === 6) {
       console.log('skip volatile assets')
       continue;
@@ -70,7 +65,13 @@ async function main() {
     console.log('rTokenName', rTokenName, rTokenAdr)
     const rTokenCtr = await DeployerUtils.connectInterface(signer, 'RTokenInterface', rTokenAdr) as RTokenInterface;
     const rTokenCtr2 = await DeployerUtils.connectInterface(signer, 'RErc20Storage', rTokenAdr) as RErc20Storage;
-    const token = await rTokenCtr2.underlying();
+    let token: string;
+    if (i === 2) {
+      token = MaticAddresses.WMATIC_TOKEN;
+    } else {
+      token = await rTokenCtr2.underlying();
+    }
+
     const tokenName = await TokenUtils.tokenSymbol(token);
 
     const collateralFactor = +utils.formatUnits((await controller.markets(rTokenAdr)).collateralFactorMantissa) * 10000;
@@ -94,16 +95,16 @@ async function main() {
     const vault = underlyingToVault.get(token.toLowerCase());
 
     const data = i + ',' +
-        rTokenName + ',' +
-        rTokenAdr + ',' +
-        token + ',' +
-        tokenName + ',' +
-        (collateralFactor - 1) + ',' +
-        borrowTarget + ',' +
-        tvl.toFixed(2) + ',' +
-        apr + ',' +
-        vault + ',' +
-        curRewards
+      rTokenName + ',' +
+      rTokenAdr + ',' +
+      token + ',' +
+      tokenName + ',' +
+      (collateralFactor - 1) + ',' +
+      borrowTarget + ',' +
+      tvl.toFixed(2) + ',' +
+      apr + ',' +
+      vault + ',' +
+      curRewards
 
 
     console.log(data);
@@ -120,11 +121,11 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
 
 async function collectTokensInfo(signer: SignerWithAddress, lp: string, id: number): Promise<string[]> {
   if (id === 0 || id === 3) {
@@ -157,11 +158,11 @@ async function collectTokensInfoUniswap(signer: SignerWithAddress, lp: string): 
 }
 
 function computeWeekReward(
-    time: number,
-    sushiPerSecond: BigNumber,
-    allocPoint: BigNumber,
-    totalAllocPoint: BigNumber,
-    sushiPrice: BigNumber
+  time: number,
+  sushiPerSecond: BigNumber,
+  allocPoint: BigNumber,
+  totalAllocPoint: BigNumber,
+  sushiPrice: BigNumber
 ): number {
   const sushiReward = BigNumber.from(time).mul(sushiPerSecond).mul(allocPoint).div(totalAllocPoint);
   const timeWeekRate = (60 * 60 * 24 * 7) / time;

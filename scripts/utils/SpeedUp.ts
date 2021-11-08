@@ -10,30 +10,30 @@ const EthereumTx = require('ethereumjs-tx').Transaction
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  maticRpcUrl: {
-    type: "string",
-  },
-  privateKey: {
-    type: "string",
-  },
-  speedUpTx: {
-    type: "string",
-  },
-  speedUpGasPrice: {
-    type: "string",
-    default: utils.parseUnits(333 + '', 9).toString()
-  }
-}).argv;
+  .env('TETU')
+  .options({
+    maticRpcUrl: {
+      type: "string",
+    },
+    privateKey: {
+      type: "string",
+    },
+    speedUpTx: {
+      type: "string",
+    },
+    speedUpGasPrice: {
+      type: "string",
+      default: utils.parseUnits(333 + '', 9).toString()
+    }
+  }).argv;
 
 const MATIC_CHAIN = Common.forCustomChain(
-    'mainnet', {
-      name: 'matic',
-      networkId: 137,
-      chainId: 137
-    },
-    'petersburg'
+  'mainnet', {
+    name: 'matic',
+    networkId: 137,
+    chainId: 137
+  },
+  'petersburg'
 );
 
 async function main() {
@@ -41,19 +41,19 @@ async function main() {
   let response: AxiosResponse;
   try {
     response = await axios.post(argv.maticRpcUrl,
-        `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["${txHash}"],"id":1}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        },
+      `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["${txHash}"],"id":1}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      },
     );
   } catch (e) {
     console.error('error request', e);
     return;
   }
   const result = response.data.result;
-  console.log('response', result);
+  console.log('response', txHash, result);
 
   const nonce = web3.utils.hexToNumber(result.nonce);
   console.log('nonce', nonce);
@@ -64,14 +64,14 @@ async function main() {
   console.log('gas', gasPrice, gasPriceAdjusted);
 
   const tx = new EthereumTx(
-      {
-        nonce: web3.utils.numberToHex(nonce),
-        to: result.to,
-        data: result.input,
-        gasPrice: web3.utils.numberToHex(argv.speedUpGasPrice),
-        gasLimit: web3.utils.numberToHex(19_000_000),
-      },
-      {common: MATIC_CHAIN});
+    {
+      nonce: web3.utils.numberToHex(nonce),
+      to: result.to,
+      data: result.input,
+      gasPrice: web3.utils.numberToHex(argv.speedUpGasPrice),
+      gasLimit: web3.utils.numberToHex(19_000_000),
+    },
+    {common: MATIC_CHAIN});
 
 
   tx.sign(Buffer.from(argv.privateKey, 'hex'));
@@ -86,8 +86,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

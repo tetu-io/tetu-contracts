@@ -17,14 +17,14 @@ const argv = require('yargs/yargs')()
   },
   onlyOneWaultStrategyTest: {
     type: "number",
-    default: 1,
+    default: 2,
   }
 }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Wault tests', async () => {
+describe.skip('Universal Wault tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }
@@ -56,7 +56,7 @@ describe('Universal Wault tests', async () => {
     if (strat[6]) {
       /* tslint:disable:no-floating-promises */
       startDefaultLpStrategyTest(
-          'StrategyWaultLp',
+          'StrategyWaultLpWithAc',
           MaticAddresses.WAULT_FACTORY,
           lpAddress.toLowerCase(),
           token0,

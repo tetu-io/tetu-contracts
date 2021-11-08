@@ -10,20 +10,28 @@ export class CoreAddresses {
   public readonly fundKeeper: string;
   public readonly vaultController: string;
   public readonly pawnshop: string;
+  public readonly swapFactory: string;
+  public readonly swapRouter: string;
+  public readonly rewardCalculator: string;
+  public readonly autoRewarder: string;
 
 
   constructor(
-      controller: string,
-      announcer: string,
-      feeRewardForwarder: string,
-      bookkeeper: string,
-      notifyHelper: string,
-      mintHelper: string,
-      rewardToken: string,
-      psVault: string,
-      fundKeeper: string,
-      vaultController: string,
-      pawnshop: string
+    controller: string,
+    announcer: string,
+    feeRewardForwarder: string,
+    bookkeeper: string,
+    notifyHelper: string,
+    mintHelper: string,
+    rewardToken: string,
+    psVault: string,
+    fundKeeper: string,
+    vaultController: string,
+    pawnshop: string,
+    swapFactory: string,
+    swapRouter: string,
+    rewardCalculator: string,
+    autoRewarder: string
   ) {
     this.controller = controller;
     this.announcer = announcer;
@@ -36,5 +44,9 @@ export class CoreAddresses {
     this.fundKeeper = fundKeeper;
     this.vaultController = vaultController;
     this.pawnshop = pawnshop;
+    this.swapFactory = swapFactory;
+    this.swapRouter = swapRouter;
+    this.rewardCalculator = rewardCalculator;
+    this.autoRewarder = autoRewarder;
   }
 }

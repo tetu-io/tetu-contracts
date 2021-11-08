@@ -25,12 +25,17 @@ import "../../base/interface/IMasterChefStrategyCafe.sol";
 import "../../base/interface/IMasterChefStrategyV1.sol";
 import "../../base/interface/IMasterChefStrategyV2.sol";
 import "../../base/interface/IMasterChefStrategyV3.sol";
+import "../../base/interface/IIronFoldStrategy.sol";
 import "../../base/interface/ISNXStrategy.sol";
+import "../../base/interface/IStrategyWithPool.sol";
 import "../../third_party/cosmic/ICosmicMasterChef.sol";
 import "../../third_party/dino/IFossilFarms.sol";
 import "../price/IPriceCalculator.sol";
 import "./IRewardCalculator.sol";
 import "../../third_party/quick/IDragonLair.sol";
+import "../../third_party/quick/IStakingDualRewards.sol";
+import "../../third_party/iron/IronControllerInterface.sol";
+import "../../third_party/iron/CompleteRToken.sol";
 
 /// @title Calculate estimated strategy rewards
 /// @author belbix
@@ -39,12 +44,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.3.0";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
+  uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 public constant AVG_REWARDS = 7;
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
@@ -73,11 +80,19 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
     uint256 rtPrice = getPrice(strategy.rewardTokens()[0]);
     uint256 rewardsPerSecond = 0;
-    if (strategy.platform() == IStrategy.Platform.TETU || strategy.platform() == IStrategy.Platform.UNKNOWN) {
+    if (
+      strategy.platform() == IStrategy.Platform.TETU
+      || strategy.platform() == IStrategy.Platform.TETU_SWAP
+      || strategy.platform() == IStrategy.Platform.UNKNOWN
+    ) {
       return 0;
     } else if (strategy.platform() == IStrategy.Platform.QUICK) {
 
-      rewardsPerSecond = quick(address(ISNXStrategy(_strategy).rewardPool()));
+      if (strategy.rewardTokens().length == 2) {
+        rewardsPerSecond = quickDualFarm(IStrategyWithPool(_strategy).pool());
+      } else {
+        rewardsPerSecond = quick(address(ISNXStrategy(_strategy).rewardPool()));
+      }
 
     } else if (strategy.platform() == IStrategy.Platform.SUSHI) {
 
@@ -109,9 +124,8 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       rewardsPerSecond = dino(mc.pool(), mc.poolID());
 
     } else if (strategy.platform() == IStrategy.Platform.IRON_LEND) {
-
-      // todo
-      return 0;
+      // we already have usd rate
+      rewardsPerSecond = ironLending(strategy);
 
     } else if (strategy.platform() == IStrategy.Platform.HERMES) {
 
@@ -125,24 +139,39 @@ contract RewardCalculator is Controllable, IRewardCalculator {
 
     }
 
-    uint256 _kpi = kpi(strategy.vault());
-    if (_kpi != 0) {
-      rewardsPerSecond = rewardsPerSecond * _kpi / PRECISION;
+    if (strategy.buyBackRatio() < _BUY_BACK_DENOMINATOR) {
+      rewardsPerSecond = rewardsPerSecond * strategy.buyBackRatio() / _BUY_BACK_DENOMINATOR;
     }
 
+    uint256 _kpi = kpi(strategy.vault());
     uint256 multiplier = platformMultiplier[strategy.platform()];
+
+    if (_kpi != 0) {
+      rewardsPerSecond = rewardsPerSecond * _kpi / PRECISION;
+    } else {
+      // no rewards for strategies without profit
+      return 0;
+    }
 
     if (multiplier != 0) {
       rewardsPerSecond = rewardsPerSecond * multiplier / MULTIPLIER_DENOMINATOR;
     }
 
-    uint256 result = _period * rewardsPerSecond * rtPrice / 1e18;
+    // return precalculated rates
+    if (strategy.platform() == IStrategy.Platform.IRON_LEND) {
+      return _period * rewardsPerSecond;
+    }
+
+    uint256 result = _period * rewardsPerSecond * rtPrice / PRECISION;
     if (strategy.rewardTokens().length == 2) {
       if (strategy.platform() == IStrategy.Platform.SUSHI) {
         IMasterChefStrategyV3 mc = IMasterChefStrategyV3(_strategy);
         uint256 rewardsPerSecond2 = mcRewarder(mc.mcRewardPool(), mc.poolID());
         uint256 rtPrice2 = priceCalculator().getPriceWithDefaultOutput(strategy.rewardTokens()[1]);
-        result += _period * rewardsPerSecond2 * rtPrice2 / 1e18;
+        result += _period * rewardsPerSecond2 * rtPrice2 / PRECISION;
+      } else if (strategy.platform() == IStrategy.Platform.QUICK) {
+        uint256 rtPrice2 = priceCalculator().getPriceWithDefaultOutput(strategy.rewardTokens()[1]);
+        result += IStakingDualRewards(IStrategyWithPool(_strategy).pool()).rewardRateB() * rtPrice2 / PRECISION;
       }
     }
     return result;
@@ -183,29 +212,39 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       return 0;
     }
 
-    uint256 lastRewards = vaultLastReward(_vault);
+    uint256 lastRewards = vaultLastTetuReward(_vault);
     if (lastRewards == 0) {
       return 0;
     }
 
-    (uint256 earned, uint256 lastEarnedTs) = strategyEarnedSinceLastDistribution(vault.strategy());
+    (uint256 earned,) = strategyEarnedSinceLastDistribution(vault.strategy());
 
-    // lastEarnedTs can not be higher than current block
-    uint256 timeSinceDistribution = block.timestamp - lastEarnedTs;
-
-    uint256 reward = Math.min(lastRewards * timeSinceDistribution / vault.duration(), lastRewards);
-
-    return PRECISION * earned / reward;
+    return PRECISION * earned / lastRewards;
   }
 
-  function vaultLastReward(address _vault) public view override returns (uint256) {
+  function vaultLastTetuReward(address _vault) public view override returns (uint256) {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
-    address rt = IController(controller()).rewardToken();
-    uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, rt);
+    ISmartVault ps = ISmartVault(IController(controller()).psVault());
+    uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, address(ps));
+    uint rewardSum = 0;
     if (rewardsSize > 0) {
-      return bookkeeper.vaultRewards(_vault, rt, rewardsSize - 1);
+      uint count = 0;
+      for (uint i = 1; i <= Math.min(AVG_REWARDS, rewardsSize); i++) {
+        rewardSum += vaultTetuReward(_vault, rewardsSize - i);
+        count++;
+      }
+      return rewardSum / count;
     }
     return 0;
+  }
+
+  function vaultTetuReward(address _vault, uint i) public view returns (uint256) {
+    IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
+    ISmartVault ps = ISmartVault(IController(controller()).psVault());
+    uint amount = bookkeeper.vaultRewards(_vault, address(ps), i);
+    // we distributed xTETU, need to calculate approx TETU amount
+    // assume that xTETU ppfs didn't change dramatically
+    return amount * ps.getPricePerFullShare() / ps.underlyingUnit();
   }
 
   function strategyEarnedSinceLastDistribution(address strategy)
@@ -213,6 +252,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
     uint256 lastEarned = 0;
     lastEarnedTs = 0;
+    earned = 0;
 
     uint256 earnedSize = bookkeeper.strategyEarnedSnapshotsLength(strategy);
     if (earnedSize > 0) {
@@ -221,8 +261,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
 
     uint256 currentEarned = bookkeeper.targetTokenEarned(strategy);
-    earned = currentEarned;
-    if (currentEarned > lastEarned) {
+    if (currentEarned >= lastEarned) {
       earned = currentEarned - lastEarned;
     }
   }
@@ -322,8 +361,40 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     if (SNXRewardInterface(_pool).periodFinish() < block.timestamp) {
       return 0;
     }
-    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(1e18);
-    return SNXRewardInterface(_pool).rewardRate() * dQuickRatio / 1e18;
+    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(PRECISION);
+    return SNXRewardInterface(_pool).rewardRate() * dQuickRatio / PRECISION;
+  }
+
+  /// @notice Calculate approximately reward amounts for Quick swap
+  function quickDualFarm(address _pool) public view returns (uint256) {
+    if (IStakingDualRewards(_pool).periodFinish() < block.timestamp) {
+      return 0;
+    }
+    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(PRECISION);
+    return IStakingDualRewards(_pool).rewardRateA() * dQuickRatio / PRECISION;
+  }
+
+  function ironLending(IStrategy strategy) public view returns (uint256) {
+    address iceToken = strategy.rewardTokens()[0];
+    address rToken = IIronFoldStrategy(address(strategy)).rToken();
+    address controller = IIronFoldStrategy(address(strategy)).ironController();
+
+    uint icePrice = getPrice(iceToken);
+    uint undPrice = getPrice(strategy.underlying());
+
+    uint8 undDecimals = CompleteRToken(strategy.underlying()).decimals();
+
+    uint256 rTokenExchangeRate = CompleteRToken(rToken).exchangeRateStored();
+
+    uint256 totalSupply = CompleteRToken(rToken).totalSupply() * rTokenExchangeRate
+    / (10 ** undDecimals);
+
+    uint suppliedRate = CompleteRToken(rToken).supplyRatePerBlock() * undPrice * totalSupply / (PRECISION ** 2);
+    // ICE rewards
+    uint rewardSpeed = IronControllerInterface(controller).rewardSpeeds(rToken) * icePrice / PRECISION;
+    // regarding folding we will earn x2.45
+    rewardSpeed = rewardSpeed * 245 / 100;
+    return rewardPerBlockToPerSecond(rewardSpeed + suppliedRate);
   }
 
   // *********** GOVERNANCE ACTIONS *****************

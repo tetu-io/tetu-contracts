@@ -50,8 +50,8 @@ describe.skip('TETU LP test', async () => {
     await controller.mintAndDistribute(0, core.notifyHelper, core.fundKeeper, true);
     expect(await TokenUtils.balanceOf(core.rewardToken, signer.address)).is.not.eq(0);
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('20000'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('20000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10000'));
 
     tetuLp = await UniswapUtils.addLiquidity(
         signer,

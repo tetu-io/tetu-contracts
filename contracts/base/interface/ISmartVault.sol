@@ -24,7 +24,13 @@ interface ISmartVault {
 
   function setLockPenalty(uint256 _value) external;
 
+  function setToInvest(uint256 _value) external;
+
   function doHardWork() external;
+
+  function rebalance() external;
+
+  function disableLock() external;
 
   function notifyTargetRewardAmount(address _rewardToken, uint256 reward) external;
 
@@ -109,6 +115,8 @@ interface ISmartVault {
   function lockPeriod() external view returns (uint256);
 
   function lockPenalty() external view returns (uint256);
+
+  function toInvest() external view returns (uint256);
 
   function lockAllowed() external view returns (bool);
 }

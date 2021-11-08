@@ -10,7 +10,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {TokenUtils} from "../TokenUtils";
 import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
-import {IStrategy, IUniswapV2Pair} from "../../typechain";
+import {IStrategy, IUniswapV2Pair, PriceCalculator} from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
 
 
@@ -18,15 +18,15 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 async function startDefaultLpStrategyTest(
-    strategyName: string,
-    factoryForLiquidation: string,
-    underlying: string,
-    token0: string,
-    token0Name: string,
-    token1: string,
-    token1Name: string,
-    platformPoolIdentifier: string,
-    rewardTokens: string[]
+  strategyName: string,
+  factoryForLiquidation: string,
+  underlying: string,
+  token0: string,
+  token0Name: string,
+  token1: string,
+  token1Name: string,
+  platformPoolIdentifier: string,
+  rewardTokens: string[]
 ) {
 
   describe(strategyName + " " + token0Name + " " + token1Name + " LpTest", async function () {
@@ -36,59 +36,54 @@ async function startDefaultLpStrategyTest(
 
     before(async function () {
       snapshotBefore = await TimeUtils.snapshot();
-      const signer = (await ethers.getSigners())[0];
+      const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-      const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
-
-      for (const rt of rewardTokens) {
-        await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-            [MaticAddresses.getRouterByFactory(factoryForLiquidation), MaticAddresses.QUICK_ROUTER]
-        );
-
-        await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN],
-            [MaticAddresses.getRouterByFactory(factoryForLiquidation)]
-        );
-      }
-
-      await core.feeRewardForwarder.setLiquidityNumerator(50);
-      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const tools = await DeployerUtils.getToolsAddresses();
+      const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
 
       const data = await StrategyTestUtils.deploy(
+        signer,
+        core,
+        token0Name + "_" + token1Name,
+        async vaultAddress => DeployerUtils.deployContract(
           signer,
-          core,
-          token0Name + "_" + token1Name,
-          async vaultAddress => DeployerUtils.deployContract(
-              signer,
-              strategyName,
-              core.controller.address,
-              vaultAddress,
-              underlying,
-              token0,
-              token1,
-              platformPoolIdentifier
-          ) as Promise<IStrategy>,
-          underlying
+          strategyName,
+          core.controller.address,
+          vaultAddress,
+          underlying,
+          token0,
+          token1,
+          platformPoolIdentifier
+        ) as Promise<IStrategy>,
+        underlying
       );
 
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
 
-      await VaultUtils.addRewardsXTetu(signer, vault, core, 1, 1);
+      for (const rt of rewardTokens) {
+        await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
+        await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
+        if ((await strategy.buyBackRatio()).toNumber() !== 10000) {
+          await StrategyTestUtils.setConversionPath(rt, token0, calculator, core.feeRewardForwarder);
+          await StrategyTestUtils.setConversionPath(rt, token1, calculator, core.feeRewardForwarder);
+        }
+      }
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
       strategyInfo = new StrategyInfo(
-          underlying,
-          signer,
-          user,
-          core,
-          vault,
-          strategy,
-          lpForTargetToken,
-          calculator
+        underlying,
+        signer,
+        user,
+        core,
+        vault,
+        strategy,
+        lpForTargetToken,
+        calculator
       );
 
       const data0 = (await calculator.getLargestPool(token0, []));
@@ -101,8 +96,8 @@ async function startDefaultLpStrategyTest(
 
 
       // ************** add funds for investing ************
-      const baseAmount = 10_000;
-      await UniswapUtils.buyAllBigTokens(user);
+      const baseAmount = 50_000;
+      // await UniswapUtils.buyAllBigTokens(user);
       const name0 = await TokenUtils.tokenSymbol(token0Opposite);
       const name1 = await TokenUtils.tokenSymbol(token1Opposite);
       const dec0 = await TokenUtils.decimals(token0Opposite);
@@ -119,16 +114,16 @@ async function startDefaultLpStrategyTest(
 
 
       await UniswapUtils.buyTokensAndAddLiq(
-          user,
-          token0OppositeFactory,
-          token1OppositeFactory,
-          await pair.factory(),
-          token0,
-          token0Opposite,
-          token1,
-          token1Opposite,
-          utils.parseUnits(amountForSell0.toFixed(dec0), dec0),
-          utils.parseUnits(amountForSell1.toFixed(dec1), dec1)
+        user,
+        token0OppositeFactory,
+        token1OppositeFactory,
+        await pair.factory(),
+        token0,
+        token0Opposite,
+        token1,
+        token1Opposite,
+        utils.parseUnits(amountForSell0.toFixed(dec0), dec0),
+        utils.parseUnits(amountForSell1.toFixed(dec1), dec1)
       );
       console.log('############## Preparations completed ##################');
     });
@@ -145,15 +140,10 @@ async function startDefaultLpStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-
-    // it("do hard work without liq path", async () => {
-    //   await StrategyTestUtils.doHardWorkWithoutLiqPath(strategyInfo,
-    //       (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString());
-    // });
     it("do hard work with liq path", async () => {
       await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          strategyInfo.strategy.readyToClaim
+        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+        strategyInfo.strategy.readyToClaim
       );
     });
     it("emergency exit", async () => {
@@ -164,10 +154,10 @@ async function startDefaultLpStrategyTest(
     });
     it("doHardWork loop", async function () {
       await DoHardWorkLoop.doHardWorkLoop(
-          strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          3,
-          60
+        strategyInfo,
+        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+        3,
+        60 * 60
       );
     });
 

@@ -66,9 +66,9 @@ describe.skip('Curve ren tests', async () => {
     );
 
     // swap tokens to invest
-    await UniswapUtils.buyToken(
+    await UniswapUtils.getTokenFromHolder(
         trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000000'));
-    await UniswapUtils.buyToken(
+    await UniswapUtils.getTokenFromHolder(
         trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
 
     await CurveUtils.addLiquidityRen(investor);
@@ -89,7 +89,7 @@ describe.skip('Curve ren tests', async () => {
   });
 
   it("doHardWork loop with liq path", async () => {
-    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo, MaticAddresses.CURVE_renBTC_GAGUE);
+    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo, null);
   });
 
   it("doHardWork loop", async function () {
