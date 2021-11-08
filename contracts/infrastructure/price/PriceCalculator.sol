@@ -13,9 +13,6 @@
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../base/governance/Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
@@ -25,25 +22,28 @@ import "../../base/interface/ISmartVault.sol";
 import "../../third_party/iron/IIronSwap.sol";
 import "../../third_party/iron/IIronLpToken.sol";
 import "./IPriceCalculator.sol";
+import "../../third_party/curve/ICurveLpToken.sol";
+import "../../third_party/curve/ICurveMinter.sol";
+import "../../third_party/IERC20Extended.sol";
+import "../../third_party/aave/IAaveToken.sol";
 
 pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
 /// @author belbix
 contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
-  using SafeERC20 for IERC20;
-  using Address for address;
   using SafeMath for uint256;
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.2.1";
+  string public constant VERSION = "1.3.0";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
+  address public constant CRV_USD_BTC_ETH = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
 
   // ************ VARIABLES **********************
   // !!! DON'T CHANGE NAMES OR ORDERING !!!
@@ -67,6 +67,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   event SwapPlatformAdded(address factoryAddress, string name);
   event SwapPlatformRemoved(address factoryAddress, string name);
   event ReplacementTokenUpdated(address token, address replacementToken);
+  event MultipartTokenUpdated(address token, bool status);
 
   constructor() {
     assert(_DEFAULT_TOKEN_SLOT == bytes32(uint256(keccak256("eip1967.calculator.defaultToken")) - 1));
@@ -74,13 +75,6 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   function initialize(address _controller) external initializer {
     Controllable.initializeControllable(_controller);
-  }
-
-  function modifyReplacementTokens(address _inputToken, address _replacementToken)
-  external onlyControllerOrGovernance
-  {
-    replacementTokens[_inputToken] = _replacementToken;
-    emit ReplacementTokenUpdated(_inputToken, _replacementToken);
   }
 
   function getPriceWithDefaultOutput(address token) external view override returns (uint256) {
@@ -103,12 +97,12 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     if (IController(controller()).vaults(token)) {
       rate = ISmartVault(token).getPricePerFullShare();
       token = ISmartVault(token).underlying();
-      rateDenominator = 10 ** ERC20(token).decimals();
+      rateDenominator = 10 ** IERC20Extended(token).decimals();
       // some vaults can have another vault as underlying
       if (IController(controller()).vaults(token)) {
         rate = rate * ISmartVault(token).getPricePerFullShare();
         token = ISmartVault(token).underlying();
-        rateDenominator = rateDenominator * (10 ** ERC20(token).decimals());
+        rateDenominator = rateDenominator * (10 ** IERC20Extended(token).decimals());
       }
     }
 
@@ -117,7 +111,6 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     if (replacementTokens[token] != address(0)) {
       token = replacementTokens[token];
     }
-
 
     uint256 price;
     if (isSwapPlatform(token)) {
@@ -135,6 +128,28 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       }
     } else if (isIronPair(token)) {
       price = IIronSwap(IIronLpToken(token).swap()).getVirtualPrice();
+    } else if (token == CRV_USD_BTC_ETH) {
+      ICurveMinter minter = ICurveMinter(ICurveLpToken(token).minter());
+      uint tvl = 0;
+      for (uint256 i = 0; i < 3; i++) {
+        address coin = minter.coins(i);
+        uint balance = normalizePrecision(minter.balances(i), IERC20Extended(coin).decimals());
+        uint256 priceToken = getPrice(coin, outputToken);
+        if (priceToken == 0) {
+          return 0;
+        }
+
+        uint256 tokenValue = priceToken * balance / 10 ** PRECISION_DECIMALS;
+        tvl += tokenValue;
+      }
+      price = tvl * (10 ** PRECISION_DECIMALS)
+      / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
+
+    } else if (isAave(token)) {
+      uint ratio = IAaveToken(token).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(token).scaledTotalSupply();
+      address[] memory usedLps = new address[](DEPTH);
+      price = computePrice(IAaveToken(token).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
+      price = price * ratio / (10 ** PRECISION_DECIMALS);
     } else {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(token, outputToken, usedLps, 0);
@@ -159,7 +174,14 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function isIronPair(address token) public view returns (bool) {
-    return isEqualString(ERC20(token).name(), IS3USD) || isEqualString(ERC20(token).name(), IRON_IS3USD);
+    return isEqualString(IERC20Extended(token).name(), IS3USD) || isEqualString(IERC20Extended(token).name(), IRON_IS3USD);
+  }
+
+  function isAave(address token) public view returns (bool) {
+    try IAaveToken(token).UNDERLYING_ASSET_ADDRESS{gas : 60000}() returns (address) {
+      return true;
+    } catch {}
+    return false;
   }
 
   /* solhint-disable no-unused-vars */
@@ -179,8 +201,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     uint256[2] memory amounts;
     tokens[0] = lp.token0();
     tokens[1] = lp.token1();
-    uint256 token0Decimals = ERC20(tokens[0]).decimals();
-    uint256 token1Decimals = ERC20(tokens[1]).decimals();
+    uint256 token0Decimals = IERC20Extended(tokens[0]).decimals();
+    uint256 token1Decimals = IERC20Extended(tokens[1]).decimals();
     uint256 supplyDecimals = lp.decimals();
     (uint256 reserve0, uint256 reserve1,) = lp.getReserves();
     uint256 totalSupply = lp.totalSupply();
@@ -272,8 +294,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     address token0 = pair.token0();
     address token1 = pair.token1();
     (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
-    uint256 token0Decimals = ERC20(token0).decimals();
-    uint256 token1Decimals = ERC20(token1).decimals();
+    uint256 token0Decimals = IERC20Extended(token0).decimals();
+    uint256 token1Decimals = IERC20Extended(token1).decimals();
 
     // both reserves should have the same decimals
     reserve0 = reserve0.mul(10 ** PRECISION_DECIMALS).div(10 ** token0Decimals);
@@ -395,6 +417,10 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     }
   }
 
+  function normalizePrecision(uint256 amount, uint256 decimals) internal pure returns (uint256){
+    return amount.mul(10 ** PRECISION_DECIMALS).div(10 ** decimals);
+  }
+
   // ************* GOVERNANCE ACTIONS ***************
 
   function setDefaultToken(address _newDefaultToken) external onlyControllerOrGovernance {
@@ -458,5 +484,11 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     }
     removeFromSwapNames(i);
     emit SwapPlatformRemoved(_factoryAddress, _name);
+  }
+
+  function setReplacementTokens(address _inputToken, address _replacementToken)
+  external onlyControllerOrGovernance {
+    replacementTokens[_inputToken] = _replacementToken;
+    emit ReplacementTokenUpdated(_inputToken, _replacementToken);
   }
 }
