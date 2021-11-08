@@ -102,7 +102,7 @@ contract LinearPipeline {
         }
     }
 
-    function getMostUnderlyingBalance() public returns (uint256) {
+    function getMostUnderlyingBalance() public view returns (uint256) {
         uint256 last = pipes.length-1;
         return pipes[last].underlyingBalance();
     }

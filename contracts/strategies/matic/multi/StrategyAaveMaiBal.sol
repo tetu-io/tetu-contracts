@@ -35,15 +35,11 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
             sourceToken : 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4, // Aave Matic Market WMATIC (amWMATIC)
             lpToken : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B      // Compounding Aave Market Matic (camWMATIC)
         }),
-        MaiStablecoinCollateralPipeData({
+        MaiStablecoinPipeData({
             sourceToken : 0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B, // Compounding Aave Market Matic (camWMATIC)
             stablecoin : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a,  // camWMATIC MAI Vault (cMVT)
-            vaultID : 0                                               // have to initialize later
-        }),
-        MaiStablecoinBorrowPipeData({
-            stablecoin : 0x88d84a85A87ED12B8f098e8953B322fF789fCD1a, // camWMATIC MAI Vault (cMVT)
-            vaultID : 0, // have to initialize later
-            borrowedToken : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC (MAI)
+            vaultID : 0,                                              // have to initialize later
+            borrowToken : 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1, // miMATIC (MAI)
             // https://docs.mai.finance/borrowing-incentives
             // 135 - liquidation, 135+25=160 - minimum for incentives
             // 135+270=405 max percentage for incentives

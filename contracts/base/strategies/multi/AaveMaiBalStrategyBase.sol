@@ -22,8 +22,7 @@ import "./pipelines/LinearPipeline.sol";
 import "./pipes/UnwrappingPipe.sol";
 import "./pipes/AaveWethPipe.sol";
 import "./pipes/MaiCamWMaticPipe.sol";
-import "./pipes/MaiStablecoinCollateralPipe.sol";
-import "./pipes/MaiStablecoinBorrowPipe.sol";
+import "./pipes/MaiStablecoinPipe.sol";
 import "./pipes/BalVaultPipe.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
@@ -53,8 +52,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         address _WMATIC,
         AaveWethPipeData memory aaveWethPipeData,
         MaiCamWMaticPipeData memory maiCamWMaticPipeData,
-        MaiStablecoinCollateralPipeData memory maiStablecoinCollateralPipeData,
-        MaiStablecoinBorrowPipeData memory maiStablecoinBorrowPipeData,
+        MaiStablecoinPipeData memory maiStablecoinPipeData,
         BalVaultPipeData memory balVaultPipeData
     ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
     {
@@ -66,8 +64,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         addPipe(new UnwrappingPipe(WMATIC));
         addPipe(new AaveWethPipe(aaveWethPipeData));
         addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData));
-        addPipe(new MaiStablecoinCollateralPipe(maiStablecoinCollateralPipeData));
-        addPipe(new MaiStablecoinBorrowPipe(maiStablecoinBorrowPipeData));
+        addPipe(new MaiStablecoinPipe(maiStablecoinPipeData));
         addPipe(new BalVaultPipe(balVaultPipeData));
 
         console.log('Initialized+++');
