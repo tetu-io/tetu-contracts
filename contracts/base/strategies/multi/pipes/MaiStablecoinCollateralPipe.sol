@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qudao-mai/IErc20Stablecoin.sol";
 
@@ -20,77 +19,54 @@ struct MaiStablecoinCollateralPipeData {
 /// @author bogdoslav
 contract MaiStablecoinCollateralPipe is Pipe {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
-    /// @dev creates context
-    function create(MaiStablecoinCollateralPipeData memory d)
-    public pure returns (bytes memory) {
-        return abi.encode(d.sourceToken, d.stablecoin, d.vaultID);
-    }
+    MaiStablecoinCollateralPipeData public d;
+    IErc20Stablecoin private _stablecoin;
 
-    /// @dev decodes context
-    /// @param c abi-encoded context
-    function context(bytes memory c)
-    public pure returns (address sourceToken, address stablecoin, uint256 vaultID) {
-        (sourceToken, stablecoin, vaultID) = abi.decode(c, (address, address, uint256));
-    }
-
-    /// @dev initializes context. Creates new vault and stores in vaultId
-    function _init(bytes memory c)
-    override public returns (bytes memory) {
-        console.log('MaiStablecoinCollateralPipe _init');
-        MaiStablecoinCollateralPipeData memory d;
-        (d.sourceToken, d.stablecoin, d.vaultID) = context(c);
-        console.log('d.vaultID', d.vaultID);
+    constructor(MaiStablecoinCollateralPipeData memory _d) Pipe() {
+        d = _d;
+        _stablecoin = IErc20Stablecoin(d.stablecoin);
         d.vaultID = IErc20Stablecoin(d.stablecoin).createVault();
-        console.log('d.vaultID', d.vaultID);
-        return create(d);
     }
 
     /// @dev function for investing, deposits, entering, borrowing
-    /// @param c abi-encoded context
     /// @param amount in source units
     /// @return output in underlying units
-    function _put(bytes memory c, uint256 amount) override public returns (uint256 output) {
-        (address sourceToken, address stablecoin, uint256 vaultID) = context(c);
-        uint256 before = IErc20Stablecoin(stablecoin).vaultCollateral(vaultID);
+    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+        uint256 before = _stablecoin.vaultCollateral(d.vaultID);
 
-        IERC20(sourceToken).safeApprove(stablecoin, 0);
-        IERC20(sourceToken).safeApprove(stablecoin, amount);
-        IErc20Stablecoin(stablecoin).depositCollateral(vaultID, amount);
+        IERC20(d.sourceToken).safeApprove(d.stablecoin, 0);
+        IERC20(d.sourceToken).safeApprove(d.stablecoin, amount);
+        _stablecoin.depositCollateral(d.vaultID, amount);
 
-        uint256 current = IErc20Stablecoin(stablecoin).vaultCollateral(vaultID);
-        output = current.sub(before);
+        uint256 current = _stablecoin.vaultCollateral(d.vaultID);
+        output = current - before;
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
-    /// @param c abi-encoded context
     /// @param amount in underlying units
     /// @return output in source units
-    function _get(bytes memory c, uint256 amount) override public returns (uint256 output) {
-        (address sourceToken, address stablecoin, uint256 vaultID) = context(c);
-        uint256 before = IERC20(sourceToken).balanceOf(address(this));
+    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+        uint256 before = ERC20Balance(d.sourceToken);
 
-        IErc20Stablecoin(stablecoin).withdrawCollateral(vaultID, amount);
+        _stablecoin.withdrawCollateral(d.vaultID, amount);
 
-        uint256 current = IERC20(sourceToken).balanceOf(address(this));
-        output = current.sub(before);
+        uint256 current = ERC20Balance(d.sourceToken);
+        output = current - before;
+
+        transferERC20toPrevPipe(d.sourceToken, output);//TODO or all current balance?
     }
 
     /// @dev available ETH (MATIC) source balance
-    /// @param c abi-encoded context
     /// @return balance in source units
-    function _sourceBalance(bytes memory c) override public view returns (uint256) {
-        (address sourceToken,,) = context(c);
-        return IERC20(sourceToken).balanceOf(address(this));
+    function sourceBalance() override public view returns (uint256) {
+        return ERC20Balance(d.sourceToken);
     }
 
     /// @dev underlying balance (LP token)
-    /// @param c abi-encoded context
     /// @return balance in underlying units
-    function _underlyingBalance(bytes memory c) override public view returns (uint256) {
-        (, address stablecoin, uint256 vaultID) = context(c);
-        return IErc20Stablecoin(stablecoin).vaultCollateral(vaultID);
+    function underlyingBalance() override public view returns (uint256) {
+        return _stablecoin.vaultCollateral(d.vaultID);
     }
 
 }

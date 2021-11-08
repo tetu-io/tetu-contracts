@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./Pipe.sol";
 import "./../../../../third_party/aave/IWETHGateway.sol";
@@ -19,54 +18,50 @@ struct AaveWethPipeData {
 /// @author bogdoslav
 contract AaveWethPipe is Pipe {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
-    /// @dev creates context
-    function create(AaveWethPipeData memory d) public pure returns (bytes memory){
-        return abi.encode(d.wethGateway, d.pool, d.lpToken);
-    }
+    AaveWethPipeData public d;
 
-    /// @dev decodes context
-    function context(bytes memory c) internal pure returns (address wethGateway, address pool, address lpToken) {
-        (wethGateway, pool, lpToken) = abi.decode(c, (address, address, address));
+    constructor(AaveWethPipeData memory _d) Pipe() {
+        d = _d;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
-    function _put(bytes memory c, uint256 amount) override public returns (uint256 output) {
-        (address wethGateway, address pool, address lpToken) = context(c);
-        uint256 before = IERC20(lpToken).balanceOf(address(this));
+    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+        uint256 before = ERC20Balance(d.lpToken);
 
-        IWETHGateway(wethGateway).depositETH{value:amount}(pool, address(this), 0);
+        IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
 
-        uint256 current = IERC20(lpToken).balanceOf(address(this));
-        output = current.sub(before);
+        uint256 current = ERC20Balance(d.lpToken);
+        output = current - before;
+
+        transferERC20toNextPipe(d.lpToken, output);
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
-    function _get(bytes memory c, uint256 amount) override public returns (uint256 output) {
-        (address wethGateway, address pool, address lpToken) = context(c);
-        IERC20(lpToken).safeApprove(address(wethGateway), 0);
-        IERC20(lpToken).safeApprove(address(wethGateway), amount);
+    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+        IERC20(d.lpToken).safeApprove(address(d.wethGateway), 0);
+        IERC20(d.lpToken).safeApprove(address(d.wethGateway), amount);
         uint256 before = address(this).balance;
 
-        IWETHGateway(wethGateway).withdrawETH(pool, amount, address(this));
+        IWETHGateway(d.wethGateway).withdrawETH(d.pool, amount, address(this));
 
         output = address(this).balance - before;
+
+        if (havePrevPipe()) {
+            payable(payable(address(nextPipe))).transfer(output);
+        }
     }
 
     /// @dev available ETH (MATIC) source balance
-    /// param c abi-encoded context
     /// @return balance in source units
-    function _sourceBalance(bytes memory) override public view returns (uint256) {
+    function sourceBalance() override public view returns (uint256) {
         return address(this).balance;
     }
 
     /// @dev underlying balance (LP token)
-    /// @param c abi-encoded context
     /// @return balance in underlying units
-    function _underlyingBalance(bytes memory c) override public view returns (uint256) {
-        (,, address lpToken) = context(c);
-        return IERC20(lpToken).balanceOf(address(this));
+    function underlyingBalance() override public view returns (uint256) {
+        return ERC20Balance(d.lpToken);
     }
 
     /// @dev to receive Ether (Matic)

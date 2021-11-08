@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../pipes/Pipe.sol";
-import "../pipes/PipeDelegateCall.sol";
 import "./LinearPipeline.sol";
 
 

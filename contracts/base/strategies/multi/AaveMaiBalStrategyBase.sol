@@ -25,13 +25,10 @@ import "./pipes/MaiCamWMaticPipe.sol";
 import "./pipes/MaiStablecoinCollateralPipe.sol";
 import "./pipes/MaiStablecoinBorrowPipe.sol";
 import "./pipes/BalVaultPipe.sol";
-import "./pipes/PipeDelegateCall.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
 contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
-    using SafeMath for uint256;
-    using PipeDelegateCall for PipeSegment;
     /// @notice Strategy type for statistical purposes
     string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
     /// @notice Version of the contract
@@ -43,10 +40,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @dev Assets should reflect underlying tokens for investing
     address[] private _assets;
 
-    address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; //TODO move to impl
-
     uint256 private _totalAmount = 0;
 
+    address public WMATIC;
 
     /// @notice Contract constructor
     constructor(
@@ -54,6 +50,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         address _underlying,
         address _vault,
         address[] memory __rewardTokens,
+        address _WMATIC,
         AaveWethPipeData memory aaveWethPipeData,
         MaiCamWMaticPipeData memory maiCamWMaticPipeData,
         MaiStablecoinCollateralPipeData memory maiStablecoinCollateralPipeData,
@@ -63,30 +60,16 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     {
         require(_underlying == WMATIC, "MS: underlying must be WMATIC");
         _rewardTokens = __rewardTokens;
+        WMATIC = _WMATIC;
 
         // Build pipeline
-        // 0
-        UnwrappingPipe unwrappingPipe = new UnwrappingPipe();
-        segments.push(PipeSegment(unwrappingPipe, unwrappingPipe.create(WMATIC)));
-        // 1
-        AaveWethPipe aaveWethPipe = new AaveWethPipe();
-        segments.push(PipeSegment(aaveWethPipe, aaveWethPipe.create(aaveWethPipeData)));
-        // 2
-        MaiCamWMaticPipe maiCamWMaticPipe = new MaiCamWMaticPipe();
-        segments.push(PipeSegment(maiCamWMaticPipe, maiCamWMaticPipe.create(maiCamWMaticPipeData)));
-        // 3
-        MaiStablecoinCollateralPipe maiStablecoinCollateralPipe = new MaiStablecoinCollateralPipe();
-        PipeSegment memory maiCollateral = PipeSegment(maiStablecoinCollateralPipe, maiStablecoinCollateralPipe.create(maiStablecoinCollateralPipeData));
-        maiCollateral.context = maiCollateral.init();
-        segments.push(maiCollateral);
-        // 4
-        (,, maiStablecoinBorrowPipeData.vaultID) = maiStablecoinCollateralPipe.context(maiCollateral.context);
-        console.log('maiStablecoinBorrowPipeData.vaultID', maiStablecoinBorrowPipeData.vaultID);
-        MaiStablecoinBorrowPipe maiStablecoinBorrowPipe = new MaiStablecoinBorrowPipe();
-        segments.push(PipeSegment(maiStablecoinBorrowPipe, maiStablecoinBorrowPipe.create(maiStablecoinBorrowPipeData)));
-        // 5
-        BalVaultPipe balVaultPipe = new BalVaultPipe();
-        segments.push(PipeSegment(balVaultPipe, balVaultPipe.create(balVaultPipeData)));
+        addPipe(new UnwrappingPipe(WMATIC));
+        addPipe(new AaveWethPipe(aaveWethPipeData));
+        addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData));
+        addPipe(new MaiStablecoinCollateralPipe(maiStablecoinCollateralPipeData));
+        addPipe(new MaiStablecoinBorrowPipe(maiStablecoinBorrowPipeData));
+        addPipe(new BalVaultPipe(balVaultPipeData));
+
         console.log('Initialized+++');
     }
 
