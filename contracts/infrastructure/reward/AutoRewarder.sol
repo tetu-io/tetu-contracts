@@ -29,7 +29,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
 
   // *********** CONSTANTS ****************
   string public constant VERSION = "1.1.0";
-  uint256 public constant PERIOD = 1 days;
+  uint256 public constant PERIOD = 22 hours;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
 

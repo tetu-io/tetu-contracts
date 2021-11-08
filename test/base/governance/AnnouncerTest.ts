@@ -537,7 +537,7 @@ describe("Announcer tests", function () {
 
     const rt = MaticAddresses.WMATIC_TOKEN;
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000'));
     await core.vaultController.addRewardTokens([target], rt);
     await TokenUtils.approve(rt, signer, target, amount.toString());
     await core.psVault.notifyTargetRewardAmount(rt, amount);

@@ -43,16 +43,6 @@ async function startDefaultLpStrategyTest(
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
 
-      for (const rt of rewardTokens) {
-        await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, token0, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, token1, calculator, core.feeRewardForwarder);
-      }
-
-      // await core.feeRewardForwarder.setLiquidityNumerator(50);
-      // await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
-
       const data = await StrategyTestUtils.deploy(
         signer,
         core,
@@ -73,6 +63,15 @@ async function startDefaultLpStrategyTest(
       const vault = data[0];
       const strategy = data[1];
       const lpForTargetToken = data[2];
+
+      for (const rt of rewardTokens) {
+        await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
+        await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
+        if ((await strategy.buyBackRatio()).toNumber() !== 10000) {
+          await StrategyTestUtils.setConversionPath(rt, token0, calculator, core.feeRewardForwarder);
+          await StrategyTestUtils.setConversionPath(rt, token1, calculator, core.feeRewardForwarder);
+        }
+      }
 
       await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
@@ -97,8 +96,8 @@ async function startDefaultLpStrategyTest(
 
 
       // ************** add funds for investing ************
-      const baseAmount = 10_000;
-      await UniswapUtils.buyAllBigTokens(user);
+      const baseAmount = 50_000;
+      // await UniswapUtils.buyAllBigTokens(user);
       const name0 = await TokenUtils.tokenSymbol(token0Opposite);
       const name1 = await TokenUtils.tokenSymbol(token1Opposite);
       const dec0 = await TokenUtils.decimals(token0Opposite);
@@ -158,7 +157,7 @@ async function startDefaultLpStrategyTest(
         strategyInfo,
         (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
         3,
-        60
+        60 * 60
       );
     });
 

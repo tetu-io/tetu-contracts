@@ -44,13 +44,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.3.0";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
   uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 public constant AVG_REWARDS = 7;
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
@@ -225,13 +226,25 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
     ISmartVault ps = ISmartVault(IController(controller()).psVault());
     uint256 rewardsSize = bookkeeper.vaultRewardsLength(_vault, address(ps));
+    uint rewardSum = 0;
     if (rewardsSize > 0) {
-      uint amount = bookkeeper.vaultRewards(_vault, address(ps), rewardsSize - 1);
-      // we distributed xTETU, need to calculate approx TETU amount
-      // assume that xTETU ppfs didn't change dramatically
-      return amount * ps.getPricePerFullShare() / ps.underlyingUnit();
+      uint count = 0;
+      for (uint i = 1; i <= Math.min(AVG_REWARDS, rewardsSize); i++) {
+        rewardSum += vaultTetuReward(_vault, rewardsSize - i);
+        count++;
+      }
+      return rewardSum / count;
     }
     return 0;
+  }
+
+  function vaultTetuReward(address _vault, uint i) public view returns (uint256) {
+    IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
+    ISmartVault ps = ISmartVault(IController(controller()).psVault());
+    uint amount = bookkeeper.vaultRewards(_vault, address(ps), i);
+    // we distributed xTETU, need to calculate approx TETU amount
+    // assume that xTETU ppfs didn't change dramatically
+    return amount * ps.getPricePerFullShare() / ps.underlyingUnit();
   }
 
   function strategyEarnedSinceLastDistribution(address strategy)

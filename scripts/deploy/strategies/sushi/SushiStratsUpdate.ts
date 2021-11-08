@@ -63,21 +63,21 @@ async function main() {
 
     if (!vAdr) {
       console.log('Vault not found!', vaultNameWithoutPrefix);
-      return;
+      continue;
     }
 
     const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
 
     if (!(await vCtr.active())) {
       console.log('vault not active', vAdr)
-      continue;
+      // continue;
     }
 
     console.log('strat', idx, lpName);
 
     const strategy = await DeployerUtils.deployContract(
         signer,
-        'StrategySushiSwapLp',
+        'StrategySushiSwapLpWithAc',
         core.controller,
         vAdr,
         lpAddress,
@@ -91,7 +91,7 @@ async function main() {
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
-      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/sushiswap/StrategySushiSwapLp.sol:StrategySushiSwapLp', [
+      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/sushiswap/StrategySushiSwapLpWithAc.sol:StrategySushiSwapLpWithAc', [
         core.controller,
         vAdr,
         lpAddress,

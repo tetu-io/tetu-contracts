@@ -7,11 +7,16 @@ import {expect} from "chai";
 import {StrategyInfo} from "./StrategyInfo";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {VaultUtils} from "../VaultUtils";
+import {ITetuSwapFactory, ITetuSwapPair} from "../../typechain";
 
 
 export class DoHardWorkLoop {
 
   public static async doHardWorkLoop(info: StrategyInfo, deposit: string, loops: number, loopTime: number) {
+    const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
+    const tetuLp = await DeployerUtils.connectInterface(info.signer, 'ITetuSwapPair',
+      await (await DeployerUtils.connectInterface(info.signer, 'ITetuSwapFactory', MaticAddresses.TETU_SWAP_FACTORY) as ITetuSwapFactory)
+        .getPair(MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN)) as ITetuSwapPair;
     const calculator = (await DeployerUtils
       .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
     const vaultForUser = info.vault.connect(info.user);
@@ -26,6 +31,8 @@ export class DoHardWorkLoop {
     const vaultBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
     const psBalanceBefore = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
     const psSharePriceBefore = await info.core.psVault.getPricePerFullShare();
+    const ppfsBefore = await info.vault.getPricePerFullShare();
+    console.log('ppfsBefore', ppfsBefore.toString())
 
     const start = await StrategyTestUtils.getBlockTime();
     let earnedTotal = 0;
@@ -50,6 +57,7 @@ export class DoHardWorkLoop {
 
       // *********** DO HARD WORK **************
       await TimeUtils.advanceBlocksOnTs(loopTime);
+      await tetuLp.sync();
       await VaultUtils.doHardWorkAndCheck(info.vault);
 
       const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
@@ -107,29 +115,30 @@ export class DoHardWorkLoop {
     }
 
     // liquidate rewards after user withdraw
-    await VaultUtils.doHardWorkAndCheck(info.vault);
+    await VaultUtils.doHardWorkAndCheck(info.vault, false);
     // *************** POST LOOPS CHECKING **************
 
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
 
-    // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
-    expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
+    if (bbRatio > 1000) {
+      // check vault balance
+      const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
+      expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
+      // check ps balance
+      const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+      expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
 
-    // check ps balance
-    const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
-    expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
+      // check ps PPFS
+      const psSharePriceAfter = await info.core.psVault.getPricePerFullShare();
+      expect(psSharePriceAfter.sub(psSharePriceBefore)).is.not.eq("0", "ps share price should increase");
 
-    // check ps PPFS
-    const psSharePriceAfter = await info.core.psVault.getPricePerFullShare();
-    expect(psSharePriceAfter.sub(psSharePriceBefore)).is.not.eq("0", "ps share price should increase");
-
-    // check reward for user
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week
-    await vaultForUser.getAllRewards();
-    const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
-    expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
-      .is.not.eq("0", "should have earned iToken rewards");
+      // check reward for user
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week
+      await vaultForUser.getAllRewards();
+      const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
+      expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
+        .is.not.eq("0", "should have earned iToken rewards");
+    }
 
     // ************* EXIT ***************
     await vaultForUser.exit();

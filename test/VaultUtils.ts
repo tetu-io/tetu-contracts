@@ -4,9 +4,9 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TokenUtils} from "./TokenUtils";
 import {BigNumber, ContractTransaction, utils} from "ethers";
 import axios from "axios";
-import {MintHelperUtils} from "./MintHelperUtils";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {MaticAddresses} from "./MaticAddresses";
 
 export class VaultUtils {
 
@@ -151,7 +151,7 @@ export class VaultUtils {
   ) {
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    await MintHelperUtils.mint(core.controller, core.announcer, amount + '', signer.address, period);
+    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits(amount + ''));
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));
     await TokenUtils.approve(rtAdr, signer, vault.address, utils.parseUnits(amount + '').toString());
@@ -169,7 +169,7 @@ export class VaultUtils {
     await vault.notifyTargetRewardAmount(rtAdr, amount);
   }
 
-  public static async doHardWorkAndCheck(vault: SmartVault, positive = true) {
+  public static async doHardWorkAndCheck(vault: SmartVault, positiveCheck = true) {
     const controller = await vault.controller();
     const controllerCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'Controller', controller) as Controller;
     const psVault = await controllerCtr.psVault();
@@ -192,9 +192,10 @@ export class VaultUtils {
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
     const psPpfsAfter = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
     const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
-    const bbRatio = +utils.formatUnits(await strategyCtr.buyBackRatio());
+    const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
 
     console.log('-------- HARDWORK --------');
+    console.log('- BB ratio:', bbRatio);
     console.log('- PPFS change:', ppfsAfter - ppfs);
     console.log('- BALANCE change:', undBalAfter - undBal);
     console.log('- RT change:', rtBalAfter - rtBal);
@@ -202,15 +203,18 @@ export class VaultUtils {
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 
-    if (positive && bbRatio > 1000) {
-      expect(psPpfsAfter).is.greaterThan(psPpfs);
-      if (psRatio !== 1) {
-        expect(rtBalAfter).is.greaterThan(rtBal);
+    if (positiveCheck) {
+      if (bbRatio > 1000) {
+        expect(psPpfsAfter).is.greaterThan(psPpfs);
+        if (psRatio !== 1) {
+          expect(rtBalAfter).is.greaterThan(rtBal);
+        }
+      }
+      if (bbRatio !== 10000) {
+        expect(ppfsAfter).is.greaterThan(ppfs);
       }
     }
-    if (bbRatio !== 10000) {
-      expect(ppfsAfter).is.greaterThan(ppfs);
-    }
+
   }
 
 }

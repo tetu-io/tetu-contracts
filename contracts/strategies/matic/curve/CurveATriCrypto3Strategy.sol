@@ -12,11 +12,14 @@
 pragma solidity 0.8.4;
 
 import "../../../base/strategies/curve/CurveStrategyBase.sol";
+import "../../../third_party/curve/ITricryptoPool.sol";
+import "hardhat/console.sol";
 
 
-/// @title Contract for Curve REN strategy implementation
-/// @author Oleg N
-contract CurveRenStrategy is CurveStrategyBase {
+/// @title Contract for Curve atricrypto3 strategy implementation
+/// @author belbix
+contract CurveATriCrypto3Strategy is CurveStrategyBase {
+  using SafeERC20 for IERC20;
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -25,13 +28,16 @@ contract CurveRenStrategy is CurveStrategyBase {
   address[] private poolRewards = [WMATIC, CRV];
 
   /// deposit tokens
+  address private constant DAI = address(0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063);
+  address private constant USDC = address(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
+  address private constant USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
   address private constant WBTC = address(0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6);
-  address private constant RENBTC = address(0xDBf31dF14B66535aF65AaC99C32e9eA844e14501);
+  address private constant WETH = address(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619);
 
-  /// @notice Curve gauge rewards pool
-  address private constant _GAUGE = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
+  address private constant _GAUGE = address(0x3B6B158A76fd8ccc297538F454ce7B4787778c7C);
+  address private constant _POOL = address(0x1d8b86e3D88cDb2d34688e87E72F388Cb541B7C8);
 
-  address[] private _assets = [WBTC, RENBTC];
+  address[] private _assets = [DAI, USDC, USDT, WBTC, WETH];
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -50,7 +56,24 @@ contract CurveRenStrategy is CurveStrategyBase {
   }
 
   function rtToUnderlying(address rt, uint toCompound) internal override {
-    //todo
+    console.log("rtToUnderlying", rt, toCompound);
+    if (toCompound == 0) {
+      return;
+    }
+    address forwarder = IController(controller()).feeRewardForwarder();
+    // use USDC for autocompound
+    IERC20(rt).safeApprove(forwarder, 0);
+    IERC20(rt).safeApprove(forwarder, toCompound);
+    uint amount = IFeeRewardForwarder(forwarder).liquidate(rt, USDC, toCompound);
+    console.log("rtToUnderlying amount", amount);
+    require(amount != 0, "CS: Liquidated zero");
+    IERC20(USDC).safeApprove(_POOL, 0);
+    IERC20(USDC).safeApprove(_POOL, amount);
+    // second token is USDC
+    console.log("rtToUnderlying bal", IERC20(_underlyingToken).balanceOf(address(this)));
+    ITricryptoPool(_POOL).add_liquidity([0, amount, 0, 0, 0], 0);
+    console.log("rtToUnderlying bal after", IERC20(_underlyingToken).balanceOf(address(this)));
+    // now we have underlying tokens
   }
 
 }

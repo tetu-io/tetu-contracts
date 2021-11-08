@@ -13,13 +13,16 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../third_party/curve/IGauge.sol";
+import "../../../third_party/curve/ICurveMinter.sol";
+import "../../../third_party/curve/ICurveLpToken.sol";
 import "../../../base/strategies/StrategyBase.sol";
+import "../../interface/ICurveStrategy.sol";
 
 
 /// @title Contract for Curve strategy implementation
 /// @author Oleg N
-abstract contract CurveStrategyFullBuyback is StrategyBase {
-
+/// @author belbix
+abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
   using SafeERC20 for IERC20;
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.CURVE;
@@ -29,31 +32,25 @@ abstract contract CurveStrategyFullBuyback is StrategyBase {
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
+  /// @notice Strategy type for statistical purposes
+  string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
-  /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  /// @dev 1% buyback
+  uint256 private constant _BUY_BACK_RATIO = 100;
 
   /// @notice Curve gauge rewards pool
-  address public gague;
-
+  address public override gauge;
 
   /// @notice Contract constructor using on strategy implementation
-  /// @dev The implementation should check each parameter
-  /// @param _controller Controller address
-  /// @param _underlying Underlying token address
-  /// @param _vault SmartVault address that will provide liquidity
-  /// @param __rewardTokens Reward tokens that the strategy will farm
-  /// @param _gague Gague reward pool address
-
   constructor(
     address _controller,
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
-    address _gague
+    address _gauge
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
-    gague = _gague;
-    address lpToken = IGauge(gague).lp_token();
+    gauge = _gauge;
+    address lpToken = IGauge(gauge).lp_token();
     require(lpToken == _underlyingToken, "wrong underlying");
   }
 
@@ -62,7 +59,7 @@ abstract contract CurveStrategyFullBuyback is StrategyBase {
   /// @notice Strategy balance in the Gauge pool
   /// @return bal Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint256 bal) {
-    bal = IGauge(gague).balanceOf(address(this));
+    bal = IGauge(gauge).balanceOf(address(this));
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in Gauge pool
@@ -73,7 +70,7 @@ abstract contract CurveStrategyFullBuyback is StrategyBase {
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory toClaim = new uint256[](_rewardTokens.length);
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      toClaim[i] = IGauge(gague).claimable_reward(address(this), _rewardTokens[i]);
+      toClaim[i] = IGauge(gauge).claimable_reward(address(this), _rewardTokens[i]);
     }
     return toClaim;
   }
@@ -82,14 +79,15 @@ abstract contract CurveStrategyFullBuyback is StrategyBase {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-    return IERC20(_underlyingToken).balanceOf(gague);
+    return IERC20(_underlyingToken).balanceOf(gauge);
   }
 
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
-    IGauge(gague).claim_rewards(address(this));
+    investAllUnderlying();
+    IGauge(gauge).claim_rewards(address(this));
     liquidateReward();
   }
 
@@ -98,29 +96,45 @@ abstract contract CurveStrategyFullBuyback is StrategyBase {
   /// @dev Deposit underlying to Gauge pool
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
-    IERC20(_underlyingToken).safeApprove(gague, 0);
-    IERC20(_underlyingToken).safeApprove(gague, amount);
-    IGauge(gague).deposit(amount);
+    IERC20(_underlyingToken).safeApprove(gauge, 0);
+    IERC20(_underlyingToken).safeApprove(gauge, amount);
+    IGauge(gauge).deposit(amount);
   }
 
   /// @dev Withdraw underlying and reward from Gauge pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
-    IGauge(gague).withdraw(amount, true);
+    IGauge(gauge).withdraw(amount, true);
   }
 
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-    IGauge(gague).withdraw(rewardPoolBalance(), false);
+    IGauge(gauge).withdraw(rewardPoolBalance(), false);
   }
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    liquidateRewardDefault();
+    autocompoundCurve();
+    liquidateRewardSilently();
+  }
+
+  /// @dev Liquidate rewards, buy assets and add to curve gauge
+  function autocompoundCurve() internal {
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      if (amount != 0) {
+        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        address rt = _rewardTokens[i];
+        rtToUnderlying(rt, toCompound);
+      }
+    }
   }
 
   function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;
   }
+
+  /// @dev Need to create a correct implementation for each pool
+  function rtToUnderlying(address rt, uint toCompound) internal virtual;
 }

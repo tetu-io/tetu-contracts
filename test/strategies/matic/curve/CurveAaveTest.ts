@@ -78,7 +78,7 @@ describe.skip('Curve aave tests', async () => {
   });
 
   it("doHardWork loop with liq path", async () => {
-    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo, MaticAddresses.CURVE_AAVE_GAGUE);
+    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo, null);
   });
 
   it("doHardWork loop", async function () {

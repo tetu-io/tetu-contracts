@@ -101,7 +101,7 @@ async function startDefaultSingleTokenStrategyTest(
       const amountForSell = baseAmount / price;
       console.log('amountForSell', amountForSell);
 
-      await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
+      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
           underlying, utils.parseUnits(amountForSell.toString(), dec), tokenOpposite);
       console.log('############## Preparations completed ##################');
     });

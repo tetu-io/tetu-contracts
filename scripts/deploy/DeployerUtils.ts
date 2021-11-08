@@ -21,11 +21,9 @@ import {
   RewardCalculator,
   RewardToken,
   SmartVault,
-  TetuPawnShop,
   TetuProxyControlled,
   TetuProxyGov,
   TetuSwapFactory,
-  TetuSwapRouter,
   VaultController,
   ZapContract,
 } from "../../typechain";
@@ -460,9 +458,11 @@ export class DeployerUtils {
       false,
       vaultRewardToken
     ), true, wait);
+    console.log(vaultName + ' vault initialized');
 
     await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
     await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
+    console.log(vaultName + ' vault setup completed');
 
     return [vaultLogic, vault, strategy];
   }

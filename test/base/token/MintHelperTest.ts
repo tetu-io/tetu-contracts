@@ -32,7 +32,7 @@ describe("Mint helper tests", () => {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     minter = core.mintHelper;
     await UniswapUtils.wrapMatic(signer);
-    await UniswapUtils.buyToken(signer, MaticAddresses.QUICK_ROUTER,
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.QUICK_ROUTER,
         MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
   });
 

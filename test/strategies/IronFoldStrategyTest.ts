@@ -9,7 +9,7 @@ import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
-import {StrategyIronFold} from "../../typechain";
+import {PriceCalculator, StrategyIronFold} from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
 
 
@@ -34,11 +34,12 @@ async function startIronFoldStrategyTest(
 
     before(async function () {
       snapshotBefore = await TimeUtils.snapshot();
-      const signer = (await ethers.getSigners())[0];
+      const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-      const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
+      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const tools = await DeployerUtils.getToolsAddresses();
+      const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
       await StrategyTestUtils.setupForwarder(
         core.feeRewardForwarder,
@@ -99,7 +100,7 @@ async function startIronFoldStrategyTest(
       const amountForSell = baseAmount / price;
       console.log('amountForSell', amountForSell);
 
-      await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
+      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
         underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
       console.log('############## Preparations completed ##################');
     });
@@ -390,7 +391,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "user should have all underlying");
 
-  const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
+  const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.signer.address);
   expect(+utils.formatUnits(signerUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(signerUnderlyingBalance, undDec) * 0.999, "signer should have all underlying");
 }

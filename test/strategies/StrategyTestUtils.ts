@@ -81,7 +81,7 @@ export class StrategyTestUtils {
     const userEarnedTotal = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
 
     // *********** TIME MACHINE GO BRRRRR***********
-    await TimeUtils.advanceBlocksOnTs(60 * 60); // 1 hour
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7);
 
     // ** calculate to claim
     let totalToClaim = 0;
@@ -297,10 +297,10 @@ export class StrategyTestUtils {
     );
   }
 
-  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number) {
+  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number, wait = 1) {
     console.log('new ps ratio', numenator, denumenatior.toFixed())
     await announcer.announceRatioChange(9, numenator, denumenatior);
-    await TimeUtils.advanceBlocksOnTs(1);
+    await TimeUtils.advanceBlocksOnTs(wait);
     await controller.setPSNumeratorDenominator(numenator, denumenatior);
   }
 
@@ -381,13 +381,19 @@ export class StrategyTestUtils {
 
     tokens.push(tokenIn);
 
-    const largestPoolDataIn = await calculator.getLargestPool(tokenIn, usedLps);
+    const largestPoolDataIn = await StrategyTestUtils.largestPoolForToken(tokenIn, usedLps, calculator);
     tokens.push(largestPoolDataIn[0]);
     routers.push(MaticAddresses.getRouterByFactory(await calculator.swapFactories(largestPoolDataIn[1])));
 
-    if (largestPoolDataIn[0] !== tokenOut) {
-      const largestPoolDataOut = await calculator.getLargestPool(tokenOut, usedLps);
-      if (largestPoolDataOut[0] !== largestPoolDataIn[0]) {
+    if (largestPoolDataIn[0].toLowerCase() !== tokenOut.toLowerCase()) {
+      const largestPoolDataOut = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
+      if (largestPoolDataOut[0].toLowerCase() !== largestPoolDataIn[0].toLowerCase()) {
+        if (!MaticAddresses.isBlueChip(largestPoolDataOut[0])) {
+          throw Error('Not blue chip ' + largestPoolDataOut[0]);
+        }
+        if (!MaticAddresses.isBlueChip(largestPoolDataIn[0])) {
+          throw Error('Not blue chip ' + largestPoolDataIn[0]);
+        }
         tokens.push(largestPoolDataOut[0]);
         routers.push(MaticAddresses.QUICK_ROUTER);
       }
@@ -395,22 +401,12 @@ export class StrategyTestUtils {
       tokens.push(tokenOut);
     }
 
-
-    // while (true) {
-    //   const largestPoolData = await calculator.getLargestPool(_tokenIn, usedLps);
-    //   console.log('largestPoolData', largestPoolData);
-    //   usedLps.push(largestPoolData[2]);
-    //   const oppositeToken = largestPoolData[0];
-    //   tokens.push(oppositeToken);
-    //   const factory = await calculator.swapFactories(largestPoolData[1]);
-    //   routers.push(MaticAddresses.getRouterByFactory(factory));
-    //   if (oppositeToken === tokenOut) {
-    //     break;
-    //   }
-    //   _tokenIn = oppositeToken;
-    // }
-    console.log('found route', tokens);
-    console.log('found routers', routers);
+    console.log('PATH -----------');
+    for (const token of tokens) {
+      console.log('->', await TokenUtils.tokenSymbol(token));
+    }
+    console.log('---------------');
+    console.log('routers', routers);
     return [tokens, routers];
   }
 
@@ -423,6 +419,18 @@ export class StrategyTestUtils {
       liqData[0],
       liqData[1]
     );
+  }
+
+  public static async largestPoolForToken(tokenOut: string, usedLps: string[], calculator: PriceCalculator): Promise<[string, BigNumber, string]> {
+    if (tokenOut.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+      return [MaticAddresses.USDC_TOKEN, BigNumber.from(0), MaticAddresses.QUICK_TETU_USDC];
+    }
+    const data = await calculator.getLargestPool(tokenOut, usedLps);
+    if ((await calculator.swapFactories(data[1])).toLowerCase() === MaticAddresses.FIREBIRD_FACTORY) {
+      usedLps.push(data[2]);
+      return StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
+    }
+    return data;
   }
 
 

@@ -11,22 +11,12 @@
 */
 pragma solidity 0.8.4;
 
-import "../../../base/strategies/curve/CurveStrategyFullBuyback.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../../../third_party/curve/IGauge.sol";
-import "../../../base/strategies/StrategyBase.sol";
+import "../../../base/strategies/curve/CurveStrategyBase.sol";
 
 
 /// @title Contract for Curve aave strategy implementation
 /// @author Oleg N
-contract CurveAaveStrategy is CurveStrategyFullBuyback {
-
-  using SafeERC20 for IERC20;
-
-  // ************ VARIABLES **********************
-
-  /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "CurveAaveStrategy";
+contract CurveAaveStrategy is CurveStrategyBase {
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -40,7 +30,7 @@ contract CurveAaveStrategy is CurveStrategyFullBuyback {
   address private constant USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
 
   /// @notice Curve gauge rewards pool
-  address public constant CURVE_AAVE_GAUGE = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
+  address private constant _GAUGE = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
 
   address[] private _assets = [DAI, USDC, USDT];
 
@@ -53,11 +43,15 @@ contract CurveAaveStrategy is CurveStrategyFullBuyback {
     address _controller,
     address _underlying,
     address _vault
-  ) CurveStrategyFullBuyback(_controller, _underlying, _vault, poolRewards, CURVE_AAVE_GAUGE) {}
+  ) CurveStrategyBase(_controller, _underlying, _vault, poolRewards, _GAUGE) {}
 
   /// assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {
     return _assets;
+  }
+
+  function rtToUnderlying(address rt, uint toCompound) internal override {
+    //todo
   }
 
 }

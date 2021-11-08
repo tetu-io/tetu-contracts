@@ -34,8 +34,8 @@ describe("Multi swap tests", function () {
     multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
   });
 
   after(async function () {
@@ -51,7 +51,7 @@ describe("Multi swap tests", function () {
   });
 
   it.skip("should swap tokens with route wex to matic", async () => {
-    await UniswapUtils.buyToken(signer, MaticAddresses.WAULT_ROUTER, MaticAddresses.WEXpoly_TOKEN, utils.parseUnits('1000', 6), MaticAddresses.USDC_TOKEN);
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.WAULT_ROUTER, MaticAddresses.WEXpoly_TOKEN, utils.parseUnits('1000', 6), MaticAddresses.USDC_TOKEN);
     await tryToSwap(signer, multiSwap, MaticAddresses.WEXpoly_TOKEN, MaticAddresses.WMATIC_TOKEN, '0.1');
   });
 
@@ -64,7 +64,7 @@ describe("Multi swap tests", function () {
   });
 
   it("should swap tokens with route btc to qi", async () => {
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('200'), MaticAddresses.WETH_TOKEN);
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.QUICK_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100000'));
     await tryToSwap(signer, multiSwap, MaticAddresses.WBTC_TOKEN, MaticAddresses.QI_TOKEN, '0.1');
   });
 

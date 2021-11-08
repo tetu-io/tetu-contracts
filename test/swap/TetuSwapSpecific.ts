@@ -56,8 +56,8 @@ describe("Tetu Swap specific tests", function () {
     const tokenA = MaticAddresses.WBTC_TOKEN;
     const tokenB = MaticAddresses.WETH_TOKEN;
 
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('200'));
-    await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('200'));
+    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'));
 
     await UniswapUtils.swapExactTokensForTokens(
       signer,
