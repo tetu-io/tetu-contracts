@@ -169,7 +169,7 @@ export class VaultUtils {
     await vault.notifyTargetRewardAmount(rtAdr, amount);
   }
 
-  public static async doHardWorkAndCheck(vault: SmartVault, positive = true) {
+  public static async doHardWorkAndCheck(vault: SmartVault, positiveCheck = true) {
     const controller = await vault.controller();
     const controllerCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'Controller', controller) as Controller;
     const psVault = await controllerCtr.psVault();
@@ -203,15 +203,18 @@ export class VaultUtils {
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 
-    if (positive && bbRatio > 1000) {
-      expect(psPpfsAfter).is.greaterThan(psPpfs);
-      if (psRatio !== 1) {
-        expect(rtBalAfter).is.greaterThan(rtBal);
+    if (positiveCheck) {
+      if (bbRatio > 1000) {
+        expect(psPpfsAfter).is.greaterThan(psPpfs);
+        if (psRatio !== 1) {
+          expect(rtBalAfter).is.greaterThan(rtBal);
+        }
+      }
+      if (bbRatio !== 10000) {
+        expect(ppfsAfter).is.greaterThan(ppfs);
       }
     }
-    if (bbRatio !== 10000) {
-      expect(ppfsAfter).is.greaterThan(ppfs);
-    }
+
   }
 
 }

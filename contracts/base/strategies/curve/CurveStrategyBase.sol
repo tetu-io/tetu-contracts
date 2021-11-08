@@ -22,7 +22,7 @@ import "../../interface/ICurveStrategy.sol";
 /// @title Contract for Curve strategy implementation
 /// @author Oleg N
 /// @author belbix
-abstract contract CurveStrategy is StrategyBase, ICurveStrategy {
+abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
   using SafeERC20 for IERC20;
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.CURVE;
@@ -33,18 +33,13 @@ abstract contract CurveStrategy is StrategyBase, ICurveStrategy {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "CurveStrategy";
+  string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
   /// @dev 1% buyback
   uint256 private constant _BUY_BACK_RATIO = 100;
 
   /// @notice Curve gauge rewards pool
   address public override gauge;
-  /// @notice One of the underlying token
-  address public autocompoundToken;
-  /// @notice Underlying coins length
-  uint public poolNCoins;
-
 
   /// @notice Contract constructor using on strategy implementation
   constructor(
@@ -52,13 +47,9 @@ abstract contract CurveStrategy is StrategyBase, ICurveStrategy {
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
-    address _gauge,
-    address _autocompoundToken,
-    uint _poolNCoins
+    address _gauge
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     gauge = _gauge;
-    autocompoundToken = _autocompoundToken;
-    poolNCoins = _poolNCoins;
     address lpToken = IGauge(gauge).lp_token();
     require(lpToken == _underlyingToken, "wrong underlying");
   }
@@ -130,30 +121,12 @@ abstract contract CurveStrategy is StrategyBase, ICurveStrategy {
 
   /// @dev Liquidate rewards, buy assets and add to curve gauge
   function autocompoundCurve() internal {
-    address forwarder = IController(controller()).feeRewardForwarder();
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
         uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
-        IERC20(rt).safeApprove(forwarder, 0);
-        IERC20(rt).safeApprove(forwarder, toCompound);
-
-        ICurveMinter minter = ICurveMinter(ICurveLpToken(IGauge(gauge).lp_token()).minter());
-
-        uint256 tokenAmount = IFeeRewardForwarder(forwarder).liquidate(rt, autocompoundToken, toCompound);
-
-        if (tokenAmount != 0) {
-          uint[] memory amounts = new uint[](poolNCoins);
-          for (uint256 j = 0; j < poolNCoins; j++) {
-            if (minter.coins(j) == autocompoundToken) {
-              amounts[j] = tokenAmount;
-            } else {
-              amounts[j] = 0;
-            }
-          }
-          minter.add_liquidity(amounts, 0, true);
-        }
+        rtToUnderlying(rt, toCompound);
       }
     }
   }
@@ -161,4 +134,7 @@ abstract contract CurveStrategy is StrategyBase, ICurveStrategy {
   function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;
   }
+
+  /// @dev Need to create a correct implementation for each pool
+  function rtToUnderlying(address rt, uint toCompound) internal virtual;
 }

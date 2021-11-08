@@ -17,17 +17,17 @@ import {config as dotEnvConfig} from "dotenv";
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  disableStrategyTests: {
-    type: "boolean",
-    default: false,
-  },
-}).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+  }).argv;
 
 chai.use(chaiAsPromised);
 
-describe.skip('Curve aTricrypto3 tests', async () => {
+describe('Curve aTricrypto3 tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }
@@ -37,41 +37,41 @@ describe.skip('Curve aTricrypto3 tests', async () => {
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
-    const [signer, investor, trader] = (await ethers.getSigners());
-    const coreContracts = await DeployerUtils.deployAllCoreContracts(
-        signer, 60 * 60 * 24 * 28, 1);
-    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(
-        signer, coreContracts.controller.address))[0];
+    const signer = await DeployerUtils.impersonate();
+    // await CurveUtils.swapTricrypto(signer)
+    const [investor, trader] = (await ethers.getSigners());
+    const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-    const underlying = MaticAddresses.BTCCRV_TOKEN;
+    await CurveUtils.addLiquidityTrirypto(investor);
+
+    const underlying = MaticAddresses.USD_BTC_ETH_CRV_TOKEN;
 
     const underlyingName = await TokenUtils.tokenSymbol(underlying);
 
     const strategyName = 'CurveATriCrypto3Strategy';
 
-    await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
-
     const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
-        strategyName, signer, coreContracts, underlying, underlyingName);
+      strategyName, signer, core, underlying, underlyingName);
+
+    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
+      await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
+      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
+    }
 
     strategyInfo = new StrategyInfo(
-        underlying,
-        signer,
-        investor,
-        coreContracts,
-        vault,
-        strategy,
-        lpForTargetToken,
-        calculator
+      underlying,
+      signer,
+      investor,
+      core,
+      vault,
+      strategy,
+      lpForTargetToken,
+      calculator
     );
 
-    // swap tokens to invest
     await UniswapUtils.getTokenFromHolder(
-        trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000000'));
-    await UniswapUtils.getTokenFromHolder(
-        trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
-
-    await CurveUtils.addLiquidityTrirypto(investor);
+      trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
 
     console.log('############## Preparations completed ##################');
   });
@@ -89,15 +89,18 @@ describe.skip('Curve aTricrypto3 tests', async () => {
   });
 
   it("doHardWork loop with liq path", async () => {
-    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo);
+    await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo,
+      // () => CurveUtils.swapTricrypto(strategyInfo.signer) // todo fix
+      null
+    );
   });
 
   it("doHardWork loop", async function () {
     await DoHardWorkLoop.doHardWorkLoop(
-        strategyInfo,
-        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-        3,
-        27000
+      strategyInfo,
+      (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+      3,
+      60 * 60
     );
   });
 

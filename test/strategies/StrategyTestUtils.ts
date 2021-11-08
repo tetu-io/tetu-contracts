@@ -297,10 +297,10 @@ export class StrategyTestUtils {
     );
   }
 
-  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number) {
+  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number, wait = 1) {
     console.log('new ps ratio', numenator, denumenatior.toFixed())
     await announcer.announceRatioChange(9, numenator, denumenatior);
-    await TimeUtils.advanceBlocksOnTs(1);
+    await TimeUtils.advanceBlocksOnTs(wait);
     await controller.setPSNumeratorDenominator(numenator, denumenatior);
   }
 

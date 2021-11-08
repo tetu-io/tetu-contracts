@@ -11,16 +11,12 @@
 */
 pragma solidity 0.8.4;
 
-import "../../../base/strategies/curve/CurveStrategy.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../../../third_party/curve/IGauge.sol";
-import "../../../base/strategies/StrategyBase.sol";
+import "../../../base/strategies/curve/CurveStrategyBase.sol";
 
 
 /// @title Contract for Curve aave strategy implementation
 /// @author Oleg N
-contract CurveAaveStrategy is CurveStrategy {
-  using SafeERC20 for IERC20;
+contract CurveAaveStrategy is CurveStrategyBase {
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -47,11 +43,15 @@ contract CurveAaveStrategy is CurveStrategy {
     address _controller,
     address _underlying,
     address _vault
-  ) CurveStrategy(_controller, _underlying, _vault, poolRewards, _GAUGE, USDC, 3) {}
+  ) CurveStrategyBase(_controller, _underlying, _vault, poolRewards, _GAUGE) {}
 
   /// assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {
     return _assets;
+  }
+
+  function rtToUnderlying(address rt, uint toCompound) internal override {
+    //todo
   }
 
 }

@@ -3,9 +3,9 @@ import {BigNumber, utils} from "ethers";
 import {
   FeeRewardForwarder,
   IAavePool,
-  ICurveMinter,
   IERC20,
   IRenBTCPool,
+  ITricryptoPool,
   RewardToken
 } from "../../../../../typechain";
 import {MaticAddresses} from "../../../../MaticAddresses";
@@ -53,10 +53,12 @@ export class CurveUtils {
   }
 
   public static async addLiquidityTrirypto(investor: SignerWithAddress) {
-    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, investor.address);
-    const pool = await ethers.getContractAt("ICurveMinter", MaticAddresses.CURVE_aTricrypto3_POOL, investor) as ICurveMinter;
+    console.log('try to deposit to atricrypto')
+    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, investor.address, utils.parseUnits('10000', 6));
+    const pool = await ethers.getContractAt("ITricryptoPool", MaticAddresses.CURVE_aTricrypto3_POOL, investor) as ITricryptoPool;
     const bal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
-    await pool["add_liquidity(uint256[],uint256,bool)"]([0, bal, 0], 0, true);
+    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, investor, pool.address, bal.toString());
+    await pool.add_liquidity([0, bal, 0, 0, 0], 0);
   }
 
   public static async swapTokensAAVE(trader: SignerWithAddress) {
@@ -75,5 +77,14 @@ export class CurveUtils {
     await daiToken.approve(MaticAddresses.CURVE_AAVE_POOL, daiTokenBalance, {from: trader.address});
     // swap dai to usdc
     await depContract.exchange_underlying(0, 1, daiTokenBalance, BigNumber.from("0"), {from: trader.address});
+  }
+
+  public static async swapTricrypto(signer: SignerWithAddress) {
+    console.log('swap tricrypto')
+    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, utils.parseUnits('10000', 6));
+    const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPool', MaticAddresses.CURVE_aTricrypto3_POOL) as ITricryptoPool;
+    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, pool.address, utils.parseUnits('10000', 6).mul(2).toString());
+    await pool.exchange_underlying(1, 0, utils.parseUnits('10000', 6), 0, signer.address);
+    console.log('swap tricrypto completed')
   }
 }
