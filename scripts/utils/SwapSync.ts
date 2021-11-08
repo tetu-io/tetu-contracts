@@ -1,7 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Bookkeeper, TetuSwapFactory, TetuSwapPair} from "../../typechain";
-import {RunHelper} from "./RunHelper";
 
 
 async function main() {
@@ -31,7 +30,7 @@ async function main() {
       pairMap.get(v0)?.add(lp)
       pairMap.get(v1)?.add(lp)
 
-      await RunHelper.runAndWait(() => lpCtr.sync());
+      await lpCtr.sync();
     } catch (e) {
       console.log('Loop Error', e);
     }
@@ -41,11 +40,15 @@ async function main() {
 
   const actionEvent = bookkeeper.filters.RegisterUserAction(null, null, null);
   bookkeeper.on(actionEvent, async (user, amount, deposit, event) => {
-    console.log('catch user action', user, amount.toString(), deposit, event);
+    // console.log('catch user action', user, amount.toString(), deposit, event);
     const tx = await ethers.provider.getTransaction(event.transactionHash);
-    console.log('tx', tx);
+    // console.log('tx', tx);
     const vault = tx.to?.toLowerCase() as string;
     const pairs = pairMap.get(vault) as Set<string>;
+    if (!pairs) {
+      // console.log('not found pairs for ' + vault)
+      return;
+    }
     for (const lp of Array.from(pairs.keys())) {
       const lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
       console.log('sync ', lp);

@@ -237,6 +237,40 @@ export class UniswapUtils {
     );
   }
 
+  public static async createPairForRewardTokenWithBuy(
+    signer: SignerWithAddress,
+    core: CoreContractsWrapper,
+    amount: string
+  ) {
+    await UniswapUtils.swapNETWORK_COINForExactTokens(
+      signer,
+      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
+      utils.parseUnits(amount, 6).toString(),
+      MaticAddresses.QUICK_ROUTER
+    );
+    const rewardTokenAddress = core.rewardToken.address;
+
+    const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
+    console.log('USDC bought', usdcBal.toString());
+    expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
+
+    await MintHelperUtils.mint(core.controller, core.announcer, amount, signer.address);
+
+    const tokenBal = await TokenUtils.balanceOf(rewardTokenAddress, signer.address);
+    console.log('Token minted', tokenBal.toString());
+    expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
+
+    return UniswapUtils.addLiquidity(
+      signer,
+      rewardTokenAddress,
+      MaticAddresses.USDC_TOKEN,
+      utils.parseUnits(amount, 18).toString(),
+      utils.parseUnits(amount, 6).toString(),
+      MaticAddresses.QUICK_FACTORY,
+      MaticAddresses.QUICK_ROUTER
+    );
+  }
+
   public static async getTokenFromHolder(
     signer: SignerWithAddress,
     router: string,

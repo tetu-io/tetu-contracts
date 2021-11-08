@@ -23,6 +23,7 @@ describe("liquidity balancer tsets", function () {
   let core: CoreContractsWrapper;
   let liquidityBalancer: LiquidityBalancer;
   let token: string;
+  let lp: string;
 
 
   before(async function () {
@@ -34,18 +35,18 @@ describe("liquidity balancer tsets", function () {
     token = core.rewardToken.address;
 
     liquidityBalancer = await DeployerUtils.deployLiquidityBalancer(
-        signer, core.controller.address) as LiquidityBalancer;
+      signer, core.controller.address) as LiquidityBalancer;
 
-    await MintHelperUtils.mint(core.controller, core.announcer, '10000000', signer.address);
+    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await TokenUtils.transfer(core.rewardToken.address, signer,
-        liquidityBalancer.address, utils.parseUnits("100000").toString());
+      liquidityBalancer.address, utils.parseUnits("100000").toString());
 
     await liquidityBalancer.setTargetPriceUpdateNumerator(1000);
     await liquidityBalancer.setTargetTvlUpdateNumerator(1000);
     await liquidityBalancer.setRemoveLiqRatioNumerator(1000);
 
     expect(await liquidityBalancer.isGovernance(signer.address)).is.eq(true);
-
+    lp = await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "1000");
   });
 
   after(async function () {
@@ -63,13 +64,11 @@ describe("liquidity balancer tsets", function () {
 
   it("should sell tokens", async () => {
     await UniswapUtils.swapNETWORK_COINForExactTokens(
-        signer,
-        [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-        utils.parseUnits("1000000", 6).toString(),
-        MaticAddresses.QUICK_ROUTER
+      signer,
+      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
+      utils.parseUnits("1000000", 6).toString(),
+      MaticAddresses.QUICK_ROUTER
     );
-
-    const lp = await UniswapUtils.createPairForRewardToken(signer, core, "1000");
 
     const lpInfo = await UniswapUtils.getLpInfo(lp, signer, token);
     const tokenStacked = lpInfo[0];
@@ -79,10 +78,10 @@ describe("liquidity balancer tsets", function () {
     const oppositeTokenDecimals = await TokenUtils.decimals(oppositeToken);
 
     console.log('INITIAL STATS',
-        'tokenStacked: ' + tokenStacked,
-        'oppositeToken: ' + oppositeToken,
-        'oppositeTokenStacked: ' + oppositeTokenStacked,
-        'price: ' + price
+      'tokenStacked: ' + tokenStacked,
+      'oppositeToken: ' + oppositeToken,
+      'oppositeTokenStacked: ' + oppositeTokenStacked,
+      'price: ' + price
     );
 
     await liquidityBalancer.setRouter(lp, MaticAddresses.QUICK_ROUTER);
@@ -93,11 +92,11 @@ describe("liquidity balancer tsets", function () {
     for (let i = 0; i < 10; i++) {
       // buy TargetToken for USDC
       await UniswapUtils.swapExactTokensForTokens(
-          signer,
-          [MaticAddresses.USDC_TOKEN, token],
-          utils.parseUnits("1000", 6).toString(),
-          signer.address,
-          MaticAddresses.QUICK_ROUTER
+        signer,
+        [MaticAddresses.USDC_TOKEN, token],
+        utils.parseUnits("1000", 6).toString(),
+        signer.address,
+        MaticAddresses.QUICK_ROUTER
       );
 
       const targetPrice = +utils.formatUnits(await liquidityBalancer.priceTargets(token));
@@ -118,21 +117,19 @@ describe("liquidity balancer tsets", function () {
 
   it("should remove liquidity and buyback", async () => {
     await UniswapUtils.swapNETWORK_COINForExactTokens(
-        signer,
-        [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-        utils.parseUnits("1000000", 6).toString(),
-        MaticAddresses.QUICK_ROUTER
+      signer,
+      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
+      utils.parseUnits("1000000", 6).toString(),
+      MaticAddresses.QUICK_ROUTER
     );
-
-    const lp = await UniswapUtils.createPairForRewardToken(signer, core, "1000");
 
     // buy TargetToken for USDC
     await UniswapUtils.swapExactTokensForTokens(
-        signer,
-        [MaticAddresses.USDC_TOKEN, token],
-        utils.parseUnits("1000", 6).toString(),
-        signer.address,
-        MaticAddresses.QUICK_ROUTER
+      signer,
+      [MaticAddresses.USDC_TOKEN, token],
+      utils.parseUnits("1000", 6).toString(),
+      signer.address,
+      MaticAddresses.QUICK_ROUTER
     );
 
     const lpContract = await UniswapUtils.connectLpContract(lp, signer);
@@ -147,10 +144,10 @@ describe("liquidity balancer tsets", function () {
     const oppositeTokenDecimals = await TokenUtils.decimals(oppositeToken);
 
     console.log('INITIAL STATS',
-        'tokenStacked: ' + tokenStacked,
-        'oppositeToken: ' + oppositeToken,
-        'oppositeTokenStacked: ' + oppositeTokenStacked,
-        'price: ' + price
+      'tokenStacked: ' + tokenStacked,
+      'oppositeToken: ' + oppositeToken,
+      'oppositeTokenStacked: ' + oppositeTokenStacked,
+      'price: ' + price
     );
 
     await liquidityBalancer.setRouter(lp, MaticAddresses.QUICK_ROUTER);
@@ -189,11 +186,11 @@ describe("liquidity balancer tsets", function () {
 
       // buy TargetToken for USDC
       await UniswapUtils.swapExactTokensForTokens(
-          signer,
-          [MaticAddresses.USDC_TOKEN, token],
-          utils.parseUnits("1000", 6).toString(),
-          signer.address,
-          MaticAddresses.QUICK_ROUTER
+        signer,
+        [MaticAddresses.USDC_TOKEN, token],
+        utils.parseUnits("1000", 6).toString(),
+        signer.address,
+        MaticAddresses.QUICK_ROUTER
       );
     }
   });
@@ -206,8 +203,6 @@ describe("liquidity balancer tsets", function () {
   });
 
   it("should not down with zero values", async () => {
-    const lp = await UniswapUtils.createPairForRewardToken(
-        signer, core, "1000");
     await liquidityBalancer.setTargetPrice(token, utils.parseUnits("1"));
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits("1"));
     await liquidityBalancer.changeLiquidity(token, lp);
@@ -222,21 +217,21 @@ function compareLpInfo(before: [number, string, number, number], after: [number,
   const price = (after[3] - before[3]) / before[3] * 100;
 
   console.log('BEFORE',
-      'tokenStacked: ' + before[0],
-      'oppositeTokenStacked: ' + before[2],
-      'price: ' + before[3]
+    'tokenStacked: ' + before[0],
+    'oppositeTokenStacked: ' + before[2],
+    'price: ' + before[3]
   );
 
   console.log('AFTER ',
-      'tokenStacked: ' + after[0],
-      'oppositeTokenStacked: ' + after[2],
-      'price: ' + after[3]
+    'tokenStacked: ' + after[0],
+    'oppositeTokenStacked: ' + after[2],
+    'price: ' + after[3]
   );
 
   console.log(
-      'change tokenStacked: ' + tokenStacked,
-      'change oppositeTokenStacked: ' + oppositeTokenStacked,
-      'change price: ' + price + '%'
+    'change tokenStacked: ' + tokenStacked,
+    'change oppositeTokenStacked: ' + oppositeTokenStacked,
+    'change price: ' + price + '%'
   );
   expect(price).is.not.eq(0, 'price doesnt change');
   expect(price > 0).is.eq(priceShouldIncrease, 'price changed wrong ' + price);

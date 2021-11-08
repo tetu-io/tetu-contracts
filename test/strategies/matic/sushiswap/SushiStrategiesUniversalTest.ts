@@ -52,7 +52,7 @@ describe('Universal Sushi tests', async () => {
     console.log('strat', idx, lpName);
     /* tslint:disable:no-floating-promises */
     startDefaultLpStrategyTest(
-        'StrategySushiSwapLp',
+        'StrategySushiSwapLpWithAc',
         MaticAddresses.SUSHI_FACTORY,
         lpAddress.toLowerCase(),
         token0,

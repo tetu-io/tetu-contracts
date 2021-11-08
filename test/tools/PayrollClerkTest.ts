@@ -33,7 +33,7 @@ describe("Payroll Clerk tests", function () {
 
     clerk = (await DeployerUtils.deployPayrollClerk(signer, core.controller.address, calculator.address))[0];
 
-    await UniswapUtils.createPairForRewardToken(signer, core, "10000");
+    await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "10000");
   });
 
   after(async function () {
