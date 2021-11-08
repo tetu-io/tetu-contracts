@@ -23,11 +23,13 @@ contract LinearPipeline {
     /// @dev Adds pipe to the end of pipeline and connects it
     /// @param newPipe to be added
     function addPipe(Pipe newPipe) internal {
-        Pipe prevPipe = pipes[pipes.length-1];
         pipes.push(newPipe);
 
-        prevPipe.setNext(newPipe);
-        newPipe.setPrev(prevPipe);
+        if (pipes.length>1) {
+            Pipe prevPipe = pipes[pipes.length-1];
+            prevPipe.setNext(newPipe);
+            newPipe.setPrev(prevPipe);
+        }
     }
 
     /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
