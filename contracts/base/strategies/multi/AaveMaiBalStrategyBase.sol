@@ -56,9 +56,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         BalVaultPipeData memory balVaultPipeData
     ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
     {
+        WMATIC = _WMATIC;
         require(_underlying == WMATIC, "MS: underlying must be WMATIC");
         _rewardTokens = __rewardTokens;
-        WMATIC = _WMATIC;
 
         // Build pipeline
         addPipe(new UnwrappingPipe(WMATIC));
