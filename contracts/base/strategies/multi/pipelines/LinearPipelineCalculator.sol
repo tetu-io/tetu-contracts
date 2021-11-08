@@ -44,7 +44,7 @@ contract LinearPipelineCalculator {
     function parseRevertReason(bytes memory reason)
     private pure returns (uint256) {
         if (reason.length != 32) {
-            if (reason.length < 68) revert('Unexpected revert');
+            if (reason.length < 68) revert('LPC: Unexpected revert');
             assembly {
                 reason := add(reason, 0x04)
             }
