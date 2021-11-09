@@ -72,7 +72,7 @@ async function downloadQuick() {
     const status = underlyingStatuses.get(lp.toLowerCase());
     if (!status) {
       console.log('not active', i);
-      continue;
+      // continue;
     }
 
     try {

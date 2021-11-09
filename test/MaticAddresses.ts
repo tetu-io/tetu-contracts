@@ -86,6 +86,7 @@ export class MaticAddresses {
   public static QUICK_TETU_IRIS = "0x8bd49C0106Da8618128e56f57e0d4B8D820d9d72".toLowerCase();
   public static QUICK_TETU_USDC = "0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B".toLowerCase();
   public static QUICK_USDC_WETH = "0x853ee4b2a13f8a742d64c8f088be7ba2131f670d".toLowerCase();
+  public static QUICK_FRAX_FXS = "0x4756ff6a714ab0a2c69a566e548b59c72eb26725".toLowerCase();
 
   // sushi
   public static SUSHI_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506".toLowerCase();
@@ -188,6 +189,26 @@ export class MaticAddresses {
         return MaticAddresses.TETU_SWAP_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
+  }
+
+  public static getRouterName(router: string): string {
+    switch (router.toLowerCase()) {
+      case MaticAddresses.QUICK_ROUTER:
+        return 'QUICK';
+      case MaticAddresses.SUSHI_ROUTER:
+        return 'SUSHI';
+      case MaticAddresses.WAULT_ROUTER:
+        return 'WAULT';
+      case MaticAddresses.FIREBIRD_ROUTER:
+        return 'FIREBIRD';
+      case MaticAddresses.DFYN_ROUTER:
+        return 'DFYN';
+      case MaticAddresses.CAFE_ROUTER:
+        return 'CAFE';
+      case MaticAddresses.TETU_SWAP_ROUTER:
+        return "TETU";
+    }
+    throw Error('Unknown router ' + router);
   }
 
   public static isBlueChip(address: string): boolean {

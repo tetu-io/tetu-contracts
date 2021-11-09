@@ -373,6 +373,7 @@ export class StrategyTestUtils {
     if (tokenIn === tokenOut) {
       throw new Error('the same tokens ' + tokenIn);
     }
+
     console.log('path for ', tokenIn, tokenOut)
     const routers = [];
     const tokens = [];
@@ -401,12 +402,17 @@ export class StrategyTestUtils {
       tokens.push(tokenOut);
     }
 
+    let routersStr = '';
+    for (const router of routers) {
+      const name = MaticAddresses.getRouterName(router);
+      routersStr += name + '=>'
+    }
     console.log('PATH -----------');
     for (const token of tokens) {
       console.log('->', await TokenUtils.tokenSymbol(token));
     }
     console.log('---------------');
-    console.log('routers', routers);
+    console.log('routers', routersStr);
     return [tokens, routers];
   }
 
@@ -425,7 +431,15 @@ export class StrategyTestUtils {
     if (tokenOut.toLowerCase() === MaticAddresses.TETU_TOKEN) {
       return [MaticAddresses.USDC_TOKEN, BigNumber.from(0), MaticAddresses.QUICK_TETU_USDC];
     }
+    if (tokenOut.toLowerCase() === MaticAddresses.FXS_TOKEN) {
+      return [MaticAddresses.FRAX_TOKEN, BigNumber.from(0), MaticAddresses.QUICK_FRAX_FXS];
+    }
     const data = await calculator.getLargestPool(tokenOut, usedLps);
+    if (!MaticAddresses.isBlueChip(data[0])) {
+      console.log('Not blue chip ' + data[0])
+      usedLps.push(data[2]);
+      return StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
+    }
     if ((await calculator.swapFactories(data[1])).toLowerCase() === MaticAddresses.FIREBIRD_FACTORY) {
       usedLps.push(data[2]);
       return StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);

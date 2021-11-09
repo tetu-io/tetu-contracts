@@ -29,7 +29,7 @@ describe('Universal Quick tests', async () => {
   }
   const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
 
-  const strategyName = 'StrategyQuickSwapLpV2';
+  const strategyName = 'StrategyQuickSwapLpAc';
 
   infos.forEach(info => {
     const strat = info.split(',');
