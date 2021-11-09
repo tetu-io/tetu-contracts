@@ -10,7 +10,7 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {AaveFoldStrategyBase, StrategyAaveFold} from "../../../../typechain";
+import {AaveFoldStrategyBase, PriceCalculator, StrategyAaveFold} from "../../../../typechain";
 
 
 const {expect} = chai;
@@ -34,11 +34,13 @@ async function startAaveFoldStrategyTest(
 
     before(async function () {
       snapshotBefore = await TimeUtils.snapshot();
-      const signer = (await ethers.getSigners())[0];
+      const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-      const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
+      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const tools = await DeployerUtils.getToolsAddresses();
+      const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+
 
       await StrategyTestUtils.setupForwarder(
           core.feeRewardForwarder,
