@@ -26,7 +26,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault. Can have another length than strategies.
@@ -283,10 +283,10 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Return info about last doHardWork call for given vault
-  /// @param vault Vault address
+  /// @param strategy Strategy address
   /// @return HardWork struct with result
-  function lastHardWork(address vault) external view override returns (HardWork memory) {
-    return _lastHardWork[vault];
+  function lastHardWork(address strategy) external view override returns (HardWork memory) {
+    return _lastHardWork[strategy];
   }
 
   /// @notice Return info about last PricePerFullShare change for given vault

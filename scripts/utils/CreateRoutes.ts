@@ -21,13 +21,16 @@ async function main() {
 
   console.log('vaults', vaultsSize);
 
-  const routes = [];
-  const routers = [];
+  const allRoutes = [];
+  const allRouters = [];
   const paths = new Set<string>();
+  const parsedAssets = new Set<string>();
   let i = 0;
   while (i < vaultsSize) {
     try {
       const vAdr = await bookkeeper._vaults(i);
+      // const vAdr = '0x96aFb62d057f7E0Dca987C503812b12BEE14f5E5';
+      // i = vaultsSize - 1;
       console.log('vAdr', i, vAdr);
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
       const strategy = await vCtr.strategy();
@@ -44,19 +47,26 @@ async function main() {
       console.log('rts', rts);
 
       for (const rt of rts) {
+        if (rt.toLowerCase() === core.psVault.toLowerCase()) {
+          console.log('ps reward')
+          continue;
+        }
         if (MaticAddresses.TETU_TOKEN !== rt.toLowerCase()) {
-          const tetuRoute = await StrategyTestUtils.createLiquidationPath(rt, MaticAddresses.TETU_TOKEN, calculator);
-          if (addToPaths(paths, tetuRoute[0])) {
-            routes.push(tetuRoute[0]);
-            routers.push(tetuRoute[1]);
+          if (addToAssets(parsedAssets, rt, MaticAddresses.TETU_TOKEN)) {
+            const tetuRoute = await StrategyTestUtils.createLiquidationPath(rt, MaticAddresses.TETU_TOKEN, calculator);
+            if (addToPaths(paths, tetuRoute[0])) {
+              allRoutes.push(tetuRoute[0]);
+              allRouters.push(tetuRoute[1]);
+            }
           }
-
         }
         if (MaticAddresses.USDC_TOKEN !== rt.toLowerCase()) {
-          const fundRoute = await StrategyTestUtils.createLiquidationPath(rt, MaticAddresses.USDC_TOKEN, calculator);
-          if (addToPaths(paths, fundRoute[0])) {
-            routes.push(fundRoute[0]);
-            routers.push(fundRoute[1]);
+          if (addToAssets(parsedAssets, rt, MaticAddresses.USDC_TOKEN)) {
+            const fundRoute = await StrategyTestUtils.createLiquidationPath(rt, MaticAddresses.USDC_TOKEN, calculator);
+            if (addToPaths(paths, fundRoute[0])) {
+              allRoutes.push(fundRoute[0]);
+              allRouters.push(fundRoute[1]);
+            }
           }
         }
         if (!ASSET_SPECIFIC_ROUTES.includes(platform)) {
@@ -66,14 +76,20 @@ async function main() {
               console.log('the same as rt', asset)
               continue;
             }
+            if (asset.toLowerCase() === core.psVault.toLowerCase()) {
+              console.log('ps asset')
+              continue;
+            }
             if (EXCLUDED_ASSETS.includes(asset.toLowerCase())) {
               console.log('excluded asses', asset)
               continue;
             }
-            const assetRoute = await StrategyTestUtils.createLiquidationPath(rt, asset, calculator);
-            if (addToPaths(paths, assetRoute[0])) {
-              routes.push(assetRoute[0]);
-              routers.push(assetRoute[1]);
+            if (addToAssets(parsedAssets, rt, asset)) {
+              const assetRoute = await StrategyTestUtils.createLiquidationPath(rt, asset, calculator);
+              if (addToPaths(paths, assetRoute[0])) {
+                allRoutes.push(assetRoute[0]);
+                allRouters.push(assetRoute[1]);
+              }
             }
           }
         }
@@ -84,7 +100,23 @@ async function main() {
     }
   }
 
-  const txt = routes.toString() + '\n\n-----------------\n\n' + routers.toString();
+  let routesTxt = '[\n';
+  let routersTxt = '[\n';
+
+  for (const r of allRoutes) {
+    routesTxt += JSON.stringify(r) + ',\n';
+  }
+  routesTxt = routesTxt.slice(0, -2);
+
+  for (const r of allRouters) {
+    routersTxt += JSON.stringify(r) + ',\n';
+  }
+  routersTxt = routersTxt.slice(0, -2);
+
+  routesTxt += '\n]';
+  routersTxt += '\n]';
+
+  const txt = routesTxt + '\n\n-----------------\n\n' + routersTxt;
   writeFileSync(`./tmp/routes.txt`, txt, 'utf8');
 }
 
@@ -96,7 +128,7 @@ main()
     process.exit(1);
   });
 
-function addToPaths(paths: Set<string>, routes: string[]) {
+function addToPaths(paths: Set<string>, routes: string[]): boolean {
   let routeStr = '';
   for (const route of routes) {
     routeStr += route.toLowerCase();
@@ -106,6 +138,18 @@ function addToPaths(paths: Set<string>, routes: string[]) {
     return false;
   } else {
     paths.add(routeStr);
+    return true;
+  }
+}
+
+function addToAssets(paths: Set<string>, tokenIn: string, tokenOut: string): boolean {
+  const str = tokenIn.toLowerCase() + tokenOut.toLowerCase();
+  if (paths.has(str)) {
+    console.log('assets already exist')
+    return false;
+  } else {
+    paths.add(str);
+    return true;
   }
 }
 
