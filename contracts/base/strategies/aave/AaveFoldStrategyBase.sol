@@ -50,16 +50,14 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   uint256 public constant MAX_DEPTH = 20;
 
   /// @dev ICE rToken address for reward price determination
-  address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-  address public constant R_ETHER = 0xCa0F37f73174a28a64552D426590d3eD601ecCa1;
+  address public constant AMWMATIC = 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4;
 
-
-  address public constant LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
+  address public constant AAVE_LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
   address public constant AAVE_CONTROLLER = 0x357D51124f59836DeD84c8a1730D72B749d8BC23;
   address public constant AAVE_DATA_PROVIDER= 0x7551b5D2763519d4e37e8B81929D336De671d46d;
 
-  ILendingPool lPool = ILendingPool(LENDING_POOL);
+  ILendingPool lPool = ILendingPool(AAVE_LENDING_POOL);
   IAaveIncentivesController aaveController = IAaveIncentivesController(AAVE_CONTROLLER);
   IProtocolDataProvider dataProvider = IProtocolDataProvider(AAVE_DATA_PROVIDER);
 
@@ -156,7 +154,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   // ************* VIEWS *******************
 
   function isMatic() private view returns (bool) {
-    return aToken == R_ETHER;
+    //todo
+    return aToken == AMWMATIC;
   }
 
   function decimals() private view returns (uint8) {
@@ -185,77 +184,33 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-//    return IAToken(aToken).getCash()
-//    .add(IAToken(aToken).totalBorrows())
-//    .sub(IAToken(aToken).totalReserves());
-    return 42;
+    //todo
+    return 1;
   }
 
   /// @dev Calculate expected rewards rate for reward token
   function rewardsRateNormalised() public view returns (uint256){
-//    IAToken rt = IAToken(aToken);
-//
-//    // get reward per token for both - suppliers and borrowers
-//    uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(aToken);
-//    // using internal Iron Oracle the safest way
-//    uint256 rewardTokenPrice = rTokenUnderlyingPrice(ICE_R_TOKEN);
-//    // normalize reward speed to USD price
-//    uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
-//
-//    // get total supply, cash and borrows, and normalize them to 18 decimals
-//    uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** decimals());
-//    uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals());
-//
-//    // for avoiding revert for empty market
-//    if (totalSupply == 0 || totalBorrows == 0) {
-//      return 0;
-//    }
-//
-//    // exchange rate between rToken and underlyingToken
-//    uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** decimals()) / (10 ** underlyingDecimals());
-//
-//    // amount of reward tokens per block for 1 supplied underlyingToken
-//    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / rTokenExchangeRate * 1e18 / totalSupply / 2;
-//    // amount of reward tokens per block for 1 borrowed underlyingToken
-//    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows / 2;
-//
-//    return rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken;
+    //todo
     return 2;
   }
 
   /// @dev Return a normalized to 18 decimal cost of folding
   function foldCostRatePerToken() public view returns (uint256) {
-//    IAToken rt = IAToken(aToken);
-
-//    // if for some reason supply rate higher than borrow we pay nothing for the borrows
-//    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
-//      return 1;
-//    }
-//    uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
-//    uint256 _rTokenPrice = rTokenUnderlyingPrice(aToken);
-//
-//    // let's calculate profit for 1 token
-//    return foldRateCost * _rTokenPrice / 1e18;
+    //todo
     return 1;
   }
 
   /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
   function rTokenUnderlyingPrice(address _rToken) public view returns (uint256){
-//    uint256 _rTokenPrice = IronPriceOracle(
-//      IronControllerInterface(ironController).oracle()
-//    ).getUnderlyingPrice(_rToken);
-//    // normalize token price to 1e18
-//    if (underlyingDecimals() < 18) {
-//      _rTokenPrice = _rTokenPrice / (10 ** (18 - underlyingDecimals()));
-//    }
-//    return _rTokenPrice;
-    return 42;
+    //todo
+    return 100;
   }
 
   /// @dev Return true if we can gain profit with folding
   function isFoldingProfitable() public view returns (bool) {
     // compare values per block per 1$
-    return rewardsRateNormalised() > foldCostRatePerToken();
+    // return rewardsRateNormalised() > foldCostRatePerToken();
+    return true;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
@@ -415,6 +370,12 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     console.log("Claimed: %s of %s", claimed, _rewardTokens[0]);
   }
 
+  //todo remove
+  function claimRewardPublic() public {
+    claimReward();
+  }
+
+
   function compound() internal {
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
@@ -514,8 +475,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     if (amount < balance) {
       balance = amount;
     }
-    IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
-    IERC20(_underlyingToken).safeApprove(LENDING_POOL, balance);
+    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
+    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, balance);
     lPool.deposit(_underlyingToken, amount, address(this), 0); //todo referral code
     uint256 aBalance = IERC20(aToken).balanceOf(address(this));
     console.log(">> aBalance %s", aBalance);
@@ -572,8 +533,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   function _repay(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     if (amountUnderlying != 0) {
       console.log(">> repay amountUnderlying %s:", amountUnderlying);
-      IERC20(_underlyingToken).safeApprove(LENDING_POOL, 0);
-      IERC20(_underlyingToken).safeApprove(LENDING_POOL, amountUnderlying);
+      IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
+      IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, amountUnderlying);
       uint256 reapyed = lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
       console.log(">> reapyed %s:", reapyed);
     }
