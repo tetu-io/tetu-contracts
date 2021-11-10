@@ -20,6 +20,7 @@ import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "../interface/ISmartVault.sol";
 
 /// @title Abstract contract for base strategy functionality
 /// @author belbix
@@ -263,7 +264,9 @@ abstract contract StrategyBase is IStrategy, Controllable {
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);
+        uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
         IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, toCompound);
+        IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, ppfs);
       }
     }
   }
@@ -289,7 +292,9 @@ abstract contract StrategyBase is IStrategy, Controllable {
           uint256 token1Amount = IFeeRewardForwarder(forwarder).liquidate(rt, pair.token1(), toCompound / 2);
           require(token1Amount != 0, "SB: Token1 zero amount");
         }
+        uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
         addLiquidity(_underlyingToken, _router);
+        IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, ppfs);
       }
     }
   }

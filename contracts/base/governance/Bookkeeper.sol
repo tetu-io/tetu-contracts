@@ -26,7 +26,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault. Can have another length than strategies.
@@ -87,19 +87,20 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @dev Only registered strategy allowed
   modifier onlyStrategy() {
-    require(IController(controller()).strategies(msg.sender), "only exist strategy");
+    require(IController(controller()).strategies(msg.sender), "B: Only exist strategy");
     _;
   }
 
   /// @dev Only FeeRewardForwarder contract allowed
-  modifier onlyFeeRewardForwarder() {
-    require(IController(controller()).feeRewardForwarder() == msg.sender, "only exist forwarder");
+  modifier onlyFeeRewardForwarderOrStrategy() {
+    require(IController(controller()).feeRewardForwarder() == msg.sender
+      || IController(controller()).strategies(msg.sender), "B: Only exist forwarder or strategy");
     _;
   }
 
   /// @dev Only registered vault allowed
   modifier onlyVault() {
-    require(IController(controller()).vaults(msg.sender), "only exist vault");
+    require(IController(controller()).vaults(msg.sender), "B: Only exist vault");
     _;
   }
 
@@ -147,7 +148,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @notice Only FeeRewardForwarder action. Save Fund Token earned value for given token
   /// @param _fundTokenAmount Earned amount
-  function registerFundKeeperEarned(address _token, uint256 _fundTokenAmount) external override onlyFeeRewardForwarder {
+  function registerFundKeeperEarned(address _token, uint256 _fundTokenAmount) external override onlyFeeRewardForwarderOrStrategy {
     fundKeeperEarned[_token] = fundKeeperEarned[_token].add(_fundTokenAmount);
     emit RegisterFundKeeperEarned(_token, _fundTokenAmount);
   }
@@ -157,7 +158,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @param vault Vault address
   /// @param value Price Per Full Share change
   function registerPpfsChange(address vault, uint256 value)
-  external override onlyFeeRewardForwarder {
+  external override onlyFeeRewardForwarderOrStrategy {
     PpfsChange memory lastPpfs = _lastPpfsChange[vault];
     _lastPpfsChange[vault] = PpfsChange(
       vault,
@@ -283,10 +284,10 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Return info about last doHardWork call for given vault
-  /// @param vault Vault address
+  /// @param strategy Strategy address
   /// @return HardWork struct with result
-  function lastHardWork(address vault) external view override returns (HardWork memory) {
-    return _lastHardWork[vault];
+  function lastHardWork(address strategy) external view override returns (HardWork memory) {
+    return _lastHardWork[strategy];
   }
 
   /// @notice Return info about last PricePerFullShare change for given vault
@@ -308,7 +309,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     return false;
   }
 
-  /// @notice Return true for registered Strategu
+  /// @notice Return true for registered Strategy
   /// @param _value Strategy address
   /// @return true if Strategy registered
   function isStrategyExist(address _value) internal view returns (bool) {
@@ -323,7 +324,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @notice Governance action. Remove given Vault from vaults array
   /// @param index Index of vault in the vault array
   function removeFromVaults(uint256 index) external onlyControllerOrGovernance {
-    require(index < _vaults.length, "wrong index");
+    require(index < _vaults.length, "B: Wrong index");
     emit RemoveVault(_vaults[index]);
     _vaults[index] = _vaults[_vaults.length - 1];
     _vaults.pop();
@@ -332,7 +333,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @notice Governance action. Remove given Strategy from strategies array
   /// @param index Index of strategy in the strategies array
   function removeFromStrategies(uint256 index) external onlyControllerOrGovernance {
-    require(index < _strategies.length, "wrong index");
+    require(index < _strategies.length, "B: Wrong index");
     emit RemoveStrategy(_strategies[index]);
     _strategies[index] = _strategies[_strategies.length - 1];
     _strategies.pop();

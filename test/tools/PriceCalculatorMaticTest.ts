@@ -66,6 +66,13 @@ describe("Price calculator tests", function () {
     expect(ethPrice).is.lessThan(10);
   });
 
+  it("calculate aTricrypto3 - usdc price and check", async () => {
+    const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.USD_BTC_ETH_CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(ethPrice).is.greaterThan(10);
+    expect(ethPrice).is.lessThan(10000);
+  });
+
   it("calculate prices", async () => {
     await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.WETH_TOKEN, MaticAddresses.WETH_TOKEN);

@@ -31,7 +31,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
@@ -126,7 +126,9 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
       if (amount != 0) {
         uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
+        uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
         rtToUnderlying(rt, toCompound);
+        IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, ppfs);
       }
     }
   }
