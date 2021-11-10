@@ -44,10 +44,17 @@ export class StrategyTestUtils {
     const vault = data[1] as SmartVault;
     const strategy = data[2] as IStrategy;
 
+    let rewardTokenLp;
+    if (core.rewardToken.address === MaticAddresses.TETU_TOKEN) {
+      rewardTokenLp = await UniswapUtils.createPairForRewardToken(
+        signer, core, "1000000"
+      );
+    } else {
+      rewardTokenLp = await UniswapUtils.createPairForRewardTokenWithBuy(
+        signer, core, "1000000"
+      );
+    }
 
-    const rewardTokenLp = await UniswapUtils.createPairForRewardToken(
-      signer, core, "1000000"
-    );
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());

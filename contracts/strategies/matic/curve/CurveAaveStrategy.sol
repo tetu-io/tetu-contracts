@@ -12,11 +12,13 @@
 pragma solidity 0.8.4;
 
 import "../../../base/strategies/curve/CurveStrategyBase.sol";
+import "../../../third_party/curve/IAavePool.sol";
 
 
 /// @title Contract for Curve aave strategy implementation
 /// @author Oleg N
 contract CurveAaveStrategy is CurveStrategyBase {
+  using SafeERC20 for IERC20;
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -31,6 +33,7 @@ contract CurveAaveStrategy is CurveStrategyBase {
 
   /// @notice Curve gauge rewards pool
   address private constant _GAUGE = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
+  address private constant _POOL = address(0x445FE580eF8d70FF569aB36e80c647af338db351);
 
   address[] private _assets = [DAI, USDC, USDT];
 
@@ -51,7 +54,20 @@ contract CurveAaveStrategy is CurveStrategyBase {
   }
 
   function rtToUnderlying(address rt, uint toCompound) internal override {
-    //todo
+    if (toCompound == 0) {
+      return;
+    }
+    address forwarder = IController(controller()).feeRewardForwarder();
+    // use USDC for autocompound
+    IERC20(rt).safeApprove(forwarder, 0);
+    IERC20(rt).safeApprove(forwarder, toCompound);
+    uint amount = IFeeRewardForwarder(forwarder).liquidate(rt, USDC, toCompound);
+    require(amount != 0, "CS: Liquidated zero");
+    IERC20(USDC).safeApprove(_POOL, 0);
+    IERC20(USDC).safeApprove(_POOL, amount);
+    // second token is USDC
+    IAavePool(_POOL).add_liquidity([0, amount, 0], 0, true);
+    // now we have underlying tokens
   }
 
 }

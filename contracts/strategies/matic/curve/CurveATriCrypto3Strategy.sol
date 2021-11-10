@@ -13,7 +13,6 @@ pragma solidity 0.8.4;
 
 import "../../../base/strategies/curve/CurveStrategyBase.sol";
 import "../../../third_party/curve/ITricryptoPool.sol";
-import "hardhat/console.sol";
 
 
 /// @title Contract for Curve atricrypto3 strategy implementation
@@ -56,7 +55,6 @@ contract CurveATriCrypto3Strategy is CurveStrategyBase {
   }
 
   function rtToUnderlying(address rt, uint toCompound) internal override {
-    console.log("rtToUnderlying", rt, toCompound);
     if (toCompound == 0) {
       return;
     }
@@ -65,14 +63,11 @@ contract CurveATriCrypto3Strategy is CurveStrategyBase {
     IERC20(rt).safeApprove(forwarder, 0);
     IERC20(rt).safeApprove(forwarder, toCompound);
     uint amount = IFeeRewardForwarder(forwarder).liquidate(rt, USDC, toCompound);
-    console.log("rtToUnderlying amount", amount);
     require(amount != 0, "CS: Liquidated zero");
     IERC20(USDC).safeApprove(_POOL, 0);
     IERC20(USDC).safeApprove(_POOL, amount);
     // second token is USDC
-    console.log("rtToUnderlying bal", IERC20(_underlyingToken).balanceOf(address(this)));
     ITricryptoPool(_POOL).add_liquidity([0, amount, 0, 0, 0], 0);
-    console.log("rtToUnderlying bal after", IERC20(_underlyingToken).balanceOf(address(this)));
     // now we have underlying tokens
   }
 

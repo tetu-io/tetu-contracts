@@ -12,6 +12,7 @@ import {ICurveStrategy, IGauge} from "../../../../../typechain";
 export class CurveDoHardWorkLoop {
 
   public static async doHardWorkWithLiqPath(strategyInfo: StrategyInfo, swap: (() => Promise<void>) | null) {
+    const undDec = await TokenUtils.decimals(strategyInfo.underlying);
     const bbRatio = (await strategyInfo.strategy.buyBackRatio()).toNumber();
     // tslint:disable-next-line
     // @ts-ignore
@@ -20,10 +21,10 @@ export class CurveDoHardWorkLoop {
     const vaultForUser = strategyInfo.vault.connect(strategyInfo.user);
 
     const xTetu = (await vaultForUser.rewardTokens())[0];
-    const userUnderlyingBalance = +utils.formatUnits(await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address));
+    const userUnderlyingBalance = +utils.formatUnits(await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address), undDec);
 
     console.log("User Underlying Balance to deposit", userUnderlyingBalance.toString());
-    await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, utils.parseUnits(userUnderlyingBalance.toFixed(5)));
+    await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, utils.parseUnits(userUnderlyingBalance.toFixed(undDec)));
 
     const rewardBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.user.address);
     const vaultBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.vault.address);
@@ -76,7 +77,7 @@ export class CurveDoHardWorkLoop {
     // ************* EXIT ***************
     await strategyInfo.strategy.emergencyExit();
     await vaultForUser.exit();
-    const userUnderlyingBalanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address));
+    const userUnderlyingBalanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address), undDec);
     expect(userUnderlyingBalanceAfter).is.greaterThan(userUnderlyingBalance, "should have more");
   };
 }

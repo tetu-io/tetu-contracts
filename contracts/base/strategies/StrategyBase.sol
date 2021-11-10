@@ -260,7 +260,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);
@@ -278,7 +278,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);
