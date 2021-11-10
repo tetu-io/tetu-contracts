@@ -41,8 +41,8 @@ describe('Universal Iron tests', async () => {
     const idx = strat[0];
     const lpName = strat[1];
     const lpAddress = strat[2];
-    const tokens = strat[4].split(' | ');
-    const tokenNames = strat[5].split(' | ');
+    const tokens = strat[4]?.split(' | ');
+    const tokenNames = strat[5]?.split(' | ');
     const alloc = strat[6];
 
     if (+alloc <= 0 || idx === 'idx') {

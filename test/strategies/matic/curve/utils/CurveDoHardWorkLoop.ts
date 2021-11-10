@@ -21,10 +21,10 @@ export class CurveDoHardWorkLoop {
     const vaultForUser = strategyInfo.vault.connect(strategyInfo.user);
 
     const xTetu = (await vaultForUser.rewardTokens())[0];
-    const userUnderlyingBalance = +utils.formatUnits(await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address), undDec);
+    const undBal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)
+    const userUnderlyingBalance = +utils.formatUnits(undBal, undDec);
 
-    console.log("User Underlying Balance to deposit", userUnderlyingBalance.toString());
-    await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, utils.parseUnits(userUnderlyingBalance.toFixed(undDec)));
+    await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, undBal);
 
     const rewardBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.user.address);
     const vaultBalanceBefore = await TokenUtils.balanceOf(strategyInfo.core.psVault.address, strategyInfo.vault.address);

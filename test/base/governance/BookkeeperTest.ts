@@ -53,15 +53,15 @@ describe("Bookkeeper tests", function () {
   });
 
   it("should not register strat action for non strat", async () => {
-    await expect(bookkeeper.registerStrategyEarned('1')).is.rejectedWith("only exist strategy");
+    await expect(bookkeeper.registerStrategyEarned('1')).is.rejectedWith("B: Only exist strategy");
   });
 
   it("should not register ppfs change for non forwarder", async () => {
-    await expect(bookkeeper.registerPpfsChange(MaticAddresses.ZERO_ADDRESS, '1')).is.rejectedWith("only exist forwarder");
+    await expect(bookkeeper.registerPpfsChange(MaticAddresses.ZERO_ADDRESS, '1')).is.rejectedWith("B: Only exist forwarder or strategy");
   });
 
   it("should not register user action for non vault", async () => {
-    await expect(bookkeeper.registerUserAction(MaticAddresses.ZERO_ADDRESS, '1', true)).is.rejectedWith("only exist vault");
+    await expect(bookkeeper.registerUserAction(MaticAddresses.ZERO_ADDRESS, '1', true)).is.rejectedWith("B: Only exist vault");
   });
 
   it("should not add vault", async () => {
