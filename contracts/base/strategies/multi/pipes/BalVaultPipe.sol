@@ -68,7 +68,7 @@ contract BalVaultPipe is Pipe {
         uint256 current = ERC20Balance(d.lpToken);
         output = current - before;
 
-        transferERC20toNextPipe(d.lpToken, output); //TODO or all current balance?
+        transferERC20toNextPipe(d.lpToken, current);
 
     }
 
@@ -103,7 +103,7 @@ contract BalVaultPipe is Pipe {
         uint256 current = ERC20Balance(d.sourceToken);
         output = current - before;
 
-        transferERC20toPrevPipe(d.sourceToken, output); //TODO or all current balance?
+        transferERC20toPrevPipe(d.sourceToken, current);
     }
 
     function asIAsset(IERC20[] memory tokens) private pure returns (IAsset[] memory assets) {

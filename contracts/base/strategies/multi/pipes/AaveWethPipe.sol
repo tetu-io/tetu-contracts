@@ -38,7 +38,7 @@ contract AaveWethPipe is Pipe {
         uint256 current = ERC20Balance(d.lpToken);
         output = current - before;
 
-        transferERC20toNextPipe(d.lpToken, output);
+        transferERC20toNextPipe(d.lpToken, current);
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
@@ -50,10 +50,11 @@ contract AaveWethPipe is Pipe {
 
         IWETHGateway(d.wethGateway).withdrawETH(d.pool, amount, address(this));
 
-        output = address(this).balance - before;
+        uint256 current = address(this).balance;
+        output = current - before;
 
         if (havePrevPipe()) {
-            payable(payable(address(nextPipe))).transfer(output);
+            payable(payable(address(nextPipe))).transfer(current);
         }
     }
 

@@ -28,7 +28,7 @@ contract UnwrappingPipe is Pipe {
         output = amount;
 
         if (haveNextPipe()) {
-            payable(address(nextPipe)).transfer(output);
+            payable(address(nextPipe)).transfer(address(this).balance);
         }
     }
 
@@ -38,7 +38,7 @@ contract UnwrappingPipe is Pipe {
         IWETH(WETH).deposit{value:amount}();
         output = amount;
 
-        transferERC20toPrevPipe(WETH, output);
+        transferERC20toPrevPipe(WETH, ERC20Balance(WETH));
     }
 
     /// @dev available source balance (WETH, WMATIC etc)

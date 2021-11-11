@@ -46,7 +46,7 @@ contract MaiStablecoinPipe is Pipe {
         uint256 borrowAmount = depositCollateral(amount);
         output = borrow(borrowAmount);
 
-        transferERC20toNextPipe(d.borrowToken, output);//TODO or all current balance?
+        transferERC20toNextPipe(d.borrowToken, ERC20Balance(d.borrowToken));
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
@@ -57,7 +57,7 @@ contract MaiStablecoinPipe is Pipe {
         uint256 withdrawAmount = repay(amount);
         output = withdrawCollateral(withdrawAmount);
 
-        transferERC20toPrevPipe(d.sourceToken, output);//TODO or all current balance?
+        transferERC20toPrevPipe(d.sourceToken, ERC20Balance(d.sourceToken));
     }
 
     /// @dev function for investing, deposits, entering, borrowing
