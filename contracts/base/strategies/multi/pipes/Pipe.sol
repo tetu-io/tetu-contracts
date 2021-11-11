@@ -2,19 +2,19 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "hardhat/console.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-abstract contract Pipe is Ownable {
+abstract contract Pipe {
     using SafeERC20 for IERC20;
 
     /// @notice Address of the master pipeline
     address private _pipeline;
 
-    /// @notice Address representing ether (bnb, matic)
+    /// @notice Address representing ether (bnb, matic) for statistical purposes only
     address internal constant _ETHER =  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     /// @notice Source token address type for statistical purposes only
@@ -89,7 +89,7 @@ abstract contract Pipe is Ownable {
     /// @dev function for re balancing. When rebalance
     /// @return imbalance in underlying units
     /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
-    function rebalance() onlyOwner virtual public
+    function rebalance() onlyPipeline virtual public
     returns (uint256 imbalance, bool deficit){
         // balanced, no deficit by default
         return (0,false);

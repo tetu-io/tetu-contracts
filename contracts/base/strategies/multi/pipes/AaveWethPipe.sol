@@ -29,7 +29,7 @@ contract AaveWethPipe is Pipe {
     }
 
     /// @dev function for investing, deposits, entering, borrowing
-    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('AaveWethPipe put amount', amount);
         uint256 before = ERC20Balance(d.lpToken);
 
@@ -42,7 +42,7 @@ contract AaveWethPipe is Pipe {
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
-    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('AaveWethPipe get amount', amount);
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), 0);
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), amount);

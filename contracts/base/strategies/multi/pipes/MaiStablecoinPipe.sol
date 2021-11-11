@@ -41,7 +41,7 @@ contract MaiStablecoinPipe is Pipe {
     /// @dev function for investing, deposits, entering, borrowing
     /// @param amount in source units
     /// @return output in underlying units
-    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('MaiStablecoinPipe put amount', amount);
         uint256 borrowAmount = depositCollateral(amount);
         output = borrow(borrowAmount);
@@ -52,7 +52,7 @@ contract MaiStablecoinPipe is Pipe {
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
     /// @param amount in underlying units
     /// @return output in source units
-    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('MaiStablecoinPipe get amount', amount);
         uint256 withdrawAmount = repay(amount);
         output = withdrawCollateral(withdrawAmount);
@@ -147,7 +147,7 @@ contract MaiStablecoinPipe is Pipe {
     /// @dev function for re balancing. When rebalance
     /// @return imbalance in underlying units
     /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
-    function rebalance() override onlyOwner public returns (uint256 imbalance, bool deficit) {
+    function rebalance() override onlyPipeline public returns (uint256 imbalance, bool deficit) {
         //TODO when stablecoin.checkLiquidation?
         uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(d.vaultID);
         if (collateralPercentage == 0) {

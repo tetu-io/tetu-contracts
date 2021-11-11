@@ -19,7 +19,7 @@ contract StartingPipe is Pipe {
     }
 
     /// @dev unwraps WETH
-    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('StartingPipe put amount', amount);
         console.log('token', token);
         output = amount;
@@ -28,7 +28,7 @@ contract StartingPipe is Pipe {
     }
 
     /// @dev wraps WETH
-    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('StartingPipe get amount', amount);
         console.log('token', token);
         output = amount;

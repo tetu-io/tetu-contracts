@@ -39,7 +39,7 @@ contract BalVaultPipe is Pipe {
     /// @dev function for investing, deposits, entering, borrowing
     /// @param amount in source units
     /// @return output in underlying units
-    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('BalVaultPipe put amount', amount);
         uint256 before = ERC20Balance(d.lpToken);
 
@@ -75,7 +75,7 @@ contract BalVaultPipe is Pipe {
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
     /// @param amount in underlying units
     /// @return output in source units
-    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('BalVaultPipe get amount', amount);
         uint256 before = ERC20Balance(d.sourceToken);
 

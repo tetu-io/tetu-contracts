@@ -20,7 +20,7 @@ contract UnwrappingPipe is Pipe {
     }
 
     /// @dev unwraps WETH
-    function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe put amount', amount);
         console.log('WETH', WETH);
         console.log('sourceBalance()', sourceBalance());
@@ -33,7 +33,7 @@ contract UnwrappingPipe is Pipe {
     }
 
     /// @dev wraps WETH
-    function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+    function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe get amount', amount);
         IWETH(WETH).deposit{value:amount}();
         output = amount;
