@@ -12,6 +12,7 @@ import "hardhat/console.sol";
 struct MaiCamWMaticPipeData {
     address sourceToken;
     address lpToken;
+    address rewardToken;
 }
 
 /// @title Wrapping Pipe Contract
@@ -26,6 +27,7 @@ contract MaiCamWMaticPipe is Pipe {
         d = _d;
         sourceToken = _d.sourceToken;
         outputToken = _d.lpToken;
+        rewardToken = _d.rewardToken;
     }
 
     /// @dev function for investing, deposits, entering, borrowing

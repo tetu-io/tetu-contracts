@@ -105,11 +105,19 @@ contract LinearPipeline is StartingPipe {
         }
     }
 
-    /// @dev calls work for all pipe pipes
+    /// @dev calls work for all pipes
     function rebalanceAllPipes() internal  {
         uint256 len = pipes.length;
         for (uint256 i=0; i<len; i++) {
             rebalancePipe(i);
+        }
+    }
+
+    /// @dev calls claim() for all pipes
+    function claimFromAllPipes() internal  {
+        uint256 len = pipes.length;
+        for (uint256 i=0; i<len; i++) {
+            pipes[i].claim();
         }
     }
 

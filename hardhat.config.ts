@@ -97,11 +97,6 @@ export default {
           optimizer: {
             enabled: true,
             runs: 150,
-            details: {
-              // to avoid CompilerError: Stack too deep when compiling inline assembly: Variable headStart is 1 slot(s) too deep inside the stack.
-              // https://github.com/ethereum/solidity/issues/11638
-              yul: false // but with disabling it few contracts too large to deploy to mainnet
-            }
           }
         }
       },

@@ -13,6 +13,7 @@ struct AaveWethPipeData {
     address wethGateway;
     address pool;
     address lpToken;
+    address rewardToken;
 }
 
 /// @title Wrapping Pipe Contract
@@ -26,6 +27,7 @@ contract AaveWethPipe is Pipe {
         d = _d;
         sourceToken = _ETHER;
         outputToken = _d.lpToken;
+        rewardToken = _d.rewardToken;
     }
 
     /// @dev function for investing, deposits, entering, borrowing

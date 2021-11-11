@@ -52,11 +52,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         address _underlying,
         address _vault,
         address[] memory __rewardTokens,
-        address _WMATIC,
-        AaveWethPipeData memory aaveWethPipeData,
-        MaiCamWMaticPipeData memory maiCamWMaticPipeData,
-        MaiStablecoinPipeData memory maiStablecoinPipeData,
-        BalVaultPipeData memory balVaultPipeData
+        address _WMATIC
+//        AaveWethPipeData memory aaveWethPipeData,
+//        MaiCamWMaticPipeData memory maiCamWMaticPipeData,
+//        MaiStablecoinPipeData memory maiStablecoinPipeData,
+//        BalVaultPipeData memory balVaultPipeData
     ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
       LinearPipeline(_underlying)
     {
@@ -64,14 +64,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         require(_underlying == WMATIC, "MS: underlying must be WMATIC");
         _rewardTokens = __rewardTokens;
 
-        // Build pipeline
-        addPipe(new UnwrappingPipe(WMATIC));
-        addPipe(new AaveWethPipe(aaveWethPipeData));
-        addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData));
-        addPipe(new MaiStablecoinPipe(maiStablecoinPipeData));
-        addPipe(new BalVaultPipe(balVaultPipeData));
-
-        console.log('Initialized+++');
+        console.log('AaveMaiBalStrategyBase Initialized');
     }
 
   /*  /// @dev creates segment and initializes its context //TODO move this function to appropriate base file
@@ -91,6 +84,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         pumpIn(ERC20Balance(_underlyingToken), 0);
         liquidateReward();
         rebalanceAllPipes();
+        claimFromAllPipes();
         _totalAmount = calculator.getTotalAmountOut(0);
     }
 
@@ -118,13 +112,13 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     }
 
     /// @dev Stub function for Strategy Base implementation
-    function readyToClaim() external pure override returns (uint256[] memory) {
-        uint256[] memory toClaim = new uint256[](1); //TODO
+    function readyToClaim() external view override returns (uint256[] memory) {
+        uint256[] memory toClaim = new uint256[](_rewardTokens.length); //TODO
         return toClaim;
     }
 
     /// @dev Stub function for Strategy Base implementation
-    function poolTotalAmount() external view override returns (uint256) {
+    function poolTotalAmount() external pure override returns (uint256) {
         return 0;
     }
 
@@ -133,7 +127,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     }
 
     function platform() external pure override returns (Platform) {
-        return Platform.AAVE_MAI_BAL; //TODO What platform we have to use?
+        return Platform.AAVE_MAI_BAL;
     }
 
     /// @notice Controller can claim coins that are somehow transferred into the contract

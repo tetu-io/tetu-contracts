@@ -19,10 +19,14 @@ abstract contract Pipe {
 
     /// @notice Source token address type for statistical purposes only
     /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-    address sourceToken;
+    address public sourceToken;
     /// @notice Output token address type for statistical purposes only
     /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-    address outputToken;
+    address public outputToken;
+
+    /// @notice Reward token address for claiming
+    /// @dev initialize it in constructor
+    address public rewardToken;
 
     /// @notice Next pipe in pipeline
     Pipe public prevPipe;
@@ -86,13 +90,22 @@ abstract contract Pipe {
     function get(uint256 amount) virtual public
     returns (uint256 output);
 
-    /// @dev function for re balancing. When rebalance
+    /// @dev function for re balancing
     /// @return imbalance in underlying units
     /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
     function rebalance() onlyPipeline virtual public
     returns (uint256 imbalance, bool deficit){
         // balanced, no deficit by default
         return (0,false);
+    }
+
+    /// @dev function for claiming rewards
+    function claim() onlyPipeline virtual public {
+        if (rewardToken == address(0)) return;
+        require(_pipeline != address(0));
+
+        uint256 amount = IERC20(rewardToken).balanceOf(address(this));
+        IERC20(rewardToken).safeTransfer(_pipeline, amount);
     }
 
     /// @dev available source balance (tokens, matic etc). Must be implemented for first pipe in line.
