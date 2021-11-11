@@ -28,6 +28,8 @@ import "./pipes/BalVaultPipe.sol";
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
 contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
+    using SafeERC20 for IERC20;
+
     /// @notice Strategy type for statistical purposes
     string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
     /// @notice Version of the contract
@@ -139,10 +141,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @param recipient Recipient address
     /// @param recipient Token address
     /// @param recipient Token amount
-    function salvage(address recipient, address token, uint256 amount)
-    external override onlyController {
-        salvageFromAllPipes(recipient, token); // transfers all amount
-        StrategyBase.salvage(recipient, token, amount);
+    function salvageFromPipeline(address recipient, address token)
+    external onlyController {
+        salvageFromAllPipes(recipient, token); // transfers all amounts
     }
 
     receive() external payable {}

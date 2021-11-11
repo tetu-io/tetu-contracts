@@ -114,7 +114,7 @@ abstract contract Pipe is Ownable {
     /// @param recipient Recipient address
     /// @param recipient Token address
     function salvage(address recipient, address token)
-    external override onlyPipeline {
+    public virtual onlyPipeline {
         // To make sure that governance cannot come in and take away the coins
         if (sourceToken == token || outputToken == token) return;
 
