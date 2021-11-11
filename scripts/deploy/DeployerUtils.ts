@@ -572,6 +572,8 @@ export class DeployerUtils {
       return 'https://api.polygonscan.com/api'
     } else if (net.chainId === 80001) {
       return 'https://api-testnet.polygonscan.com/api'
+    } else if (net.chainId === 250) {
+      return 'https://api.ftmscan.com//api'
     } else {
       throw Error('network not found ' + net);
     }

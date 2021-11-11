@@ -19,7 +19,14 @@ dotEnvConfig();
 const argv = require('yargs/yargs')()
 .env('TETU')
 .options({
+  hardhatChainId: {
+    type: "number",
+    default: 137
+  },
   maticRpcUrl: {
+    type: "string",
+  },
+  ftmRpcUrl: {
     type: "string",
   },
   infuraKey: {
@@ -36,6 +43,10 @@ const argv = require('yargs/yargs')()
     type: "number",
     default: 21030305
   },
+  ftmForkBlock: {
+    type: "number",
+    default: 21653998
+  },
 }).argv;
 
 
@@ -44,11 +55,11 @@ export default {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      chainId: 137,
+      chainId: argv.hardhatChainId,
       timeout: 99999,
       gas: 19_000_000,
       forking: {
-        url: argv.maticRpcUrl,
+        url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
         blockNumber: argv.forkBlock
       },
       accounts: {
@@ -56,6 +67,15 @@ export default {
         path: "m/44'/60'/0'/0",
         accountsBalance: "100000000000000000000000000000"
       },
+    },
+    ftm: {
+      url: argv.ftmRpcUrl,
+      timeout: 99999,
+      chainId: 250,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      // gasMultiplier: 2,
+      accounts: [argv.privateKey],
     },
     matic: {
       url: argv.maticRpcUrl,

@@ -56,6 +56,7 @@ async function main() {
   const vaults: string[] = [];
   const usersTotal = new Map<string, Set<string>>();
   const users = new Map<string, Map<string, string>>();
+  const uniqueUsers = new Set<string>();
   let vaultUnclaimed = "";
 
   for (const vault of vaultsPure) {
@@ -96,10 +97,12 @@ async function main() {
         }],
       log.data,
       log.topics.slice(1));
+    uniqueUsers.add(logDecoded.beneficiary.toLowerCase());
     usersTotal.get(log.address)?.add(logDecoded.beneficiary.toLowerCase());
     users.get(log.address)?.set(logDecoded.beneficiary.toLowerCase(), '0');
   }
   console.log('users', users.size);
+  console.log('uniqueUsers', uniqueUsers.size);
 
   for (const vaultAddress of Array.from(users.keys())) {
     try {
