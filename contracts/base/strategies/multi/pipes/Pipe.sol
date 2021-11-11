@@ -125,7 +125,7 @@ abstract contract Pipe {
     /// @notice Pipeline can claim coins that are somehow transferred into the contract
     /// @param recipient Recipient address
     /// @param recipient Token address
-    function salvage(address recipient, address token)
+    function salvageFromPipe(address recipient, address token)
     public virtual onlyPipeline {
         // To make sure that governance cannot come in and take away the coins
         // checking first and last pipes only to have ability salvage tokens from inside pipeline

@@ -146,7 +146,7 @@ contract LinearPipeline is StartingPipe {
     internal {
         uint256 len = pipes.length;
         for (uint256 i=0; i<len; i++) {
-            pipes[i].salvage(recipient, token);
+            pipes[i].salvageFromPipe(recipient, token);
         }
     }
 
