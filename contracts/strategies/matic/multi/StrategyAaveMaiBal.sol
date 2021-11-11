@@ -16,6 +16,7 @@ import "../../../base/strategies/multi/AaveMaiBalStrategyBase.sol";
 contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
 
     address[] private __rewardTokens = [ // rewardTokens
+        0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270, // WMATIC on AAVE
         0x580A84C73811E1839F75d86d75d88cCa0c241fF4, // Qi Dao (QI)
         0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3  // BAL
     ]; //TODO check for other

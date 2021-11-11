@@ -3,34 +3,71 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
 abstract contract Pipe is Ownable {
+    using SafeERC20 for IERC20;
 
+    /// @notice Address of the master pipeline
+    address private _pipeline;
+
+    /// @notice Address representing ether (bnb, matic)
+    address internal constant _ETHER =  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
+    /// @notice Source token address type for statistical purposes only
+    /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
+    address sourceToken;
+    /// @notice Output token address type for statistical purposes only
+    /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
+    address outputToken;
+
+    /// @notice Next pipe in pipeline
     Pipe public prevPipe;
+    /// @notice Previous pipe in pipeline
     Pipe public nextPipe;
 
     constructor () {
+        _pipeline = msg.sender;
+    }
+
+    function setPipeline(address pipeline) public onlyPipeline {
+        console.log('setPipeline', pipeline);
+        _pipeline = pipeline;
+    }
+
+    modifier onlyPipeline() {
+        console.log('onlyPipeline _pipeline, msg.sender', _pipeline, msg.sender); //TODO rm
+        require(
+//            _pipeline == address(0) || _pipeline == msg.sender || msg.sender == address(this),
+            _pipeline == msg.sender || msg.sender == address(this),
+            "PIPE: caller is not the pipeline"
+        );
+        _;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param _nextPipe - next pipe in pipeline
-    function setNext(Pipe _nextPipe) onlyOwner public {
+    function setNextPipe(Pipe _nextPipe) onlyPipeline public {
         nextPipe = _nextPipe;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param _prevPipe - next pipe in pipeline
-    function setPrev(Pipe _prevPipe) onlyOwner public {
+    function setPrevPipe(Pipe _prevPipe) onlyPipeline public {
         prevPipe = _prevPipe;
     }
 
+    /// @dev Checks is pipe have next pipe connected
+    /// @return true when connected
     function haveNextPipe() internal view returns (bool) {
         return address(nextPipe) != address(0);
     }
 
+    /// @dev Checks is pipe have previous pipe connected
+    /// @return true when connected
     function havePrevPipe() internal view returns (bool) {
         return address(prevPipe) != address(0);
     }
@@ -67,13 +104,25 @@ abstract contract Pipe is Ownable {
 
     /// @dev underlying balance (LP tokens, collateral etc). Must be implemented for last pipe in line and all pipes after balancing pipes.
     /// @return balance in underlying units
-    function underlyingBalance() virtual public view
+    function outputBalance() virtual public view
     returns (uint256) {
         revert("PIPE: not implemented");
     }
 
-    /// Helper functions
+    /// @notice Pipeline can claim coins that are somehow transferred into the contract
+    ///         Note that they cannot come in take away coins that are used and defined in the strategy itself
+    /// @param recipient Recipient address
+    /// @param recipient Token address
+    function salvage(address recipient, address token)
+    external override onlyPipeline {
+        // To make sure that governance cannot come in and take away the coins
+        if (sourceToken == token || outputToken == token) return;
 
+        uint256 amount = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransfer(recipient, amount);
+    }
+
+    /// Helper functions
 
     /// @dev Transfers ERC20 token to next pipe when its exists
     /// @param ERC20Token ERC20 token address

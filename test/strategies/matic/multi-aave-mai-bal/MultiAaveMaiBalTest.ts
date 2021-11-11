@@ -13,6 +13,7 @@ import {StrategyInfo} from "../../StrategyInfo";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {utils} from "ethers";
+import {PriceCalculator} from "../../../../typechain";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -43,10 +44,16 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     before(async function () {
         snapshotBefore = await TimeUtils.snapshot();
-        const [signer, user] = await ethers.getSigners();
-        //TODO impersonate
-        const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-        const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
+        // const [signer, user] = await ethers.getSigners();
+        const signer = await DeployerUtils.impersonate();
+        const user = (await ethers.getSigners())[1];
+        
+        const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+        const tools = await DeployerUtils.getToolsAddresses();
+        const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
+
+        // const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
+        // const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
         /*    for (const rt of rewardTokens) {
               await core.feeRewardForwarder.setConversionPath(

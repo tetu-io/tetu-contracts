@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/aave/IWETHGateway.sol";
 
+import "hardhat/console.sol";
 
 struct AaveWethPipeData {
     address wethGateway;
@@ -23,10 +24,13 @@ contract AaveWethPipe is Pipe {
 
     constructor(AaveWethPipeData memory _d) Pipe() {
         d = _d;
+        sourceToken = _ETHER;
+        outputToken = _d.lpToken;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('AaveWethPipe put amount', amount);
         uint256 before = ERC20Balance(d.lpToken);
 
         IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
@@ -39,6 +43,7 @@ contract AaveWethPipe is Pipe {
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
     function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('AaveWethPipe get amount', amount);
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), 0);
         IERC20(d.lpToken).safeApprove(address(d.wethGateway), amount);
         uint256 before = address(this).balance;
@@ -60,7 +65,7 @@ contract AaveWethPipe is Pipe {
 
     /// @dev underlying balance (LP token)
     /// @return balance in underlying units
-    function underlyingBalance() override public view returns (uint256) {
+    function outputBalance() override public view returns (uint256) {
         return ERC20Balance(d.lpToken);
     }
 

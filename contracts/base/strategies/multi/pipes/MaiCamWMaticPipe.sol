@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qudao-mai/ICamWMATIC.sol";
 
+import "hardhat/console.sol";
 
 struct MaiCamWMaticPipeData {
     address sourceToken;
@@ -23,12 +24,15 @@ contract MaiCamWMaticPipe is Pipe {
     /// @dev creates context
     constructor(MaiCamWMaticPipeData memory _d) Pipe() {
         d = _d;
+        sourceToken = _d.sourceToken;
+        outputToken = _d.lpToken;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param amount in source units
     /// @return output in underlying units
     function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('MaiCamWMaticPipe put amount', amount);
         uint256 before = ERC20Balance(d.lpToken);
 
         IERC20(d.sourceToken).safeApprove(d.lpToken, 0);
@@ -45,6 +49,7 @@ contract MaiCamWMaticPipe is Pipe {
     /// @param amount in underlying units
     /// @return output in source units
     function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('MaiCamWMaticPipe get amount', amount);
         uint256 before = ERC20Balance(d.sourceToken);
 
         ICamWMATIC(d.lpToken).leave(amount);
@@ -63,7 +68,7 @@ contract MaiCamWMaticPipe is Pipe {
 
     /// @dev underlying balance (LP token)
     /// @return balance in underlying units
-    function underlyingBalance() override public view returns (uint256) {
+    function outputBalance() override public view returns (uint256) {
         return ERC20Balance(d.lpToken);
     }
 

@@ -32,6 +32,8 @@ contract MaiStablecoinPipe is Pipe {
 
     constructor(MaiStablecoinPipeData memory _d) Pipe() {
         d = _d;
+        sourceToken = _d.sourceToken;
+        outputToken = _d.borrowToken;
         _stablecoin = IErc20Stablecoin(d.stablecoin);
         d.vaultID = IErc20Stablecoin(d.stablecoin).createVault();
     }
@@ -40,6 +42,7 @@ contract MaiStablecoinPipe is Pipe {
     /// @param amount in source units
     /// @return output in underlying units
     function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('MaiStablecoinPipe put amount', amount);
         uint256 borrowAmount = depositCollateral(amount);
         output = borrow(borrowAmount);
 
@@ -50,6 +53,7 @@ contract MaiStablecoinPipe is Pipe {
     /// @param amount in underlying units
     /// @return output in source units
     function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('MaiStablecoinPipe get amount', amount);
         uint256 withdrawAmount = repay(amount);
         output = withdrawCollateral(withdrawAmount);
 
@@ -90,7 +94,7 @@ contract MaiStablecoinPipe is Pipe {
 
     /// @dev underlying balance (borrowed token)
     /// @return balance in underlying units
-    function underlyingBalance() override public view returns (uint256) {
+    function outputBalance() override public view returns (uint256) {
         return ERC20Balance(d.borrowToken);
     }
 

@@ -11,6 +11,7 @@ import "./../../../../third_party/balancer/IMockStableMath.sol";
 import "./../../../../third_party/balancer/IStablePool.sol";
 import "./../../../../third_party/balancer/IBasePool.sol";
 
+import "hardhat/console.sol";
 
 struct BalVaultPipeData {
     address sourceToken;
@@ -31,12 +32,15 @@ contract BalVaultPipe is Pipe {
 
     constructor(BalVaultPipeData memory _d) Pipe() {
         d = _d;
+        sourceToken = _d.sourceToken;
+        outputToken = _d.lpToken;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param amount in source units
     /// @return output in underlying units
     function put(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('BalVaultPipe put amount', amount);
         uint256 before = ERC20Balance(d.lpToken);
 
         IERC20(d.sourceToken).safeApprove(d.vault, 0);
@@ -72,6 +76,7 @@ contract BalVaultPipe is Pipe {
     /// @param amount in underlying units
     /// @return output in source units
     function get(uint256 amount) override onlyOwner public returns (uint256 output) {
+        console.log('BalVaultPipe get amount', amount);
         uint256 before = ERC20Balance(d.sourceToken);
 
         IERC20(d.lpToken).safeApprove(d.vault, 0);
@@ -116,7 +121,7 @@ contract BalVaultPipe is Pipe {
 
     /// @dev underlying balance (LP token)
     /// @return balance in underlying units
-    function underlyingBalance() override public view returns (uint256) {
+    function outputBalance() override public view returns (uint256) {
         return ERC20Balance(d.lpToken);
     }
 

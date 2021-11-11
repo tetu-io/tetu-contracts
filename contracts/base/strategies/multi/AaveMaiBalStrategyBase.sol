@@ -39,6 +39,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @dev Assets should reflect underlying tokens for investing
     address[] private _assets;
 
+    // cached total amount in underlying tokens, updated after each deposit, withdraw and hardwork
     uint256 private _totalAmount = 0;
 
     address public WMATIC;
@@ -55,6 +56,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         MaiStablecoinPipeData memory maiStablecoinPipeData,
         BalVaultPipeData memory balVaultPipeData
     ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
+      LinearPipeline(_underlying)
     {
         WMATIC = _WMATIC;
         require(_underlying == WMATIC, "MS: underlying must be WMATIC");
@@ -78,21 +80,16 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
 
 /// @dev Stub function for Strategy Base implementation
-    function rewardPoolBalance() public override pure returns (uint256 bal) {
-        bal = 0;
+    function rewardPoolBalance() public override view returns (uint256 bal) {
+        return _totalAmount;
     }
 
     /// @dev Stub function for Strategy Base implementation
     function doHardWork() external onlyNotPausedInvesting override restricted {
-        // withdrawAndClaimFromPool(0);
-        //emergencyWithdrawFromPool();
+        pumpIn(ERC20Balance(_underlyingToken), 0);
         liquidateReward();
         rebalanceAllPipes();
         _totalAmount = calculator.getTotalAmountOut(0);
-    }
-
-    function _balance(address token) internal view returns (uint256) {
-        return IERC20(token).balanceOf(address(this));
     }
 
     /// @dev Stub function for Strategy Base implementation
@@ -109,7 +106,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     /// @dev Stub function for Strategy Base implementation
     function emergencyWithdrawFromPool() internal override {
-        //noop
+        pumpOut(getMostUnderlyingBalance(), 0);
     }
 
     /// @dev Stub function for Strategy Base implementation
@@ -126,7 +123,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     /// @dev Stub function for Strategy Base implementation
     function poolTotalAmount() external view override returns (uint256) {
-        return _totalAmount;
+        return 0;
     }
 
     function assets() external view override returns (address[] memory) {
@@ -134,7 +131,18 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     }
 
     function platform() external pure override returns (Platform) {
-        return Platform.UNKNOWN; //TODO What platform we have to use?
+        return Platform.AAVE_MAI_BAL; //TODO What platform we have to use?
+    }
+
+    /// @notice Controller can claim coins that are somehow transferred into the contract
+    ///         Note that they cannot come in take away coins that are used and defined in the strategy itself
+    /// @param recipient Recipient address
+    /// @param recipient Token address
+    /// @param recipient Token amount
+    function salvage(address recipient, address token, uint256 amount)
+    external override onlyController {
+        salvageFromAllPipes(recipient, token); // transfers all amount
+        StrategyBase.salvage(recipient, token, amount);
     }
 
     receive() external payable {}

@@ -19,7 +19,7 @@ contract LinearPipelineCalculator {
 
     function getAmountOut(uint256 amountIn, uint256 toPipeIndex)
     public returns (uint256) {
-        try pipeline.getAmountOut_Reverted(amountIn, toPipeIndex)
+        try pipeline.getAmountOutReverted(amountIn, toPipeIndex)
         {} catch (bytes memory reason) {
             return parseRevertReason(reason);
         }
