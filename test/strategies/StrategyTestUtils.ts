@@ -131,13 +131,15 @@ export class StrategyTestUtils {
 
     await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
 
-    // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
-    expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
+    if (bbRatio > 1000) {
+      // check vault balance
+      const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
+      expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
 
-    // check ps balance
-    const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
-    expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
+      // check ps balance
+      const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
+      expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
+    }
 
     // check reward for user
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week

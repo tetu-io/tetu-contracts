@@ -15,7 +15,7 @@ const argv = require('yargs/yargs')()
     maticRpcUrl: {
       type: "string",
     },
-    privateKey: {
+    speedUpPrivateKey: {
       type: "string",
     },
     speedUpTx: {
@@ -74,7 +74,7 @@ async function main() {
     {common: MATIC_CHAIN});
 
 
-  tx.sign(Buffer.from(argv.privateKey, 'hex'));
+  tx.sign(Buffer.from(argv.speedUpPrivateKey, 'hex'));
 
   const txRaw = '0x' + tx.serialize().toString('hex');
 
