@@ -94,7 +94,7 @@ abstract contract WaultStrategyLPWithAC is StrategyBase, IMasterChefStrategyV2 {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
     // wault WEXpoly pool has the same underlying and reward token
     // need to be sure that we don't liquidate invested funds
     investAllUnderlying();

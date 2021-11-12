@@ -87,7 +87,7 @@ abstract contract QuickStrategyBaseAC is StrategyBase, ISNXStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
     investAllUnderlying();
     rewardPool.getReward();
     liquidateReward();
