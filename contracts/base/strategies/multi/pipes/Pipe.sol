@@ -17,6 +17,9 @@ abstract contract Pipe {
     /// @notice Address representing ether (bnb, matic) for statistical purposes only
     address internal constant _ETHER =  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
+    /// @notice Pipe name for statistical purposes only
+    /// @dev initialize it in constructor
+    string public name;
     /// @notice Source token address type for statistical purposes only
     /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
     address public sourceToken;
@@ -38,15 +41,13 @@ abstract contract Pipe {
     }
 
     function setPipeline(address pipeline) public onlyPipeline {
-        console.log('setPipeline', pipeline);
+        console.log('setPipeline', name, pipeline);
         _pipeline = pipeline;
     }
 
     modifier onlyPipeline() {
-        console.log('onlyPipeline _pipeline, msg.sender', _pipeline, msg.sender); //TODO rm
         require(
-//            _pipeline == address(0) || _pipeline == msg.sender || msg.sender == address(this),
-            _pipeline == msg.sender || msg.sender == address(this),
+            _pipeline == msg.sender || _pipeline == address(this),
             "PIPE: caller is not the pipeline"
         );
         _;
@@ -162,5 +163,18 @@ abstract contract Pipe {
     function ERC20Balance(address ERC20Token)
     internal view returns (uint256){
         return IERC20(ERC20Token).balanceOf(address(this));
+    }
+
+    function toDecimals(uint256 input, uint256 fromDecimals, uint256 outputDecimals)
+    internal pure returns (uint256) {
+        return input * (10 ** fromDecimals) / (10 ** outputDecimals);
+    }
+
+    function norm(uint256 input, uint256 decimals) internal pure returns (uint256) {
+        return input * (10 ** decimals);
+    }
+
+    function norm(uint256 input) internal pure returns (uint256) {
+        return norm(input, 18);
     }
 }

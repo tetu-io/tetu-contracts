@@ -24,6 +24,7 @@ contract AaveWethPipe is Pipe {
     AaveWethPipeData public d;
 
     constructor(AaveWethPipeData memory _d) Pipe() {
+        name = 'AaveWethPipe';
         d = _d;
         sourceToken = _ETHER;
         outputToken = _d.lpToken;

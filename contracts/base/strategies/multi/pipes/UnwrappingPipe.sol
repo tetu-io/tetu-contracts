@@ -14,6 +14,7 @@ contract UnwrappingPipe is Pipe {
     address public WETH;
 
     constructor(address _WETH) Pipe() {
+        name = 'UnwrappingPipe';
         WETH = _WETH;
         sourceToken = _WETH;
         outputToken = _ETHER;

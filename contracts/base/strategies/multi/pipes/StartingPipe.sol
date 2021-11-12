@@ -13,6 +13,7 @@ contract StartingPipe is Pipe {
     address public token;
 
     constructor(address _token) Pipe() {
+        name = 'StartingPipe';
         token = _token;
         sourceToken = _token;
         outputToken = _token;

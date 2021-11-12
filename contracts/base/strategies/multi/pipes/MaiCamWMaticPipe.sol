@@ -24,6 +24,7 @@ contract MaiCamWMaticPipe is Pipe {
 
     /// @dev creates context
     constructor(MaiCamWMaticPipeData memory _d) Pipe() {
+        name = 'MaiCamWMaticPipe';
         d = _d;
         sourceToken = _d.sourceToken;
         outputToken = _d.lpToken;

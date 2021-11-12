@@ -32,6 +32,7 @@ contract BalVaultPipe is Pipe {
     BalVaultPipeData public d;
 
     constructor(BalVaultPipeData memory _d) Pipe() {
+        name = 'BalVaultPipe';
         d = _d;
         sourceToken = _d.sourceToken;
         outputToken = _d.lpToken;
