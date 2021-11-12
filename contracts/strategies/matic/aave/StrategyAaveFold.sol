@@ -16,8 +16,6 @@ import "../../../base/strategies/aave/AaveFoldStrategyBase.sol";
 
 contract StrategyAaveFold is AaveFoldStrategyBase {
 
-  // IRON CONTROLLER todo remove
-  address public constant _IRON_CONTROLLER = address(0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND;
   // rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -39,7 +37,6 @@ contract StrategyAaveFold is AaveFoldStrategyBase {
       _vault,
       _poolRewards,
       _rToken,
-      _IRON_CONTROLLER,
       _borrowTargetFactorNumerator,
       _collateralFactorNumerator,
       _FACTOR_DENOMINATOR

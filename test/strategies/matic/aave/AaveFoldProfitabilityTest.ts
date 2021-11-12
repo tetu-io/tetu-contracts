@@ -2,29 +2,17 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {readFileSync} from "fs";
-import {startIronFoldStrategyTest} from "../../IronFoldStrategyTest";
 import {config as dotEnvConfig} from "dotenv";
-import {startAaveFoldStrategyTest} from "./AaveFoldStrategyTest";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {
-  IAaveProtocolDataProvider,
-  IAToken,
-  IStrategy,
-  PriceCalculator,
-  SmartVault,
-  StrategyAaveFold
-} from "../../../../typechain";
+import {PriceCalculator, SmartVault, StrategyAaveFold} from "../../../../typechain";
 import {ethers} from "hardhat";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {BigNumber, utils} from "ethers";
+import {utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {TimeUtils} from "../../../TimeUtils";
-import {StrategyInfo} from "../../StrategyInfo";
-import {UniswapUtils} from "../../../UniswapUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {WMATIC} from "../../../../typechain/WMATIC";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -62,9 +50,6 @@ describe('Universal Aave Fold tests', async () => {
     // const collateralFactor = strat[5];
     // const borrowTarget = strat[6];
 
-    const collateralFactor = '6000'; //todo add real data
-    const borrowTarget = '5000';   //todo add real data
-
     let vault: SmartVault;
     let strategy: StrategyAaveFold;
     let lpForTargetToken;
@@ -75,30 +60,27 @@ describe('Universal Aave Fold tests', async () => {
       return;
     }
 
-    // if (argv.onlyOneAaveFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest) {
-    //   return;
-    // }
-
     console.log('strat', idx, aTokenName);
 
     describe(tokenName + "Test", async function () {
       let snapshotBefore: string;
       let snapshot: string;
-      let strategyInfo: StrategyInfo;
-      let underlying = "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063";
-      let aToken = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e";
-      let debtToken = "0x75c4d1fb84429023170086f06e682dcbbf537b7d";
+      const underlying = token;
+      const aToken = aTokenAddress;
+      const debtToken = "0x75c4d1fb84429023170086f06e682dcbbf537b7d";
+      const deposit = "1"
 
       let user: SignerWithAddress;
-      let core:CoreContractsWrapper;
+      let core: CoreContractsWrapper;
       let calculator: PriceCalculator;
 
       before(async function () {
         snapshotBefore = await TimeUtils.snapshot();
-        const signer = (await ethers.getSigners())[0];
+        const signer = await DeployerUtils.impersonate();
         user = (await ethers.getSigners())[1];
+        const undDec = await TokenUtils.decimals(underlying);
 
-        core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
+        core = await DeployerUtils.getCoreAddressesWrapper(signer);
         calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
         const data = await StrategyTestUtils.deploy(
@@ -126,8 +108,7 @@ describe('Universal Aave Fold tests', async () => {
 
         await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
         // ************** add funds for investing ************
-        const baseAmount = 100_000;
-        await UniswapUtils.buyAllBigTokens(user);
+        await TokenUtils.getToken(underlying, user.address, utils.parseUnits(deposit, undDec))
         console.log('############## Preparations completed ##################');
       });
 
@@ -144,16 +125,17 @@ describe('Universal Aave Fold tests', async () => {
       });
 
       it("Folding profitability calculations", async () => {
-        const deposit = "1000000000000000000000"
+
         const vaultForUser = vault.connect(user);
         const rt0 = (await vaultForUser.rewardTokens())[0];
         const userUnderlyingBalance = await TokenUtils.balanceOf(underlying, user.address);
+        const undDec = await TokenUtils.decimals(underlying);
 
         await strategy.setFold(false);
 
-        const undDec = await TokenUtils.decimals(underlying);
+
         console.log("deposit", deposit);
-        await VaultUtils.deposit(user, vault, BigNumber.from(deposit));
+        await VaultUtils.deposit(user, vault, utils.parseUnits(deposit, undDec));
 
         const rewardBalanceBefore = await TokenUtils.balanceOf(core.psVault.address, user.address);
         console.log("rewardBalanceBefore: ", rewardBalanceBefore.toString());
@@ -168,15 +150,14 @@ describe('Universal Aave Fold tests', async () => {
         const debtBalanceBefore = await TokenUtils.balanceOf(debtToken, strategy.address);
         console.log("debtBalanceBefore: ", debtBalanceBefore.toString());
 
-        const matic_before = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address);
-        console.log("MATIC before: ", matic_before.toString());
+        const maticBefore = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address);
+        console.log("MATIC before: ", maticBefore.toString());
 
         // await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 30 * 12); // 1 year
-        await TimeUtils.advanceBlocksOnTs(100); // 1 h
+        await TimeUtils.advanceBlocksOnTs(100);
 
 
-
-        await strategy.claimRewardPublic();
+        // await strategy.claimRewardPublic();
 
 
         const underlyingBalanceAfter = await TokenUtils.balanceOf(aToken, strategy.address);

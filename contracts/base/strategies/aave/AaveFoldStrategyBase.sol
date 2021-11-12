@@ -49,23 +49,19 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Maximum folding loops
   uint256 public constant MAX_DEPTH = 20;
 
-  /// @dev ICE rToken address for reward price determination
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant AMWMATIC = 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4;
 
   address public constant AAVE_LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
   address public constant AAVE_CONTROLLER = 0x357D51124f59836DeD84c8a1730D72B749d8BC23;
-  address public constant AAVE_DATA_PROVIDER= 0x7551b5D2763519d4e37e8B81929D336De671d46d;
+  address public constant AAVE_DATA_PROVIDER = 0x7551b5D2763519d4e37e8B81929D336De671d46d;
 
   ILendingPool lPool = ILendingPool(AAVE_LENDING_POOL);
   IAaveIncentivesController aaveController = IAaveIncentivesController(AAVE_CONTROLLER);
   IProtocolDataProvider dataProvider = IProtocolDataProvider(AAVE_DATA_PROVIDER);
 
-
   /// @notice aToken address
   address public override aToken;
-  /// @notice Iron Controller address
-  address public override ironController;
 
   /// @notice Numerator value for the targeted borrow rate
   uint256 public borrowTargetFactorNumeratorStored;
@@ -93,39 +89,23 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   modifier updateSupplyInTheEnd() {
     _;
-    // todo update
-    //https://docs.aave.com/developers/the-core-protocol/lendingpool#getuseraccountdata
-//    suppliedInUnderlying = IAToken(aToken).balanceOfUnderlying(address(this));
-//    borrowedInUnderlying = IAToken(aToken).borrowBalanceCurrent(address(this));
-      (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
+    (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
   }
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
-  /// @param _controller Controller address
-  /// @param _underlying Underlying token address
-  /// @param _vault SmartVault address that will provide liquidity
-  /// @param __rewardTokens Reward tokens that the strategy will farm
-  /// @param _aToken RToken address
-  /// @param _ironController Iron Controller address
-  /// @param _borrowTargetFactorNumerator Numerator value for the targeted borrow rate
-  /// @param _collateralFactorNumerator Numerator value for the asset market collateral value
-  /// @param _factorDenominator Denominator value for the both above mentioned ratios
   constructor(
     address _controller,
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
     address _aToken,
-    address _ironController,
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator,
     uint256 _factorDenominator
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_aToken != address(0), "AFS: Zero address rToken");
-    require(_ironController != address(0), "AFS: Zero address ironController");
     aToken = _aToken;
-    ironController = _ironController;
 
     if (isMatic()) {
       require(_underlyingToken == W_MATIC, "AFS: Only wmatic allowed");
@@ -154,7 +134,6 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   // ************* VIEWS *******************
 
   function isMatic() private view returns (bool) {
-    //todo
     return aToken == AMWMATIC;
   }
 
@@ -175,8 +154,9 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @notice Return approximately amount of reward tokens ready to claim in Iron MasterChef contract
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
-  function readyToClaim() external pure override returns (uint256[] memory) {
+  function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
+    rewards[0] = aaveController.getUserUnclaimedRewards(address(this));
     return rewards;
   }
 
@@ -184,32 +164,12 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-    //todo
-    return 1;
-  }
-
-  /// @dev Calculate expected rewards rate for reward token
-  function rewardsRateNormalised() public view returns (uint256){
-    //todo
-    return 2;
-  }
-
-  /// @dev Return a normalized to 18 decimal cost of folding
-  function foldCostRatePerToken() public view returns (uint256) {
-    //todo
-    return 1;
-  }
-
-  /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely
-  function rTokenUnderlyingPrice(address _rToken) public view returns (uint256){
-    //todo
-    return 100;
+    return IERC20(_underlyingToken).balanceOf(aToken);
   }
 
   /// @dev Return true if we can gain profit with folding
   function isFoldingProfitable() public view returns (bool) {
-    // compare values per block per 1$
-    // return rewardsRateNormalised() > foldCostRatePerToken();
+    // todo
     return true;
   }
 
@@ -217,10 +177,10 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
+    investAllUnderlying();
     claimReward();
     compound();
     liquidateReward();
-    investAllUnderlying();
     if (!isFoldingProfitable() && fold) {
       stopFolding();
     } else if (isFoldingProfitable() && !fold) {
@@ -232,8 +192,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Rebalances the borrow ratio
   function rebalance() public restricted updateSupplyInTheEnd {
-//    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-//    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
+    //    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
+    //    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
     console.log(">> rebalance");
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     console.log(">> supplied: %s", supplied);
@@ -370,12 +330,6 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     console.log("Claimed: %s of %s", claimed, _rewardTokens[0]);
   }
 
-  //todo remove
-  function claimRewardPublic() public {
-    claimReward();
-  }
-
-
   function compound() internal {
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
@@ -441,12 +395,14 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       // ppfs = 1 if underlying balance = total supply
       // -1 for avoiding problem with rounding
       uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
+      console.log(">> liquidateExcessUnderlying toLiquidate", toLiquidate);
       if (underlyingBalance() < toLiquidate) {
         console.log(">> go to -> _redeemPartialWithLoan %s", toLiquidate - underlyingBalance());
 
         _redeemPartialWithLoan(toLiquidate - underlyingBalance());
       }
       toLiquidate = Math.min(underlyingBalance(), toLiquidate);
+      console.log(">> liquidateExcessUnderlying toLiquidate adjusted", toLiquidate);
       if (toLiquidate != 0) {
         IERC20(_underlyingToken).safeApprove(forwarder, 0);
         IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
@@ -462,32 +418,28 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
         } catch {
           emit UnderlyingLiquidationFailed();
         }
-        (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
       }
     }
   }
 
   /// @dev Supplies to Aave
-  function _supply(uint256 amount) internal updateSupplyInTheEnd returns (uint256) {
-    uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
-    console.log(">> supply: balance %s", balance);
-
-    if (amount < balance) {
-      balance = amount;
-    }
+  function _supply(uint256 amount) internal updateSupplyInTheEnd {
+    console.log(">> supply: balance %s", IERC20(_underlyingToken).balanceOf(address(this)));
+    console.log(">> supply amount ", amount);
+    amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
+    console.log(">> supply amount adjusted", amount);
     IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
-    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, balance);
-    lPool.deposit(_underlyingToken, amount, address(this), 0); //todo referral code
+    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, amount);
+    lPool.deposit(_underlyingToken, amount, address(this), 0);
     uint256 aBalance = IERC20(aToken).balanceOf(address(this));
     console.log(">> aBalance %s", aBalance);
-    return balance;
   }
 
   /// @dev Borrows against the collateral
   function _borrow(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // Borrow, check the balance for this contract's address
-    console.log(">>borrow amountUnderlying %s:", amountUnderlying);
-    lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this)); //todo referral code
+    console.log(">>borrow amountUnderlying %s", amountUnderlying);
+    lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this));
   }
 
   /// @dev Redeem liquidity in underlying
@@ -500,22 +452,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
     amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
     if (amountUnderlying > 0) {
-      try lPool.withdraw(_underlyingToken, amountUnderlying, address(this)) returns (uint256 withdrawnAmount) {
-        console.log(">>withdrawnAmount %s:", withdrawnAmount);
-      } catch{
-        console.log(">> unable to withdraw amount %s:", amountUnderlying);
-      }
-
-      //todo figure out if needed
-//      if (redeemCode != 0) {
-//        // iron has verification function that can ruin tx with underlying, in this case redeem rToken will work
-//        (,,, uint256 exchangeRate) = IAToken(aToken).getAccountSnapshot(address(this));
-//        uint256 rTokenRedeem = amountUnderlying * 1e18 / exchangeRate;
-//        if (rTokenRedeem > 0) {
-//          _redeemRToken(rTokenRedeem);
-//        }
-//      }
-
+      lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
     }
   }
 
@@ -542,7 +479,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
   function _redeemMaximumWithLoan() internal updateSupplyInTheEnd {
-     console.log(">> _redeemMaximumWithLoan");
+    console.log(">> _redeemMaximumWithLoan");
     // amount of liquidity
     (uint256 availableLiquidity,,,,,,,,,) = dataProvider.getReserveData(_underlyingToken);
     console.log(">> availableLiquidity %s:", availableLiquidity);
@@ -565,7 +502,6 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
     console.log(">> _redeemMaximumWithLoan aTokenBalance %s", aTokenBalance);
 
-    //todo not sure if it needed.
     if (aTokenBalance > 0) {
       _redeemAToken(aTokenBalance);
     }

@@ -5,26 +5,25 @@ import {BigNumber, utils} from "ethers";
 import {StrategyInfo} from "../../StrategyInfo";
 import {TimeUtils} from "../../../TimeUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../../../MaticAddresses";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {AaveFoldStrategyBase, PriceCalculator, StrategyAaveFold} from "../../../../typechain";
+import {PriceCalculator, StrategyAaveFold} from "../../../../typechain";
+import {MaticAddresses} from "../../../MaticAddresses";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 async function startAaveFoldStrategyTest(
-    strategyName: string,
-    factory: string,
-    underlying: string,
-    tokenName: string,
-    rewardTokens: string[],
-    aToken: string,
-    borrowTargetFactorNumerator: string,
-    collateralFactorNumerator: string
+  strategyName: string,
+  factory: string,
+  underlying: string,
+  tokenName: string,
+  rewardTokens: string[],
+  aToken: string,
+  borrowTargetFactorNumerator: string,
+  collateralFactorNumerator: string
 ) {
 
   describe(strategyName + " " + tokenName + "Test", async function () {
@@ -43,28 +42,28 @@ async function startAaveFoldStrategyTest(
 
 
       await StrategyTestUtils.setupForwarder(
-          core.feeRewardForwarder,
-          rewardTokens,
-          underlying,
-          core.rewardToken.address,
-          factory
+        core.feeRewardForwarder,
+        rewardTokens,
+        underlying,
+        core.rewardToken.address,
+        factory
       );
 
       const data = await StrategyTestUtils.deploy(
+        signer,
+        core,
+        tokenName,
+        async vaultAddress => DeployerUtils.deployContract(
           signer,
-          core,
-          tokenName,
-          async vaultAddress => DeployerUtils.deployContract(
-              signer,
-              strategyName,
-              core.controller.address,
-              vaultAddress,
-              underlying,
-              aToken,
-              borrowTargetFactorNumerator,
-              collateralFactorNumerator
-          ) as Promise<StrategyAaveFold>,
-          underlying
+          strategyName,
+          core.controller.address,
+          vaultAddress,
+          underlying,
+          aToken,
+          borrowTargetFactorNumerator,
+          collateralFactorNumerator
+        ) as Promise<StrategyAaveFold>,
+        underlying
       );
 
       const vault = data[0];
@@ -76,33 +75,23 @@ async function startAaveFoldStrategyTest(
       await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
       strategyInfo = new StrategyInfo(
-          underlying,
-          signer,
-          user,
-          core,
-          vault,
-          strategy,
-          lpForTargetToken,
-          calculator
+        underlying,
+        signer,
+        user,
+        core,
+        vault,
+        strategy,
+        lpForTargetToken,
+        calculator
       );
-
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
 
       // ************** add funds for investing ************
       const baseAmount = 100_000;
-      await UniswapUtils.buyAllBigTokens(user);
-      const name = await TokenUtils.tokenSymbol(tokenOpposite);
-      const dec = await TokenUtils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
+      const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying));
+      const amount = baseAmount / price;
+      const undDec = await TokenUtils.decimals(underlying);
 
-      await UniswapUtils.buyToken(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-          underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
+      await TokenUtils.getToken(underlying, user.address, utils.parseUnits(amount + '', undDec));
 
       console.log('############## Preparations completed ##################');
     });
@@ -121,7 +110,9 @@ async function startAaveFoldStrategyTest(
 
 
     it("do hard work with liq path", async () => {
-      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,"1000000000000000000000", null);
+      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+        null);
     });
     it("emergency exit", async () => {
       const info = strategyInfo;
@@ -139,10 +130,10 @@ async function startAaveFoldStrategyTest(
       const stratInvested = await strategy.investedUnderlyingBalance();
       // loans return a bit less balance for deposited assets
       expect(+utils.formatUnits(stratInvested))
-      .is.approximately(+utils.formatUnits(invested), +utils.formatUnits(stratInvested) * 0.001,
-          "assets in the pool should be more or equal than invested");
+        .is.approximately(+utils.formatUnits(invested), +utils.formatUnits(stratInvested) * 0.001,
+        "assets in the pool should be more or equal than invested");
       expect(await vault.underlyingBalanceInVault())
-      .at.eq(deposit.sub(invested), "all assets in strategy");
+        .at.eq(deposit.sub(invested), "all assets in strategy");
 
 
       await info.strategy.emergencyExit();
@@ -161,25 +152,69 @@ async function startAaveFoldStrategyTest(
       await info.strategy.continueInvesting();
       expect(await info.strategy.pausedInvesting()).is.eq(false);
     });
+
     it("common test should be ok", async () => {
       await StrategyTestUtils.commonTests(strategyInfo);
     });
-    // it("doHardWork loop", async function () {
-    //   const deposit = 100_000;
-    //   const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
-    //   const undDec = await TokenUtils.decimals(strategyInfo.underlying);
-    //   const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
-    //   console.log('depositBN', utils.formatUnits(depositBN, undDec))
-    //   const bal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
-    //   // remove excess balance
-    //   await TokenUtils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
-    //   await doHardWorkLoopFolding(
-    //       strategyInfo,
-    //       depositBN.div(2).toString(),
-    //       3,
-    //       3000
-    //   );
-    // });
+
+    it("emergency exit", async () => {
+      const info = strategyInfo;
+      const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
+
+      const undDec = await TokenUtils.decimals(info.underlying);
+      const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+
+      await VaultUtils.deposit(info.user, info.vault, deposit);
+
+      const invested = deposit;
+      const strategy = info.strategy;
+      const vault = info.vault;
+      expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
+      const stratInvested = await strategy.investedUnderlyingBalance();
+      // loans return a bit less balance for deposited assets
+      expect(+utils.formatUnits(stratInvested))
+        .is.approximately(+utils.formatUnits(invested), +utils.formatUnits(stratInvested) * 0.001,
+        "assets in the pool should be more or equal than invested");
+      expect(await vault.underlyingBalanceInVault())
+        .at.eq(deposit.sub(invested), "all assets in strategy");
+
+
+      await info.strategy.emergencyExit();
+
+      await info.vault.connect(info.user).exit();
+
+      const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+
+      console.log('ppfs', oldPpfs, ppfs, oldPpfs - ppfs);
+
+      expect(await strategy.underlyingBalance()).at.eq("0", "all withdrew");
+      expect(+utils.formatUnits(await strategy.investedUnderlyingBalance())).is.eq(0, "0 strat balance");
+      expect(await vault.underlyingBalanceInVault()).at.eq(0, "0 vault bal");
+
+      expect(await info.strategy.pausedInvesting()).is.eq(true);
+      await info.strategy.continueInvesting();
+      expect(await info.strategy.pausedInvesting()).is.eq(false);
+    });
+
+    it("doHardWork loop", async function () {
+      const deposit = 10_000;
+      const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
+      const undDec = await TokenUtils.decimals(strategyInfo.underlying);
+      const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
+      console.log('depositBN', utils.formatUnits(depositBN, undDec))
+      const bal = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
+      // remove excess balance
+      if (!bal.sub(depositBN).isNegative()) {
+        await TokenUtils.transfer(strategyInfo.underlying, strategyInfo.user, strategyInfo.calculator.address, bal.sub(depositBN).toString());
+      }
+
+      await doHardWorkLoopFolding(
+        strategyInfo,
+        depositBN.div(2).toString(),
+        3,
+        3000
+      );
+    });
 
   });
 }
@@ -189,10 +224,10 @@ export {startAaveFoldStrategyTest};
 
 async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
   const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyIronFold', info.strategy.address) as StrategyAaveFold;
-  const rr = await foldContract.rewardsRateNormalised();
-  console.log('rr', rr.toString());
+  // const rr = await foldContract.rewardsRateNormalised();
+  // console.log('rr', rr.toString());
   const calculator = (await DeployerUtils
-  .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
+    .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
   const vaultForUser = info.vault.connect(info.user);
   const undDec = await TokenUtils.decimals(info.underlying);
 
@@ -269,8 +304,8 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
     earnedTotal = earned;
     const currentTs = await StrategyTestUtils.getBlockTime();
     console.log('earned: ' + earnedThiCycle,
-        'earned total: ' + earned,
-        'cycle time: ' + (currentTs - loopStart)
+      'earned total: ' + earned,
+      'cycle time: ' + (currentTs - loopStart)
     );
 
     const targetTokenPrice = +utils.formatUnits(await calculator.getPrice(info.core.rewardToken.address, MaticAddresses.USDC_TOKEN));
@@ -286,10 +321,10 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
     console.log('tvl', tvl, tvlUsdc);
 
     const roi = ((earnedUsdc / tvlUsdc) / (currentTs - start))
-        * 100 * StrategyTestUtils.SECONDS_OF_YEAR;
+      * 100 * StrategyTestUtils.SECONDS_OF_YEAR;
 
     const roiThisCycle = ((earnedUsdcThisCycle / tvlUsdc) / (currentTs - loopStart))
-        * 100 * StrategyTestUtils.SECONDS_OF_YEAR;
+      * 100 * StrategyTestUtils.SECONDS_OF_YEAR;
 
     console.log('############################################################### --- ROI: ', roi, roiThisCycle);
     // hardhat sometimes doesn't provide a block for some reason, need to investigate why
@@ -308,13 +343,13 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
         await vaultForUser.exit();
         // some pools have auto compounding so user balance can increase
         expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
-        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "should have all underlying");
+          .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "should have all underlying");
       } else {
         console.log('user withdraw', uBal.toString(), vBal.toString());
         await vaultForUser.withdraw(BigNumber.from(uBal).mul(90).div(100));
         // some pools have auto compounding so user balance can increase
         expect(+utils.formatUnits(await TokenUtils.balanceOf(info.underlying, info.user.address), undDec))
-        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance.mul(90).div(100), undDec) * 0.999, "should have all underlying");
+          .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance.mul(90).div(100), undDec) * 0.999, "should have all underlying");
       }
 
 
@@ -349,7 +384,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   await vaultForUser.getAllRewards();
   const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
   expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
-  .is.not.eq("0", "should have earned iToken rewards");
+    .is.not.eq("0", "should have earned iToken rewards");
 
   // ************* EXIT ***************
   const bal = await TokenUtils.balanceOf(vaultForUser.address, info.user.address);
@@ -360,9 +395,9 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   // some pools have auto compounding so user balance can increase
   const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
   expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-  .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "user should have all underlying");
+    .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "user should have all underlying");
 
   const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
   expect(+utils.formatUnits(signerUnderlyingBalanceAfter, undDec))
-  .is.greaterThanOrEqual(+utils.formatUnits(signerUnderlyingBalance, undDec) * 0.999, "signer should have all underlying");
+    .is.greaterThanOrEqual(+utils.formatUnits(signerUnderlyingBalance, undDec) * 0.999, "signer should have all underlying");
 }

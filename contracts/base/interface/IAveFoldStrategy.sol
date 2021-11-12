@@ -16,6 +16,4 @@ interface IAveFoldStrategy {
 
   function aToken() external view returns (address);
 
-  function ironController() external view returns (address);
-
 }
