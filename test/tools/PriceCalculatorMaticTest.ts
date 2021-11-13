@@ -73,6 +73,14 @@ describe("Price calculator tests", function () {
     expect(ethPrice).is.lessThan(10000);
   });
 
+  it("calculate crvAave - usdc price and check", async () => {
+    await calculator.setReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.WBTC_TOKEN);
+    const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(ethPrice).is.greaterThan(30000);
+    expect(ethPrice).is.lessThan(300000);
+  });
+
   it("calculate prices", async () => {
     await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.WETH_TOKEN, MaticAddresses.WETH_TOKEN);
