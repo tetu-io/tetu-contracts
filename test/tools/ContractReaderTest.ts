@@ -310,7 +310,7 @@ describe("contract reader tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(1);
 
-    const approx = 0.25;
+    const approx = 0.5;
 
     const vaultAprLocal = await VaultUtils.vaultApr(vault, rt, contractReader);
     const vaultAprReader = +utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]);
