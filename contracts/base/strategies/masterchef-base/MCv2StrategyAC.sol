@@ -123,7 +123,7 @@ abstract contract MCv2StrategyAC is StrategyBase, IMasterChefStrategyV3 {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
     IMiniChefV2(mcRewardPool).harvest(poolID, address(this));
     liquidateReward();
   }
