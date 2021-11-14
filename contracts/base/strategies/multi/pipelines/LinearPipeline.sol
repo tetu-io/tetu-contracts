@@ -104,12 +104,12 @@ contract LinearPipeline {
 
     /// @dev re balance pipe pipes
     function rebalancePipe(uint256 pipeIndex) internal {
-        console.log('rebalancePipe pipeIndex', pipeIndex);
         Pipe pipe = pipes[pipeIndex];
         (uint256 imbalance, bool deficit) = pipe.rebalance();
-        console.log('imbalance, deficit', imbalance, deficit);
         if (imbalance>0) {
             if (deficit) {
+                console.log('rebalancePipe', pipe.name());
+                console.log('imbalance, deficit', imbalance, deficit);
                 pumpOutSource(imbalance, pipeIndex.add(1));
                 // call rebalance again after we have closed deficit
                 pipe.rebalance();
