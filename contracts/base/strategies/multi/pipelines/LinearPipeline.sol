@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../pipes/Pipe.sol";
-import "../pipes/StartingPipe.sol";
 import "./LinearPipelineCalculator.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -12,52 +11,64 @@ import "hardhat/console.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-contract LinearPipeline is StartingPipe {
+contract LinearPipeline {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    address private immutable _underlyingToken;
     LinearPipelineCalculator public calculator;
     Pipe[] public pipes;
 
-    constructor(address underlyingToken) StartingPipe(underlyingToken) {
+    constructor(address underlyingToken) {
         console.log('LinearPipelineCalculator constructor address(this)', address(this));
-        setPipeline(address(this)); // to call StartingPipe onlyPipeline methods
         calculator = new LinearPipelineCalculator(this);
-        addPipe(this); // add self as first pipe in line
+        _underlyingToken = underlyingToken;
     }
 
     /// @dev Adds pipe to the end of pipeline and connects it
     /// @param newPipe to be added
     function addPipe(Pipe newPipe) internal {
-        console.log('addPipe newPipe', address(newPipe));
+        console.log('+addPipe ', address(newPipe), newPipe.name());
         pipes.push(newPipe);
-        console.log('pipes.length', pipes.length);
+        console.log('   pipes.length', pipes.length);
 
         if (pipes.length > 1) {
-            if (pipes.length == 2) { // adding to this StartingPipe
-                setNextPipe(newPipe);
-            } else {
-                Pipe prevPipe = pipes[pipes.length-2];
-                console.log('prevPipe', address(prevPipe));
-                prevPipe.setNextPipe(newPipe);
-            }
-            newPipe.setPrevPipe(prevPipe);
+            Pipe prevPipe = pipes[pipes.length-2];
+            console.log('   prevPipe    ', prevPipe.name());
+            prevPipe.setNextPipe(address(newPipe));
+            newPipe.setPrevPipe(address(prevPipe));
+        } else { // first pipe should have pipeline as prev pipe to send tokens when gets
+            newPipe.setPrevPipe(address(this) );
+            console.log('   prevPipe    ', 'LinearPipeline');
         }
     }
 
     /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
     /// @param sourceAmount in source units
-    /// @return amountIn in most underlying units
+    /// @return outputAmount in most underlying units
     function pumpIn(uint256 sourceAmount, uint256 fromPipeIndex)
-    internal returns (uint256 amountIn)  {
-        console.log('pumpIn sourceAmount, fromPipeIndex', sourceAmount, fromPipeIndex);
-        amountIn = sourceAmount;
+    internal returns (uint256 outputAmount)  {
+        console.log('=== pumpIn sourceAmount, fromPipeIndex', sourceAmount, fromPipeIndex);
+        if (sourceAmount == 0) return 0;
+        outputAmount = sourceAmount;
         uint256 len = pipes.length;
         for (uint256 i=fromPipeIndex; i<len; i++) {
-            console.log('put i, amountIn', i, amountIn);
-            amountIn = pipes[i].put(amountIn);
+            console.log('+++ put amountIn', pipes[i].name(), outputAmount);
+            outputAmount = pipes[i].put(outputAmount);
         }
-        console.log('last amount', amountIn);
+        console.log('last amount', outputAmount);
+    }
+
+    /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
+    /// @param sourceAmount in source units
+    /// @return outputAmount in most underlying units
+    function pumpIn(uint256 sourceAmount)
+    internal returns (uint256 outputAmount)  {
+        console.log('=== pumpIn sourceAmount', sourceAmount);
+        // send token to first pipe
+        IERC20(_underlyingToken).safeTransfer(address(pipes[0]), sourceAmount);
+        outputAmount = pumpIn(sourceAmount, 0);
+        console.log('last amount', outputAmount);
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
@@ -66,12 +77,15 @@ contract LinearPipeline is StartingPipe {
     /// @return amountOut in source units
     function pumpOut(uint256 underlyingAmount, uint256 toPipeIndex)
     internal returns (uint256 amountOut) {
-        console.log('pumpOut underlyingAmount, toPipeIndex', underlyingAmount, toPipeIndex);
+        console.log('=== pumpOut underlyingAmount, toPipeIndex', underlyingAmount, toPipeIndex);
+        if (underlyingAmount == 0) return 0;
         amountOut = underlyingAmount;
         uint256 len = pipes.length;
-        for (uint256 i=len-1; i>=toPipeIndex; i--) {
-            console.log('put i, amountOut', i, amountOut);
-            amountOut = pipes[i].get(amountOut);
+        for (uint256 i=len; i>toPipeIndex; i--) {
+            Pipe pipe = pipes[i-1];
+            console.log('--- get amountOut', pipe.name(), amountOut);
+            amountOut = pipe.get(amountOut);
+            console.log('- amountOut', amountOut);
         }
         console.log('last amount', amountOut);
 
@@ -123,9 +137,10 @@ contract LinearPipeline is StartingPipe {
 
     function getAmountOutReverted(uint256 amountIn, uint256 toPipeIndex)
     public {
-        pumpOut(amountIn, toPipeIndex);
-        Pipe pipe = pipes[toPipeIndex];
-        uint256 amountOut = pipe.sourceBalance();
+        uint256 amountOut = pumpOut(amountIn, toPipeIndex);
+        console.log('getAmountOutReverted amountOut', amountOut);
+//        Pipe pipe = pipes[toPipeIndex];
+//        uint256 amountOut = pipe.sourceBalance();
         // store answer in revert message data
         assembly {
             let ptr := mload(0x40)
@@ -136,7 +151,9 @@ contract LinearPipeline is StartingPipe {
 
     function getMostUnderlyingBalance() public view returns (uint256) {
         uint256 last = pipes.length-1;
-        return pipes[last].outputBalance();
+        uint256 mostUnderlyingBalance = pipes[last].outputBalance();
+        console.log('mostUnderlyingBalance', mostUnderlyingBalance);
+        return mostUnderlyingBalance;
     }
 
     /// @notice Pipeline can claim coins that are somehow transferred into the pipes

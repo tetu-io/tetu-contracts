@@ -26,10 +26,12 @@ contract LinearPipelineCalculator {
         return 0;
     }
 
-    function getTotalAmountOut(uint256 toPipeIndex)
+    function getTotalAmountOut()
     public returns (uint256) {
         uint256 amountIn = pipeline.getMostUnderlyingBalance();
-        return getAmountOut(amountIn, toPipeIndex);
+        uint256 amountOut = getAmountOut(amountIn, 0);
+        console.log('amountOut', amountOut);
+        return amountOut;
     }
 
     function getAmountInForAmountOut(uint256 amountOut, uint256 toPipeIndex)

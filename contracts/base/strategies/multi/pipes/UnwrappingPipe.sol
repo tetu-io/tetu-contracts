@@ -11,11 +11,8 @@ import "hardhat/console.sol";
 /// @author bogdoslav
 contract UnwrappingPipe is Pipe {
 
-    address public WETH;
-
     constructor(address _WETH) Pipe() {
         name = 'UnwrappingPipe';
-        WETH = _WETH;
         sourceToken = _WETH;
         outputToken = _ETHER;
     }
@@ -23,9 +20,9 @@ contract UnwrappingPipe is Pipe {
     /// @dev unwraps WETH
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe put amount', amount);
-        console.log('WETH', WETH);
+        console.log('sourceToken (WETH)', sourceToken);
         console.log('sourceBalance()', sourceBalance());
-        IWETH(WETH).withdraw(amount);
+        IWETH(sourceToken).withdraw(amount);
         output = amount;
 
         if (haveNextPipe()) {
@@ -36,16 +33,13 @@ contract UnwrappingPipe is Pipe {
     /// @dev wraps WETH
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe get amount', amount);
-        IWETH(WETH).deposit{value:amount}();
+        IWETH(sourceToken).deposit{value:amount}();
         output = amount;
-
-        transferERC20toPrevPipe(WETH, ERC20Balance(WETH));
-    }
-
-    /// @dev available source balance (WETH, WMATIC etc)
-    /// @return balance in source units
-    function sourceBalance() override public view returns (uint256) {
-        return ERC20Balance(WETH);
+        console.log('output     ', output);
+        uint256 current = ERC20Balance(sourceToken);
+        console.log('current     ', current);
+        transferERC20toPrevPipe(sourceToken, current);
+        console.log('transferred', current);
     }
 
     /// @dev underlying balance (ETH, MATIC)

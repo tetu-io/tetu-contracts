@@ -49,7 +49,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @notice Contract constructor
     constructor(
         address _controller,
-        address _underlying,
+        address _underlyingToken,
         address _vault,
         address[] memory __rewardTokens,
         address _WMATIC
@@ -57,11 +57,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 //        MaiCamWMaticPipeData memory maiCamWMaticPipeData,
 //        MaiStablecoinPipeData memory maiStablecoinPipeData,
 //        BalVaultPipeData memory balVaultPipeData
-    ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO)
-      LinearPipeline(_underlying)
+    ) StrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO)
+      LinearPipeline(_underlyingToken)
     {
         WMATIC = _WMATIC;
-        require(_underlying == WMATIC, "MS: underlying must be WMATIC");
+        require(_underlyingToken == _WMATIC, "MS: underlying must be WMATIC");
         _rewardTokens = __rewardTokens;
 
         console.log('AaveMaiBalStrategyBase Initialized');
@@ -81,23 +81,23 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     /// @dev Stub function for Strategy Base implementation
     function doHardWork() external onlyNotPausedInvesting override restricted {
-        pumpIn(ERC20Balance(_underlyingToken), 0);
+        pumpIn(IERC20(_underlyingToken).balanceOf(address(this)));
         liquidateReward();
         rebalanceAllPipes();
         claimFromAllPipes();
-        _totalAmount = calculator.getTotalAmountOut(0);
+        _totalAmount = calculator.getTotalAmountOut();
     }
 
     /// @dev Stub function for Strategy Base implementation
     function depositToPool(uint256 underlyingAmount) internal override {
-        pumpIn(underlyingAmount, 0);
-        _totalAmount = calculator.getTotalAmountOut(0);
+        pumpIn(underlyingAmount);
+        _totalAmount = calculator.getTotalAmountOut();
     }
 
     /// @dev Stub function for Strategy Base implementation
     function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
         pumpOutSource(underlyingAmount, 0);
-        _totalAmount = calculator.getTotalAmountOut(0);
+        _totalAmount = calculator.getTotalAmountOut();
     }
 
     /// @dev Stub function for Strategy Base implementation

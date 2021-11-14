@@ -126,7 +126,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             calculator
         );
 
-        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000')); // 1K wmatic
+        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100')); // 100 wmatic
         const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, user.address);
         console.log("User WMATIC balance: ", bal.toString());
 

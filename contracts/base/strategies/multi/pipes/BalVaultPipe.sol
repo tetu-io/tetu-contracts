@@ -27,8 +27,6 @@ struct BalVaultPipeData {
 contract BalVaultPipe is Pipe {
     using SafeERC20 for IERC20;
 
-    string constant _WRONG_SOURCE_TOKEN = "BVP: Wrong source token";
-
     BalVaultPipeData public d;
 
     constructor(BalVaultPipeData memory _d) Pipe() {
@@ -46,18 +44,15 @@ contract BalVaultPipe is Pipe {
         console.log('BalVaultPipe put amount', amount);
         uint256 before = ERC20Balance(d.lpToken);
 
-        IERC20(d.sourceToken).safeApprove(d.vault, 0);
-        IERC20(d.sourceToken).safeApprove(d.vault, amount);
-
         //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
-        require(d.sourceToken == address(tokens[d.tokenIndex]), _WRONG_SOURCE_TOKEN);
+        require(d.sourceToken == address(tokens[d.tokenIndex]), "BVP: Wrong source token");
         uint256[] memory maxAmountsIn = new uint256[](4);
         maxAmountsIn[d.tokenIndex] = amount;
 
         // example found at https://etherscan.io/address/0x5C6361f4cC18Df63D07Abd1D59A282d82C27Ad17#code#F2#L162
         uint256 minAmountOut = 1;
-        bytes memory userData = abi.encode(IBVault.JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT, maxAmountsIn, minAmountOut); //TODO check
+        bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, maxAmountsIn, minAmountOut);
 
         IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
             assets: asIAsset(tokens),
@@ -66,12 +61,13 @@ contract BalVaultPipe is Pipe {
             fromInternalBalance: false
         });
 
+        ERC20Approve(sourceToken, d.vault, amount);
         IBVault(d.vault).joinPool(d.poolID, address(this), address(this), request);
 
-        uint256 current = ERC20Balance(d.lpToken);
+        uint256 current = ERC20Balance(outputToken);
         output = current - before;
 
-        transferERC20toNextPipe(d.lpToken, current);
+        transferERC20toNextPipe(outputToken, current);
 
     }
 
@@ -80,19 +76,18 @@ contract BalVaultPipe is Pipe {
     /// @return output in source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('BalVaultPipe get amount', amount);
-        uint256 before = ERC20Balance(d.sourceToken);
+        uint256 before = ERC20Balance(sourceToken);
+        console.log('before', before);
 
-        IERC20(d.lpToken).safeApprove(d.vault, 0);
-        IERC20(d.lpToken).safeApprove(d.vault, amount);
-
-        uint256 minAmountOut = 1;
+        ERC20Approve(outputToken, d.vault, amount);
 
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
-        require(d.sourceToken == address(tokens[d.tokenIndex]), _WRONG_SOURCE_TOKEN);
+        require(sourceToken == address(tokens[d.tokenIndex]), "BVP: Wrong source token");
         uint256[] memory minAmountsOut = new uint256[](4);
+        uint256 minAmountOut = 1;
         minAmountsOut[d.tokenIndex] = minAmountOut;
 
-        bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, minAmountOut); //TODO check
+        bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, d.tokenIndex);
 
         IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
             assets: asIAsset(tokens),
@@ -103,10 +98,11 @@ contract BalVaultPipe is Pipe {
 
         IBVault(d.vault).exitPool(d.poolID, address(this), payable(address(this)), request);
 
-        uint256 current = ERC20Balance(d.sourceToken);
+        uint256 current = ERC20Balance(sourceToken);
+        console.log('current', current);
         output = current - before;
 
-        transferERC20toPrevPipe(d.sourceToken, current);
+        transferERC20toPrevPipe(sourceToken, current);
     }
 
     function asIAsset(IERC20[] memory tokens) private pure returns (IAsset[] memory assets) {
@@ -114,18 +110,6 @@ contract BalVaultPipe is Pipe {
         assembly {
             assets := tokens
         }
-    }
-
-    /// @dev available ETH (MATIC) source balance
-    /// @return balance in source units
-    function sourceBalance() override public view returns (uint256) {
-        return ERC20Balance(d.sourceToken);
-    }
-
-    /// @dev underlying balance (LP token)
-    /// @return balance in underlying units
-    function outputBalance() override public view returns (uint256) {
-        return ERC20Balance(d.lpToken);
     }
 
 }

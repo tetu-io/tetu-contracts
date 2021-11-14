@@ -36,16 +36,15 @@ contract MaiCamWMaticPipe is Pipe {
     /// @return output in underlying units
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('MaiCamWMaticPipe put amount', amount);
-        uint256 before = ERC20Balance(d.lpToken);
+        uint256 before = ERC20Balance(outputToken);
 
-        IERC20(d.sourceToken).safeApprove(d.lpToken, 0);
-        IERC20(d.sourceToken).safeApprove(d.lpToken, amount);
-        ICamWMATIC(d.lpToken).enter(amount);
+        ERC20Approve(sourceToken, d.lpToken, amount);
+        ICamWMATIC(outputToken).enter(amount);
 
-        uint256 current = ERC20Balance(d.lpToken);
+        uint256 current = ERC20Balance(outputToken);
         output = current - before;
 
-        transferERC20toNextPipe(d.lpToken, current);
+        transferERC20toNextPipe(outputToken, current);
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
@@ -53,26 +52,14 @@ contract MaiCamWMaticPipe is Pipe {
     /// @return output in source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('MaiCamWMaticPipe get amount', amount);
-        uint256 before = ERC20Balance(d.sourceToken);
+        uint256 before = ERC20Balance(sourceToken);
 
         ICamWMATIC(d.lpToken).leave(amount);
 
-        uint256 current = ERC20Balance(d.sourceToken);
+        uint256 current = ERC20Balance(sourceToken);
         output = current - before;
 
-        transferERC20toPrevPipe(d.sourceToken, current);
-    }
-
-    /// @dev available ETH (MATIC) source balance
-    /// @return balance in source units
-    function sourceBalance() override public view returns (uint256) {
-        return ERC20Balance(d.sourceToken);
-    }
-
-    /// @dev underlying balance (LP token)
-    /// @return balance in underlying units
-    function outputBalance() override public view returns (uint256) {
-        return ERC20Balance(d.lpToken);
+        transferERC20toPrevPipe(sourceToken, current);
     }
 
 }

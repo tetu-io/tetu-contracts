@@ -32,9 +32,9 @@ abstract contract Pipe {
     address public rewardToken;
 
     /// @notice Next pipe in pipeline
-    Pipe public prevPipe;
+    address public prevPipe;
     /// @notice Previous pipe in pipeline
-    Pipe public nextPipe;
+    address public nextPipe;
 
     constructor () {
         _pipeline = msg.sender;
@@ -55,26 +55,26 @@ abstract contract Pipe {
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param _nextPipe - next pipe in pipeline
-    function setNextPipe(Pipe _nextPipe) onlyPipeline public {
+    function setNextPipe(address _nextPipe) onlyPipeline public {
         nextPipe = _nextPipe;
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param _prevPipe - next pipe in pipeline
-    function setPrevPipe(Pipe _prevPipe) onlyPipeline public {
+    function setPrevPipe(address _prevPipe) onlyPipeline public {
         prevPipe = _prevPipe;
     }
 
     /// @dev Checks is pipe have next pipe connected
     /// @return true when connected
     function haveNextPipe() internal view returns (bool) {
-        return address(nextPipe) != address(0);
+        return nextPipe != address(0);
     }
 
     /// @dev Checks is pipe have previous pipe connected
     /// @return true when connected
     function havePrevPipe() internal view returns (bool) {
-        return address(prevPipe) != address(0);
+        return prevPipe != address(0);
     }
 
     //TODO Do we need salvage function? To pump out balances and tokens from pipe contracts to main?
@@ -106,6 +106,7 @@ abstract contract Pipe {
         require(_pipeline != address(0));
 
         uint256 amount = IERC20(rewardToken).balanceOf(address(this));
+        console.log('claim amount', amount, name);
         IERC20(rewardToken).safeTransfer(_pipeline, amount);
     }
 
@@ -113,14 +114,14 @@ abstract contract Pipe {
     /// @return balance in source units
     function sourceBalance() virtual public view
     returns (uint256) {
-        revert("PIPE: not implemented");
+        return ERC20Balance(sourceToken);
     }
 
     /// @dev underlying balance (LP tokens, collateral etc). Must be implemented for last pipe in line and all pipes after balancing pipes.
     /// @return balance in underlying units
     function outputBalance() virtual public view
     returns (uint256) {
-        revert("PIPE: not implemented");
+        return ERC20Balance(outputToken);
     }
 
     /// @notice Pipeline can claim coins that are somehow transferred into the contract
@@ -144,7 +145,7 @@ abstract contract Pipe {
     /// @param amount to transfer
     function transferERC20toNextPipe(address ERC20Token, uint256 amount) internal {
         if (haveNextPipe()) {
-            IERC20(ERC20Token).transfer(address(nextPipe), amount);
+            IERC20(ERC20Token).safeTransfer(nextPipe, amount);
         }
     }
 
@@ -153,7 +154,7 @@ abstract contract Pipe {
     /// @param amount to transfer
     function transferERC20toPrevPipe(address ERC20Token, uint256 amount) internal {
         if (havePrevPipe()) {
-            IERC20(ERC20Token).transfer(address(prevPipe), amount);
+            IERC20(ERC20Token).safeTransfer(prevPipe, amount);
         }
     }
 
@@ -165,16 +166,25 @@ abstract contract Pipe {
         return IERC20(ERC20Token).balanceOf(address(this));
     }
 
+    /// @dev Approve to spend ERC20 token amount for spender
+    /// @param ERC20Token ERC20 token address
+    /// @param spender address
+    /// @param amount to spend
+    function ERC20Approve(address ERC20Token, address spender, uint256 amount) internal {
+        IERC20(ERC20Token).safeApprove(spender, 0);
+        IERC20(ERC20Token).safeApprove(spender, amount);
+    }
+
     function toDecimals(uint256 input, uint256 fromDecimals, uint256 outputDecimals)
     internal pure returns (uint256) {
         return input * (10 ** fromDecimals) / (10 ** outputDecimals);
     }
 
-    function norm(uint256 input, uint256 decimals) internal pure returns (uint256) {
-        return input * (10 ** decimals);
+/*    function norm(uint256 input, uint256 decimals) internal pure returns (uint256) {
+        return input / (10 ** decimals);
     }
 
     function norm(uint256 input) internal pure returns (uint256) {
         return norm(input, 18);
-    }
+    }*/
 }
