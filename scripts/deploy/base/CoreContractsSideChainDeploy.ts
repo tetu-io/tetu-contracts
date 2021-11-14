@@ -3,23 +3,14 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {writeFileSync} from "fs";
-import {Bookkeeper, Controller, NoopStrategy, SmartVault} from "../../../typechain";
+import {Bookkeeper, Controller} from "../../../typechain";
 import {RunHelper} from "../../utils/RunHelper";
-import {MaticAddresses} from "../../../test/MaticAddresses";
 
+const TIME_LOCK = 60 * 60 * 48;
 
 export default async function main() {
   const signer = (await ethers.getSigners())[0];
-  const net = (await ethers.provider.getNetwork()).name;
 
-  let timeLock = 60 * 60 * 48;
-  if (net === 'rinkeby' || net === 'ropsten' || net === 'mumbai') {
-    timeLock = 1;
-  }
-
-  const rewardToken = MaticAddresses.ZERO_ADDRESS;
-  const wait = true;
-  const psRewardDuration = 60 * 60 * 24 * 28;
 
   // ************** CONTROLLER **********
   const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
@@ -28,7 +19,7 @@ export default async function main() {
   await controller.initialize();
 
   // ************ ANNOUNCER **********
-  const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, timeLock);
+  const announcerData = await DeployerUtils.deployAnnouncer(signer, controller.address, TIME_LOCK);
 
   // ************ VAULT CONTROLLER **********
   const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
@@ -45,56 +36,31 @@ export default async function main() {
   // ********** FUND KEEPER **************
   const fundKeeperData = await DeployerUtils.deployFundKeeper(signer, controller.address);
 
-  // ****** PS ********
-  const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-  const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
-  const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
-  const psEmptyStrategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-    controller.address, rewardToken, psVault.address, [], [rewardToken], 1) as NoopStrategy;
-
-  // !########### INIT ##############
-  await RunHelper.runAndWait(() => psVault.initializeSmartVault(
-    "TETU_PS",
-    "xTETU",
-    controller.address,
-    rewardToken,
-    psRewardDuration,
-    false,
-    MaticAddresses.ZERO_ADDRESS
-  ), true, wait);
-
   // ******* SETUP CONTROLLER ********
-  await RunHelper.runAndWait(() => controller.setFeeRewardForwarder(feeRewardForwarderData[0].address), true, wait);
-  await RunHelper.runAndWait(() => controller.setBookkeeper(bookkeeper.address), true, wait);
-  await RunHelper.runAndWait(() => controller.setRewardToken(rewardToken), true, wait);
-  await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
-  await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
-  await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
-  await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address), true, wait);
+  await RunHelper.runAndWait(() => controller.setFeeRewardForwarder(feeRewardForwarderData[0].address));
+  await RunHelper.runAndWait(() => controller.setBookkeeper(bookkeeper.address));
+  await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address));
+  await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address));
+  await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address));
 
   try {
     const tokens = await DeployerUtils.getTokenAddresses()
-    await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
+    await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string));
   } catch (e) {
     console.error('USDC token not defined for network, need to setup Fund token later');
   }
   await RunHelper.runAndWait(() => controller.setRewardDistribution(
     [
       feeRewardForwarderData[0].address
-    ], true), true, wait);
-
-  // need to add after adding bookkeeper
-  await RunHelper.runAndWait(() =>
-      controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
-    true, wait);
+    ], true));
 
   writeFileSync('./core_addresses.txt',
     controller.address + ', // controller\n' +
     announcerData[0].address + ', // announcer\n' +
     feeRewardForwarderData[0].address + ', // feeRewardForwarder\n' +
     bookkeeper.address + ', // bookkeeper\n' +
-    rewardToken + ', // rewardToken\n' +
-    psVault.address + ', // psVault\n' +
+    ', // rewardToken\n' +
+    ', // psVault\n' +
     fundKeeperData[0].address + ', // fundKeeper\n'
     , 'utf8');
 
@@ -119,13 +85,6 @@ export default async function main() {
   await DeployerUtils.verify(bookkeeperLogic.address);
   await DeployerUtils.verifyWithArgs(bookkeeper.address, [bookkeeperLogic.address]);
   await DeployerUtils.verifyProxy(bookkeeper.address);
-
-  // ps
-  await DeployerUtils.verify(vaultLogic.address);
-  await DeployerUtils.verifyWithArgs(psVault.address, [vaultLogic.address]);
-  await DeployerUtils.verifyProxy(psVault.address);
-  await DeployerUtils.verifyWithArgs(psEmptyStrategy.address,
-    [controller.address, rewardToken, psVault.address, [], [rewardToken]]);
 
   // fundKeeper
   await DeployerUtils.verify(fundKeeperData[1].address);

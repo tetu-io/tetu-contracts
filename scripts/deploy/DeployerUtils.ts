@@ -36,6 +36,7 @@ import axios from "axios";
 import {RunHelper} from "../utils/RunHelper";
 import {MaticAddresses} from "../../test/MaticAddresses";
 import {config as dotEnvConfig} from "dotenv";
+import {FtmAddresses} from "../../test/FtmAddresses";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -221,6 +222,28 @@ export class DeployerUtils {
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.setReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
     await calculator.setReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+
+    expect(await calculator.keyTokensSize()).is.not.eq(0);
+    return [calculator, proxy, logic];
+  }
+
+  public static async deployPriceCalculatorFtm(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const calculator = logic.attach(proxy.address) as PriceCalculator;
+    await calculator.initialize(controller);
+
+    await RunHelper.runAndWait(() => calculator.addKeyTokens([
+      FtmAddresses.USDC_TOKEN,
+      FtmAddresses.WETH_TOKEN,
+      FtmAddresses.DAI_TOKEN,
+      FtmAddresses.fUSDT_TOKEN,
+      FtmAddresses.WBTC_TOKEN,
+      FtmAddresses.FTM_TOKEN
+    ]), true, wait);
+
+    await RunHelper.runAndWait(() => calculator.setDefaultToken(FtmAddresses.USDC_TOKEN), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPOOKY_SWAP_FACTORY, "Spooky LP"), true, wait);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -581,20 +604,20 @@ export class DeployerUtils {
 
   public static async getCoreAddresses(): Promise<CoreAddresses> {
     const net = await ethers.provider.getNetwork();
-    console.log('network', net.name);
-    const core = Addresses.CORE.get(net.name);
+    console.log('network', net.chainId);
+    const core = Addresses.CORE.get(net.chainId + '');
     if (!core) {
-      throw Error('No config for ' + net.name);
+      throw Error('No config for ' + net.chainId);
     }
     return core;
   }
 
   public static async getCoreAddressesWrapper(signer: SignerWithAddress): Promise<CoreContractsWrapper> {
     const net = await ethers.provider.getNetwork();
-    console.log('network', net.name);
-    const core = Addresses.CORE.get(net.name);
+    console.log('network', net.chainId);
+    const core = Addresses.CORE.get(net.chainId + '');
     if (!core) {
-      throw Error('No config for ' + net.name);
+      throw Error('No config for ' + net.chainId);
     }
 
     const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
@@ -625,20 +648,20 @@ export class DeployerUtils {
 
   public static async getToolsAddresses(): Promise<ToolsAddresses> {
     const net = await ethers.provider.getNetwork();
-    console.log('network', net.name);
-    const tools = Addresses.TOOLS.get(net.name);
+    console.log('network', net.chainId);
+    const tools = Addresses.TOOLS.get(net.chainId + '');
     if (!tools) {
-      throw Error('No config for ' + net.name);
+      throw Error('No config for ' + net.chainId);
     }
     return tools;
   }
 
   public static async getTokenAddresses(): Promise<Map<string, string>> {
     const net = await ethers.provider.getNetwork();
-    console.log('network', net.name);
-    const mocks = Addresses.TOKENS.get(net.name);
+    console.log('network', net.chainId);
+    const mocks = Addresses.TOKENS.get(net.chainId + '');
     if (!mocks) {
-      throw Error('No config for ' + net.name);
+      throw Error('No config for ' + net.chainId);
     }
     return mocks;
   }

@@ -239,17 +239,17 @@ describe("Zap contract tests", function () {
 
     const deployedZap = await DeployerUtils.connectInterface(
       user, 'ZapContract',
-      Addresses.TOOLS.get('matic')?.zapContract as string
+      (await DeployerUtils.getToolsAddresses()).zapContract as string
     ) as ZapContract;
 
     const deployedMultiSwap = await DeployerUtils.connectInterface(
       user, 'MultiSwap',
-      Addresses.TOOLS.get('matic')?.multiSwap as string
+      (await DeployerUtils.getToolsAddresses()).multiSwap as string
     ) as MultiSwap;
 
     const contractReader = await DeployerUtils.connectInterface(
       user, 'ContractReader',
-      Addresses.TOOLS.get('matic')?.reader as string
+      (await DeployerUtils.getToolsAddresses()).reader as string
     ) as ContractReader;
 
     const vaults = await contractReader.vaults();

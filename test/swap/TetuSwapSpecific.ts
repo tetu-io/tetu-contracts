@@ -8,8 +8,6 @@ import {MaticAddresses} from "../MaticAddresses";
 import {utils} from "ethers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers} from "hardhat";
-import {Addresses} from "../../addresses";
-import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 
 const {expect} = chai;
@@ -31,7 +29,7 @@ describe("Tetu Swap specific tests", function () {
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
     const net = await ethers.provider.getNetwork();
-    const coreAddresses = Addresses.CORE.get(net.name) as CoreAddresses;
+    const coreAddresses = await DeployerUtils.getCoreAddresses();
 
     factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', coreAddresses.swapFactory) as TetuSwapFactory;
     router = await DeployerUtils.connectInterface(signer, 'TetuSwapRouter', coreAddresses.swapRouter) as TetuSwapRouter;
@@ -67,7 +65,6 @@ describe("Tetu Swap specific tests", function () {
       router.address
     );
   });
-
 
 
 });

@@ -12,7 +12,6 @@ import {
   SmartVault
 } from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {Addresses} from "../../addresses";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {BigNumber, utils} from "ethers";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
@@ -44,7 +43,7 @@ describe("auto rewarder tests", function () {
     snapshot = await TimeUtils.snapshot();
     gov = await DeployerUtils.impersonate();
 
-    coreAddresses = Addresses.CORE.get('matic') as CoreAddresses;
+    coreAddresses = await DeployerUtils.getCoreAddresses();
     const controllerAdr = coreAddresses.controller;
     const announcerAdr = coreAddresses.announcer;
     const bookkeeperAdr = coreAddresses.bookkeeper;
