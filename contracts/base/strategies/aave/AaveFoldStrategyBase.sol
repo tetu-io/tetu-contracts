@@ -28,6 +28,8 @@ import "../../../third_party/aave/ILendingPool.sol";
 import "hardhat/console.sol";
 import "../../../third_party/aave/IAaveIncentivesController.sol";
 import "../../../third_party/aave/IProtocolDataProvider.sol";
+import "../../../third_party/aave/DataTypes.sol";
+import "../../../third_party/aave/IPriceOracle.sol";
 
 
 /// @title Abstract contract for Aave lending strategy implementation with folding functionality
@@ -37,6 +39,10 @@ import "../../../third_party/aave/IProtocolDataProvider.sol";
 abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
+
+  uint8 private constant _PRECISION = 18;
+  uint8 private constant _RAY_PRECISION = 27;
+  uint256 private constant _SECONDS_PER_YEAR = 365*24*60*60;
 
   // ************ VARIABLES **********************
   /// @notice Strategy type for statistical purposes
@@ -55,13 +61,15 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   address public constant AAVE_LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
   address public constant AAVE_CONTROLLER = 0x357D51124f59836DeD84c8a1730D72B749d8BC23;
   address public constant AAVE_DATA_PROVIDER = 0x7551b5D2763519d4e37e8B81929D336De671d46d;
+  address public constant AAVE_LENDING_POOL_ADDRESSES_PROVIDER = 0xd05e3E715d945B59290df0ae8eF85c1BdB684744;
 
   ILendingPool lPool = ILendingPool(AAVE_LENDING_POOL);
   IAaveIncentivesController aaveController = IAaveIncentivesController(AAVE_CONTROLLER);
   IProtocolDataProvider dataProvider = IProtocolDataProvider(AAVE_DATA_PROVIDER);
+  ILendingPoolAddressesProvider lendingPoolAddressesProvider = ILendingPoolAddressesProvider(AAVE_LENDING_POOL_ADDRESSES_PROVIDER);
 
-  /// @notice aToken address
   address public override aToken;
+  address public override dToken;
 
   /// @notice Numerator value for the targeted borrow rate
   uint256 public borrowTargetFactorNumeratorStored;
@@ -99,14 +107,11 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     address _underlying,
     address _vault,
     address[] memory __rewardTokens,
-    address _aToken,
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator,
     uint256 _factorDenominator
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
-    require(_aToken != address(0), "AFS: Zero address rToken");
-    aToken = _aToken;
-
+    (aToken,,dToken) = dataProvider.getReserveTokensAddresses(_underlying);
     if (isMatic()) {
       require(_underlyingToken == W_MATIC, "AFS: Only wmatic allowed");
     } else {
@@ -130,6 +135,74 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     console.log(">>>>>>>>>>>>>>>>");
 
   }
+
+  function rewardPrediction(uint256 numberOfBlocks, address token) public view returns (uint256){
+    (uint256 emissionPerSecond,,) = aaveController.assets(token);
+    (uint256 stakedByUserScaled, uint256 totalStakedScaled) = IScaledBalanceToken(token).getScaledUserBalanceAndSupply(address(this));
+    uint256 rewards = emissionPerSecond.mul(numberOfBlocks).mul(10 ** uint256(_PRECISION)).div(totalStakedScaled).mul(stakedByUserScaled).div(10 ** uint256(_PRECISION));
+//    uint256 rewardPerToken = rewardsMaticScaled.div(IERC20(token).balanceOf(address(this)));
+    return rewards;
+  }
+
+  function rewardUnderlyingPrediction(uint256 numberOfBlocks, address token, uint256 currentLiquidityRate) public view returns (uint256){
+    uint256 underlyingPerSecond = currentLiquidityRate.div(_SECONDS_PER_YEAR);
+//    uint256 underlyingBalance = IERC20(token).balanceOf(address(this));
+    uint256 predictedUnderlyingEarned = underlyingPerSecond.mul(numberOfBlocks).mul(10 ** uint256(_PRECISION)).div(10 ** uint256(_RAY_PRECISION));
+    return predictedUnderlyingEarned;
+  }
+
+  function debtCostPrediction(uint256 numberOfBlocks, address token, uint256 currentVariableBorrowRate) public view returns (uint256){
+    uint256 debtUnderlyingPerSecond = currentVariableBorrowRate.div(_SECONDS_PER_YEAR);
+//    uint256 debtBalance = IERC20(token).balanceOf(address(this));
+    uint256 predictedDebtCost = debtUnderlyingPerSecond.mul(numberOfBlocks).mul(10 ** uint256(_PRECISION)).div(10 ** uint256(_RAY_PRECISION));
+    return predictedDebtCost;
+  }
+
+
+  function rewardPrediction(uint256 numberOfBlocks) public view returns (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost){
+//    console.log("Rewards for %s blocks", numberOfBlocks);
+//    console.log("Token: %s  (%s) ", _underlyingToken, (ERC20(_underlyingToken)).decimals());
+//    console.log("Token: %s  (%s) ", _rewardTokens[0], (ERC20(_rewardTokens[0])).decimals());
+//
+//    console.log("Token: %s  (%s) ", aToken, (ERC20(aToken)).decimals());
+//    console.log("Token: %s  (%s) ", dToken, (ERC20(dToken)).decimals());
+
+
+    (address aTokenAddress,,address variableDebtTokenAddress) = dataProvider.getReserveTokensAddresses(_underlyingToken);
+
+    supplyRewards = rewardPrediction(numberOfBlocks, aTokenAddress);
+    borrowRewards = rewardPrediction(numberOfBlocks, variableDebtTokenAddress);
+
+
+//    IPriceOracle priceOracle = IPriceOracle(lendingPoolAddressesProvider.getPriceOracle());
+//    uint256 underlyingInWeth = priceOracle.getAssetPrice(_underlyingToken);
+//    uint256 rewardInWeth =  priceOracle.getAssetPrice(_rewardTokens[0]);
+//
+//    //todo use decimals
+//    // todo check iron calc
+//
+//
+//    console.log("Underlying price in WETH: %s", underlyingInWeth);
+//    console.log("Reward Token price in WETH: %s", rewardInWeth);
+
+//    console.log("============");
+//    console.log("Total Reward rewards prediction: %s", supplyRewardPerToken.add(borrowRewardPerToken));
+//    console.log("Total WETH rewards prediction: %s", (supplyRewardPerToken.add(borrowRewardPerToken)).mul(rewardInWeth));
+//    console.log("============");
+
+
+    DataTypes.ReserveData memory rd = lPool.getReserveData(_underlyingToken);
+    supplyUnderlyingProfit = rewardUnderlyingPrediction(numberOfBlocks, aTokenAddress, rd.currentLiquidityRate);
+    debtUnderlyingCost = debtCostPrediction(numberOfBlocks, variableDebtTokenAddress, rd.currentVariableBorrowRate);
+
+//    console.log("============");
+//    console.log("Total underlying rewards prediction: %s", underlyingRewards);
+//    console.log("Total debt cost prediction : %s", debtCost);
+////    console.log("Total Folding cost prediction : %s", debtCost.sub(underlyingRewards));
+//    console.log("============");
+////    console.log("Total Folding cost prediction : %s", (debtCost.sub(underlyingRewards)).mul(underlyingInWeth));
+ }
+
 
   // ************* VIEWS *******************
 
@@ -324,11 +397,19 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Claim distribution rewards
   function claimReward() internal {
-    address[] memory assets = new address[](1);
+    address[] memory assets = new address[](2);
+    // todo add debt token to claim rewards
     assets[0] = aToken;
+    assets[1] = dToken;
     uint256 claimed = aaveController.claimRewards(assets, type(uint256).max, address(this));
     console.log("Claimed: %s of %s", claimed, _rewardTokens[0]);
   }
+
+  //todo remove
+  function claimRewardPublic() public {
+    claimReward();
+  }
+
 
   function compound() internal {
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();

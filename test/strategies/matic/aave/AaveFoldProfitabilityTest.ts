@@ -93,7 +93,6 @@ describe('Universal Aave Fold tests', async () => {
             core.controller.address,
             vaultAddress,
             underlying,
-            aToken,
             "5000",
             "6000"
           ) as Promise<StrategyAaveFold>,
@@ -152,13 +151,17 @@ describe('Universal Aave Fold tests', async () => {
 
         const maticBefore = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address);
         console.log("MATIC before: ", maticBefore.toString());
+        await strategy.rewardPrediction(8640000);
 
         // await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 30 * 12); // 1 year
-        await TimeUtils.advanceBlocksOnTs(100);
+        await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 100); //8640025
+        await strategy.claimRewardPublic();
+        // await strategy.doHardWork();
 
-
-        // await strategy.claimRewardPublic();
-
+        // const vaultBalanceAfter = await TokenUtils.balanceOf(core.psVault.address, vault.address);
+        //
+        // expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
+        //
 
         const underlyingBalanceAfter = await TokenUtils.balanceOf(aToken, strategy.address);
         console.log("underlyingBalanceAfter: ", underlyingBalanceAfter.toString());

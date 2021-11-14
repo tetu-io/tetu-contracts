@@ -13,7 +13,10 @@
 pragma solidity 0.8.4;
 
 interface IAveFoldStrategy {
-
+  /// @dev represents supply
   function aToken() external view returns (address);
+
+  /// @dev represents debt
+  function dToken() external view returns (address);
 
 }

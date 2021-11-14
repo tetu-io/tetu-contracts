@@ -59,7 +59,6 @@ async function startAaveFoldStrategyTest(
           core.controller.address,
           vaultAddress,
           underlying,
-          aToken,
           borrowTargetFactorNumerator,
           collateralFactorNumerator
         ) as Promise<StrategyAaveFold>,

@@ -28,7 +28,6 @@ contract StrategyAaveFold is AaveFoldStrategyBase {
     address _controller,
     address _vault,
     address _underlying,
-    address _rToken,
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator
   ) AaveFoldStrategyBase(
@@ -36,7 +35,6 @@ contract StrategyAaveFold is AaveFoldStrategyBase {
       _underlying,
       _vault,
       _poolRewards,
-      _rToken,
       _borrowTargetFactorNumerator,
       _collateralFactorNumerator,
       _FACTOR_DENOMINATOR
