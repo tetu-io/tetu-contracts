@@ -70,7 +70,7 @@ export class McLpDownloader {
     for (let i = 0; i < poolLength; i++) {
       try {
         const poolInfo = await poolInfoCall(i);
-        if (poolInfo.depositFeeBP) {
+        if (poolInfo.depositFeeBP && poolInfo.depositFeeBP !== 0) {
           console.log(i, 'depositFeeBP', poolInfo.depositFeeBP, 'is defined, skipping the pool');
           continue;
         }

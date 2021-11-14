@@ -13,6 +13,7 @@ export class FtmAddresses {
   public static DAI_TOKEN = "0x8d11ec38a3eb5e956b052f67da8bdc9bef8abf3e".toLowerCase();
   public static fUSDT_TOKEN = "0x049d68029688eabf473097a2fc38ef61633a3c7a".toLowerCase();
   public static FTM_TOKEN = "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83".toLowerCase();
+  public static BOO_TOKEN = "0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
@@ -36,6 +37,8 @@ export class FtmAddresses {
     switch (factory.toLowerCase()) {
       case FtmAddresses.TETU_SWAP_FACTORY:
         return FtmAddresses.TETU_SWAP_ROUTER;
+      case FtmAddresses.SPOOKY_SWAP_FACTORY:
+        return FtmAddresses.SPOOKY_SWAP_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }
@@ -44,6 +47,8 @@ export class FtmAddresses {
     switch (router.toLowerCase()) {
       case FtmAddresses.TETU_SWAP_ROUTER:
         return "TETU";
+      case FtmAddresses.SPOOKY_SWAP_ROUTER:
+        return "SPOOKY";
     }
     throw Error('Unknown router ' + router);
   }

@@ -620,30 +620,54 @@ export class DeployerUtils {
       throw Error('No config for ' + net.chainId);
     }
 
-    const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
-    const str = await ps.strategy();
+    if (net.chainId === 137) {
+      const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
+      const str = await ps.strategy();
+      return new CoreContractsWrapper(
+        await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
+        '',
+        await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+        '',
+        await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
+        '',
+        await DeployerUtils.connectInterface(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
+        await DeployerUtils.connectInterface(signer, "MintHelper", core.mintHelper) as MintHelper,
+        '',
+        await DeployerUtils.connectInterface(signer, "RewardToken", core.rewardToken) as RewardToken,
+        ps,
+        '',
+        await DeployerUtils.connectInterface(signer, "NoopStrategy", str) as NoopStrategy,
+        await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
+        '',
+        await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
+        '',
+        await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
+        '',
+      );
+    } else {
+      return new CoreContractsWrapper(
+        await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
+        '',
+        await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+        '',
+        await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
+        '',
+        await DeployerUtils.connectInterface(signer, "NotifyHelper", FtmAddresses.ZERO_ADDRESS) as NotifyHelper,
+        await DeployerUtils.connectInterface(signer, "MintHelper", FtmAddresses.ZERO_ADDRESS) as MintHelper,
+        '',
+        await DeployerUtils.connectInterface(signer, "RewardToken", FtmAddresses.ZERO_ADDRESS) as RewardToken,
+        await DeployerUtils.connectInterface(signer, "SmartVault", FtmAddresses.ZERO_ADDRESS) as SmartVault,
+        '',
+        await DeployerUtils.connectInterface(signer, "NoopStrategy", FtmAddresses.ZERO_ADDRESS) as NoopStrategy,
+        await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
+        '',
+        await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
+        '',
+        await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
+        '',
+      );
+    }
 
-    return new CoreContractsWrapper(
-      await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
-      '',
-      await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
-      '',
-      await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
-      '',
-      await DeployerUtils.connectInterface(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
-      await DeployerUtils.connectInterface(signer, "MintHelper", core.mintHelper) as MintHelper,
-      '',
-      await DeployerUtils.connectInterface(signer, "RewardToken", core.rewardToken) as RewardToken,
-      ps,
-      '',
-      await DeployerUtils.connectInterface(signer, "NoopStrategy", str) as NoopStrategy,
-      await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
-      '',
-      await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
-      '',
-      await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
-      '',
-    );
   }
 
   public static async getToolsAddresses(): Promise<ToolsAddresses> {
@@ -677,6 +701,73 @@ export class DeployerUtils {
       params: [address, "0x1431E0FAE6D7217CAA0000000"],
     });
     return ethers.getSigner(address);
+  }
+
+  public static async getDefaultNetworkFactory() {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.QUICK_FACTORY;
+    } else if (net.chainId === 250) {
+      return FtmAddresses.SPOOKY_SWAP_FACTORY;
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
+  public static async getUSDCAddress() {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.USDC_TOKEN;
+    } else if (net.chainId === 250) {
+      return FtmAddresses.USDC_TOKEN;
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
+  public static async getTETUAddress() {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.TETU_TOKEN;
+    } else if (net.chainId === 250) {
+      // todo
+      return MaticAddresses.TETU_TOKEN;
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
+  public static async isBlueChip(address: string): Promise<boolean> {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.BLUE_CHIPS.has(address.toLowerCase())
+    } else if (net.chainId === 250) {
+      return FtmAddresses.BLUE_CHIPS.has(address.toLowerCase())
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
+  public static async getRouterByFactory(factory: string) {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.getRouterByFactory(factory);
+    } else if (net.chainId === 250) {
+      return FtmAddresses.getRouterByFactory(factory);
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
+  public static async getRouterName(factory: string) {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.getRouterName(factory);
+    } else if (net.chainId === 250) {
+      return FtmAddresses.getRouterName(factory);
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
   }
 
   // ****************** WAIT ******************

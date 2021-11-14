@@ -18,10 +18,11 @@ import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 contract StrategySpookySwapLp is SpookyStrategyACBase {
 
   // MASTER_CHEF
-  address public constant MASTER_CHEF  = address(0x2b2929E785374c651a81A63878Ab22742656DcDd);
+  address private constant _MASTER_CHEF = address(0x2b2929E785374c651a81A63878Ab22742656DcDd);
+  address private constant _ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.SPOOKY;
   // rewards
-  address private constant BOO  = address(0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE);
+  address private constant BOO = address(0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE);
   address[] private poolRewards = [BOO];
   address[] private _assets;
 
@@ -32,7 +33,7 @@ contract StrategySpookySwapLp is SpookyStrategyACBase {
     address _token0,
     address _token1,
     uint256 _poolId
-  ) SpookyStrategyACBase(_controller, _underlying, _vault, poolRewards, MASTER_CHEF, _poolId) {
+  ) SpookyStrategyACBase(_controller, _underlying, _vault, poolRewards, _MASTER_CHEF, _poolId, _ROUTER) {
     require(_underlying != address(0), "zero underlying");
     require(_token0 != address(0), "zero token0");
     require(_token1 != address(0), "zero token1");

@@ -17,37 +17,37 @@ import "@tenderly/hardhat-tenderly"
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  hardhatChainId: {
-    type: "number",
-    default: 137
-  },
-  maticRpcUrl: {
-    type: "string",
-  },
-  ftmRpcUrl: {
-    type: "string",
-  },
-  infuraKey: {
-    type: "string",
-  },
-  networkScanKey: {
-    type: "string",
-  },
-  privateKey: {
-    type: "string",
-    default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
-  },
-  forkBlock: {
-    type: "number",
-    default: 21313813
-  },
-  ftmForkBlock: {
-    type: "number",
-    default: 21653998
-  },
-}).argv;
+  .env('TETU')
+  .options({
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+    maticRpcUrl: {
+      type: "string",
+    },
+    ftmRpcUrl: {
+      type: "string",
+    },
+    infuraKey: {
+      type: "string",
+    },
+    networkScanKey: {
+      type: "string",
+    },
+    privateKey: {
+      type: "string",
+      default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
+    },
+    forkBlock: {
+      type: "number",
+      default: 21313813
+    },
+    ftmForkBlock: {
+      type: "number",
+      default: 22018924
+    },
+  }).argv;
 
 
 export default {
@@ -60,7 +60,7 @@ export default {
       gas: 19_000_000,
       forking: {
         url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
-        blockNumber: argv.forkBlock
+        // blockNumber: argv.hardhatChainId === 137 ? argv.forkBlock : argv.ftmForkBlock
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",

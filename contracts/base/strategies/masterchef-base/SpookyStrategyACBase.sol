@@ -38,6 +38,8 @@ abstract contract SpookyStrategyACBase is StrategyBase, IMasterChefStrategyV2 {
   address public override pool;
   /// @notice MasterChef rewards pool ID
   uint256 public override poolID;
+  /// @notice Uniswap router for underlying LP
+  address public router;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -47,11 +49,13 @@ abstract contract SpookyStrategyACBase is StrategyBase, IMasterChefStrategyV2 {
     address _vault,
     address[] memory __rewardTokens,
     address _pool,
-    uint256 _poolID
+    uint256 _poolID,
+    address _router
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_pool != address(0), "SSAB: Zero address pool");
     pool = _pool;
     poolID = _poolID;
+    router = _router;
 
     ISpookyMasterChef.PoolInfo memory poolInfo = ISpookyMasterChef(pool).poolInfo(_poolID);
     require(address(poolInfo.lpToken) == _underlyingToken, "SSAB: Wrong underlying");
@@ -114,7 +118,9 @@ abstract contract SpookyStrategyACBase is StrategyBase, IMasterChefStrategyV2 {
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    liquidateRewardDefault();
+    autocompoundLP(router);
+    // if we have not enough balance for buybacks we will autocompound 100%
+    liquidateRewardSilently();
   }
 
 }

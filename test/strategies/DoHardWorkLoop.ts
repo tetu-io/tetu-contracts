@@ -1,5 +1,4 @@
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../TimeUtils";
@@ -7,18 +6,13 @@ import {expect} from "chai";
 import {StrategyInfo} from "./StrategyInfo";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {VaultUtils} from "../VaultUtils";
-import {ITetuSwapFactory, ITetuSwapPair} from "../../typechain";
 
 
 export class DoHardWorkLoop {
 
   public static async doHardWorkLoop(info: StrategyInfo, deposit: string, loops: number, loopTime: number) {
     const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
-    const tetuLp = await DeployerUtils.connectInterface(info.signer, 'ITetuSwapPair',
-      await (await DeployerUtils.connectInterface(info.signer, 'ITetuSwapFactory', MaticAddresses.TETU_SWAP_FACTORY) as ITetuSwapFactory)
-        .getPair(MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN)) as ITetuSwapPair;
-    const calculator = (await DeployerUtils
-      .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
+    const calculator = info.calculator;
     const vaultForUser = info.vault.connect(info.user);
     const undDec = await TokenUtils.decimals(info.underlying);
 
@@ -57,7 +51,6 @@ export class DoHardWorkLoop {
 
       // *********** DO HARD WORK **************
       await TimeUtils.advanceBlocksOnTs(loopTime);
-      await tetuLp.sync();
       await VaultUtils.doHardWorkAndCheck(info.vault);
 
       const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
@@ -81,8 +74,9 @@ export class DoHardWorkLoop {
         'cycle time: ' + (currentTs - loopStart)
       );
 
-      const targetTokenPrice = +utils.formatUnits(await calculator.getPrice(info.core.rewardToken.address, MaticAddresses.USDC_TOKEN));
-      const underlyingPrice = +utils.formatUnits(await calculator.getPrice(info.underlying, MaticAddresses.USDC_TOKEN));
+      const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(info.core.rewardToken.address));
+      console.log('targetTokenPrice', targetTokenPrice);
+      const underlyingPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(info.underlying));
       console.log('underlyingPrice', underlyingPrice);
       const earnedUsdc = earned * targetTokenPrice;
       const earnedUsdcThisCycle = earnedThiCycle * targetTokenPrice;
