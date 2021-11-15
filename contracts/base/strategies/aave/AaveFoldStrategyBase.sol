@@ -42,7 +42,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   uint8 private constant _PRECISION = 18;
   uint8 private constant _RAY_PRECISION = 27;
-  uint256 private constant _SECONDS_PER_YEAR = 365*24*60*60;
+  uint256 private constant _SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+  uint256 private constant _PROFITABILITY_PERIOD = 60 * 60 * 24 * 30;
 
   // ************ VARIABLES **********************
   /// @notice Strategy type for statistical purposes
@@ -62,6 +63,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   address public constant AAVE_CONTROLLER = 0x357D51124f59836DeD84c8a1730D72B749d8BC23;
   address public constant AAVE_DATA_PROVIDER = 0x7551b5D2763519d4e37e8B81929D336De671d46d;
   address public constant AAVE_LENDING_POOL_ADDRESSES_PROVIDER = 0xd05e3E715d945B59290df0ae8eF85c1BdB684744;
+  address public constant WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 
   ILendingPool lPool = ILendingPool(AAVE_LENDING_POOL);
   IAaveIncentivesController aaveController = IAaveIncentivesController(AAVE_CONTROLLER);
@@ -140,68 +142,84 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     (uint256 emissionPerSecond,,) = aaveController.assets(token);
     (uint256 stakedByUserScaled, uint256 totalStakedScaled) = IScaledBalanceToken(token).getScaledUserBalanceAndSupply(address(this));
     uint256 rewards = emissionPerSecond.mul(numberOfBlocks).mul(10 ** uint256(_PRECISION)).div(totalStakedScaled).mul(stakedByUserScaled).div(10 ** uint256(_PRECISION));
-//    uint256 rewardPerToken = rewardsMaticScaled.div(IERC20(token).balanceOf(address(this)));
     return rewards;
   }
 
   function rewardUnderlyingPrediction(uint256 numberOfBlocks, address token, uint256 currentLiquidityRate) public view returns (uint256){
     uint256 underlyingPerSecond = currentLiquidityRate.div(_SECONDS_PER_YEAR);
-//    uint256 underlyingBalance = IERC20(token).balanceOf(address(this));
-    uint256 predictedUnderlyingEarned = underlyingPerSecond.mul(numberOfBlocks).mul(10 ** uint256(_PRECISION)).div(10 ** uint256(_RAY_PRECISION));
-    return predictedUnderlyingEarned;
+    uint256 underlyingBalance = IERC20(token).balanceOf(address(this));
+    console.log(">>contract  underlyingBalance: %s", underlyingBalance);
+
+    uint256 predictedUnderlyingEarned = underlyingPerSecond.mul(numberOfBlocks);
+    return predictedUnderlyingEarned.mul(underlyingBalance).div(10 ** uint256(_RAY_PRECISION));
   }
 
   function debtCostPrediction(uint256 numberOfBlocks, address token, uint256 currentVariableBorrowRate) public view returns (uint256){
     uint256 debtUnderlyingPerSecond = currentVariableBorrowRate.div(_SECONDS_PER_YEAR);
-//    uint256 debtBalance = IERC20(token).balanceOf(address(this));
-    uint256 predictedDebtCost = debtUnderlyingPerSecond.mul(numberOfBlocks).mul(10 ** uint256(_PRECISION)).div(10 ** uint256(_RAY_PRECISION));
-    return predictedDebtCost;
+    uint256 debtBalance = IERC20(token).balanceOf(address(this));
+    uint256 predictedDebtCost = debtUnderlyingPerSecond.mul(numberOfBlocks);
+    return predictedDebtCost.mul(debtBalance).div(10 ** uint256(_RAY_PRECISION));
   }
 
 
-  function rewardPrediction(uint256 numberOfBlocks) public view returns (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost){
-//    console.log("Rewards for %s blocks", numberOfBlocks);
-//    console.log("Token: %s  (%s) ", _underlyingToken, (ERC20(_underlyingToken)).decimals());
-//    console.log("Token: %s  (%s) ", _rewardTokens[0], (ERC20(_rewardTokens[0])).decimals());
-//
-//    console.log("Token: %s  (%s) ", aToken, (ERC20(aToken)).decimals());
-//    console.log("Token: %s  (%s) ", dToken, (ERC20(dToken)).decimals());
-
-
+  function totalRewardPrediction(uint256 numberOfBlocks) public view returns (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost){
     (address aTokenAddress,,address variableDebtTokenAddress) = dataProvider.getReserveTokensAddresses(_underlyingToken);
 
     supplyRewards = rewardPrediction(numberOfBlocks, aTokenAddress);
     borrowRewards = rewardPrediction(numberOfBlocks, variableDebtTokenAddress);
 
-
-//    IPriceOracle priceOracle = IPriceOracle(lendingPoolAddressesProvider.getPriceOracle());
-//    uint256 underlyingInWeth = priceOracle.getAssetPrice(_underlyingToken);
-//    uint256 rewardInWeth =  priceOracle.getAssetPrice(_rewardTokens[0]);
-//
-//    //todo use decimals
-//    // todo check iron calc
-//
-//
-//    console.log("Underlying price in WETH: %s", underlyingInWeth);
-//    console.log("Reward Token price in WETH: %s", rewardInWeth);
-
-//    console.log("============");
-//    console.log("Total Reward rewards prediction: %s", supplyRewardPerToken.add(borrowRewardPerToken));
-//    console.log("Total WETH rewards prediction: %s", (supplyRewardPerToken.add(borrowRewardPerToken)).mul(rewardInWeth));
-//    console.log("============");
-
-
     DataTypes.ReserveData memory rd = lPool.getReserveData(_underlyingToken);
     supplyUnderlyingProfit = rewardUnderlyingPrediction(numberOfBlocks, aTokenAddress, rd.currentLiquidityRate);
+    console.log(">>contract  supplyUnderlyingProfit: %s", supplyUnderlyingProfit);
     debtUnderlyingCost = debtCostPrediction(numberOfBlocks, variableDebtTokenAddress, rd.currentVariableBorrowRate);
 
-//    console.log("============");
-//    console.log("Total underlying rewards prediction: %s", underlyingRewards);
-//    console.log("Total debt cost prediction : %s", debtCost);
-////    console.log("Total Folding cost prediction : %s", debtCost.sub(underlyingRewards));
-//    console.log("============");
-////    console.log("Total Folding cost prediction : %s", (debtCost.sub(underlyingRewards)).mul(underlyingInWeth));
+    return (supplyRewards, borrowRewards, supplyUnderlyingProfit, debtUnderlyingCost);
  }
+
+  function totalRewardPredictionInWeth(uint256 numberOfBlocks) public view returns (
+      uint256 supplyRewardsInWeth,
+      uint256 borrowRewardsInWeth,
+      uint256 supplyUnderlyingProfitInWeth,
+      uint256 debtUnderlyingCostInWeth
+  ){
+    IPriceOracle priceOracle = IPriceOracle(lendingPoolAddressesProvider.getPriceOracle());
+    uint256 underlyingInWeth = priceOracle.getAssetPrice(_underlyingToken);
+    uint256 rewardInWeth =  priceOracle.getAssetPrice(_rewardTokens[0]);
+    uint256 wethDecimals = (ERC20(WETH)).decimals();
+
+    (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction(numberOfBlocks);
+
+    supplyRewardsInWeth = supplyRewards.mul(rewardInWeth).div(10**wethDecimals);
+    borrowRewardsInWeth = borrowRewards.mul(rewardInWeth).div(10**wethDecimals);
+
+    supplyUnderlyingProfitInWeth = supplyUnderlyingProfit.mul(underlyingInWeth).div(10**wethDecimals);
+    debtUnderlyingCostInWeth = debtUnderlyingCost.mul(underlyingInWeth).div(10**wethDecimals);
+  }
+
+  function normTotalRewardPredictionInWeth(uint256 numberOfBlocks) public view returns (
+    uint256 supplyRewardsInWethPT,
+    uint256 borrowRewardsInWethPT,
+    uint256 supplyUnderlyingProfitInWethPT,
+    uint256 debtUnderlyingCostInWethPT
+  ){
+      uint256 supplyBalance = IERC20(aToken).balanceOf(address(this));
+      uint256 debtBalance = IERC20(dToken).balanceOf(address(this));
+
+    (uint256 supplyRewardsInWeth,
+      uint256 borrowRewardsInWeth,
+      uint256 supplyUnderlyingProfitInWeth,
+      uint256 debtUnderlyingCostInWeth) = totalRewardPredictionInWeth(numberOfBlocks);
+
+    supplyRewardsInWethPT = supplyRewardsInWeth.mul(10 ** uint256(_PRECISION)).div(supplyBalance);
+    supplyUnderlyingProfitInWethPT = supplyUnderlyingProfitInWeth.mul(10 ** uint256(_PRECISION)).div(supplyBalance);
+
+    borrowRewardsInWethPT = 0;
+    debtUnderlyingCostInWethPT = 0;
+    if(debtBalance>0){
+      borrowRewardsInWethPT = borrowRewardsInWeth.mul(10 ** uint256(_PRECISION)).div(debtBalance);
+      debtUnderlyingCostInWethPT = debtUnderlyingCostInWeth.mul(10 ** uint256(_PRECISION)).div(debtBalance);
+    }
+  }
 
 
   // ************* VIEWS *******************
@@ -242,8 +260,14 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Return true if we can gain profit with folding
   function isFoldingProfitable() public view returns (bool) {
-    // todo
-    return true;
+    (uint256 supplyRewardsInWethPT,
+    uint256 borrowRewardsInWethPT,
+    uint256 supplyUnderlyingProfitInWethPT,
+    uint256 debtUnderlyingCostInWethPT) = normTotalRewardPredictionInWeth(_PROFITABILITY_PERIOD);
+
+    uint256 foldingProfitPerToken = supplyRewardsInWethPT + borrowRewardsInWethPT + supplyUnderlyingProfitInWethPT;
+    console.log(">> FOLDING PROFIT PER INVESTED TOKEN: %s WETH<<", foldingProfitPerToken - debtUnderlyingCostInWethPT);
+    return foldingProfitPerToken > debtUnderlyingCostInWethPT;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
@@ -265,8 +289,6 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
 
   /// @dev Rebalances the borrow ratio
   function rebalance() public restricted updateSupplyInTheEnd {
-    //    uint256 supplied = IAToken(aToken).balanceOfUnderlying(address(this));
-    //    uint256 borrowed = IAToken(aToken).borrowBalanceCurrent(address(this));
     console.log(">> rebalance");
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     console.log(">> supplied: %s", supplied);
@@ -398,7 +420,6 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Claim distribution rewards
   function claimReward() internal {
     address[] memory assets = new address[](2);
-    // todo add debt token to claim rewards
     assets[0] = aToken;
     assets[1] = dToken;
     uint256 claimed = aaveController.claimRewards(assets, type(uint256).max, address(this));

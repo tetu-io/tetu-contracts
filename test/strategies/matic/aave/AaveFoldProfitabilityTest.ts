@@ -8,7 +8,7 @@ import {PriceCalculator, SmartVault, StrategyAaveFold} from "../../../../typecha
 import {ethers} from "hardhat";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {TimeUtils} from "../../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -32,7 +32,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Aave Fold tests', async () => {
+describe('Universal Aave Fold profitability tests', async () => {
 
   if (argv.disableStrategyTests) {
     return;
@@ -66,9 +66,12 @@ describe('Universal Aave Fold tests', async () => {
       let snapshotBefore: string;
       let snapshot: string;
       const underlying = token;
+
       const aToken = aTokenAddress;
-      const debtToken = "0x75c4d1fb84429023170086f06e682dcbbf537b7d";
-      const deposit = "1"
+      // const debtToken = "0x75c4d1fb84429023170086f06e682dcbbf537b7d"; //DAI
+      const debtToken = "0x21f67830d72fea2e759df0aa7c698cdd542da1dd"; //USDC
+      const deposit = "1000"
+      const investingPeriod = 60 * 60 * 24 * 30;
 
       let user: SignerWithAddress;
       let core: CoreContractsWrapper;
@@ -136,25 +139,67 @@ describe('Universal Aave Fold tests', async () => {
         console.log("deposit", deposit);
         await VaultUtils.deposit(user, vault, utils.parseUnits(deposit, undDec));
 
+        const atDecimals = await TokenUtils.decimals(aToken);
+        const dtDecimals = await TokenUtils.decimals(debtToken);
+        const rtDecimals = await TokenUtils.decimals(MaticAddresses.WMATIC_TOKEN);
+
         const rewardBalanceBefore = await TokenUtils.balanceOf(core.psVault.address, user.address);
         console.log("rewardBalanceBefore: ", rewardBalanceBefore.toString());
 
         const vaultBalanceBefore = await TokenUtils.balanceOf(core.psVault.address, vault.address);
         console.log("vaultBalanceBefore: ", vaultBalanceBefore.toString());
 
-
-        const underlyingBalanceBefore = await TokenUtils.balanceOf(aToken, strategy.address);
+        const underlyingBalanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(aToken, strategy.address), atDecimals);
         console.log("underlyingBalanceBefore: ", underlyingBalanceBefore.toString());
 
-        const debtBalanceBefore = await TokenUtils.balanceOf(debtToken, strategy.address);
+        const debtBalanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(debtToken, strategy.address), dtDecimals);
         console.log("debtBalanceBefore: ", debtBalanceBefore.toString());
 
-        const maticBefore = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address);
-        console.log("MATIC before: ", maticBefore.toString());
-        await strategy.rewardPrediction(8640000);
+        const maticBefore = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address), rtDecimals);
 
-        // await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 30 * 12); // 1 year
-        await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 100); //8640025
+        console.log("MATIC before: ", maticBefore.toString());
+        let data = await strategy.totalRewardPrediction(investingPeriod);
+
+        let supplyRewards = +utils.formatUnits(data[0], rtDecimals);
+        let borrowRewards = +utils.formatUnits(data[1], rtDecimals);
+        let supplyUnderlyingProfit = +utils.formatUnits(data[2], atDecimals);
+        let debtUnderlyingCost = +utils.formatUnits(data[3], dtDecimals);
+
+        console.log("supplyRewards:", supplyRewards);
+        console.log("borrowRewards:", borrowRewards);
+        console.log("supplyUnderlyingProfit:", supplyUnderlyingProfit);
+        console.log("debtUnderlyingCost:", debtUnderlyingCost);
+        console.log("======================================");
+
+
+        let dataWeth = await strategy.totalRewardPredictionInWeth(investingPeriod);
+
+        let supplyRewardsWeth = +utils.formatUnits(dataWeth[0], rtDecimals);
+        let borrowRewardsWeth = +utils.formatUnits(dataWeth[1], rtDecimals);
+        let supplyUnderlyingProfitWeth = +utils.formatUnits(dataWeth[2], atDecimals);
+        let debtUnderlyingCostWeth = +utils.formatUnits(dataWeth[3], dtDecimals);
+        let totalWethEarned = supplyRewardsWeth+borrowRewardsWeth+supplyUnderlyingProfitWeth-debtUnderlyingCostWeth;
+
+        console.log("supplyRewardsWeth:", supplyRewardsWeth, "borrowRewardsWeth:", borrowRewardsWeth);
+        console.log("supplyUnderlyingProfitWeth:", supplyUnderlyingProfitWeth, "debtUnderlyingCostWeth:", debtUnderlyingCostWeth);
+        console.log("======================================");
+        console.log("Total earned WETH:", totalWethEarned);
+        expect(totalWethEarned).is.greaterThan(0);
+
+        let dataWethNorm = await strategy.normTotalRewardPredictionInWeth(investingPeriod);
+        let supplyRewardsWethN = +utils.formatUnits(dataWethNorm[0], rtDecimals);
+        let borrowRewardsWethN = +utils.formatUnits(dataWethNorm[1], rtDecimals);
+        let supplyUnderlyingProfitWethN = +utils.formatUnits(dataWethNorm[2], rtDecimals);
+        let debtUnderlyingCostWethN = +utils.formatUnits(dataWethNorm[3], rtDecimals);
+        let foldingProfPerToken = supplyRewardsWeth+borrowRewardsWeth+supplyUnderlyingProfitWeth-debtUnderlyingCostWeth;
+
+        console.log("supplyRewardsWethN:", supplyRewardsWethN, "borrowRewardsWethN:", borrowRewardsWethN);
+        console.log("supplyUnderlyingProfitWethN:", supplyUnderlyingProfitWethN, "debtUnderlyingCostWethN:", debtUnderlyingCostWethN);
+        console.log("======================================");
+        console.log("Total foldingProfPerToken WETH:", foldingProfPerToken);
+        expect(foldingProfPerToken).is.greaterThan(0);
+
+        await TimeUtils.advanceBlocksOnTs(investingPeriod);
         await strategy.claimRewardPublic();
         // await strategy.doHardWork();
 
@@ -163,19 +208,38 @@ describe('Universal Aave Fold tests', async () => {
         // expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
         //
 
-        const underlyingBalanceAfter = await TokenUtils.balanceOf(aToken, strategy.address);
+
+        const underlyingBalanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(aToken, strategy.address), atDecimals);
+
         console.log("underlyingBalanceAfter: ", underlyingBalanceAfter.toString());
 
-        const debtBalanceAfter = await TokenUtils.balanceOf(debtToken, strategy.address);
+        const debtBalanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(debtToken, strategy.address), dtDecimals);
         console.log("debtBalanceAfter: ", debtBalanceAfter.toString());
 
-        const debtCost = debtBalanceAfter.sub(debtBalanceBefore);
+        const debtCost = debtBalanceAfter - debtBalanceBefore;
         console.log("debtCost: ", debtCost.toString());
 
-        const earned = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address);
-        console.log("MATIC earned: ", earned.toString());
-        console.log("DAI earned: ", underlyingBalanceAfter.sub(underlyingBalanceBefore).sub(debtCost).toString());
 
+        const rewardsEarned = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address), rtDecimals);
+
+        console.log("MATIC earned: ", rewardsEarned.toString());
+        const underlyingEarned = underlyingBalanceAfter - underlyingBalanceBefore - debtCost;
+        console.log("DAI earned: ", underlyingEarned.toString());
+
+        let rewardProfitPrediction = supplyRewards + borrowRewards;
+
+        console.log("rewardProfitPrediction (MATIC): ", rewardProfitPrediction.toString());
+
+        expect(rewardsEarned).is.approximately(rewardProfitPrediction, rewardProfitPrediction * 0.001, "Prediction of rewards profit is inaccurate")
+
+        console.log("underlyingEarnedPredicted: ", supplyUnderlyingProfit.toString());
+
+        console.log("debtUnderlyingCostPredicted: ", debtUnderlyingCost.toString());
+
+        if(debtCost > 0){
+          supplyUnderlyingProfit = supplyUnderlyingProfit - debtUnderlyingCost;
+        }
+        expect(supplyUnderlyingProfit).is.approximately(underlyingEarned, underlyingEarned * 0.01, "Prediction of underlying profit is inaccurate");
 
       });
 

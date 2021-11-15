@@ -1,2 +1,2 @@
 idx, aToken_name, aToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, apr, vault, current rewards 
-0,amDAI,0x27F8D03b3a2196956ED754baDc28D73be8830A6e,0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063,DAI,collateralFactor - 1,borrowTarget,tvl.toFixed(2),apr,vault,curRewards
+0,amUSDC,0x1a13F4Ca1d028320A707D99520AbFefca3998b7F,0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174,USDC,collateralFactor - 1,borrowTarget,tvl.toFixed(2),apr,vault,curRewards
