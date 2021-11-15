@@ -44,16 +44,9 @@ export class StrategyTestUtils {
     const vault = data[1] as SmartVault;
     const strategy = data[2] as IStrategy;
 
-    let rewardTokenLp;
-    if (core.rewardToken.address === MaticAddresses.TETU_TOKEN) {
-      rewardTokenLp = await UniswapUtils.createPairForRewardToken(
-        signer, core, "1000000"
-      );
-    } else {
-      rewardTokenLp = await UniswapUtils.createPairForRewardTokenWithBuy(
-        signer, core, "1000000"
-      );
-    }
+    const rewardTokenLp = await UniswapUtils.createTetuUsdc(
+      signer, core, "1000000"
+    );
 
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
@@ -393,27 +386,27 @@ export class StrategyTestUtils {
 
     const largestPoolDataIn = await StrategyTestUtils.largestPoolForToken(tokenIn, usedLps, calculator);
     tokens.push(largestPoolDataIn[0]);
-    routers.push(MaticAddresses.getRouterByFactory(await calculator.swapFactories(largestPoolDataIn[1])));
+    routers.push(await DeployerUtils.getRouterByFactory(await calculator.swapFactories(largestPoolDataIn[1])));
 
     if (largestPoolDataIn[0].toLowerCase() !== tokenOut.toLowerCase()) {
       const largestPoolDataOut = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
       if (largestPoolDataOut[0].toLowerCase() !== largestPoolDataIn[0].toLowerCase()) {
-        if (!MaticAddresses.isBlueChip(largestPoolDataOut[0])) {
+        if (!(await DeployerUtils.isBlueChip(largestPoolDataOut[0]))) {
           throw Error('Not blue chip ' + largestPoolDataOut[0]);
         }
-        if (!MaticAddresses.isBlueChip(largestPoolDataIn[0])) {
+        if (!(await DeployerUtils.isBlueChip(largestPoolDataIn[0]))) {
           throw Error('Not blue chip ' + largestPoolDataIn[0]);
         }
         tokens.push(largestPoolDataOut[0]);
-        routers.push(MaticAddresses.QUICK_ROUTER);
+        routers.push(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
       }
-      routers.push(MaticAddresses.getRouterByFactory(await calculator.swapFactories(largestPoolDataOut[1])));
+      routers.push(await DeployerUtils.getRouterByFactory(await calculator.swapFactories(largestPoolDataOut[1])));
       tokens.push(tokenOut);
     }
 
     let routersStr = '';
     for (const router of routers) {
-      const name = MaticAddresses.getRouterName(router);
+      const name = await DeployerUtils.getRouterName(router);
       routersStr += name + '=>'
     }
     console.log('PATH -----------');
@@ -443,15 +436,22 @@ export class StrategyTestUtils {
     if (tokenOut.toLowerCase() === MaticAddresses.FXS_TOKEN) {
       return [MaticAddresses.FRAX_TOKEN, BigNumber.from(0), MaticAddresses.QUICK_FRAX_FXS];
     }
-    const data = await calculator.getLargestPool(tokenOut, usedLps);
-    if (!MaticAddresses.isBlueChip(data[0])) {
+    console.log('largestPoolForToken', tokenOut)
+    let data = await calculator.getLargestPool(tokenOut, usedLps);
+    if (!(await DeployerUtils.isBlueChip(data[0]))) {
       console.log('Not blue chip ' + data[0])
+      if (data[0] === MaticAddresses.ZERO_ADDRESS) {
+        throw Error('Not found biggest lp for ' + tokenOut);
+      }
       usedLps.push(data[2]);
-      return StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
+      data = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
     }
     if ((await calculator.swapFactories(data[1])).toLowerCase() === MaticAddresses.FIREBIRD_FACTORY) {
       usedLps.push(data[2]);
-      return StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
+      data = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
+    }
+    if (data[0].toLowerCase() === MaticAddresses.ZERO_ADDRESS) {
+      throw Error('Largest pool not found for ' + tokenOut);
     }
     return data;
   }

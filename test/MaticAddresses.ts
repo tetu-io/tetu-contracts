@@ -211,8 +211,4 @@ export class MaticAddresses {
     }
     throw Error('Unknown router ' + router);
   }
-
-  public static isBlueChip(address: string): boolean {
-    return MaticAddresses.BLUE_CHIPS.has(address.toLowerCase())
-  }
 }

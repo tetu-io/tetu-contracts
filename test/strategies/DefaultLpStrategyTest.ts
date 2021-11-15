@@ -4,7 +4,6 @@ import chaiAsPromised from "chai-as-promised";
 import {StrategyInfo} from "./StrategyInfo";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {UniswapUtils} from "../UniswapUtils";
 import {TokenUtils} from "../TokenUtils";
@@ -39,7 +38,8 @@ async function startDefaultLpStrategyTest(
       const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const core = await DeployerUtils.deployAllCoreContracts(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
 
@@ -66,7 +66,7 @@ async function startDefaultLpStrategyTest(
 
       for (const rt of rewardTokens) {
         await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
+        await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
         if ((await strategy.buyBackRatio()).toNumber() !== 10000) {
           await StrategyTestUtils.setConversionPath(rt, token0, calculator, core.feeRewardForwarder);
           await StrategyTestUtils.setConversionPath(rt, token1, calculator, core.feeRewardForwarder);

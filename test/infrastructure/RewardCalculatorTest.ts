@@ -110,7 +110,7 @@ describe("Reward calculator tests", function () {
   });
 
   it.skip("strategy reward usd for all", async () => {
-    const bkAdr = (Addresses.CORE.get('matic') as CoreAddresses).bookkeeper;
+    const bkAdr = (await DeployerUtils.getCoreAddresses()).bookkeeper;
     const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', bkAdr) as Bookkeeper;
     const strats = await bookkeeper.strategies();
     for (const strategy of strats) {

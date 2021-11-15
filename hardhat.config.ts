@@ -17,26 +17,37 @@ import "@tenderly/hardhat-tenderly"
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  maticRpcUrl: {
-    type: "string",
-  },
-  infuraKey: {
-    type: "string",
-  },
-  networkScanKey: {
-    type: "string",
-  },
-  privateKey: {
-    type: "string",
-    default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
-  },
-  forkBlock: {
-    type: "number",
-    default: 21313813
-  },
-}).argv;
+  .env('TETU')
+  .options({
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+    maticRpcUrl: {
+      type: "string",
+    },
+    ftmRpcUrl: {
+      type: "string",
+    },
+    infuraKey: {
+      type: "string",
+    },
+    networkScanKey: {
+      type: "string",
+    },
+    privateKey: {
+      type: "string",
+      default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
+    },
+    forkBlock: {
+      type: "number",
+      default: 21313813
+    },
+    ftmForkBlock: {
+      type: "number",
+      default: 22018924
+    },
+  }).argv;
 
 
 export default {
@@ -44,18 +55,27 @@ export default {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      chainId: 137,
+      chainId: argv.hardhatChainId,
       timeout: 99999,
       gas: 19_000_000,
       forking: {
-        url: argv.maticRpcUrl,
-        blockNumber: argv.forkBlock
+        url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
+        blockNumber: argv.hardhatChainId === 137 ? argv.forkBlock : argv.ftmForkBlock
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
         path: "m/44'/60'/0'/0",
         accountsBalance: "100000000000000000000000000000"
       },
+    },
+    ftm: {
+      url: argv.ftmRpcUrl,
+      timeout: 99999,
+      chainId: 250,
+      gas: 10_000_000,
+      // gasPrice: 100_000_000_000,
+      // gasMultiplier: 2,
+      accounts: [argv.privateKey],
     },
     matic: {
       url: argv.maticRpcUrl,
