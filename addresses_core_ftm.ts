@@ -9,8 +9,8 @@ export class FtmCoreAddresses {
     '0x00379dD90b2A337C4652E286e4FBceadef940a21', // bookkeeper
     '', // notifier
     '', // mint helper
-    '', // tetu token
-    '', // ps vault
+    '0x0000000000000000000000000000000000000000', // tetu token
+    '0x0000000000000000000000000000000000000000', // ps vault
     '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // fund keeper
     '0xA43eA51b3251f96bB48c48567A93b15e7e4b99F6', // vault controller
     '', // pawnshop
