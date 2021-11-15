@@ -1,7 +1,8 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, IStrategy} from "../../../../typechain";
-import {appendFileSync, mkdir, readFileSync, writeFileSync} from "fs";
+import {ContractReader, Controller, IStrategy} from "../../../../typechain";
+import {appendFileSync, mkdir, readFileSync} from "fs";
+import {RunHelper} from "../../../utils/RunHelper";
 
 
 async function main() {
@@ -56,22 +57,22 @@ async function main() {
     // tslint:disable-next-line:no-any
     const data: any[] = [];
     data.push(...await DeployerUtils.deployVaultAndStrategy(
-        vaultNameWithoutPrefix,
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategySpookySwapLp',
-            core.controller,
-            vaultAddress,
-            lpAddress,
-            token0,
-            token1,
-            idx
-        ) as Promise<IStrategy>,
-        core.controller,
-        core.psVault,
+      vaultNameWithoutPrefix,
+      async vaultAddress => DeployerUtils.deployContract(
         signer,
-        60 * 60 * 24 * 28,
-        true
+        'StrategySpookySwapLp',
+        core.controller,
+        vaultAddress,
+        lpAddress,
+        token0,
+        token1,
+        idx
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.psVault,
+      signer,
+      60 * 60 * 24 * 28,
+      true
     ));
     data.push([
       core.controller,
@@ -94,13 +95,13 @@ async function main() {
     await DeployerUtils.verify(data[0].address);
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);
-    await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/ftm/spooky/StrategySpookySwapLp.sol:StrategySpookySwapLp', data[3]);
+    await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/fantom/spooky/StrategySpookySwapLp.sol:StrategySpookySwapLp', data[3]);
   }
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

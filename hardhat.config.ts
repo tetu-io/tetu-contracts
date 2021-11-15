@@ -72,7 +72,7 @@ export default {
       url: argv.ftmRpcUrl,
       timeout: 99999,
       chainId: 250,
-      // gas: 19_000_000,
+      gas: 10_000_000,
       // gasPrice: 100_000_000_000,
       // gasMultiplier: 2,
       accounts: [argv.privateKey],

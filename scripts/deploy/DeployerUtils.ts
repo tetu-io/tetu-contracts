@@ -500,6 +500,10 @@ export class DeployerUtils {
     wait = false
   ): Promise<[SmartVault, SmartVault, IStrategy]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+    console.log('vaultLogic', vaultLogic.address);
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
