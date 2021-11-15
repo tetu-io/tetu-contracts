@@ -8,7 +8,7 @@ import {PriceCalculator, SmartVault, StrategyAaveFold} from "../../../../typecha
 import {ethers} from "hardhat";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {BigNumber, utils} from "ethers";
+import {utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {TimeUtils} from "../../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -43,18 +43,17 @@ describe('Universal Aave Fold profitability tests', async () => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const aTokenName = strat[1];
-    const aTokenAddress = strat[2];
-    const token = strat[3];
-    const tokenName = strat[4];
-    // const collateralFactor = strat[5];
-    // const borrowTarget = strat[6];
+    const tokenName = strat[1];
+    const token = strat[2];
+    const aTokenName = strat[3];
+    const aTokenAddress = strat[4];
+    const dTokenAddress = strat[6];
+
 
     let vault: SmartVault;
     let strategy: StrategyAaveFold;
     let lpForTargetToken;
 
-    // if (!idx || idx === 'idx' || collateralFactor === '0') {
     if (!idx || idx === 'idx') {
       console.log('skip', idx);
       return;
@@ -62,15 +61,17 @@ describe('Universal Aave Fold profitability tests', async () => {
 
     console.log('strat', idx, aTokenName);
 
-    describe(tokenName + "Test", async function () {
+    describe(tokenName + " Test", async function () {
       let snapshotBefore: string;
       let snapshot: string;
       const underlying = token;
 
       const aToken = aTokenAddress;
-      // const debtToken = "0x75c4d1fb84429023170086f06e682dcbbf537b7d"; //DAI
-      const debtToken = "0x21f67830d72fea2e759df0aa7c698cdd542da1dd"; //USDC
-      const deposit = "1000"
+      const debtToken = dTokenAddress;
+      let deposit = "1000"
+      if (tokenName === "WBTC") {
+        deposit = "1";
+      }
       const investingPeriod = 60 * 60 * 24 * 30;
 
       let user: SignerWithAddress;
@@ -158,12 +159,12 @@ describe('Universal Aave Fold profitability tests', async () => {
         const maticBefore = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address), rtDecimals);
 
         console.log("MATIC before: ", maticBefore.toString());
-        let data = await strategy.totalRewardPrediction(investingPeriod);
+        const data = await strategy.totalRewardPrediction(investingPeriod);
 
-        let supplyRewards = +utils.formatUnits(data[0], rtDecimals);
-        let borrowRewards = +utils.formatUnits(data[1], rtDecimals);
+        const supplyRewards = +utils.formatUnits(data[0], rtDecimals);
+        const borrowRewards = +utils.formatUnits(data[1], rtDecimals);
         let supplyUnderlyingProfit = +utils.formatUnits(data[2], atDecimals);
-        let debtUnderlyingCost = +utils.formatUnits(data[3], dtDecimals);
+        const debtUnderlyingCost = +utils.formatUnits(data[3], dtDecimals);
 
         console.log("supplyRewards:", supplyRewards);
         console.log("borrowRewards:", borrowRewards);
@@ -172,13 +173,13 @@ describe('Universal Aave Fold profitability tests', async () => {
         console.log("======================================");
 
 
-        let dataWeth = await strategy.totalRewardPredictionInWeth(investingPeriod);
+        const dataWeth = await strategy.totalRewardPredictionInWeth(investingPeriod);
 
-        let supplyRewardsWeth = +utils.formatUnits(dataWeth[0], rtDecimals);
-        let borrowRewardsWeth = +utils.formatUnits(dataWeth[1], rtDecimals);
-        let supplyUnderlyingProfitWeth = +utils.formatUnits(dataWeth[2], atDecimals);
-        let debtUnderlyingCostWeth = +utils.formatUnits(dataWeth[3], dtDecimals);
-        let totalWethEarned = supplyRewardsWeth+borrowRewardsWeth+supplyUnderlyingProfitWeth-debtUnderlyingCostWeth;
+        const supplyRewardsWeth = +utils.formatUnits(dataWeth[0], rtDecimals);
+        const borrowRewardsWeth = +utils.formatUnits(dataWeth[1], rtDecimals);
+        const supplyUnderlyingProfitWeth = +utils.formatUnits(dataWeth[2], atDecimals);
+        const debtUnderlyingCostWeth = +utils.formatUnits(dataWeth[3], dtDecimals);
+        const totalWethEarned = supplyRewardsWeth + borrowRewardsWeth + supplyUnderlyingProfitWeth - debtUnderlyingCostWeth;
 
         console.log("supplyRewardsWeth:", supplyRewardsWeth, "borrowRewardsWeth:", borrowRewardsWeth);
         console.log("supplyUnderlyingProfitWeth:", supplyUnderlyingProfitWeth, "debtUnderlyingCostWeth:", debtUnderlyingCostWeth);
@@ -186,12 +187,12 @@ describe('Universal Aave Fold profitability tests', async () => {
         console.log("Total earned WETH:", totalWethEarned);
         expect(totalWethEarned).is.greaterThan(0);
 
-        let dataWethNorm = await strategy.normTotalRewardPredictionInWeth(investingPeriod);
-        let supplyRewardsWethN = +utils.formatUnits(dataWethNorm[0], rtDecimals);
-        let borrowRewardsWethN = +utils.formatUnits(dataWethNorm[1], rtDecimals);
-        let supplyUnderlyingProfitWethN = +utils.formatUnits(dataWethNorm[2], rtDecimals);
-        let debtUnderlyingCostWethN = +utils.formatUnits(dataWethNorm[3], rtDecimals);
-        let foldingProfPerToken = supplyRewardsWeth+borrowRewardsWeth+supplyUnderlyingProfitWeth-debtUnderlyingCostWeth;
+        const dataWethNorm = await strategy.normTotalRewardPredictionInWeth(investingPeriod);
+        const supplyRewardsWethN = +utils.formatUnits(dataWethNorm[0], rtDecimals);
+        const borrowRewardsWethN = +utils.formatUnits(dataWethNorm[1], rtDecimals);
+        const supplyUnderlyingProfitWethN = +utils.formatUnits(dataWethNorm[2], rtDecimals);
+        const debtUnderlyingCostWethN = +utils.formatUnits(dataWethNorm[3], rtDecimals);
+        const foldingProfPerToken = supplyRewardsWeth + borrowRewardsWeth + supplyUnderlyingProfitWeth - debtUnderlyingCostWeth;
 
         console.log("supplyRewardsWethN:", supplyRewardsWethN, "borrowRewardsWethN:", borrowRewardsWethN);
         console.log("supplyUnderlyingProfitWethN:", supplyUnderlyingProfitWethN, "debtUnderlyingCostWethN:", debtUnderlyingCostWethN);
@@ -201,13 +202,6 @@ describe('Universal Aave Fold profitability tests', async () => {
 
         await TimeUtils.advanceBlocksOnTs(investingPeriod);
         await strategy.claimRewardPublic();
-        // await strategy.doHardWork();
-
-        // const vaultBalanceAfter = await TokenUtils.balanceOf(core.psVault.address, vault.address);
-        //
-        // expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
-        //
-
 
         const underlyingBalanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(aToken, strategy.address), atDecimals);
 
@@ -218,15 +212,13 @@ describe('Universal Aave Fold profitability tests', async () => {
 
         const debtCost = debtBalanceAfter - debtBalanceBefore;
         console.log("debtCost: ", debtCost.toString());
-
-
         const rewardsEarned = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, strategy.address), rtDecimals);
 
         console.log("MATIC earned: ", rewardsEarned.toString());
         const underlyingEarned = underlyingBalanceAfter - underlyingBalanceBefore - debtCost;
         console.log("DAI earned: ", underlyingEarned.toString());
 
-        let rewardProfitPrediction = supplyRewards + borrowRewards;
+        const rewardProfitPrediction = supplyRewards + borrowRewards;
 
         console.log("rewardProfitPrediction (MATIC): ", rewardProfitPrediction.toString());
 
@@ -236,7 +228,7 @@ describe('Universal Aave Fold profitability tests', async () => {
 
         console.log("debtUnderlyingCostPredicted: ", debtUnderlyingCost.toString());
 
-        if(debtCost > 0){
+        if (debtCost > 0) {
           supplyUnderlyingProfit = supplyUnderlyingProfit - debtUnderlyingCost;
         }
         expect(supplyUnderlyingProfit).is.approximately(underlyingEarned, underlyingEarned * 0.01, "Prediction of underlying profit is inaccurate");

@@ -42,26 +42,18 @@ describe('Universal Aave Fold tests', async () => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const aTokenName = strat[1];
-    const aTokenAddress = strat[2];
-    const token = strat[3];
-    const tokenName = strat[4];
-    // const collateralFactor = strat[5];
-    // const borrowTarget = strat[6];
+    const tokenName = strat[1];
+    const token = strat[2];
+    const aTokenName = strat[3];
+    const aTokenAddress = strat[4];
 
     const collateralFactor = '6000'; // todo add real data
     const borrowTarget = '5000';   // todo add real data
 
-    // if (!idx || idx === 'idx' || collateralFactor === '0') {
     if (!idx || idx === 'idx') {
       console.log('skip', idx);
       return;
     }
-
-    // if (argv.onlyOneAaveFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest) {
-    //   return;
-    // }
-
     console.log('strat', idx, aTokenName);
 
     /* tslint:disable:no-floating-promises */

@@ -26,7 +26,7 @@ async function startAaveFoldStrategyTest(
   collateralFactorNumerator: string
 ) {
 
-  describe(strategyName + " " + tokenName + "Test", async function () {
+  describe(strategyName + " " + tokenName + " Test", async function () {
     let snapshotBefore: string;
     let snapshot: string;
     let strategyInfo: StrategyInfo;
@@ -223,8 +223,6 @@ export {startAaveFoldStrategyTest};
 
 async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
   const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyIronFold', info.strategy.address) as StrategyAaveFold;
-  // const rr = await foldContract.rewardsRateNormalised();
-  // console.log('rr', rr.toString());
   const calculator = (await DeployerUtils
     .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
   const vaultForUser = info.vault.connect(info.user);
@@ -274,9 +272,6 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
       await info.core.controller.setPSNumeratorDenominator(newNum, den);
     }
     const loopStart = await StrategyTestUtils.getBlockTime();
-    const balancesBefore = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
-    // console.log('balancesBefore', balancesBefore[0].toString());
-
     const psRate = await VaultUtils.profitSharingRatio(info.core.controller);
     console.log('psRate', psRate);
 
@@ -290,10 +285,6 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
 
     console.log('PPFS', oldPpfs, ppfs, ppfs - oldPpfs);
     expect(ppfs).is.greaterThanOrEqual(oldPpfs * 0.999);
-
-    const balancesAfter = await StrategyTestUtils.saveBalances(info.signer.address, info.strategy);
-    // console.log('balancesAfter', balancesAfter[0].toString(), balancesAfter[0].sub(balancesBefore[0]).toString());
-
     // ##### CHECK STRAT EARNED #########
     const earnedPure = await info.core.bookkeeper.targetTokenEarned(info.strategy.address);
     const earnedThisCyclePure = earnedPure.sub(earnedTotalPure);
@@ -326,9 +317,6 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
       * 100 * StrategyTestUtils.SECONDS_OF_YEAR;
 
     console.log('############################################################### --- ROI: ', roi, roiThisCycle);
-    // hardhat sometimes doesn't provide a block for some reason, need to investigate why
-    // it is not critical checking, we already checked earned amount
-    // expect(roi).is.greaterThan(0, 'zero roi');
 
     if (deposited && i % 3 === 0) {
       deposited = false;
@@ -363,9 +351,6 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   }
 
   // *************** POST LOOPS CHECKING **************
-  // with multiple deposits we will have unsold rewards after exit
-  // await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
-
   // check vault balance
   const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
   expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
