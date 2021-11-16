@@ -372,7 +372,11 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
       console.log(">> depositToPool: borrowTarget %s", borrowTarget);
 
       uint256 wantBorrow = borrowTarget.sub(borrowed);
+      console.log("wantBorrow %s", wantBorrow);
+
       uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
+      console.log(">>maxBorrow %s", maxBorrow);
+
       _borrow(Math.min(wantBorrow, maxBorrow));
       uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
       if (underlyingBalance > 0) {
@@ -390,9 +394,10 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     }
   }
 
-  /// @dev Withdraw underlying from Iron MasterChef finance
+  /// @dev Withdraw underlying
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
+    console.log("withdrawAndClaimFromPool");
     claimReward();
     _redeemPartialWithLoan(amount);
   }
@@ -400,10 +405,14 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override updateSupplyInTheEnd {
+    console.log(">>>>emergencyWithdrawFromPool");
+
     _redeemMaximumWithLoan();
   }
 
   function exitRewardPool() internal override updateSupplyInTheEnd {
+    console.log(">>>>exitRewardPool");
+
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
       claimReward();
@@ -540,6 +549,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   /// @dev Borrows against the collateral
   function _borrow(uint256 amountUnderlying) internal updateSupplyInTheEnd {
     // Borrow, check the balance for this contract's address
+    console.log(">>borrow _underlyingToken %s", _underlyingToken);
     console.log(">>borrow amountUnderlying %s", amountUnderlying);
     lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this));
   }
@@ -624,8 +634,12 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     console.log(">> _redeemPartialWithLoan amount: %s ", amount);
 
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
+    console.log(">> supplied : %s ", supplied);
+    console.log(">> borrowed : %s ", borrowed);
 
     uint256 oldBalance = supplied.sub(borrowed);
+      console.log(">> oldBalance : %s ", oldBalance);
+
     uint256 newBalance = 0;
     if (amount < oldBalance) {
       newBalance = oldBalance.sub(amount);

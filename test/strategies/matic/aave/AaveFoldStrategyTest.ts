@@ -10,6 +10,7 @@ import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
 import {PriceCalculator, StrategyAaveFold} from "../../../../typechain";
 import {MaticAddresses} from "../../../MaticAddresses";
+import {UniswapUtils} from "../../../UniswapUtils";
 
 
 const {expect} = chai;
@@ -84,14 +85,32 @@ async function startAaveFoldStrategyTest(
         calculator
       );
 
+      // // ************** add funds for investing ************
+      // const baseAmount = 100_000;
+      // const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying));
+      // const amount = baseAmount / price;
+      // const undDec = await TokenUtils.decimals(underlying);
+      //
+      // await TokenUtils.getToken(underlying, user.address, utils.parseUnits(amount + '', undDec));
+      //
+      // console.log('############## Preparations completed ##################');
+      const largest = (await calculator.getLargestPool(underlying, []));
+      const tokenOpposite = largest[0];
+      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
+      console.log('largest', largest);
+
       // ************** add funds for investing ************
       const baseAmount = 100_000;
-      const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying));
-      const amount = baseAmount / price;
-      const undDec = await TokenUtils.decimals(underlying);
+      await UniswapUtils.buyAllBigTokens(user);
+      const name = await TokenUtils.tokenSymbol(tokenOpposite);
+      const dec = await TokenUtils.decimals(tokenOpposite);
+      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
+      console.log('tokenOpposite Price', price, name);
+      const amountForSell = baseAmount / price;
+      console.log('amountForSell', amountForSell);
 
-      await TokenUtils.getToken(underlying, user.address, utils.parseUnits(amount + '', undDec));
-
+      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
+        underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
       console.log('############## Preparations completed ##################');
     });
 
@@ -381,7 +400,7 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999, "user should have all underlying");
 
-  const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
+  const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.signer.address);
   expect(+utils.formatUnits(signerUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(signerUnderlyingBalance, undDec) * 0.999, "signer should have all underlying");
 }
