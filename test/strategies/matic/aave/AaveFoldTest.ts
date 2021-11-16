@@ -2,16 +2,8 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {readFileSync} from "fs";
-import {startIronFoldStrategyTest} from "../../IronFoldStrategyTest";
 import {config as dotEnvConfig} from "dotenv";
 import {startAaveFoldStrategyTest} from "./AaveFoldStrategyTest";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {IAaveProtocolDataProvider, IAToken, PriceCalculator, SmartVault} from "../../../../typechain";
-import {ethers} from "hardhat";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {VaultUtils} from "../../../VaultUtils";
-import {utils} from "ethers";
-import {TokenUtils} from "../../../TokenUtils";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -39,22 +31,25 @@ describe('Universal Aave Fold tests', async () => {
   const infos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
 
   infos.forEach(info => {
-    const strat = info.split(',');
+    const start = info.split(',');
 
-    const idx = strat[0];
-    const tokenName = strat[1];
-    const token = strat[2];
-    const aTokenName = strat[3];
-    const aTokenAddress = strat[4];
+    const idx = start[0];
+    const tokenName = start[1];
+    const token = start[2];
+    const aTokenName = start[3];
+    const aTokenAddress = start[4];
+    const ltv = start[7];
+    const usageAsCollateralEnabled = start[9];
+    const borrowingEnabled = start[10];
+    const ltvNum = Number(ltv);
+    const collateralFactor = (ltvNum * 0.95).toString();
+    const borrowTarget = (ltvNum * 0.8).toString();
 
-    const collateralFactor = '6000'; // todo add real data
-    const borrowTarget = '5000';   // todo add real data
-
-    if (!idx || idx === 'idx') {
-      console.log('skip', idx);
+    if (!idx || idx === 'idx' || usageAsCollateralEnabled !== "true" || borrowingEnabled !== "true") {
+      console.log('skip ', tokenName);
       return;
     }
-    console.log('strat', idx, aTokenName);
+    console.log('start', idx, aTokenName);
 
     /* tslint:disable:no-floating-promises */
     startAaveFoldStrategyTest(

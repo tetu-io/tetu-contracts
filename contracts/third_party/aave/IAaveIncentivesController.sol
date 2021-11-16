@@ -19,14 +19,7 @@ interface IAaveIncentivesController {
    * @param asset The address of the reference asset of the distribution
    * @return The asset index, the emission per second and the last updated timestamp
    **/
-  function getAssetData(address asset)
-    external
-    view
-    returns (
-      uint256,
-      uint256,
-      uint256
-    );
+  function getAssetData(address asset) external view returns (uint256, uint256, uint256);
 
   /*
    * LEGACY **************************
@@ -34,14 +27,7 @@ interface IAaveIncentivesController {
    * @param asset The address of the reference asset of the distribution
    * @return The asset index, the emission per second and the last updated timestamp
    **/
-  function assets(address asset)
-    external
-    view
-    returns (
-      uint128,
-      uint128,
-      uint256
-    );
+  function assets(address asset) external view returns (uint128, uint128, uint256);
 
   /**
    * @dev Whitelists an address to claim the rewards on behalf of another address

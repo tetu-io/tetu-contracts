@@ -17,7 +17,7 @@ async function main() {
     const allLendingTokens = await dataProvider.getAllATokens();
     console.log('Lending tokens', allLendingTokens.length);
 
-    let infos: string = 'idx, token_name, token_address, aToken_name, aToken_address, dToken_Name, dToken_address\n';
+    let infos: string = 'idx, token_name, token_address, aToken_name, aToken_address, dToken_Name, dToken_address, ltv, liquidationThreshold, usageAsCollateralEnabled, borrowingEnabled\n';
     for (let i = 0; i < allLendingTokens.length; i++) {
       console.log('id', i);
 
@@ -34,6 +34,11 @@ async function main() {
       const tokenName = await TokenUtils.tokenSymbol(tokenAdr);
       const dTokenAdr = (await dataProvider.getReserveTokensAddresses(tokenAdr))[2]
       const dTokenName = await TokenUtils.tokenSymbol(dTokenAdr);
+      const confData = await dataProvider.getReserveConfigurationData(tokenAdr);
+      const ltv = confData[1];
+      const liquidationThreshold = confData[2];
+      const usageAsCollateralEnabled = confData[5];
+      const borrowingEnabled = confData[6];
 
       const data = i + ',' +
         tokenName + ',' +
@@ -41,7 +46,12 @@ async function main() {
         aTokenName + ',' +
         aTokenAdr + ',' +
         dTokenName + ',' +
-        dTokenAdr
+        dTokenAdr + ',' +
+        ltv + ',' +
+        liquidationThreshold + ',' +
+        usageAsCollateralEnabled + ',' +
+        borrowingEnabled
+
       console.log(data);
       infos += data + '\n';
     }

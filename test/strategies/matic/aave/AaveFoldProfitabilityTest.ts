@@ -32,7 +32,12 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Aave Fold profitability tests', async () => {
+// skipped as it relaying on the internal strategy checks
+//   function claimRewardPublic() public {
+//     claimReward();
+//   }
+// need to be updated to use bookkeper or similar.
+describe.skip('Universal Aave Fold profitability tests', async () => {
 
   if (argv.disableStrategyTests) {
     return;

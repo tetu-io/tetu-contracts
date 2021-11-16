@@ -84,16 +84,6 @@ async function startAaveFoldStrategyTest(
         lpForTargetToken,
         calculator
       );
-
-      // // ************** add funds for investing ************
-      // const baseAmount = 100_000;
-      // const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying));
-      // const amount = baseAmount / price;
-      // const undDec = await TokenUtils.decimals(underlying);
-      //
-      // await TokenUtils.getToken(underlying, user.address, utils.parseUnits(amount + '', undDec));
-      //
-      // console.log('############## Preparations completed ##################');
       const largest = (await calculator.getLargestPool(underlying, []));
       const tokenOpposite = largest[0];
       const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
