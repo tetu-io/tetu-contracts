@@ -19,7 +19,7 @@ async function main() {
   const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
 
   const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+    signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -49,31 +49,36 @@ async function main() {
 
     const vaultNameWithoutPrefix = `QUICK_${token0Name}_${token1Name}`;
 
-    const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
+    const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix) as string;
 
     if (!vAdr) {
       console.log('Vault not found!', vaultNameWithoutPrefix);
-      return;
+      continue;
+      // return;
     }
 
     const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
 
     if (!(await vCtr.active())) {
       console.log('vault not active', vAdr)
+      // continue;
+    } else {
+      // todo only deactivated
+      console.log('skip active vault', vAdr)
       continue;
     }
 
     console.log('strat', pool, lpName, vAdr, lpAddress, token0, token1);
 
     const strategy = await DeployerUtils.deployContract(
-        signer,
-        'StrategyQuickSwapLpV2',
-        core.controller,
-        vAdr,
-        lpAddress,
-        token0,
-        token1,
-        pool
+      signer,
+      'StrategyQuickSwapLpAc',
+      core.controller,
+      vAdr,
+      lpAddress,
+      token0,
+      token1,
+      pool
     ) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
@@ -81,7 +86,7 @@ async function main() {
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
-      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/quick/StrategyQuickSwapLpV2.sol:StrategyQuickSwapLpV2', [
+      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/quick/StrategyQuickSwapLpAc.sol:StrategyQuickSwapLpAc', [
         core.controller,
         vAdr,
         lpAddress,
@@ -96,8 +101,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

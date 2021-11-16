@@ -27,7 +27,7 @@ import "../infrastructure/price/IPriceCalculator.sol";
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.3";
+  string public constant VERSION = "1.0.4";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -472,6 +472,11 @@ contract ContractReader is Initializable, Controllable {
     uint256 rewardsPerTvlRatio = rewards.mul(PRECISION).div(tvl).mul(PRECISION);
     return rewardsPerTvlRatio.mul(PRECISION).div(duration.mul(PRECISION).div(1 days))
     .mul(uint256(365)).mul(uint256(100)).div(PRECISION);
+  }
+
+  // normalized precision
+  function vaultPpfs(address _vault) public view returns (uint256){
+    return normalizePrecision(ISmartVault(_vault).getPricePerFullShare(), vaultDecimals(_vault));
   }
 
   // normalized precision
