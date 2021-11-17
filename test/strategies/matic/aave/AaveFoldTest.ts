@@ -49,6 +49,10 @@ describe('Universal Aave Fold tests', async () => {
       console.log('skip ', tokenName);
       return;
     }
+
+    if (argv.onlyOneAaveFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest) {
+      return;
+    }
     console.log('start', idx, aTokenName);
 
     /* tslint:disable:no-floating-promises */

@@ -27,7 +27,7 @@ interface IAaveIncentivesController {
    * @param asset The address of the reference asset of the distribution
    * @return The asset index, the emission per second and the last updated timestamp
    **/
-  function assets(address asset) external view returns (uint128, uint128, uint256);
+  function assets(address _asset) external view returns (uint128, uint128, uint256);
 
   /**
    * @dev Whitelists an address to claim the rewards on behalf of another address
@@ -45,10 +45,10 @@ interface IAaveIncentivesController {
 
   /**
    * @dev Configure assets for a certain rewards emission
-   * @param assets The assets to incentivize
+   * @param _assets The assets to incentivize
    * @param emissionsPerSecond The emission for each asset
    */
-  function configureAssets(address[] calldata assets, uint256[] calldata emissionsPerSecond)
+  function configureAssets(address[] calldata _assets, uint256[] calldata emissionsPerSecond)
     external;
 
   /**
@@ -68,7 +68,7 @@ interface IAaveIncentivesController {
    * @param user The address of the user
    * @return The rewards
    **/
-  function getRewardsBalance(address[] calldata assets, address user)
+  function getRewardsBalance(address[] calldata _assets, address user)
     external
     view
     returns (uint256);
@@ -80,7 +80,7 @@ interface IAaveIncentivesController {
    * @return Rewards claimed
    **/
   function claimRewards(
-    address[] calldata assets,
+    address[] calldata _assets,
     uint256 amount,
     address to
   ) external returns (uint256);
@@ -94,7 +94,7 @@ interface IAaveIncentivesController {
    * @return Rewards claimed
    **/
   function claimRewardsOnBehalf(
-    address[] calldata assets,
+    address[] calldata _assets,
     uint256 amount,
     address user,
     address to
@@ -110,10 +110,10 @@ interface IAaveIncentivesController {
   /**
    * @dev returns the unclaimed rewards of the user
    * @param user the address of the user
-   * @param asset The asset to incentivize
+   * @param _assets The asset to incentivize
    * @return the user index for the asset
    */
-  function getUserAssetData(address user, address asset) external view returns (uint256);
+  function getUserAssetData(address user, address _assets) external view returns (uint256);
 
   /**
    * @dev for backward compatibility with previous implementation of the Incentives controller
