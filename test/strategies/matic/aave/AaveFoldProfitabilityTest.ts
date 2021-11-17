@@ -206,7 +206,7 @@ describe.skip('Universal Aave Fold profitability tests', async () => {
         expect(foldingProfPerToken).is.greaterThan(0);
 
         await TimeUtils.advanceBlocksOnTs(investingPeriod);
-        await strategy.claimRewardPublic();
+        // await strategy.claimRewardPublic();
 
         const underlyingBalanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(aToken, strategy.address), atDecimals);
 
