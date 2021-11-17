@@ -14,6 +14,7 @@ import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {utils} from "ethers";
 import {PriceCalculator} from "../../../../typechain";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -42,11 +43,28 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         return;
     }
 
+    const aavePipeIndex = 1;
+    const maiPipeIndex  = 3;
+    const balPipeIndex  = 4;
+
+    let airDropper: any;
+    const depositAmountStr = utils.parseUnits('100').toString()
+
+    const airdropTokenToPipe = async function(pipeIndex: number, tokenAddress: string, amount: string) {
+        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, utils.parseUnits(amount));
+        const bal = await TokenUtils.balanceOf(tokenAddress, airDropper.address);
+        const strategy = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
+        const pipeAddress = await strategy.pipes(pipeIndex);
+        await TokenUtils.transfer(tokenAddress, airDropper, pipeAddress, bal.toString());
+    }
+
+
     before(async function () {
         snapshotBefore = await TimeUtils.snapshot();
         // const [signer, user] = await ethers.getSigners();
         const signer = await DeployerUtils.impersonate();
         const user = (await ethers.getSigners())[1];
+        airDropper = (await ethers.getSigners())[2];
 
         const core = await DeployerUtils.getCoreAddressesWrapper(signer);
         const tools = await DeployerUtils.getToolsAddresses();
@@ -126,8 +144,10 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             calculator
         );
 
-        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100')); // 100 wmatic
+        await UniswapUtils.buyToken(user,MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000')); // 1000 wmatic
+        await UniswapUtils.buyToken(user,MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000')); // 1000 wmatic
         const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, user.address);
+
         console.log("User WMATIC balance: ", bal.toString());
 
         console.log('############## Preparations completed ##################');
@@ -145,11 +165,46 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await TimeUtils.rollback(snapshotBefore);
     });
 
-
-    it("do hard work with liq path", async () => {
+   /* it("do hard work with liq path", async () => {
         await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
             (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
             null
+        );
+    });*/
+
+    it("do hard work with liq path AAVE WMATIC rewards", async () => {
+        console.log('AAVE WMATIC rewards');
+        await StrategyTestUtils.doHardWorkWithLiqPath(
+            strategyInfo,
+            depositAmountStr,
+            null,
+            async () => {
+                await airdropTokenToPipe(aavePipeIndex, MaticAddresses.WMATIC_TOKEN, '5');
+            }
+        );
+    });
+
+    it("do hard work with liq path MAI QI rewards", async () => {
+        console.log('MAI QI rewards');
+        await StrategyTestUtils.doHardWorkWithLiqPath(
+            strategyInfo,
+            depositAmountStr,
+            null,
+            async () => {
+                await airdropTokenToPipe(maiPipeIndex, MaticAddresses.QI_TOKEN, '5');
+            }
+        );
+    });
+
+    it("do hard work with liq path Balancer BAL rewards", async () => {
+        console.log('Balancer BAL rewards');
+        await StrategyTestUtils.doHardWorkWithLiqPath(
+            strategyInfo,
+            depositAmountStr,
+            null,
+            async () => {
+                await airdropTokenToPipe(balPipeIndex, MaticAddresses.BAL_TOKEN, '5');
+            }
         );
     });
 

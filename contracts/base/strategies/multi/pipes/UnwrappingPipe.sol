@@ -18,28 +18,28 @@ contract UnwrappingPipe is Pipe {
     }
 
     /// @dev unwraps WETH
+    /// @param amount to unwrap
+    /// @return output amount of output units
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe put amount', amount);
         console.log('sourceToken (WETH)', sourceToken);
         console.log('sourceBalance()', sourceBalance());
         IWETH(sourceToken).withdraw(amount);
-        output = amount;
+        output = address(this).balance;
 
         if (haveNextPipe()) {
-            payable(address(nextPipe)).transfer(address(this).balance);
+            payable(address(nextPipe)).transfer(output);
         }
     }
 
-    /// @dev wraps WETH
+    /// @dev wraps WETH back
+    /// @param amount to wrap
+    /// @return output amount of source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe get amount', amount);
         IWETH(sourceToken).deposit{value:amount}();
-        output = amount;
-        console.log('output     ', output);
-        uint256 current = ERC20Balance(sourceToken);
-        console.log('current     ', current);
-        transferERC20toPrevPipe(sourceToken, current);
-        console.log('transferred', current);
+        output = ERC20Balance(sourceToken);
+        transferERC20toPrevPipe(sourceToken, output);
     }
 
     /// @dev underlying balance (ETH, MATIC)

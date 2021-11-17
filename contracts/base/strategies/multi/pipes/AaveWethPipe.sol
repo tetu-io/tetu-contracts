@@ -16,7 +16,7 @@ struct AaveWethPipeData {
     address rewardToken;
 }
 
-/// @title Wrapping Pipe Contract
+/// @title Aave Weth Pipe Contract
 /// @author bogdoslav
 contract AaveWethPipe is Pipe {
     using SafeERC20 for IERC20;
@@ -34,14 +34,10 @@ contract AaveWethPipe is Pipe {
     /// @dev function for investing, deposits, entering, borrowing
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('AaveWethPipe put amount', amount);
-        uint256 before = ERC20Balance(outputToken);
-
         IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
 
-        uint256 current = ERC20Balance(outputToken);
-        output = current - before;
-
-        transferERC20toNextPipe(outputToken, current);
+        output = ERC20Balance(outputToken);
+        transferERC20toNextPipe(outputToken, output);
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
@@ -53,11 +49,9 @@ contract AaveWethPipe is Pipe {
         ERC20Approve(outputToken, d.wethGateway, amount);
         IWETHGateway(d.wethGateway).withdrawETH(d.pool, amount, address(this));
 
-        uint256 current = address(this).balance;
-        output = current - before;
-
+        output = address(this).balance;
         if (havePrevPipe()) {
-            payable(payable(address(prevPipe))).transfer(current);
+            payable(payable(address(prevPipe))).transfer(output);
         }
     }
 

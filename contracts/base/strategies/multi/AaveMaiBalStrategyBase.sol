@@ -74,17 +74,21 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     }*/
 
 
-/// @dev Stub function for Strategy Base implementation
+/// @dev function for Strategy Base implementation
     function rewardPoolBalance() public override view returns (uint256 bal) {
         return _totalAmount;
     }
 
-    /// @dev Stub function for Strategy Base implementation
+    /// @dev HardWork function for Strategy Base implementation
     function doHardWork() external onlyNotPausedInvesting override restricted {
-        pumpIn(IERC20(_underlyingToken).balanceOf(address(this)));
-        liquidateReward();
+        console.log('### doHardWork');
+        uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
+        if (balance > 0) {
+            pumpIn(balance);
+        }
         rebalanceAllPipes();
         claimFromAllPipes();
+        liquidateReward();
         _totalAmount = calculator.getTotalAmountOut();
     }
 
@@ -111,9 +115,9 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         liquidateRewardDefault();
     }
 
-    /// @dev Stub function for Strategy Base implementation
+    /// @dev function for Strategy Base implementation
     function readyToClaim() external view override returns (uint256[] memory) {
-        uint256[] memory toClaim = new uint256[](_rewardTokens.length); //TODO
+        uint256[] memory toClaim = new uint256[](_rewardTokens.length);
         return toClaim;
     }
 

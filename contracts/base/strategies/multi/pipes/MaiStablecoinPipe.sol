@@ -22,7 +22,7 @@ struct MaiStablecoinPipeData {
     address rewardToken;
 }
 
-/// @title Wrapping Pipe Contract
+/// @title Mai Stablecoin Pipe Contract
 /// @author bogdoslav
 contract MaiStablecoinPipe is Pipe {
     using SafeERC20 for IERC20;
@@ -50,9 +50,9 @@ contract MaiStablecoinPipe is Pipe {
         console.log('deposited', depositedCollateralAmount);
         uint256 borrowAmount = _collateralToBorrowTokenAmountPercentage(depositedCollateralAmount, d.targetPercentage);
         console.log('borrow   ', borrowAmount);
-        output = borrow(borrowAmount);
-
-        transferERC20toNextPipe(d.borrowToken, ERC20Balance(d.borrowToken));
+        borrow(borrowAmount);
+        output = ERC20Balance(outputToken);
+        transferERC20toNextPipe(d.borrowToken, output);
     }
 
     /// @dev function for repaying debt then withdrawing from collateral
@@ -68,54 +68,46 @@ contract MaiStablecoinPipe is Pipe {
         console.log('withdrawAmount', withdrawAmount);
 
         uint256 collateralBefore = _stablecoin.vaultCollateral(vaultID);//TODO
-        console.log('-collateralBefore ', collateralBefore);//TODO
-        output = withdrawCollateral(withdrawAmount);
-        console.log('output            ', output);
+        console.log('-collateralBefore   ', collateralBefore);//TODO
+        uint256 collateralWithdrawn = withdrawCollateral(withdrawAmount);
+        console.log('-collateralWithdrawn', collateralWithdrawn);
         uint256 collateralCurrent = _stablecoin.vaultCollateral(vaultID); //TODO
-        console.log('-collateralCurrent', collateralCurrent);//TODO
+        console.log('-collateralCurrent  ', collateralCurrent);//TODO
 
-        transferERC20toPrevPipe(d.sourceToken, ERC20Balance(d.sourceToken));
+        output = ERC20Balance(sourceToken);
+        transferERC20toPrevPipe(sourceToken, output);
     }
 
     /// @dev function for investing, deposits, entering, borrowing
     /// @param amount in source units
     /// @return output in underlying units
-    function depositCollateral(uint256 amount) private returns (uint256 output) {
-        uint256 before = _stablecoin.vaultCollateral(vaultID);
-
+    function depositCollateral(uint256 amount) private {
+        console.log('*depositCollateral amount', amount);
         ERC20Approve(d.sourceToken, d.stablecoin, amount);
         _stablecoin.depositCollateral(vaultID, amount);
-
-        uint256 current = _stablecoin.vaultCollateral(vaultID);
-        output = current - before;
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
     /// @param amount in underlying units
     /// @return output in source units
-    function withdrawCollateral(uint256 amount) private returns (uint256 output) {
-        uint256 before = ERC20Balance(d.sourceToken);
-
+    function withdrawCollateral(uint256 amount) private {
+        console.log('*withdrawCollateral amount', amount);
         _stablecoin.withdrawCollateral(vaultID, amount);
-
-        uint256 current = ERC20Balance(d.sourceToken);
-        output = current - before;
     }
 
     /// @dev Borrow tokens
     /// @param borrowAmount in underlying units
     /// @return output in underlying units
-    function borrow(uint256 borrowAmount) private returns (uint256 output) {
-        console.log('borrowAmount', borrowAmount);
+    function borrow(uint256 borrowAmount) private {
+        console.log('*borrowAmount', borrowAmount);
         _stablecoin.borrowToken(vaultID, borrowAmount);
-        output = borrowAmount;
     }
 
     /// @dev Repay borrowed tokens
     /// @param amount in borrowed tokens
     /// @return output in collateral tokens
-    function repay(uint256 amount) private returns (uint256 output) {
-        console.log('repay amount', amount);
+    function repay(uint256 amount) private {
+        console.log('*repay amount', amount);
         uint256 debt = _stablecoin.vaultDebt(vaultID);
         console.log('debt        ', debt);
 
@@ -123,12 +115,6 @@ contract MaiStablecoinPipe is Pipe {
         console.log('repay Amount', repayAmount);
         ERC20Approve(d.borrowToken, d.stablecoin, amount);
         _stablecoin.payBackToken(vaultID, repayAmount);
-
-        uint256 current = _stablecoin.vaultDebt(vaultID);
-        console.log('current debt', current);
-        output = debt - current;
-        console.log('output      ', output);
-
     }
 
     function collateralDecimals() internal view returns (uint256) {
@@ -138,8 +124,6 @@ contract MaiStablecoinPipe is Pipe {
     function borrowDecimals() internal view returns (uint256) {
         return uint256(IERC20Metadata(_stablecoin.mai()).decimals());
     }
-
-
 
     /// @dev function for re balancing. When rebalance
     /// @return imbalance in underlying units

@@ -22,7 +22,7 @@ struct BalVaultPipeData {
     address rewardToken;
 }
 
-/// @title Wrapping Pipe Contract
+/// @title Balancer Vault Pipe Contract
 /// @author bogdoslav
 contract BalVaultPipe is Pipe {
     using SafeERC20 for IERC20;
@@ -37,14 +37,11 @@ contract BalVaultPipe is Pipe {
         rewardToken = _d.rewardToken;
     }
 
-    /// @dev function for investing, deposits, entering, borrowing
+    /// @dev Joins to the Balancer pool
     /// @param amount in source units
     /// @return output in underlying units
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('BalVaultPipe put amount', amount);
-        uint256 before = ERC20Balance(d.lpToken);
-
-        //  Function: joinPool(  bytes32 poolId,  address sender,  address recipient, JoinPoolRequest memory request)
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
         require(d.sourceToken == address(tokens[d.tokenIndex]), "BVP: Wrong source token");
         uint256[] memory maxAmountsIn = new uint256[](4);
@@ -64,23 +61,15 @@ contract BalVaultPipe is Pipe {
         ERC20Approve(sourceToken, d.vault, amount);
         IBVault(d.vault).joinPool(d.poolID, address(this), address(this), request);
 
-        uint256 current = ERC20Balance(outputToken);
-        output = current - before;
-
-        transferERC20toNextPipe(outputToken, current);
-
+        output = ERC20Balance(outputToken);
+        transferERC20toNextPipe(outputToken, output);
     }
 
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks
+    /// @dev Exits from the Balancer pool
     /// @param amount in underlying units
     /// @return output in source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('BalVaultPipe get amount', amount);
-        uint256 before = ERC20Balance(sourceToken);
-        console.log('before', before);
-
-        ERC20Approve(outputToken, d.vault, amount);
-
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
         require(sourceToken == address(tokens[d.tokenIndex]), "BVP: Wrong source token");
         uint256[] memory minAmountsOut = new uint256[](4);
@@ -96,15 +85,14 @@ contract BalVaultPipe is Pipe {
             toInternalBalance: false
         });
 
+        ERC20Approve(outputToken, d.vault, amount);
         IBVault(d.vault).exitPool(d.poolID, address(this), payable(address(this)), request);
 
-        uint256 current = ERC20Balance(sourceToken);
-        console.log('current', current);
-        output = current - before;
-
-        transferERC20toPrevPipe(sourceToken, current);
+        output = ERC20Balance(sourceToken);
+        transferERC20toPrevPipe(sourceToken, output);
     }
 
+    /// @dev Casts IERC20[] to IAsset[]
     function asIAsset(IERC20[] memory tokens) private pure returns (IAsset[] memory assets) {
         // solhint-disable-next-line no-inline-assembly
         assembly {

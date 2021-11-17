@@ -15,7 +15,7 @@ struct MaiCamWMaticPipeData {
     address rewardToken;
 }
 
-/// @title Wrapping Pipe Contract
+/// @title Mai CamWMatic Pipe Contract
 /// @author bogdoslav
 contract MaiCamWMaticPipe is Pipe {
     using SafeERC20 for IERC20;
@@ -36,15 +36,11 @@ contract MaiCamWMaticPipe is Pipe {
     /// @return output in underlying units
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('MaiCamWMaticPipe put amount', amount);
-        uint256 before = ERC20Balance(outputToken);
-
         ERC20Approve(sourceToken, d.lpToken, amount);
         ICamWMATIC(outputToken).enter(amount);
 
-        uint256 current = ERC20Balance(outputToken);
-        output = current - before;
-
-        transferERC20toNextPipe(outputToken, current);
+        output = ERC20Balance(outputToken);
+        transferERC20toNextPipe(outputToken, output);
     }
 
     /// @dev function for de-vesting, withdrawals, leaves, paybacks
@@ -52,14 +48,10 @@ contract MaiCamWMaticPipe is Pipe {
     /// @return output in source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('MaiCamWMaticPipe get amount', amount);
-        uint256 before = ERC20Balance(sourceToken);
-
         ICamWMATIC(d.lpToken).leave(amount);
 
-        uint256 current = ERC20Balance(sourceToken);
-        output = current - before;
-
-        transferERC20toPrevPipe(sourceToken, current);
+        output = ERC20Balance(sourceToken);
+        transferERC20toPrevPipe(sourceToken, output);
     }
 
 }

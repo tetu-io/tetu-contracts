@@ -107,7 +107,9 @@ abstract contract Pipe {
 
         uint256 amount = IERC20(rewardToken).balanceOf(address(this));
         console.log('claim amount', amount, name);
-        IERC20(rewardToken).safeTransfer(_pipeline, amount);
+        if (amount > 0 ) {
+            IERC20(rewardToken).safeTransfer(_pipeline, amount);
+        }
     }
 
     /// @dev available source balance (tokens, matic etc). Must be implemented for first pipe in line.

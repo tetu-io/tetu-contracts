@@ -55,7 +55,13 @@ export class StrategyTestUtils {
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc: (() => Promise<BigNumber[]>) | null) {
+  /// @param toDropRewardsFunc drop rewards in this func
+  public static async doHardWorkWithLiqPath(
+      info: StrategyInfo,
+      deposit: string,
+      toClaimCalcFunc: (() => Promise<BigNumber[]>) | null,
+      toDropRewardsFunc?: (() => Promise<void>))
+  {
     const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
@@ -101,6 +107,9 @@ export class StrategyTestUtils {
     }
 
     const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
+
+    // ** call callback, so test can send some reward tokens to the contract
+    if (toDropRewardsFunc != null) await toDropRewardsFunc();
 
     // ** doHardWork
     await VaultUtils.doHardWorkAndCheck(info.vault);
