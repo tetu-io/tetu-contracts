@@ -179,8 +179,9 @@ export class StrategyTestUtils {
     }
     for (let i = 0; i < tokens.length; i++) {
       const rtDec = await TokenUtils.decimals(tokens[i]);
+      const expected = utils.formatUnits(balances[i] || 0, rtDec);
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokens[i], strategy.address), rtDec))
-        .is.approximately(+utils.formatUnits(balances[i], rtDec), 0.0000000001, 'strategy has wrong reward balance for ' + i);
+        .is.approximately(+expected, 0.0000000001, 'strategy has wrong reward balance for ' + i);
     }
   }
 

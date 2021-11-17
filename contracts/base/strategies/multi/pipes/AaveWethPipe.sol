@@ -31,7 +31,9 @@ contract AaveWethPipe is Pipe {
         rewardToken = _d.rewardToken;
     }
 
-    /// @dev function for investing, deposits, entering, borrowing
+    /// @dev Deposits MATIC to Aave
+    /// @param amount to deposit (MATIC)
+    /// @return output amount of output units (amMATIC)
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('AaveWethPipe put amount', amount);
         IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
@@ -40,11 +42,11 @@ contract AaveWethPipe is Pipe {
         transferERC20toNextPipe(outputToken, output);
     }
 
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks
+    /// @dev Withdraws MATIC from Aave
+    /// @param amount to unwrap
+    /// @return output amount of source units (MATIC)
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('AaveWethPipe get amount', amount);
-
-        uint256 before = address(this).balance;
 
         ERC20Approve(outputToken, d.wethGateway, amount);
         IWETHGateway(d.wethGateway).withdrawETH(d.pool, amount, address(this));
@@ -55,13 +57,13 @@ contract AaveWethPipe is Pipe {
         }
     }
 
-    /// @dev available ETH (MATIC) source balance
+    /// @dev available MATIC source balance
     /// @return balance in source units
     function sourceBalance() override public view returns (uint256) {
         return address(this).balance;
     }
 
-    /// @dev to receive Ether (Matic)
+    /// @dev to receive Ether (Matic) from Aave
     receive() external payable {}
 
 }

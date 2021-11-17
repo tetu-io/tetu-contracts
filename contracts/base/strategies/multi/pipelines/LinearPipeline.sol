@@ -98,6 +98,7 @@ contract LinearPipeline {
     function pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex)
     internal returns (uint256 amountOut) {
         console.log('pumpOutSource sourceAmount, toPipeIndex', sourceAmount, toPipeIndex);
+        if (sourceAmount == 0) return 0;
         uint256 underlyingAmount = calculator.getAmountInForAmountOut(sourceAmount, toPipeIndex);
         return pumpOut(underlyingAmount, toPipeIndex);
     }

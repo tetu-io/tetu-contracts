@@ -88,6 +88,13 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         }
         rebalanceAllPipes();
         claimFromAllPipes();
+        console.log('_rewardTokens.length', _rewardTokens.length);
+        uint256 balanceWMATIC = IERC20(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270).balanceOf(address(this));
+        console.log('balanceWMATIC', balanceWMATIC);
+        uint256 balanceQI     = IERC20(0x580A84C73811E1839F75d86d75d88cCa0c241fF4).balanceOf(address(this));
+        console.log('balanceQI', balanceQI);
+        uint256 balanceBAL    = IERC20(0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3).balanceOf(address(this));
+        console.log('balanceBAL', balanceBAL);
         liquidateReward();
         _totalAmount = calculator.getTotalAmountOut();
     }
@@ -100,6 +107,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     /// @dev Stub function for Strategy Base implementation
     function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
+        claimFromAllPipes();
         pumpOutSource(underlyingAmount, 0);
         _totalAmount = calculator.getTotalAmountOut();
     }

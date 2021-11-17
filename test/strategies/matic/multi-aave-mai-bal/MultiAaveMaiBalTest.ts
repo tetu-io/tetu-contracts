@@ -64,7 +64,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         // const [signer, user] = await ethers.getSigners();
         const signer = await DeployerUtils.impersonate();
         const user = (await ethers.getSigners())[1];
-        airDropper = (await ethers.getSigners())[2];
+        airDropper = user;
+        // airDropper = (await ethers.getSigners())[2];
 
         const core = await DeployerUtils.getCoreAddressesWrapper(signer);
         const tools = await DeployerUtils.getToolsAddresses();
@@ -144,8 +145,11 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             calculator
         );
 
-        await UniswapUtils.buyToken(user,MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000')); // 1000 wmatic
-        await UniswapUtils.buyToken(user,MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000')); // 1000 wmatic
+        await UniswapUtils.buyToken(user,
+            MaticAddresses.SUSHI_ROUTER,
+            MaticAddresses.WMATIC_TOKEN,
+            utils.parseUnits('105') // 100 wmatic for deposit and 5 for rewards
+        );
         const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, user.address);
 
         console.log("User WMATIC balance: ", bal.toString());

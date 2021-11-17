@@ -15,7 +15,7 @@ import "../../../base/strategies/multi/AaveMaiBalStrategyBase.sol";
 
 contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
 
-    uint256 private constant _maiCollateralToDebtTargetPercentage = 200;
+    uint16 private constant _maiCollateralToDebtTargetPercentage = 200;
 
     address private constant _WMATIC    = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address private constant _amWMATIC  = 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4; // Aave Matic Market WMATIC (amWMATIC)

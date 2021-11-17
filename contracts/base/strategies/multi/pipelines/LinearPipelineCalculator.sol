@@ -36,6 +36,8 @@ contract LinearPipelineCalculator {
 
     function getAmountInForAmountOut(uint256 amountOut, uint256 toPipeIndex)
     public returns (uint256 amountIn) {
+        if (amountOut == 0) return 0;
+
         uint256 totalIn  = pipeline.getMostUnderlyingBalance();
         uint256 totalOut = getAmountOut(amountIn, toPipeIndex);
 
