@@ -30,16 +30,23 @@ contract LinearPipelineCalculator {
     public returns (uint256) {
         uint256 amountIn = pipeline.getMostUnderlyingBalance();
         uint256 amountOut = getAmountOut(amountIn, 0);
-        console.log('amountOut', amountOut);
+        console.log('getTotalAmountOut amountOut', amountOut);
         return amountOut;
     }
 
+    /// @dev Calculates how much we have to pump out to receive amountOut
+    /// @param amountOut in source units of toPipeIndex
+    /// @param toPipeIndex index of the pipe to pump out
     function getAmountInForAmountOut(uint256 amountOut, uint256 toPipeIndex)
     public returns (uint256 amountIn) {
+        console.log('getAmountInForAmountOut amountOut, toPipeIndex', amountOut, toPipeIndex);
         if (amountOut == 0) return 0;
 
         uint256 totalIn  = pipeline.getMostUnderlyingBalance();
+        console.log('   totalIn', totalIn);
         uint256 totalOut = getAmountOut(amountIn, toPipeIndex);
+        console.log('   totalOut', totalOut);
+        if (totalOut == 0) return 0;
 
         amountIn = totalIn.mul(amountOut).div(totalOut);
     }

@@ -65,6 +65,7 @@ contract LinearPipeline {
     function pumpIn(uint256 sourceAmount)
     internal returns (uint256 outputAmount)  {
         console.log('=== pumpIn sourceAmount', sourceAmount);
+        if (sourceAmount == 0) return 0;
         // send token to first pipe
         IERC20(_underlyingToken).safeTransfer(address(pipes[0]), sourceAmount);
         outputAmount = pumpIn(sourceAmount, 0);
@@ -94,7 +95,7 @@ contract LinearPipeline {
     /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
     /// @param sourceAmount in source units
     /// @param toPipeIndex pump out to pipe with this index
-    /// @return amountOut in source units
+    /// @return amountOut in source units of pipe with toPipeIndex
     function pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex)
     internal returns (uint256 amountOut) {
         console.log('pumpOutSource sourceAmount, toPipeIndex', sourceAmount, toPipeIndex);

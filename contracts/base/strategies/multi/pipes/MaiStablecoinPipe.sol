@@ -101,7 +101,7 @@ contract MaiStablecoinPipe is Pipe {
 
     /// @dev Repay borrowed tokens
     /// @param amount in borrowed tokens
-    /// @return output in collateral tokens
+    /// @return output in borrowed tokens
     function repay(uint256 amount) private returns (uint256 output) {
         console.log('*repay amount', amount);
         uint256 debt = _stablecoin.vaultDebt(vaultID);
@@ -114,17 +114,17 @@ contract MaiStablecoinPipe is Pipe {
         output = repayAmount;
     }
 
-    function collateralDecimals() internal view returns (uint256) {
+   /* function collateralDecimals() internal view returns (uint256) {
         return uint256(IERC20Metadata(_stablecoin.collateral()).decimals());
     }
 
     function borrowDecimals() internal view returns (uint256) {
         return uint256(IERC20Metadata(_stablecoin.mai()).decimals());
-    }
+    }*/
 
     /// @dev function for re balancing. When rebalance
     /// @return imbalance in underlying units
-    /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
+    /// @return deficit - when true, then asks to receive underlying imbalance amount, when false - put imbalance to next pipe,
     function rebalance() override onlyPipeline public returns (uint256 imbalance, bool deficit) {
         uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
         if (collateralPercentage == 0) {
@@ -132,18 +132,24 @@ contract MaiStablecoinPipe is Pipe {
         }
 
         if ((collateralPercentage + d.maxImbalance) < d.targetPercentage) {
-
+            // we have deficit
             uint256 targetBorrow = _percentageToBorrowTokenAmount(d.targetPercentage);
+            console.log('targetBorrow', targetBorrow);
             uint256 debt = _stablecoin.vaultDebt(vaultID);
+            console.log('debt', debt);
             uint256 repayAmount = debt - targetBorrow;
+            console.log('repayAmount', repayAmount);
 
             uint256 available = ERC20Balance(d.borrowToken);
+            console.log('available', available);
             uint256 paidAmount = Math.min(repayAmount, available);
+            console.log('paidAmount', paidAmount);
             if (paidAmount > 0) {
                 repay(paidAmount);
             }
 
             uint256 change = ERC20Balance(d.borrowToken);
+            console.log('change', change);
             if (change > 0) {
                 transferERC20toNextPipe(d.borrowToken, change);
                 return (change, false);
@@ -152,13 +158,17 @@ contract MaiStablecoinPipe is Pipe {
             }
 
         } else if (collateralPercentage > (uint256(d.targetPercentage) + d.maxImbalance)) {
-
+            // we have excess
             uint256 targetBorrow = _percentageToBorrowTokenAmount(d.targetPercentage);
+            console.log('   targetBorrow', targetBorrow);
             uint256 debt = _stablecoin.vaultDebt(vaultID);
+            console.log('   debt', debt);
             if (debt < targetBorrow) {
                 borrow(targetBorrow - debt);
             }
             uint256 excess = ERC20Balance(d.borrowToken);
+            console.log('   excess', excess);
+            transferERC20toNextPipe(d.borrowToken, excess);
             return (excess, false);
         }
 
