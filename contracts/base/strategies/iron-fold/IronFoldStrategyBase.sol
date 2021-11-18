@@ -57,8 +57,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     address _rToken,
     address _ironController,
     uint256 _borrowTargetFactorNumerator,
-    uint256 _collateralFactorNumerator,
-    uint256 _factorDenominator
+    uint256 _collateralFactorNumerator
   ) FoldingBase(
     _controller,
     _underlying,
@@ -66,8 +65,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     __rewardTokens,
     _BUY_BACK_RATIO,
     _borrowTargetFactorNumerator,
-    _collateralFactorNumerator,
-    _factorDenominator
+    _collateralFactorNumerator
   ) {
     require(_rToken != address(0), "IFS: Zero address rToken");
     require(_ironController != address(0), "IFS: Zero address ironController");

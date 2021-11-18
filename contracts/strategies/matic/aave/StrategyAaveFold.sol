@@ -17,12 +17,23 @@ import "../../../base/strategies/aave/AaveFoldStrategyBase.sol";
 contract StrategyAaveFold is AaveFoldStrategyBase {
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND;
-  // rewards
+
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
+  address public constant AAVE_LENDING_POOL = 0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf;
+  address public constant AAVE_CONTROLLER = 0x357D51124f59836DeD84c8a1730D72B749d8BC23;
+  address public constant AAVE_DATA_PROVIDER = 0x7551b5D2763519d4e37e8B81929D336De671d46d;
+  address public constant AAVE_LENDING_POOL_ADDRESSES_PROVIDER = 0xd05e3E715d945B59290df0ae8eF85c1BdB684744;
+
+  AaveData private _aaveData = AaveData(
+    WMATIC,
+    AAVE_LENDING_POOL,
+    AAVE_CONTROLLER,
+    AAVE_DATA_PROVIDER,
+    AAVE_LENDING_POOL_ADDRESSES_PROVIDER
+  );
+
   address[] private _poolRewards = [WMATIC];
   address[] private _assets;
-
-  uint256 _FACTOR_DENOMINATOR = 10000;
 
   constructor(
     address _controller,
@@ -31,13 +42,13 @@ contract StrategyAaveFold is AaveFoldStrategyBase {
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator
   ) AaveFoldStrategyBase(
-      _controller,
-      _underlying,
-      _vault,
-      _poolRewards,
-      _borrowTargetFactorNumerator,
-      _collateralFactorNumerator,
-      _FACTOR_DENOMINATOR
+    _controller,
+    _underlying,
+    _vault,
+    _poolRewards,
+    _borrowTargetFactorNumerator,
+    _collateralFactorNumerator,
+    _aaveData
   ) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(_underlying);

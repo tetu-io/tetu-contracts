@@ -27,14 +27,14 @@ abstract contract FoldingBase is StrategyBase {
   // ************ VARIABLES **********************
   /// @dev Maximum folding loops
   uint256 public constant MAX_DEPTH = 20;
+  /// @notice Denominator value for the both above mentioned ratios
+  uint256 public _FACTOR_DENOMINATOR = 10000;
 
   /// @notice Numerator value for the targeted borrow rate
   uint256 public borrowTargetFactorNumeratorStored;
   uint256 public borrowTargetFactorNumerator;
   /// @notice Numerator value for the asset market collateral value
   uint256 public collateralFactorNumerator;
-  /// @notice Denominator value for the both above mentioned ratios
-  uint256 public factorDenominator;
   /// @notice Use folding
   bool public fold = true;
 
@@ -64,12 +64,9 @@ abstract contract FoldingBase is StrategyBase {
     address[] memory __rewardTokens,
     uint256 __buyBackRatio,
     uint256 _borrowTargetFactorNumerator,
-    uint256 _collateralFactorNumerator,
-    uint256 _factorDenominator
+    uint256 _collateralFactorNumerator
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, __buyBackRatio) {
-    factorDenominator = _factorDenominator;
-
-    require(_collateralFactorNumerator < factorDenominator, "FS: Collateral factor cannot be this high");
+    require(_collateralFactorNumerator < _FACTOR_DENOMINATOR, "FS: Collateral factor cannot be this high");
     collateralFactorNumerator = _collateralFactorNumerator;
 
     require(_borrowTargetFactorNumerator < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
@@ -110,7 +107,7 @@ abstract contract FoldingBase is StrategyBase {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 balance = supplied - borrowed;
     return balance * borrowTargetFactorNumerator
-    / (factorDenominator - borrowTargetFactorNumerator);
+    / (_FACTOR_DENOMINATOR - borrowTargetFactorNumerator);
   }
 
   // ************* GOV ACTIONS **************
@@ -140,7 +137,7 @@ abstract contract FoldingBase is StrategyBase {
 
   /// @dev Set collateral rate for asset market
   function setCollateralFactorNumerator(uint256 _target) external restricted {
-    require(_target < factorDenominator, "FS: Collateral factor cannot be this high");
+    require(_target < _FACTOR_DENOMINATOR, "FS: Collateral factor cannot be this high");
     collateralFactorNumerator = _target;
     emit CollateralFactorNumeratorChanged(_target);
   }
@@ -259,7 +256,7 @@ abstract contract FoldingBase is StrategyBase {
     uint256 i = 0;
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget - borrowed;
-      uint256 maxBorrow = (supplied * collateralFactorNumerator / factorDenominator) - borrowed;
+      uint256 maxBorrow = (supplied * collateralFactorNumerator / _FACTOR_DENOMINATOR) - borrowed;
       _borrow(Math.min(wantBorrow, maxBorrow));
       uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
       if (underlyingBalance > 0) {
@@ -285,11 +282,11 @@ abstract contract FoldingBase is StrategyBase {
     if (amount < oldBalance) {
       newBalance = oldBalance - amount;
     }
-    uint256 newBorrowTarget = newBalance * borrowTargetFactorNumerator / (factorDenominator - borrowTargetFactorNumerator);
+    uint256 newBorrowTarget = newBalance * borrowTargetFactorNumerator / (_FACTOR_DENOMINATOR - borrowTargetFactorNumerator);
     uint256 underlyingBalance = 0;
     uint256 i = 0;
     while (borrowed > newBorrowTarget) {
-      uint256 requiredCollateral = borrowed * factorDenominator / collateralFactorNumerator;
+      uint256 requiredCollateral = borrowed * _FACTOR_DENOMINATOR / collateralFactorNumerator;
       uint256 toRepay = borrowed - newBorrowTarget;
       if (supplied < requiredCollateral) {
         break;
