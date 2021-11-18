@@ -15,14 +15,9 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./StrategyBase.sol";
-import "../../third_party/iron/CompleteRToken.sol";
-import "../../third_party/iron/IRMatic.sol";
-import "../../third_party/iron/IronPriceOracle.sol";
 import "../interface/ISmartVault.sol";
-import "../../third_party/IWmatic.sol";
-import "../interface/IIronFoldStrategy.sol";
+import "../../third_party/IERC20Extended.sol";
 
 /// @title Abstract contract for folding strategy
 /// @author belbix
@@ -82,23 +77,9 @@ abstract contract FoldingBase is StrategyBase {
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
   }
 
-  ///////////// gov actions should be override as restricted
-
-  function setFold(bool _fold) public virtual;
-
-  function rebalance() public virtual;
-
-  function setBorrowTargetFactorNumeratorStored(uint256 _target) public virtual;
-
-  function stopFolding() public virtual;
-
-  function startFolding() public virtual;
-
   ///////////// internal functions require specific implementation for each platforms
 
   function _getInvestmentData() internal virtual returns (uint256 supplied, uint256 borrowed);
-
-  function _isMatic() internal view virtual returns (bool);
 
   function _isFoldingProfitable() internal view virtual returns (bool);
 
@@ -106,7 +87,7 @@ abstract contract FoldingBase is StrategyBase {
 
   //////////// require update balance in the end
 
-  function _supply(uint256 amount) internal virtual returns (uint256);
+  function _supply(uint256 amount) internal virtual;
 
   function _borrow(uint256 amountUnderlying) internal virtual;
 
@@ -117,8 +98,6 @@ abstract contract FoldingBase is StrategyBase {
   function _repay(uint256 amountUnderlying) internal virtual;
 
   function _redeemMaximumWithLoan() internal virtual;
-
-
 
   // ************* VIEW **********************
 
@@ -136,11 +115,82 @@ abstract contract FoldingBase is StrategyBase {
 
   // ************* GOV ACTIONS **************
 
+  /// @dev Set use folding
+  function setFold(bool _fold) public restricted {
+    _setFold(_fold);
+  }
+
+  /// @dev Rebalances the borrow ratio
+  function rebalance() public restricted {
+    _rebalance();
+  }
+
+  /// @dev Set borrow rate target
+  function setBorrowTargetFactorNumeratorStored(uint256 _target) public restricted {
+    _setBorrowTargetFactorNumeratorStored(_target);
+  }
+
+  function stopFolding() public restricted {
+    _stopFolding();
+  }
+
+  function startFolding() public restricted {
+    _startFolding();
+  }
+
   /// @dev Set collateral rate for asset market
   function setCollateralFactorNumerator(uint256 _target) external restricted {
     require(_target < factorDenominator, "FS: Collateral factor cannot be this high");
     collateralFactorNumerator = _target;
     emit CollateralFactorNumeratorChanged(_target);
+  }
+
+  //////////////////////////////////////////////////////
+  //////////// STRATEGY FUNCTIONS IMPLEMENTATIONS //////
+  //////////////////////////////////////////////////////
+
+  /// @notice Strategy balance supplied minus borrowed
+  /// @return bal Balance amount in underlying tokens
+  function rewardPoolBalance() public override view returns (uint256) {
+    return suppliedInUnderlying - borrowedInUnderlying;
+  }
+
+  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
+  function doHardWork() external onlyNotPausedInvesting override restricted {
+    _claimReward();
+    _compound();
+    liquidateReward();
+    investAllUnderlying();
+    if (!isFoldingProfitable() && fold) {
+      stopFolding();
+    } else if (isFoldingProfitable() && !fold) {
+      startFolding();
+    } else {
+      rebalance();
+    }
+  }
+
+  /// @dev Withdraw underlying from Iron MasterChef finance
+  /// @param amount Withdraw amount
+  function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
+    _claimReward();
+    _redeemPartialWithLoan(amount);
+  }
+
+  /// @dev Exit from external project without caring about rewards
+  ///      For emergency cases only!
+  function emergencyWithdrawFromPool() internal override updateSupplyInTheEnd {
+    _redeemMaximumWithLoan();
+  }
+
+  /// @dev Should withdraw all available assets
+  function exitRewardPool() internal override updateSupplyInTheEnd {
+    uint256 bal = rewardPoolBalance();
+    if (bal != 0) {
+      _claimReward();
+      _redeemMaximumWithLoan();
+      // reward liquidation can ruin transaction, do it in hard work process
+    }
   }
 
   //////////////////////////////////////////////////////
@@ -177,15 +227,15 @@ abstract contract FoldingBase is StrategyBase {
 
   function _stopFolding() internal {
     borrowTargetFactorNumerator = 0;
-    setFold(false);
-    rebalance();
+    _setFold(false);
+    _rebalance();
     emit FoldStopped();
   }
 
   function _startFolding() internal {
     borrowTargetFactorNumerator = borrowTargetFactorNumeratorStored;
-    setFold(true);
-    rebalance();
+    _setFold(true);
+    _rebalance();
     emit FoldStarted(borrowTargetFactorNumeratorStored);
   }
 
@@ -319,16 +369,16 @@ abstract contract FoldingBase is StrategyBase {
     if (ppfs > ppfsPeg) {
       uint256 totalUnderlyingBalance = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
       if (totalUnderlyingBalance == 0
-      || ERC20(_smartVault).totalSupply() == 0
-      || totalUnderlyingBalance < ERC20(_smartVault).totalSupply()
-        || totalUnderlyingBalance - ERC20(_smartVault).totalSupply() < 2) {
+      || IERC20Extended(_smartVault).totalSupply() == 0
+      || totalUnderlyingBalance < IERC20Extended(_smartVault).totalSupply()
+        || totalUnderlyingBalance - IERC20Extended(_smartVault).totalSupply() < 2) {
         // no actions in case of no money
         emit NoMoneyForLiquidateUnderlying();
         return;
       }
       // ppfs = 1 if underlying balance = total supply
       // -1 for avoiding problem with rounding
-      uint256 toLiquidate = (totalUnderlyingBalance - ERC20(_smartVault).totalSupply()) - 1;
+      uint256 toLiquidate = (totalUnderlyingBalance - IERC20Extended(_smartVault).totalSupply()) - 1;
       if (underlyingBalance() < toLiquidate) {
         _redeemPartialWithLoan(toLiquidate - underlyingBalance());
       }

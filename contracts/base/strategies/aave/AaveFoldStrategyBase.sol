@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../StrategyBase.sol";
+import "../FoldingBase.sol";
 
 import "../../interface/ISmartVault.sol";
 import "../../../third_party/IWmatic.sol";
@@ -34,7 +34,7 @@ import "../../../third_party/aave/IPriceOracle.sol";
 /// @author JasperS13
 /// @author belbix
 /// @author olegn
-abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
+abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -54,9 +54,8 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   string public constant VERSION = "1.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
-  /// @dev Maximum folding loops
-  uint256 public constant MAX_DEPTH = 20;
 
+  // todo move to attributes
   address public constant WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant AMWMATIC = 0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4;
@@ -74,37 +73,7 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
   address public override aToken;
   address public override dToken;
 
-  /// @notice Numerator value for the targeted borrow rate
-  uint256 public borrowTargetFactorNumeratorStored;
-  uint256 public borrowTargetFactorNumerator;
-  /// @notice Numerator value for the asset market collateral value
-  uint256 public collateralFactorNumerator;
-  /// @notice Denominator value for the both above mentioned ratios
-  uint256 public factorDenominator;
-  /// @notice Use folding
-  bool public fold = true;
-
-  /// @notice Strategy balance parameters to be tracked
-  uint256 public suppliedInUnderlying;
-  uint256 public borrowedInUnderlying;
-
-  event FoldChanged(bool value);
-  event FoldStopped();
-  event FoldStarted(uint256 borrowTargetFactorNumerator);
-  event MaxDepthReached();
-  event NoMoneyForLiquidateUnderlying();
-  event UnderlyingLiquidationFailed();
-  event Rebalanced(uint256 supplied, uint256 borrowed, uint256 borrowTarget);
-  event BorrowTargetFactorNumeratorChanged(uint256 value);
-  event CollateralFactorNumeratorChanged(uint256 value);
-
-  modifier updateSupplyInTheEnd() {
-    _;
-    (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
-  }
-
   /// @notice Contract constructor using on strategy implementation
-  /// @dev The implementation should check each parameter
   constructor(
     address _controller,
     address _underlying,
@@ -113,22 +82,140 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     uint256 _borrowTargetFactorNumerator,
     uint256 _collateralFactorNumerator,
     uint256 _factorDenominator
-  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
+  ) FoldingBase(
+    _controller,
+    _underlying,
+    _vault,
+    __rewardTokens,
+    _BUY_BACK_RATIO,
+    _borrowTargetFactorNumerator,
+    _collateralFactorNumerator,
+    _factorDenominator
+  ) {
     (aToken,,dToken) = dataProvider.getReserveTokensAddresses(_underlying);
     address _lpt = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
     require(_lpt == _underlyingToken, "AFS: Wrong underlying");
-
-    factorDenominator = _factorDenominator;
-
-    require(_collateralFactorNumerator < factorDenominator, "AFS: Collateral factor cannot be this high");
-    collateralFactorNumerator = _collateralFactorNumerator;
-
-    require(_borrowTargetFactorNumerator < collateralFactorNumerator, "AFS: Target should be lower than collateral limit");
-    borrowTargetFactorNumeratorStored = _borrowTargetFactorNumerator;
-    borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
   }
 
-  // ************* VIEWS *******************
+  /////////////////////////////////////////////
+  ////////////BASIC STRATEGY FUNCTIONS/////////
+  /////////////////////////////////////////////
+
+  /// @notice Return approximately amount of reward tokens ready to claim in AAVE Lending pool
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @return Array with amounts ready to claim
+  function readyToClaim() external view override returns (uint256[] memory) {
+    uint256[] memory rewards = new uint256[](1);
+    rewards[0] = aaveController.getUserUnclaimedRewards(address(this));
+    return rewards;
+  }
+
+  /// @notice TVL of the underlying in the aToken contract
+  /// @dev Only for statistic
+  /// @return Pool TVL
+  function poolTotalAmount() external view override returns (uint256) {
+    return IERC20(_underlyingToken).balanceOf(aToken);
+  }
+
+  /// @dev Do something useful with farmed rewards
+  function liquidateReward() internal override {
+    liquidateRewardDefault();
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////
+  ///////////// internal functions require specific implementation for each platforms ///
+  ///////////////////////////////////////////////////////////////////////////////////////
+
+  function _getInvestmentData() internal view override returns (uint256, uint256) {
+    (uint256 suppliedUnderlying,,uint256 borrowedUnderlying,,,,,,) = dataProvider.getUserReserveData(_underlyingToken, address(this));
+    return (suppliedUnderlying, borrowedUnderlying);
+  }
+
+  /// @dev Return true if we can gain profit with folding
+  function _isFoldingProfitable() internal view override returns (bool) {
+    (uint256 supplyRewardsInWethPT,
+    uint256 borrowRewardsInWethPT,
+    uint256 supplyUnderlyingProfitInWethPT,
+    uint256 debtUnderlyingCostInWethPT) = normTotalRewardPredictionInWeth(_PROFITABILITY_PERIOD);
+
+    uint256 foldingProfitPerToken = supplyRewardsInWethPT + borrowRewardsInWethPT + supplyUnderlyingProfitInWethPT;
+    return foldingProfitPerToken > debtUnderlyingCostInWethPT;
+  }
+
+  /// @dev Claim distribution rewards
+  function _claimReward() internal override {
+    address[] memory assets = new address[](2);
+    assets[0] = aToken;
+    assets[1] = dToken;
+    aaveController.claimRewards(assets, type(uint256).max, address(this));
+  }
+
+  //////////// require update balance in the end
+
+  function _supply(uint256 amount) internal override updateSupplyInTheEnd {
+    amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
+    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
+    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, amount);
+    lPool.deposit(_underlyingToken, amount, address(this), 0);
+  }
+
+  /// @dev Borrows against the collateral
+  function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+    // Borrow, check the balance for this contract's address
+    lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this));
+  }
+
+  /// @dev Redeem liquidity in underlying
+  function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+    // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
+    (uint256 suppliedUnderlying,) = _getInvestmentData();
+    amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
+    if (amountUnderlying > 0) {
+      lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
+    }
+  }
+
+  /// @dev Redeem liquidity in aToken
+  function _redeemLoanToken(uint256 amount) internal override updateSupplyInTheEnd {
+    if (amount > 0) {
+      lPool.withdraw(_underlyingToken, amount, address(this));
+      uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
+      require(aTokenBalance == 0, "AFS: Redeem failed");
+    }
+  }
+
+  /// @dev Repay a loan
+  function _repay(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+    if (amountUnderlying != 0) {
+      IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
+      IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, amountUnderlying);
+      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
+    }
+  }
+
+  /// @dev Redeems the maximum amount of underlying.
+  ///      Either all of the balance or all of the available liquidity.
+  function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
+    // amount of liquidity
+    (uint256 availableLiquidity,,,,,,,,,) = dataProvider.getReserveData(_underlyingToken);
+    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
+    uint256 balance = supplied.sub(borrowed);
+    _redeemPartialWithLoan(Math.min(availableLiquidity, balance));
+
+    // we have a little amount of supply after full exit
+    // better to redeem rToken amount for avoid rounding issues
+    (supplied, borrowed) = _getInvestmentData();
+    uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
+
+    if (aTokenBalance > 0) {
+      _redeemLoanToken(aTokenBalance);
+    }
+  }
+
+  /////////////////////////////////////////////
+  ////////////SPECIFIC INTERNAL FUNCTIONS//////
+  /////////////////////////////////////////////
+
 
   /// @notice return WMATIC reward forecast for aave token (supply or debt)
   /// @dev Don't use it in any internal logic, only for statistical purposes
@@ -262,366 +349,5 @@ abstract contract AaveFoldStrategyBase is StrategyBase, IAveFoldStrategy {
     return ERC20(_underlyingToken).decimals();
   }
 
-  /// @notice Strategy balance supplied minus borrowed
-  /// @return bal Balance amount in underlying tokens
-  function rewardPoolBalance() public override view returns (uint256) {
-    return suppliedInUnderlying.sub(borrowedInUnderlying);
-  }
 
-  /// @notice Return approximately amount of reward tokens ready to claim in AAVE Lending pool
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @return Array with amounts ready to claim
-  function readyToClaim() external view override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](1);
-    rewards[0] = aaveController.getUserUnclaimedRewards(address(this));
-    return rewards;
-  }
-
-  /// @notice TVL of the underlying in the aToken contract
-  /// @dev Only for statistic
-  /// @return Pool TVL
-  function poolTotalAmount() external view override returns (uint256) {
-    return IERC20(_underlyingToken).balanceOf(aToken);
-  }
-
-  /// @dev Return true if we can gain profit with folding
-  function isFoldingProfitable() public view returns (bool) {
-    (uint256 supplyRewardsInWethPT,
-    uint256 borrowRewardsInWethPT,
-    uint256 supplyUnderlyingProfitInWethPT,
-    uint256 debtUnderlyingCostInWethPT) = normTotalRewardPredictionInWeth(_PROFITABILITY_PERIOD);
-
-    uint256 foldingProfitPerToken = supplyRewardsInWethPT + borrowRewardsInWethPT + supplyUnderlyingProfitInWethPT;
-    return foldingProfitPerToken > debtUnderlyingCostInWethPT;
-  }
-
-  // ************ GOVERNANCE ACTIONS **************************
-
-  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
-    investAllUnderlying();
-    claimReward();
-    compound();
-    liquidateReward();
-    if (!isFoldingProfitable() && fold) {
-      stopFolding();
-    } else if (isFoldingProfitable() && !fold) {
-      startFolding();
-    } else {
-      rebalance();
-    }
-  }
-
-  /// @dev Rebalances the borrow ratio
-  function rebalance() public restricted updateSupplyInTheEnd {
-    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
-    uint256 balance = supplied.sub(borrowed);
-
-    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
-    if (borrowed > borrowTarget) {
-      _redeemPartialWithLoan(0);
-    } else if (borrowed < borrowTarget) {
-      depositToPool(0);
-    }
-    emit Rebalanced(supplied, borrowed, borrowTarget);
-  }
-
-  /// @dev Set use folding
-  function setFold(bool _fold) public restricted {
-    fold = _fold;
-    emit FoldChanged(_fold);
-  }
-
-  /// @dev Set borrow rate target
-  function setBorrowTargetFactorNumeratorStored(uint256 _target) public restricted {
-    require(_target < collateralFactorNumerator, "Target should be lower than collateral limit");
-    borrowTargetFactorNumeratorStored = _target;
-    if (fold) {
-      borrowTargetFactorNumerator = _target;
-    }
-    emit BorrowTargetFactorNumeratorChanged(_target);
-  }
-
-  function stopFolding() public restricted {
-    borrowTargetFactorNumerator = 0;
-    setFold(false);
-    rebalance();
-    emit FoldStopped();
-  }
-
-  function startFolding() public restricted {
-    borrowTargetFactorNumerator = borrowTargetFactorNumeratorStored;
-    setFold(true);
-    rebalance();
-    emit FoldStarted(borrowTargetFactorNumeratorStored);
-  }
-
-  /// @dev Set collateral rate for asset market
-  function setCollateralFactorNumerator(uint256 _target) external restricted {
-    require(_target < factorDenominator, "Collateral factor cannot be this high");
-    collateralFactorNumerator = _target;
-    emit CollateralFactorNumeratorChanged(_target);
-  }
-
-  // ************ INTERNAL LOGIC IMPLEMENTATION **************************
-
-  /// @dev Deposit underlying to aToken contract
-  /// @param amount Deposit amount
-  function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
-    if (amount > 0) {
-      // we need to sell excess in non hardWork function for keeping ppfs ~1
-      liquidateExcessUnderlying();
-      _supply(amount);
-    }
-    if (!fold || !isFoldingProfitable()) {
-      return;
-    }
-    (uint256 supplied,uint256 borrowed) = _getInvestmentData();
-    uint256 balance = supplied.sub(borrowed);
-    uint256 borrowTarget = balance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
-    uint256 i = 0;
-    while (borrowed < borrowTarget) {
-      uint256 wantBorrow = borrowTarget.sub(borrowed);
-      uint256 maxBorrow = supplied.mul(collateralFactorNumerator).div(factorDenominator).sub(borrowed);
-
-      _borrow(Math.min(wantBorrow, maxBorrow));
-      uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      if (underlyingBalance > 0) {
-        _supply(underlyingBalance);
-      }
-      //update parameters
-      (supplied, borrowed) = _getInvestmentData();
-      i++;
-      if (i == MAX_DEPTH) {
-        emit MaxDepthReached();
-        break;
-      }
-    }
-  }
-
-  /// @dev Withdraw underlying
-  /// @param amount Withdraw amount
-  function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
-    claimReward();
-    _redeemPartialWithLoan(amount);
-  }
-
-  /// @dev Exit from external project without caring about rewards
-  ///      For emergency cases only!
-  function emergencyWithdrawFromPool() internal override updateSupplyInTheEnd {
-    _redeemMaximumWithLoan();
-  }
-
-  function exitRewardPool() internal override updateSupplyInTheEnd {
-    uint256 bal = rewardPoolBalance();
-    if (bal != 0) {
-      claimReward();
-      _redeemMaximumWithLoan();
-      // reward liquidation can ruin transaction, do it in hard work process
-    }
-  }
-
-  /// @dev Do something useful with farmed rewards
-  function liquidateReward() internal override {
-    liquidateRewardDefault();
-  }
-
-  /// @dev Claim distribution rewards
-  function claimReward() internal {
-    address[] memory assets = new address[](2);
-    assets[0] = aToken;
-    assets[1] = dToken;
-    aaveController.claimRewards(assets, type(uint256).max, address(this));
-  }
-
-  function compound() internal {
-    (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
-    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
-    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
-    // in case of negative ppfs compound all profit to underlying
-    if (ppfs < ppfsPeg) {
-      for (uint256 i = 0; i < _rewardTokens.length; i++) {
-        uint256 amount = rewardBalance(i);
-        address rt = _rewardTokens[i];
-        // it will sell reward token to Target Token and send back
-        if (amount != 0) {
-          address forwarder = IController(controller()).feeRewardForwarder();
-          // keep a bit for for distributing for catch all necessary events
-          amount = amount * 90 / 100;
-          IERC20(rt).safeApprove(forwarder, 0);
-          IERC20(rt).safeApprove(forwarder, amount);
-          uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
-          // supply profit for correct ppfs calculation
-          if (underlyingProfit != 0) {
-            _supply(underlyingProfit);
-          }
-        }
-      }
-      // safe way to keep ppfs peg is sell excess after reward liquidation
-      // it should not decrease old ppfs
-      liquidateExcessUnderlying();
-      // in case of ppfs decreasing we will get revert in vault anyway
-      require(ppfs <= ISmartVault(_smartVault).getPricePerFullShare(), "AFS: Ppfs decreased after compound");
-    }
-  }
-
-  /// @dev We should keep PPFS ~1
-  ///      This function must not ruin transaction
-  function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
-    // update balances for accurate ppfs calculation
-    (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
-    address forwarder = IController(controller()).feeRewardForwarder();
-    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
-    uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
-
-    if (ppfs > ppfsPeg) {
-
-      uint256 undBal = ISmartVault(_smartVault).underlyingBalanceWithInvestment();
-      if (undBal == 0
-      || ERC20(_smartVault).totalSupply() == 0
-      || undBal < ERC20(_smartVault).totalSupply()
-        || undBal - ERC20(_smartVault).totalSupply() < 2) {
-        // no actions in case of no money
-        emit NoMoneyForLiquidateUnderlying();
-        return;
-      }
-      // ppfs = 1 if underlying balance = total supply
-      // -1 for avoiding problem with rounding
-      uint256 toLiquidate = (undBal - ERC20(_smartVault).totalSupply()) - 1;
-      if (underlyingBalance() < toLiquidate) {
-        _redeemPartialWithLoan(toLiquidate - underlyingBalance());
-      }
-      toLiquidate = Math.min(underlyingBalance(), toLiquidate);
-      if (toLiquidate != 0) {
-        IERC20(_underlyingToken).safeApprove(forwarder, 0);
-        IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
-
-        // it will sell reward token to Target Token and distribute it to SmartVault and PS
-        // we must not ruin transaction in any case
-        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-        try IFeeRewardForwarder(forwarder).distribute(toLiquidate, _underlyingToken, _smartVault)
-        returns (uint256 targetTokenEarned) {
-          if (targetTokenEarned > 0) {
-            IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-          }
-        } catch {
-          emit UnderlyingLiquidationFailed();
-        }
-      }
-    }
-  }
-
-  /// @dev Supplies to Aave
-  function _supply(uint256 amount) internal updateSupplyInTheEnd {
-    amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
-    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
-    IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, amount);
-    lPool.deposit(_underlyingToken, amount, address(this), 0);
-  }
-
-  /// @dev Borrows against the collateral
-  function _borrow(uint256 amountUnderlying) internal updateSupplyInTheEnd {
-    // Borrow, check the balance for this contract's address
-    lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this));
-  }
-
-  /// @dev Redeem liquidity in underlying
-  function _redeemUnderlying(uint256 amountUnderlying) internal updateSupplyInTheEnd {
-    // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    (uint256 suppliedUnderlying,) = _getInvestmentData();
-    amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
-    if (amountUnderlying > 0) {
-      lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
-    }
-  }
-
-  /// @dev Redeem liquidity in rToken
-  function _redeemAToken(uint256 amountAToken) internal updateSupplyInTheEnd {
-    if (amountAToken > 0) {
-      lPool.withdraw(_underlyingToken, amountAToken, address(this));
-      uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
-      require(aTokenBalance == 0, "AFS: Redeem failed");
-    }
-  }
-
-  /// @dev Repay a loan
-  function _repay(uint256 amountUnderlying) internal updateSupplyInTheEnd {
-    if (amountUnderlying != 0) {
-      IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, 0);
-      IERC20(_underlyingToken).safeApprove(AAVE_LENDING_POOL, amountUnderlying);
-      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
-    }
-  }
-
-  /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
-  function _redeemMaximumWithLoan() internal updateSupplyInTheEnd {
-    // amount of liquidity
-    (uint256 availableLiquidity,,,,,,,,,) = dataProvider.getReserveData(_underlyingToken);
-    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
-    uint256 balance = supplied.sub(borrowed);
-    _redeemPartialWithLoan(Math.min(availableLiquidity, balance));
-
-    // we have a little amount of supply after full exit
-    // better to redeem rToken amount for avoid rounding issues
-    (supplied, borrowed) = _getInvestmentData();
-    uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
-
-    if (aTokenBalance > 0) {
-      _redeemAToken(aTokenBalance);
-    }
-  }
-
-  /// @dev Helper function to get suppliedUnderlying and borrowedUnderlying
-  function _getInvestmentData() internal view returns (uint256, uint256){
-    (uint256 suppliedUnderlying,,uint256 borrowedUnderlying,,,,,,) = dataProvider.getUserReserveData(_underlyingToken, address(this));
-    return (suppliedUnderlying, borrowedUnderlying);
-  }
-
-
-  /// @dev Redeems a set amount of underlying tokens while keeping the borrow ratio healthy.
-  ///      This function must nor revert transaction
-  function _redeemPartialWithLoan(uint256 amount) internal updateSupplyInTheEnd {
-    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
-    uint256 oldBalance = supplied.sub(borrowed);
-
-    uint256 newBalance = 0;
-    if (amount < oldBalance) {
-      newBalance = oldBalance.sub(amount);
-    }
-    uint256 newBorrowTarget = newBalance.mul(borrowTargetFactorNumerator).div(factorDenominator.sub(borrowTargetFactorNumerator));
-    uint256 underlyingBalance = 0;
-    uint256 i = 0;
-    while (borrowed > newBorrowTarget) {
-      uint256 requiredCollateral = borrowed.mul(factorDenominator).div(collateralFactorNumerator);
-      uint256 toRepay = borrowed.sub(newBorrowTarget);
-      if (supplied < requiredCollateral) {
-        break;
-      }
-      // redeem just as much as needed to repay the loan
-      // supplied - requiredCollateral = max redeemable, amount + repay = needed
-      uint256 toRedeem = Math.min(supplied.sub(requiredCollateral), amount.add(toRepay));
-      _redeemUnderlying(toRedeem);
-      // now we can repay our borrowed amount
-      underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      toRepay = Math.min(toRepay, underlyingBalance);
-      if (toRepay == 0) {
-        // in case of we don't have money for repaying we can't do anything
-        break;
-      }
-      _repay(toRepay);
-      // update the parameters
-      (supplied, borrowed) = _getInvestmentData();
-      i++;
-      if (i == MAX_DEPTH) {
-        emit MaxDepthReached();
-        break;
-      }
-    }
-    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-    if (underlyingBalance < amount) {
-      uint256 toRedeem = amount.sub(underlyingBalance);
-      // redeem the most we can redeem
-      _redeemUnderlying(toRedeem);
-    }
-  }
 }

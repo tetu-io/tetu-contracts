@@ -19,10 +19,8 @@ import "../FoldingBase.sol";
 import "../../../third_party/iron/CompleteRToken.sol";
 import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
-import "../../interface/ISmartVault.sol";
 import "../../../third_party/IWmatic.sol";
 import "../../interface/IIronFoldStrategy.sol";
-import "../../../third_party/IERC20Extended.sol";
 
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
@@ -88,12 +86,6 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   ////////////BASIC STRATEGY FUNCTIONS/////////
   /////////////////////////////////////////////
 
-  /// @notice Strategy balance supplied minus borrowed
-  /// @return bal Balance amount in underlying tokens
-  function rewardPoolBalance() public override view returns (uint256) {
-    return suppliedInUnderlying.sub(borrowedInUnderlying);
-  }
-
   /// @notice Return approximately amount of reward tokens ready to claim in Iron Controller contract
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
@@ -112,74 +104,9 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     .sub(CompleteRToken(rToken).totalReserves());
   }
 
-  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
-    _claimReward();
-    _compound();
-    liquidateReward();
-    investAllUnderlying();
-    if (!isFoldingProfitable() && fold) {
-      stopFolding();
-    } else if (isFoldingProfitable() && !fold) {
-      startFolding();
-    } else {
-      rebalance();
-    }
-  }
-
-  /// @dev Withdraw underlying from Iron MasterChef finance
-  /// @param amount Withdraw amount
-  function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
-    _claimReward();
-    _redeemPartialWithLoan(amount);
-  }
-
-  /// @dev Exit from external project without caring about rewards
-  ///      For emergency cases only!
-  function emergencyWithdrawFromPool() internal override updateSupplyInTheEnd {
-    _redeemMaximumWithLoan();
-  }
-
-  /// @dev Should withdraw all available assets
-  function exitRewardPool() internal override updateSupplyInTheEnd {
-    uint256 bal = rewardPoolBalance();
-    if (bal != 0) {
-      _claimReward();
-      _redeemMaximumWithLoan();
-      // reward liquidation can ruin transaction, do it in hard work process
-    }
-  }
-
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
     liquidateRewardDefault();
-  }
-
-  /////////////////////////////////////////////////////////
-  //////////// SPECIFIC GOV FUNCTIONS /////////////////////
-  /////////////////////////////////////////////////////////
-
-  /// @dev Set use folding
-  function setFold(bool _fold) public override restricted {
-    _setFold(_fold);
-  }
-
-  /// @dev Rebalances the borrow ratio
-  function rebalance() public override restricted {
-    _rebalance();
-  }
-
-  /// @dev Set borrow rate target
-  function setBorrowTargetFactorNumeratorStored(uint256 _target) public override restricted {
-    _setBorrowTargetFactorNumeratorStored(_target);
-  }
-
-  function stopFolding() public override restricted {
-    _stopFolding();
-  }
-
-  function startFolding() public override restricted {
-    _startFolding();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -189,10 +116,6 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   function _getInvestmentData() internal override returns (uint256 supplied, uint256 borrowed){
     supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
     borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
-  }
-
-  function _isMatic() internal view override returns (bool) {
-    return rToken == R_ETHER;
   }
 
   /// @dev Return true if we can gain profit with folding
@@ -208,7 +131,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     IronControllerInterface(ironController).claimReward(address(this), markets);
   }
 
-  function _supply(uint256 amount) internal override updateSupplyInTheEnd returns (uint256) {
+  function _supply(uint256 amount) internal override updateSupplyInTheEnd {
     uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
     if (amount < balance) {
       balance = amount;
@@ -221,7 +144,6 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
       IERC20(_underlyingToken).safeApprove(rToken, balance);
       require(CompleteRToken(rToken).mint(balance) == 0, "IFS: Supplying failed");
     }
-    return balance;
   }
 
   function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
@@ -366,6 +288,10 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   function wmaticWithdraw(uint256 amount) private {
     require(IERC20(W_MATIC).balanceOf(address(this)) >= amount, "IFS: Not enough wmatic");
     IWmatic(W_MATIC).withdraw(amount);
+  }
+
+  function _isMatic() internal view returns (bool) {
+    return rToken == R_ETHER;
   }
 
 }
