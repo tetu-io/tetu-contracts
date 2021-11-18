@@ -13,7 +13,7 @@ import {TokenUtils} from "../TokenUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Price calculator tests", function () {
+describe("Price calculator matic tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -216,7 +216,7 @@ describe("Price calculator tests", function () {
   it("calculate FIREBIRD eth-ice, price and check", async () => {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.FIREBIRD_ETH_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(10);
+    expect(price).is.greaterThan(1);
     expect(price).is.lessThan(500);
   });
 

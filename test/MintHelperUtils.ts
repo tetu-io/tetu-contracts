@@ -13,7 +13,7 @@ export class MintHelperUtils {
     await controller.mintAndDistribute(utils.parseUnits(amount), destination, destination, false);
   }
 
-  public static async mintAll(controller: Controller, announcer: Announcer, destination: string, period = 60 * 60 * 24 * 7 + 1) {
+  public static async mintAll(controller: Controller, announcer: Announcer, destination: string, period = 60 * 60 * 48 + 1) {
 
     await announcer.announceMint(0, destination, destination, true);
 
