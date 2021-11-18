@@ -7,12 +7,12 @@ import {TimeUtils} from "../../../TimeUtils";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {StrategyAaveMaiBal} from "../../../../typechain";
+import {ICamWMATIC, StrategyAaveMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {StrategyInfo} from "../../StrategyInfo";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {PriceCalculator} from "../../../../typechain";
 // import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
@@ -43,15 +43,24 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         return;
     }
 
-    const aavePipeIndex = 1;
-    const maiPipeIndex  = 3;
-    const balPipeIndex  = 4;
+    const AAVE_PIPE_INDEX = 1;
+    const MAI_PIPE_INDEX  = 3;
+    const BAL_PIPE_INDEX  = 4;
 
+    let ICamWMATIC: any;
     let airDropper: any;
-    const depositAmountStr = utils.parseUnits('100').toString()
 
-    const airdropTokenToPipe = async function(pipeIndex: number, tokenAddress: string, amount: string) {
-        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, utils.parseUnits(amount));
+    const DEPOSIT_AMOUNT = utils.parseUnits('100')
+    const REWARDS_AMOUNT  = utils.parseUnits('1')
+
+    const airdropTokenToPipe = async function(pipeIndex: number, tokenAddress: string, amount: BigNumber) {
+        // claim aave rewards on mai
+        // TODO impersonate as ICamWMATIC.operator()
+        //await ICamWMATIC.claimAaveRewards();
+        //await ICamWMATIC.harvestMaticIntoToken();
+
+        // air drop reward token
+        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
         const bal = await TokenUtils.balanceOf(tokenAddress, airDropper.address);
         const strategy = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
         const pipeAddress = await strategy.pipes(pipeIndex);
@@ -63,13 +72,13 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         snapshotBefore = await TimeUtils.snapshot();
         // const [signer, user] = await ethers.getSigners();
         const signer = await DeployerUtils.impersonate();
-        const user = (await ethers.getSigners())[1];
-        airDropper = user;
-        // airDropper = (await ethers.getSigners())[2];
+        const user  = (await ethers.getSigners())[1];
+        airDropper        = (await ethers.getSigners())[2];
 
         const core = await DeployerUtils.getCoreAddressesWrapper(signer);
         const tools = await DeployerUtils.getToolsAddresses();
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
+        ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', tools.calculator) as ICamWMATIC
 
         // const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
         // const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
@@ -149,7 +158,12 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await UniswapUtils.buyToken(user,
             MaticAddresses.SUSHI_ROUTER,
             MaticAddresses.WMATIC_TOKEN,
-            utils.parseUnits('110') // 100 wmatic for deposit and 10 for rewards
+            DEPOSIT_AMOUNT
+        );
+        await UniswapUtils.buyToken(airDropper,
+            MaticAddresses.SUSHI_ROUTER,
+            MaticAddresses.WMATIC_TOKEN,
+            REWARDS_AMOUNT
         );
         const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, user.address);
 
@@ -177,15 +191,13 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         );
     });*/
 
-    it("do hard work with liq path AAVE WMATIC rewards", async () => {
+    it.only("do hard work with liq path AAVE WMATIC rewards", async () => {
         console.log('AAVE WMATIC rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
-            depositAmountStr,
+            DEPOSIT_AMOUNT.toString(),
             null,
-            async () => {
-                await airdropTokenToPipe(aavePipeIndex, MaticAddresses.WMATIC_TOKEN, '10');
-            }
+            () => airdropTokenToPipe(AAVE_PIPE_INDEX, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT)
         );
     });
 
@@ -193,11 +205,9 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         console.log('MAI QI rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
-            depositAmountStr,
+            DEPOSIT_AMOUNT.toString(),
             null,
-            async () => {
-                await airdropTokenToPipe(maiPipeIndex, MaticAddresses.QI_TOKEN, '10');
-            }
+            () => airdropTokenToPipe(MAI_PIPE_INDEX, MaticAddresses.QI_TOKEN, REWARDS_AMOUNT)
         );
     });
 
@@ -205,11 +215,9 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         console.log('Balancer BAL rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
-            depositAmountStr,
+            DEPOSIT_AMOUNT.toString(),
             null,
-            async () => {
-                await airdropTokenToPipe(balPipeIndex, MaticAddresses.BAL_TOKEN, '10');
-            }
+            () => airdropTokenToPipe(BAL_PIPE_INDEX, MaticAddresses.BAL_TOKEN, REWARDS_AMOUNT)
         );
     });
 

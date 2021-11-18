@@ -69,7 +69,10 @@ contract BalVaultPipe is Pipe {
     /// @param amount in underlying units
     /// @return output in source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
+        uint256 lpBalance = ERC20Balance(outputToken);
         console.log('BalVaultPipe get amount', amount);
+        console.log('BalVaultPipe lpBalance ', lpBalance);
+
         (IERC20[] memory tokens,,) = IBVault(d.vault).getPoolTokens(d.poolID);
         require(sourceToken == address(tokens[d.tokenIndex]), "BVP: Wrong source token");
         uint256[] memory minAmountsOut = new uint256[](4);

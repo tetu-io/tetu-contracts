@@ -80,9 +80,9 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
         // Build pipeline
         addPipe(new UnwrappingPipe(_WMATIC));
         addPipe(new AaveWethPipe(aaveWethPipeData));
-        addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData));
-        addPipe(new MaiStablecoinPipe(maiStablecoinPipeData));
-        addPipe(new BalVaultPipe(balVaultPipeData));
+//        addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData)); //TODO uncomment
+//        addPipe(new MaiStablecoinPipe(maiStablecoinPipeData));
+//        addPipe(new BalVaultPipe(balVaultPipeData));
 
         console.log('StrategyAaveMaiBal Initialized');
 

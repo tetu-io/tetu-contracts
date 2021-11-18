@@ -122,6 +122,17 @@ contract MaiStablecoinPipe is Pipe {
         return uint256(IERC20Metadata(_stablecoin.mai()).decimals());
     }*/
 
+    /// @dev Returns true when rebalance needed
+    function needsRebalance() override public view
+    returns (bool){
+        uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
+        if (collateralPercentage == 0) {
+            return false; // no debt or collateral
+        }
+        return ((collateralPercentage + d.maxImbalance) < d.targetPercentage)
+            || (collateralPercentage > (uint256(d.targetPercentage) + d.maxImbalance));
+    }
+
     /// @dev function for re balancing. When rebalance
     /// @return imbalance in underlying units
     /// @return deficit - when true, then asks to receive underlying imbalance amount, when false - put imbalance to next pipe,

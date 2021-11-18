@@ -104,9 +104,11 @@ contract LinearPipeline {
         return pumpOut(underlyingAmount, toPipeIndex);
     }
 
-    /// @dev re balance pipe pipes
+    /// @dev Re-balance pipe
     function rebalancePipe(uint256 pipeIndex) internal {
         Pipe pipe = pipes[pipeIndex];
+        if (!pipe.needsRebalance()) return;
+
         (uint256 imbalance, bool deficit) = pipe.rebalance();
         if (imbalance>0) {
             if (deficit) {
@@ -121,13 +123,24 @@ contract LinearPipeline {
         }
     }
 
-    /// @dev calls work for all pipes
-    function rebalanceAllPipes() internal  {
+    /// @dev Re-balance all pipes
+    function rebalanceAllPipes() public {
         uint256 len = pipes.length;
         for (uint256 i=0; i<len; i++) {
             rebalancePipe(i);
         }
     }
+
+    /// @dev Checks if re-balancing needs some pipe(s)
+    function isRebalanceNeeded() external view returns(bool) {
+        uint256 len = pipes.length;
+        for (uint256 i=0; i<len; i++) {
+            if (pipes[i].needsRebalance()) return true;
+        }
+        return false;
+    }
+
+
 
     /// @dev calls claim() for all pipes
     function claimFromAllPipes() internal  {

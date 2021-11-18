@@ -20,6 +20,7 @@ interface ICamWMATIC {
 //    address public treasury;
 //
 //    address public operator;
+    function operator() external returns (address);
 //
 //    uint16 public depositFeeBP;
     function depositFeeBP() external returns (uint16);
@@ -48,6 +49,8 @@ interface ICamWMATIC {
     function enter(uint256 _amount) external;
 
     function claimAaveRewards() external;
+
+    function harvestMaticIntoToken() external;
 
     // claim amToken by burning camToken
     function leave(uint256 _share) external;

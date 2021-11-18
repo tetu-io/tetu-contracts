@@ -100,6 +100,13 @@ abstract contract Pipe {
         return (0,false);
     }
 
+    /// @dev Returns true when rebalance needed
+    function needsRebalance() virtual public view
+    returns (bool){
+        // balanced, no deficit by default
+        return false;
+    }
+
     /// @dev function for claiming rewards
     function claim() onlyPipeline virtual public {
         if (rewardToken == address(0)) return;
@@ -182,11 +189,4 @@ abstract contract Pipe {
         return input * (10 ** fromDecimals) / (10 ** outputDecimals);
     }
 
-/*    function norm(uint256 input, uint256 decimals) internal pure returns (uint256) {
-        return input / (10 ** decimals);
-    }
-
-    function norm(uint256 input) internal pure returns (uint256) {
-        return norm(input, 18);
-    }*/
 }

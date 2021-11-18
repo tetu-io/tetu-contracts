@@ -107,22 +107,25 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         console.log('_totalAmount', _totalAmount);
     }
 
-    /// @dev function for Strategy Base implementation
+    /// @dev Function to withdraw from pool
     function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
         console.log('withdrawAndClaimFromPool underlyingAmount', underlyingAmount);
-        pumpOutSource(underlyingAmount, 0);
         claimFromAllPipes();
         liquidateReward();
+        uint256 amountOut = pumpOutSource(underlyingAmount, 0);
+        console.log('amountOut', amountOut);
+        uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+        console.log('$ underlyingBalance', underlyingBalance);
         _totalAmount = calculator.getTotalAmountOut();
         console.log('_totalAmount', _totalAmount);
     }
 
-    /// @dev Stub function for Strategy Base implementation
+    /// @dev Emergency withdraws all most underlying from the pool
     function emergencyWithdrawFromPool() internal override {
         pumpOut(getMostUnderlyingBalance(), 0);
     }
 
-    /// @dev Stub function for Strategy Base implementation
+    /// @dev Liquidate all reward tokens
     //slither-disable-next-line dead-code
     function liquidateReward() internal override {
         liquidateRewardDefault();

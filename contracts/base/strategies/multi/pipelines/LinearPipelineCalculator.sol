@@ -44,7 +44,7 @@ contract LinearPipelineCalculator {
 
         uint256 totalIn  = pipeline.getMostUnderlyingBalance();
         console.log('   totalIn', totalIn);
-        uint256 totalOut = getAmountOut(amountIn, toPipeIndex);
+        uint256 totalOut = getAmountOut(totalIn, toPipeIndex);
         console.log('   totalOut', totalOut);
         if (totalOut == 0) return 0;
 
