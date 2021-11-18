@@ -111,6 +111,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
         console.log('withdrawAndClaimFromPool underlyingAmount', underlyingAmount);
         pumpOutSource(underlyingAmount, 0);
+        claimFromAllPipes();
+        liquidateReward();
         _totalAmount = calculator.getTotalAmountOut();
         console.log('_totalAmount', _totalAmount);
     }

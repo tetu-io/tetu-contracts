@@ -93,6 +93,8 @@ contract BalVaultPipe is Pipe {
     }
 
     /// @dev Casts IERC20[] to IAsset[]
+    /// @param tokens IERC20 array
+    /// @param assets IAsset array
     function asIAsset(IERC20[] memory tokens) private pure returns (IAsset[] memory assets) {
         // solhint-disable-next-line no-inline-assembly
         assembly {

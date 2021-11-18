@@ -7,14 +7,14 @@ import {TimeUtils} from "../../../TimeUtils";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {StrategyAaveMaiBal} from "../../../../typechain/StrategyAaveMaiBal";
+import {StrategyAaveMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {StrategyInfo} from "../../StrategyInfo";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {utils} from "ethers";
 import {PriceCalculator} from "../../../../typechain";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+// import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -31,7 +31,7 @@ const argv = require('yargs/yargs')()
         }
     }).argv;
 
-const {expect} = chai;
+// const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal MultiAaveMaiBal tests', async () => {
@@ -126,6 +126,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             underlying
         );
 
+        // noinspection DuplicatedCode
         const vault = data[0];
         const strategy = data[1];
         const lpForTargetToken = data[2];
@@ -148,7 +149,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await UniswapUtils.buyToken(user,
             MaticAddresses.SUSHI_ROUTER,
             MaticAddresses.WMATIC_TOKEN,
-            utils.parseUnits('105') // 100 wmatic for deposit and 5 for rewards
+            utils.parseUnits('110') // 100 wmatic for deposit and 10 for rewards
         );
         const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, user.address);
 
@@ -183,7 +184,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             depositAmountStr,
             null,
             async () => {
-                await airdropTokenToPipe(aavePipeIndex, MaticAddresses.WMATIC_TOKEN, '5');
+                await airdropTokenToPipe(aavePipeIndex, MaticAddresses.WMATIC_TOKEN, '10');
             }
         );
     });
@@ -195,7 +196,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             depositAmountStr,
             null,
             async () => {
-                await airdropTokenToPipe(maiPipeIndex, MaticAddresses.QI_TOKEN, '5');
+                await airdropTokenToPipe(maiPipeIndex, MaticAddresses.QI_TOKEN, '10');
             }
         );
     });
@@ -207,7 +208,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             depositAmountStr,
             null,
             async () => {
-                await airdropTokenToPipe(balPipeIndex, MaticAddresses.BAL_TOKEN, '5');
+                await airdropTokenToPipe(balPipeIndex, MaticAddresses.BAL_TOKEN, '10');
             }
         );
     });
