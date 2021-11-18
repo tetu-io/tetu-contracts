@@ -30,6 +30,7 @@ abstract contract FoldingBase is StrategyBase {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
+  /// @dev Maximum folding loops
   uint256 public constant MAX_DEPTH = 20;
 
   /// @notice Numerator value for the targeted borrow rate
@@ -95,15 +96,13 @@ abstract contract FoldingBase is StrategyBase {
 
   ///////////// internal functions require specific implementation for each platforms
 
-  function _getInvestmentData() internal virtual returns (uint256, uint256);
+  function _getInvestmentData() internal virtual returns (uint256 supplied, uint256 borrowed);
 
   function _isMatic() internal view virtual returns (bool);
 
   function _isFoldingProfitable() internal view virtual returns (bool);
 
   function _claimReward() internal virtual;
-
-  function _underlyingBalance() internal virtual returns (uint256);
 
   //////////// require update balance in the end
 
@@ -199,7 +198,7 @@ abstract contract FoldingBase is StrategyBase {
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
-      liquidateExcessUnderlying();
+      _liquidateExcessUnderlying();
       _supply(amount);
     }
     if (!fold || !isFoldingProfitable()) {
@@ -303,13 +302,13 @@ abstract contract FoldingBase is StrategyBase {
       }
       // safe way to keep ppfs peg is sell excess after reward liquidation
       // it should not decrease old ppfs
-      liquidateExcessUnderlying();
+      _liquidateExcessUnderlying();
     }
   }
 
   /// @dev We should keep PPFS ~1
   ///      This function must not ruin transaction
-  function liquidateExcessUnderlying() internal updateSupplyInTheEnd {
+  function _liquidateExcessUnderlying() internal updateSupplyInTheEnd {
     // update balances for accurate ppfs calculation
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
 
@@ -330,10 +329,10 @@ abstract contract FoldingBase is StrategyBase {
       // ppfs = 1 if underlying balance = total supply
       // -1 for avoiding problem with rounding
       uint256 toLiquidate = (totalUnderlyingBalance - ERC20(_smartVault).totalSupply()) - 1;
-      if (_underlyingBalance() < toLiquidate) {
+      if (underlyingBalance() < toLiquidate) {
         _redeemPartialWithLoan(toLiquidate - underlyingBalance());
       }
-      toLiquidate = Math.min(_underlyingBalance(), toLiquidate);
+      toLiquidate = Math.min(underlyingBalance(), toLiquidate);
       if (toLiquidate != 0) {
         IERC20(_underlyingToken).safeApprove(forwarder, 0);
         IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
