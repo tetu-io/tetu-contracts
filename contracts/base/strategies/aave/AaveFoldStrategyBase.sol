@@ -87,14 +87,14 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     _borrowTargetFactorNumerator,
     _collateralFactorNumerator
   ) {
-    (aToken,,dToken) = dataProvider.getReserveTokensAddresses(_underlying);
-    address _lpt = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
-    require(_lpt == _underlyingToken, "AFS: Wrong underlying");
-
     lPool = ILendingPool(_aaveData.pool);
     aaveController = IAaveIncentivesController(_aaveData.controller);
     dataProvider = IProtocolDataProvider(_aaveData.dataProvider);
     lendingPoolAddressesProvider = ILendingPoolAddressesProvider(_aaveData.addressesProvider);
+
+    (aToken,,dToken) = dataProvider.getReserveTokensAddresses(_underlying);
+    address _lpt = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
+    require(_lpt == _underlyingToken, "AFS: Wrong underlying");
   }
 
   /////////////////////////////////////////////
@@ -168,8 +168,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev Redeem liquidity in underlying
   function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
     // we can have a little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    //    (uint256 suppliedUnderlying,) = _getInvestmentData();
-    //    amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
+    (uint256 suppliedUnderlying,) = _getInvestmentData();
+    amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
     if (amountUnderlying > 0) {
       lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
     }
