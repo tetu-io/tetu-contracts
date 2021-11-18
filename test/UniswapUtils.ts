@@ -207,12 +207,8 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    await UniswapUtils.swapNETWORK_COINForExactTokens(
-      signer,
-      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-      utils.parseUnits(amount, 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory()
-    );
+    const usdc = await DeployerUtils.getUSDCAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
@@ -242,12 +238,8 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    await UniswapUtils.swapNETWORK_COINForExactTokens(
-      signer,
-      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-      utils.parseUnits(amount, 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory()
-    );
+    const usdc = await DeployerUtils.getUSDCAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
@@ -263,11 +255,11 @@ export class UniswapUtils {
     return UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
-      MaticAddresses.USDC_TOKEN,
+      usdc,
       utils.parseUnits(amount, 18).toString(),
       utils.parseUnits(amount, 6).toString(),
-      MaticAddresses.QUICK_FACTORY,
-      MaticAddresses.QUICK_ROUTER
+      await DeployerUtils.getDefaultNetworkFactory(),
+      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
     );
   }
 
