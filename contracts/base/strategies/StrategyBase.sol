@@ -241,6 +241,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   function _liquidateReward(bool revertOnErrors) internal {
     address forwarder = IController(controller()).feeRewardForwarder();
+    uint targetTokenEarnedTotal = 0;
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
@@ -257,10 +258,11 @@ abstract contract StrategyBase is IStrategy, Controllable {
             targetTokenEarned = r;
           } catch {}
         }
-        if (targetTokenEarned > 0) {
-          IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-        }
+        targetTokenEarnedTotal += targetTokenEarned;
       }
+    }
+    if (targetTokenEarnedTotal > 0) {
+      IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
     }
   }
 

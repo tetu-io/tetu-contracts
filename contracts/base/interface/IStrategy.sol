@@ -28,7 +28,9 @@ interface IStrategy {
     HERMES, // 10
     CAFE, // 11
     TETU_SWAP, // 12
-    SPOOKY // 13
+    SPOOKY, // 13
+    AAVE_LEND //14
+
   }
 
   // *************** GOVERNANCE ACTIONS **************
