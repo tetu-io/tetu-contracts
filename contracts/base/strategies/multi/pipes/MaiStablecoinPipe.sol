@@ -12,15 +12,15 @@ import "./../../../../third_party/qudao-mai/IErc20Stablecoin.sol";
 
 import "hardhat/console.sol"; //TODO rm
 
-struct MaiStablecoinPipeData {
-    address sourceToken;
-    address stablecoin; //Erc20Stablecoin contract address
-    // borrowing
-    address borrowToken; // mai (miMATIC) for example
-    uint16 targetPercentage; // Collateral to Debt percentage
-    uint16 maxImbalance;     // Maximum Imbalance in percents
-    address rewardToken;
-}
+    struct MaiStablecoinPipeData {
+        address sourceToken;
+        address stablecoin; //Erc20Stablecoin contract address
+        // borrowing
+        address borrowToken; // mai (miMATIC) for example
+        uint16 targetPercentage; // Collateral to Debt percentage
+        uint16 maxImbalance;     // Maximum Imbalance in percents
+        address rewardToken;
+    }
 
 /// @title Mai Stablecoin Pipe Contract
 /// @author bogdoslav
@@ -39,6 +39,18 @@ contract MaiStablecoinPipe is Pipe {
         rewardToken = _d.rewardToken;
         _stablecoin = IErc20Stablecoin(d.stablecoin);
         vaultID = IErc20Stablecoin(d.stablecoin).createVault();
+    }
+
+    /// @dev Sets targetPercentage
+    /// @param _targetPercentage - target collateral to debt percentage
+    function setTargetPercentage(uint16 _targetPercentage) onlyPipeline public {
+        d.targetPercentage = _targetPercentage;
+    }
+
+    /// @dev Gets targetPercentage
+    /// @return collateral to debt percentage
+    function targetPercentage() external view returns (uint16) {
+        return d.targetPercentage;
     }
 
     /// @dev function for depositing to collateral then borrowing
@@ -67,11 +79,15 @@ contract MaiStablecoinPipe is Pipe {
         uint256 withdrawAmount = _borrowToCollateralTokenAmountPercentage(repaidAmount, d.targetPercentage);
         console.log('withdrawAmount', withdrawAmount);
 
-        uint256 collateralBefore = _stablecoin.vaultCollateral(vaultID);//TODO
-        console.log('-collateralBefore   ', collateralBefore);//TODO
+        uint256 collateralBefore = _stablecoin.vaultCollateral(vaultID);
+        //TODO
+        console.log('-collateralBefore   ', collateralBefore);
+        //TODO
         withdrawCollateral(withdrawAmount);
-        uint256 collateralCurrent = _stablecoin.vaultCollateral(vaultID); //TODO
-        console.log('-collateralCurrent  ', collateralCurrent);//TODO
+        uint256 collateralCurrent = _stablecoin.vaultCollateral(vaultID);
+        //TODO
+        console.log('-collateralCurrent  ', collateralCurrent);
+        //TODO
 
         output = ERC20Balance(sourceToken);
         transferERC20toPrevPipe(sourceToken, output);
@@ -114,23 +130,24 @@ contract MaiStablecoinPipe is Pipe {
         output = repayAmount;
     }
 
-   /* function collateralDecimals() internal view returns (uint256) {
-        return uint256(IERC20Metadata(_stablecoin.collateral()).decimals());
-    }
+    /* function collateralDecimals() internal view returns (uint256) {
+         return uint256(IERC20Metadata(_stablecoin.collateral()).decimals());
+     }
 
-    function borrowDecimals() internal view returns (uint256) {
-        return uint256(IERC20Metadata(_stablecoin.mai()).decimals());
-    }*/
+     function borrowDecimals() internal view returns (uint256) {
+         return uint256(IERC20Metadata(_stablecoin.mai()).decimals());
+     }*/
 
     /// @dev Returns true when rebalance needed
     function needsRebalance() override public view
     returns (bool){
         uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
         if (collateralPercentage == 0) {
-            return false; // no debt or collateral
+            return false;
+            // no debt or collateral
         }
         return ((collateralPercentage + d.maxImbalance) < d.targetPercentage)
-            || (collateralPercentage > (uint256(d.targetPercentage) + d.maxImbalance));
+        || (collateralPercentage > (uint256(d.targetPercentage) + d.maxImbalance));
     }
 
     /// @dev function for re balancing. When rebalance
@@ -139,7 +156,8 @@ contract MaiStablecoinPipe is Pipe {
     function rebalance() override onlyPipeline public returns (uint256 imbalance, bool deficit) {
         uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
         if (collateralPercentage == 0) {
-            return (0, false); // no debt or collateral
+            return (0, false);
+            // no debt or collateral
         }
 
         if ((collateralPercentage + d.maxImbalance) < d.targetPercentage) {
@@ -183,7 +201,8 @@ contract MaiStablecoinPipe is Pipe {
             return (excess, false);
         }
 
-        return (0, false); // in balance
+        return (0, false);
+        // in balance
     }
 
     function _percentageToBorrowTokenAmount(uint256 percentage) private view returns (uint256 borrowAmount) {
@@ -207,7 +226,7 @@ contract MaiStablecoinPipe is Pipe {
         uint256 value = collateral * ethPriceSource / _stablecoin.getTokenPriceSource();
         console.log('_value', value);
 
-//        amount = toDecimals(value * 100 / percentage, collateralDecimals(), borrowDecimals());
+        //        amount = toDecimals(value * 100 / percentage, collateralDecimals(), borrowDecimals());
         amount = value * 100 / percentage;
         console.log('_return borrow', amount);
     }
@@ -225,12 +244,12 @@ contract MaiStablecoinPipe is Pipe {
         uint256 closingFee = _stablecoin.closingFee();
 
         // from https://github.com/0xlaozi/qidao/blob/308754139e0d701bdd2c8d4f66ae14ef8b2acdca/contracts/Stablecoin.sol#L212
-        uint256 fee   = (borrowAmount * closingFee * tokenPriceSource) / (ethPriceSource * 10000);
+        uint256 fee = (borrowAmount * closingFee * tokenPriceSource) / (ethPriceSource * 10000);
         console.log('_fee           ', fee);
         uint256 value = borrowAmount * tokenPriceSource / ethPriceSource;
         console.log('_value         ', value);
 
-//        amount = toDecimals(value * percentage / 100 - fee, collateralDecimals(), borrowDecimals());
+        //        amount = toDecimals(value * percentage / 100 - fee, collateralDecimals(), borrowDecimals());
         amount = value * percentage / 100 - fee;
 
         console.log('_return collateral', amount);

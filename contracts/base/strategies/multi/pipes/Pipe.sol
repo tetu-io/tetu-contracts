@@ -15,7 +15,7 @@ abstract contract Pipe {
     address private _pipeline;
 
     /// @notice Address representing ether (bnb, matic) for statistical purposes only
-    address internal constant _ETHER =  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address internal constant _ETHER = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     /// @notice Pipe name for statistical purposes only
     /// @dev initialize it in constructor
@@ -97,7 +97,7 @@ abstract contract Pipe {
     function rebalance() onlyPipeline virtual public
     returns (uint256 imbalance, bool deficit){
         // balanced, no deficit by default
-        return (0,false);
+        return (0, false);
     }
 
     /// @dev Returns true when rebalance needed
@@ -114,7 +114,7 @@ abstract contract Pipe {
 
         uint256 amount = IERC20(rewardToken).balanceOf(address(this));
         console.log('claim amount', amount, name);
-        if (amount > 0 ) {
+        if (amount > 0) {
             IERC20(rewardToken).safeTransfer(_pipeline, amount);
         }
     }

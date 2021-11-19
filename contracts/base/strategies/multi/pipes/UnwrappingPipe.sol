@@ -37,7 +37,7 @@ contract UnwrappingPipe is Pipe {
     /// @return output amount of source units
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('UnwrappingPipe get amount', amount);
-        IWETH(sourceToken).deposit{value:amount}();
+        IWETH(sourceToken).deposit{value : amount}();
         output = ERC20Balance(sourceToken);
         transferERC20toPrevPipe(sourceToken, output);
     }

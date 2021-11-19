@@ -6,7 +6,7 @@ import "../pipes/Pipe.sol";
 import "./LinearPipeline.sol";
 
 
-/// @title Linear Pipeline Calculator
+/// @title Linear Pipeline Calculator (helper contract for LinearPipeline)
 /// @author bogdoslav
 contract LinearPipelineCalculator {
     using SafeMath for uint256;
@@ -17,6 +17,9 @@ contract LinearPipelineCalculator {
         pipeline = _pipeline;
     }
 
+    /// @dev Returns amount out (when we withdraw amountIn most underlying tokens to pipe with specified index)
+    /// @param amountIn in output units of last pipe
+    /// @param toPipeIndex index of the last pipe to pump out
     function getAmountOut(uint256 amountIn, uint256 toPipeIndex)
     public returns (uint256) {
         try pipeline.getAmountOutReverted(amountIn, toPipeIndex)
@@ -26,6 +29,7 @@ contract LinearPipelineCalculator {
         return 0;
     }
 
+    /// @dev Returns total amount out (when we withdraw all most underlying tokens)
     function getTotalAmountOut()
     public returns (uint256) {
         uint256 amountIn = pipeline.getMostUnderlyingBalance();
@@ -42,7 +46,7 @@ contract LinearPipelineCalculator {
         console.log('getAmountInForAmountOut amountOut, toPipeIndex', amountOut, toPipeIndex);
         if (amountOut == 0) return 0;
 
-        uint256 totalIn  = pipeline.getMostUnderlyingBalance();
+        uint256 totalIn = pipeline.getMostUnderlyingBalance();
         console.log('   totalIn', totalIn);
         uint256 totalOut = getAmountOut(totalIn, toPipeIndex);
         console.log('   totalOut', totalOut);
@@ -52,6 +56,8 @@ contract LinearPipelineCalculator {
     }
 
     /// @dev Parses a revert reason that should contain the numeric answer
+    /// @param reason encoded revert reason
+    /// @return numeric answer
     function parseRevertReason(bytes memory reason)
     private pure returns (uint256) {
         if (reason.length != 32) {

@@ -9,12 +9,12 @@ import "./../../../../third_party/aave/IWETHGateway.sol";
 
 import "hardhat/console.sol";
 
-struct AaveWethPipeData {
-    address wethGateway;
-    address pool;
-    address lpToken;
-    address rewardToken;
-}
+    struct AaveWethPipeData {
+        address wethGateway;
+        address pool;
+        address lpToken;
+        address rewardToken;
+    }
 
 /// @title Aave Weth Pipe Contract
 /// @author bogdoslav
@@ -36,7 +36,7 @@ contract AaveWethPipe is Pipe {
     /// @return output amount of output units (amMATIC)
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
         console.log('AaveWethPipe put amount', amount);
-        IWETHGateway(d.wethGateway).depositETH{value:amount}(d.pool, address(this), 0);
+        IWETHGateway(d.wethGateway).depositETH{value : amount}(d.pool, address(this), 0);
 
         output = ERC20Balance(outputToken);
         transferERC20toNextPipe(outputToken, output);

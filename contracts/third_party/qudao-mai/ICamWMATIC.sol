@@ -50,7 +50,7 @@ interface ICamWMATIC {
 
     function claimAaveRewards() external;
 
-    function harvestMaticIntoToken() external;
+    //function harvestMaticIntoToken() external; // not present at blockchain
 
     // claim amToken by burning camToken
     function leave(uint256 _share) external;

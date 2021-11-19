@@ -13,14 +13,14 @@ import "./../../../../third_party/balancer/IBasePool.sol";
 
 import "hardhat/console.sol";
 
-struct BalVaultPipeData {
-    address sourceToken;
-    address vault;
-    bytes32 poolID;
-    uint256 tokenIndex;
-    address lpToken;
-    address rewardToken;
-}
+    struct BalVaultPipeData {
+        address sourceToken;
+        address vault;
+        bytes32 poolID;
+        uint256 tokenIndex;
+        address lpToken;
+        address rewardToken;
+    }
 
 /// @title Balancer Vault Pipe Contract
 /// @author bogdoslav
@@ -52,10 +52,10 @@ contract BalVaultPipe is Pipe {
         bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, maxAmountsIn, minAmountOut);
 
         IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
-            assets: asIAsset(tokens),
-            maxAmountsIn: maxAmountsIn,
-            userData: userData,
-            fromInternalBalance: false
+        assets : asIAsset(tokens),
+        maxAmountsIn : maxAmountsIn,
+        userData : userData,
+        fromInternalBalance : false
         });
 
         ERC20Approve(sourceToken, d.vault, amount);
@@ -82,10 +82,10 @@ contract BalVaultPipe is Pipe {
         bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, d.tokenIndex);
 
         IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
-            assets: asIAsset(tokens),
-            minAmountsOut: minAmountsOut,
-            userData: userData,
-            toInternalBalance: false
+        assets : asIAsset(tokens),
+        minAmountsOut : minAmountsOut,
+        userData : userData,
+        toInternalBalance : false
         });
 
         ERC20Approve(outputToken, d.vault, amount);

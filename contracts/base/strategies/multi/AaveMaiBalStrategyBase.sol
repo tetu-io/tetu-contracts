@@ -53,28 +53,16 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         address _vault,
         address[] memory __rewardTokens,
         address _WMATIC
-//        AaveWethPipeData memory aaveWethPipeData,
-//        MaiCamWMaticPipeData memory maiCamWMaticPipeData,
-//        MaiStablecoinPipeData memory maiStablecoinPipeData,
-//        BalVaultPipeData memory balVaultPipeData
     ) StrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO)
-      LinearPipeline(_underlyingToken)
+    LinearPipeline(_underlyingToken)
     {
         WMATIC = _WMATIC;
         require(_underlyingToken == _WMATIC, "MS: underlying must be WMATIC");
         _rewardTokens = __rewardTokens;
-
-        console.log('AaveMaiBalStrategyBase Initialized');
     }
 
-  /*  /// @dev creates segment and initializes its context //TODO move this function to appropriate base file
-    function initSegment(Pipe pipe, bytes memory context) internal returns (PipeSegment memory segment) {
-        segment = PipeSegment(pipe, context);
-        segment.context = segment.init(); //TODO
-    }*/
 
-
-/// @dev function for Strategy Base implementation
+    /// @dev Returns reward pool balance
     function rewardPoolBalance() public override view returns (uint256 bal) {
         return _totalAmount;
     }
@@ -89,22 +77,23 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         rebalanceAllPipes();
         claimFromAllPipes();
         console.log('_rewardTokens.length', _rewardTokens.length);
+        //TODO remove balance logs
         uint256 balanceWMATIC = IERC20(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270).balanceOf(address(this));
         console.log('balanceWMATIC', balanceWMATIC);
-        uint256 balanceQI     = IERC20(0x580A84C73811E1839F75d86d75d88cCa0c241fF4).balanceOf(address(this));
+        uint256 balanceQI = IERC20(0x580A84C73811E1839F75d86d75d88cCa0c241fF4).balanceOf(address(this));
         console.log('balanceQI', balanceQI);
-        uint256 balanceBAL    = IERC20(0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3).balanceOf(address(this));
+        uint256 balanceBAL = IERC20(0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3).balanceOf(address(this));
         console.log('balanceBAL', balanceBAL);
         liquidateReward();
         _totalAmount = calculator.getTotalAmountOut();
-        console.log('_totalAmount', _totalAmount);
+        console.log('doHardWork _totalAmount', _totalAmount);
     }
 
     /// @dev Stub function for Strategy Base implementation
     function depositToPool(uint256 underlyingAmount) internal override {
         pumpIn(underlyingAmount);
         _totalAmount = calculator.getTotalAmountOut();
-        console.log('_totalAmount', _totalAmount);
+        console.log('depositToPool _totalAmount', _totalAmount);
     }
 
     /// @dev Function to withdraw from pool
@@ -117,7 +106,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
         console.log('$ underlyingBalance', underlyingBalance);
         _totalAmount = calculator.getTotalAmountOut();
-        console.log('_totalAmount', _totalAmount);
+        console.log('withdrawAndClaimFromPool _totalAmount', _totalAmount);
     }
 
     /// @dev Emergency withdraws all most underlying from the pool
@@ -131,21 +120,23 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         liquidateRewardDefault();
     }
 
-    /// @dev function for Strategy Base implementation
+    /// @dev Returns how much tokens are ready to claim
     function readyToClaim() external view override returns (uint256[] memory) {
         uint256[] memory toClaim = new uint256[](_rewardTokens.length);
         return toClaim;
     }
 
-    /// @dev Stub function for Strategy Base implementation
+    /// @dev Returns pool total amount
     function poolTotalAmount() external pure override returns (uint256) {
         return 0;
     }
 
+    /// @dev Returns assets array
     function assets() external view override returns (address[] memory) {
         return _assets;
     }
 
+    /// @dev Returns platform index
     function platform() external pure override returns (Platform) {
         return Platform.AAVE_MAI_BAL;
     }
@@ -153,13 +144,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @notice Controller can claim coins that are somehow transferred into the contract
     ///         Note that they cannot come in take away coins that are used and defined in the strategy itself
     /// @param recipient Recipient address
-    /// @param recipient Token address
-    /// @param recipient Token amount
+    /// @param token Token address
     function salvageFromPipeline(address recipient, address token)
     external onlyController {
-        salvageFromAllPipes(recipient, token); // transfers all amounts
+        salvageFromAllPipes(recipient, token);
+        // transfers token to this contract
     }
-
-    receive() external payable {}
 
 }

@@ -33,12 +33,12 @@ contract LinearPipeline {
         console.log('   pipes.length', pipes.length);
 
         if (pipes.length > 1) {
-            Pipe prevPipe = pipes[pipes.length-2];
+            Pipe prevPipe = pipes[pipes.length - 2];
             console.log('   prevPipe    ', prevPipe.name());
             prevPipe.setNextPipe(address(newPipe));
             newPipe.setPrevPipe(address(prevPipe));
-        } else { // first pipe should have pipeline as prev pipe to send tokens when gets
-            newPipe.setPrevPipe(address(this) );
+        } else {// first pipe should have pipeline as prev pipe to send tokens when gets
+            newPipe.setPrevPipe(address(this));
             console.log('   prevPipe    ', 'LinearPipeline');
         }
     }
@@ -52,7 +52,7 @@ contract LinearPipeline {
         if (sourceAmount == 0) return 0;
         outputAmount = sourceAmount;
         uint256 len = pipes.length;
-        for (uint256 i=fromPipeIndex; i<len; i++) {
+        for (uint256 i = fromPipeIndex; i < len; i++) {
             console.log('+++ put amountIn', pipes[i].name(), outputAmount);
             outputAmount = pipes[i].put(outputAmount);
         }
@@ -82,8 +82,8 @@ contract LinearPipeline {
         if (underlyingAmount == 0) return 0;
         amountOut = underlyingAmount;
         uint256 len = pipes.length;
-        for (uint256 i=len; i>toPipeIndex; i--) {
-            Pipe pipe = pipes[i-1];
+        for (uint256 i = len; i > toPipeIndex; i--) {
+            Pipe pipe = pipes[i - 1];
             console.log('--- get amountOut', pipe.name(), amountOut);
             amountOut = pipe.get(amountOut);
             console.log('- amountOut', amountOut);
@@ -105,12 +105,13 @@ contract LinearPipeline {
     }
 
     /// @dev Re-balance pipe
+    /// @param pipeIndex index of the pipe to rebalance
     function rebalancePipe(uint256 pipeIndex) internal {
         Pipe pipe = pipes[pipeIndex];
         if (!pipe.needsRebalance()) return;
 
         (uint256 imbalance, bool deficit) = pipe.rebalance();
-        if (imbalance>0) {
+        if (imbalance > 0) {
             if (deficit) {
                 console.log('rebalancePipe', pipe.name());
                 console.log('imbalance, deficit', imbalance, deficit);
@@ -126,36 +127,36 @@ contract LinearPipeline {
     /// @dev Re-balance all pipes
     function rebalanceAllPipes() public {
         uint256 len = pipes.length;
-        for (uint256 i=0; i<len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             rebalancePipe(i);
         }
     }
 
-    /// @dev Checks if re-balancing needs some pipe(s)
-    function isRebalanceNeeded() external view returns(bool) {
+    /// @dev Checks if re-balance need some pipe(s)
+    /// @return returns true when re-balance needed
+    function isRebalanceNeeded() external view returns (bool) {
         uint256 len = pipes.length;
-        for (uint256 i=0; i<len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             if (pipes[i].needsRebalance()) return true;
         }
         return false;
     }
 
-
-
-    /// @dev calls claim() for all pipes
-    function claimFromAllPipes() internal  {
+    /// @dev Calls claim() for all pipes
+    function claimFromAllPipes() internal {
         uint256 len = pipes.length;
-        for (uint256 i=0; i<len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             pipes[i].claim();
         }
     }
 
+    /// @dev Function to calculate amount we will receive when we withdraw amountIn from last pipe to pipe with toPipeIndex. Should be called from another contract (LinearPipelineCalculator.sol)
+    /// @param amountIn in most output tokens (lp tokens of the last pipe)
+    /// @param toPipeIndex index of the pipe we should to pump out
     function getAmountOutReverted(uint256 amountIn, uint256 toPipeIndex)
     public {
         uint256 amountOut = pumpOut(amountIn, toPipeIndex);
         console.log('getAmountOutReverted amountOut', amountOut);
-//        Pipe pipe = pipes[toPipeIndex];
-//        uint256 amountOut = pipe.sourceBalance();
         // store answer in revert message data
         assembly {
             let ptr := mload(0x40)
@@ -164,8 +165,9 @@ contract LinearPipeline {
         }
     }
 
+    /// @dev Returns balance of output (lp) token of the last pipe
     function getMostUnderlyingBalance() public view returns (uint256) {
-        uint256 last = pipes.length-1;
+        uint256 last = pipes.length - 1;
         uint256 mostUnderlyingBalance = pipes[last].outputBalance();
         console.log('mostUnderlyingBalance', mostUnderlyingBalance);
         return mostUnderlyingBalance;
@@ -177,7 +179,7 @@ contract LinearPipeline {
     function salvageFromAllPipes(address recipient, address token)
     internal {
         uint256 len = pipes.length;
-        for (uint256 i=0; i<len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             pipes[i].salvageFromPipe(recipient, token);
         }
     }

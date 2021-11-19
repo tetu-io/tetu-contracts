@@ -60,7 +60,9 @@ export class StrategyTestUtils {
       info: StrategyInfo,
       deposit: string,
       toClaimCalcFunc: (() => Promise<BigNumber[]>) | null,
-      toDropRewardsFunc?: (() => Promise<void>))
+      toDropRewardsFunc?: (() => Promise<void>),
+      timeShift?: number,
+  )
   {
     const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
     const den = (await info.core.controller.psDenominator()).toNumber();
@@ -86,8 +88,9 @@ export class StrategyTestUtils {
     const psBalanceBefore = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
     const userEarnedTotal = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
 
+    console.log("TIME MACHINE GO");
     // *********** TIME MACHINE GO BRRRRR***********
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7);
+    await TimeUtils.advanceBlocksOnTs(timeShift || 60 * 60 * 24 * 7);
 
     // ** calculate to claim
     let totalToClaim = 0;
@@ -109,10 +112,10 @@ export class StrategyTestUtils {
     const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
 
     // ** call callback, so test can send some reward tokens to the contract
-    if (toDropRewardsFunc != null) await toDropRewardsFunc();
+    if (toDropRewardsFunc) await toDropRewardsFunc();
 
     // ** doHardWork
-    await VaultUtils.doHardWorkAndCheck(info.vault);
+    await VaultUtils.doHardWorkAndCheck(info.vault, true);
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
     if (await info.vault.ppfsDecreaseAllowed()) {
@@ -307,11 +310,11 @@ export class StrategyTestUtils {
     );
   }
 
-  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number, wait = 1) {
-    console.log('new ps ratio', numenator, denumenatior.toFixed())
-    await announcer.announceRatioChange(9, numenator, denumenatior);
+  public static async updatePSRatio(announcer: Announcer, controller: Controller, numerator: number, denominator: number, wait = 1) {
+    console.log('new ps ratio', numerator, denominator.toFixed())
+    await announcer.announceRatioChange(9, numerator, denominator);
     await TimeUtils.advanceBlocksOnTs(wait);
-    await controller.setPSNumeratorDenominator(numenator, denumenatior);
+    await controller.setPSNumeratorDenominator(numerator, denominator);
   }
 
 

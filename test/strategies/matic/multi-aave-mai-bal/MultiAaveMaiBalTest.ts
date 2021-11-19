@@ -44,20 +44,21 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     }
 
     const AAVE_PIPE_INDEX = 1;
-    const MAI_PIPE_INDEX  = 3;
-    const BAL_PIPE_INDEX  = 4;
+    const MAI_PIPE_INDEX = 3;
+    const BAL_PIPE_INDEX = 4;
+
+    const TIME_SHIFT = 60 * 60 * 24 * 30 * 6;  // months;
 
     let ICamWMATIC: any;
     let airDropper: any;
 
-    const DEPOSIT_AMOUNT = utils.parseUnits('100')
-    const REWARDS_AMOUNT  = utils.parseUnits('1')
+    const DEPOSIT_AMOUNT = utils.parseUnits('1000')
+    const REWARDS_AMOUNT = utils.parseUnits('10')
 
-    const airdropTokenToPipe = async function(pipeIndex: number, tokenAddress: string, amount: BigNumber) {
+    const airdropTokenToPipe = async function (pipeIndex: number, tokenAddress: string, amount: BigNumber) {
         // claim aave rewards on mai
-        // TODO impersonate as ICamWMATIC.operator()
-        //await ICamWMATIC.claimAaveRewards();
-        //await ICamWMATIC.harvestMaticIntoToken();
+        console.log('claimAaveRewards');
+        await ICamWMATIC.claimAaveRewards();
 
         // air drop reward token
         await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
@@ -67,18 +68,17 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await TokenUtils.transfer(tokenAddress, airDropper, pipeAddress, bal.toString());
     }
 
-
     before(async function () {
         snapshotBefore = await TimeUtils.snapshot();
         // const [signer, user] = await ethers.getSigners();
         const signer = await DeployerUtils.impersonate();
-        const user  = (await ethers.getSigners())[1];
-        airDropper        = (await ethers.getSigners())[2];
+        const user = (await ethers.getSigners())[1];
+        airDropper = (await ethers.getSigners())[2];
 
         const core = await DeployerUtils.getCoreAddressesWrapper(signer);
         const tools = await DeployerUtils.getToolsAddresses();
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
-        ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', tools.calculator) as ICamWMATIC
+        ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', MaticAddresses.CAMWMATIC_TOKEN) as ICamWMATIC
 
         // const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
         // const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
@@ -184,12 +184,12 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await TimeUtils.rollback(snapshotBefore);
     });
 
-   /* it("do hard work with liq path", async () => {
-        await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-            (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-            null
-        );
-    });*/
+    /* it("do hard work with liq path", async () => {
+         await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+             (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+             null
+         );
+     });*/
 
     it.only("do hard work with liq path AAVE WMATIC rewards", async () => {
         console.log('AAVE WMATIC rewards');
@@ -197,7 +197,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
             null,
-            () => airdropTokenToPipe(AAVE_PIPE_INDEX, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT)
+            () => airdropTokenToPipe(AAVE_PIPE_INDEX, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT),
+            TIME_SHIFT,
         );
     });
 
@@ -207,7 +208,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
             null,
-            () => airdropTokenToPipe(MAI_PIPE_INDEX, MaticAddresses.QI_TOKEN, REWARDS_AMOUNT)
+            () => airdropTokenToPipe(MAI_PIPE_INDEX, MaticAddresses.QI_TOKEN, REWARDS_AMOUNT),
+            TIME_SHIFT,
         );
     });
 
@@ -217,7 +219,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
             null,
-            () => airdropTokenToPipe(BAL_PIPE_INDEX, MaticAddresses.BAL_TOKEN, REWARDS_AMOUNT)
+            () => airdropTokenToPipe(BAL_PIPE_INDEX, MaticAddresses.BAL_TOKEN, REWARDS_AMOUNT),
+            TIME_SHIFT,
         );
     });
 

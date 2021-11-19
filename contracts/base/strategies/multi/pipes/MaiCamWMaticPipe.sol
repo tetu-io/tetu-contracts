@@ -9,11 +9,11 @@ import "./../../../../third_party/qudao-mai/ICamWMATIC.sol";
 
 import "hardhat/console.sol";
 
-struct MaiCamWMaticPipeData {
-    address sourceToken;
-    address lpToken;
-    address rewardToken;
-}
+    struct MaiCamWMaticPipeData {
+        address sourceToken;
+        address lpToken;
+        address rewardToken;
+    }
 
 /// @title Mai CamWMatic Pipe Contract
 /// @author bogdoslav

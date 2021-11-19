@@ -24,11 +24,7 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
     address private constant _QI        = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4; // MAI reward token
     address private constant _BAL       = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
 
-//    address[] private __rewardTokens = [ // rewardTokens
-//        _WMATIC, // WMATIC on AAVE
-//        _QI,     // Qi Dao (QI) on MAI
-//        _BAL     // BAL on Balancer
-//    ];
+    MaiStablecoinPipe private _maiStablecoinPipe;
 
     constructor(
         address _controller,
@@ -36,8 +32,6 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
         address _underlying
     ) AaveMaiBalStrategyBase(_controller, _underlying, _vault, new address[](0), _WMATIC
     ) {
-
-
         _rewardTokens.push(_WMATIC); // WMATIC on AAVE;
         _rewardTokens.push(_QI);     // Qi Dao (QI) on MAI
         _rewardTokens.push(_BAL);    // BAL on Balancer
@@ -80,12 +74,25 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
         // Build pipeline
         addPipe(new UnwrappingPipe(_WMATIC));
         addPipe(new AaveWethPipe(aaveWethPipeData));
-//        addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData)); //TODO uncomment
-//        addPipe(new MaiStablecoinPipe(maiStablecoinPipeData));
-//        addPipe(new BalVaultPipe(balVaultPipeData));
+        addPipe(new MaiCamWMaticPipe(maiCamWMaticPipeData));
+        _maiStablecoinPipe = new MaiStablecoinPipe(maiStablecoinPipeData);
+        addPipe(_maiStablecoinPipe);
+        addPipe(new BalVaultPipe(balVaultPipeData));
 
         console.log('StrategyAaveMaiBal Initialized');
+    }
 
+    /// @dev Sets targetPercentage for MaiStablecoinPipe
+    /// @param _targetPercentage - target collateral to debt percentage
+    function setTargetPercentage(uint16 _targetPercentage) onlyControllerOrGovernance external {
+        _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
+        rebalanceAllPipes(); //TODO or leave it imbalanced to next external rebalanceAllPipes() call?
+    }
+
+    /// @dev Gets targetPercentage of MaiStablecoinPipe
+    /// @return collateral to debt percentage
+    function targetPercentage() external view returns (uint16){
+        return _maiStablecoinPipe.targetPercentage();
     }
 
 }
