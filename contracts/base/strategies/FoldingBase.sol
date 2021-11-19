@@ -20,6 +20,7 @@ import "../interface/ISmartVault.sol";
 import "../../third_party/IERC20Extended.sol";
 
 /// @title Abstract contract for folding strategy
+/// @author JasperS13
 /// @author belbix
 abstract contract FoldingBase is StrategyBase {
   using SafeERC20 for IERC20;

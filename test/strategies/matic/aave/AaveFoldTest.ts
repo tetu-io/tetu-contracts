@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
-import {startAaveFoldStrategyTest} from "./AaveFoldStrategyTest";
+import {startAaveFoldStrategyTest} from "./AaveFoldStrategyTestBase";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires

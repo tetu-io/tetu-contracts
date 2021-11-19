@@ -30,7 +30,6 @@ import "../../../third_party/aave/IPriceOracle.sol";
 
 
 /// @title Abstract contract for Aave lending strategy implementation with folding functionality
-/// @author JasperS13
 /// @author belbix
 /// @author olegn
 abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
@@ -42,7 +41,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev precision for the RAY values e.g currentLiquidityRate value
   uint256 private constant _RAY_PRECISION = 10 ** 27;
   /// @dev approximate number of seconds per year
-  uint256 private constant _SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+  uint256 private constant _SECONDS_PER_YEAR = 365 days;
   /// @dev approximate 1 month - default time period for profitability forecast
   uint256 private constant _PROFITABILITY_PERIOD = 30 days;
   /// @notice Strategy type for statistical purposes
@@ -52,6 +51,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant VERSION = "1.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
+  /// @dev 2 is Variable
+  uint256 private constant INTEREST_RATE_MODE = 2;
 
   ILendingPool private lPool;
   IAaveIncentivesController private aaveController;
@@ -150,8 +151,6 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     aaveController.claimRewards(assets, type(uint256).max, address(this));
   }
 
-  //////////// require update balance in the end
-
   function _supply(uint256 amount) internal override updateSupplyInTheEnd {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
     IERC20(_underlyingToken).safeApprove(address(lPool), 0);
@@ -161,8 +160,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   /// @dev Borrows against the collateral
   function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
-    // Borrow, check the balance for this contract's address
-    lPool.borrow(_underlyingToken, amountUnderlying, 2, 0, address(this));
+    lPool.borrow(_underlyingToken, amountUnderlying, INTEREST_RATE_MODE, 0, address(this));
   }
 
   /// @dev Redeem liquidity in underlying
@@ -189,7 +187,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     if (amountUnderlying != 0) {
       IERC20(_underlyingToken).safeApprove(address(lPool), 0);
       IERC20(_underlyingToken).safeApprove(address(lPool), amountUnderlying);
-      lPool.repay(_underlyingToken, amountUnderlying, 2, address(this));
+      lPool.repay(_underlyingToken, amountUnderlying, INTEREST_RATE_MODE, address(this));
     }
   }
 
