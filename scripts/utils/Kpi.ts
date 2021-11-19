@@ -51,30 +51,38 @@ async function main() {
     currentBlock
   );
 
-  for (const log of logs) {
-    const logDecoded = web3.eth.abi.decodeLog([
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "rewardToken",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }],
-      log.data,
-      log.topics.slice(1));
-    const vault = log.address.toLowerCase();
-    const rewardPerToken = rewards.get(vault) as Map<string, number>;
-    const rt = logDecoded.rewardToken;
-    const rtDec = await TokenUtils.decimals(rt);
-    const amount = +utils.formatUnits(logDecoded.amount, rtDec);
-    const prevAmount = rewardPerToken.get(rt.toLowerCase()) ?? 0;
-    rewardPerToken.set(rt.toLowerCase(), prevAmount + amount);
-    console.log('rt', rt, amount, prevAmount);
+  let i = 0;
+  while (i < logs.length) {
+    try {
+      const log = logs[i];
+      const logDecoded = web3.eth.abi.decodeLog([
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "rewardToken",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }],
+        log.data,
+        log.topics.slice(1));
+      const vault = log.address.toLowerCase();
+      const rewardPerToken = rewards.get(vault) as Map<string, number>;
+      const rt = logDecoded.rewardToken;
+      const rtDec = await TokenUtils.decimals(rt);
+      const amount = +utils.formatUnits(logDecoded.amount, rtDec);
+      const prevAmount = rewardPerToken.get(rt.toLowerCase()) ?? 0;
+      rewardPerToken.set(rt.toLowerCase(), prevAmount + amount);
+      console.log('rt', rt, amount, prevAmount);
+      i++
+    } catch (e) {
+      console.log('error in log loop, try again')
+      await DeployerUtils.delay(10000);
+    }
   }
 
   for (const strategy of allStrategies) {
