@@ -16,7 +16,7 @@ const argv = require('yargs/yargs')()
   },
   onlyOneAaveFoldStrategyTest: {
     type: "number",
-    default: 0,
+    default: -1,
   }
 }).argv;
 

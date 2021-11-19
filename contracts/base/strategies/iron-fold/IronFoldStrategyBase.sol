@@ -130,17 +130,14 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   }
 
   function _supply(uint256 amount) internal override updateSupplyInTheEnd {
-    uint256 balance = IERC20(_underlyingToken).balanceOf(address(this));
-    if (amount < balance) {
-      balance = amount;
-    }
+    amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
     if (_isMatic()) {
-      wmaticWithdraw(balance);
-      IRMatic(rToken).mint{value : balance}();
+      wmaticWithdraw(amount);
+      IRMatic(rToken).mint{value : amount}();
     } else {
       IERC20(_underlyingToken).safeApprove(rToken, 0);
-      IERC20(_underlyingToken).safeApprove(rToken, balance);
-      require(CompleteRToken(rToken).mint(balance) == 0, "IFS: Supplying failed");
+      IERC20(_underlyingToken).safeApprove(rToken, amount);
+      require(CompleteRToken(rToken).mint(amount) == 0, "IFS: Supplying failed");
     }
   }
 
