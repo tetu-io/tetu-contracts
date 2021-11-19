@@ -1,11 +1,11 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, PriceCalculator, SmartVault} from "../../typechain";
+import {Bookkeeper, ContractReader, IStrategy, PriceCalculator, SmartVault} from "../../typechain";
 import {writeFileSync} from "fs";
 import {StrategyTestUtils} from "../../test/strategies/StrategyTestUtils";
 import {MaticAddresses} from "../../test/MaticAddresses";
 
-const ASSET_SPECIFIC_ROUTES = [7];
+const ASSET_TO_RT_ROUTES = [9, 14];
 const EXCLUDED_ASSETS = [MaticAddresses.FRAX_TOKEN, MaticAddresses.FXS_TOKEN];
 
 async function main() {
@@ -28,9 +28,9 @@ async function main() {
   let i = 0;
   while (i < vaultsSize) {
     try {
-      const vAdr = await bookkeeper._vaults(i);
-      // const vAdr = '0x96aFb62d057f7E0Dca987C503812b12BEE14f5E5';
-      // i = vaultsSize - 1;
+      // const vAdr = await bookkeeper._vaults(i);
+      const vAdr = '0xb4607D4B8EcFafd063b3A3563C02801c4C7366B2';
+      i = vaultsSize - 1;
       console.log('vAdr', i, vAdr);
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
       const strategy = await vCtr.strategy();
@@ -43,6 +43,10 @@ async function main() {
         continue;
       }
 
+      const strategyCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', strategy) as IStrategy;
+
+      const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
+
       const rts = await cReader.strategyRewardTokens(strategy);
       console.log('rts', rts);
 
@@ -51,6 +55,7 @@ async function main() {
           console.log('ps reward')
           continue;
         }
+        // *** BUYBACK ROUTE
         if (MaticAddresses.TETU_TOKEN !== rt.toLowerCase()) {
           if (addToAssets(parsedAssets, rt, MaticAddresses.TETU_TOKEN)) {
             const tetuRoute = await StrategyTestUtils.createLiquidationPath(rt, MaticAddresses.TETU_TOKEN, calculator);
@@ -60,6 +65,7 @@ async function main() {
             }
           }
         }
+        // *** FUNDKEEPER ROUTE
         if (MaticAddresses.USDC_TOKEN !== rt.toLowerCase()) {
           if (addToAssets(parsedAssets, rt, MaticAddresses.USDC_TOKEN)) {
             const fundRoute = await StrategyTestUtils.createLiquidationPath(rt, MaticAddresses.USDC_TOKEN, calculator);
@@ -69,7 +75,7 @@ async function main() {
             }
           }
         }
-        if (!ASSET_SPECIFIC_ROUTES.includes(platform)) {
+        if (bbRatio !== 10000) {
           const assets = await cReader.strategyAssets(strategy);
           for (const asset of assets) {
             if (asset.toLowerCase() === rt.toLowerCase()) {
@@ -84,6 +90,7 @@ async function main() {
               console.log('excluded asses', asset)
               continue;
             }
+            // *** AUTOCOMPOUND ROUTE
             if (addToAssets(parsedAssets, rt, asset)) {
               const assetRoute = await StrategyTestUtils.createLiquidationPath(rt, asset, calculator);
               if (addToPaths(paths, assetRoute[0])) {
@@ -94,6 +101,33 @@ async function main() {
           }
         }
       }
+
+      // *** LIQUIDATE UNDERLYING
+      if (ASSET_TO_RT_ROUTES.includes(platform)) {
+        const asset = await cReader.vaultUnderlying(vAdr);
+
+        // *** BUYBACK ROUTE
+        if (MaticAddresses.TETU_TOKEN !== asset.toLowerCase()) {
+          if (addToAssets(parsedAssets, asset, MaticAddresses.TETU_TOKEN)) {
+            const tetuRoute = await StrategyTestUtils.createLiquidationPath(asset, MaticAddresses.TETU_TOKEN, calculator);
+            if (addToPaths(paths, tetuRoute[0])) {
+              allRoutes.push(tetuRoute[0]);
+              allRouters.push(tetuRoute[1]);
+            }
+          }
+        }
+        // *** FUNDKEEPER ROUTE
+        if (MaticAddresses.USDC_TOKEN !== asset.toLowerCase()) {
+          if (addToAssets(parsedAssets, asset, MaticAddresses.USDC_TOKEN)) {
+            const fundRoute = await StrategyTestUtils.createLiquidationPath(asset, MaticAddresses.USDC_TOKEN, calculator);
+            if (addToPaths(paths, fundRoute[0])) {
+              allRoutes.push(fundRoute[0]);
+              allRouters.push(fundRoute[1]);
+            }
+          }
+        }
+      }
+
       i++;
     } catch (e) {
       console.error('Error in loop', e);

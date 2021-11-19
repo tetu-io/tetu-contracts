@@ -41,6 +41,9 @@ async function startAaveFoldStrategyTest(
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
+      console.log('borrowTargetFactorNumerator', borrowTargetFactorNumerator)
+      console.log('collateralFactorNumerator', collateralFactorNumerator)
+
       const data = await StrategyTestUtils.deploy(
         signer,
         core,
