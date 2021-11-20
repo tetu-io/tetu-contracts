@@ -7,13 +7,14 @@ import {TimeUtils} from "../../../TimeUtils";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {ICamWMATIC, StrategyAaveMaiBal} from "../../../../typechain";
+import {ICamWMATIC, IErc20Stablecoin, StrategyAaveMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {StrategyInfo} from "../../StrategyInfo";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {PriceCalculator} from "../../../../typechain";
+import { smock } from "@defi-wonderland/smock";
 // import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 dotEnvConfig();
@@ -50,12 +51,13 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     const BAL_PIPE_INDEX = 4;
 
     const TIME_SHIFT = 60 * 60 * 24 * 30 * 3;  // months;
-
-    let ICamWMATIC: any;
-    let airDropper: any;
+    const MAI_STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a';
 
     const DEPOSIT_AMOUNT = utils.parseUnits('1000')
     const REWARDS_AMOUNT = utils.parseUnits('10')
+
+    let ICamWMATIC: any;
+    let airDropper: any;
 
     const airdropTokenToPipe = async function (pipeIndex: number, tokenAddress: string, amount: BigNumber) {
         // claim aave rewards on mai
@@ -192,16 +194,14 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         );
     });
 
-    it.only("Target percentage", async () => {
+    it("Target percentage", async () => {
         console.log('Rebalance test');
-        const info = strategyInfo
-        const deposit = DEPOSIT_AMOUNT.toString()
-        const strategyGov = strategyAaveMaiBal.connect(info.signer);
+        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
 
         const targetPercentageInitial = await strategyGov.targetPercentage()
-        console.log('>>>targetPercentageInitial', targetPercentageInitial);
+        console.log('>>>targetPercentageInitial', targetPercentageInitial.toString());
 
-        await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
+        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(DEPOSIT_AMOUNT));
         console.log('>>>deposited');
         const bal1 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal1', bal1.toString());
@@ -209,7 +209,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         // increase collateral to debt percentage twice, so debt should be decreased twice
         await strategyGov.setTargetPercentage(targetPercentageInitial*2)
         const targetPercentage2 = await strategyGov.targetPercentage()
-        console.log('>>>targetPercentage2', targetPercentage2)
+        console.log('>>>targetPercentage2', targetPercentage2.toString())
 
         const bal2 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal2', bal2.toString());
@@ -217,7 +217,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         // return target percentage back, so debt should be increased twice
         await strategyGov.setTargetPercentage(targetPercentageInitial)
         const targetPercentage3 = await strategyGov.targetPercentage()
-        console.log('>>>targetPercentage3', targetPercentage3)
+        console.log('>>>targetPercentage3', targetPercentage3.toString())
 
         const bal3 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal3', bal3.toString());
@@ -225,6 +225,28 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         expect(bal2).to.be.closeTo(bal1.div(2), bal1.div(200)); // 0.5% deviation max
         expect(bal3).to.be.closeTo(bal1, bal1.div(200));        // 0.5% deviation max
 
+    });
+
+    it.only("Rebalance on matic price change", async () => {
+        console.log('Rebalance test');
+        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
+
+        const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', MAI_STABLECOIN_ADDRESS)) as IErc20Stablecoin;
+        const stablecoinEthPrice = await stablecoin.getEthPriceSource();
+        console.log('stablecoinEthPrice', stablecoinEthPrice.toString());
+
+        const price = await strategyGov.ethPriceSource()
+        console.log('price             ', price.toString());
+
+        await strategyGov.setMockEthPriceSource(price.mul(2)) // mock price to twice
+
+        const price2 = await strategyGov.ethPriceSource()
+        console.log('price2            ', price2.toString());
+
+        await strategyGov.setMockEthPriceSource(0) // disable mocking
+
+        const price3 = await strategyGov.ethPriceSource()
+        console.log('price3            ', price3.toString());
 
     });
 

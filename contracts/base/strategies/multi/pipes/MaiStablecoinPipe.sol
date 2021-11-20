@@ -17,8 +17,8 @@ import "hardhat/console.sol"; //TODO rm
         address stablecoin; //Erc20Stablecoin contract address
         // borrowing
         address borrowToken; // mai (miMATIC) for example
-        uint16 targetPercentage; // Collateral to Debt percentage
-        uint16 maxImbalance;     // Maximum Imbalance in percents
+        uint256 targetPercentage; // Collateral to Debt percentage
+        uint256 maxImbalance;     // Maximum Imbalance in percents
         address rewardToken;
     }
 
@@ -31,7 +31,7 @@ contract MaiStablecoinPipe is Pipe {
     IErc20Stablecoin private _stablecoin;
     uint256 vaultID;
 
-    uint256 public mockEthPriceSource = 0;
+    uint256 public mockEthPriceSource = 0; // used for testing purposes only
 
     constructor(MaiStablecoinPipeData memory _d) Pipe() {
         name = 'MaiStablecoinPipe';
@@ -45,13 +45,13 @@ contract MaiStablecoinPipe is Pipe {
 
     /// @dev Sets targetPercentage
     /// @param _targetPercentage - target collateral to debt percentage
-    function setTargetPercentage(uint16 _targetPercentage) onlyPipeline public {
+    function setTargetPercentage(uint256 _targetPercentage) onlyPipeline public {
         d.targetPercentage = _targetPercentage;
     }
 
     /// @dev Gets targetPercentage
     /// @return collateral to debt percentage
-    function targetPercentage() external view returns (uint16) {
+    function targetPercentage() external view returns (uint256) {
         return d.targetPercentage;
     }
 
@@ -220,7 +220,7 @@ contract MaiStablecoinPipe is Pipe {
 
     /// @dev Gets current eth (matic) price
     /// @return current or mocked eth (matic) price
-    function getEthPriceSource() internal returns (uint256) {
+    function getEthPriceSource() internal view returns (uint256) {
         if (mockEthPriceSource != 0) {
             return mockEthPriceSource;
         } else {
@@ -228,6 +228,7 @@ contract MaiStablecoinPipe is Pipe {
         }
     }
 
+    ///TODO how to disable it at production? Mey be we have some modifier
     /// @dev Sets mock eth (matic) price for re-balance testing. do not use it at production
     /// @param _mockEthPriceSource new mock eth (matic) price. Set to 0 to disable mocking
     function setMockEthPriceSource(uint256 _mockEthPriceSource) external onlyPipeline {
@@ -236,21 +237,21 @@ contract MaiStablecoinPipe is Pipe {
 
     /// @dev Shows current eth (matic) price
     /// @return current or mocked eth (matic) price
-    function ethPriceSource() public returns (uint256) {
+    function ethPriceSource() public view returns (uint256) {
         return getEthPriceSource();
     }
 
-    /// @dev converts collateral amount to borrow amount using target Collateral to Debt percentage
+    /// @dev Converts collateral amount to borrow amount using target Collateral to Debt percentage
     /// @param collateral amount in collateral token
     /// @param percentage is Collateral to Debt percentage from 135 and above
     function _collateralToBorrowTokenAmountPercentage(uint256 collateral, uint256 percentage)
     private view returns (uint256 amount) {
         console.log('_collateralPercentageToBorrowTokenAmount collateral, percentage', collateral, percentage);
 
-        uint256 ethPriceSource = getEthPriceSource();
-        console.log('_ethPriceSource', ethPriceSource);
+        uint256 ethPrice = getEthPriceSource();
+        console.log('_ethPrice', ethPrice);
 
-        uint256 value = collateral * ethPriceSource / _stablecoin.getTokenPriceSource();
+        uint256 value = collateral * ethPrice / _stablecoin.getTokenPriceSource();
         console.log('_value', value);
 
         //        amount = toDecimals(value * 100 / percentage, collateralDecimals(), borrowDecimals());
@@ -265,15 +266,15 @@ contract MaiStablecoinPipe is Pipe {
     private view returns (uint256 amount) {
         console.log('_borrowToCollateralTokenAmountPercentage borrowAmount, percentage', borrowAmount, percentage);
 
-        uint256 ethPriceSource = getEthPriceSource();
-        console.log('_ethPriceSource', ethPriceSource);
+        uint256 ethPrice = getEthPriceSource();
+        console.log('_ethPrice', ethPrice);
         uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
         uint256 closingFee = _stablecoin.closingFee();
 
         // from https://github.com/0xlaozi/qidao/blob/308754139e0d701bdd2c8d4f66ae14ef8b2acdca/contracts/Stablecoin.sol#L212
-        uint256 fee = (borrowAmount * closingFee * tokenPriceSource) / (ethPriceSource * 10000);
+        uint256 fee = (borrowAmount * closingFee * tokenPriceSource) / (ethPrice * 10000);
         console.log('_fee           ', fee);
-        uint256 value = borrowAmount * tokenPriceSource / ethPriceSource;
+        uint256 value = borrowAmount * tokenPriceSource / ethPrice;
         console.log('_value         ', value);
 
         //        amount = toDecimals(value * percentage / 100 - fee, collateralDecimals(), borrowDecimals());

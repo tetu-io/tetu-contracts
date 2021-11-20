@@ -84,15 +84,28 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
 
     /// @dev Sets targetPercentage for MaiStablecoinPipe
     /// @param _targetPercentage - target collateral to debt percentage
-    function setTargetPercentage(uint16 _targetPercentage) onlyControllerOrGovernance external {
+    function setTargetPercentage(uint256 _targetPercentage) onlyControllerOrGovernance external {
         _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
         rebalanceAllPipes(); //TODO or leave it imbalanced to next external rebalanceAllPipes() call?
     }
 
     /// @dev Gets targetPercentage of MaiStablecoinPipe
     /// @return collateral to debt percentage
-    function targetPercentage() external view returns (uint16){
+    function targetPercentage() external view returns (uint256){
         return _maiStablecoinPipe.targetPercentage();
+    }
+
+    ///TODO how to disable it at production? Mey be we have some modifier
+    /// @dev Sets mockEthPriceSource for MaiStablecoinPipe. Set it to 0 to disable mocking
+    /// @param _mockEthPriceSource - target collateral to debt percentage
+    function setMockEthPriceSource(uint256 _mockEthPriceSource) onlyControllerOrGovernance external {
+        _maiStablecoinPipe.setMockEthPriceSource(_mockEthPriceSource);
+    }
+
+    /// @dev Gets ethPriceSource of MaiStablecoinPipe
+    /// @return ethPriceSource (mocked or real)
+    function ethPriceSource() external view returns (uint256){
+        return _maiStablecoinPipe.ethPriceSource();
     }
 
 }
