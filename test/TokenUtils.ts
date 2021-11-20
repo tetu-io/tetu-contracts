@@ -6,6 +6,7 @@ import {MaticAddresses} from "./MaticAddresses";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {FtmAddresses} from "./FtmAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -16,8 +17,8 @@ export class TokenUtils {
   public static TOKEN_HOLDERS = new Map<string, string>([
     [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
     [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
-    [MaticAddresses.WBTC_TOKEN, '0x5c2ed810328349100a66b82b78a1791b101c9d61'.toLowerCase()], // aave
-    [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave
+    [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
+    [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
     [MaticAddresses.USDT_TOKEN, '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe'.toLowerCase()], // adr
     [MaticAddresses.QUICK_TOKEN, '0xdB74C5D4F154BBD0B8e0a28195C68ab2721327e5'.toLowerCase()], // dquick
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
@@ -31,6 +32,10 @@ export class TokenUtils {
     [MaticAddresses.DAI_TOKEN, '0x9b17bAADf0f21F03e35249e0e59723F34994F806'.toLowerCase()], // anyswap
     [MaticAddresses.LINK_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
     [MaticAddresses.CRV_TOKEN, '0x98B5F32dd9670191568b661a3e847Ed764943875'.toLowerCase()], // qi
+    [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], //
+    [FtmAddresses.USDC_TOKEN, '0xe578c856933d8e1082740bf7661e379aa2a30b26'.toLowerCase()], // geist
+    [FtmAddresses.fUSDT_TOKEN, '0x940f41f0ec9ba1a34cf001cc03347ac092f5f6b5'.toLowerCase()], // geist
+    [FtmAddresses.FTM_TOKEN, '0x39b3bd37208cbade74d0fcbdbb12d606295b430a'.toLowerCase()], // geist
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

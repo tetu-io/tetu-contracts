@@ -31,7 +31,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
@@ -85,7 +85,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
     investAllUnderlying();
     IGauge(gauge).claim_rewards(address(this));
     liquidateReward();
@@ -124,11 +124,9 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
-        uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
         rtToUnderlying(rt, toCompound);
-        IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, ppfs);
       }
     }
   }

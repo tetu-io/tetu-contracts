@@ -117,6 +117,7 @@ export class MaticAddresses {
   public static SUSHI_WETH_USDT = "0xc2755915a85C6f6c1C0F3a86ac8C058F11Caa9C9".toLowerCase();
   public static SUSHI_USDC_WETH = "0x34965ba0ac2451A34a0471F04CCa3F990b8dea27".toLowerCase();
   public static SUSHI_TETU_WMATIC = "0x34dA30D1f8Ef9799F5Ae3B9989e1dEf926052e78".toLowerCase();
+  public static SUSHI_TETU_USDC = "0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9".toLowerCase();
 
   // wault
   public static WAULT_POLYMASTER = "0xC8Bd86E5a132Ac0bf10134e270De06A8Ba317BFe".toLowerCase();
@@ -173,6 +174,9 @@ export class MaticAddresses {
     MaticAddresses.WBTC_TOKEN,
   ]);
 
+  // AAVE
+  public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
+
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {
       case MaticAddresses.QUICK_FACTORY:
@@ -211,9 +215,5 @@ export class MaticAddresses {
         return "TETU";
     }
     throw Error('Unknown router ' + router);
-  }
-
-  public static isBlueChip(address: string): boolean {
-    return MaticAddresses.BLUE_CHIPS.has(address.toLowerCase())
   }
 }

@@ -80,7 +80,7 @@ describe("Multi swap tests", function () {
 
     const contractReader = await DeployerUtils.connectInterface(
       signer, 'ContractReader',
-      Addresses.TOOLS.get('matic')?.reader as string
+      (await DeployerUtils.getToolsAddresses()).reader as string
     ) as ContractReader;
 
     const strategies = await contractReader.strategies();

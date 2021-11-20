@@ -93,7 +93,7 @@ async function startDefaultSingleTokenStrategyTest(
 
       // ************** add funds for investing ************
       const baseAmount = 10_000;
-      await UniswapUtils.buyAllBigTokens(user);
+      // await UniswapUtils.buyAllBigTokens(user);
       const name = await TokenUtils.tokenSymbol(tokenOpposite);
       const dec = await TokenUtils.decimals(tokenOpposite);
       const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));

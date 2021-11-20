@@ -34,7 +34,7 @@ contract LiquidityBalancer is Controllable {
   using Address for address;
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   uint256 constant internal PRECISION = 10 ** 18;
   uint256 public targetPriceUpdateNumerator = 100; // 0.1 % by default
   uint256 public targetTvlUpdateNumerator = 100; // 0.1 % by default
@@ -63,13 +63,13 @@ contract LiquidityBalancer is Controllable {
 
   modifier onlyHardWorkerOrController() {
     require(IController(controller()).isHardWorker(msg.sender)
-      || controller() == msg.sender, "only hardworker or controller");
+      || controller() == msg.sender, "LB: Only hardworker or controller");
     _;
   }
 
   function changeLiquidity(address _token, address _lp) external onlyHardWorkerOrController {
-    require(priceTargets[_token] != 0, "zero price target");
-    require(lpTvlTargets[_lp] != 0, "zero lp tvl target");
+    require(priceTargets[_token] != 0, "LB: Zero price target");
+    require(lpTvlTargets[_lp] != 0, "LB: Zero lp tvl target");
 
     IUniswapV2Pair pair = IUniswapV2Pair(_lp);
     address oppositeToken = (_token == pair.token0()) ? pair.token1() : pair.token0();
@@ -78,7 +78,7 @@ contract LiquidityBalancer is Controllable {
     uint256 remAmount = needToRemove(_token, _lp);
 
     if (remAmount > 0) {
-      removeLiquidity(_lp, remAmount, _token, oppositeToken);
+      removeLiquidity(_lp, remAmount);
       // buy target tokens
       route.push(oppositeToken);
       route.push(_token);
@@ -105,7 +105,7 @@ contract LiquidityBalancer is Controllable {
       );
       route.pop();
       route.pop();
-      addLiquidity(_lp, _token, oppositeToken);
+      addLiquidity(_lp);
       updatePriceTarget(_token);
     }
   }
@@ -210,9 +210,9 @@ contract LiquidityBalancer is Controllable {
 
   // https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
   function swap(address _router, address[] memory _route, uint256 _amount) internal {
-    require(_router != address(0), "zero router");
+    require(_router != address(0), "LB: Zero router");
     uint256 bal = IERC20(_route[0]).balanceOf(address(this));
-    require(bal >= _amount, "not enough balance");
+    require(bal >= _amount, "LB: Not enough balance");
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
     //slither-disable-next-line unused-return
@@ -226,21 +226,24 @@ contract LiquidityBalancer is Controllable {
     emit Swap(_route[0], _route[1], _amount);
   }
 
-  function addLiquidity(address _lp, address token, address oppositeToken) internal {
+  function addLiquidity(address _lp) internal {
+    address token0 = IUniswapV2Pair(_lp).token0();
+    address token1 = IUniswapV2Pair(_lp).token1();
     address routerAddress = routers[_lp];
+    require(routerAddress != address(0), "LB: Router not found");
     IUniswapV2Router02 router = IUniswapV2Router02(routerAddress);
 
-    uint256 amount0 = IERC20(token).balanceOf(address(this));
-    uint256 amount1 = IERC20(oppositeToken).balanceOf(address(this));
+    uint256 amount0 = IERC20(token0).balanceOf(address(this));
+    uint256 amount1 = IERC20(token1).balanceOf(address(this));
 
-    IERC20(token).safeApprove(routerAddress, 0);
-    IERC20(token).safeApprove(routerAddress, amount0);
-    IERC20(oppositeToken).safeApprove(routerAddress, 0);
-    IERC20(oppositeToken).safeApprove(routerAddress, amount1);
+    IERC20(token0).safeApprove(routerAddress, 0);
+    IERC20(token0).safeApprove(routerAddress, amount0);
+    IERC20(token1).safeApprove(routerAddress, 0);
+    IERC20(token1).safeApprove(routerAddress, amount1);
     //slither-disable-next-line unused-return
     router.addLiquidity(
-      token,
-      oppositeToken,
+      token0,
+      token1,
       amount0,
       amount1,
       1,
@@ -248,14 +251,16 @@ contract LiquidityBalancer is Controllable {
       address(this),
       block.timestamp
     );
-    require(IERC20(oppositeToken).balanceOf(address(this)) == 0, "added not all");
     emit LiqAdded(_lp, amount0, amount1);
   }
 
-  function removeLiquidity(address _lp, uint256 _amount, address token0, address token1) internal {
+  function removeLiquidity(address _lp, uint256 _amount) internal {
+    address token0 = IUniswapV2Pair(_lp).token0();
+    address token1 = IUniswapV2Pair(_lp).token1();
     uint256 bal = IERC20(_lp).balanceOf(address(this));
-    require(bal >= _amount, "not enough balance");
+    require(bal >= _amount, "LB: Not enough balance");
     address routerAddress = routers[_lp];
+    require(routerAddress != address(0), "LB: Router not found");
     IUniswapV2Router02 router = IUniswapV2Router02(routerAddress);
 
     IERC20(_lp).safeApprove(routerAddress, 0);
@@ -325,54 +330,65 @@ contract LiquidityBalancer is Controllable {
 
   // ***************** GOVERNANCE ACTIONS *********************
 
+  function moveLiquidity(address from, address to) external onlyControllerOrGovernance {
+    IUniswapV2Pair sourceLp = IUniswapV2Pair(from);
+    IUniswapV2Pair targetLp = IUniswapV2Pair(to);
+    address token0 = sourceLp.token0();
+    address token1 = sourceLp.token1();
+    require(token0 == targetLp.token0() && token1 == targetLp.token1(), "LB: Wrong tokens in lps");
+
+    removeLiquidity(from, IERC20(from).balanceOf(address(this)));
+    addLiquidity(to);
+  }
+
   // move tokens to controller where money will be protected with time lock
   function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
-    require(tokenBalance >= amount, "not enough balance");
+    require(tokenBalance >= amount, "LB: Not enough balance");
     IERC20(_token).safeTransfer(controller(), amount);
     emit TokenMoved(_token, amount);
   }
 
   // should have PRECISION_DECIMALS
   function setTargetPrice(address _token, uint256 _target) external onlyControllerOrGovernance {
-    require(_target != 0, "wrong target");
-    require(_token != address(0), "wrong token");
+    require(_target != 0, "LB: Wrong target");
+    require(_token != address(0), "LB: Wrong token");
     priceTargets[_token] = _target;
     emit PriceTargetChanged(_token, _target);
   }
 
   // should have PRECISION_DECIMALS
   function setTargetLpTvl(address _lp, uint256 _target) external onlyControllerOrGovernance {
-    require(_target != 0, "wrong target");
-    require(_lp != address(0), "wrong lp");
+    require(_target != 0, "LB: Wrong target");
+    require(_lp != address(0), "LB: Wrong lp");
     lpTvlTargets[_lp] = _target;
     emit LpTvlTargetChanged(_lp, _target);
   }
 
   function setRouter(address _lp, address _router) external onlyControllerOrGovernance {
-    require(_lp != address(0), "wrong lp");
-    require(_router != address(0), "wrong router");
+    require(_lp != address(0), "LB: Wrong lp");
+    require(_router != address(0), "LB: Wrong router");
     routers[_lp] = _router;
     emit RouterChanged(_lp, _router);
   }
 
   function setTargetPriceUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
-    require(_numerator > 0, "zero not allowed");
-    require(_numerator < DENOMINATOR, "should be lower than denominator");
+    require(_numerator > 0, "LB: Zero not allowed");
+    require(_numerator < DENOMINATOR, "LB: Should be lower than denominator");
     targetPriceUpdateNumerator = _numerator;
     emit PriceNumeratorChanged(_numerator);
   }
 
   function setTargetTvlUpdateNumerator(uint256 _numerator) external onlyControllerOrGovernance {
-    require(_numerator > 0, "zero not allowed");
-    require(_numerator < DENOMINATOR, "should be lower than denominator");
+    require(_numerator > 0, "LB: Zero not allowed");
+    require(_numerator < DENOMINATOR, "LB: Should be lower than denominator");
     targetTvlUpdateNumerator = _numerator;
     emit TvlNumeratorChanged(_numerator);
   }
 
   function setRemoveLiqRatioNumerator(uint256 _numerator) external onlyControllerOrGovernance {
-    require(_numerator > 0, "zero not allowed");
-    require(_numerator <= DENOMINATOR, "should be lower or equal than denominator");
+    require(_numerator > 0, "LB: Zero not allowed");
+    require(_numerator <= DENOMINATOR, "LB: Should be lower or equal than denominator");
     removeLiqRatioNumerator = _numerator;
     emit RemLiqNumeratorChanged(_numerator);
   }

@@ -7,6 +7,7 @@ import axios from "axios";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "./MaticAddresses";
+import {MintHelperUtils} from "./MintHelperUtils";
 
 export class VaultUtils {
 
@@ -151,7 +152,11 @@ export class VaultUtils {
   ) {
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits(amount + ''));
+    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+      await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
+    } else {
+      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address)
+    }
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));
     await TokenUtils.approve(rtAdr, signer, vault.address, utils.parseUnits(amount + '').toString());

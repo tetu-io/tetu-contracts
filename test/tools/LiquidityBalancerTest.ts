@@ -207,6 +207,27 @@ describe("liquidity balancer tsets", function () {
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits("1"));
     await liquidityBalancer.changeLiquidity(token, lp);
   });
+
+  it("should move liquidity", async () => {
+    await liquidityBalancer.setRouter(MaticAddresses.SUSHI_TETU_USDC, MaticAddresses.SUSHI_ROUTER);
+    await liquidityBalancer.setRouter(MaticAddresses.QUICK_TETU_USDC, MaticAddresses.QUICK_ROUTER);
+    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('100000'))
+    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, utils.parseUnits('1000', 6))
+    await UniswapUtils.addLiquidity(
+      signer,
+      MaticAddresses.TETU_TOKEN,
+      MaticAddresses.USDC_TOKEN,
+      utils.parseUnits('10000').toString(),
+      utils.parseUnits('1000', 6).toString(),
+      MaticAddresses.SUSHI_FACTORY,
+      MaticAddresses.SUSHI_ROUTER
+    );
+    const lpBal = await TokenUtils.balanceOf(MaticAddresses.SUSHI_TETU_USDC, signer.address);
+    await TokenUtils.transfer(MaticAddresses.SUSHI_TETU_USDC, signer, liquidityBalancer.address, lpBal.toString());
+    await liquidityBalancer.moveLiquidity(MaticAddresses.SUSHI_TETU_USDC, MaticAddresses.QUICK_TETU_USDC);
+    expect(await TokenUtils.balanceOf(MaticAddresses.SUSHI_TETU_USDC, liquidityBalancer.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(MaticAddresses.QUICK_TETU_USDC, liquidityBalancer.address)).is.not.eq(0);
+  });
 });
 
 

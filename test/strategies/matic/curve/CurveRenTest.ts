@@ -27,7 +27,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe.skip('Curve ren tests', async () => {
+describe('Curve ren tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }
@@ -38,10 +38,10 @@ describe.skip('Curve ren tests', async () => {
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
     const [signer, investor, trader] = (await ethers.getSigners());
-    const coreContracts = await DeployerUtils.deployAllCoreContracts(
+    const core = await DeployerUtils.deployAllCoreContracts(
         signer, 60 * 60 * 24 * 28, 1);
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(
-        signer, coreContracts.controller.address))[0];
+        signer, core.controller.address))[0];
 
     const underlying = MaticAddresses.BTCCRV_TOKEN;
 
@@ -49,27 +49,25 @@ describe.skip('Curve ren tests', async () => {
 
     const strategyName = 'CurveRenStrategy';
 
-    await CurveUtils.configureFeeRewardForwarder(coreContracts.feeRewardForwarder, coreContracts.rewardToken);
-
     const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
-        strategyName, signer, coreContracts, underlying, underlyingName);
+        strategyName, signer, core, underlying, underlyingName);
+
+    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
+      await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
+      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
+      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.WBTC_TOKEN, calculator, core.feeRewardForwarder);
+    }
 
     strategyInfo = new StrategyInfo(
         underlying,
         signer,
         investor,
-        coreContracts,
+        core,
         vault,
         strategy,
         lpForTargetToken,
         calculator
     );
-
-    // swap tokens to invest
-    await UniswapUtils.getTokenFromHolder(
-        trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000000'));
-    await UniswapUtils.getTokenFromHolder(
-        trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
 
     await CurveUtils.addLiquidityRen(investor);
 

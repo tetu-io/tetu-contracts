@@ -12,7 +12,6 @@ import {
   SmartVault
 } from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {Addresses} from "../../addresses";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {BigNumber, utils} from "ethers";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
@@ -23,9 +22,9 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 const vaultsSet = new Set<string>([
-  '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7',
-  '0xd051605E07C2B526ED9406a555601aA4DB8490D9',
-  '0xE680e0317402ad3CB37D5ed9fc642702658Ef57F'
+  '0x0ed08c9A2EFa93C4bF3C8878e61D2B6ceD89E9d7',
+  '0x57205cC741f8787a5195B2126607ac505E11B650',
+  '0x5de724eD41317fD0212133ef4A1530005bb5837f'
 ]);
 
 describe("auto rewarder tests", function () {
@@ -44,7 +43,7 @@ describe("auto rewarder tests", function () {
     snapshot = await TimeUtils.snapshot();
     gov = await DeployerUtils.impersonate();
 
-    coreAddresses = Addresses.CORE.get('matic') as CoreAddresses;
+    coreAddresses = await DeployerUtils.getCoreAddresses();
     const controllerAdr = coreAddresses.controller;
     const announcerAdr = coreAddresses.announcer;
     const bookkeeperAdr = coreAddresses.bookkeeper;
@@ -119,7 +118,7 @@ describe("auto rewarder tests", function () {
     const rewardsPerDay = await rewarder.rewardsPerDay();
     console.log('rewards per day', utils.formatUnits(rewardsPerDay));
 
-    await MintHelperUtils.mintAll(controller, announcer, rewarder.address);
+    await TokenUtils.getToken(coreAddresses.rewardToken, rewarder.address, utils.parseUnits('100000'));
 
     const bal = await TokenUtils.balanceOf(coreAddresses.rewardToken, rewarder.address);
     console.log('minted', utils.formatUnits(bal));

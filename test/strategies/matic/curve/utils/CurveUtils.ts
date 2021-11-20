@@ -33,8 +33,7 @@ export class CurveUtils {
   }
 
   public static async addLiquidityAave(investor: SignerWithAddress) {
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000000'));
+    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
     const usdcUserBalance = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
     const aavePool = await ethers.getContractAt("IAavePool", MaticAddresses.CURVE_AAVE_POOL, investor) as IAavePool;
     const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, investor) as IERC20;
@@ -44,12 +43,12 @@ export class CurveUtils {
   }
 
   public static async addLiquidityRen(investor: SignerWithAddress) {
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000000')); // 100m wmatic
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('2053400'));
+    const dec = await TokenUtils.decimals(MaticAddresses.WBTC_TOKEN);
+    const amount = utils.parseUnits('0.01', dec);
+    await TokenUtils.getToken(MaticAddresses.WBTC_TOKEN, investor.address, amount);
     const renBTCPool = await ethers.getContractAt("IRenBTCPool", MaticAddresses.CURVE_renBTC_POOL, investor) as IRenBTCPool;
-    const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN, investor) as IERC20;
-    await wbtcToken.approve(MaticAddresses.CURVE_renBTC_POOL, "2053400", {from: investor.address});
-    await renBTCPool.add_liquidity([2053400, 0], 0, true);
+    await TokenUtils.approve(MaticAddresses.WBTC_TOKEN, investor, MaticAddresses.CURVE_renBTC_POOL, amount.toString());
+    await renBTCPool.add_liquidity([amount, 0], 0, true);
   }
 
   public static async addLiquidityTrirypto(investor: SignerWithAddress) {

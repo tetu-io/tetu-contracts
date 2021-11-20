@@ -52,4 +52,5 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           TETU_INFURA_KEY: ${{secrets.TETU_INFURA_KEY}}
           TETU_MATIC_RPC_URL: ${{secrets.TETU_MATIC_RPC_URL}}
+          TETU_FTM_RPC_URL: ${{secrets.TETU_FTM_RPC_URL}}
       - uses: codecov/codecov-action@v2

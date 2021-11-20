@@ -207,12 +207,8 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    await UniswapUtils.swapNETWORK_COINForExactTokens(
-      signer,
-      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-      utils.parseUnits(amount, 6).toString(),
-      MaticAddresses.QUICK_ROUTER
-    );
+    const usdc = await DeployerUtils.getUSDCAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
@@ -242,12 +238,8 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    await UniswapUtils.swapNETWORK_COINForExactTokens(
-      signer,
-      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-      utils.parseUnits(amount, 6).toString(),
-      MaticAddresses.QUICK_ROUTER
-    );
+    const usdc = await DeployerUtils.getUSDCAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
@@ -263,11 +255,45 @@ export class UniswapUtils {
     return UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
-      MaticAddresses.USDC_TOKEN,
+      usdc,
       utils.parseUnits(amount, 18).toString(),
       utils.parseUnits(amount, 6).toString(),
-      MaticAddresses.QUICK_FACTORY,
-      MaticAddresses.QUICK_ROUTER
+      await DeployerUtils.getDefaultNetworkFactory(),
+      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+    );
+  }
+
+  public static async createTetuUsdc(
+    signer: SignerWithAddress,
+    core: CoreContractsWrapper,
+    amount: string
+  ) {
+    const usdc = await DeployerUtils.getUSDCAddress();
+    const tetu = core.rewardToken.address.toLowerCase();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6));
+    const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
+    console.log('USDC bought', usdcBal.toString());
+    expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
+
+    if (tetu === await DeployerUtils.getTETUAddress()) {
+      await TokenUtils.getToken(tetu, signer.address, utils.parseUnits(amount));
+    } else {
+      await MintHelperUtils.mint(core.controller, core.announcer, amount, signer.address);
+    }
+
+
+    const tokenBal = await TokenUtils.balanceOf(tetu, signer.address);
+    console.log('Token minted', tokenBal.toString());
+    expect(+utils.formatUnits(tokenBal)).is.greaterThanOrEqual(+amount);
+
+    return UniswapUtils.addLiquidity(
+      signer,
+      tetu,
+      usdc,
+      utils.parseUnits(amount).toString(),
+      utils.parseUnits(amount, 6).toString(),
+      await DeployerUtils.getDefaultNetworkFactory(),
+      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
     );
   }
 
@@ -353,10 +379,10 @@ export class UniswapUtils {
     const token0Bal = await TokenUtils.balanceOf(token0, signer.address);
     const token1Bal = await TokenUtils.balanceOf(token1, signer.address);
     if (token0Bal.isZero()) {
-      await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.getRouterByFactory(factory0), token0, amountForSell0, token0Opposite, wait);
+      await UniswapUtils.getTokenFromHolder(signer, await DeployerUtils.getRouterByFactory(factory0), token0, amountForSell0, token0Opposite, wait);
     }
     if (token1Bal.isZero()) {
-      await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.getRouterByFactory(factory1), token1, amountForSell1, token1Opposite, wait);
+      await UniswapUtils.getTokenFromHolder(signer, await DeployerUtils.getRouterByFactory(factory1), token1, amountForSell1, token1Opposite, wait);
     }
 
     const lpToken = await UniswapUtils.getPairFromFactory(signer, token0, token1, targetFactory);
@@ -370,7 +396,7 @@ export class UniswapUtils {
       (await TokenUtils.balanceOf(token0, signer.address)).toString(),
       (await TokenUtils.balanceOf(token1, signer.address)).toString(),
       targetFactory,
-      MaticAddresses.getRouterByFactory(targetFactory),
+      await DeployerUtils.getRouterByFactory(targetFactory),
       wait
     );
 

@@ -60,6 +60,16 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _;
   }
 
+  /// @dev Write info to bookkeeper. Must be used for doHardwork!
+  modifier savePpfsInfo() {
+    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
+    _;
+    uint256 newPpfs = ISmartVault(_smartVault).getPricePerFullShare();
+    if (ppfs != newPpfs) {
+      IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, newPpfs);
+    }
+  }
+
   /// @notice Contract constructor using on Base Strategy implementation
   /// @param _controller Controller address
   /// @param _underlying Underlying token address
@@ -231,6 +241,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   function _liquidateReward(bool revertOnErrors) internal {
     address forwarder = IController(controller()).feeRewardForwarder();
+    uint targetTokenEarnedTotal = 0;
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
@@ -247,10 +258,11 @@ abstract contract StrategyBase is IStrategy, Controllable {
             targetTokenEarned = r;
           } catch {}
         }
-        if (targetTokenEarned > 0) {
-          IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-        }
+        targetTokenEarnedTotal += targetTokenEarned;
       }
+    }
+    if (targetTokenEarnedTotal > 0) {
+      IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
     }
   }
 
@@ -260,13 +272,11 @@ abstract contract StrategyBase is IStrategy, Controllable {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);
-        uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
         IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, toCompound);
-        IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, ppfs);
       }
     }
   }
@@ -278,7 +288,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);
@@ -292,9 +302,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
           uint256 token1Amount = IFeeRewardForwarder(forwarder).liquidate(rt, pair.token1(), toCompound / 2);
           require(token1Amount != 0, "SB: Token1 zero amount");
         }
-        uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
         addLiquidity(_underlyingToken, _router);
-        IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, ppfs);
       }
     }
   }

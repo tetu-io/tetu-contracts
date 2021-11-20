@@ -24,8 +24,6 @@ contract StrategyIronFold is IronFoldStrategyBase {
   address[] private _poolRewards = [ICE];
   address[] private _assets;
 
-  uint256 _FACTOR_DENOMINATOR = 10000;
-
   constructor(
     address _controller,
     address _vault,
@@ -41,8 +39,7 @@ contract StrategyIronFold is IronFoldStrategyBase {
       _rToken,
       _IRON_CONTROLLER,
       _borrowTargetFactorNumerator,
-      _collateralFactorNumerator,
-      _FACTOR_DENOMINATOR
+      _collateralFactorNumerator
   ) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(_underlying);

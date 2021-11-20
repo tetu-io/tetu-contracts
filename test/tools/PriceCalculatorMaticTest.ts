@@ -13,7 +13,7 @@ import {TokenUtils} from "../TokenUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Price calculator tests", function () {
+describe("Price calculator matic tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -71,6 +71,14 @@ describe("Price calculator tests", function () {
       MaticAddresses.USD_BTC_ETH_CRV_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(ethPrice).is.greaterThan(10);
     expect(ethPrice).is.lessThan(10000);
+  });
+
+  it("calculate crvAave - usdc price and check", async () => {
+    await calculator.setReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.WBTC_TOKEN);
+    const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(ethPrice).is.greaterThan(30000);
+    expect(ethPrice).is.lessThan(300000);
   });
 
   it("calculate prices", async () => {
@@ -208,7 +216,7 @@ describe("Price calculator tests", function () {
   it("calculate FIREBIRD eth-ice, price and check", async () => {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.FIREBIRD_ETH_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(10);
+    expect(price).is.greaterThan(1);
     expect(price).is.lessThan(500);
   });
 
