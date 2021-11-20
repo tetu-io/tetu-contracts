@@ -48,7 +48,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant override STRATEGY_NAME = "AaveFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev 2 is Variable
@@ -137,8 +137,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     (uint256 supplyRewardsInWethPT,
     uint256 borrowRewardsInWethPT,
     uint256 supplyUnderlyingProfitInWethPT,
-    uint256 debtUnderlyingCostInWethPT) = normTotalRewardPredictionInWeth(_PROFITABILITY_PERIOD);
-
+    uint256 debtUnderlyingCostInWethPT) = totalRewardPredictionInWeth(_PROFITABILITY_PERIOD);
     uint256 foldingProfitPerToken = supplyRewardsInWethPT + borrowRewardsInWethPT + supplyUnderlyingProfitInWethPT;
     return foldingProfitPerToken > debtUnderlyingCostInWethPT;
   }
@@ -219,12 +218,14 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @param _seconds time period for the forecast
   /// @param token address (supply or debt)
+  /// @param aaveIndex see ReserveData for detail (liquidityIndex or variableBorrowIndex)
   /// @return forecasted amount of WMATIC tokens
-  function rewardPrediction(uint256 _seconds, address token) private view returns (uint256){
+  function rewardPrediction(uint256 _seconds, address token, uint256 aaveIndex) private view returns (uint256){
     (uint256 emissionPerSecond,,) = aaveController.assets(token);
-    (uint256 stakedByUserScaled, uint256 totalStakedScaled) = IScaledBalanceToken(token).getScaledUserBalanceAndSupply(address(this));
-    uint256 rewards = emissionPerSecond * _seconds * stakedByUserScaled / totalStakedScaled;
-    return rewards;
+    uint256 tokenPrecision = 10 ** (ERC20(token)).decimals();
+    uint256 totalStakedScaled = IScaledBalanceToken(token).scaledTotalSupply();
+    uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION / aaveIndex * tokenPrecision / totalStakedScaled;
+    return rewards * tokenPrecision / _PRECISION ;
   }
 
   /// @notice return underlying reward forecast for aave supply token
@@ -239,9 +240,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     uint256 currentLiquidityRate
   ) private view returns (uint256){
     uint256 underlyingPerSecond = currentLiquidityRate / _SECONDS_PER_YEAR;
-    uint256 underlyingBalance = IERC20(token).balanceOf(address(this));
     uint256 predictedUnderlyingEarned = underlyingPerSecond * _seconds;
-    return predictedUnderlyingEarned * underlyingBalance / _RAY_PRECISION;
+    return predictedUnderlyingEarned * _PRECISION / _RAY_PRECISION;
   }
 
   /// @notice returns forecast of the debt cost in the underlying tokens
@@ -255,9 +255,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     uint256 currentVariableBorrowRate
   ) private view returns (uint256){
     uint256 debtUnderlyingPerSecond = currentVariableBorrowRate / _SECONDS_PER_YEAR;
-    uint256 debtBalance = IERC20(token).balanceOf(address(this));
     uint256 predictedDebtCost = debtUnderlyingPerSecond * _seconds;
-    return predictedDebtCost * debtBalance / _RAY_PRECISION;
+    return predictedDebtCost * _PRECISION / _RAY_PRECISION;
   }
 
   /// @notice returns forecast of all rewards (WMATIC and underlying) for the given period of time
@@ -270,11 +269,9 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     uint256 debtUnderlyingCost
   ){
     (address aTokenAddress,,address variableDebtTokenAddress) = dataProvider.getReserveTokensAddresses(_underlyingToken);
-
-    supplyRewards = rewardPrediction(_seconds, aTokenAddress);
-    borrowRewards = rewardPrediction(_seconds, variableDebtTokenAddress);
-
     DataTypes.ReserveData memory rd = lPool.getReserveData(_underlyingToken);
+    supplyRewards = rewardPrediction(_seconds, aTokenAddress, rd.liquidityIndex);
+    borrowRewards = rewardPrediction(_seconds, variableDebtTokenAddress, rd.variableBorrowIndex);
     supplyUnderlyingProfit = rewardUnderlyingPrediction(_seconds, aTokenAddress, rd.currentLiquidityRate);
     debtUnderlyingCost = debtCostPrediction(_seconds, variableDebtTokenAddress, rd.currentVariableBorrowRate);
 
@@ -298,37 +295,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     // oracle price denominated in ETH and always have 18 decimals
     supplyRewardsInWeth = supplyRewards * rewardInWeth / _PRECISION;
     borrowRewardsInWeth = borrowRewards * rewardInWeth / _PRECISION;
-
     supplyUnderlyingProfitInWeth = supplyUnderlyingProfit * underlyingInWeth / _PRECISION;
     debtUnderlyingCostInWeth = debtUnderlyingCost * underlyingInWeth / _PRECISION;
-  }
-  /// @notice returns normalized (per invested underlying token) forecast of all rewards (WMATIC and underlying)
-  ///         for the given period of time in WETH token using AAVE price oracle .
-  /// @dev Don't use it in any internal logic, only for statistical purposes
-  /// @param _seconds time period for the forecast
-  function normTotalRewardPredictionInWeth(uint256 _seconds) private view returns (
-    uint256 supplyRewardsInWethPT,
-    uint256 borrowRewardsInWethPT,
-    uint256 supplyUnderlyingProfitInWethPT,
-    uint256 debtUnderlyingCostInWethPT
-  ){
-    uint256 supplyBalance = IERC20(aToken).balanceOf(address(this));
-    uint256 debtBalance = IERC20(dToken).balanceOf(address(this));
-
-    (uint256 supplyRewardsInWeth,
-    uint256 borrowRewardsInWeth,
-    uint256 supplyUnderlyingProfitInWeth,
-    uint256 debtUnderlyingCostInWeth) = totalRewardPredictionInWeth(_seconds);
-
-    supplyRewardsInWethPT = supplyRewardsInWeth * _PRECISION / supplyBalance;
-    supplyUnderlyingProfitInWethPT = supplyUnderlyingProfitInWeth * _PRECISION / supplyBalance;
-
-    borrowRewardsInWethPT = 0;
-    debtUnderlyingCostInWethPT = 0;
-    if (debtBalance > 0) {
-      borrowRewardsInWethPT = borrowRewardsInWeth * _PRECISION / debtBalance;
-      debtUnderlyingCostInWethPT = debtUnderlyingCostInWeth * _PRECISION / debtBalance;
-    }
   }
 
   /// @notice number of decimals for the supply token

@@ -11,6 +11,7 @@ import {VaultUtils} from "../../../VaultUtils";
 import {PriceCalculator, StrategyAaveFold} from "../../../../typechain";
 import {MaticAddresses} from "../../../MaticAddresses";
 import {UniswapUtils} from "../../../UniswapUtils";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 
 const {expect} = chai;
@@ -190,7 +191,154 @@ async function startAaveFoldStrategyTest(
   });
 }
 
-export {startAaveFoldStrategyTest};
+async function startAaveFoldStrategyProfitabilityTest(
+  strategyName: string,
+  factory: string,
+  underlying: string,
+  tokenName: string,
+  rewardTokens: string[],
+  aToken: string,
+  borrowTargetFactorNumerator: string,
+  collateralFactorNumerator: string
+) {
+
+  describe(strategyName + " " + tokenName + " Test", async function () {
+    let snapshotBefore: string;
+    let snapshot: string;
+    let strategyInfo: StrategyInfo;
+    let user: SignerWithAddress;
+    const investingPeriod = 60 * 60 * 24 * 30;
+    before(async function () {
+      snapshotBefore = await TimeUtils.snapshot();
+      const signer = await DeployerUtils.impersonate();
+      user = (await ethers.getSigners())[1];
+
+      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const tools = await DeployerUtils.getToolsAddresses();
+      const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+
+
+      await StrategyTestUtils.setupForwarder(
+        core.feeRewardForwarder,
+        rewardTokens,
+        underlying,
+        core.rewardToken.address,
+        factory
+      );
+
+      const data = await StrategyTestUtils.deploy(
+        signer,
+        core,
+        tokenName,
+        async vaultAddress => DeployerUtils.deployContract(
+          signer,
+          strategyName,
+          core.controller.address,
+          vaultAddress,
+          underlying,
+          borrowTargetFactorNumerator,
+          collateralFactorNumerator
+        ) as Promise<StrategyAaveFold>,
+        underlying
+      );
+
+      const vault = data[0];
+      const strategy = data[1];
+      const lpForTargetToken = data[2];
+
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
+
+      await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
+
+      strategyInfo = new StrategyInfo(
+        underlying,
+        signer,
+        user,
+        core,
+        vault,
+        strategy,
+        lpForTargetToken,
+        calculator
+      );
+      const largest = (await calculator.getLargestPool(underlying, []));
+      const tokenOpposite = largest[0];
+      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
+      console.log('largest', largest);
+
+      // ************** add funds for investing ************
+      const baseAmount = 100_000;
+      await UniswapUtils.buyAllBigTokens(user);
+      const name = await TokenUtils.tokenSymbol(tokenOpposite);
+      const dec = await TokenUtils.decimals(tokenOpposite);
+      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
+      console.log('tokenOpposite Price', price, name);
+      const amountForSell = baseAmount / price;
+      console.log('amountForSell', amountForSell);
+
+      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
+        underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
+      console.log('############## Preparations completed ##################');
+    });
+
+    beforeEach(async function () {
+      snapshot = await TimeUtils.snapshot();
+    });
+
+    afterEach(async function () {
+      await TimeUtils.rollback(snapshot);
+    });
+
+    after(async function () {
+      await TimeUtils.rollback(snapshotBefore);
+    });
+
+
+    it("do lending vs folding", async () => {
+
+      const strategy = strategyInfo.strategy as StrategyAaveFold;
+      const vaultForUser = strategyInfo.vault.connect(user);
+      const und = await strategyInfo.vault.underlying();
+      const undDec = await TokenUtils.decimals(und);
+      const rt = (await strategyInfo.vault.rewardTokens())[0];
+
+      // console.log("deposit", "1000");
+      // await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits("1000000", undDec));
+
+      const undBal = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
+      await TimeUtils.advanceBlocksOnTs(investingPeriod);
+      console.log("Folding disabled");
+      await strategy.setFold(false);
+      await strategyInfo.vault.doHardWork();
+      const tetuEarned1 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address), undDec);
+
+      const undBalAfterR1 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
+      const undEarnedR1 = undBalAfterR1 - undBal;
+      console.log("undEarnedR1: ", undEarnedR1);
+      console.log("tetuEarned1: ", tetuEarned1);
+      await TimeUtils.rollback(snapshot);
+
+      console.log("Folding enabled");
+      await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits("1000000", undDec));
+      await strategy.setFold(true);
+      await TimeUtils.advanceBlocksOnTs(investingPeriod);
+      await strategyInfo.vault.doHardWork();
+
+      const tetuEarned2 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address), undDec);
+
+      const undBalAfterR2 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
+      const undEarnedR2 = undBalAfterR2 - undBal;
+      console.log("undEarnedR2: ", undEarnedR2);
+      console.log("tetuEarned2: ", tetuEarned2);
+
+    });
+
+
+
+  });
+}
+
+
+export {startAaveFoldStrategyTest, startAaveFoldStrategyProfitabilityTest};
 
 
 async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
