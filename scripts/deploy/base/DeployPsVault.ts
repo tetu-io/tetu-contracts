@@ -51,7 +51,7 @@ export default async function main() {
   await DeployerUtils.verifyWithArgs(psVault.address, [vaultLogic.address]);
   await DeployerUtils.verifyProxy(psVault.address);
   await DeployerUtils.verifyWithArgs(psEmptyStrategy.address,
-    [core.controller, core.rewardToken, psVault.address, [], [core.rewardToken]]);
+    [core.controller, core.rewardToken, psVault.address, [], [core.rewardToken], 1]);
 
 }
 
