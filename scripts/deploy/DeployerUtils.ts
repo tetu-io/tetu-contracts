@@ -322,7 +322,7 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
   }
 
-  public static async deployMultiSwap(
+  public static async deployMultiSwapMatic(
     signer: SignerWithAddress,
     controllerAddress: string,
     calculatorAddress: string
@@ -345,6 +345,23 @@ export class DeployerUtils {
         MaticAddresses.TETU_SWAP_ROUTER,
         MaticAddresses.CAFE_ROUTER,
         MaticAddresses.DFYN_ROUTER,
+      ]
+    ) as MultiSwap;
+  }
+
+  public static async deployMultiSwapFantom(
+    signer: SignerWithAddress,
+    controllerAddress: string,
+    calculatorAddress: string
+  ): Promise<MultiSwap> {
+    return await DeployerUtils.deployContract(signer, "MultiSwap",
+      controllerAddress,
+      calculatorAddress,
+      [
+        FtmAddresses.SPOOKY_SWAP_FACTORY,
+      ],
+      [
+        FtmAddresses.SPOOKY_SWAP_ROUTER
       ]
     ) as MultiSwap;
   }

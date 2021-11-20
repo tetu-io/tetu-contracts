@@ -53,7 +53,7 @@ describe("Zap contract tests", function () {
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
-    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    multiSwap = await DeployerUtils.deployMultiSwapMatic(signer, core.controller.address, calculator.address);
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
