@@ -31,6 +31,8 @@ contract MaiStablecoinPipe is Pipe {
     IErc20Stablecoin private _stablecoin;
     uint256 vaultID;
 
+    uint256 public mockEthPriceSource = 0;
+
     constructor(MaiStablecoinPipeData memory _d) Pipe() {
         name = 'MaiStablecoinPipe';
         d = _d;
@@ -205,12 +207,37 @@ contract MaiStablecoinPipe is Pipe {
         // in balance
     }
 
+    /// @dev Converts percentage to borrow token amount
+    /// @param percentage target collateral to debt percentage
+    /// @return borrowAmount amount of borrow token for target percentage
     function _percentageToBorrowTokenAmount(uint256 percentage) private view returns (uint256 borrowAmount) {
         console.log('_percentageToBorrowTokenAmount percentage', percentage);
         uint256 collateral = _stablecoin.vaultCollateral(vaultID);
         console.log('_collateral', collateral);
-        borrowAmount = _collateralToBorrowTokenAmountPercentage(collateral, borrowAmount);
+        borrowAmount = _collateralToBorrowTokenAmountPercentage(collateral, percentage);
         console.log('_borrow    ', borrowAmount);
+    }
+
+    /// @dev Gets current eth (matic) price
+    /// @return current or mocked eth (matic) price
+    function getEthPriceSource() internal returns (uint256) {
+        if (mockEthPriceSource != 0) {
+            return mockEthPriceSource;
+        } else {
+            return _stablecoin.getEthPriceSource();
+        }
+    }
+
+    /// @dev Sets mock eth (matic) price for re-balance testing. do not use it at production
+    /// @param _mockEthPriceSource new mock eth (matic) price. Set to 0 to disable mocking
+    function setMockEthPriceSource(uint256 _mockEthPriceSource) external onlyPipeline {
+        mockEthPriceSource = _mockEthPriceSource;
+    }
+
+    /// @dev Shows current eth (matic) price
+    /// @return current or mocked eth (matic) price
+    function ethPriceSource() public returns (uint256) {
+        return getEthPriceSource();
     }
 
     /// @dev converts collateral amount to borrow amount using target Collateral to Debt percentage
@@ -220,7 +247,7 @@ contract MaiStablecoinPipe is Pipe {
     private view returns (uint256 amount) {
         console.log('_collateralPercentageToBorrowTokenAmount collateral, percentage', collateral, percentage);
 
-        uint256 ethPriceSource = _stablecoin.getEthPriceSource();
+        uint256 ethPriceSource = getEthPriceSource();
         console.log('_ethPriceSource', ethPriceSource);
 
         uint256 value = collateral * ethPriceSource / _stablecoin.getTokenPriceSource();
@@ -238,7 +265,7 @@ contract MaiStablecoinPipe is Pipe {
     private view returns (uint256 amount) {
         console.log('_borrowToCollateralTokenAmountPercentage borrowAmount, percentage', borrowAmount, percentage);
 
-        uint256 ethPriceSource = _stablecoin.getEthPriceSource();
+        uint256 ethPriceSource = getEthPriceSource();
         console.log('_ethPriceSource', ethPriceSource);
         uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
         uint256 closingFee = _stablecoin.closingFee();

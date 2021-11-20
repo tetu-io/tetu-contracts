@@ -1,4 +1,4 @@
-import chai from "chai";
+import chai, {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../MaticAddresses";
 // import {readFileSync} from "fs";
@@ -43,11 +43,13 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         return;
     }
 
+    let strategyAaveMaiBal: any;
+
     const AAVE_PIPE_INDEX = 1;
     const MAI_PIPE_INDEX = 3;
     const BAL_PIPE_INDEX = 4;
 
-    const TIME_SHIFT = 60 * 60 * 24 * 30 * 6;  // months;
+    const TIME_SHIFT = 60 * 60 * 24 * 30 * 3;  // months;
 
     let ICamWMATIC: any;
     let airDropper: any;
@@ -63,8 +65,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         // air drop reward token
         await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
         const bal = await TokenUtils.balanceOf(tokenAddress, airDropper.address);
-        const strategy = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
-        const pipeAddress = await strategy.pipes(pipeIndex);
+        const pipeAddress = await strategyAaveMaiBal.pipes(pipeIndex);
         await TokenUtils.transfer(tokenAddress, airDropper, pipeAddress, bal.toString());
     }
 
@@ -79,49 +80,6 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const tools = await DeployerUtils.getToolsAddresses();
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
         ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', MaticAddresses.CAMWMATIC_TOKEN) as ICamWMATIC
-
-        const strategy = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
-        const rewardTokens = await strategy.rewardTokens();
-        for (const rt of rewardTokens) {
-            await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-            await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
-        }
-        // const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-        // const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
-
-        /*    for (const rt of rewardTokens) {
-              await core.feeRewardForwarder.setConversionPath(
-                [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-                [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-              );
-              await core.feeRewardForwarder.setConversionPath(
-                [rt, MaticAddresses.USDC_TOKEN],
-                [MaticAddresses.getRouterByFactory(factory)]
-              );
-
-              if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
-                await core.feeRewardForwarder.setConversionPath(
-                  [rt, MaticAddresses.USDC_TOKEN],
-                  [MaticAddresses.getRouterByFactory(factory)]
-                );
-              } else {
-                await core.feeRewardForwarder.setConversionPath(
-                  [rt, MaticAddresses.USDC_TOKEN, underlying],
-                  [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-                );
-              }
-
-            }
-            if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
-              await core.feeRewardForwarder.setConversionPath(
-                [underlying, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-                [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
-              );
-              await core.feeRewardForwarder.setConversionPath(
-                [underlying, MaticAddresses.USDC_TOKEN],
-                [MaticAddresses.QUICK_ROUTER]
-              );
-            }*/
 
         let underlying = MaticAddresses.WMATIC_TOKEN;
         await core.feeRewardForwarder.setLiquidityNumerator(50);
@@ -175,6 +133,16 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
         console.log("User WMATIC balance: ", bal.toString());
 
+        strategyAaveMaiBal = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
+
+        //TODO uncomment for doHardWorkWithLiqPath tests
+        /*const rewardTokens = await strategyAaveMaiBal.rewardTokens();
+        console.log('rewardTokens', rewardTokens);
+        for (const rt of rewardTokens) {
+            await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
+            await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
+        }*/
+
         console.log('############## Preparations completed ##################');
     });
 
@@ -190,14 +158,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await TimeUtils.rollback(snapshotBefore);
     });
 
-    /* it("do hard work with liq path", async () => {
-         await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
-             (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-             null
-         );
-     });*/
 
-    it.only("do hard work with liq path AAVE WMATIC rewards", async () => {
+    it("do hard work with liq path AAVE WMATIC rewards", async () => {
         console.log('AAVE WMATIC rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
@@ -228,6 +190,42 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             () => airdropTokenToPipe(BAL_PIPE_INDEX, MaticAddresses.BAL_TOKEN, REWARDS_AMOUNT),
             TIME_SHIFT,
         );
+    });
+
+    it.only("Target percentage", async () => {
+        console.log('Rebalance test');
+        const info = strategyInfo
+        const deposit = DEPOSIT_AMOUNT.toString()
+        const strategyGov = strategyAaveMaiBal.connect(info.signer);
+
+        const targetPercentageInitial = await strategyGov.targetPercentage()
+        console.log('>>>targetPercentageInitial', targetPercentageInitial);
+
+        await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
+        console.log('>>>deposited');
+        const bal1 = await strategyGov.getMostUnderlyingBalance()
+        console.log('>>>bal1', bal1.toString());
+
+        // increase collateral to debt percentage twice, so debt should be decreased twice
+        await strategyGov.setTargetPercentage(targetPercentageInitial*2)
+        const targetPercentage2 = await strategyGov.targetPercentage()
+        console.log('>>>targetPercentage2', targetPercentage2)
+
+        const bal2 = await strategyGov.getMostUnderlyingBalance()
+        console.log('>>>bal2', bal2.toString());
+
+        // return target percentage back, so debt should be increased twice
+        await strategyGov.setTargetPercentage(targetPercentageInitial)
+        const targetPercentage3 = await strategyGov.targetPercentage()
+        console.log('>>>targetPercentage3', targetPercentage3)
+
+        const bal3 = await strategyGov.getMostUnderlyingBalance()
+        console.log('>>>bal3', bal3.toString());
+
+        expect(bal2).to.be.closeTo(bal1.div(2), bal1.div(200)); // 0.5% deviation max
+        expect(bal3).to.be.closeTo(bal1, bal1.div(200));        // 0.5% deviation max
+
+
     });
 
 });
