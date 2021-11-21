@@ -202,17 +202,21 @@ async function startAaveFoldStrategyProfitabilityTest(
   collateralFactorNumerator: string
 ) {
 
-  describe(strategyName + " " + tokenName + " Test", async function () {
+  describe(tokenName + " Folding profitability Test", async function () {
     let snapshotBefore: string;
     let snapshot: string;
+    let snapshotFolding: string;
     let strategyInfo: StrategyInfo;
     let user: SignerWithAddress;
     const investingPeriod = 60 * 60 * 24 * 30;
+    let deposit = "1000"
     before(async function () {
       snapshotBefore = await TimeUtils.snapshot();
       const signer = await DeployerUtils.impersonate();
       user = (await ethers.getSigners())[1];
-
+      if (tokenName === "WBTC"){
+        deposit = "1"
+      }
       const core = await DeployerUtils.getCoreAddressesWrapper(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
@@ -263,7 +267,7 @@ async function startAaveFoldStrategyProfitabilityTest(
       const largest = (await calculator.getLargestPool(underlying, []));
       const tokenOpposite = largest[0];
       const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
+      console.log('largest', largest.toString());
 
       // ************** add funds for investing ************
       const baseAmount = 100_000;
@@ -294,46 +298,64 @@ async function startAaveFoldStrategyProfitabilityTest(
 
 
     it("do lending vs folding", async () => {
+      const underlyingUSDPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
+      const tetuUSDCPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.core.rewardToken.address));
+      console.log("underlyingUSDPrice ", underlyingUSDPrice);
+      console.log("tetuUSDCPrice ", tetuUSDCPrice);
+
 
       const strategy = strategyInfo.strategy as StrategyAaveFold;
-      const vaultForUser = strategyInfo.vault.connect(user);
       const und = await strategyInfo.vault.underlying();
       const undDec = await TokenUtils.decimals(und);
-      const rt = (await strategyInfo.vault.rewardTokens())[0];
-
-      // console.log("deposit", "1000");
-      // await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits("1000000", undDec));
-
-      const undBal = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
-      await TimeUtils.advanceBlocksOnTs(investingPeriod);
+      const isFoldingProfitable = await strategy.isFoldingProfitable();
+      if (!isFoldingProfitable){
+        console.log("Folding is not profitable for: ", tokenName);
+        return;
+      }
+      console.log("Is Folding profitable: ", isFoldingProfitable);
+      snapshotFolding = await TimeUtils.snapshot();
       console.log("Folding disabled");
       await strategy.setFold(false);
+      console.log("deposit", deposit);
+      await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits(deposit, undDec));
+      const undBal1 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
+      await TimeUtils.advanceBlocksOnTs(investingPeriod);
       await strategyInfo.vault.doHardWork();
       const tetuEarned1 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address), undDec);
-
       const undBalAfterR1 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
-      const undEarnedR1 = undBalAfterR1 - undBal;
-      console.log("undEarnedR1: ", undEarnedR1);
-      console.log("tetuEarned1: ", tetuEarned1);
-      await TimeUtils.rollback(snapshot);
-
+      const lendingUnderlyingProfit = undBalAfterR1 - undBal1;
+      const lendingTetuProfit = tetuEarned1;
+      await TimeUtils.rollback(snapshotFolding);
       console.log("Folding enabled");
-      await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits("1000000", undDec));
       await strategy.setFold(true);
+      await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits(deposit, undDec));
+      const undBal2 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
+
       await TimeUtils.advanceBlocksOnTs(investingPeriod);
       await strategyInfo.vault.doHardWork();
 
       const tetuEarned2 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address), undDec);
-
       const undBalAfterR2 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
-      const undEarnedR2 = undBalAfterR2 - undBal;
-      console.log("undEarnedR2: ", undEarnedR2);
-      console.log("tetuEarned2: ", tetuEarned2);
+      const foldingUnderlyingProfit = undBalAfterR2 - undBal2;
+      const foldingTetuProfit = tetuEarned2;
 
+      const lendingUnderlyingProfitUSD = lendingUnderlyingProfit * underlyingUSDPrice;
+      const foldingUnderlyingProfitUSD = foldingUnderlyingProfit * underlyingUSDPrice;
+      const lendingTetuProfitUSD = lendingTetuProfit * underlyingUSDPrice;
+      const foldingTetuProfitUSD = foldingTetuProfit * underlyingUSDPrice;
+      const totalLendingProfitUSD = lendingUnderlyingProfitUSD + lendingTetuProfitUSD;
+      const totalFoldingProfitUSD = foldingTetuProfitUSD + foldingUnderlyingProfitUSD;
+
+      console.log("===========================");
+      console.log("=========Lending===========");
+      console.log("Underlying: ", lendingUnderlyingProfit, "Tetu: ", lendingTetuProfit);
+      console.log("=========Folding===========");
+      console.log("Underlying: ", foldingUnderlyingProfit, "Tetu: ", foldingTetuProfit);
+      console.log("===========================");
+      console.log("Total lending profit: ", totalLendingProfitUSD);
+      console.log("Total folding profit: ", totalFoldingProfitUSD);
+      console.log("Difference: ", totalFoldingProfitUSD / totalLendingProfitUSD * 100, "%");
     });
-
-
-
   });
 }
 
