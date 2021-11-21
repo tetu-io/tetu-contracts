@@ -40,8 +40,8 @@ describe('Curve aTricrypto3 tests', async () => {
     const signer = await DeployerUtils.impersonate();
     // await CurveUtils.swapTricrypto(signer)
     const [investor, trader] = (await ethers.getSigners());
-    // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
-    const core = await DeployerUtils.deployAllCoreContracts(signer);
+    const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // const core = await DeployerUtils.deployAllCoreContracts(signer);
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     await CurveUtils.addLiquidityTrirypto(investor);
@@ -89,7 +89,7 @@ describe('Curve aTricrypto3 tests', async () => {
     await TimeUtils.rollback(snapshotBefore);
   });
 
-  it("doHardWork loop with liq path", async () => {
+  it("doHardWork with liq path", async () => {
     await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo,
       // () => CurveUtils.swapTricrypto(strategyInfo.signer) // todo fix
       null

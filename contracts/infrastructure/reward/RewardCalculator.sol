@@ -45,7 +45,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.4.0";
+  string public constant VERSION = "1.4.1";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
@@ -59,6 +59,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
   mapping(bytes32 => address) internal tools;
   mapping(IStrategy.Platform => uint256) internal platformMultiplier;
+  mapping(uint256 => uint256) internal platformMultiplierV2;
 
   function initialize(address _controller, address _calculator) external initializer {
     Controllable.initializeControllable(_controller);
@@ -163,7 +164,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     }
 
     uint256 _kpi = kpi(strategy.vault());
-    uint256 multiplier = platformMultiplier[strategy.platform()];
+    uint256 multiplier = platformMultiplierV2[uint256(strategy.platform())];
 
     if (_kpi != 0) {
       rewardsPerSecond = rewardsPerSecond * _kpi / PRECISION;
@@ -298,7 +299,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     uint earnedUsd = earned * tetuPrice / PRECISION;
     uint rewardsPerSecond = earnedUsd / timeDiff;
 
-    uint256 multiplier = platformMultiplier[IStrategy(strategy).platform()];
+    uint256 multiplier = platformMultiplierV2[uint256(IStrategy(strategy).platform())];
     if (multiplier != 0) {
       rewardsPerSecond = rewardsPerSecond * multiplier / MULTIPLIER_DENOMINATOR;
     }
@@ -443,8 +444,8 @@ contract RewardCalculator is Controllable, IRewardCalculator {
     emit ToolAddressUpdated(_CALCULATOR, newValue);
   }
 
-  function setPlatformMultiplier(IStrategy.Platform _platform, uint256 _value) external onlyControllerOrGovernance {
+  function setPlatformMultiplier(uint256 _platform, uint256 _value) external onlyControllerOrGovernance {
     require(_value < MULTIPLIER_DENOMINATOR * 10, "RC: Too high value");
-    platformMultiplier[_platform] = _value;
+    platformMultiplierV2[_platform] = _value;
   }
 }

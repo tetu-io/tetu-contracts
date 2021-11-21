@@ -322,7 +322,7 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
   }
 
-  public static async deployMultiSwap(
+  public static async deployMultiSwapMatic(
     signer: SignerWithAddress,
     controllerAddress: string,
     calculatorAddress: string
@@ -345,6 +345,23 @@ export class DeployerUtils {
         MaticAddresses.TETU_SWAP_ROUTER,
         MaticAddresses.CAFE_ROUTER,
         MaticAddresses.DFYN_ROUTER,
+      ]
+    ) as MultiSwap;
+  }
+
+  public static async deployMultiSwapFantom(
+    signer: SignerWithAddress,
+    controllerAddress: string,
+    calculatorAddress: string
+  ): Promise<MultiSwap> {
+    return await DeployerUtils.deployContract(signer, "MultiSwap",
+      controllerAddress,
+      calculatorAddress,
+      [
+        FtmAddresses.SPOOKY_SWAP_FACTORY,
+      ],
+      [
+        FtmAddresses.SPOOKY_SWAP_ROUTER
       ]
     ) as MultiSwap;
   }
@@ -624,53 +641,30 @@ export class DeployerUtils {
       throw Error('No config for ' + net.chainId);
     }
 
-    if (net.chainId === 137) {
-      const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
-      const str = await ps.strategy();
-      return new CoreContractsWrapper(
-        await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
-        '',
-        await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
-        '',
-        await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
-        '',
-        await DeployerUtils.connectInterface(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
-        await DeployerUtils.connectInterface(signer, "MintHelper", core.mintHelper) as MintHelper,
-        '',
-        await DeployerUtils.connectInterface(signer, "RewardToken", core.rewardToken) as RewardToken,
-        ps,
-        '',
-        await DeployerUtils.connectInterface(signer, "NoopStrategy", str) as NoopStrategy,
-        await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
-        '',
-        await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
-        '',
-        await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
-        '',
-      );
-    } else {
-      return new CoreContractsWrapper(
-        await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
-        '',
-        await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
-        '',
-        await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
-        '',
-        await DeployerUtils.connectInterface(signer, "NotifyHelper", FtmAddresses.ZERO_ADDRESS) as NotifyHelper,
-        await DeployerUtils.connectInterface(signer, "MintHelper", FtmAddresses.ZERO_ADDRESS) as MintHelper,
-        '',
-        await DeployerUtils.connectInterface(signer, "RewardToken", FtmAddresses.ZERO_ADDRESS) as RewardToken,
-        await DeployerUtils.connectInterface(signer, "SmartVault", FtmAddresses.ZERO_ADDRESS) as SmartVault,
-        '',
-        await DeployerUtils.connectInterface(signer, "NoopStrategy", FtmAddresses.ZERO_ADDRESS) as NoopStrategy,
-        await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
-        '',
-        await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
-        '',
-        await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
-        '',
-      );
-    }
+
+    const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
+    const str = await ps.strategy();
+    return new CoreContractsWrapper(
+      await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
+      '',
+      await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+      '',
+      await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
+      '',
+      await DeployerUtils.connectInterface(signer, "NotifyHelper", core.notifyHelper) as NotifyHelper,
+      await DeployerUtils.connectInterface(signer, "MintHelper", core.mintHelper) as MintHelper,
+      '',
+      await DeployerUtils.connectInterface(signer, "RewardToken", core.rewardToken) as RewardToken,
+      ps,
+      '',
+      await DeployerUtils.connectInterface(signer, "NoopStrategy", str) as NoopStrategy,
+      await DeployerUtils.connectInterface(signer, "FundKeeper", core.fundKeeper) as FundKeeper,
+      '',
+      await DeployerUtils.connectInterface(signer, "Announcer", core.announcer) as Announcer,
+      '',
+      await DeployerUtils.connectInterface(signer, "VaultController", core.vaultController) as VaultController,
+      '',
+    );
 
   }
 

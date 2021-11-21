@@ -15,4 +15,6 @@ export class FtmToolsAddresses {
     '', // pawnshopReader
   );
 
+  // retranslator 0xcBDeF56CE454A81c3c6C6b639D683285bd467D02
+
 }

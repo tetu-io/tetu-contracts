@@ -17,7 +17,6 @@ export class CurveDoHardWorkLoop {
     // tslint:disable-next-line
     // @ts-ignore
     const gaugeAddress = await (strategyInfo.strategy as ICurveStrategy).gauge();
-    await StrategyTestUtils.updatePSRatio(strategyInfo.core.announcer, strategyInfo.core.controller, 500, 1000, 60 * 60 * 24 * 2)
     const vaultForUser = strategyInfo.vault.connect(strategyInfo.user);
 
     const xTetu = (await vaultForUser.rewardTokens())[0];
@@ -34,6 +33,8 @@ export class CurveDoHardWorkLoop {
     if (swap) {
       await swap();
     }
+
+    await StrategyTestUtils.updatePSRatio(strategyInfo.core.announcer, strategyInfo.core.controller, 500, 1000, 60 * 60 * 24 * 2)
 
     const sevenDays = 7 * 24 * 60 * 60;
     await TimeUtils.advanceBlocksOnTs(sevenDays);
