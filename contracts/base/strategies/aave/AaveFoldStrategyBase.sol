@@ -152,9 +152,11 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   function _supply(uint256 amount) internal override updateSupplyInTheEnd {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
-    IERC20(_underlyingToken).safeApprove(address(lPool), 0);
-    IERC20(_underlyingToken).safeApprove(address(lPool), amount);
-    lPool.deposit(_underlyingToken, amount, address(this), 0);
+    if (amount > 0){
+      IERC20(_underlyingToken).safeApprove(address(lPool), 0);
+      IERC20(_underlyingToken).safeApprove(address(lPool), amount);
+      lPool.deposit(_underlyingToken, amount, address(this), 0);
+    }
   }
 
   /// @dev Borrows against the collateral
