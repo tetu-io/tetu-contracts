@@ -231,14 +231,12 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @notice return underlying reward forecast for aave supply token
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @param _seconds time period for the forecast
-  /// @param token address (supply)
   /// @param currentLiquidityRate from the AAVE dataProvider
   /// @return forecasted amount of underlying tokens
   function rewardUnderlyingPrediction(
     uint256 _seconds,
-    address token,
     uint256 currentLiquidityRate
-  ) private view returns (uint256){
+  ) private pure returns (uint256){
     uint256 underlyingPerSecond = currentLiquidityRate / _SECONDS_PER_YEAR;
     uint256 predictedUnderlyingEarned = underlyingPerSecond * _seconds;
     return predictedUnderlyingEarned * _PRECISION / _RAY_PRECISION;
@@ -247,13 +245,11 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @notice returns forecast of the debt cost in the underlying tokens
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @param _seconds time period for the forecast
-  /// @param token address (debt)
   /// @return forecasted amount of underlying tokens which needs to be payed as debt interest
   function debtCostPrediction(
     uint256 _seconds,
-    address token,
     uint256 currentVariableBorrowRate
-  ) private view returns (uint256){
+  ) private pure returns (uint256){
     uint256 debtUnderlyingPerSecond = currentVariableBorrowRate / _SECONDS_PER_YEAR;
     uint256 predictedDebtCost = debtUnderlyingPerSecond * _seconds;
     return predictedDebtCost * _PRECISION / _RAY_PRECISION;
@@ -272,8 +268,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     DataTypes.ReserveData memory rd = lPool.getReserveData(_underlyingToken);
     supplyRewards = rewardPrediction(_seconds, aTokenAddress, rd.liquidityIndex);
     borrowRewards = rewardPrediction(_seconds, variableDebtTokenAddress, rd.variableBorrowIndex);
-    supplyUnderlyingProfit = rewardUnderlyingPrediction(_seconds, aTokenAddress, rd.currentLiquidityRate);
-    debtUnderlyingCost = debtCostPrediction(_seconds, variableDebtTokenAddress, rd.currentVariableBorrowRate);
+    supplyUnderlyingProfit = rewardUnderlyingPrediction(_seconds, rd.currentLiquidityRate);
+    debtUnderlyingCost = debtCostPrediction(_seconds, rd.currentVariableBorrowRate);
 
     return (supplyRewards, borrowRewards, supplyUnderlyingProfit, debtUnderlyingCost);
   }
