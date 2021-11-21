@@ -22,7 +22,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe('Universal Cafe tests', async () => {
+describe.skip('Universal Spooky tests', async () => {
   if (argv.disableStrategyTests) {
     return;
   }

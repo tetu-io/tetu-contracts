@@ -168,7 +168,7 @@ async function startAaveFoldStrategyTest(
     });
 
     it("doHardWork loop", async function () {
-      const deposit = 10_000;
+      const deposit = 90_000;
       const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
       const undDec = await TokenUtils.decimals(strategyInfo.underlying);
       const depositBN = utils.parseUnits((deposit / undPrice).toFixed(undDec), undDec);
@@ -183,7 +183,7 @@ async function startAaveFoldStrategyTest(
         strategyInfo,
         depositBN.div(2).toString(),
         3,
-        3000
+        30
       );
     });
 

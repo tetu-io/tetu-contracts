@@ -38,8 +38,8 @@ async function startDefaultLpStrategyTest(
       const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
-      const core = await DeployerUtils.deployAllCoreContracts(signer);
+      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      // const core = await DeployerUtils.deployAllCoreContracts(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
 

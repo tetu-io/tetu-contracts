@@ -37,8 +37,9 @@ describe('Curve aave tests', async () => {
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
-    const [signer, investor, ] = (await ethers.getSigners());
-    const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
+    const [user, investor, ] = (await ethers.getSigners());
+    const signer = await DeployerUtils.impersonate();
+    const core = await DeployerUtils.getCoreAddressesWrapper(signer);
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
     const underlying = MaticAddresses.AM3CRV_TOKEN;
     const underlyingName = await TokenUtils.tokenSymbol(underlying);
@@ -81,7 +82,7 @@ describe('Curve aave tests', async () => {
     await TimeUtils.rollback(snapshotBefore);
   });
 
-  it("doHardWork loop with liq path", async () => {
+  it("doHardWork with liq path", async () => {
     await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo, null);
   });
 
