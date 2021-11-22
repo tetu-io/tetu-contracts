@@ -8,6 +8,7 @@ import {
   ContractReader,
   Controller,
   FeeRewardForwarder,
+  ForwarderV2,
   FundKeeper,
   IStrategy,
   ITetuProxy,
@@ -156,6 +157,17 @@ export class DeployerUtils {
     const logic = await DeployerUtils.deployContract(signer, "FeeRewardForwarder") as FeeRewardForwarder;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as FeeRewardForwarder;
+    await contract.initialize(controllerAddress);
+    return [contract, proxy, logic];
+  }
+
+  public static async deployForwarderV2(
+    signer: SignerWithAddress,
+    controllerAddress: string
+  ): Promise<[ForwarderV2, TetuProxyControlled, ForwarderV2]> {
+    const logic = await DeployerUtils.deployContract(signer, "ForwarderV2") as ForwarderV2;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
+    const contract = logic.attach(proxy.address) as ForwarderV2;
     await contract.initialize(controllerAddress);
     return [contract, proxy, logic];
   }

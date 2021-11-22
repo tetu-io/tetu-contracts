@@ -30,7 +30,7 @@ abstract contract WaultStrategyLPWithAC is StrategyBase, IMasterChefStrategyV2 {
   string public constant override STRATEGY_NAME = "WaultStrategyLPWithAC";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev 1% buyback
   uint256 private constant _BUY_BACK_RATIO = 100;
 
@@ -94,7 +94,7 @@ abstract contract WaultStrategyLPWithAC is StrategyBase, IMasterChefStrategyV2 {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
+  function doHardWork() external onlyNotPausedInvesting override restricted {
     // wault WEXpoly pool has the same underlying and reward token
     // need to be sure that we don't liquidate invested funds
     investAllUnderlying();

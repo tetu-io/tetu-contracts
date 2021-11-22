@@ -60,16 +60,6 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _;
   }
 
-  /// @dev Write info to bookkeeper. Must be used for doHardwork!
-  modifier savePpfsInfo() {
-    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
-    _;
-    uint256 newPpfs = ISmartVault(_smartVault).getPricePerFullShare();
-    if (ppfs != newPpfs) {
-      IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, newPpfs);
-    }
-  }
-
   /// @notice Contract constructor using on Base Strategy implementation
   /// @param _controller Controller address
   /// @param _underlying Underlying token address
