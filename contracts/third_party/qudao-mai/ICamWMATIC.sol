@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 // Original contract: https://github.com/0xlaozi/qidao/blob/main/contracts/camWMatic.sol
 
-pragma solidity 0.8.4;
+pragma solidity ^0.8.4;
 
 //import "@openzeppelin/contracts/math/SafeMath.sol";
 

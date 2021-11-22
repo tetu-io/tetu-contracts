@@ -1,6 +1,6 @@
 import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Contract, ContractFactory, utils} from "ethers";
+import {BigNumber, Contract, ContractFactory, utils} from "ethers";
 import {
   Announcer,
   AutoRewarder,
@@ -773,6 +773,14 @@ export class DeployerUtils {
       throw Error('No config for ' + net.chainId);
     }
   }
+
+  public static async getStorageAt(address: string, index: string) {
+    return await ethers.provider.getStorageAt(address, index);
+  };
+  public static async setStorageAt(address: string, index: string, value: string) {
+    await ethers.provider.send("hardhat_setStorageAt", [address, index, value]);
+    await ethers.provider.send("evm_mine", []); // Just mines to the next block
+  };
 
   // ****************** WAIT ******************
 

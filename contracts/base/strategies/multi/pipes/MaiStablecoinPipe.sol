@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./Pipe.sol";
 import "./../../../../third_party/qudao-mai/IErc20Stablecoin.sol";
+import "./MockPriceSource.sol";
 
 import "hardhat/console.sol"; //TODO rm
 
@@ -30,8 +31,6 @@ contract MaiStablecoinPipe is Pipe {
     MaiStablecoinPipeData public d;
     IErc20Stablecoin private _stablecoin;
     uint256 vaultID;
-
-    uint256 public mockEthPriceSource = 0; // used for testing purposes only
 
     constructor(MaiStablecoinPipeData memory _d) Pipe() {
         name = 'MaiStablecoinPipe';
@@ -218,28 +217,6 @@ contract MaiStablecoinPipe is Pipe {
         console.log('_borrow    ', borrowAmount);
     }
 
-    /// @dev Gets current eth (matic) price
-    /// @return current or mocked eth (matic) price
-    function getEthPriceSource() internal view returns (uint256) {
-        if (mockEthPriceSource != 0) {
-            return mockEthPriceSource;
-        } else {
-            return _stablecoin.getEthPriceSource();
-        }
-    }
-
-    ///TODO how to disable it at production? Mey be we have some modifier
-    /// @dev Sets mock eth (matic) price for re-balance testing. do not use it at production
-    /// @param _mockEthPriceSource new mock eth (matic) price. Set to 0 to disable mocking
-    function setMockEthPriceSource(uint256 _mockEthPriceSource) external onlyPipeline {
-        mockEthPriceSource = _mockEthPriceSource;
-    }
-
-    /// @dev Shows current eth (matic) price
-    /// @return current or mocked eth (matic) price
-    function ethPriceSource() public view returns (uint256) {
-        return getEthPriceSource();
-    }
 
     /// @dev Converts collateral amount to borrow amount using target Collateral to Debt percentage
     /// @param collateral amount in collateral token
@@ -248,7 +225,7 @@ contract MaiStablecoinPipe is Pipe {
     private view returns (uint256 amount) {
         console.log('_collateralPercentageToBorrowTokenAmount collateral, percentage', collateral, percentage);
 
-        uint256 ethPrice = getEthPriceSource();
+        uint256 ethPrice = _stablecoin.getEthPriceSource();
         console.log('_ethPrice', ethPrice);
 
         uint256 value = collateral * ethPrice / _stablecoin.getTokenPriceSource();
@@ -266,7 +243,7 @@ contract MaiStablecoinPipe is Pipe {
     private view returns (uint256 amount) {
         console.log('_borrowToCollateralTokenAmountPercentage borrowAmount, percentage', borrowAmount, percentage);
 
-        uint256 ethPrice = getEthPriceSource();
+        uint256 ethPrice = _stablecoin.getEthPriceSource();
         console.log('_ethPrice', ethPrice);
         uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
         uint256 closingFee = _stablecoin.closingFee();
