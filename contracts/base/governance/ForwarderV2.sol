@@ -55,8 +55,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   event FeeMovedToFund(address indexed fund, address indexed token, uint256 amount);
   /// @notice Simple liquidation was done
   event Liquidated(address indexed tokenIn, address indexed tokenOut, uint256 amount);
-  /// @notice Added or changed a route with routers
-  event RouteAdded(address indexed tokenIn, address indexed tokenOut);
   event LiquidityAdded(
     address router,
     address token0,
@@ -100,6 +98,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   // ************ GOVERNANCE ACTIONS **************************
 
+  /// @notice Only Governance or Controller can call it.
+  ///         Add a pair with biggest TVL for given token
   function addLps(address[] memory _tokens, address[] memory _lps) external onlyControllerOrGovernance {
     require(_tokens.length == _lps.length, "F2: Wrong arrays");
     for (uint i = 0; i < _lps.length; i++) {
@@ -131,6 +131,13 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   // ***************** EXTERNAL *******************************
 
+  /// @notice Only Reward Distributor or Governance or Controller can call it.
+  ///         Distribute rewards for given vault, move fees to PS and Fund
+  ///         Under normal circumstances, sender is the strategy
+  /// @param _amount Amount of tokens for distribute
+  /// @param _token Token for distribute
+  /// @param _vault Target vault
+  /// @return Amount of distributed Target(TETU) tokens + FundKeeper fee (approx)
   function distribute(
     uint256 _amount,
     address _token,
@@ -180,7 +187,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     }
 
     _sendExcessTokens();
-    return plusFundAmountToDistributedAmount(tetuDistributed);
+    return _plusFundAmountToDistributedAmount(tetuDistributed);
   }
 
   /// @dev Simple function for liquidate and send back the given token
@@ -343,11 +350,10 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @dev Compute Approximate Total amount normalized to TETU token
   /// @param _amount Amount of TETU token distributed to PS and Vault
   /// @return Approximate Total amount normalized to TETU token
-  function plusFundAmountToDistributedAmount(uint256 _amount) internal view returns (uint256) {
+  function _plusFundAmountToDistributedAmount(uint256 _amount) internal view returns (uint256) {
     uint256 fundNumerator = IController(controller()).fundNumerator();
     uint256 fundDenominator = IController(controller()).fundDenominator();
-    uint256 toDistributeNumerator = fundDenominator - fundNumerator;
-    return _amount * fundDenominator / toDistributeNumerator;
+    return _amount * fundDenominator / (fundDenominator - fundNumerator);
   }
 
   /// @dev Swap one token to another using all available amount
@@ -405,8 +411,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       fee = UniFee(DEFAULT_UNI_FEE_NOMINATOR, DEFAULT_UNI_FEE_DENOMINATOR);
     }
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
-
-    // todo slippage check
 
     IERC20(tokenIn).safeTransfer(address(lp), amount);
     console.log("amountOut to swap", amountOut);
