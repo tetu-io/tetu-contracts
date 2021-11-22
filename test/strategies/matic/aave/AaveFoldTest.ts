@@ -42,8 +42,8 @@ describe('Universal Aave Fold tests', async () => {
     const usageAsCollateralEnabled = start[9];
     const borrowingEnabled = start[10];
     const ltvNum = Number(ltv);
-    const collateralFactor = (ltvNum * 0.95).toString();
-    const borrowTarget = (ltvNum * 0.8).toString();
+    const collateralFactor = (ltvNum).toString();
+    const borrowTarget = (ltvNum * 0.95).toString();
 
     if (!idx || idx === 'idx' || usageAsCollateralEnabled !== "true" || borrowingEnabled !== "true") {
       console.log('skip ', tokenName);
