@@ -245,9 +245,9 @@ abstract contract FoldingBase is StrategyBase {
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
+      _supply(amount);
       // we need to sell excess in non hardWork function for keeping ppfs ~1
       _liquidateExcessUnderlying();
-      _supply(amount);
     }
     if (!fold || !isFoldingProfitable()) {
       return;

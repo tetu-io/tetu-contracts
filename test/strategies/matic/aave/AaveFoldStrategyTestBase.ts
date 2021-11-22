@@ -10,7 +10,6 @@ import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
 import {PriceCalculator, StrategyAaveFold} from "../../../../typechain";
 import {MaticAddresses} from "../../../MaticAddresses";
-import {UniswapUtils} from "../../../UniswapUtils";
 
 
 const {expect} = chai;
@@ -86,23 +85,16 @@ async function startAaveFoldStrategyTest(
         lpForTargetToken,
         calculator
       );
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
 
       // ************** add funds for investing ************
       const baseAmount = 100_000;
-      await UniswapUtils.buyAllBigTokens(user);
-      const name = await TokenUtils.tokenSymbol(tokenOpposite);
-      const dec = await TokenUtils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
+      const dec = await TokenUtils.decimals(underlying);
+      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying)));
+      console.log('Price', price);
+      const depositAmount = baseAmount / price;
+      console.log('depositAmount', depositAmount);
 
-      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-        underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
+      await TokenUtils.getToken(underlying, user.address, utils.parseUnits(depositAmount.toFixed(0), dec));
       console.log('############## Preparations completed ##################');
     });
 
@@ -194,7 +186,7 @@ export {startAaveFoldStrategyTest};
 
 
 async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
-  const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyIronFold', info.strategy.address) as StrategyAaveFold;
+  const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyAaveFold', info.strategy.address) as StrategyAaveFold;
   const calculator = (await DeployerUtils
     .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
   const vaultForUser = info.vault.connect(info.user);
