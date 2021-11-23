@@ -153,6 +153,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     emit RegisterFundKeeperEarned(_token, _fundTokenAmount);
   }
 
+  /// ---------DEPRECATED----------------
   /// @notice FeeRewardForwarder action.
   ///         Register Price Per Full Share change for given vault
   /// @param vault Vault address

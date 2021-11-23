@@ -156,7 +156,8 @@ describe("contract reader tests", function () {
       .is.eq('0');
   });
 
-  it("ps ppfs apr", async () => {
+  // we don't use this functionality
+  it.skip("ps ppfs apr", async () => {
     await UniswapUtils.createPairForRewardToken(signer, core, "10000");
     await core.feeRewardForwarder.setConversionPath(
       [core.rewardToken.address, MaticAddresses.USDC_TOKEN],

@@ -55,7 +55,7 @@ export class StrategyTestUtils {
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkWithLiqPath(info: StrategyInfo, deposit: string, toClaimCalcFunc: (() => Promise<BigNumber[]>) | null) {
+  public static async doHardWorkSimple(info: StrategyInfo, deposit: string, toClaimCalcFunc: (() => Promise<BigNumber[]>) | null) {
     const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
     const den = (await info.core.controller.psDenominator()).toNumber();
     const newNum = +(den / 2).toFixed()
@@ -106,7 +106,7 @@ export class StrategyTestUtils {
     await VaultUtils.doHardWorkAndCheck(info.vault);
 
     const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
-    if (await info.vault.ppfsDecreaseAllowed()) {
+    if (await info.vault.ppfsDecreaseAllowed() && oldPpfs >= 1) {
       expect(ppfs).is.greaterThanOrEqual(oldPpfs * 0.999);
     } else {
       expect(ppfs).is.greaterThanOrEqual(oldPpfs);
@@ -147,7 +147,7 @@ export class StrategyTestUtils {
 
     if (await info.vault.ppfsDecreaseAllowed()) {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.99,
+        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999,
         "should have more or equal underlying than deposited");
     } else {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
@@ -155,6 +155,18 @@ export class StrategyTestUtils {
         "should have more or equal underlying than deposited");
     }
 
+    const vaultBal = await vaultForUser.underlyingBalanceWithInvestment();
+    const vaultUndBal = await vaultForUser.underlyingBalanceInVault();
+    const strPoolBal = await info.strategy.rewardPoolBalance();
+    const strUndBal = await info.strategy.underlyingBalance();
+    console.log('vaultBal', vaultBal.toString());
+    console.log('vaultUndBal', vaultUndBal.toString());
+    console.log('strPoolBal', strPoolBal.toString());
+    console.log('strUndBal', strUndBal.toString());
+    expect(vaultBal).is.eq(0);
+    expect(vaultUndBal).is.eq(0);
+    expect(strPoolBal).is.eq(0);
+    expect(strUndBal).is.eq(0);
 
     const userEarnedTotalAfter = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
     console.log('user total earned rt0', +utils.formatUnits(userEarnedTotal), +utils.formatUnits(userEarnedTotalAfter),

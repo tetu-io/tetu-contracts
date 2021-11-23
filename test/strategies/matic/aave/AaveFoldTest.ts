@@ -16,7 +16,7 @@ const argv = require('yargs/yargs')()
   },
   onlyOneAaveFoldStrategyTest: {
     type: "number",
-    default: -1,
+    default: 0,
   }
 }).argv;
 
@@ -42,8 +42,8 @@ describe('Universal Aave Fold tests', async () => {
     const usageAsCollateralEnabled = start[9];
     const borrowingEnabled = start[10];
     const ltvNum = Number(ltv);
-    const collateralFactor = (ltvNum).toString();
-    const borrowTarget = (ltvNum * 0.95).toString();
+    const collateralFactor = (ltvNum * 0.99).toFixed(0);
+    const borrowTarget = (ltvNum * 0.9).toFixed(0);
 
     if (!idx || idx === 'idx' || usageAsCollateralEnabled !== "true" || borrowingEnabled !== "true") {
       console.log('skip ', tokenName);

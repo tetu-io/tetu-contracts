@@ -87,23 +87,16 @@ async function startAaveFoldStrategyTest(
         lpForTargetToken,
         calculator
       );
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
 
       // ************** add funds for investing ************
       const baseAmount = 100_000;
-      await UniswapUtils.buyAllBigTokens(user);
-      const name = await TokenUtils.tokenSymbol(tokenOpposite);
-      const dec = await TokenUtils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
+      const dec = await TokenUtils.decimals(underlying);
+      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying)));
+      console.log('Price', price);
+      const depositAmount = baseAmount / price;
+      console.log('depositAmount', depositAmount);
 
-      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-        underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
+      await TokenUtils.getToken(underlying, user.address, utils.parseUnits(depositAmount.toFixed(0), dec));
       console.log('############## Preparations completed ##################');
     });
 
@@ -120,8 +113,8 @@ async function startAaveFoldStrategyTest(
     });
 
 
-    it("do hard work with liq path", async () => {
-      await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+    it("do hard work simple", async () => {
+      await StrategyTestUtils.doHardWorkSimple(strategyInfo,
         (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
         null);
     });
@@ -168,7 +161,7 @@ async function startAaveFoldStrategyTest(
       await StrategyTestUtils.commonTests(strategyInfo);
     });
 
-    it("doHardWork loop", async function () {
+    it("doHardWork loop with blocks", async function () {
       const deposit = 90_000;
       const undPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
       const undDec = await TokenUtils.decimals(strategyInfo.underlying);
@@ -183,119 +176,10 @@ async function startAaveFoldStrategyTest(
       await doHardWorkLoopFolding(
         strategyInfo,
         depositBN.div(2).toString(),
-        3,
-        30
+        9,
+        3000
       );
     });
-
-  });
-}
-
-async function startAaveFoldStrategyProfitabilityTest(
-  strategyName: string,
-  factory: string,
-  underlying: string,
-  tokenName: string,
-  rewardTokens: string[],
-  aToken: string,
-  borrowTargetFactorNumerator: string,
-  collateralFactorNumerator: string
-) {
-
-  describe(tokenName + " Folding profitability Test", async function () {
-    let snapshotBefore: string;
-    let snapshot: string;
-    let snapshotFolding: string;
-    let strategyInfo: StrategyInfo;
-    let user: SignerWithAddress;
-    const investingPeriod = 60 * 60 * 24 * 30;
-    let deposit = "1000"
-    before(async function () {
-      snapshotBefore = await TimeUtils.snapshot();
-      const signer = await DeployerUtils.impersonate();
-      user = (await ethers.getSigners())[1];
-      if (tokenName === "WBTC"){
-        deposit = "1"
-      }
-      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
-      const tools = await DeployerUtils.getToolsAddresses();
-      const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
-
-
-      await StrategyTestUtils.setupForwarder(
-        core.feeRewardForwarder,
-        rewardTokens,
-        underlying,
-        core.rewardToken.address,
-        factory
-      );
-
-      const data = await StrategyTestUtils.deploy(
-        signer,
-        core,
-        tokenName,
-        async vaultAddress => DeployerUtils.deployContract(
-          signer,
-          strategyName,
-          core.controller.address,
-          vaultAddress,
-          underlying,
-          borrowTargetFactorNumerator,
-          collateralFactorNumerator
-        ) as Promise<StrategyAaveFold>,
-        underlying
-      );
-
-      const vault = data[0];
-      const strategy = data[1];
-      const lpForTargetToken = data[2];
-
-      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
-
-      await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
-
-      strategyInfo = new StrategyInfo(
-        underlying,
-        signer,
-        user,
-        core,
-        vault,
-        strategy,
-        lpForTargetToken,
-        calculator
-      );
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest.toString());
-
-      // ************** add funds for investing ************
-      const baseAmount = 100_000;
-      await UniswapUtils.buyAllBigTokens(user);
-      const name = await TokenUtils.tokenSymbol(tokenOpposite);
-      const dec = await TokenUtils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
-
-      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-        underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
-      console.log('############## Preparations completed ##################');
-    });
-
-    beforeEach(async function () {
-      snapshot = await TimeUtils.snapshot();
-    });
-
-    afterEach(async function () {
-      await TimeUtils.rollback(snapshot);
-    });
-
-    after(async function () {
-      await TimeUtils.rollback(snapshotBefore);
-    });
-
 
     it("do lending vs folding", async () => {
       const underlyingUSDPrice = +utils.formatUnits(await strategyInfo.calculator.getPriceWithDefaultOutput(strategyInfo.underlying));
@@ -303,46 +187,52 @@ async function startAaveFoldStrategyProfitabilityTest(
       console.log("underlyingUSDPrice ", underlyingUSDPrice);
       console.log("tetuUSDCPrice ", tetuUSDCPrice);
 
+      const investingPeriod = 60 * 60 * 24 * 30;
+      const deposit = await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address);
 
       const strategy = strategyInfo.strategy as StrategyAaveFold;
+
+      expect(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address)).is.eq(0);
+
       const und = await strategyInfo.vault.underlying();
       const undDec = await TokenUtils.decimals(und);
       const isFoldingProfitable = await strategy.isFoldingProfitable();
-      if (!isFoldingProfitable){
+      if (!isFoldingProfitable) {
         console.log("Folding is not profitable for: ", tokenName);
         return;
       }
       console.log("Is Folding profitable: ", isFoldingProfitable);
-      snapshotFolding = await TimeUtils.snapshot();
+      const snapshotFolding = await TimeUtils.snapshot();
       console.log("Folding disabled");
       await strategy.setFold(false);
       console.log("deposit", deposit);
-      await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits(deposit, undDec));
+      await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, deposit);
       const undBal1 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
       await TimeUtils.advanceBlocksOnTs(investingPeriod);
       await strategyInfo.vault.doHardWork();
-      const tetuEarned1 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address), undDec);
+      const tetuEarned1 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address));
       const undBalAfterR1 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
       const lendingUnderlyingProfit = undBalAfterR1 - undBal1;
       const lendingTetuProfit = tetuEarned1;
       await TimeUtils.rollback(snapshotFolding);
       console.log("Folding enabled");
       await strategy.setFold(true);
-      await VaultUtils.deposit(user, strategyInfo.vault, utils.parseUnits(deposit, undDec));
+      await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, deposit);
       const undBal2 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
+      expect(undBal2).is.eq(undBal1);
 
       await TimeUtils.advanceBlocksOnTs(investingPeriod);
       await strategyInfo.vault.doHardWork();
 
-      const tetuEarned2 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address), undDec);
+      const tetuEarned2 = +utils.formatUnits(await strategyInfo.core.bookkeeper.targetTokenEarned(strategy.address));
       const undBalAfterR2 = +utils.formatUnits(await strategyInfo.vault.underlyingBalanceWithInvestment(), undDec);
       const foldingUnderlyingProfit = undBalAfterR2 - undBal2;
       const foldingTetuProfit = tetuEarned2;
 
       const lendingUnderlyingProfitUSD = lendingUnderlyingProfit * underlyingUSDPrice;
       const foldingUnderlyingProfitUSD = foldingUnderlyingProfit * underlyingUSDPrice;
-      const lendingTetuProfitUSD = lendingTetuProfit * underlyingUSDPrice;
-      const foldingTetuProfitUSD = foldingTetuProfit * underlyingUSDPrice;
+      const lendingTetuProfitUSD = lendingTetuProfit * tetuUSDCPrice;
+      const foldingTetuProfitUSD = foldingTetuProfit * tetuUSDCPrice;
       const totalLendingProfitUSD = lendingUnderlyingProfitUSD + lendingTetuProfitUSD;
       const totalFoldingProfitUSD = foldingTetuProfitUSD + foldingUnderlyingProfitUSD;
 
@@ -356,15 +246,12 @@ async function startAaveFoldStrategyProfitabilityTest(
       console.log("Total folding profit: ", totalFoldingProfitUSD);
       console.log("Difference: ", totalFoldingProfitUSD / totalLendingProfitUSD * 100, "%");
     });
+
   });
 }
 
-
-export {startAaveFoldStrategyTest, startAaveFoldStrategyProfitabilityTest};
-
-
 async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops: number, loopBlocks: number) {
-  const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyIronFold', info.strategy.address) as StrategyAaveFold;
+  const foldContract = await DeployerUtils.connectInterface(info.signer, 'StrategyAaveFold', info.strategy.address) as StrategyAaveFold;
   const calculator = (await DeployerUtils
     .deployPriceCalculatorMatic(info.signer, info.core.controller.address))[0];
   const vaultForUser = info.vault.connect(info.user);
@@ -527,3 +414,6 @@ async function doHardWorkLoopFolding(info: StrategyInfo, deposit: string, loops:
   expect(+utils.formatUnits(signerUnderlyingBalanceAfter, undDec))
     .is.greaterThanOrEqual(+utils.formatUnits(signerUnderlyingBalance, undDec) * 0.999, "signer should have all underlying");
 }
+
+
+export {startAaveFoldStrategyTest};

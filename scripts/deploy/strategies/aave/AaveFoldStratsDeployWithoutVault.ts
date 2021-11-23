@@ -12,7 +12,7 @@ async function main() {
 
   const infos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
 
-  const vaultNames = new Set<string>();
+  const vaultsByUnderlying = new Map<string, string>();
 
   const cReader = await DeployerUtils.connectContract(
     signer, "ContractReader", tools.reader) as ContractReader;
@@ -21,7 +21,11 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
-    vaultNames.add(await cReader.vaultName(vAdr));
+    const underlying = (await cReader.vaultUnderlying(vAdr)).toLowerCase();
+    if (vaultsByUnderlying.has(underlying)) {
+      throw Error('duplicate und');
+    }
+    vaultsByUnderlying.set(underlying, vAdr);
   }
 
   for (const info of infos) {
@@ -47,64 +51,45 @@ async function main() {
       continue;
     }
 
-    // TODO !!!!!!!!!!
-    // TODO REMOVE!
-    // TODO !!!!!!!!!!
-    if (idx !== '0') {
-      // only dai!
+    if (idx === '0') {
+      console.log('dai excluded');
+      continue;
+    }
+    if (idx === '1') {
+      console.log('usdc excluded');
       continue;
     }
 
-    const vaultNameWithoutPrefix = `AAVE_${tokenName}`;
+    const vault = vaultsByUnderlying.get(tokenAddress.toLowerCase()) as string;
+    const vaultName = await cReader.vaultUnderlying(vault);
 
-    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
-      continue;
-    }
-
-    console.log('strat', idx, aTokenName, vaultNameWithoutPrefix);
+    console.log('strat', idx, aTokenName, vaultName);
 
     const collateralFactor = (ltv * 0.99).toFixed(0);
     const borrowTarget = (ltv * 0.9).toFixed(0);
 
-    let strategyArgs;
-
-    const data = await DeployerUtils.deployVaultAndStrategy(
-      vaultNameWithoutPrefix,
-      (vaultAddress) => {
-        strategyArgs = [
-          core.controller,
-          vaultAddress,
-          tokenAddress,
-          borrowTarget,
-          collateralFactor
-        ]
-        return DeployerUtils.deployContract(
-          signer,
-          'StrategyAaveFold',
-          ...strategyArgs
-        ) as Promise<IStrategy>
-      },
+    const strategyArgs = [
       core.controller,
-      core.psVault,
+      vault,
+      tokenAddress,
+      borrowTarget,
+      collateralFactor
+    ];
+    const strategy = await DeployerUtils.deployContract(
       signer,
-      60 * 60 * 24 * 28,
-      true
-    );
-
+      'StrategyAaveFold',
+      ...strategyArgs
+    ) as IStrategy;
 
     await DeployerUtils.wait(5);
 
-    await DeployerUtils.verify(data[0].address);
-    await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
-    await DeployerUtils.verifyProxy(data[1].address);
-    await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/matic/aave/StrategyAaveFold.sol:StrategyAaveFold', strategyArgs);
+    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/aave/StrategyAaveFold.sol:StrategyAaveFold', strategyArgs);
 
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
-    const txt = `vault: ${data[1].address}\nstrategy: ${data[2].address}`;
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
+    const txt = `strategy: ${strategy.address}`;
+    writeFileSync(`./tmp/deployed/AAVE_STRAT_${tokenName}.txt`, txt, 'utf8');
   }
 
 }

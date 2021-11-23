@@ -31,7 +31,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
@@ -85,7 +85,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
+  function doHardWork() external onlyNotPausedInvesting override restricted {
     investAllUnderlying();
     IGauge(gauge).claim_rewards(address(this));
     liquidateReward();
