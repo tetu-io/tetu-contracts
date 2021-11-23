@@ -25,6 +25,12 @@ contract LinearPipeline {
         _underlyingToken = underlyingToken;
     }
 
+    /// @dev Returns pipes array length
+    /// @return pipes array length
+    function pipesLength() public view returns (uint256){
+        return pipes.length;
+    }
+
     /// @dev Adds pipe to the end of pipeline and connects it
     /// @param newPipe to be added
     function addPipe(Pipe newPipe) internal {

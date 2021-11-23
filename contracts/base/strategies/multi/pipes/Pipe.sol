@@ -40,11 +40,6 @@ abstract contract Pipe {
         _pipeline = msg.sender;
     }
 
-    function setPipeline(address pipeline) public onlyPipeline {
-        console.log('setPipeline', name, pipeline);
-        _pipeline = pipeline;
-    }
-
     modifier onlyPipeline() {
         require(
             _pipeline == msg.sender || _pipeline == address(this),
@@ -91,11 +86,11 @@ abstract contract Pipe {
     function get(uint256 amount) virtual public
     returns (uint256 output);
 
-    /// @dev function for re balancing
+    /// @dev function for re balancing. Mark it as onlyPipeline when override
     /// @return imbalance in underlying units
     /// @return deficit - when true, then ask to receive underlying imbalance amount, when false - put imbalance to next pipe,
-    function rebalance() onlyPipeline virtual public
-    returns (uint256 imbalance, bool deficit){
+    function rebalance() virtual public
+    returns (uint256 imbalance, bool deficit) {
         // balanced, no deficit by default
         return (0, false);
     }
@@ -182,11 +177,6 @@ abstract contract Pipe {
     function ERC20Approve(address ERC20Token, address spender, uint256 amount) internal {
         IERC20(ERC20Token).safeApprove(spender, 0);
         IERC20(ERC20Token).safeApprove(spender, amount);
-    }
-
-    function toDecimals(uint256 input, uint256 fromDecimals, uint256 outputDecimals)
-    internal pure returns (uint256) {
-        return input * (10 ** fromDecimals) / (10 ** outputDecimals);
     }
 
 }

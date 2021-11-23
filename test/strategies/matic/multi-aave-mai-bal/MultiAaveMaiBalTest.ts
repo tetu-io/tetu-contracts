@@ -12,7 +12,7 @@ import {
     IErc20Stablecoin,
     PriceSource,
     MockPriceSource,
-    StrategyAaveMaiBal
+    StrategyAaveMaiBal, UnwrappingPipe, AaveWethPipe, MaiStablecoinPipe
 } from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {StrategyInfo} from "../../StrategyInfo";
@@ -51,9 +51,12 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     let strategyAaveMaiBal: any;
 
-    const AAVE_PIPE_INDEX = 1;
-    const MAI_PIPE_INDEX = 3;
-    const BAL_PIPE_INDEX = 4;
+    const UNDERLYING = MaticAddresses.WMATIC_TOKEN
+
+    const UNWRAPPING_PIPE_INDEX = 0;
+    const AAVE_PIPE_INDEX       = 1;
+    const MAI_PIPE_INDEX        = 3;
+    const BAL_PIPE_INDEX        = 4;
 
     const TIME_SHIFT = 60 * 60 * 24 * 30 * 3;  // months;
     const MAI_STABLECOIN_ADDRESS   = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a';
@@ -89,7 +92,6 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
         ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', MaticAddresses.CAMWMATIC_TOKEN) as ICamWMATIC
 
-        let underlying = MaticAddresses.WMATIC_TOKEN;
         await core.feeRewardForwarder.setLiquidityNumerator(50);
         await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
@@ -102,9 +104,9 @@ describe('Universal MultiAaveMaiBal tests', async () => {
                 "StrategyAaveMaiBal",
                 core.controller.address,
                 vaultAddress,
-                underlying
+                UNDERLYING
             ) as Promise<StrategyAaveMaiBal>,
-            underlying
+            UNDERLYING
         );
 
         // noinspection DuplicatedCode
@@ -117,7 +119,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
         strategyInfo = new StrategyInfo(
-            underlying,
+            UNDERLYING,
             signer,
             user,
             core,
@@ -168,7 +170,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
 
     it("do hard work with liq path AAVE WMATIC rewards", async () => {
-        console.log('AAVE WMATIC rewards');
+        console.log('>>>AAVE WMATIC rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
@@ -179,7 +181,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     });
 
     it("do hard work with liq path MAI QI rewards", async () => {
-        console.log('MAI QI rewards');
+        console.log('>>>MAI QI rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
@@ -190,7 +192,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     });
 
     it("do hard work with liq path Balancer BAL rewards", async () => {
-        console.log('Balancer BAL rewards');
+        console.log('>>>Balancer BAL rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
@@ -201,7 +203,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     });
 
     it("Target percentage", async () => {
-        console.log('Rebalance test');
+        console.log('>>>Target percentage test');
         const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
 
         const targetPercentageInitial = await strategyGov.targetPercentage()
@@ -233,14 +235,20 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     });
 
-    it.only("Rebalance on matic price change", async () => {
-        console.log('Rebalance test');
+    it("Rebalance on matic price change", async () => {
+        console.log('>>>Rebalance test');
         const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
 
         const stablecoin  = (await ethers.getContractAt('IErc20Stablecoin', MAI_STABLECOIN_ADDRESS)) as IErc20Stablecoin;
 
+        await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
+
         await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(DEPOSIT_AMOUNT));
         console.log('>>>deposited');
+        const bal0 = await strategyGov.getMostUnderlyingBalance()
+        console.log('>>>bal0', bal0.toString())
+
+        await strategyGov.rebalanceAllPipes() // should do nothing - pipe must rebalance at deposit
         const bal1 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal1', bal1.toString())
 
@@ -254,7 +262,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         console.log('priceSourcePrice   ', priceSourcePrice.toString())
 
         const mockPriceSource = await DeployerUtils.deployContract(
-            strategyInfo.signer, 'MockPriceSource', priceSourcePrice.mul(2));
+            strategyInfo.signer, 'MockPriceSource', 0);
+        await mockPriceSource.setPrice(priceSourcePrice.mul(2));
         const [,mockSourcePrice,,] = await mockPriceSource.latestRoundData()
         console.log('mockSourcePrice    ', mockSourcePrice.toString())
 
@@ -290,8 +299,121 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const bal3 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal3', bal3.toString())
 
+        expect(bal0).to.be.equal(bal1);
         expect(bal2).to.be.closeTo(bal1.mul(2), bal1.div(200)); // 0.5% deviation max
         expect(bal3).to.be.closeTo(bal1, bal1.div(200));        // 0.5% deviation max
+
+    });
+
+    it("Salvage from pipeline", async () => {
+        console.log('>>>Salvage from pipeline test');
+        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
+        const token = MaticAddresses.USDT_TOKEN; // token to test salvage
+        const pipesLength = await strategyGov.pipesLength();
+        console.log('>>>pipesLength', pipesLength);
+        const amountPerPipe = utils.parseUnits('5')
+        console.log('>>>amountPerPipe', amountPerPipe);
+        const totalAmount = amountPerPipe.mul(pipesLength)
+        console.log('>>>totalAmount', totalAmount);
+        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
+            token, totalAmount);
+
+        for (let i = 0; i < pipesLength; i++) {
+            const pipe = strategyGov.pipes(i);
+            await TokenUtils.transfer(token, airDropper, pipe.address, amountPerPipe.toString());
+        }
+
+        const balanceBefore = await TokenUtils.balanceOf(token, airDropper.address)
+        console.log('>>>balanceBefore', balanceBefore);
+
+        await strategyGov.salvageFromPipeline(airDropper.address, token);
+
+        const balanceAfter = await TokenUtils.balanceOf(token, airDropper.address)
+        console.log('>>>balanceAfter ', balanceAfter);
+
+        const increase = balanceAfter.sub(balanceBefore)
+        console.log('>>>increase     ', increase);
+
+        expect(increase).to.be.equal(totalAmount);
+
+    });
+
+    it("PumpIn on hardwork", async () => {
+        console.log('>>>PumpIn on hardwork');
+        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
+        const amount = utils.parseUnits('10')
+        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
+            UNDERLYING, amount);
+        await TokenUtils.transfer(UNDERLYING, airDropper, strategyGov.address, amount.toString());
+        const before = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
+        console.log('>>>before', before);
+        await strategyGov.doHardWork();
+        const after = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
+        console.log('>>>after', after);
+
+        expect(before).to.be.equal(amount)
+        expect(after).to.be.equal(0, 'Underlying token should be pumped in on hard work')
+    });
+
+
+    it("Withdraw and Claim from Pool", async () => {
+        console.log('>>>withdrawAndClaimFromPool test');
+        const userAddress = strategyInfo.user.address
+        const depositAmount = await TokenUtils.balanceOf(UNDERLYING, userAddress);
+        const before = await strategyAaveMaiBal.getMostUnderlyingBalance()
+        console.log('>>>before      ', before.toString());
+
+        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, depositAmount);
+
+        const afterDeposit = await strategyAaveMaiBal.getMostUnderlyingBalance()
+        console.log('>>>afterDeposit', afterDeposit.toString());
+
+        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
+        await strategyGov.emergencyExit();
+
+        const afterExit = await strategyAaveMaiBal.getMostUnderlyingBalance()
+        console.log('>>>afterExit   ', afterExit.toString());
+
+        expect(before).to.be.equal(0)
+        expect(afterDeposit).to.be.above(before);
+        expect(afterExit).to.be.equal(0)
+
+    });
+
+    it("Emergency withdraw from Pool", async () => {
+        console.log('>>>emergencyWithdrawFromPool test');
+        const userAddress = strategyInfo.user.address
+        const before = await TokenUtils.balanceOf(UNDERLYING, userAddress)
+        console.log('>>>before      ', before.toString());
+
+        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(before));
+
+        const afterDeposit = await TokenUtils.balanceOf(UNDERLYING, userAddress)
+        console.log('>>>afterDeposit', afterDeposit.toString());
+
+        await VaultUtils.exit(strategyInfo.user, strategyInfo.vault);
+
+        const afterExit = await TokenUtils.balanceOf(UNDERLYING, userAddress)
+        console.log('>>>afterExit   ', afterExit.toString());
+
+        expect(afterDeposit).to.be.equal(0)
+        //expect(afterExit).to.be.closeTo(before, before.div(200));
+
+    });
+
+
+    it("Coverage calls", async () => {
+        const unwrappingPipe  = (await ethers.getContractAt('UnwrappingPipe',
+            await strategyAaveMaiBal.pipes(UNWRAPPING_PIPE_INDEX))) as UnwrappingPipe;
+        const unwrappingPipeOutputBalance = await unwrappingPipe.outputBalance();
+        console.log('unwrappingPipe OutputBalance', unwrappingPipeOutputBalance);
+        await unwrappingPipe.rebalance(); // for Pipe.sol coverage
+
+        const aaveWethPipe   = (await ethers.getContractAt('AaveWethPipe',
+            await strategyAaveMaiBal.pipes(AAVE_PIPE_INDEX))) as AaveWethPipe;
+        const aaveWethPipeSourceBalance = await aaveWethPipe.sourceBalance();
+        console.log('unwrappingPipe OutputBalance', aaveWethPipeSourceBalance);
+
 
     });
 
