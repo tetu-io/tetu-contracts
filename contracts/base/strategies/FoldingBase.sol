@@ -13,7 +13,6 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./StrategyBase.sol";
 import "../interface/ISmartVault.sol";
@@ -91,8 +90,6 @@ abstract contract FoldingBase is StrategyBase {
 
   function _redeemUnderlying(uint256 amountUnderlying) internal virtual;
 
-  function _redeemLoanToken(uint256 amount) internal virtual;
-
   function _repay(uint256 amountUnderlying) internal virtual;
 
   function _redeemMaximumWithLoan() internal virtual;
@@ -155,10 +152,10 @@ abstract contract FoldingBase is StrategyBase {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
+    investAllUnderlying();
     _claimReward();
     _compound();
     liquidateReward();
-    investAllUnderlying();
     if (!isFoldingProfitable() && fold) {
       stopFolding();
     } else if (isFoldingProfitable() && !fold) {
@@ -348,10 +345,8 @@ abstract contract FoldingBase is StrategyBase {
           }
         }
       }
-      // safe way to keep ppfs peg is sell excess after reward liquidation
-      // it should not decrease old ppfs
-      _liquidateExcessUnderlying();
     }
+    _liquidateExcessUnderlying();
   }
 
   /// @dev We should keep PPFS ~1

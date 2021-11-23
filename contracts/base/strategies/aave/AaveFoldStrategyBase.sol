@@ -14,20 +14,15 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../FoldingBase.sol";
-
-import "../../interface/ISmartVault.sol";
+import "../../interface/IAveFoldStrategy.sol";
 import "../../../third_party/IWmatic.sol";
 import "../../../third_party/aave/IAToken.sol";
-import "../../interface/IAveFoldStrategy.sol";
 import "../../../third_party/aave/ILendingPool.sol";
-
 import "../../../third_party/aave/IAaveIncentivesController.sol";
 import "../../../third_party/aave/IProtocolDataProvider.sol";
 import "../../../third_party/aave/DataTypes.sol";
 import "../../../third_party/aave/IPriceOracle.sol";
-
 
 /// @title Abstract contract for Aave lending strategy implementation with folding functionality
 /// @author belbix
@@ -152,7 +147,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   function _supply(uint256 amount) internal override updateSupplyInTheEnd {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
-    if (amount > 0){
+    if (amount > 0) {
       IERC20(_underlyingToken).safeApprove(address(lPool), 0);
       IERC20(_underlyingToken).safeApprove(address(lPool), amount);
       lPool.deposit(_underlyingToken, amount, address(this), 0);
@@ -167,19 +162,11 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev Redeem liquidity in underlying
   function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
     // we can have a little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    (uint256 suppliedUnderlying,) = _getInvestmentData();
-    amountUnderlying = Math.min(amountUnderlying, suppliedUnderlying);
+    (uint supplied, uint borrowed) = _getInvestmentData();
+    uint balance = supplied - borrowed;
+    amountUnderlying = Math.min(amountUnderlying, balance);
     if (amountUnderlying > 0) {
       lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
-    }
-  }
-
-  /// @dev Redeem liquidity in aToken
-  function _redeemLoanToken(uint256 amount) internal override updateSupplyInTheEnd {
-    if (amount > 0) {
-      lPool.withdraw(_underlyingToken, amount, address(this));
-      uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
-      require(aTokenBalance == 0, "AFS: Redeem failed");
     }
   }
 
@@ -200,15 +187,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 balance = supplied - borrowed;
     _redeemPartialWithLoan(Math.min(availableLiquidity, balance));
-
-    // we have a little amount of supply after full exit
-    // better to redeem rToken amount for avoid rounding issues
-    (supplied, borrowed) = _getInvestmentData();
-    uint256 aTokenBalance = IERC20(aToken).balanceOf(address(this));
-
-    if (aTokenBalance > 0) {
-      _redeemLoanToken(aTokenBalance);
-    }
+    (supplied,) = _getInvestmentData();
+    _redeemUnderlying(supplied);
   }
 
   /////////////////////////////////////////////
@@ -217,17 +197,16 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
 
   /// @notice return WMATIC reward forecast for aave token (supply or debt)
-  /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @param _seconds time period for the forecast
   /// @param token address (supply or debt)
   /// @param aaveIndex see ReserveData for detail (liquidityIndex or variableBorrowIndex)
   /// @return forecasted amount of WMATIC tokens
   function rewardPrediction(uint256 _seconds, address token, uint256 aaveIndex) private view returns (uint256){
     (uint256 emissionPerSecond,,) = aaveController.assets(token);
-    uint256 tokenPrecision = 10 ** (ERC20(token)).decimals();
+    uint256 tokenPrecision = 10 ** (IERC20Extended(token)).decimals();
     uint256 totalStakedScaled = IScaledBalanceToken(token).scaledTotalSupply();
     uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION / aaveIndex * tokenPrecision / totalStakedScaled;
-    return rewards * tokenPrecision / _PRECISION ;
+    return rewards * tokenPrecision / _PRECISION;
   }
 
   /// @notice return underlying reward forecast for aave supply token
@@ -299,17 +278,17 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   /// @notice number of decimals for the supply token
   function supplyTokenDecimals() private view returns (uint8) {
-    return ERC20(aToken).decimals();
+    return IERC20Extended(aToken).decimals();
   }
 
   /// @notice number of decimals for the debt token
   function debtTokenDecimals() private view returns (uint8) {
-    return ERC20(dToken).decimals();
+    return IERC20Extended(dToken).decimals();
   }
 
   /// @notice number of decimals for the underlying token
   function underlyingDecimals() private view returns (uint8) {
-    return ERC20(_underlyingToken).decimals();
+    return IERC20Extended(_underlyingToken).decimals();
   }
 
 

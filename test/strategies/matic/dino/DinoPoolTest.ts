@@ -115,7 +115,7 @@ describe('Dino pool tests', async () => {
   });
 
   it("do hard work with liq path", async () => {
-    await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+    await StrategyTestUtils.doHardWorkSimple(strategyInfo,
       (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
       strategyInfo.strategy.readyToClaim
     );
