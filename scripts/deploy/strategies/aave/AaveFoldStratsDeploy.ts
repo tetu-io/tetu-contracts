@@ -64,8 +64,8 @@ async function main() {
 
     console.log('strat', idx, aTokenName, vaultNameWithoutPrefix);
 
-    const collateralFactor = (ltv).toFixed(0);
-    const borrowTarget = (ltv * 0.99).toFixed(0);
+    const collateralFactor = (ltv * 0.99).toFixed(0);
+    const borrowTarget = (ltv * 0.9).toFixed(0);
 
     let strategyArgs;
 

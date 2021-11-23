@@ -69,7 +69,7 @@ abstract contract FoldingBase is StrategyBase {
     require(_collateralFactorNumerator < _FACTOR_DENOMINATOR, "FS: Collateral factor cannot be this high");
     collateralFactorNumerator = _collateralFactorNumerator;
 
-    require(_borrowTargetFactorNumerator < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
+    require(_borrowTargetFactorNumerator == 0 || _borrowTargetFactorNumerator < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
     borrowTargetFactorNumeratorStored = _borrowTargetFactorNumerator;
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
   }
@@ -212,7 +212,7 @@ abstract contract FoldingBase is StrategyBase {
 
   /// @dev Set borrow rate target
   function _setBorrowTargetFactorNumeratorStored(uint256 _target) internal {
-    require(_target < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
+    require(_target == 0 || _target < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
     borrowTargetFactorNumeratorStored = _target;
     if (fold) {
       borrowTargetFactorNumerator = _target;
