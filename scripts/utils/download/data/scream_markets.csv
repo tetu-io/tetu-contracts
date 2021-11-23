@@ -1,0 +1,2 @@
+idx, rToken_name, rToken_address, token, tokenName, collateralFactor, borrowTarget
+1,scUSDC,0xE45Ac34E528907d0A0239ab5Db507688070B20bf,0x04068DA6C83AFCFA0e13ba15A6696662335D5B75,USDC,7500,6750

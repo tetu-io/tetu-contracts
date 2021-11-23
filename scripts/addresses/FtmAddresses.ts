@@ -16,12 +16,15 @@ export class FtmAddresses {
   public static FTM_TOKEN = "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83".toLowerCase();
   public static BOO_TOKEN = "0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE".toLowerCase();
   public static GEIST_TOKEN = "0xd8321AA83Fb0a4ECd6348D4577431310A6E0814d".toLowerCase();
+  public static SCREAM_TOKEN = "0xe0654C8e6fd4D733349ac7E09f6f23DA256bF475".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
   public static SPOOKY_SWAP_ROUTER = "0xF491e7B69E4244ad4002BC14e878a34207E38c29".toLowerCase();
   public static SPOOKY_MASTERCHEF = "0x2b2929E785374c651a81A63878Ab22742656DcDd".toLowerCase();
 
+  // Scream
+  public static SCREAM_CONTROLLER = "0x37517C5D880c5c282437a3Da4d627B4457C10BEB".toLowerCase();
   // TetuSwap
   public static TETU_SWAP_FACTORY = "".toLowerCase();
   public static TETU_SWAP_ROUTER = "".toLowerCase();
