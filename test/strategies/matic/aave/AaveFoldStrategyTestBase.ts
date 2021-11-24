@@ -38,7 +38,8 @@ async function startAaveFoldStrategyTest(
       const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const core = await DeployerUtils.deployAllCoreContracts(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
@@ -69,13 +70,7 @@ async function startAaveFoldStrategyTest(
 
       await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
-      for (const rt of rewardTokens) {
-        await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, underlying, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(underlying, core.rewardToken.address, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(underlying, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
-      }
+      await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
       strategyInfo = new StrategyInfo(
         underlying,

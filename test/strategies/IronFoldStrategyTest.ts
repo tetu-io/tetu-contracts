@@ -37,17 +37,12 @@ async function startIronFoldStrategyTest(
       const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const core = await DeployerUtils.deployAllCoreContracts(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
-      await StrategyTestUtils.setupForwarder(
-        core.feeRewardForwarder,
-        rewardTokens,
-        underlying,
-        core.rewardToken.address,
-        factory
-      );
+      await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
       const data = await StrategyTestUtils.deploy(
         signer,

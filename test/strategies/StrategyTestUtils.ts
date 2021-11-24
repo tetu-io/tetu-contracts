@@ -7,6 +7,7 @@ import {
   Announcer,
   Controller,
   FeeRewardForwarder,
+  ForwarderV2,
   IStrategy,
   PriceCalculator,
   RewardToken,
@@ -19,6 +20,7 @@ import {expect} from "chai";
 import {StrategyInfo} from "./StrategyInfo";
 import {ethers} from "hardhat";
 import {VaultUtils} from "../VaultUtils";
+import {readFileSync} from "fs";
 
 export class StrategyTestUtils {
   public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
@@ -48,6 +50,7 @@ export class StrategyTestUtils {
       signer, core, "1000000"
     );
 
+    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
@@ -265,13 +268,6 @@ export class StrategyTestUtils {
     return balances;
   }
 
-  public static checkBalances(balancesBefore: BigNumber[], balancesAfter: BigNumber[]) {
-    balancesAfter.forEach((after, i) => {
-      expect(after.sub(balancesBefore[i]).isZero())
-        .is.eq(false, "should have earned rewards for " + i);
-    })
-  }
-
   public static async commonTests(info: StrategyInfo) {
     expect(await info.strategy.unsalvageableTokens(info.underlying)).is.eq(true);
     expect(await info.strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.eq(false);
@@ -300,7 +296,7 @@ export class StrategyTestUtils {
       signer,
       coreContracts,
       underlyingName,
-      async vaultAddress => DeployerUtils.deployContract(
+      vaultAddress => DeployerUtils.deployContract(
         signer,
         strategyName,
         coreContracts.controller.address,
@@ -317,7 +313,6 @@ export class StrategyTestUtils {
     await TimeUtils.advanceBlocksOnTs(wait);
     await controller.setPSNumeratorDenominator(numenator, denumenatior);
   }
-
 
   public static async calculateTotalToClaim(calculator: PriceCalculator, strategy: IStrategy, rewardToken: RewardToken) {
     const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rewardToken.address));
@@ -337,135 +332,27 @@ export class StrategyTestUtils {
     return totalToClaim
   }
 
-  public static async setupForwarder(
-    forwarder: FeeRewardForwarder,
-    rewardTokens: string[],
-    underlying: string,
-    tetu: string,
-    rtFactory: string
-  ) {
-    for (const rt of rewardTokens) {
-      await forwarder.setConversionPath(
-        [rt, MaticAddresses.USDC_TOKEN, tetu],
-        [MaticAddresses.getRouterByFactory(rtFactory), MaticAddresses.QUICK_ROUTER]
-      );
-      await forwarder.setConversionPath(
-        [rt, MaticAddresses.USDC_TOKEN],
-        [MaticAddresses.getRouterByFactory(rtFactory)]
-      );
-
-      if (MaticAddresses.USDC_TOKEN === underlying.toLowerCase()) {
-        await forwarder.setConversionPath(
-          [rt, MaticAddresses.USDC_TOKEN],
-          [MaticAddresses.getRouterByFactory(rtFactory)]
-        );
-      } else {
-        await forwarder.setConversionPath(
-          [rt, MaticAddresses.USDC_TOKEN, underlying],
-          [MaticAddresses.getRouterByFactory(rtFactory), MaticAddresses.QUICK_ROUTER]
-        );
-      }
-
-    }
-
-    if (MaticAddresses.USDC_TOKEN !== underlying.toLowerCase()) {
-      await forwarder.setConversionPath(
-        [underlying, MaticAddresses.USDC_TOKEN, tetu],
-        [MaticAddresses.QUICK_ROUTER, MaticAddresses.QUICK_ROUTER]
-      );
-      await forwarder.setConversionPath(
-        [underlying, MaticAddresses.USDC_TOKEN],
-        [MaticAddresses.QUICK_ROUTER]
-      );
-    }
-
+  public static async initForwarder(forwarder: ForwarderV2) {
     await forwarder.setLiquidityNumerator(50);
     await forwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await StrategyTestUtils.setConversionPaths(forwarder);
   }
 
-  public static async createLiquidationPath(tokenIn: string, tokenOut: string, calculator: PriceCalculator) {
-    if (tokenIn === tokenOut) {
-      throw new Error('the same tokens ' + tokenIn);
-    }
+  public static async setConversionPaths(forwarder: ForwarderV2) {
+    const net = (await ethers.provider.getNetwork()).chainId;
+    const bc: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8'));
+    await forwarder.addBlueChipsLps(bc);
 
-    console.log('path for ', tokenIn, tokenOut)
-    const routers = [];
-    const tokens = [];
-    // let _tokenIn = tokenIn;
-    const usedLps: string[] = [];
-
-    tokens.push(tokenIn);
-
-    const largestPoolDataIn = await StrategyTestUtils.largestPoolForToken(tokenIn, usedLps, calculator);
-    tokens.push(largestPoolDataIn[0]);
-    routers.push(await DeployerUtils.getRouterByFactory(await calculator.swapFactories(largestPoolDataIn[1])));
-
-    if (largestPoolDataIn[0].toLowerCase() !== tokenOut.toLowerCase()) {
-      const largestPoolDataOut = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
-      if (largestPoolDataOut[0].toLowerCase() !== largestPoolDataIn[0].toLowerCase()) {
-        if (!(await DeployerUtils.isBlueChip(largestPoolDataOut[0]))) {
-          throw Error('Not blue chip ' + largestPoolDataOut[0]);
-        }
-        if (!(await DeployerUtils.isBlueChip(largestPoolDataIn[0]))) {
-          throw Error('Not blue chip ' + largestPoolDataIn[0]);
-        }
-        tokens.push(largestPoolDataOut[0]);
-        routers.push(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
-      }
-      routers.push(await DeployerUtils.getRouterByFactory(await calculator.swapFactories(largestPoolDataOut[1])));
-      tokens.push(tokenOut);
+    const tokens: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8'));
+    const lps: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8'));
+    const batch = 30;
+    for (let i = 0; i < tokens.length / batch; i++) {
+      const t = tokens.slice(i * batch, i * batch + batch)
+      const l = lps.slice(i * batch, i * batch + batch)
+      // console.log('t', t)
+      // console.log('l', l)
+      await forwarder.addLargestLps(t, l);
     }
-
-    let routersStr = '';
-    for (const router of routers) {
-      const name = await DeployerUtils.getRouterName(router);
-      routersStr += name + '=>'
-    }
-    console.log('PATH -----------');
-    for (const token of tokens) {
-      console.log('->', await TokenUtils.tokenSymbol(token));
-    }
-    console.log('---------------');
-    console.log('routers', routersStr);
-    return [tokens, routers];
-  }
-
-  public static async setConversionPath(tokenIn: string, tokenOut: string, calculator: PriceCalculator, forwarder: FeeRewardForwarder) {
-    if (tokenIn === tokenOut) {
-      return;
-    }
-    const liqData = await StrategyTestUtils.createLiquidationPath(tokenIn, tokenOut, calculator)
-    await forwarder.setConversionPath(
-      liqData[0],
-      liqData[1]
-    );
-  }
-
-  public static async largestPoolForToken(tokenOut: string, usedLps: string[], calculator: PriceCalculator): Promise<[string, BigNumber, string]> {
-    if (tokenOut.toLowerCase() === MaticAddresses.TETU_TOKEN) {
-      return [MaticAddresses.USDC_TOKEN, BigNumber.from(0), MaticAddresses.QUICK_TETU_USDC];
-    }
-    if (tokenOut.toLowerCase() === MaticAddresses.FXS_TOKEN) {
-      return [MaticAddresses.FRAX_TOKEN, BigNumber.from(0), MaticAddresses.QUICK_FRAX_FXS];
-    }
-    console.log('largestPoolForToken', tokenOut)
-    let data = await calculator.getLargestPool(tokenOut, usedLps);
-    if (!(await DeployerUtils.isBlueChip(data[0]))) {
-      console.log('Not blue chip ' + data[0])
-      if (data[0] === MaticAddresses.ZERO_ADDRESS) {
-        throw Error('Not found biggest lp for ' + tokenOut);
-      }
-      usedLps.push(data[2]);
-      data = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
-    }
-    if ((await calculator.swapFactories(data[1])).toLowerCase() === MaticAddresses.FIREBIRD_FACTORY) {
-      usedLps.push(data[2]);
-      data = await StrategyTestUtils.largestPoolForToken(tokenOut, usedLps, calculator);
-    }
-    if (data[0].toLowerCase() === MaticAddresses.ZERO_ADDRESS) {
-      throw Error('Largest pool not found for ' + tokenOut);
-    }
-    return data;
   }
 
 

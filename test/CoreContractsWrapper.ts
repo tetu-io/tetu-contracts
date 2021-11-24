@@ -2,7 +2,7 @@ import {
   Announcer,
   Bookkeeper,
   Controller,
-  FeeRewardForwarder,
+  ForwarderV2,
   FundKeeper,
   MintHelper,
   NoopStrategy,
@@ -16,7 +16,7 @@ import {tracer} from "hardhat";
 export class CoreContractsWrapper {
   public controller: Controller;
   public controllerLogic: string;
-  public feeRewardForwarder: FeeRewardForwarder;
+  public feeRewardForwarder: ForwarderV2;
   public feeRewardForwarderLogic: string;
   public bookkeeper: Bookkeeper;
   public bookkeeperLogic: string;
@@ -36,7 +36,7 @@ export class CoreContractsWrapper {
 
   constructor(controller: Controller,
               controllerLogic: string,
-              feeRewardForwarder: FeeRewardForwarder,
+              feeRewardForwarder: ForwarderV2,
               feeRewardForwarderLogic: string,
               bookkeeper: Bookkeeper,
               bookkeeperLogic: string,

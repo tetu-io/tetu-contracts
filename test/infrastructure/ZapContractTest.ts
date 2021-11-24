@@ -49,7 +49,8 @@ describe("Zap contract tests", function () {
     snapshot = await TimeUtils.snapshot();
     user = (await ethers.getSigners())[1];
     signer = await DeployerUtils.impersonate();
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;

@@ -23,9 +23,6 @@ import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "./ForwarderV2Storage.sol";
 
-import "hardhat/console.sol";
-import "../../swap/libraries/TetuSwapLibrary.sol";
-
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
 ///        After swap TETU tokens are deposited to the Profit Share pool and give xTETU tokens.
@@ -42,7 +39,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NOMINATOR = 997;
-  uint constant public SEARCH_MAX_DEEP = 4;
+  uint constant public ROUTE_LENGTH_MAX = 4;
   uint constant public SLIPPAGE_DENOMINATOR = 100;
   uint constant public SLIPPAGE_NOMINATOR = 95;
 
@@ -99,8 +96,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Only Governance or Controller can call it.
-  ///         Add a pair with biggest TVL for given token
-  function addLps(address[] memory _tokens, address[] memory _lps) external onlyControllerOrGovernance {
+  ///         Add a pair with largest TVL for given token
+  function addLargestLps(address[] memory _tokens, address[] memory _lps) external onlyControllerOrGovernance {
     require(_tokens.length == _lps.length, "F2: Wrong arrays");
     for (uint i = 0; i < _lps.length; i++) {
       IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
@@ -112,7 +109,17 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       } else {
         revert("F2: Wrong LP");
       }
-      lps[_tokens[i]] = LpData(address(lp), _tokens[i], oppositeToken);
+      largestLps[_tokens[i]] = LpData(address(lp), _tokens[i], oppositeToken);
+    }
+  }
+
+  /// @notice Only Governance or Controller can call it.
+  ///         Add largest pairs with the most popular tokens on the current network
+  function addBlueChipsLps(address[] memory _lps) external onlyControllerOrGovernance {
+    for (uint i = 0; i < _lps.length; i++) {
+      IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
+      blueChipsLps[lp.token0()][lp.token1()] = LpData(address(lp), lp.token0(), lp.token1());
+      blueChipsLps[lp.token1()][lp.token0()] = LpData(address(lp), lp.token0(), lp.token1());
     }
   }
 
@@ -147,12 +154,12 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     require(_amount != 0, "F2: Zero amount for distribute");
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
-    // calculate require amounts in income token value
+    // calculate require amounts
     uint toFund = _toFundAmount(_amount);
     uint toPsAndLiq = _toPsAndLiqAmount(_amount - toFund);
     uint toLiq = toPsAndLiq / 2;
     uint toLiqFundTokenPart = toLiq / 2;
-    uint toLiqTetuTokenPart = toLiq / 2;
+    uint toLiqTetuTokenPart = toLiq - toLiqFundTokenPart;
     uint toPs = toPsAndLiq - toLiq;
     uint toVault = _amount - toFund - toPsAndLiq;
 
@@ -161,10 +168,10 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     require(fundTokenRequires + tetuTokenRequires == _amount, "F2: Wrong amount sum");
 
 
-    uint fundTokenAmount = _liquidate(_token, fundTokenRequires, fundToken());
+    uint fundTokenAmount = _liquidate(_token, fundToken(), fundTokenRequires);
     uint sentToFund = _sendToFund(fundTokenAmount, toFund, toLiqFundTokenPart);
 
-    uint tetuTokenAmount = _liquidate(_token, tetuTokenRequires, tetu());
+    uint tetuTokenAmount = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
     if (toPsAndLiq > 0) {
@@ -197,9 +204,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       // no action required if the same token;
       return amount;
     }
-    require(amount != 0, "F2: Zero amount for liquidation");
+    if (amount == 0) {
+      return 0;
+    }
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
-    uint256 resultAmount = _liquidate(tokenIn, amount, tokenOut);
+    uint256 resultAmount = _liquidate(tokenIn, tokenOut, amount);
     require(resultAmount > 0, "F2: Liquidated with zero result");
     IERC20(tokenOut).safeTransfer(msg.sender, resultAmount);
     emit Liquidated(tokenIn, tokenOut, amount);
@@ -208,12 +217,12 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @dev We don't need this function anymore, keep for compatibility
   function notifyPsPool(address, uint256) external pure override returns (uint256) {
-    revert("Directly notifyPsPool not implemented");
+    revert("F2: Directly notifyPsPool not implemented");
   }
 
   /// @dev We don't need this function anymore, keep for compatibility
   function notifyCustomPool(address, address, uint256) external pure override returns (uint256) {
-    revert("Directly notifyCustomPool not implemented");
+    revert("F2: Directly notifyCustomPool not implemented");
   }
 
 
@@ -248,8 +257,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuLiqAmount = _sendToLiquidity(toLiqTetuTokenPart, toLiqFundTokenPart);
 
     uint toPs = tetuTokenAmount * baseToPs / baseSum;
-    console.log("sendtoPs", toPs);
-    console.log("sendtoPs bal", IERC20(tetu()).balanceOf(address(this)));
     IERC20(tetu()).safeTransfer(psVault(), toPs);
     emit FeeMovedToPs(psVault(), tetu(), toPs);
     return toPs + tetuLiqAmount;
@@ -264,32 +271,40 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   ) internal returns (uint256) {
     address xTetu = psVault();
     ISmartVault smartVault = ISmartVault(_vault);
+    address[] rts = smartVault.rewardTokens();
+    require(rts.length > 0, "F2: No reward tokens");
+    address rt = rts[0];
 
     uint baseSum = baseToLiqTetuTokenPart + baseToPs + baseToVault;
     uint toVault = tetuTokenAmount * baseToVault / baseSum;
 
-    console.log("_sendToVault", toVault);
-    console.log("_sendToVault bal", IERC20(tetu()).balanceOf(address(this)));
-    IERC20(tetu()).safeApprove(psVault(), toVault);
-    ISmartVault(psVault()).deposit(toVault);
-    uint256 amountToSend = IERC20(xTetu).balanceOf(address(this));
-    IERC20(xTetu).safeApprove(_vault, amountToSend);
-    smartVault.notifyTargetRewardAmount(xTetu, amountToSend);
-    emit FeeMovedToVault(_vault, xTetu, amountToSend);
+    uint256 amountToSend;
+    if (rt == xTetu) {
+      uint rtBalanceBefore = IERC20(xTetu).balanceOf(address(this));
+      IERC20(tetu()).safeApprove(psVault(), toVault);
+      ISmartVault(psVault()).deposit(toVault);
+      amountToSend = IERC20(xTetu).balanceOf(address(this)) - rtBalanceBefore;
+    } else if (rt == tetu()) {
+      amountToSend = toVault;
+    } else {
+      revert("F2: First reward token not TETU nor xTETU");
+    }
+
+    IERC20(rt).safeApprove(_vault, amountToSend);
+    smartVault.notifyTargetRewardAmount(rt, amountToSend);
+    emit FeeMovedToVault(_vault, rt, amountToSend);
     return toVault;
   }
 
   function _sendToFund(uint256 fundTokenAmount, uint baseToFundAmount, uint baseToLiqFundTokenPart) internal returns (uint){
     uint toFund = fundTokenAmount * baseToFundAmount / (baseToFundAmount + baseToLiqFundTokenPart);
 
-    console.log("toFund", fundTokenAmount, toFund);
     // no actions if we don't have a fee for fund
     if (toFund == 0) {
       return 0;
     }
     require(fund() != address(0), "F2: Fund is zero");
 
-    console.log("_sendToFund bal", IERC20(fundToken()).balanceOf(address(this)));
     IERC20(fundToken()).safeTransfer(fund(), toFund);
 
     IBookkeeper(IController(controller()).bookkeeper())
@@ -303,9 +318,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     if (toLiqTetuTokenPart == 0 || toLiqFundTokenPart == 0) {
       return 0;
     }
-
-    console.log("_sendToLiquidity", toLiqFundTokenPart, toLiqTetuTokenPart);
-    console.log("_sendToLiquidity balns", IERC20(fundToken()).balanceOf(address(this)), IERC20(tetu()).balanceOf(address(this)));
 
     uint256 lpAmount = _addLiquidity(
       liquidityRouter(),
@@ -357,43 +369,106 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   }
 
   /// @dev Swap one token to another using all available amount
-  function _liquidate(address _tokenIn, uint256 _amount, address _tokenOut) internal returns (uint256) {
+  function _liquidate(address _tokenIn, address _tokenOut, uint256 _amount) internal returns (uint256) {
     if (_tokenIn == _tokenOut) {
       // this is already the right token
       return _amount;
     }
     address tokenIn = _tokenIn;
-    console.log("start liquidation", tokenIn);
     (LpData[] memory route, uint count) = _createLiquidationRoute(_tokenIn, _tokenOut);
 
-    for (uint i = count; i > 0; i--) {
-      LpData memory lpData = route[i - 1];
-      console.log("lpData for swap", lpData.lp, lpData.token, lpData.oppositeToken);
-      if (lpData.lp == address(0)) {
-        continue;
-      }
-      _swap(lpData.oppositeToken, lpData.token, IUniswapV2Pair(lpData.lp), _amount);
+    uint outBalance = _amount;
+    for (uint i = 0; i < count; i++) {
+      LpData memory lpData = route[i];
+      uint outBalanceBefore = IERC20(lpData.oppositeToken).balanceOf(address(this));
+      _swap(lpData.token, lpData.oppositeToken, IUniswapV2Pair(lpData.lp), outBalance);
+      outBalance = IERC20(lpData.oppositeToken).balanceOf(address(this)) - outBalanceBefore;
     }
-    return IERC20(_tokenOut).balanceOf(address(this));
+    return outBalance;
   }
 
-  function _createLiquidationRoute(address _tokenIn, address _targetOut) internal view returns (LpData[] memory, uint)  {
-    LpData[] memory route = new LpData[](SEARCH_MAX_DEEP);
-    address token = _targetOut;
-    uint count = 0;
-    while (true) {
-      LpData memory lpData = lps[token];
-      console.log("pure lpData", lpData.lp, lpData.oppositeToken);
-      require(lpData.lp != address(0), "F2: LP for swap not found");
-      route[count] = lpData;
-      count++;
-      if (lpData.oppositeToken == _tokenIn) {
-        break;
-      }
-      token = lpData.oppositeToken;
-      require(count <= SEARCH_MAX_DEEP, "F2: LP for swap not found, too deep");
+  function _createLiquidationRoute(address _tokenIn, address _tokenOut) internal view returns (LpData[] memory, uint)  {
+    LpData[] memory route = new LpData[](ROUTE_LENGTH_MAX);
+
+    // in case that we try to liquidate blue chips use bc lps directly
+    LpData memory lpDataBC = blueChipsLps[_tokenIn][_tokenOut];
+    if (lpDataBC.lp != address(0)) {
+      lpDataBC.token = _tokenIn;
+      lpDataBC.oppositeToken = _tokenOut;
+      route[0] = lpDataBC;
+      return (route, 1);
     }
-    return (route, count);
+
+    // find the best LP for token IN
+    LpData memory lpDataIn = largestLps[_tokenIn];
+    require(lpDataIn.lp != address(0), "F2: not found LP for tokenIn");
+    route[0] = lpDataIn;
+    // if the best LP for token IN a pair with token OUT token we complete the route
+    if (lpDataIn.oppositeToken == _tokenOut) {
+      return (route, 1);
+    }
+
+    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
+    lpDataBC = blueChipsLps[lpDataIn.oppositeToken][_tokenOut];
+    if (lpDataBC.lp != address(0)) {
+      lpDataBC.token = lpDataIn.oppositeToken;
+      lpDataBC.oppositeToken = _tokenOut;
+      route[1] = lpDataBC;
+      return (route, 2);
+    }
+
+    // find the largest LP for token out
+    LpData memory lpDataOut = largestLps[_tokenOut];
+    require(lpDataIn.lp != address(0), "F2: not found LP for tokenOut");
+    // if we can swap between largest LPs the route is ended
+    if (lpDataIn.oppositeToken == lpDataOut.oppositeToken) {
+      lpDataOut.oppositeToken = lpDataOut.token;
+      lpDataOut.token = lpDataIn.oppositeToken;
+      route[1] = lpDataOut;
+      return (route, 2);
+    }
+
+    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
+    lpDataBC = blueChipsLps[lpDataIn.oppositeToken][lpDataOut.oppositeToken];
+    if (lpDataBC.lp != address(0)) {
+      lpDataBC.token = lpDataIn.oppositeToken;
+      lpDataBC.oppositeToken = lpDataOut.oppositeToken;
+      route[1] = lpDataBC;
+      lpDataOut.oppositeToken = lpDataOut.token;
+      lpDataOut.token = lpDataBC.oppositeToken;
+      route[2] = lpDataOut;
+      return (route, 3);
+    }
+
+    // some tokens have primary liquidity with specific token
+    // need to find a liquidity for them
+    LpData memory lpDataMiddle = largestLps[lpDataIn.oppositeToken];
+    require(lpDataMiddle.lp != address(0), "F2: not found LP for middle");
+    route[1] = lpDataMiddle;
+    if (lpDataMiddle.oppositeToken == _tokenOut) {
+      return (route, 2);
+    }
+
+    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
+    lpDataBC = blueChipsLps[lpDataMiddle.oppositeToken][_tokenOut];
+    if (lpDataBC.lp != address(0)) {
+      route[2] = lpDataBC;
+      return (route, 3);
+    }
+
+    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
+    lpDataBC = blueChipsLps[lpDataMiddle.oppositeToken][lpDataOut.oppositeToken];
+    if (lpDataBC.lp != address(0)) {
+      route[2] = lpDataBC;
+      address tmp = lpDataOut.oppositeToken;
+      lpDataOut.oppositeToken = lpDataOut.token;
+      lpDataOut.token = tmp;
+      route[3] = lpDataOut;
+      return (route, 4);
+    }
+
+    // we are not handling other cases
+    revert("F2: Liquidation path not found");
   }
 
 
@@ -403,9 +478,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     require(amount != 0, "F2: Zero swap amount");
     (uint reserveIn, uint reserveOut) = getReserves(lp, tokenIn, tokenOut);
 
-    console.log("reserveIn", tokenIn, reserveIn);
-    console.log("reserveOut", tokenOut, reserveOut);
-
     UniFee memory fee = uniPlatformFee[lp.factory()];
     if (fee.nominator == 0) {
       fee = UniFee(DEFAULT_UNI_FEE_NOMINATOR, DEFAULT_UNI_FEE_DENOMINATOR);
@@ -413,11 +485,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
 
     IERC20(tokenIn).safeTransfer(address(lp), amount);
-    console.log("amountOut to swap", amountOut);
-    console.log("amount to swap", amount, tokenIn);
-    console.log("balance tokenOut", IERC20(tokenOut).balanceOf(address(this)), tokenOut);
     _swapCall(lp, tokenIn, tokenOut, amountOut);
-    console.log("balance tokenOut after", IERC20(tokenOut).balanceOf(address(this)));
   }
 
   function _addLiquidity(
@@ -458,7 +526,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   ///      Assume that amountOut already sent to the pair
   function _swapCall(IUniswapV2Pair _lp, address tokenIn, address tokenOut, uint amountOut) internal {
     (address token0,) = sortTokens(tokenIn, tokenOut);
-    console.log("check token0", token0, _lp.token0(), token0 == _lp.token0());
     (uint amount0Out, uint amount1Out) = tokenIn == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
     _lp.swap(amount0Out, amount1Out, address(this), new bytes(0));
   }

@@ -215,14 +215,17 @@ export class UniswapUtils {
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
-    // await MintHelperUtils.mint(core.controller, core.announcer, utils.parseUnits(amount).mul(2).toString(), signer.address);
-    await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount))
+    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+      await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount))
+    } else {
+      await MintHelperUtils.mint(core.controller, core.announcer, (+amount * 2).toString(), signer.address);
+    }
 
     const tokenBal = await TokenUtils.balanceOf(rewardTokenAddress, signer.address);
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
-    return UniswapUtils.addLiquidity(
+    const lp = await UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
       MaticAddresses.USDC_TOKEN,
@@ -231,6 +234,8 @@ export class UniswapUtils {
       MaticAddresses.QUICK_FACTORY,
       MaticAddresses.QUICK_ROUTER
     );
+    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [lp]);
+    return lp;
   }
 
   public static async createPairForRewardTokenWithBuy(
