@@ -13,7 +13,7 @@ export class FtmAddresses {
   public static WBTC_TOKEN = "0x321162cd933e2be498cd2267a90534a804051b11".toLowerCase();
   public static DAI_TOKEN = "0x8d11ec38a3eb5e956b052f67da8bdc9bef8abf3e".toLowerCase();
   public static fUSDT_TOKEN = "0x049d68029688eabf473097a2fc38ef61633a3c7a".toLowerCase();
-  public static FTM_TOKEN = "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83".toLowerCase();
+  public static WFTM_TOKEN = "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83".toLowerCase();
   public static BOO_TOKEN = "0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE".toLowerCase();
   public static GEIST_TOKEN = "0xd8321AA83Fb0a4ECd6348D4577431310A6E0814d".toLowerCase();
   public static SCREAM_TOKEN = "0xe0654C8e6fd4D733349ac7E09f6f23DA256bF475".toLowerCase();
@@ -38,7 +38,7 @@ export class FtmAddresses {
     FtmAddresses.DAI_TOKEN,
     FtmAddresses.WETH_TOKEN,
     FtmAddresses.WBTC_TOKEN,
-    FtmAddresses.FTM_TOKEN,
+    FtmAddresses.WFTM_TOKEN,
   ]);
 
   public static getRouterByFactory(factory: string): string {

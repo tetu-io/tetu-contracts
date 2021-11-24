@@ -3,8 +3,12 @@
 pragma solidity 0.8.4;
 
 interface IScreamController {
-  /*** Assets You Are In ***/
 
+  function claimComp(address holder, address[] memory cTokens) external;
+
+
+//  /*** Assets You Are In ***/
+// todo revisit
   function enterMarkets(address[] calldata RTokens) external returns (uint[] memory);
 
   function exitMarket(address RToken) external returns (uint);
@@ -75,9 +79,6 @@ interface IScreamController {
     address RTokenBorrowed,
     address RTokenCollateral,
     uint repayAmount) external view returns (uint, uint);
-
-
-  function claimReward(address holder, address[] memory rTokens) external;
 
   function rewardSpeeds(address rToken) external view returns (uint);
 

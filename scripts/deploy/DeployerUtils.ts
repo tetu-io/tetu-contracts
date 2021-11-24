@@ -261,7 +261,7 @@ export class DeployerUtils {
       FtmAddresses.DAI_TOKEN,
       FtmAddresses.fUSDT_TOKEN,
       FtmAddresses.WBTC_TOKEN,
-      FtmAddresses.FTM_TOKEN
+      FtmAddresses.WFTM_TOKEN
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(FtmAddresses.USDC_TOKEN), true, wait);
