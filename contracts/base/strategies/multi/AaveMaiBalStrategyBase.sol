@@ -122,7 +122,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
     /// @dev Returns how much tokens are ready to claim
     function readyToClaim() external view override returns (uint256[] memory) {
-        uint256[] memory toClaim = new uint256[](_rewardTokens.length);
+        uint256 len = _rewardTokens.length;
+        uint256[] memory toClaim = new uint256[](len);
         return toClaim;
     }
 

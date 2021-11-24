@@ -26,16 +26,14 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
 
     MaiStablecoinPipe private _maiStablecoinPipe;
 
+    address[] private _rewardTokensArray = [_WMATIC, _QI, _BAL];
+
     constructor(
         address _controller,
         address _vault,
         address _underlying
-    ) AaveMaiBalStrategyBase(_controller, _underlying, _vault, new address[](0), _WMATIC
+    ) AaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray, _WMATIC
     ) {
-        _rewardTokens.push(_WMATIC); // WMATIC on AAVE;
-        _rewardTokens.push(_QI);     // Qi Dao (QI) on MAI
-        _rewardTokens.push(_BAL);    // BAL on Balancer
-
         // Pipes data
         AaveWethPipeData memory aaveWethPipeData = AaveWethPipeData({
             wethGateway : 0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97, // for MATIC deposits
