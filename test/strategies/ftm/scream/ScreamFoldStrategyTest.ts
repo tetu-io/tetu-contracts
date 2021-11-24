@@ -38,17 +38,17 @@ async function startScreamFoldStrategyTest(
       const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const core = await DeployerUtils.deployAllCoreContracts(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
-      // await StrategyTestUtils.setupForwarder(
-      //   core.feeRewardForwarder,
-      //   rewardTokens,
-      //   underlying,
-      //   core.rewardToken.address,
-      //   factory
-      // );
+      await StrategyTestUtils.setupForwarderFtm(
+        core.feeRewardForwarder,
+        rewardTokens,
+        underlying,
+        core.rewardToken.address,
+        factory
+      );
 
       const data = await StrategyTestUtils.deploy(
         signer,
@@ -85,24 +85,10 @@ async function startScreamFoldStrategyTest(
         lpForTargetToken,
         calculator
       );
-
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
-
       // ************** add funds for investing ************
-      const baseAmount = 100_000;
-      await UniswapUtils.buyAllBigTokens(user);
-      const name = await TokenUtils.tokenSymbol(tokenOpposite);
-      const dec = await TokenUtils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
-
-      await UniswapUtils.getTokenFromHolder(user, FtmAddresses.getRouterByFactory(tokenOppositeFactory),
-        underlying, utils.parseUnits(amountForSell.toFixed(dec), dec), tokenOpposite);
+      await UniswapUtils.buyAllBigTokensFtm(user);
+      const usdcBal = await TokenUtils.balanceOf(FtmAddresses.USDC_TOKEN, user.address);
+      console.log(usdcBal.toString())
       console.log('############## Preparations completed ##################');
     });
 
@@ -118,15 +104,12 @@ async function startScreamFoldStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-    it("Hello", async () => {
-      console.log("Hello");
+    it("do hard work with liq path", async () => {
+      await StrategyTestUtils.doHardWorkSimple(strategyInfo,
+        (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
+        null
+      );
     });
-    // it("do hard work with liq path", async () => {
-    //   await StrategyTestUtils.doHardWorkSimple(strategyInfo,
-    //     (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-    //     null
-    //   );
-    // });
     // it("emergency exit", async () => {
     //   const info = strategyInfo;
     //   const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);

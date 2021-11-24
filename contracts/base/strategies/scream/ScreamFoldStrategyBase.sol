@@ -24,6 +24,9 @@ import "../../../third_party/IWmatic.sol";
 import "../../interface/IScreamFoldStrategy.sol";
 import "../../interface/IScreamFoldStrategy.sol";
 
+import "hardhat/console.sol";
+
+
 
 /// @title Abstract contract for Scream lending strategy implementation with folding functionality
 /// @author OlegN
@@ -40,7 +43,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev SCREAM token address for reward price determination
-  address public constant ICE_R_TOKEN = 0xe0654C8e6fd4D733349ac7E09f6f23DA256bF475;
+  address public constant SCREAM_R_TOKEN = 0xe0654C8e6fd4D733349ac7E09f6f23DA256bF475; //todo not needed???
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant R_ETHER = 0xCa0F37f73174a28a64552D426590d3eD601ecCa1;
 
@@ -121,14 +124,25 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
   /// @dev Return true if we can gain profit with folding
   function _isFoldingProfitable() internal view override returns (bool) {
     // compare values per block per 1$
-    return rewardsRateNormalised() > foldCostRatePerToken();
+//    return rewardsRateNormalised() > foldCostRatePerToken();
+    return true; //todo fix
   }
 
   /// @dev Claim distribution rewards
   function _claimReward() internal override {
     address[] memory markets = new address[](1);
     markets[0] = scToken;
-    IScreamController(screamController).claimReward(address(this), markets);
+    console.log("scToken %s", scToken);
+    console.log("screamController %s", screamController);
+    console.log("_rewardTokens[0] %s", _rewardTokens[0]);
+    uint256 rewardBal1 = IERC20(_rewardTokens[0]).balanceOf(address(this));
+    console.log("rewardBal1 %s", rewardBal1);
+
+
+    IScreamController(screamController).claimComp(address(this), markets);
+
+    uint256 rewardBal2 = IERC20(_rewardTokens[0]).balanceOf(address(this));
+    console.log("rewardBal2 %s", rewardBal2);
   }
 
   function _supply(uint256 amount) internal override updateSupplyInTheEnd {
@@ -231,7 +245,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
     // get reward per token for both - suppliers and borrowers
     uint256 rewardSpeed = IScreamController(screamController).rewardSpeeds(scToken);
     // using internal Iron Oracle the safest way
-    uint256 rewardTokenPrice = rTokenUnderlyingPrice(ICE_R_TOKEN);
+    uint256 rewardTokenPrice = rTokenUnderlyingPrice(SCREAM_R_TOKEN);
     // normalize reward speed to USD price
     uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
 

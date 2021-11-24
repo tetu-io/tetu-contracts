@@ -17,7 +17,7 @@ import "../../../base/strategies/scream/ScreamFoldStrategyBase.sol";
 contract StrategyScreamFold is ScreamFoldStrategyBase {
 
   // SCREAM CONTROLLER
-  address public constant _SCREAM_CONTROLLER = address(0x37517C5D880c5c282437a3Da4d627B4457C10BEB);
+  address public constant _SCREAM_CONTROLLER = address(0x260E596DAbE3AFc463e75B6CC05d8c46aCAcFB09);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.SCREAM_LEND;
   // rewards
   address private constant SCREAM = address(0xe0654C8e6fd4D733349ac7E09f6f23DA256bF475);
