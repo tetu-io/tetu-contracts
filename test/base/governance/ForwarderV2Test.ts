@@ -46,6 +46,10 @@ describe("ForwarderV2 tests", function () {
     await core.controller.setFeeRewardForwarder(forwarder.address);
     await core.controller.setRewardDistribution([forwarder.address], true);
 
+    await core.announcer.announceRatioChange(9, 50, 100);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+    await core.controller.setPSNumeratorDenominator(50, 100);
+
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
     await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
 
@@ -112,16 +116,23 @@ describe("ForwarderV2 tests", function () {
     expect(forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address)).rejectedWith('psToken not added to vault');
   });
 
-  it("should notify ps single liq path", async () => {
-    await forwarder.addLargestLps(
-      [core.rewardToken.address],
-      [tetuLp]
-    );
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, amount.toString());
-    expect(await forwarder.callStatic.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address)).is.not.eq(0);
-  });
-
   it("should distribute", async () => {
+    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
+      't',
+      async vaultAddress => DeployerUtils.deployContract(
+        signer,
+        'StrategyWaultSingle',
+        core.controller.address,
+        vaultAddress,
+        MaticAddresses.WEXpoly_TOKEN,
+        1
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.vaultController,
+      core.rewardToken.address,
+      signer
+    );
+    const vault = data[1] as SmartVault;
     const psRatioNom = (await core.controller.psNumerator()).toNumber();
     const psRatioDen = (await core.controller.psDenominator()).toNumber();
     const psRatio = psRatioNom / psRatioDen;
@@ -133,7 +144,7 @@ describe("ForwarderV2 tests", function () {
     );
     expect(+utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(amount))
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, amount.toString());
-    await forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address);
+    await forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, vault.address);
 
     const qsFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', MaticAddresses.QUICK_FACTORY) as IUniswapV2Factory;
 

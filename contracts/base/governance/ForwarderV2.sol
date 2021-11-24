@@ -271,7 +271,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   ) internal returns (uint256) {
     address xTetu = psVault();
     ISmartVault smartVault = ISmartVault(_vault);
-    address[] rts = smartVault.rewardTokens();
+    address[] memory rts = smartVault.rewardTokens();
     require(rts.length > 0, "F2: No reward tokens");
     address rt = rts[0];
 
@@ -374,7 +374,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       // this is already the right token
       return _amount;
     }
-    address tokenIn = _tokenIn;
     (LpData[] memory route, uint count) = _createLiquidationRoute(_tokenIn, _tokenOut);
 
     uint outBalance = _amount;
