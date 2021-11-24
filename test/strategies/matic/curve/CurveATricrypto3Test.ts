@@ -40,8 +40,8 @@ describe('Curve aTricrypto3 tests', async () => {
     const signer = await DeployerUtils.impersonate();
     // await CurveUtils.swapTricrypto(signer)
     const [investor, trader] = (await ethers.getSigners());
-    const core = await DeployerUtils.getCoreAddressesWrapper(signer);
-    // const core = await DeployerUtils.deployAllCoreContracts(signer);
+    // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    const core = await DeployerUtils.deployAllCoreContracts(signer);
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
     await CurveUtils.addLiquidityTrirypto(investor);
@@ -55,10 +55,7 @@ describe('Curve aTricrypto3 tests', async () => {
     const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
       strategyName, signer, core, underlying, underlyingName);
 
-    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
-      await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
-    }
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     strategyInfo = new StrategyInfo(
       underlying,

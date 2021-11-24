@@ -12,6 +12,7 @@ import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {PawnShopTestUtils} from "./PawnShopTestUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
+import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -40,13 +41,7 @@ describe("Tetu pawnshop base tests", function () {
 
     await shop.setPositionDepositToken(core.rewardToken.address);
 
-    await core.feeRewardForwarder.setConversionPath(
-        [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-        [MaticAddresses.QUICK_ROUTER]
-    );
-
-    await core.feeRewardForwarder.setLiquidityNumerator(50);
-    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     await nft.mint(user1.address);
     await nft.mint(user1.address);

@@ -8,7 +8,7 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
-  const data = await DeployerUtils.deployFeeForwarder(signer, core.controller);
+  const data = await DeployerUtils.deployForwarderV2(signer, core.controller);
 
   if ((await ethers.provider.getNetwork()).name !== "matic") {
     const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
@@ -23,8 +23,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

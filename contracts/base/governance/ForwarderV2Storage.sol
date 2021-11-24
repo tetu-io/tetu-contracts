@@ -35,8 +35,10 @@ abstract contract ForwarderV2Storage is Initializable {
   mapping(bytes32 => uint256) private uintStorage;
   mapping(bytes32 => address) private addressStorage;
 
-  /// @dev Liquidity Pool with the highest TVL for given token
-  mapping(address => LpData) public lps;
+  /// @dev Liquidity Pools with the highest TVL for given token
+  mapping(address => LpData) public largestLps;
+  /// @dev Liquidity Pools with the most popular tokens
+  mapping(address => mapping(address => LpData)) public blueChipsLps;
   /// @dev Factory address to fee value map
   mapping(address => UniFee) public uniPlatformFee;
 

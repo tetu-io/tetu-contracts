@@ -32,6 +32,7 @@ describe("Reward calculator tests", function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.deployAllCoreContracts(signer);
 
     priceCalculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
     rewardCalculator = (await DeployerUtils.deployRewardCalculator(signer, core.controller.address, priceCalculator.address))[0] as RewardCalculator;
@@ -49,67 +50,20 @@ describe("Reward calculator tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it.skip("strategy reward usd SUSHI_WMATIC_WETH", async () => {
-    const strategy = '0x3bDbd2Ed1A214Ca4ba4421ddD7236ccA3EF088b6';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
-  });
-
-  it.skip("strategy reward usd cafe", async () => {
-    const strategy = '0xD45347527c567244CfDca6c296D4F0940F747D98';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
-  });
-
-  it.skip("strategy reward QUICK_WMATIC_WETH dual ", async () => {
-    const strategy = '0xC6F0Db38F9ce099eEc13A456673d0a771fb1Ff79';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
-  });
-
-  it.skip("strategy reward quick usdc-weth", async () => {
-    const strategy = '0x5af6a06Ce1444eF7A42B23FCEACdb783CCb265f4';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24 * 7));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
-  });
-
-  it("strategy reward iron lend usdc", async () => {
-    const strategy = '0xc8940050A4ba18cf59f1a0b874a7d0b308F0dE16';
+  it("strategy reward sushi-matic-eth", async () => {
+    const vault = '0x0ed08c9A2EFa93C4bF3C8878e61D2B6ceD89E9d7';
+    const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+    const strategy = await vCtr.strategy();
     const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
     console.log('rewardUsd', rewardUsd)
     expect(rewardUsd).is.not.eq(0);
   });
 
-  it.skip("strategy reward TETU_SUSHI_LINK_WETH", async () => {
-    const strategy = '0xcfA38e6c2fbD8607509CDC02fC0050e11DDafD60';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
-  });
-
-  it.skip("strategy KPI TETU_SUSHI_LINK_WETH", async () => {
-    const vault = '0xd98320bb02f29d4f714c5f1741a42680dd19461d';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.kpi(vault));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
-  });
-
-  it("USDC vault kpi", async () => {
-    const vault = '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7';
+  it("sushi-matic-eth vault kpi", async () => {
+    const vault = '0x0ed08c9A2EFa93C4bF3C8878e61D2B6ceD89E9d7';
     const kpi = +utils.formatUnits(await rewardCalculator.kpi(vault));
     console.log('kpi', kpi)
     expect(kpi).is.not.eq(0);
-  });
-
-  it.skip("strategy reward curve atricrypto3", async () => {
-    const strategy = '0x93836dE9D1c750d01468027b644508a66C1e3C68';
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
-    console.log('rewardUsd', rewardUsd)
-    expect(rewardUsd).is.not.eq(0);
   });
 
   it.skip("strategy reward usd for all", async () => {

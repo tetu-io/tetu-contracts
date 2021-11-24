@@ -11,6 +11,7 @@ import {DoHardWorkLoop} from "./DoHardWorkLoop";
 import {utils} from "ethers";
 import {IStrategy, IUniswapV2Pair, PriceCalculator} from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
+import {MaticAddresses} from "../MaticAddresses";
 
 
 const {expect} = chai;
@@ -38,8 +39,8 @@ async function startDefaultLpStrategyTest(
       const signer = await DeployerUtils.impersonate();
       const user = (await ethers.getSigners())[1];
 
-      const core = await DeployerUtils.getCoreAddressesWrapper(signer);
-      // const core = await DeployerUtils.deployAllCoreContracts(signer);
+      // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      const core = await DeployerUtils.deployAllCoreContracts(signer);
       const tools = await DeployerUtils.getToolsAddresses();
       const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
 
@@ -64,14 +65,7 @@ async function startDefaultLpStrategyTest(
       const strategy = data[1];
       const lpForTargetToken = data[2];
 
-      for (const rt of rewardTokens) {
-        await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-        await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
-        if ((await strategy.buyBackRatio()).toNumber() !== 10000) {
-          await StrategyTestUtils.setConversionPath(rt, token0, calculator, core.feeRewardForwarder);
-          await StrategyTestUtils.setConversionPath(rt, token1, calculator, core.feeRewardForwarder);
-        }
-      }
+      await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
       await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 

@@ -25,7 +25,7 @@ export default async function main() {
   const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
 
   // ********* FEE FORWARDER *********
-  const feeRewardForwarderData = await DeployerUtils.deployFeeForwarder(signer, controller.address);
+  const feeRewardForwarderData = await DeployerUtils.deployForwarderV2(signer, controller.address);
 
   // ********** BOOKKEEPER **********
   const bookkeeperLogic = await DeployerUtils.deployContract(signer, "Bookkeeper");

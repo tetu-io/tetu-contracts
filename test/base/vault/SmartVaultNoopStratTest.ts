@@ -12,6 +12,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelperUtils} from "../../MintHelperUtils";
+import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -41,55 +42,49 @@ describe("SmartVaultNoopStrat", () => {
     vault = await DeployerUtils.deploySmartVault(signer);
 
     strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
 
     await vault.initializeSmartVault(
-        "NOOP",
-        "tNOOP",
-        core.controller.address,
-        underlying,
-        REWARD_DURATION,
-        false,
-        MaticAddresses.ZERO_ADDRESS
+      "NOOP",
+      "tNOOP",
+      core.controller.address,
+      underlying,
+      REWARD_DURATION,
+      false,
+      MaticAddresses.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
     await core.vaultController.setToInvest([vault.address], 1000);
 
     await new VaultUtils(vault).checkEmptyVault(
-        strategy.address,
-        underlying,
-        vaultRewardToken0,
-        signerAddress,
-        TO_INVEST_NUMERATOR,
-        TO_INVEST_DENOMINATOR,
-        REWARD_DURATION
+      strategy.address,
+      underlying,
+      vaultRewardToken0,
+      signerAddress,
+      TO_INVEST_NUMERATOR,
+      TO_INVEST_DENOMINATOR,
+      REWARD_DURATION
     );
 
     await UniswapUtils.wrapMatic(signer);
     await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.QUICK_ROUTER,
-        MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
+      MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
     const lpAddress = await UniswapUtils.addLiquidity(
-        signer,
-        core.rewardToken.address,
-        MaticAddresses.USDC_TOKEN,
-        utils.parseUnits("100", 18).toString(),
-        utils.parseUnits("100", 6).toString(),
-        MaticAddresses.QUICK_FACTORY,
-        MaticAddresses.QUICK_ROUTER,
+      signer,
+      core.rewardToken.address,
+      MaticAddresses.USDC_TOKEN,
+      utils.parseUnits("100", 18).toString(),
+      utils.parseUnits("100", 6).toString(),
+      MaticAddresses.QUICK_FACTORY,
+      MaticAddresses.QUICK_ROUTER,
     );
     expect(await TokenUtils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 
-    await core.feeRewardForwarder.setConversionPath(
-        [core.rewardToken.address, MaticAddresses.USDC_TOKEN],
-        [MaticAddresses.QUICK_ROUTER]
-    );
-
-    await core.feeRewardForwarder.setLiquidityNumerator(50);
-    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
   });
 
   after(async function () {
@@ -291,7 +286,7 @@ describe("SmartVaultNoopStrat", () => {
 
     it("should not remove not finished reward token", async () => {
       await TokenUtils.approve(core.rewardToken.address, signer,
-          core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
+        core.feeRewardForwarder.address, utils.parseUnits("100", 18).toString());
       await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
       await expect(core.vaultController.removeRewardTokens([vault.address], vaultRewardToken0)).rejectedWith('');
     });
@@ -299,13 +294,13 @@ describe("SmartVaultNoopStrat", () => {
     it("tests without strategy", async () => {
       const vault1 = await DeployerUtils.deploySmartVault(signer);
       await vault1.initializeSmartVault(
-          "NOOP",
-          "tNOOP",
-          core.controller.address,
-          underlying,
-          REWARD_DURATION,
-          false,
-          MaticAddresses.ZERO_ADDRESS
+        "NOOP",
+        "tNOOP",
+        core.controller.address,
+        underlying,
+        REWARD_DURATION,
+        false,
+        MaticAddresses.ZERO_ADDRESS
       );
       expect(await vault1.underlyingBalanceWithInvestment()).is.eq(0);
       await expect(vault1.doHardWork()).rejectedWith('')
@@ -334,15 +329,15 @@ describe("SmartVaultNoopStrat", () => {
 
     it("should not notify with amount overflow", async () => {
       await expect(vault.notifyTargetRewardAmount(
-          core.rewardToken.address,
-          '115792089237316195423570985008687907853269984665640564039457584007913129639935'
+        core.rewardToken.address,
+        '115792089237316195423570985008687907853269984665640564039457584007913129639935'
       )).rejectedWith('SV:14');
     });
 
     it("should not notify with unknown token", async () => {
       await expect(vault.notifyTargetRewardAmount(
-          MaticAddresses.ZERO_ADDRESS,
-          '1'
+        MaticAddresses.ZERO_ADDRESS,
+        '1'
       )).rejectedWith('SV:15');
     });
 

@@ -40,19 +40,7 @@ async function startDefaultSingleTokenStrategyTest(
       const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
       const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
-      for (const rt of rewardTokens) {
-        await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-            [MaticAddresses.getRouterByFactory(factory), MaticAddresses.QUICK_ROUTER]
-        );
-        await core.feeRewardForwarder.setConversionPath(
-            [rt, MaticAddresses.USDC_TOKEN],
-            [MaticAddresses.getRouterByFactory(factory)]
-        );
-      }
-
-      await core.feeRewardForwarder.setLiquidityNumerator(50);
-      await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+      await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
       const data = await StrategyTestUtils.deploy(
           signer,

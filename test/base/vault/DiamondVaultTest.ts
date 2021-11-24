@@ -30,7 +30,8 @@ describe("Diamond vault test", () => {
   before(async function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
 
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
 
@@ -88,7 +89,6 @@ describe("Diamond vault test", () => {
     const rewardsToDistribute = utils.parseUnits('10000', rtDecimals);
     let rewardsTotalAmount = rewardsToDistribute;
 
-    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('1000000'));
     await UniswapUtils.createPairForRewardToken(signer, core, '567111');
     await VaultUtils.deposit(signer, core.psVault, await TokenUtils.balanceOf(core.rewardToken.address, signer.address));
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));

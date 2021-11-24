@@ -7,7 +7,6 @@ import {
   Bookkeeper,
   ContractReader,
   Controller,
-  FeeRewardForwarder,
   ForwarderV2,
   FundKeeper,
   IStrategy,
@@ -147,17 +146,6 @@ export class DeployerUtils {
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as VaultController;
     await contract.initialize(controller);
-    return [contract, proxy, logic];
-  }
-
-  public static async deployFeeForwarder(
-    signer: SignerWithAddress,
-    controllerAddress: string
-  ): Promise<[FeeRewardForwarder, TetuProxyControlled, FeeRewardForwarder]> {
-    const logic = await DeployerUtils.deployContract(signer, "FeeRewardForwarder") as FeeRewardForwarder;
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
-    const contract = logic.attach(proxy.address) as FeeRewardForwarder;
-    await contract.initialize(controllerAddress);
     return [contract, proxy, logic];
   }
 
@@ -397,7 +385,7 @@ export class DeployerUtils {
     const vaultControllerData = await DeployerUtils.deployVaultController(signer, controller.address);
 
     // ********* FEE FORWARDER *********
-    const feeRewardForwarderData = await DeployerUtils.deployFeeForwarder(signer, controller.address);
+    const feeRewardForwarderData = await DeployerUtils.deployForwarderV2(signer, controller.address);
 
     // ********** BOOKKEEPER **********
     const bookkeeperLogic = await DeployerUtils.deployContract(signer, "Bookkeeper");
@@ -659,7 +647,7 @@ export class DeployerUtils {
     return new CoreContractsWrapper(
       await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
       '',
-      await DeployerUtils.connectInterface(signer, "FeeRewardForwarder", core.feeRewardForwarder) as FeeRewardForwarder,
+      await DeployerUtils.connectInterface(signer, "ForwarderV2", core.feeRewardForwarder) as ForwarderV2,
       '',
       await DeployerUtils.connectInterface(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper,
       '',

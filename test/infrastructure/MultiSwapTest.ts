@@ -27,7 +27,8 @@ describe("Multi swap tests", function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;

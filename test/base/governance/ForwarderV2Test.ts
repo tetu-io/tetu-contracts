@@ -17,6 +17,7 @@ import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
+import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -72,8 +73,7 @@ describe("ForwarderV2 tests", function () {
       MaticAddresses.QUICK_ROUTER
     );
 
-    await forwarder.setLiquidityNumerator(50);
-    await forwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await StrategyTestUtils.initForwarder(forwarder);
     await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, amount)
   });
 
@@ -91,71 +91,29 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should not setup wrong lps arrays", async () => {
-    await expect(forwarder.addLps([MaticAddresses.QUICK_FACTORY], [])).rejectedWith("F2: Wrong arrays");
+    await expect(forwarder.addLargestLps([MaticAddresses.QUICK_FACTORY], [])).rejectedWith("F2: Wrong arrays");
   });
 
   it("should not setup wrong lps", async () => {
-    await expect(forwarder.addLps([MaticAddresses.USDC_TOKEN], [MaticAddresses.QUICK_WMATIC_ETH])).rejectedWith("F2: Wrong LP");
+    await expect(forwarder.addLargestLps([MaticAddresses.USDC_TOKEN], [MaticAddresses.QUICK_WMATIC_ETH])).rejectedWith("F2: Wrong LP");
   });
 
-  it("should not notify ps with zero target token", async () => {
+  it("should not distribute  with zero fund token", async () => {
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
     const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", controllerLogic.address);
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
-    const feeRewardForwarder = (await DeployerUtils.deployFeeForwarder(signer, controller.address))[0];
-    await expect(feeRewardForwarder.callStatic.notifyPsPool(MaticAddresses.ZERO_ADDRESS, 1)).is.rejectedWith('FRF: Target token is zero for notify')
+    const feeRewardForwarder = (await DeployerUtils.deployForwarderV2(signer, controller.address))[0];
+    await expect(feeRewardForwarder.distribute(1, MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS)).is.rejectedWith('F2: Fund token is zero')
   });
 
-  it("should not notify ps without liq path", async () => {
+  it("should not distribute without liq path", async () => {
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, amount.toString());
-    await expect(forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address)).rejectedWith('F2: LP for swap not found');
-  });
-
-  it("should not notify vault without xTETU", async () => {
-    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-      't',
-      async vaultAddress => DeployerUtils.deployContract(
-        signer,
-        'StrategyWaultSingle',
-        core.controller.address,
-        vaultAddress,
-        MaticAddresses.WEXpoly_TOKEN,
-        1
-      ) as Promise<IStrategy>,
-      core.controller,
-      core.vaultController,
-      MaticAddresses.WMATIC_TOKEN,
-      signer
-    );
-    const vault = data[1] as SmartVault;
     expect(forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address)).rejectedWith('psToken not added to vault');
   });
 
-  it("should not notify vault without liq path", async () => {
-    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-      't',
-      async vaultAddress => DeployerUtils.deployContract(
-        signer,
-        'StrategyWaultSingle',
-        core.controller.address,
-        vaultAddress,
-        MaticAddresses.WEXpoly_TOKEN,
-        1
-      ) as Promise<IStrategy>,
-      core.controller,
-      core.vaultController,
-      MaticAddresses.WMATIC_TOKEN,
-      signer
-    );
-    const vault = data[1] as SmartVault;
-    await core.vaultController.addRewardTokens([vault.address], core.psVault.address);
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, amount.toString());
-    await expect(forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address)).rejectedWith('F2: LP for swap not found');
-  });
-
   it("should notify ps single liq path", async () => {
-    await forwarder.addLps(
+    await forwarder.addLargestLps(
       [core.rewardToken.address],
       [tetuLp]
     );
@@ -169,7 +127,7 @@ describe("ForwarderV2 tests", function () {
     const psRatio = psRatioNom / psRatioDen;
     console.log('psRatio', psRatio);
 
-    await forwarder.addLps(
+    await forwarder.addLargestLps(
       [core.rewardToken.address],
       [tetuLp]
     );
@@ -200,12 +158,18 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should liquidate usdc to weth", async () => {
-    await forwarder.addLps(
-      [MaticAddresses.WETH_TOKEN],
-      [MaticAddresses.QUICK_USDC_WETH]
-    );
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
-    await forwarder.liquidate(MaticAddresses.USDC_TOKEN, MaticAddresses.WETH_TOKEN, utils.parseUnits('1000', 6));
+    await forwarder.liquidate(MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000', 6));
+  });
+
+  it("should liquidate fxs to tetu", async () => {
+    await forwarder.addLargestLps(
+      [MaticAddresses.FXS_TOKEN],
+      [MaticAddresses.QUICK_FRAX_FXS]
+    );
+    await TokenUtils.getToken(MaticAddresses.FXS_TOKEN, signer.address);
+    await TokenUtils.approve(MaticAddresses.FXS_TOKEN, signer, forwarder.address, utils.parseUnits('1000').toString());
+    await forwarder.liquidate(MaticAddresses.FXS_TOKEN, MaticAddresses.CRV_TOKEN, utils.parseUnits('1000'));
   });
 
 });
