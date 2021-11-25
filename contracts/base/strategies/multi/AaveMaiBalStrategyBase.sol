@@ -147,7 +147,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     /// @param recipient Recipient address
     /// @param token Token address
     function salvageFromPipeline(address recipient, address token)
-    external onlyController {
+    external onlyControllerOrGovernance {
         salvageFromAllPipes(recipient, token);
         // transfers token to this contract
     }

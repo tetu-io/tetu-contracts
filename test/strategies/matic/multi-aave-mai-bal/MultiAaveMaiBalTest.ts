@@ -244,6 +244,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const stablecoin  = (await ethers.getContractAt('IErc20Stablecoin', MAI_STABLECOIN_ADDRESS)) as IErc20Stablecoin;
 
         await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
+        const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
+        console.log('>>>needed0', needed0);
 
         await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(DEPOSIT_AMOUNT));
         console.log('>>>deposited');
@@ -257,30 +259,32 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         // *** mock price *2 ***
 
         const stablecoinEthPrice = await stablecoin.getEthPriceSource()
-        console.log('stablecoinEthPrice ', stablecoinEthPrice.toString())
+        console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
 
         const priceSource = (await ethers.getContractAt('PriceSource', PRICE_SOURCE_ADDRESS)) as PriceSource;
         const [,priceSourcePrice,,] = await priceSource.latestRoundData()
-        console.log('priceSourcePrice   ', priceSourcePrice.toString())
+        console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
 
         const mockPriceSource = await DeployerUtils.deployContract(
             strategyInfo.signer, 'MockPriceSource', 0);
         await mockPriceSource.setPrice(priceSourcePrice.mul(2));
         const [,mockSourcePrice,,] = await mockPriceSource.latestRoundData()
-        console.log('mockSourcePrice    ', mockSourcePrice.toString())
+        console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
         const ethPriceSourceSlotIndex = '0x10'
         const adrOriginal = await DeployerUtils.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
-        console.log('adrOriginal        ', adrOriginal)
+        console.log('>>>adrOriginal        ', adrOriginal)
         // set matic price source to our mock contract
         // convert address string to bytes32 string
         const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
 
-        console.log('adrBytes32         ', adrBytes32)
+        console.log('>>>adrBytes32         ', adrBytes32)
         await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
 
         const stablecoinEthPrice2 = await stablecoin.getEthPriceSource()
-        console.log('stablecoinEthPrice2', stablecoinEthPrice2.toString())
+        console.log('>>>stablecoinEthPrice2', stablecoinEthPrice2.toString())
+        const needed1 = await strategyAaveMaiBal.isRebalanceNeeded();
+        console.log('>>>needed1', needed1);
 
         expect(stablecoinEthPrice2).to.be.equal(mockSourcePrice)
 
@@ -289,13 +293,16 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         await strategyGov.rebalanceAllPipes()
         const bal2 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal2', bal2.toString())
+        const needed2 = await strategyAaveMaiBal.isRebalanceNeeded();
 
         // ***** check balance after matic price changed back ***
 
         // set matic price source back to original value
         await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrOriginal);
         const stablecoinEthPrice3 = await stablecoin.getEthPriceSource();
-        console.log('stablecoinEthPrice3', stablecoinEthPrice3.toString());
+        console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
+        const needed3 = await strategyAaveMaiBal.isRebalanceNeeded();
+        console.log('>>>needed3', needed3);
 
         await strategyGov.rebalanceAllPipes()
         const bal3 = await strategyGov.getMostUnderlyingBalance()
@@ -304,6 +311,11 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         expect(bal0).to.be.equal(bal1);
         expect(bal2).to.be.closeTo(bal1.mul(2), bal1.div(200)); // 0.5% deviation max
         expect(bal3).to.be.closeTo(bal1, bal1.div(200));        // 0.5% deviation max
+
+        expect(needed0).is.false;
+        expect(needed1).is.true;
+        expect(needed2).is.false;
+        expect(needed3).is.true;
 
     });
 

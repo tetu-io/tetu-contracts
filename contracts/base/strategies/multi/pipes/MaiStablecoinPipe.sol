@@ -80,15 +80,17 @@ contract MaiStablecoinPipe is Pipe {
         uint256 withdrawAmount = _borrowToCollateralTokenAmountPercentage(repaidAmount, d.targetPercentage);
         console.log('withdrawAmount', withdrawAmount);
 
+        //TODO remove logs
         uint256 collateralBefore = _stablecoin.vaultCollateral(vaultID);
         //TODO
         console.log('-collateralBefore   ', collateralBefore);
-        //TODO
+
         withdrawCollateral(withdrawAmount);
+
+        //TODO
         uint256 collateralCurrent = _stablecoin.vaultCollateral(vaultID);
         //TODO
         console.log('-collateralCurrent  ', collateralCurrent);
-        //TODO
 
         output = ERC20Balance(sourceToken);
         transferERC20toPrevPipe(sourceToken, output);
@@ -144,8 +146,8 @@ contract MaiStablecoinPipe is Pipe {
     returns (bool){
         uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
         if (collateralPercentage == 0) {
-            return false;
             // no debt or collateral
+            return false;
         }
         return ((collateralPercentage + d.maxImbalance) < d.targetPercentage)
         || (collateralPercentage > (uint256(d.targetPercentage) + d.maxImbalance));
@@ -157,8 +159,8 @@ contract MaiStablecoinPipe is Pipe {
     function rebalance() override onlyPipeline public returns (uint256 imbalance, bool deficit) {
         uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
         if (collateralPercentage == 0) {
-            return (0, false);
             // no debt or collateral
+            return (0, false);
         }
 
         if ((collateralPercentage + d.maxImbalance) < d.targetPercentage) {
