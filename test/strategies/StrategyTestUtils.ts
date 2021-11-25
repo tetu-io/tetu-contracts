@@ -6,7 +6,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Announcer,
   Controller,
-  FeeRewardForwarder,
   ForwarderV2,
   IStrategy,
   PriceCalculator,
@@ -58,9 +57,8 @@ export class StrategyTestUtils {
     return [vault, strategy, rewardTokenLp];
   }
 
-  public static async doHardWorkSimple(info: StrategyInfo, deposit: string, toClaimCalcFunc: (() => Promise<BigNumber[]>) | null) {
+  public static async doHardWorkSimple(
   /// @param toDropRewardsFunc drop rewards in this func
-  public static async doHardWorkWithLiqPath(
       info: StrategyInfo,
       deposit: string,
       toClaimCalcFunc: (() => Promise<BigNumber[]>) | null,

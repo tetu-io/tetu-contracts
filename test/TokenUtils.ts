@@ -18,7 +18,8 @@ export class TokenUtils {
     [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
     [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
     [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
-    [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
+    // [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
+    [MaticAddresses.USDC_TOKEN, '0x5D6Fcf22Aa4e4Ff8dA0abE329392E7c5306D22F3'.toLowerCase()], // bal
     [MaticAddresses.USDT_TOKEN, '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe'.toLowerCase()], // adr
     [MaticAddresses.QUICK_TOKEN, '0xdB74C5D4F154BBD0B8e0a28195C68ab2721327e5'.toLowerCase()], // dquick
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
@@ -51,7 +52,7 @@ export class TokenUtils {
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    // await TokenUtils.checkBalance(tokenAddress, signer.address, amount);
+    //await TokenUtils.checkBalance(tokenAddress, signer.address, amount);
     const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
     return token.approve(spender, BigNumber.from(amount));
   }
@@ -96,7 +97,7 @@ export class TokenUtils {
 
   public static async checkBalance(tokenAddress: string, account: string, amount: string) {
     const bal = await TokenUtils.balanceOf(tokenAddress, account);
-    expect(bal.gt(BigNumber.from(amount))).is.eq(true);
+    expect(bal.gt(BigNumber.from(amount))).is.eq(true, 'Balance less than amount');
     return bal;
   }
 

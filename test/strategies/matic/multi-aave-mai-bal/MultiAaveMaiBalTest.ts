@@ -91,14 +91,11 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const user = (await ethers.getSigners())[1];
         airDropper = (await ethers.getSigners())[2];
 
-        const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+        // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+        const core = await DeployerUtils.deployAllCoreContracts(signer);
         const tools = await DeployerUtils.getToolsAddresses();
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
         ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', MaticAddresses.CAMWMATIC_TOKEN) as ICamWMATIC
-
-        // await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
-        await core.feeRewardForwarder.setLiquidityNumerator(50);
-        await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
         const data = await StrategyTestUtils.deploy(
             signer,
@@ -119,8 +116,13 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const strategy = data[1];
         const lpForTargetToken = data[2];
 
+        //TODO uncomment
+        //await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
+
+        console.log('addRewardsXTetu');
         await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
+        console.log('changePpfsDecreasePermissions');
         await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
         strategyInfo = new StrategyInfo(
@@ -134,11 +136,13 @@ describe('Universal MultiAaveMaiBal tests', async () => {
             calculator
         );
 
+        console.log('buyToken for user')
         await UniswapUtils.buyToken(user,
             MaticAddresses.SUSHI_ROUTER,
             MaticAddresses.WMATIC_TOKEN,
             DEPOSIT_AMOUNT
         );
+        console.log('buyToken for airDropper')
         await UniswapUtils.buyToken(airDropper,
             MaticAddresses.SUSHI_ROUTER,
             MaticAddresses.WMATIC_TOKEN,
@@ -149,16 +153,6 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         console.log("User WMATIC balance: ", bal.toString());
 
         strategyAaveMaiBal = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
-
-        //TODO uncomment for doHardWorkWithLiqPath tests
-        const rewardTokens = await strategyAaveMaiBal.rewardTokens();
-        console.log('rewardTokens', rewardTokens);
-        for (const rt of rewardTokens) {
-            console.log('rewardToken', rt);
-            await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-            await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
-            break; // TODO remove - it is for 1st matic on aave test only
-        }
 
         console.log('############## Preparations completed ##################');
     });
@@ -178,7 +172,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     it.only("do hard work with liq path AAVE WMATIC rewards", async () => {
         console.log('>>>AAVE WMATIC rewards');
-        await StrategyTestUtils.doHardWorkWithLiqPath(
+        await StrategyTestUtils.doHardWorkSimple(
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
             null,
@@ -189,7 +183,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     it("do hard work with liq path MAI QI rewards", async () => {
         console.log('>>>MAI QI rewards');
-        await StrategyTestUtils.doHardWorkWithLiqPath(
+        await StrategyTestUtils.doHardWorkSimple(
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
             null,
@@ -200,7 +194,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     it("do hard work with liq path Balancer BAL rewards", async () => {
         console.log('>>>Balancer BAL rewards');
-        await StrategyTestUtils.doHardWorkWithLiqPath(
+        await StrategyTestUtils.doHardWorkSimple(
             strategyInfo,
             DEPOSIT_AMOUNT.toString(),
             null,
