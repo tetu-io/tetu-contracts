@@ -1,13 +1,6 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber, utils} from "ethers";
-import {
-  FeeRewardForwarder,
-  IAavePool,
-  IERC20,
-  IRenBTCPool,
-  ITricryptoPool,
-  RewardToken
-} from "../../../../../typechain";
+import {IAavePool, IERC20, IRenBTCPool, ITricryptoPool} from "../../../../../typechain";
 import {MaticAddresses} from "../../../../MaticAddresses";
 import {ethers} from "hardhat";
 import {expect} from "chai";
@@ -16,21 +9,6 @@ import {TokenUtils} from "../../../../TokenUtils";
 import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
 
 export class CurveUtils {
-
-  public static async configureFeeRewardForwarder(feeRewardForwarder: FeeRewardForwarder, rewardToken: RewardToken) {
-    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
-      await feeRewardForwarder.setConversionPath(
-        [rt, MaticAddresses.USDC_TOKEN, rewardToken.address],
-        [MaticAddresses.SUSHI_ROUTER, MaticAddresses.QUICK_ROUTER]
-      );
-      await feeRewardForwarder.setConversionPath(
-        [rt, MaticAddresses.USDC_TOKEN],
-        [MaticAddresses.SUSHI_ROUTER]
-      );
-    }
-    await feeRewardForwarder.setLiquidityNumerator(50);
-    await feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
-  }
 
   public static async addLiquidityAave(investor: SignerWithAddress) {
     await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));

@@ -6,7 +6,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Announcer,
   Controller,
-  FeeRewardForwarder,
   ForwarderV2,
   IStrategy,
   PriceCalculator,
