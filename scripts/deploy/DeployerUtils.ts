@@ -728,8 +728,18 @@ export class DeployerUtils {
     if (net.chainId === 137) {
       return MaticAddresses.TETU_TOKEN;
     } else if (net.chainId === 250) {
-      // todo
-      return MaticAddresses.TETU_TOKEN;
+      return FtmAddresses.TETU_TOKEN;
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
+  public static async getBlueChips() {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.BLUE_CHIPS;
+    } else if (net.chainId === 250) {
+      return FtmAddresses.BLUE_CHIPS;
     } else {
       throw Error('No config for ' + net.chainId);
     }
