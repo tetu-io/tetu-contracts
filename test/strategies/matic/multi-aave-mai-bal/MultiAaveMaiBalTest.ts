@@ -12,7 +12,9 @@ import {
     IErc20Stablecoin,
     PriceSource,
     MockPriceSource,
-    StrategyAaveMaiBal, UnwrappingPipe, AaveWethPipe, MaiStablecoinPipe
+    StrategyAaveMaiBal,
+    UnwrappingPipe,
+    AaveWethPipe
 } from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {StrategyInfo} from "../../StrategyInfo";
@@ -94,6 +96,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
         ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', MaticAddresses.CAMWMATIC_TOKEN) as ICamWMATIC
 
+        // await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
         await core.feeRewardForwarder.setLiquidityNumerator(50);
         await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
@@ -151,8 +154,10 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const rewardTokens = await strategyAaveMaiBal.rewardTokens();
         console.log('rewardTokens', rewardTokens);
         for (const rt of rewardTokens) {
+            console.log('rewardToken', rt);
             await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
             await StrategyTestUtils.setConversionPath(rt, await DeployerUtils.getUSDCAddress(), calculator, core.feeRewardForwarder);
+            break; // TODO remove - it is for 1st matic on aave test only
         }
 
         console.log('############## Preparations completed ##################');
@@ -171,7 +176,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     });
 
 
-    it("do hard work with liq path AAVE WMATIC rewards", async () => {
+    it.only("do hard work with liq path AAVE WMATIC rewards", async () => {
         console.log('>>>AAVE WMATIC rewards');
         await StrategyTestUtils.doHardWorkWithLiqPath(
             strategyInfo,
