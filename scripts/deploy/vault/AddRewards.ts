@@ -22,20 +22,21 @@ async function main() {
     const vaultName = await vaultCtr.name();
     const rewards = await vaultCtr.rewardTokens();
     console.log('vaultName', vault, vaultName, rewards);
-    if (rewards[0] === FtmAddresses.ZERO_ADDRESS) {
-      // await RunHelper.runAndWait(() => core.vaultController.removeRewardTokens([vault], FtmAddresses.ZERO_ADDRESS));
+    if (rewards[0] === core.psVault.address) {
+      await RunHelper.runAndWait(() => core.vaultController.removeRewardTokens([vault], core.psVault.address));
     }
-    if (rewards[0] !== FtmAddresses.ZERO_ADDRESS && rewards.length !== 0) {
-      continue;
-    }
+    // if (rewards.length === 2) {
+    //   console.log('already have two rewards');
+    //   continue;
+    // }
     vaultForProcess.push(vault);
     if (vaultForProcess.length > 30) {
-      // await RunHelper.runAndWait(() => core.vaultController.addRewardTokens(vaultForProcess, core.psVault.address));
+      // await RunHelper.runAndWait(() => core.vaultController.addRewardTokens(vaultForProcess, core.rewardToken.address));
       vaultForProcess = [];
     }
   }
   if (vaultForProcess.length > 0) {
-    // await RunHelper.runAndWait(() => core.vaultController.addRewardTokens(vaultForProcess, core.psVault.address));
+    // await RunHelper.runAndWait(() => core.vaultController.addRewardTokens(vaultForProcess, core.rewardToken.address));
   }
 }
 
