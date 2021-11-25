@@ -70,13 +70,7 @@ describe('Dino pool tests', async () => {
     const strategy = data[1];
     const lpForTargetToken = data[2];
 
-    for (const rt of [reward]) {
-      await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
-      if ((await strategy.buyBackRatio()).toNumber() !== 10000) {
-        await StrategyTestUtils.setConversionPath(rt, underlying, calculator, core.feeRewardForwarder);
-      }
-    }
+    await StrategyTestUtils.setConversionPaths(core.feeRewardForwarder);
 
     await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
 
@@ -115,7 +109,7 @@ describe('Dino pool tests', async () => {
   });
 
   it("do hard work with liq path", async () => {
-    await StrategyTestUtils.doHardWorkWithLiqPath(strategyInfo,
+    await StrategyTestUtils.doHardWorkSimple(strategyInfo,
       (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
       strategyInfo.strategy.readyToClaim
     );

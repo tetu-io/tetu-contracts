@@ -40,7 +40,7 @@ describe("Smart vault rewards test", () => {
 
     await contractReader.initialize(core.controller.address, calculator.address);
 
-    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    multiSwap = await DeployerUtils.deployMultiSwapMatic(signer, core.controller.address, calculator.address);
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     await core.controller.addToWhiteList(zapContract.address);
 

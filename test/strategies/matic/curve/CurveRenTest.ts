@@ -37,9 +37,10 @@ describe('Curve ren tests', async () => {
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
-    const [signer, investor, trader] = (await ethers.getSigners());
-    const core = await DeployerUtils.deployAllCoreContracts(
-        signer, 60 * 60 * 24 * 28, 1);
+    const [, investor, ] = (await ethers.getSigners());
+    const signer = await DeployerUtils.impersonate();
+    const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
+    // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
     const calculator = (await DeployerUtils.deployPriceCalculatorMatic(
         signer, core.controller.address))[0];
 
@@ -52,11 +53,7 @@ describe('Curve ren tests', async () => {
     const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
         strategyName, signer, core, underlying, underlyingName);
 
-    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
-      await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
-      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.WBTC_TOKEN, calculator, core.feeRewardForwarder);
-    }
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     strategyInfo = new StrategyInfo(
         underlying,

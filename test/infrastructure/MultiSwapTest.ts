@@ -27,11 +27,12 @@ describe("Multi swap tests", function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
 
 
     calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
-    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    multiSwap = await DeployerUtils.deployMultiSwapMatic(signer, core.controller.address, calculator.address);
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
     await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic

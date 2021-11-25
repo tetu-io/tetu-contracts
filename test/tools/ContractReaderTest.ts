@@ -7,7 +7,6 @@ import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {
   ContractReader,
-  FeeRewardForwarder,
   NoopStrategy,
   PriceCalculator,
   SmartVault,
@@ -19,6 +18,7 @@ import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../MaticAddresses";
 import {VaultUtils} from "../VaultUtils";
+import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -38,7 +38,8 @@ describe("contract reader tests", function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     const proxy = await DeployerUtils.deployContract(
       signer, "TetuProxyGov", logic.address) as TetuProxyGov;
@@ -156,33 +157,28 @@ describe("contract reader tests", function () {
       .is.eq('0');
   });
 
-  it("ps ppfs apr", async () => {
+  // we don't use this functionality
+  it.skip("ps ppfs apr", async () => {
     await UniswapUtils.createPairForRewardToken(signer, core, "10000");
-    await core.feeRewardForwarder.setConversionPath(
-      [core.rewardToken.address, MaticAddresses.USDC_TOKEN],
-      [MaticAddresses.QUICK_ROUTER]
-    );
-
-    await core.feeRewardForwarder.setLiquidityNumerator(50);
-    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits('10000000'));
 
     await deposit("25863", core.rewardToken.address, core.psVault, signer);
 
-    await notifyPsPool("1000000", core.rewardToken.address, core.feeRewardForwarder, signer);
+    await notifyPsPool("1000000", core.rewardToken.address, core.psVault, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(10_000).and.is.lessThan(100_000);
     expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(100).and.is.lessThan(1000);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60);
 
-    await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
+    await notifyPsPool("345", core.rewardToken.address, core.psVault, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(0.1).and.is.lessThan(10);
     expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(10).and.is.lessThan(500);
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 30);
 
-    await notifyPsPool("345", core.rewardToken.address, core.feeRewardForwarder, signer);
+    await notifyPsPool("345", core.rewardToken.address, core.psVault, signer);
     expect(await lastPpfs(core.psVault.address, contractReader)).is.greaterThan(0.01).and.is.lessThan(10);
     expect(await allPpfs(core.psVault.address, contractReader)).is.greaterThan(10).and.is.lessThan(500);
   });
@@ -366,10 +362,10 @@ async function allPpfs(vault: string, contractReader: ContractReader): Promise<n
 }
 
 async function notifyPsPool(amount: string, token: string,
-                            forwarder: FeeRewardForwarder, signer: SignerWithAddress) {
+                            psVault: SmartVault, signer: SignerWithAddress) {
   const notify = utils.parseUnits(amount, 18);
-  await TokenUtils.approve(token, signer, forwarder.address, notify.toString());
-  await forwarder.notifyPsPool(token, notify)
+  await TokenUtils.approve(token, signer, psVault.address, notify.toString());
+  await psVault.notifyTargetRewardAmount(token, notify)
   await TimeUtils.advanceNBlocks(1);
 }
 

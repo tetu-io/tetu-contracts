@@ -9,10 +9,12 @@ export class FtmToolsAddresses {
     '', // rebalancer
     '', // payrollClerk
     '', // mockFaucet
-    '', // multiSwap
-    '', // zapContract
+    '0x633b054bb63a0e13012e28167A916201892d122F', // multiSwap
+    '0x24f0Ba229a7E7B1A89AbDf0B4824A7cdaAdd6a1c', // zapContract
     '0x75e1e98650c119c4E3dCE3070CE6A5397Ed70c6a', // multicall
     '', // pawnshopReader
   );
+
+  // retranslator 0xcBDeF56CE454A81c3c6C6b639D683285bd467D02
 
 }

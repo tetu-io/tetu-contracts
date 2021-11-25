@@ -18,21 +18,29 @@ import "../interface/IFeeRewardForwarder.sol";
 /// @title Eternal storage + getters and setters pattern
 /// @dev If you will change a key value it will require setup it again
 /// @author belbix
-abstract contract ForwarderStorage is Initializable {
+abstract contract ForwarderV2Storage is Initializable {
 
-  /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
-  uint256 public constant LIQUIDITY_DENOMINATOR = 100;
+  struct LpData {
+    address lp;
+    address token;
+    address oppositeToken;
+  }
+
+  struct UniFee {
+    uint nominator;
+    uint denominator;
+  }
 
   // don't change names or ordering!
   mapping(bytes32 => uint256) private uintStorage;
   mapping(bytes32 => address) private addressStorage;
 
-  /// @notice Routes for token liquidations
-  mapping(address => mapping(address => address[])) public routes;
-  /// @notice Routers for token liquidations
-  mapping(address => mapping(address => address[])) public routers;
+  /// @dev Liquidity Pools with the highest TVL for given token
+  mapping(address => LpData) public largestLps;
+  /// @dev Liquidity Pools with the most popular tokens
+  mapping(address => mapping(address => LpData)) public blueChipsLps;
+  /// @dev Factory address to fee value map
+  mapping(address => UniFee) public uniPlatformFee;
 
   /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);

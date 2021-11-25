@@ -29,6 +29,8 @@ abstract contract StrategyBase is IStrategy, Controllable {
   using SafeERC20 for IERC20;
 
   uint256 internal constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 internal constant _TOLERANCE_DENOMINATOR = 1000;
+  uint256 internal constant _TOLERANCE_NOMINATOR = 999;
 
   //************************ VARIABLES **************************
   address internal _underlyingToken;
@@ -58,16 +60,6 @@ abstract contract StrategyBase is IStrategy, Controllable {
   modifier onlyNotPausedInvesting() {
     require(!pausedInvesting, "paused");
     _;
-  }
-
-  /// @dev Write info to bookkeeper. Must be used for doHardwork!
-  modifier savePpfsInfo() {
-    uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
-    _;
-    uint256 newPpfs = ISmartVault(_smartVault).getPricePerFullShare();
-    if (ppfs != newPpfs) {
-      IBookkeeper(IController(controller()).bookkeeper()).registerPpfsChange(_smartVault, newPpfs);
-    }
   }
 
   /// @notice Contract constructor using on Base Strategy implementation
@@ -198,8 +190,9 @@ abstract contract StrategyBase is IStrategy, Controllable {
       uint256 toWithdraw = Math.min(rewardPoolBalance(), needToWithdraw);
       withdrawAndClaimFromPool(toWithdraw);
     }
-
-    IERC20(_underlyingToken).safeTransfer(_smartVault, Math.min(amount, underlyingBalance()));
+    uint amountAdjusted = Math.min(amount, underlyingBalance());
+    require(amountAdjusted > amount * _TOLERANCE_NOMINATOR / _TOLERANCE_DENOMINATOR, "SB: Withdrew too low");
+    IERC20(_underlyingToken).safeTransfer(_smartVault, amountAdjusted);
   }
 
   /// @notice Stakes everything the strategy holds into the reward pool

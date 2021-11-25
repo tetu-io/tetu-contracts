@@ -171,7 +171,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     }
   }
 
-  function _redeemLoanToken(uint256 amount) internal override updateSupplyInTheEnd {
+  function _redeemLoanToken(uint256 amount) internal updateSupplyInTheEnd {
     if (amount > 0) {
       require(CompleteRToken(rToken).redeem(amount) == 0, "IFS: Redeem failed");
     }

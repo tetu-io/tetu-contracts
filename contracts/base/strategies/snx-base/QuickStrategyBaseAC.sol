@@ -31,7 +31,7 @@ abstract contract QuickStrategyBaseAC is StrategyBase, ISNXStrategy {
   string public constant override STRATEGY_NAME = "QuickStrategyBaseAC";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev 1% buyback
   uint256 private constant _BUY_BACK_RATIO = 100;
   address public constant QUICK = address(0x831753DD7087CaC61aB5644b308642cc1c33Dc13);
@@ -87,7 +87,7 @@ abstract contract QuickStrategyBaseAC is StrategyBase, ISNXStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted savePpfsInfo {
+  function doHardWork() external onlyNotPausedInvesting override restricted {
     investAllUnderlying();
     rewardPool.getReward();
     liquidateReward();

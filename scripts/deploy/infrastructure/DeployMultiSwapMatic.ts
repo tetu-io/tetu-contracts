@@ -9,7 +9,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller, tools.calculator) as MultiSwap;
+  const multiSwap = await DeployerUtils.deployMultiSwapMatic(signer, core.controller, tools.calculator) as MultiSwap;
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verifyWithArgs(multiSwap.address, [

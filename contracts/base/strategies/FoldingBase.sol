@@ -13,7 +13,6 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./StrategyBase.sol";
 import "../interface/ISmartVault.sol";
@@ -70,7 +69,7 @@ abstract contract FoldingBase is StrategyBase {
     require(_collateralFactorNumerator < _FACTOR_DENOMINATOR, "FS: Collateral factor cannot be this high");
     collateralFactorNumerator = _collateralFactorNumerator;
 
-    require(_borrowTargetFactorNumerator < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
+    require(_borrowTargetFactorNumerator == 0 || _borrowTargetFactorNumerator < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
     borrowTargetFactorNumeratorStored = _borrowTargetFactorNumerator;
     borrowTargetFactorNumerator = _borrowTargetFactorNumerator;
   }
@@ -90,8 +89,6 @@ abstract contract FoldingBase is StrategyBase {
   function _borrow(uint256 amountUnderlying) internal virtual;
 
   function _redeemUnderlying(uint256 amountUnderlying) internal virtual;
-
-  function _redeemLoanToken(uint256 amount) internal virtual;
 
   function _repay(uint256 amountUnderlying) internal virtual;
 
@@ -155,10 +152,10 @@ abstract contract FoldingBase is StrategyBase {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
+    investAllUnderlying();
     _claimReward();
     _compound();
     liquidateReward();
-    investAllUnderlying();
     if (!isFoldingProfitable() && fold) {
       stopFolding();
     } else if (isFoldingProfitable() && !fold) {
@@ -215,7 +212,7 @@ abstract contract FoldingBase is StrategyBase {
 
   /// @dev Set borrow rate target
   function _setBorrowTargetFactorNumeratorStored(uint256 _target) internal {
-    require(_target < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
+    require(_target == 0 || _target < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
     borrowTargetFactorNumeratorStored = _target;
     if (fold) {
       borrowTargetFactorNumerator = _target;
@@ -245,9 +242,9 @@ abstract contract FoldingBase is StrategyBase {
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
+      _supply(amount);
       // we need to sell excess in non hardWork function for keeping ppfs ~1
       _liquidateExcessUnderlying();
-      _supply(amount);
     }
     if (!fold || !isFoldingProfitable()) {
       return;
@@ -348,10 +345,8 @@ abstract contract FoldingBase is StrategyBase {
           }
         }
       }
-      // safe way to keep ppfs peg is sell excess after reward liquidation
-      // it should not decrease old ppfs
-      _liquidateExcessUnderlying();
     }
+    _liquidateExcessUnderlying();
   }
 
   /// @dev We should keep PPFS ~1

@@ -15,4 +15,7 @@ export class MaticToolsAddresses {
     '0x48aD115540a0f9E128Ee62dF5Ce519451ba5F6E0', // pawnshopReader
   );
 
+  // tetu bridge 0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c
+  // retranslator 0xcBDeF56CE454A81c3c6C6b639D683285bd467D02
+
 }

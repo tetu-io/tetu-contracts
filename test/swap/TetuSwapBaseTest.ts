@@ -67,6 +67,7 @@ describe("Tetu Swap base tests", function () {
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[0];
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.deployAllCoreContracts(signer);
 
     vaultUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDC) as SmartVault;
     vaultUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDT) as SmartVault;
@@ -130,13 +131,7 @@ describe("Tetu Swap base tests", function () {
 
     await factory.setPairRewardRecipients([lp], [lpStrategy.address]);
 
-    await StrategyTestUtils.setupForwarder(
-      core.feeRewardForwarder,
-      [tokenA, tokenB],
-      lp,
-      core.rewardToken.address,
-      MaticAddresses.QUICK_FACTORY
-    );
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
   });
 

@@ -55,10 +55,7 @@ describe('Curve aTricrypto3 tests', async () => {
     const [vault, strategy, lpForTargetToken] = await StrategyTestUtils.deployStrategy(
       strategyName, signer, core, underlying, underlyingName);
 
-    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
-      await StrategyTestUtils.setConversionPath(rt, core.rewardToken.address, calculator, core.feeRewardForwarder);
-      await StrategyTestUtils.setConversionPath(rt, MaticAddresses.USDC_TOKEN, calculator, core.feeRewardForwarder);
-    }
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     strategyInfo = new StrategyInfo(
       underlying,
@@ -89,7 +86,7 @@ describe('Curve aTricrypto3 tests', async () => {
     await TimeUtils.rollback(snapshotBefore);
   });
 
-  it("doHardWork loop with liq path", async () => {
+  it("doHardWork with liq path", async () => {
     await CurveDoHardWorkLoop.doHardWorkWithLiqPath(strategyInfo,
       // () => CurveUtils.swapTricrypto(strategyInfo.signer) // todo fix
       null
