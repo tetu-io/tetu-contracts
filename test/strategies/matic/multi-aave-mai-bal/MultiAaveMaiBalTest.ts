@@ -8,7 +8,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {
-    ICamWMATIC,
+    ICamToken,
     IErc20Stablecoin,
     PriceSource,
     MockPriceSource,
@@ -55,27 +55,47 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
     const STRATEGY_PLATFORM_ID = 15;
 
-    const UNDERLYING = MaticAddresses.WMATIC_TOKEN
+    const UNDERLYING = MaticAddresses.AAVE_TOKEN // WMATIC_TOKEN
 
     const UNWRAPPING_PIPE_INDEX = 0;
     const AAVE_PIPE_INDEX       = 1;
     const MAI_PIPE_INDEX        = 3;
     const BAL_PIPE_INDEX        = 4;
 
-    const TIME_SHIFT = 60 * 60 * 24 * 30 * 3;  // months;
-    const MAI_STABLECOIN_ADDRESS   = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a';
-    const PRICE_SOURCE_ADDRESS = '0x7791b9d71fa3A9782183B810f26b5C2eEdf53Eb0';
+    const TIME_SHIFT = 60 * 60 * 24 * 30 * 1;  // months;
+    const MIN_PPFS_RATE = 0.995;
 
-    const DEPOSIT_AMOUNT = utils.parseUnits('1000')
-    const REWARDS_AMOUNT = utils.parseUnits('10')
+    let MAI_STABLECOIN_ADDRESS: any, PRICE_SOURCE_ADDRESS: any, PRICE_SLOT_INDEX: any;
+    if (UNDERLYING == MaticAddresses.WMATIC_TOKEN) {
+        MAI_STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
+        PRICE_SLOT_INDEX = '0x10'
+        /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to MAI_STABLECOIN_ADDRESS
+        find ethPriceSource() address at the list, and use its index. !Do not forget to convert decimal index to hexadecimal
+        async function main() {
+          let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
+          for (let index = 0; index < 40; index++){
+          console.log(`[${index}]` +
+            await web3.eth.getStorageAt(contractAddress, index))
+          }
+        }
+         */
+    } else if (UNDERLYING == MaticAddresses.AAVE_TOKEN) {
+        MAI_STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
+        PRICE_SLOT_INDEX = '0x10'
+    }
 
-    let ICamWMATIC: any;
+    const USER_WMATIC_AMOUNT = utils.parseUnits('10000')
+    const DEPOSIT_AMOUNT = utils.parseUnits('1000') // WMATIC
+    const REWARDS_AMOUNT = utils.parseUnits('100')  // WMATIC
+
+    let depositAmount: any;
+    let ICamToken: any;
     let airDropper: any;
 
     const airdropTokenToPipe = async function (pipeIndex: number, tokenAddress: string, amount: BigNumber) {
         // claim aave rewards on mai
         console.log('claimAaveRewards');
-        await ICamWMATIC.claimAaveRewards();
+        await ICamToken.claimAaveRewards();
 
         // air drop reward token
         await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
@@ -95,7 +115,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const core = await DeployerUtils.deployAllCoreContracts(signer);
         const tools = await DeployerUtils.getToolsAddresses();
         const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
-        ICamWMATIC = await DeployerUtils.connectInterface(signer, 'ICamWMATIC', MaticAddresses.CAMWMATIC_TOKEN) as ICamWMATIC
+        ICamToken = await DeployerUtils.connectInterface(signer, 'ICamToken', MaticAddresses.CAMWMATIC_TOKEN) as ICamToken
 
         const data = await StrategyTestUtils.deploy(
             signer,
@@ -116,8 +136,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const strategy = data[1];
         const lpForTargetToken = data[2];
 
-        //TODO uncomment
-        //await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
+        await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
         console.log('addRewardsXTetu');
         await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
@@ -137,20 +156,14 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         );
 
         console.log('buyToken for user')
-        await UniswapUtils.buyToken(user,
-            MaticAddresses.SUSHI_ROUTER,
-            MaticAddresses.WMATIC_TOKEN,
-            DEPOSIT_AMOUNT
-        );
-        console.log('buyToken for airDropper')
-        await UniswapUtils.buyToken(airDropper,
-            MaticAddresses.SUSHI_ROUTER,
-            MaticAddresses.WMATIC_TOKEN,
-            REWARDS_AMOUNT
-        );
-        const bal = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, user.address);
+        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, USER_WMATIC_AMOUNT );
+        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, UNDERLYING, DEPOSIT_AMOUNT );
+        // console.log('buyToken for airDropper')
+        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT);
 
-        console.log("User WMATIC balance: ", bal.toString());
+        const bal = await TokenUtils.balanceOf(UNDERLYING, user.address);
+        console.log("User UNDERLYING balance: ", bal.toString());
+        depositAmount = bal.toString();
 
         strategyAaveMaiBal = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
 
@@ -170,14 +183,15 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     });
 
 
-    it.only("do hard work with liq path AAVE WMATIC rewards", async () => {
+    it("do hard work with liq path AAVE WMATIC rewards", async () => {
         console.log('>>>AAVE WMATIC rewards');
         await StrategyTestUtils.doHardWorkSimple(
             strategyInfo,
-            DEPOSIT_AMOUNT.toString(),
+            depositAmount,
             null,
             () => airdropTokenToPipe(AAVE_PIPE_INDEX, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT),
             TIME_SHIFT,
+            MIN_PPFS_RATE
         );
     });
 
@@ -185,21 +199,33 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         console.log('>>>MAI QI rewards');
         await StrategyTestUtils.doHardWorkSimple(
             strategyInfo,
-            DEPOSIT_AMOUNT.toString(),
+            depositAmount,
             null,
             () => airdropTokenToPipe(MAI_PIPE_INDEX, MaticAddresses.QI_TOKEN, REWARDS_AMOUNT),
             TIME_SHIFT,
+            MIN_PPFS_RATE
         );
     });
 
     it("do hard work with liq path Balancer BAL rewards", async () => {
         console.log('>>>Balancer BAL rewards');
+
+        const token = MaticAddresses.BAL_TOKEN;
+        let largestPool = '0xc67136e235785727a0d3B5Cfd08325327b81d373';
+        //[,, largestPool] = await strategyInfo.calculator.getLargestPool(token, []);
+        console.log('!largestPool', largestPool);
+        await strategyInfo.core.feeRewardForwarder.addLargestLps(
+            [token],
+            [largestPool]
+        );
+
         await StrategyTestUtils.doHardWorkSimple(
             strategyInfo,
-            DEPOSIT_AMOUNT.toString(),
+            depositAmount,
             null,
             () => airdropTokenToPipe(BAL_PIPE_INDEX, MaticAddresses.BAL_TOKEN, REWARDS_AMOUNT),
             TIME_SHIFT,
+            MIN_PPFS_RATE
         );
     });
 
@@ -210,7 +236,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const targetPercentageInitial = await strategyGov.targetPercentage()
         console.log('>>>targetPercentageInitial', targetPercentageInitial.toString());
 
-        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(DEPOSIT_AMOUNT));
+        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(depositAmount));
         console.log('>>>deposited');
         const bal1 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal1', bal1.toString());
@@ -246,7 +272,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
         console.log('>>>needed0', needed0);
 
-        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(DEPOSIT_AMOUNT));
+        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(depositAmount));
         console.log('>>>deposited');
         const bal0 = await strategyGov.getMostUnderlyingBalance()
         console.log('>>>bal0', bal0.toString())
@@ -260,7 +286,8 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const stablecoinEthPrice = await stablecoin.getEthPriceSource()
         console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
 
-        const priceSource = (await ethers.getContractAt('PriceSource', PRICE_SOURCE_ADDRESS)) as PriceSource;
+        const priceSourceAddress = await stablecoin.ethPriceSource()
+        const priceSource = (await ethers.getContractAt('PriceSource', priceSourceAddress)) as PriceSource;
         const [,priceSourcePrice,,] = await priceSource.latestRoundData()
         console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
 
@@ -270,7 +297,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const [,mockSourcePrice,,] = await mockPriceSource.latestRoundData()
         console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
-        const ethPriceSourceSlotIndex = '0x10'
+        const ethPriceSourceSlotIndex = PRICE_SLOT_INDEX;
         const adrOriginal = await DeployerUtils.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
         console.log('>>>adrOriginal        ', adrOriginal)
         // set matic price source to our mock contract
@@ -360,14 +387,16 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const amount = utils.parseUnits('10')
         await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
             UNDERLYING, amount);
-        await TokenUtils.transfer(UNDERLYING, airDropper, strategyGov.address, amount.toString());
+        const bal = await TokenUtils.balanceOf(UNDERLYING, airDropper.address)
+        console.log('>>>bal   ', bal);
+        await TokenUtils.transfer(UNDERLYING, airDropper, strategyGov.address, bal.toString());
         const before = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
-        console.log('>>>before', before);
+        console.log('>>>before', before.toString());
         await strategyGov.doHardWork();
         const after = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
-        console.log('>>>after', after);
+        console.log('>>>after ', after.toString());
 
-        expect(before).to.be.equal(amount)
+        expect(before).to.be.equal(bal)
         expect(after).to.be.equal(0, 'Underlying token should be pumped in on hard work')
     });
 

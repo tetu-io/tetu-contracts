@@ -5,50 +5,52 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Pipe.sol";
-import "./../../../../third_party/qudao-mai/ICamToken.sol";
+import "./../../../../third_party/aave/ILendingPool.sol";
 
 import "hardhat/console.sol";
 
-    struct MaiCamTokenPipeData {
+    struct AaveAmPipeData {
+        address pool;
         address sourceToken;
         address lpToken;
         address rewardToken;
     }
 
-/// @title Mai CamWMatic Pipe Contract
+/// @title Aave Weth Pipe Contract
 /// @author bogdoslav
-contract MaiCamTokenPipe is Pipe {
+contract AaveAmPipe is Pipe {
     using SafeERC20 for IERC20;
 
-    MaiCamTokenPipeData public d;
+    AaveAmPipeData public d;
 
-    /// @dev creates context
-    constructor(MaiCamTokenPipeData memory _d) Pipe() {
-        name = 'MaiCamTokenPipe';
+    constructor(AaveAmPipeData memory _d) Pipe() {
+        name = 'AaveAmPipe';
         d = _d;
         sourceToken = _d.sourceToken;
         outputToken = _d.lpToken;
         rewardToken = _d.rewardToken;
     }
 
-    /// @dev function for investing, deposits, entering, borrowing
-    /// @param amount in source units
-    /// @return output in underlying units
+    /// @dev Deposits to Aave
+    /// @param amount to deposit (TOKEN)
+    /// @return output amount of output units (amTOKEN)
     function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
-        console.log('MaiCamTokenPipe put amount', amount);
-        ERC20Approve(sourceToken, d.lpToken, amount);
-        ICamToken(outputToken).enter(amount);
+        console.log('AaveAmPipe put amount', amount);
+        ERC20Approve(sourceToken, d.pool, amount);
+        ILendingPool(d.pool).deposit(sourceToken, amount, address(this), 0);
 
         output = ERC20Balance(outputToken);
         transferERC20toNextPipe(outputToken, output);
     }
 
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks
-    /// @param amount in underlying units
-    /// @return output in source units
+    /// @dev Withdraws from Aave
+    /// @param amount to withdraw
+    /// @return output amount of source token
     function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
-        console.log('MaiCamTokenPipe get amount', amount);
-        ICamToken(d.lpToken).leave(amount);
+        console.log('AaveAmPipe get amount', amount);
+
+        ERC20Approve(outputToken, d.pool, amount);
+        ILendingPool(d.pool).withdraw(sourceToken, amount, address(this));
 
         output = ERC20Balance(sourceToken);
         transferERC20toPrevPipe(sourceToken, output);

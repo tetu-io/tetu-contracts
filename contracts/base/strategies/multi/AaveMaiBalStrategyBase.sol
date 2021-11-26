@@ -19,8 +19,11 @@ import "./../StrategyBase.sol";
 
 import "../../../third_party/uniswap/IWETH.sol";
 import "./pipelines/LinearPipeline.sol";
+
+import "./pipes/NoopPipe.sol";
 import "./pipes/UnwrappingPipe.sol";
 import "./pipes/AaveWethPipe.sol";
+import "./pipes/AaveAmPipe.sol";
 import "./pipes/MaiCamWMaticPipe.sol";
 import "./pipes/MaiStablecoinPipe.sol";
 import "./pipes/BalVaultPipe.sol";
@@ -57,7 +60,6 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     LinearPipeline(_underlyingToken)
     {
         WMATIC = _WMATIC;
-        require(_underlyingToken == _WMATIC, "MS: underlying must be WMATIC");
         _rewardTokens = __rewardTokens;
     }
 

@@ -4,6 +4,7 @@ pragma solidity 0.8.4;
 
 interface IErc20Stablecoin {
 //    PriceSource external ethPriceSource;
+    function ethPriceSource() external view returns (address);
 //
 //    uint256 external _minimumCollateralPercentage;
 //

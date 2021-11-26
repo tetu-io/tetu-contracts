@@ -41,9 +41,10 @@ contract LinearPipeline {
         if (pipes.length > 1) {
             Pipe prevPipe = pipes[pipes.length - 2];
             console.log('   prevPipe    ', prevPipe.name());
+            require(prevPipe.outputToken() == newPipe.sourceToken(), 'LPL: Pipe incompatible with previous pipe');
             prevPipe.setNextPipe(address(newPipe));
             newPipe.setPrevPipe(address(prevPipe));
-        } else {// first pipe should have pipeline as prev pipe to send tokens when gets
+        } else { // first pipe should have pipeline as prev pipe to send tokens on get()
             newPipe.setPrevPipe(address(this));
             console.log('   prevPipe    ', 'LinearPipeline');
         }

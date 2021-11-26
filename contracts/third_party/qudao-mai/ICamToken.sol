@@ -10,7 +10,7 @@ pragma solidity ^0.8.4;
 
 // stake Token to earn more Token (from farming)
 // This contract handles swapping to and from uMiMatic, a staked version of miMatic stable coin.
-interface ICamWMATIC {
+interface ICamToken {
 
 //    address public Token;
 //    address public AaveContract;

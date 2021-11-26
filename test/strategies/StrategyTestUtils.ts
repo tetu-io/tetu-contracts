@@ -64,6 +64,7 @@ export class StrategyTestUtils {
       toClaimCalcFunc: (() => Promise<BigNumber[]>) | null,
       toDropRewardsFunc?: (() => Promise<void>),
       timeShift?: number,
+      minPpfsRate?: number
   )
   {
     const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
@@ -160,7 +161,7 @@ export class StrategyTestUtils {
 
     if (await info.vault.ppfsDecreaseAllowed()) {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999,
+        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * (minPpfsRate || 0.999),
         "should have more or equal underlying than deposited");
     } else {
       expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
