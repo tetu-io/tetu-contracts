@@ -1,8 +1,8 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IUniswapV2Pair, NoopStrategy, SmartVault} from "../../../../typechain";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {TokenUtils} from "../../../../test/TokenUtils";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 
 async function main() {

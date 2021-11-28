@@ -6,7 +6,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {PriceCalculator} from "../../typechain";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {TokenUtils} from "../TokenUtils";
 

@@ -1,10 +1,12 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../MaticAddresses";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
-import {startIronSwapStrategyTest} from "../../IronSwapStrategyTest";
+import {startIronSwapStrategyTest} from "./IronSwapStrategyTest";
 import {config as dotEnvConfig} from "dotenv";
+import {DeployInfo} from "../../DeployInfo";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -17,8 +19,16 @@ const argv = require('yargs/yargs')()
     },
     onlyOneIronStrategyTest: {
       type: "number",
-      default: -1,
-    }
+      default: 0,
+    },
+    deployCoreContracts: {
+      type: "boolean",
+      default: false,
+    },
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
   }).argv;
 
 const {expect} = chai;
@@ -30,10 +40,15 @@ const ironSwapIds = new Set<string>([
 ]);
 
 describe('Universal Iron tests', async () => {
-  if (argv.disableStrategyTests) {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/iron_pools.csv', 'utf8').split(/\r?\n/);
+
+  const deployInfo: DeployInfo = new DeployInfo();
+  before(async function () {
+    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+  });
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -57,7 +72,6 @@ describe('Universal Iron tests', async () => {
     console.log('strat', idx, lpName);
 
     if (ironSwapIds.has(idx)) {
-      /* tslint:disable:no-floating-promises */
       startIronSwapStrategyTest(
         'StrategyIronSwap',
         MaticAddresses.DFYN_FACTORY,
@@ -65,10 +79,9 @@ describe('Universal Iron tests', async () => {
         tokens,
         tokenNames.join('_'),
         idx,
-        [MaticAddresses.ICE_TOKEN]
+        deployInfo
       );
     } else {
-      /* tslint:disable:no-floating-promises */
       startDefaultLpStrategyTest(
         'StrategyIronUniPair',
         MaticAddresses.DFYN_FACTORY,
@@ -78,7 +91,7 @@ describe('Universal Iron tests', async () => {
         tokens[1],
         tokenNames[1],
         idx,
-        [MaticAddresses.ICE_TOKEN]
+        deployInfo
       );
     }
 

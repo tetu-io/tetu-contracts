@@ -9,11 +9,11 @@ import {
   SmartVault
 } from "../../typechain";
 import {UniswapUtils} from "../../test/UniswapUtils";
-import {MaticAddresses} from "../../test/MaticAddresses";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../test/TokenUtils";
 import {RunHelper} from "./RunHelper";
 import {config as dotEnvConfig} from "dotenv";
+import {MaticAddresses} from "../addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires

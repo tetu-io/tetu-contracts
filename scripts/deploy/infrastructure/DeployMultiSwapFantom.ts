@@ -1,8 +1,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {MultiSwap} from "../../../typechain";
-import {MaticAddresses} from "../../../test/MaticAddresses";
-import {FtmAddresses} from "../../../test/FtmAddresses";
+import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 
 async function main() {

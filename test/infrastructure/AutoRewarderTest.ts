@@ -16,7 +16,7 @@ import {MintHelperUtils} from "../MintHelperUtils";
 import {BigNumber, utils} from "ethers";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TokenUtils} from "../TokenUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);

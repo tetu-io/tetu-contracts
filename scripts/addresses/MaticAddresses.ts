@@ -54,6 +54,7 @@ export class MaticAddresses {
   public static TETU_TOKEN = "0x255707B70BF90aa112006E1b07B9AeA6De021424".toLowerCase();
   public static IRON_TOKEN = "0xD86b5923F3AD7b585eD81B448170ae026c65ae9a".toLowerCase();
   public static amWBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
+  public static polyDoge_TOKEN = "0x8A953CfE442c5E8855cc6c61b1293FA648BAE472".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

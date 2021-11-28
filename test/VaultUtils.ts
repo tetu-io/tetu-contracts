@@ -6,8 +6,9 @@ import {BigNumber, ContractTransaction, utils} from "ethers";
 import axios from "axios";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "./MaticAddresses";
+import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
+import {Misc} from "../scripts/utils/tools/Misc";
 
 export class VaultUtils {
 
@@ -79,14 +80,6 @@ export class VaultUtils {
     }
   }
 
-  public static async exit(
-    user: SignerWithAddress,
-    vault: SmartVault
-  ): Promise<ContractTransaction> {
-    const vaultForUser = vault.connect(user);
-    return vaultForUser.exit();
-  }
-
   public static async vaultApr(vault: SmartVault, rt: string, cReader: ContractReader): Promise<number> {
     const rtDec = await TokenUtils.decimals(rt);
     const undDec = await vault.decimals();
@@ -150,31 +143,24 @@ export class VaultUtils {
     amount: number,
     period = 60 * 60 * 24 * 7 + 1
   ) {
+    const start = Date.now();
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
     if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
       await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
     } else {
-      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address)
+      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, period)
     }
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));
-    await TokenUtils.approve(rtAdr, signer, vault.address, utils.parseUnits(amount + '').toString());
-    await vault.notifyTargetRewardAmount(rtAdr, utils.parseUnits(amount + ''));
-  }
-
-  public static async addRewards(
-    signer: SignerWithAddress,
-    vault: SmartVault,
-    rtAdr: string,
-    amount: BigNumber
-  ) {
-    console.log("Add rewards to vault: ", amount.toString())
-    await TokenUtils.approve(rtAdr, signer, vault.address, amount.toString());
-    await vault.notifyTargetRewardAmount(rtAdr, amount);
+    const xTetuBal = await TokenUtils.balanceOf(core.psVault.address, signer.address);
+    await TokenUtils.approve(rtAdr, signer, vault.address, xTetuBal.toString());
+    await vault.notifyTargetRewardAmount(rtAdr, xTetuBal);
+    Misc.printDuration('xTetu reward token added to vault', start);
   }
 
   public static async doHardWorkAndCheck(vault: SmartVault, positiveCheck = true) {
+    const start = Date.now();
     const controller = await vault.controller();
     const controllerCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'Controller', controller) as Controller;
     const psVault = await controllerCtr.psVault();
@@ -201,6 +187,7 @@ export class VaultUtils {
 
     console.log('-------- HARDWORK --------');
     console.log('- BB ratio:', bbRatio);
+    console.log('- PPFS:', ppfsAfter);
     console.log('- PPFS change:', ppfsAfter - ppfs);
     console.log('- BALANCE change:', undBalAfter - undBal);
     console.log('- RT change:', rtBalAfter - rtBal);
@@ -210,16 +197,18 @@ export class VaultUtils {
 
     if (positiveCheck) {
       if (bbRatio > 1000) {
-        expect(psPpfsAfter).is.greaterThan(psPpfs);
+        expect(psPpfsAfter).is.greaterThan(psPpfs,
+          'PS didnt have any income, it means that rewards was not liquidated and properly sent to PS.' +
+          ' Check reward tokens list and liquidation paths');
         if (psRatio !== 1) {
-          expect(rtBalAfter).is.greaterThan(rtBal);
+          expect(rtBalAfter).is.greaterThan(rtBal, 'With ps ratio less than 1 we should send a part of buybacks to vaults as rewards.');
         }
       }
       if (bbRatio !== 10000) {
-        expect(ppfsAfter).is.greaterThan(ppfs);
+        expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
       }
     }
-
+    Misc.printDuration('doHardWorkAndCheck completed', start);
   }
 
 }

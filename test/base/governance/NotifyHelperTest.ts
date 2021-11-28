@@ -8,7 +8,7 @@ import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
-import {MaticAddresses} from "../../MaticAddresses";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 import {NotifyHelper} from "../../../typechain/NotifyHelper";
 import {IStrategy, NoopStrategy} from "../../../typechain";

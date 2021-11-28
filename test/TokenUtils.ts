@@ -2,11 +2,12 @@ import {ethers} from "hardhat";
 import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {MaticAddresses} from "./MaticAddresses";
+import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
-import {FtmAddresses} from "./FtmAddresses";
+import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
+import {Misc} from "../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -37,6 +38,11 @@ export class TokenUtils {
     [FtmAddresses.fUSDT_TOKEN, '0x940f41f0ec9ba1a34cf001cc03347ac092f5f6b5'.toLowerCase()], // geist
     [FtmAddresses.FTM_TOKEN, '0x39b3bd37208cbade74d0fcbdbb12d606295b430a'.toLowerCase()], // geist
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
+    [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
+    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
+    [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
+    [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
+    [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -122,6 +128,7 @@ export class TokenUtils {
   }
 
   public static async getToken(token: string, to: string, amount?: BigNumber) {
+    const start = Date.now();
     console.log('transfer token from biggest holder', token, amount?.toString());
     const holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
     if (!holder) {
@@ -135,6 +142,7 @@ export class TokenUtils {
     } else {
       await TokenUtils.transfer(token, signer, to, balance.toString());
     }
+    Misc.printDuration('getToken completed', start);
     return balance;
   }
 

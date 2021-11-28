@@ -9,7 +9,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {BigNumber, utils} from "ethers";
 import {VaultUtils} from "../VaultUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {TokenUtils} from "../TokenUtils";
 

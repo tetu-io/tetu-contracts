@@ -1,6 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../MaticAddresses";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Controller,
@@ -181,6 +181,15 @@ describe("ForwarderV2 tests", function () {
     await TokenUtils.getToken(MaticAddresses.FXS_TOKEN, signer.address);
     await TokenUtils.approve(MaticAddresses.FXS_TOKEN, signer, forwarder.address, utils.parseUnits('1000').toString());
     await forwarder.liquidate(MaticAddresses.FXS_TOKEN, MaticAddresses.CRV_TOKEN, utils.parseUnits('1000'));
+  });
+
+  // add to prod and move block
+  it.skip("should liquidate quick to polyDoge", async () => {
+    const tokenIn = MaticAddresses.QUICK_TOKEN;
+    const dec = await TokenUtils.decimals(tokenIn);
+    await TokenUtils.getToken(tokenIn, signer.address);
+    await TokenUtils.approve(tokenIn, signer, forwarder.address, utils.parseUnits('1000', dec).toString());
+    await forwarder.liquidate(tokenIn, MaticAddresses.polyDoge_TOKEN, utils.parseUnits('1000', dec));
   });
 
 });

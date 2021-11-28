@@ -9,7 +9,7 @@ import {TimeUtils} from "../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
-import {MaticAddresses} from "../../MaticAddresses";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 
 const {expect} = chai;

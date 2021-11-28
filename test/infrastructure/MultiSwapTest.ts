@@ -5,7 +5,7 @@ import {TimeUtils} from "../TimeUtils";
 import {ContractReader, IUniswapV2Pair, MultiSwap, PriceCalculator} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";

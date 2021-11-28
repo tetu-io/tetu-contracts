@@ -1,7 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {SmartVault} from "../../../typechain";
-import {FtmAddresses} from "../../../test/FtmAddresses";
 import {RunHelper} from "../../utils/RunHelper";
 
 

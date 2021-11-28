@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {MaticAddresses} from "../../../test/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {IFossilFarms} from "../../../typechain";
 import {BigNumber} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
