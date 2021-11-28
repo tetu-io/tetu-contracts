@@ -246,7 +246,7 @@ abstract contract FoldingBase is StrategyBase {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
       _liquidateExcessUnderlying();
     }
-    if (!fold || !isFoldingProfitable()) {
+    if (!fold) {
       return;
     }
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
