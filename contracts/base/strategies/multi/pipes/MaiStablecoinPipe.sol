@@ -262,5 +262,10 @@ contract MaiStablecoinPipe is Pipe {
         console.log('_return collateral', amount);
     }
 
+    /// @dev Gets available MAI (miMATIC) to borrow at the Mai Stablecoin contract.
+    /// @return miMatic borrow token Stablecoin supply
+    function availableMai() external view returns (uint256) {
+        return IERC20(d.borrowToken).balanceOf(address(_stablecoin));
+    }
 
 }

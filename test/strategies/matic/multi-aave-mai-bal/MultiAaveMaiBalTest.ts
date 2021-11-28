@@ -469,6 +469,9 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         const readyToClaim = await strategyAaveMaiBal.readyToClaim()
         console.log('readyToClaim', readyToClaim);
 
+        const availableMai = await strategyAaveMaiBal.availableMai();
+        console.log('availableMai', availableMai);
+
         expect(platformId).is.eq(STRATEGY_PLATFORM_ID);
 
     });
