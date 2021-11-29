@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {MaticAddresses} from "./MaticAddresses";
+import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {
   IFireBirdFactory,
   IFireBirdRouter,
@@ -16,6 +16,8 @@ import {RunHelper} from "../scripts/utils/RunHelper";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {Misc} from "../scripts/utils/tools/Misc";
+import {PriceCalculatorUtils} from "./PriceCalculatorUtils";
 
 export class UniswapUtils {
   public static deadline = "1000000000000";
@@ -91,6 +93,7 @@ export class UniswapUtils {
     _router: string,
     wait = false
   ): Promise<string> {
+    const start = Date.now();
     const t0Dec = await TokenUtils.decimals(tokenA);
     const t1Dec = await TokenUtils.decimals(tokenB);
     const name0 = await TokenUtils.tokenSymbol(tokenA);
@@ -136,7 +139,9 @@ export class UniswapUtils {
     }
 
     const factory = await UniswapUtils.connectFactory(_factory, sender);
-    return UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, factory.address);
+    const pairAdr = UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, factory.address);
+    Misc.printDuration('addLiquidity completed', start);
+    return pairAdr;
   }
 
   public static async removeLiquidity(
@@ -273,6 +278,7 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
+    const start = Date.now();
     const usdc = await DeployerUtils.getUSDCAddress();
     const tetu = core.rewardToken.address.toLowerCase();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6));
@@ -291,7 +297,7 @@ export class UniswapUtils {
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal)).is.greaterThanOrEqual(+amount);
 
-    return UniswapUtils.addLiquidity(
+    const result = UniswapUtils.addLiquidity(
       signer,
       tetu,
       usdc,
@@ -300,6 +306,8 @@ export class UniswapUtils {
       await DeployerUtils.getDefaultNetworkFactory(),
       await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
     );
+    Misc.printDuration('createTetuUsdc completed', start);
+    return result;
   }
 
   public static async getTokenFromHolder(
@@ -367,65 +375,50 @@ export class UniswapUtils {
     }
   }
 
-  public static async buyTokensAndAddLiq(
+  public static async getTokensAndAddLiq(
     signer: SignerWithAddress,
-    factory0: string,
-    factory1: string,
-    targetFactory: string,
-    token0: string,
-    token0Opposite: string,
-    token1: string,
-    token1Opposite: string,
-    amountForSell0: BigNumber,
-    amountForSell1: BigNumber,
-    wait = false
+    lp: string,
+    usdAmountN: number,
+    calculator: PriceCalculator
   ) {
+    console.log("UniswapUtils: buyTokensAndAddLiq");
+    const start = Date.now();
+    const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
+    const token0 = await lpCtr.token0();
+    const token1 = await lpCtr.token1();
+    const factory = await lpCtr.factory();
+    const router = await DeployerUtils.getRouterByFactory(factory);
+    const token0Und = await TokenUtils.decimals(token0);
+    const token1Und = await TokenUtils.decimals(token1);
 
-    const token0Bal = await TokenUtils.balanceOf(token0, signer.address);
-    const token1Bal = await TokenUtils.balanceOf(token1, signer.address);
-    if (token0Bal.isZero()) {
-      await UniswapUtils.getTokenFromHolder(signer, await DeployerUtils.getRouterByFactory(factory0), token0, amountForSell0, token0Opposite, wait);
-    }
-    if (token1Bal.isZero()) {
-      await UniswapUtils.getTokenFromHolder(signer, await DeployerUtils.getRouterByFactory(factory1), token1, amountForSell1, token1Opposite, wait);
-    }
+    const token0Price = await PriceCalculatorUtils.getPriceCached(token0);
+    const token0PriceN = +utils.formatUnits(token0Price);
+    const token1Price = await PriceCalculatorUtils.getPriceCached(token1);
+    const token1PriceN = +utils.formatUnits(token1Price);
 
-    const lpToken = await UniswapUtils.getPairFromFactory(signer, token0, token1, targetFactory);
+    const token0AmountN = ((usdAmountN / 2) / token0PriceN);
+    const token0Amount = utils.parseUnits(token0AmountN.toFixed(token0Und), token0Und);
+    const token1AmountN = ((usdAmountN / 2) / token1PriceN);
+    const token1Amount = utils.parseUnits(token1AmountN.toFixed(token1Und), token1Und);
 
-    const lpBalanceBefore = await TokenUtils.balanceOf(lpToken, signer.address);
+    await TokenUtils.getToken(token0, signer.address, token0Amount);
+    await TokenUtils.getToken(token1, signer.address, token1Amount);
 
     await UniswapUtils.addLiquidity(
       signer,
       token0,
       token1,
-      (await TokenUtils.balanceOf(token0, signer.address)).toString(),
-      (await TokenUtils.balanceOf(token1, signer.address)).toString(),
-      targetFactory,
-      await DeployerUtils.getRouterByFactory(targetFactory),
-      wait
+      token0Amount.toString(),
+      token1Amount.toString(),
+      factory,
+      router,
+      false
     );
-
-    const lpBalanceAfter = await TokenUtils.balanceOf(lpToken, signer.address);
-    const dec = await TokenUtils.decimals(lpToken);
-    const name = await TokenUtils.tokenName(lpToken);
-    const bought = lpBalanceAfter.sub(lpBalanceBefore);
-    console.log('add liq', name, utils.formatUnits(bought, dec))
-    console.log('lpToken', lpToken);
+    Misc.printDuration('UniswapUtils: buyTokensAndAddLiq finished', start);
   }
 
   public static async wrapMatic(signer: SignerWithAddress) {
     await TokenUtils.wrapMatic(signer, utils.formatUnits(utils.parseUnits('10000000'))); // 10m wmatic
-  }
-
-  public static async amountForSell(
-    usdAmount: number,
-    tokenAddress: string,
-    priceCalculator: PriceCalculator
-  ) {
-    const dec = await TokenUtils.decimals(tokenAddress);
-    const price = await priceCalculator.getPriceWithDefaultOutput(tokenAddress);
-    const D18 = BigNumber.from('1000000000000000000');
-    return BigNumber.from(usdAmount).mul(D18).mul(BigNumber.from(1).pow(dec)).div(price)
   }
 
   public static async getPairFromFactory(signer: SignerWithAddress, token0: string, token1: string, factory: string): Promise<string> {

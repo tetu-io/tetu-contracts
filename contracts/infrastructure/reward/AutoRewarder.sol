@@ -168,6 +168,9 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
 
   /// @dev Calculate distribution amount and notify given vault
   function _distribute(address _vault) internal {
+    if (!ISmartVault(_vault).active()) {
+      return;
+    }
     RewardInfo memory info = lastInfo[_vault];
     require(info.vault == _vault, "AR: Info not found");
     require(block.timestamp - info.time < PERIOD, "AR: Info too old");

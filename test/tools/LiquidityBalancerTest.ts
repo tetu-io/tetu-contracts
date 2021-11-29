@@ -9,7 +9,7 @@ import {LiquidityBalancer} from "../../typechain";
 import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "../MintHelperUtils";
 
 const {expect} = chai;

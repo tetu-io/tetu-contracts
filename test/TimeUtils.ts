@@ -1,22 +1,26 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {Misc} from "../scripts/utils/tools/Misc";
 
 export class TimeUtils {
 
   public static async advanceBlocksOnTs(add: number) {
-    console.log('Block advanced on', add);
+    const start = Date.now();
     // const block = await TimeUtils.currentBlock();
     await ethers.provider.send('evm_increaseTime', [add]);
     await ethers.provider.send('evm_mine', []);
     // await TimeUtils.mineAndCheck();
+    Misc.printDuration('advanceBlocksOnTs ' + add + ' completed', start);
   }
 
   public static async advanceNBlocks(n: number) {
-    await ethers.provider.send('evm_increaseTime', [n * 3]);
+    const start = Date.now();
+    await ethers.provider.send('evm_increaseTime', [+(n * 2.35).toFixed(0)]);
     for (let i = 0; i < n; i++) {
       await ethers.provider.send('evm_mine', []);
     }
+    Misc.printDuration('advanceNBlocks ' + n + ' completed', start);
   }
 
   public static async mineAndCheck() {

@@ -8,7 +8,6 @@ import {
   SmartVault
 } from "../../typechain";
 import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../../test/MaticAddresses";
 import {TokenUtils} from "../../test/TokenUtils";
 import {utils} from "ethers";
 
@@ -28,9 +27,10 @@ async function main() {
   const blueChipsLps: string[] = [];
   const parsedBC = new Set<string>();
 
+  const BLUE_CHIPS = await DeployerUtils.getBlueChips();
   // * parse blue chips
-  for (const token of Array.from(MaticAddresses.BLUE_CHIPS.keys())) {
-    for (const expectedToken of Array.from(MaticAddresses.BLUE_CHIPS.keys())) {
+  for (const token of Array.from(BLUE_CHIPS.keys())) {
+    for (const expectedToken of Array.from(BLUE_CHIPS.keys())) {
       const usedLps: string[] = [];
       if (expectedToken.toLowerCase() === token.toLowerCase()) {
         continue;
@@ -112,7 +112,7 @@ async function main() {
   const allLps: string[] = [];
 
   await addRoutes(core.rewardToken, calculator, allLps, allTokens);
-  await addRoutes(MaticAddresses.USDC_TOKEN, calculator, allLps, allTokens);
+  await addRoutes(await DeployerUtils.getUSDCAddress(), calculator, allLps, allTokens);
 
   let i = 0;
   while (i < vaultsSize) {

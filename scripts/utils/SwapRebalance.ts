@@ -11,10 +11,10 @@ import {
 } from "../../typechain";
 import {TokenUtils} from "../../test/TokenUtils";
 import {BigNumber, utils} from "ethers";
-import {MaticAddresses} from "../../test/MaticAddresses";
 import {RunHelper} from "./RunHelper";
 import {UniswapUtils} from "../../test/UniswapUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {MaticAddresses} from "../addresses/MaticAddresses";
 
 const MIN_AMOUNT_TO_REBALANCE = 100;
 

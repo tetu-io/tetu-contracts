@@ -6,7 +6,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MockNFT, TetuPawnShop} from "../../typechain";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";

@@ -5,7 +5,7 @@ import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {ContractUtils} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);

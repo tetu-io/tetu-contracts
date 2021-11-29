@@ -1,34 +1,49 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../MaticAddresses";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
 import {startDefaultSingleTokenStrategyTest} from "../../DefaultSingleTokenStrategyTest";
 import {config as dotEnvConfig} from "dotenv";
+import {DeployInfo} from "../../DeployInfo";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  disableStrategyTests: {
-    type: "boolean",
-    default: false,
-  },
-  onlyOneWaultStrategyTest: {
-    type: "number",
-    default: 2,
-  }
-}).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+    onlyOneWaultStrategyTest: {
+      type: "number",
+      default: 2,
+    },
+    deployCoreContracts: {
+      type: "boolean",
+      default: false,
+    },
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+  }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe.skip('Universal Wault tests', async () => {
-  if (argv.disableStrategyTests) {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/wault_pools.csv', 'utf8').split(/\r?\n/);
+
+  const deployInfo: DeployInfo = new DeployInfo();
+  before(async function () {
+    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+  });
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -56,26 +71,23 @@ describe.skip('Universal Wault tests', async () => {
     if (strat[6]) {
       /* tslint:disable:no-floating-promises */
       startDefaultLpStrategyTest(
-          'StrategyWaultLpWithAc',
-          MaticAddresses.WAULT_FACTORY,
-          lpAddress.toLowerCase(),
-          token0,
-          token0Name,
-          token1,
-          token1Name,
-          idx,
-          [MaticAddresses.WEXpoly_TOKEN]
+        'StrategyWaultLpWithAc',
+        MaticAddresses.WAULT_FACTORY,
+        lpAddress.toLowerCase(),
+        token0,
+        token0Name,
+        token1,
+        token1Name,
+        idx,
+        deployInfo
       );
     } else {
       /* tslint:disable:no-floating-promises */
       startDefaultSingleTokenStrategyTest(
-          'StrategyWaultSingle',
-          MaticAddresses.WAULT_FACTORY,
-          lpAddress.toLowerCase(),
-          token0,
-          token0Name,
-          idx,
-          [MaticAddresses.WEXpoly_TOKEN]
+        'StrategyWaultSingle',
+        lpAddress.toLowerCase(),
+        token0Name,
+        deployInfo
       );
     }
   });

@@ -205,7 +205,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     (uint256 emissionPerSecond,,) = aaveController.assets(token);
     uint256 tokenPrecision = 10 ** (IERC20Extended(token)).decimals();
     uint256 totalStakedScaled = IScaledBalanceToken(token).scaledTotalSupply();
-    uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION / aaveIndex * tokenPrecision / totalStakedScaled;
+    uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION * tokenPrecision / aaveIndex  / totalStakedScaled;
     return rewards * tokenPrecision / _PRECISION;
   }
 
@@ -270,8 +270,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
     (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction(_seconds);
     // oracle price denominated in ETH and always have 18 decimals
-    supplyRewardsInWeth = supplyRewards * rewardInWeth / _PRECISION;
-    borrowRewardsInWeth = borrowRewards * rewardInWeth / _PRECISION;
+    supplyRewardsInWeth = supplyRewards * rewardInWeth / (10 ** underlyingDecimals());
+    borrowRewardsInWeth = borrowRewards * rewardInWeth / (10 ** underlyingDecimals());
     supplyUnderlyingProfitInWeth = supplyUnderlyingProfit * underlyingInWeth / _PRECISION;
     debtUnderlyingCostInWeth = debtUnderlyingCost * underlyingInWeth / _PRECISION;
   }

@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {MaticAddresses} from "../../../test/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {IMiniChefV2, IOracleMatic, IRewarder, IUniswapV2Pair, SmartVault} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";

@@ -8,7 +8,7 @@ import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {TokenUtils} from "../../TokenUtils";
-import {MaticAddresses} from "../../MaticAddresses";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {BigNumber, utils} from "ethers";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {VaultUtils} from "../../VaultUtils";
