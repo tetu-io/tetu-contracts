@@ -16,7 +16,7 @@ import {TokenUtils} from "../TokenUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Proxy tests", function () {
+describe.skip("Proxy tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;

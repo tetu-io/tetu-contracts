@@ -5,7 +5,7 @@
 export class FtmAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  public static GOV_ADDRESS = "";
+  public static GOV_ADDRESS = "0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94";
   // tokens
   public static TETU_TOKEN = "0x65c9d9d080714cDa7b5d58989Dc27f897F165179".toLowerCase();
   public static WETH_TOKEN = "0x74b23882a30290451a17c44f4f05243b6b58c76d".toLowerCase();
@@ -24,6 +24,9 @@ export class FtmAddresses {
   // TetuSwap
   public static TETU_SWAP_FACTORY = "".toLowerCase();
   public static TETU_SWAP_ROUTER = "".toLowerCase();
+
+  // Geist
+  public static GEIST_PROTOCOL_DATA_PROVIDER = "0xf3B0611e2E4D2cd6aB4bb3e01aDe211c3f42A8C3".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

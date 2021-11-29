@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic} from "../typechain";
+import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic, RewardToken} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
@@ -43,6 +43,8 @@ export class TokenUtils {
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
     [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
+    [FtmAddresses.TETU_TOKEN, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
+    [FtmAddresses.DAI_TOKEN, '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E'.toLowerCase()], // itself
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -130,6 +132,12 @@ export class TokenUtils {
   public static async getToken(token: string, to: string, amount?: BigNumber) {
     const start = Date.now();
     console.log('transfer token from biggest holder', token, amount?.toString());
+    if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
+      const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
+      const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
+      await tokenCtr.mint(to, amount as BigNumber);
+      return amount;
+    }
     const holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
     if (!holder) {
       throw new Error('Please add holder for ' + token);

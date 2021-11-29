@@ -143,7 +143,8 @@ export class DoHardWorkLoopBase {
   protected async userCheckBalanceInVault() {
     // assume that at this point we deposited all expected amount except userWithdrew amount
     const userBalance = await this.vault.underlyingBalanceWithInvestmentForHolder(this.user.address);
-    const userBalanceN = +utils.formatUnits(userBalance, this.undDec);
+    // avoid rounding errors
+    const userBalanceN = +utils.formatUnits(userBalance.add(1), this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(this.userDeposited.sub(this.userWithdrew), this.undDec);
 
     const percent = 100 - (userBalanceN / userBalanceExpectedN * 100);
@@ -337,7 +338,12 @@ export class DoHardWorkLoopBase {
     if (this.priceCache.has(token)) {
       return this.priceCache.get(token) as BigNumber;
     }
-    const price = await PriceCalculatorUtils.getPriceCached(token);
+    let price;
+    if (token === this.core.rewardToken.address.toLowerCase()) {
+      price = await this.tools.calculator.getPriceWithDefaultOutput(token);
+    } else {
+      price = await PriceCalculatorUtils.getPriceCached(token);
+    }
     this.priceCache.set(token, price);
     return price;
   }

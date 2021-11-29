@@ -107,7 +107,7 @@ export class StrategyTestUtils {
   public static async initForwarder(forwarder: ForwarderV2) {
     const start = Date.now();
     await forwarder.setLiquidityNumerator(50);
-    await forwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await forwarder.setLiquidityRouter(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
     await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);
   }
@@ -155,7 +155,7 @@ export class StrategyTestUtils {
     calculator: PriceCalculator,
     recipients: string[],
   ) {
-    log.info('get underlying', amountN, recipients.length);
+    log.info('get underlying', amountN, recipients.length, underlying);
     const start = Date.now();
     const uName = await TokenUtils.tokenSymbol(underlying);
     const uDec = await TokenUtils.decimals(underlying);
@@ -167,7 +167,7 @@ export class StrategyTestUtils {
     const amountAdjusted = utils.parseUnits(amountAdjustedN.toFixed(uDec), uDec);
     log.info('Get underlying: ', uName, amountAdjustedN);
 
-    const amountAdjustedN2 = amountAdjustedN * (recipients.length + 1);
+    // const amountAdjustedN2 = amountAdjustedN * (recipients.length + 1);
     const amountAdjusted2 = amountAdjusted.mul(recipients.length + 1);
 
     let isLp = false;
@@ -182,7 +182,7 @@ export class StrategyTestUtils {
       await UniswapUtils.getTokensAndAddLiq(
         signer,
         underlying,
-        amountAdjustedN2,
+        amountN,
         calculator
       );
       balance = await TokenUtils.balanceOf(underlying, signer.address);

@@ -723,7 +723,10 @@ export class DeployerUtils {
     return mocks;
   }
 
-  public static async impersonate(address = MaticAddresses.GOV_ADDRESS) {
+  public static async impersonate(address: string | null = null) {
+    if (address === null) {
+      address = await DeployerUtils.getGovernance();
+    }
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [address],
@@ -781,6 +784,17 @@ export class DeployerUtils {
     }
   }
 
+  public static async getGovernance() {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.GOV_ADDRESS;
+    } else if (net.chainId === 250) {
+      return FtmAddresses.GOV_ADDRESS;
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
   public static async isBlueChip(address: string): Promise<boolean> {
     const net = await ethers.provider.getNetwork();
     if (net.chainId === 137) {
@@ -813,6 +827,7 @@ export class DeployerUtils {
       throw Error('No config for ' + net.chainId);
     }
   }
+
 
   // ****************** WAIT ******************
 

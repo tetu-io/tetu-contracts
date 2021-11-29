@@ -60,7 +60,7 @@ export default {
       gas: 19_000_000,
       forking: {
         url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
-        // blockNumber: argv.hardhatChainId === 137 ? argv.maticForkBlock : argv.ftmForkBlock
+        blockNumber: argv.hardhatChainId === 137 ? argv.maticForkBlock : argv.ftmForkBlock
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",

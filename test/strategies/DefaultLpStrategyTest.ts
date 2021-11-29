@@ -24,7 +24,10 @@ async function startDefaultLpStrategyTest(
   token1: string,
   token1Name: string,
   platformPoolIdentifier: string,
-  deployInfo: DeployInfo
+  deployInfo: DeployInfo,
+  deposit = 100_000,
+  loopValue = 300,
+  advanceBlocks = true,
 ) {
 
 
@@ -41,13 +44,8 @@ async function startDefaultLpStrategyTest(
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 100_000;
   // at least 3
   const loops = 3;
-  // number of blocks or timestamp value
-  const loopValue = 300;
-  // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
-  const advanceBlocks = true;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 

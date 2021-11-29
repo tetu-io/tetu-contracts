@@ -164,6 +164,9 @@ export class MaticAddresses {
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c".toLowerCase();
 
+  // AAVE
+  public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
@@ -172,9 +175,6 @@ export class MaticAddresses {
     MaticAddresses.WMATIC_TOKEN,
     MaticAddresses.WBTC_TOKEN,
   ]);
-
-  // AAVE
-  public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
 
   public static getRouterByFactory(factory: string): string {
     switch (factory.toLowerCase()) {

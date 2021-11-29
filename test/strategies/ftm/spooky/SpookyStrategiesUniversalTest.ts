@@ -28,7 +28,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe.skip('Universal Spooky tests', async () => {
+describe('Universal Spooky tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
@@ -71,7 +71,10 @@ describe.skip('Universal Spooky tests', async () => {
       token1,
       token1Name,
       idx,
-      deployInfo
+      deployInfo,
+      100_000,
+      60 * 60 * 24,
+      false
     );
   });
 

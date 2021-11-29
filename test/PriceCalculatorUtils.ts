@@ -4,6 +4,10 @@ import {TokenUtils} from "./TokenUtils";
 import {expect} from "chai";
 import axios from "axios";
 import {ethers} from "hardhat";
+import {Logger} from "tslog";
+import logSettings from "../log_settings";
+
+const log: Logger = new Logger(logSettings);
 
 export class PriceCalculatorUtils {
 
@@ -31,7 +35,8 @@ export class PriceCalculatorUtils {
       throw Error('No config for ' + net.chainId);
     }
     const response = await axios.get(`https://tetu-server-staging.herokuapp.com/api/v1/price/longTTL/?token=${token}&network=${network}`);
-    return BigNumber.from(response.data.result);
+    log.info('price for', token, response?.data?.result);
+    return BigNumber.from(response?.data?.result);
   }
 
 }
