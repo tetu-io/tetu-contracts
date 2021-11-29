@@ -56,7 +56,7 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
     address private constant _WBTC            = 0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6;
     address private constant _amWBTC          = 0x5c2ed810328349100A66B82b78a1791B101C9D61;
     address private constant _camWBTC         = 0xBa6273A78a23169e01317bd0f6338547F869E8Df;
-    address private constant _camWBTCVault    = 0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0; // camWBTC MAI Vault
+    address private constant _camWBTCVault    = 0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0; // camWBTC MAI Vault (camWBMVT)
 
 
     address private constant _miMATIC        = 0xa3Fa99A148fA48D14Ed51d610c367C61876997F1;
