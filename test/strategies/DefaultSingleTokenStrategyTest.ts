@@ -1,138 +1,107 @@
-import {ethers} from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {StrategyInfo} from "./StrategyInfo";
-import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {StrategyTestUtils} from "./StrategyTestUtils";
-import {UniswapUtils} from "../UniswapUtils";
-import {TokenUtils} from "../TokenUtils";
-import {DoHardWorkLoop} from "./DoHardWorkLoop";
-import {utils} from "ethers";
-import {IStrategy} from "../../typechain";
-import {VaultUtils} from "../VaultUtils";
+import {IStrategy, SmartVault} from "../../typechain";
+import {SpecificStrategyTest} from "./SpecificStrategyTest";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {CoreContractsWrapper} from "../CoreContractsWrapper";
+import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
+import {universalStrategyTest} from "./UniversalStrategyTest";
+import {DeployInfo} from "./DeployInfo";
+import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 async function startDefaultSingleTokenStrategyTest(
-    strategyName: string,
-    factory: string,
-    underlying: string,
-    token: string,
-    tokenName: string,
-    platformPoolIdentifier: string,
-    rewardTokens: string[]
+  strategyName: string,
+  underlying: string,
+  tokenName: string,
+  deployInfo: DeployInfo
 ) {
+  // **********************************************
+  // ************** CONFIG*************************
+  // **********************************************
+  const strategyContractName = strategyName;
+  const vaultName = tokenName;
+  // const underlying = token;
+  // add custom liquidation path if necessary
+  const forwarderConfigurator = null;
+  // only for strategies where we expect PPFS fluctuations
+  const ppfsDecreaseAllowed = true;
+  // only for strategies where we expect PPFS fluctuations
+  const balanceTolerance = 0;
+  const finalBalanceTolerance = 0;
+  const deposit = 100_000;
+  // at least 3
+  const loops = 3;
+  // number of blocks or timestamp value
+  const loopValue = 300;
+  // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
+  const advanceBlocks = true;
+  const specificTests: SpecificStrategyTest[] = [];
+  // **********************************************
 
-  describe(strategyName + " " + tokenName + "Test", async function () {
-    let snapshotBefore: string;
-    let snapshot: string;
-    let strategyInfo: StrategyInfo;
-
-    before(async function () {
-      snapshotBefore = await TimeUtils.snapshot();
-      const signer = (await ethers.getSigners())[0];
-      const user = (await ethers.getSigners())[1];
-
-      const core = await DeployerUtils.deployAllCoreContracts(signer, 60 * 60 * 24 * 28, 1);
-      const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
-
-      await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
-
-      const data = await StrategyTestUtils.deploy(
-          signer,
-          core,
-          tokenName,
-          async vaultAddress => DeployerUtils.deployContract(
-              signer,
-              strategyName,
-              core.controller.address,
-              vaultAddress,
-              underlying,
-              +platformPoolIdentifier
-          ) as Promise<IStrategy>,
-          underlying
-      );
-
-      const vault = data[0];
-      const strategy = data[1];
-      const lpForTargetToken = data[2];
-
-      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
-
-      strategyInfo = new StrategyInfo(
+  const deployer = (signer: SignerWithAddress) => {
+    const core = deployInfo.core as CoreContractsWrapper;
+    return StrategyTestUtils.deploy(
+      signer,
+      core,
+      vaultName,
+      vaultAddress => {
+        const strategyArgs = [
+          core.controller.address,
+          vaultAddress,
           underlying,
+        ];
+        return DeployerUtils.deployContract(
           signer,
-          user,
-          core,
-          vault,
-          strategy,
-          lpForTargetToken,
-          calculator
-      );
+          strategyContractName,
+          ...strategyArgs
+        ) as Promise<IStrategy>;
+      },
+      underlying
+    );
+  };
+  const hwInitiator = (
+    _signer: SignerWithAddress,
+    _user: SignerWithAddress,
+    _core: CoreContractsWrapper,
+    _tools: ToolsContractsWrapper,
+    _underlying: string,
+    _vault: SmartVault,
+    _strategy: IStrategy,
+    _balanceTolerance: number
+  ) => {
+    return new DoHardWorkLoopBase(
+      _signer,
+      _user,
+      _core,
+      _tools,
+      _underlying,
+      _vault,
+      _strategy,
+      _balanceTolerance,
+      finalBalanceTolerance,
+    );
+  };
 
-      const largest = (await calculator.getLargestPool(underlying, []));
-      const tokenOpposite = largest[0];
-      const tokenOppositeFactory = await calculator.swapFactories(largest[1]);
-      console.log('largest', largest);
-
-      // ************** add funds for investing ************
-      const baseAmount = 10_000;
-      // await UniswapUtils.buyAllBigTokens(user);
-      const name = await TokenUtils.tokenSymbol(tokenOpposite);
-      const dec = await TokenUtils.decimals(tokenOpposite);
-      const price = parseFloat(utils.formatUnits(await calculator.getPriceWithDefaultOutput(tokenOpposite)));
-      console.log('tokenOpposite Price', price, name);
-      const amountForSell = baseAmount / price;
-      console.log('amountForSell', amountForSell);
-
-      await UniswapUtils.getTokenFromHolder(user, MaticAddresses.getRouterByFactory(tokenOppositeFactory),
-          underlying, utils.parseUnits(amountForSell.toString(), dec), tokenOpposite);
-      console.log('############## Preparations completed ##################');
-    });
-
-    beforeEach(async function () {
-      snapshot = await TimeUtils.snapshot();
-    });
-
-    afterEach(async function () {
-      await TimeUtils.rollback(snapshot);
-    });
-
-    after(async function () {
-      await TimeUtils.rollback(snapshotBefore);
-    });
-
-
-    // it("do hard work without liq path", async () => {
-    //   await StrategyTestUtils.doHardWorkWithoutLiqPath(strategyInfo,
-    //       (await Erc20Utils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString());
-    // });
-    it("do hard work with liq path", async () => {
-      await StrategyTestUtils.doHardWorkSimple(strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          strategyInfo.strategy.readyToClaim
-      );
-    });
-    it("emergency exit", async () => {
-      await StrategyTestUtils.checkEmergencyExit(strategyInfo);
-    });
-    it("common test should be ok", async () => {
-      await StrategyTestUtils.commonTests(strategyInfo);
-    });
-    it("doHardWork loop", async function () {
-      await DoHardWorkLoop.doHardWorkLoop(
-          strategyInfo,
-          (await TokenUtils.balanceOf(strategyInfo.underlying, strategyInfo.user.address)).toString(),
-          3,
-          60
-      );
-    });
-
-  });
+  await universalStrategyTest(
+    strategyName + vaultName,
+    deployInfo,
+    deployer,
+    hwInitiator,
+    forwarderConfigurator,
+    ppfsDecreaseAllowed,
+    balanceTolerance,
+    deposit,
+    loops,
+    loopValue,
+    advanceBlocks,
+    specificTests,
+  );
 }
 
 export {startDefaultSingleTokenStrategyTest};

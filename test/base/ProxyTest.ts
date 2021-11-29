@@ -9,14 +9,14 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {BigNumber, utils} from "ethers";
 import {VaultUtils} from "../VaultUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {TokenUtils} from "../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Proxy tests", function () {
+describe.skip("Proxy tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;

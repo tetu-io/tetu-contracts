@@ -1,13 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {RunHelper} from "../../utils/RunHelper";
-import {utils} from "ethers";
-import {
-  AutoRewarder,
-  AutoRewarderSideChain,
-  TetuProxyGov, TokenRetranslator,
-  TokenRetranslatorFactory
-} from "../../../typechain";
+import {TokenRetranslator} from "../../../typechain";
 
 
 async function main() {

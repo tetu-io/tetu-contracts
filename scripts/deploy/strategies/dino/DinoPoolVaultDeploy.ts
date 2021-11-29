@@ -1,9 +1,9 @@
 import {McLpStrategyDeployer} from "../McLpStrategyDeployer";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy} from "../../../../typechain";
 import {writeFileSync} from "fs";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];

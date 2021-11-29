@@ -13,11 +13,11 @@ export class RinkebyCoreAddress {
     '0xAec561cF4F54756EBB9E897b7fdbb444DE8783bA', // ps vault
     '0x1b6E2a7AcB8f79044bE4b384fa7A1Cac1259bb72', // fund keeper
     '0xb990e66DAbda0a30a6d79fe9e7f5aeD36E59156b', // vault controller
-    '', // pawnshop
-    '', // swapFactory
-    '', // swapRouter
-    '', // rewardCalculator
-    '', // autoRewarder
+    '0x0000000000000000000000000000000000000000', // pawnshop
+    '0x0000000000000000000000000000000000000000', // swapFactory
+    '0x0000000000000000000000000000000000000000', // swapRouter
+    '0x0000000000000000000000000000000000000000', // rewardCalculator
+    '0x0000000000000000000000000000000000000000', // autoRewarder
   );
 
 }

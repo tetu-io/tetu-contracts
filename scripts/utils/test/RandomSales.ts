@@ -2,10 +2,10 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {IUniswapV2Pair} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
-import {RopstenAddresses} from "../../../test/RopstenAddresses";
 import {UniswapUtils} from "../../../test/UniswapUtils";
 import {BigNumber, utils} from "ethers";
 import {RunHelper} from "../RunHelper";
+import {RopstenAddresses} from "../../addresses/RopstenAddresses";
 
 
 async function main() {

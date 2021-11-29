@@ -39,9 +39,9 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
     },
-    forkBlock: {
+    maticForkBlock: {
       type: "number",
-      default: 21819900
+      default: 21878146
     },
     ftmForkBlock: {
       type: "number",
@@ -60,7 +60,7 @@ export default {
       gas: 19_000_000,
       forking: {
         url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
-        blockNumber: argv.hardhatChainId === 137 ? argv.forkBlock : argv.ftmForkBlock
+        blockNumber: argv.hardhatChainId === 137 ? argv.maticForkBlock : argv.ftmForkBlock
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
