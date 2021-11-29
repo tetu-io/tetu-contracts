@@ -230,7 +230,8 @@ async function startAaveFoldStrategyTest(
       const foldingTetuProfitUSD = foldingTetuProfit * tetuUSDCPrice;
       const totalLendingProfitUSD = lendingUnderlyingProfitUSD + lendingTetuProfitUSD;
       const totalFoldingProfitUSD = foldingTetuProfitUSD + foldingUnderlyingProfitUSD;
-
+      const difference = totalFoldingProfitUSD / totalLendingProfitUSD * 100;
+      const isFoldingProfitableReal = difference > 100;
       console.log("===========================");
       console.log("=========Lending===========");
       console.log("Underlying: ", lendingUnderlyingProfit, "Tetu: ", lendingTetuProfit);
@@ -239,7 +240,8 @@ async function startAaveFoldStrategyTest(
       console.log("===========================");
       console.log("Total lending profit: ", totalLendingProfitUSD);
       console.log("Total folding profit: ", totalFoldingProfitUSD);
-      console.log("Difference: ", totalFoldingProfitUSD / totalLendingProfitUSD * 100, "%");
+      console.log("Difference: ", difference, "%");
+      expect(isFoldingProfitable).is.eq(isFoldingProfitableReal, "Folding prediction is not fit real result");
     });
 
   });
