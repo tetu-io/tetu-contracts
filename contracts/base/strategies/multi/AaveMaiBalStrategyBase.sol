@@ -24,7 +24,7 @@ import "./pipes/NoopPipe.sol";
 import "./pipes/UnwrappingPipe.sol";
 import "./pipes/AaveWethPipe.sol";
 import "./pipes/AaveAmPipe.sol";
-import "./pipes/MaiCamWMaticPipe.sol";
+import "./pipes/MaiCamPipe.sol";
 import "./pipes/MaiStablecoinPipe.sol";
 import "./pipes/BalVaultPipe.sol";
 

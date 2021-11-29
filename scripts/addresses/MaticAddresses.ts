@@ -57,6 +57,10 @@ export class MaticAddresses {
   public static polyDoge_TOKEN = "0x8A953CfE442c5E8855cc6c61b1293FA648BAE472".toLowerCase();
   public static BAL_TOKEN = "0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3".toLowerCase();
   public static CAMWMATIC_TOKEN = "0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B".toLowerCase();
+  public static CAMAAVE_TOKEN = "0xeA4040B21cb68afb94889cB60834b13427CFc4EB".toLowerCase();
+  public static CAMDAI_TOKEN = "0xE6C23289Ba5A9F0Ef31b8EB36241D5c800889b7b".toLowerCase();
+  public static CAMWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
+  public static CAMWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

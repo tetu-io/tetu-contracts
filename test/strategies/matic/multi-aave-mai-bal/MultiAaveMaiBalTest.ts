@@ -57,7 +57,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
   const STRATEGY_PLATFORM_ID = 15;
 
   // const UNDERLYING = MaticAddresses.WMATIC_TOKEN
-  const UNDERLYING = MaticAddresses.AAVE_TOKEN 
+  const UNDERLYING = MaticAddresses.AAVE_TOKEN
   // const UNDERLYING = MaticAddresses.DAI_TOKEN
   // const UNDERLYING = MaticAddresses.WETH_TOKEN
   // const UNDERLYING = MaticAddresses.WBTC_TOKEN
@@ -69,7 +69,9 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
   let STABLECOIN_ADDRESS: string;
   let PRICE_SLOT_INDEX: string;
+  let camToken: string;
   if (UNDERLYING === MaticAddresses.WMATIC_TOKEN) {
+    camToken = MaticAddresses.CAMWMATIC_TOKEN;
     STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
     PRICE_SLOT_INDEX = '0x10'
     /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to MAI_STABLECOIN_ADDRESS
@@ -84,20 +86,25 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     */
 
   } else if (UNDERLYING === MaticAddresses.WMATIC_TOKEN) {
-      STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
+    camToken = MaticAddresses.CAMWMATIC_TOKEN;
+    STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
 
   } else if (UNDERLYING === MaticAddresses.AAVE_TOKEN) {
-      STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
+    camToken = MaticAddresses.CAMAAVE_TOKEN;
+    STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
 
   } else if (UNDERLYING === MaticAddresses.DAI_TOKEN) {
-      STABLECOIN_ADDRESS = '0xD2FE44055b5C874feE029119f70336447c8e8827';  // camDAI MAI Vault (camDAIMVT)
-      PRICE_SLOT_INDEX = '0x0f' // different from default slot
+    camToken = MaticAddresses.CAMDAI_TOKEN;
+    STABLECOIN_ADDRESS = '0xD2FE44055b5C874feE029119f70336447c8e8827';  // camDAI MAI Vault (camDAIMVT)
+    PRICE_SLOT_INDEX = '0x0f' // different from default slot
 
   } else if (UNDERLYING === MaticAddresses.WETH_TOKEN) {
-      STABLECOIN_ADDRESS = '0x11A33631a5B5349AF3F165d2B7901A4d67e561ad'; // camWETH MAI Vault (camWEMVT)
+    camToken = MaticAddresses.CAMWETH_TOKEN;
+    STABLECOIN_ADDRESS = '0x11A33631a5B5349AF3F165d2B7901A4d67e561ad'; // camWETH MAI Vault (camWEMVT)
 
   } else if (UNDERLYING === MaticAddresses.WBTC_TOKEN) {
-      STABLECOIN_ADDRESS = '0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0'; // camWBTC MAI Vault (camWBMVT)
+    camToken = MaticAddresses.CAMWBTC_TOKEN;
+    STABLECOIN_ADDRESS = '0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0'; // camWBTC MAI Vault (camWBMVT)
   }
 
   const USER_WMATIC_AMOUNT = utils.parseUnits('10000')
@@ -126,7 +133,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
     tools = await DeployerUtils.getToolsAddressesWrapper(signer);
-    iCamToken = await DeployerUtils.connectInterface(signer, 'ICamToken', MaticAddresses.CAMWMATIC_TOKEN) as ICamToken
+    iCamToken = await DeployerUtils.connectInterface(signer, 'ICamToken', camToken) as ICamToken
 
     const data = await StrategyTestUtils.deploy(
       signer,
