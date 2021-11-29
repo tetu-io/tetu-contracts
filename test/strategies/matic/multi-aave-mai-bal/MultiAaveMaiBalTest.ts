@@ -1,479 +1,501 @@
 import chai, {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../MaticAddresses";
-// import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {TimeUtils} from "../../../TimeUtils";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {
-    ICamToken,
-    IErc20Stablecoin,
-    PriceSource,
-    MockPriceSource,
-    StrategyAaveMaiBal,
-    UnwrappingPipe,
-    AaveWethPipe
-} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
-import {StrategyInfo} from "../../StrategyInfo";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {BigNumber, utils} from "ethers";
-import {PriceCalculator} from "../../../../typechain";
-// import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
+import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
+import {
+  AaveWethPipe,
+  ICamToken,
+  IErc20Stablecoin,
+  IStrategy,
+  PriceSource,
+  SmartVault,
+  StrategyAaveMaiBal,
+  UnwrappingPipe
+} from "../../../../typechain";
+import {MultiAaveMaiBalTest} from "./MultiAMBDoHardWork";
+import {TestAsserts} from "../../../TestAsserts";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-    .env('TETU')
-    .options({
-        disableStrategyTests: {
-            type: "boolean",
-            default: false,
-        },
-        onlyOneMultiAMBStrategyTest: {
-            type: "number",
-            default: -1,
-        }
-    }).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+    onlyOneMultiAMBStrategyTest: {
+      type: "number",
+      default: -1,
+    }
+  }).argv;
 
 // const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal MultiAaveMaiBal tests', async () => {
-    let snapshotBefore: string;
-    let snapshot: string;
-    let strategyInfo: StrategyInfo;
+  let snapshotBefore: string;
+  let snapshot: string;
 
-    if (argv.disableStrategyTests) {
-        return;
+  if (argv.disableStrategyTests) {
+    return;
+  }
+
+  let strategyAaveMaiBal: StrategyAaveMaiBal;
+
+  const STRATEGY_PLATFORM_ID = 15;
+
+  const UNDERLYING = MaticAddresses.AAVE_TOKEN // WMATIC_TOKEN
+
+  const UNWRAPPING_PIPE_INDEX = 0;
+  const AAVE_PIPE_INDEX = 1;
+  const MAI_PIPE_INDEX = 3;
+  const BAL_PIPE_INDEX = 4;
+
+  const TIME_SHIFT = 60 * 60 * 24 * 30;  // months;
+  const MIN_PPFS_RATE = 0.995;
+
+  let MAI_STABLECOIN_ADDRESS: string;
+  let PRICE_SLOT_INDEX: string;
+  if (UNDERLYING === MaticAddresses.WMATIC_TOKEN) {
+    MAI_STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
+    PRICE_SLOT_INDEX = '0x10'
+    /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to MAI_STABLECOIN_ADDRESS
+    find ethPriceSource() address at the list, and use its index. !Do not forget to convert decimal index to hexadecimal
+    async function main() {
+      let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
+      for (let index = 0; index < 40; index++){
+      console.log(`[${index}]` +
+        await web3.eth.getStorageAt(contractAddress, index))
+      }
+    }
+     */
+  } else if (UNDERLYING === MaticAddresses.AAVE_TOKEN) {
+    MAI_STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
+    PRICE_SLOT_INDEX = '0x10'
+  }
+
+  const USER_WMATIC_AMOUNT = utils.parseUnits('10000')
+  const DEPOSIT_AMOUNT = utils.parseUnits('1000') // WMATIC
+  const REWARDS_AMOUNT = utils.parseUnits('100')  // WMATIC
+
+  let depositAmount: string;
+  let iCamToken: ICamToken;
+  let airDropper: SignerWithAddress;
+
+  let signer: SignerWithAddress;
+  let user: SignerWithAddress;
+  let core: CoreContractsWrapper;
+  let tools: ToolsContractsWrapper;
+  let vault: SmartVault;
+  let strategy: IStrategy;
+  let lpForTargetToken: string;
+
+  const airdropTokenToPipe = async function (pipeIndex: number, tokenAddress: string, amount: BigNumber) {
+    // claim aave rewards on mai
+    console.log('claimAaveRewards');
+    await iCamToken.claimAaveRewards();
+
+    // air drop reward token
+    await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
+    const bal = await TokenUtils.balanceOf(tokenAddress, airDropper.address);
+    const pipeAddress = await strategyAaveMaiBal.pipes(pipeIndex);
+    await TokenUtils.transfer(tokenAddress, airDropper, pipeAddress, bal.toString());
+  }
+
+  before(async function () {
+    snapshotBefore = await TimeUtils.snapshot();
+    // const [signer, user] = await ethers.getSigners();
+    signer = await DeployerUtils.impersonate();
+    user = (await ethers.getSigners())[1];
+    airDropper = (await ethers.getSigners())[2];
+
+    // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
+    tools = await DeployerUtils.getToolsAddressesWrapper(signer);
+    iCamToken = await DeployerUtils.connectInterface(signer, 'ICamToken', MaticAddresses.CAMWMATIC_TOKEN) as ICamToken
+
+    const data = await StrategyTestUtils.deploy(
+      signer,
+      core,
+      "WETH",
+      async vaultAddress => DeployerUtils.deployContract(
+        signer,
+        "StrategyAaveMaiBal",
+        core.controller.address,
+        vaultAddress,
+        UNDERLYING
+      ) as Promise<StrategyAaveMaiBal>,
+      UNDERLYING
+    );
+
+    // noinspection DuplicatedCode
+    vault = data[0];
+    strategy = data[1];
+    lpForTargetToken = data[2];
+
+    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
+
+    console.log('addRewardsXTetu');
+    await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
+
+    console.log('changePpfsDecreasePermissions');
+    await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
+
+    console.log('buyToken for user')
+    await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, USER_WMATIC_AMOUNT);
+    await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, UNDERLYING, DEPOSIT_AMOUNT);
+    // console.log('buyToken for airDropper')
+    await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT);
+
+    const bal = await TokenUtils.balanceOf(UNDERLYING, user.address);
+    console.log("User UNDERLYING balance: ", bal.toString());
+    depositAmount = bal.toString();
+
+    strategyAaveMaiBal = (await ethers.getContractAt('StrategyAaveMaiBal', strategy.address)) as StrategyAaveMaiBal;
+
+    console.log('############## Preparations completed ##################');
+  });
+
+  beforeEach(async function () {
+    snapshot = await TimeUtils.snapshot();
+  });
+
+  afterEach(async function () {
+    await TimeUtils.rollback(snapshot);
+  });
+
+  after(async function () {
+    await TimeUtils.rollback(snapshotBefore);
+  });
+
+
+  it("do hard work with liq path AAVE WMATIC rewards", async () => {
+    console.log('>>>AAVE WMATIC rewards');
+    await new MultiAaveMaiBalTest(
+      signer,
+      user,
+      core,
+      tools,
+      UNDERLYING,
+      vault,
+      strategy,
+      0,
+      0,
+      iCamToken,
+      airDropper,
+      MaticAddresses.WMATIC_TOKEN,
+      REWARDS_AMOUNT,
+      AAVE_PIPE_INDEX,
+    ).start(BigNumber.from(depositAmount), 3, 30000, true);
+  });
+
+  it("do hard work with liq path MAI QI rewards", async () => {
+    console.log('>>>MAI QI rewards');
+    await new MultiAaveMaiBalTest(
+      signer,
+      user,
+      core,
+      tools,
+      UNDERLYING,
+      vault,
+      strategy,
+      0,
+      0,
+      iCamToken,
+      airDropper,
+      MaticAddresses.QI_TOKEN,
+      REWARDS_AMOUNT,
+      MAI_PIPE_INDEX,
+    ).start(BigNumber.from(depositAmount), 3, 30000, true);
+  });
+
+  it("do hard work with liq path Balancer BAL rewards", async () => {
+    console.log('>>>Balancer BAL rewards');
+
+    const token = MaticAddresses.BAL_TOKEN;
+    const largestPool = '0xc67136e235785727a0d3B5Cfd08325327b81d373';
+    // [,, largestPool] = await strategyInfo.calculator.getLargestPool(token, []);
+    console.log('!largestPool', largestPool);
+    await core.feeRewardForwarder.addLargestLps(
+      [token],
+      [largestPool]
+    );
+    await new MultiAaveMaiBalTest(
+      signer,
+      user,
+      core,
+      tools,
+      UNDERLYING,
+      vault,
+      strategy,
+      0,
+      0,
+      iCamToken,
+      airDropper,
+      MaticAddresses.BAL_TOKEN,
+      REWARDS_AMOUNT,
+      BAL_PIPE_INDEX,
+    ).start(BigNumber.from(depositAmount), 3, 30000, true);
+  });
+
+  it("Target percentage", async () => {
+    console.log('>>>Target percentage test');
+    const strategyGov = strategyAaveMaiBal.connect(signer);
+
+    const targetPercentageInitial = await strategyGov.targetPercentage()
+    console.log('>>>targetPercentageInitial', targetPercentageInitial.toString());
+
+    await VaultUtils.deposit(user, vault, BigNumber.from(depositAmount));
+    console.log('>>>deposited');
+    const bal1 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal1', bal1.toString());
+
+    // increase collateral to debt percentage twice, so debt should be decreased twice
+    await strategyGov.setTargetPercentage(targetPercentageInitial.mul(2))
+    const targetPercentage2 = await strategyGov.targetPercentage()
+    console.log('>>>targetPercentage2', targetPercentage2.toString())
+
+    const bal2 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal2', bal2.toString());
+
+    // return target percentage back, so debt should be increased twice
+    await strategyGov.setTargetPercentage(targetPercentageInitial)
+    const targetPercentage3 = await strategyGov.targetPercentage()
+    console.log('>>>targetPercentage3', targetPercentage3.toString())
+
+    const bal3 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal3', bal3.toString());
+    const dec = await TokenUtils.decimals(UNDERLYING);
+    TestAsserts.closeTo(bal2, bal1.div(2), 0.005, dec);
+    TestAsserts.closeTo(bal3, bal1, 0.005, dec);
+
+  });
+
+  it("Rebalance on matic price change", async () => {
+    console.log('>>>Rebalance test');
+    const strategyGov = strategyAaveMaiBal.connect(signer);
+
+    const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', MAI_STABLECOIN_ADDRESS)) as IErc20Stablecoin;
+
+    await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
+    const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
+    console.log('>>>needed0', needed0);
+
+    await VaultUtils.deposit(user, vault, BigNumber.from(depositAmount));
+    console.log('>>>deposited');
+    const bal0 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal0', bal0.toString())
+
+    await strategyGov.rebalanceAllPipes() // should do nothing - pipe must rebalance at deposit
+    const bal1 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal1', bal1.toString())
+
+    // *** mock price *2 ***
+
+    const stablecoinEthPrice = await stablecoin.getEthPriceSource()
+    console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
+
+    const priceSourceAddress = await stablecoin.ethPriceSource()
+    const priceSource = (await ethers.getContractAt('PriceSource', priceSourceAddress)) as PriceSource;
+    const [, priceSourcePrice, ,] = await priceSource.latestRoundData()
+    console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
+
+    const mockPriceSource = await DeployerUtils.deployContract(
+      signer, 'MockPriceSource', 0);
+    await mockPriceSource.setPrice(priceSourcePrice.mul(2));
+    const [, mockSourcePrice, ,] = await mockPriceSource.latestRoundData();
+    console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
+
+    const ethPriceSourceSlotIndex = PRICE_SLOT_INDEX;
+    const adrOriginal = await DeployerUtils.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
+    console.log('>>>adrOriginal        ', adrOriginal)
+    // set matic price source to our mock contract
+    // convert address string to bytes32 string
+    const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
+
+    console.log('>>>adrBytes32         ', adrBytes32)
+    await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
+
+    const stablecoinEthPrice2 = await stablecoin.getEthPriceSource()
+    console.log('>>>stablecoinEthPrice2', stablecoinEthPrice2.toString())
+    const needed1 = await strategyAaveMaiBal.isRebalanceNeeded();
+    console.log('>>>needed1', needed1);
+
+    expect(stablecoinEthPrice2).to.be.equal(mockSourcePrice)
+
+    // ***** check balance after matic price changed x2 ***
+
+    await strategyGov.rebalanceAllPipes()
+    const bal2 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal2', bal2.toString())
+    const needed2 = await strategyAaveMaiBal.isRebalanceNeeded();
+
+    // ***** check balance after matic price changed back ***
+
+    // set matic price source back to original value
+    await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrOriginal);
+    const stablecoinEthPrice3 = await stablecoin.getEthPriceSource();
+    console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
+    const needed3 = await strategyAaveMaiBal.isRebalanceNeeded();
+    console.log('>>>needed3', needed3);
+
+    await strategyGov.rebalanceAllPipes()
+    const bal3 = await strategyGov.getMostUnderlyingBalance()
+    console.log('>>>bal3', bal3.toString())
+
+    expect(bal0).to.be.eq(bal1);
+    const dec = await TokenUtils.decimals(UNDERLYING);
+    TestAsserts.closeTo(bal2, bal1.mul(2), 0.005, dec);
+    TestAsserts.closeTo(bal3, bal1, 0.005, dec);
+
+    expect(needed0).is.eq(false);
+    expect(needed1).is.eq(true);
+    expect(needed2).is.eq(false);
+    expect(needed3).is.eq(true);
+
+  });
+
+  it("Salvage from pipeline", async () => {
+    console.log('>>>Salvage from pipeline test');
+    const strategyGov = strategyAaveMaiBal.connect(signer);
+    const token = MaticAddresses.DAI_TOKEN; // token to test salvage, 18 decimals
+    const pipesLength = await strategyGov.pipesLength();
+    console.log('>>>pipesLength  ', pipesLength.toString());
+    const amountPerPipe = utils.parseUnits('1')
+    console.log('>>>amountPerPipe', amountPerPipe.toString());
+    const totalAmount = amountPerPipe.mul(pipesLength)
+    console.log('>>>totalAmount  ', totalAmount.toString());
+    await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
+      token, totalAmount);
+
+    const balanceAfterBuy = await TokenUtils.balanceOf(token, airDropper.address)
+    console.log('>>>balanceAfterBuy', balanceAfterBuy.toString());
+
+    for (let i = 0; i < pipesLength.toNumber(); i++) {
+      const pipe = await strategyGov.pipes(i);
+      await TokenUtils.transfer(token, airDropper, pipe, amountPerPipe.toString());
     }
 
-    let strategyAaveMaiBal: any;
-
-    const STRATEGY_PLATFORM_ID = 15;
-
-    const UNDERLYING = MaticAddresses.AAVE_TOKEN // WMATIC_TOKEN
-
-    const UNWRAPPING_PIPE_INDEX = 0;
-    const AAVE_PIPE_INDEX       = 1;
-    const MAI_PIPE_INDEX        = 3;
-    const BAL_PIPE_INDEX        = 4;
-
-    const TIME_SHIFT = 60 * 60 * 24 * 30 * 1;  // months;
-    const MIN_PPFS_RATE = 0.995;
-
-    let MAI_STABLECOIN_ADDRESS: any, PRICE_SOURCE_ADDRESS: any, PRICE_SLOT_INDEX: any;
-    if (UNDERLYING == MaticAddresses.WMATIC_TOKEN) {
-        MAI_STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
-        PRICE_SLOT_INDEX = '0x10'
-        /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to MAI_STABLECOIN_ADDRESS
-        find ethPriceSource() address at the list, and use its index. !Do not forget to convert decimal index to hexadecimal
-        async function main() {
-          let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
-          for (let index = 0; index < 40; index++){
-          console.log(`[${index}]` +
-            await web3.eth.getStorageAt(contractAddress, index))
-          }
-        }
-         */
-    } else if (UNDERLYING == MaticAddresses.AAVE_TOKEN) {
-        MAI_STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
-        PRICE_SLOT_INDEX = '0x10'
-    }
-
-    const USER_WMATIC_AMOUNT = utils.parseUnits('10000')
-    const DEPOSIT_AMOUNT = utils.parseUnits('1000') // WMATIC
-    const REWARDS_AMOUNT = utils.parseUnits('100')  // WMATIC
-
-    let depositAmount: any;
-    let ICamToken: any;
-    let airDropper: any;
-
-    const airdropTokenToPipe = async function (pipeIndex: number, tokenAddress: string, amount: BigNumber) {
-        // claim aave rewards on mai
-        console.log('claimAaveRewards');
-        await ICamToken.claimAaveRewards();
-
-        // air drop reward token
-        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
-        const bal = await TokenUtils.balanceOf(tokenAddress, airDropper.address);
-        const pipeAddress = await strategyAaveMaiBal.pipes(pipeIndex);
-        await TokenUtils.transfer(tokenAddress, airDropper, pipeAddress, bal.toString());
-    }
-
-    before(async function () {
-        snapshotBefore = await TimeUtils.snapshot();
-        // const [signer, user] = await ethers.getSigners();
-        const signer = await DeployerUtils.impersonate();
-        const user = (await ethers.getSigners())[1];
-        airDropper = (await ethers.getSigners())[2];
-
-        // const core = await DeployerUtils.getCoreAddressesWrapper(signer);
-        const core = await DeployerUtils.deployAllCoreContracts(signer);
-        const tools = await DeployerUtils.getToolsAddresses();
-        const calculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator
-        ICamToken = await DeployerUtils.connectInterface(signer, 'ICamToken', MaticAddresses.CAMWMATIC_TOKEN) as ICamToken
-
-        const data = await StrategyTestUtils.deploy(
-            signer,
-            core,
-            "WETH",
-            async vaultAddress => DeployerUtils.deployContract(
-                signer,
-                "StrategyAaveMaiBal",
-                core.controller.address,
-                vaultAddress,
-                UNDERLYING
-            ) as Promise<StrategyAaveMaiBal>,
-            UNDERLYING
-        );
-
-        // noinspection DuplicatedCode
-        const vault = data[0];
-        const strategy = data[1];
-        const lpForTargetToken = data[2];
-
-        await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
-
-        console.log('addRewardsXTetu');
-        await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
-
-        console.log('changePpfsDecreasePermissions');
-        await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
-
-        strategyInfo = new StrategyInfo(
-            UNDERLYING,
-            signer,
-            user,
-            core,
-            vault,
-            strategy,
-            lpForTargetToken,
-            calculator
-        );
-
-        console.log('buyToken for user')
-        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, USER_WMATIC_AMOUNT );
-        await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, UNDERLYING, DEPOSIT_AMOUNT );
-        // console.log('buyToken for airDropper')
-        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT);
-
-        const bal = await TokenUtils.balanceOf(UNDERLYING, user.address);
-        console.log("User UNDERLYING balance: ", bal.toString());
-        depositAmount = bal.toString();
-
-        strategyAaveMaiBal = (await ethers.getContractAt('StrategyAaveMaiBal', strategyInfo.strategy.address)) as StrategyAaveMaiBal;
-
-        console.log('############## Preparations completed ##################');
-    });
-
-    beforeEach(async function () {
-        snapshot = await TimeUtils.snapshot();
-    });
-
-    afterEach(async function () {
-        await TimeUtils.rollback(snapshot);
-    });
-
-    after(async function () {
-        await TimeUtils.rollback(snapshotBefore);
-    });
-
-
-    it("do hard work with liq path AAVE WMATIC rewards", async () => {
-        console.log('>>>AAVE WMATIC rewards');
-        await StrategyTestUtils.doHardWorkSimple(
-            strategyInfo,
-            depositAmount,
-            null,
-            () => airdropTokenToPipe(AAVE_PIPE_INDEX, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT),
-            TIME_SHIFT,
-            MIN_PPFS_RATE
-        );
-    });
-
-    it("do hard work with liq path MAI QI rewards", async () => {
-        console.log('>>>MAI QI rewards');
-        await StrategyTestUtils.doHardWorkSimple(
-            strategyInfo,
-            depositAmount,
-            null,
-            () => airdropTokenToPipe(MAI_PIPE_INDEX, MaticAddresses.QI_TOKEN, REWARDS_AMOUNT),
-            TIME_SHIFT,
-            MIN_PPFS_RATE
-        );
-    });
-
-    it("do hard work with liq path Balancer BAL rewards", async () => {
-        console.log('>>>Balancer BAL rewards');
-
-        const token = MaticAddresses.BAL_TOKEN;
-        let largestPool = '0xc67136e235785727a0d3B5Cfd08325327b81d373';
-        //[,, largestPool] = await strategyInfo.calculator.getLargestPool(token, []);
-        console.log('!largestPool', largestPool);
-        await strategyInfo.core.feeRewardForwarder.addLargestLps(
-            [token],
-            [largestPool]
-        );
-
-        await StrategyTestUtils.doHardWorkSimple(
-            strategyInfo,
-            depositAmount,
-            null,
-            () => airdropTokenToPipe(BAL_PIPE_INDEX, MaticAddresses.BAL_TOKEN, REWARDS_AMOUNT),
-            TIME_SHIFT,
-            MIN_PPFS_RATE
-        );
-    });
-
-    it("Target percentage", async () => {
-        console.log('>>>Target percentage test');
-        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
-
-        const targetPercentageInitial = await strategyGov.targetPercentage()
-        console.log('>>>targetPercentageInitial', targetPercentageInitial.toString());
-
-        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(depositAmount));
-        console.log('>>>deposited');
-        const bal1 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal1', bal1.toString());
-
-        // increase collateral to debt percentage twice, so debt should be decreased twice
-        await strategyGov.setTargetPercentage(targetPercentageInitial*2)
-        const targetPercentage2 = await strategyGov.targetPercentage()
-        console.log('>>>targetPercentage2', targetPercentage2.toString())
-
-        const bal2 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal2', bal2.toString());
-
-        // return target percentage back, so debt should be increased twice
-        await strategyGov.setTargetPercentage(targetPercentageInitial)
-        const targetPercentage3 = await strategyGov.targetPercentage()
-        console.log('>>>targetPercentage3', targetPercentage3.toString())
-
-        const bal3 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal3', bal3.toString());
-
-        expect(bal2).to.be.closeTo(bal1.div(2), bal1.div(200)); // 0.5% deviation max
-        expect(bal3).to.be.closeTo(bal1, bal1.div(200));        // 0.5% deviation max
-
-    });
-
-    it("Rebalance on matic price change", async () => {
-        console.log('>>>Rebalance test');
-        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
-
-        const stablecoin  = (await ethers.getContractAt('IErc20Stablecoin', MAI_STABLECOIN_ADDRESS)) as IErc20Stablecoin;
-
-        await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
-        const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
-        console.log('>>>needed0', needed0);
-
-        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(depositAmount));
-        console.log('>>>deposited');
-        const bal0 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal0', bal0.toString())
-
-        await strategyGov.rebalanceAllPipes() // should do nothing - pipe must rebalance at deposit
-        const bal1 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal1', bal1.toString())
-
-        // *** mock price *2 ***
-
-        const stablecoinEthPrice = await stablecoin.getEthPriceSource()
-        console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
-
-        const priceSourceAddress = await stablecoin.ethPriceSource()
-        const priceSource = (await ethers.getContractAt('PriceSource', priceSourceAddress)) as PriceSource;
-        const [,priceSourcePrice,,] = await priceSource.latestRoundData()
-        console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
-
-        const mockPriceSource = await DeployerUtils.deployContract(
-            strategyInfo.signer, 'MockPriceSource', 0);
-        await mockPriceSource.setPrice(priceSourcePrice.mul(2));
-        const [,mockSourcePrice,,] = await mockPriceSource.latestRoundData()
-        console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
-
-        const ethPriceSourceSlotIndex = PRICE_SLOT_INDEX;
-        const adrOriginal = await DeployerUtils.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
-        console.log('>>>adrOriginal        ', adrOriginal)
-        // set matic price source to our mock contract
-        // convert address string to bytes32 string
-        const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
-
-        console.log('>>>adrBytes32         ', adrBytes32)
-        await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
-
-        const stablecoinEthPrice2 = await stablecoin.getEthPriceSource()
-        console.log('>>>stablecoinEthPrice2', stablecoinEthPrice2.toString())
-        const needed1 = await strategyAaveMaiBal.isRebalanceNeeded();
-        console.log('>>>needed1', needed1);
-
-        expect(stablecoinEthPrice2).to.be.equal(mockSourcePrice)
-
-        // ***** check balance after matic price changed x2 ***
-
-        await strategyGov.rebalanceAllPipes()
-        const bal2 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal2', bal2.toString())
-        const needed2 = await strategyAaveMaiBal.isRebalanceNeeded();
-
-        // ***** check balance after matic price changed back ***
-
-        // set matic price source back to original value
-        await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrOriginal);
-        const stablecoinEthPrice3 = await stablecoin.getEthPriceSource();
-        console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
-        const needed3 = await strategyAaveMaiBal.isRebalanceNeeded();
-        console.log('>>>needed3', needed3);
-
-        await strategyGov.rebalanceAllPipes()
-        const bal3 = await strategyGov.getMostUnderlyingBalance()
-        console.log('>>>bal3', bal3.toString())
-
-        expect(bal0).to.be.equal(bal1);
-        expect(bal2).to.be.closeTo(bal1.mul(2), bal1.div(200)); // 0.5% deviation max
-        expect(bal3).to.be.closeTo(bal1, bal1.div(200));        // 0.5% deviation max
-
-        expect(needed0).is.false;
-        expect(needed1).is.true;
-        expect(needed2).is.false;
-        expect(needed3).is.true;
-
-    });
-
-    it("Salvage from pipeline", async () => {
-        console.log('>>>Salvage from pipeline test');
-        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
-        const token = MaticAddresses.DAI_TOKEN; // token to test salvage, 18 decimals
-        const pipesLength = await strategyGov.pipesLength();
-        console.log('>>>pipesLength  ', pipesLength.toString());
-        const amountPerPipe = utils.parseUnits('1')
-        console.log('>>>amountPerPipe', amountPerPipe.toString());
-        const totalAmount = amountPerPipe.mul(pipesLength)
-        console.log('>>>totalAmount  ', totalAmount.toString());
-        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
-            token, totalAmount);
-
-        const balanceAfterBuy = await TokenUtils.balanceOf(token, airDropper.address)
-        console.log('>>>balanceAfterBuy', balanceAfterBuy.toString());
-
-        for (let i = 0; i < pipesLength; i++) {
-            const pipe = strategyGov.pipes(i);
-            await TokenUtils.transfer(token, airDropper, pipe, amountPerPipe.toString());
-        }
-
-        const balanceBefore = await TokenUtils.balanceOf(token, airDropper.address)
-        console.log('>>>balanceBefore', balanceBefore);
-
-        await strategyGov.salvageFromPipeline(airDropper.address, token);
-
-        const balanceAfter = await TokenUtils.balanceOf(token, airDropper.address)
-        console.log('>>>balanceAfter ', balanceAfter);
-
-        const increase = balanceAfter.sub(balanceBefore)
-        console.log('>>>increase     ', increase);
-
-        expect(increase).to.be.equal(totalAmount);
-
-    });
-
-    it("PumpIn on hardwork", async () => {
-        console.log('>>>PumpIn on hardwork');
-        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
-        const amount = utils.parseUnits('10')
-        await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
-            UNDERLYING, amount);
-        const bal = await TokenUtils.balanceOf(UNDERLYING, airDropper.address)
-        console.log('>>>bal   ', bal);
-        await TokenUtils.transfer(UNDERLYING, airDropper, strategyGov.address, bal.toString());
-        const before = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
-        console.log('>>>before', before.toString());
-        await strategyGov.doHardWork();
-        const after = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
-        console.log('>>>after ', after.toString());
-
-        expect(before).to.be.equal(bal)
-        expect(after).to.be.equal(0, 'Underlying token should be pumped in on hard work')
-    });
-
-
-    it("Withdraw and Claim from Pool", async () => {
-        console.log('>>>withdrawAndClaimFromPool test');
-        const userAddress = strategyInfo.user.address
-        const before = await TokenUtils.balanceOf(UNDERLYING, userAddress)
-        console.log('>>>before      ', before.toString());
-
-        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, BigNumber.from(before));
-
-        const afterDeposit = await TokenUtils.balanceOf(UNDERLYING, userAddress)
-        console.log('>>>afterDeposit', afterDeposit.toString());
-
-        await VaultUtils.exit(strategyInfo.user, strategyInfo.vault);
-
-        const afterExit = await TokenUtils.balanceOf(UNDERLYING, userAddress)
-        console.log('>>>afterExit   ', afterExit.toString());
-
-        expect(afterDeposit).to.be.equal(0)
-        //expect(afterExit).to.be.closeTo(before, before.div(200));
-    });
-
-    it("Emergency withdraw from Pool", async () => {
-        console.log('>>>emergencyWithdrawFromPool test');
-        const userAddress = strategyInfo.user.address
-        const depositAmount = await TokenUtils.balanceOf(UNDERLYING, userAddress);
-        const before = await strategyAaveMaiBal.getMostUnderlyingBalance()
-        console.log('>>>before      ', before.toString());
-
-        await VaultUtils.deposit(strategyInfo.user, strategyInfo.vault, depositAmount);
-
-        const afterDeposit = await strategyAaveMaiBal.getMostUnderlyingBalance()
-        console.log('>>>afterDeposit', afterDeposit.toString());
-
-        const strategyGov = strategyAaveMaiBal.connect(strategyInfo.signer);
-        await strategyGov.emergencyExit();
-
-        const afterExit = await strategyAaveMaiBal.getMostUnderlyingBalance()
-        console.log('>>>afterExit   ', afterExit.toString());
-
-        expect(before).to.be.equal(0)
-        expect(afterDeposit).to.be.above(before);
-        expect(afterExit).to.be.equal(0)
-    });
-
-    it("Coverage calls", async () => {
-        console.log('>>>Coverage calls test');
-        const platformId = await strategyAaveMaiBal.platform();
-        console.log('>>>platformId', platformId);
-
-        const assets = await strategyAaveMaiBal.assets();
-        console.log('>>>assets', assets);
-
-        const poolTotalAmount = await strategyAaveMaiBal.poolTotalAmount()
-        console.log('>>>poolTotalAmount', poolTotalAmount);
-
-        const unwrappingPipe  = (await ethers.getContractAt('UnwrappingPipe',
-            await strategyAaveMaiBal.pipes(UNWRAPPING_PIPE_INDEX))) as UnwrappingPipe;
-        const unwrappingPipeOutputBalance = await unwrappingPipe.outputBalance();
-        console.log('>>>unwrappingPipe OutputBalance', unwrappingPipeOutputBalance);
-        await unwrappingPipe.rebalance(); // for Pipe.sol coverage
-
-        const aaveWethPipe   = (await ethers.getContractAt('AaveWethPipe',
-            await strategyAaveMaiBal.pipes(AAVE_PIPE_INDEX))) as AaveWethPipe;
-        const aaveWethPipeSourceBalance = await aaveWethPipe.sourceBalance();
-        console.log('>>>unwrappingPipe SourceBalance', aaveWethPipeSourceBalance);
-
-        const readyToClaim = await strategyAaveMaiBal.readyToClaim()
-        console.log('readyToClaim', readyToClaim);
-
-        const availableMai = await strategyAaveMaiBal.availableMai();
-        console.log('availableMai', availableMai);
-
-        expect(platformId).is.eq(STRATEGY_PLATFORM_ID);
-
-    });
+    const balanceBefore = await TokenUtils.balanceOf(token, airDropper.address)
+    console.log('>>>balanceBefore', balanceBefore);
+
+    await strategyGov.salvageFromPipeline(airDropper.address, token);
+
+    const balanceAfter = await TokenUtils.balanceOf(token, airDropper.address)
+    console.log('>>>balanceAfter ', balanceAfter);
+
+    const increase = balanceAfter.sub(balanceBefore)
+    console.log('>>>increase     ', increase);
+
+    expect(increase).to.be.equal(totalAmount);
+
+  });
+
+  it("PumpIn on hardwork", async () => {
+    console.log('>>>PumpIn on hardwork');
+    const strategyGov = strategyAaveMaiBal.connect(signer);
+    const amount = utils.parseUnits('10')
+    await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER,
+      UNDERLYING, amount);
+    const bal = await TokenUtils.balanceOf(UNDERLYING, airDropper.address)
+    console.log('>>>bal   ', bal);
+    await TokenUtils.transfer(UNDERLYING, airDropper, strategyGov.address, bal.toString());
+    const before = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
+    console.log('>>>before', before.toString());
+    await strategyGov.doHardWork();
+    const after = await TokenUtils.balanceOf(UNDERLYING, strategyGov.address)
+    console.log('>>>after ', after.toString());
+
+    expect(before).to.be.equal(bal)
+    expect(after).to.be.equal(0, 'Underlying token should be pumped in on hard work')
+  });
+
+
+  it("Withdraw and Claim from Pool", async () => {
+    console.log('>>>withdrawAndClaimFromPool test');
+    const userAddress = user.address
+    const before = await TokenUtils.balanceOf(UNDERLYING, userAddress)
+    console.log('>>>before      ', before.toString());
+
+    await VaultUtils.deposit(user, vault, BigNumber.from(before));
+
+    const afterDeposit = await TokenUtils.balanceOf(UNDERLYING, userAddress)
+    console.log('>>>afterDeposit', afterDeposit.toString());
+
+    await vault.connect(user).exit();
+
+    const afterExit = await TokenUtils.balanceOf(UNDERLYING, userAddress)
+    console.log('>>>afterExit   ', afterExit.toString());
+
+    expect(afterDeposit).to.be.equal(0)
+    // expect(afterExit).to.be.closeTo(before, before.div(200));
+  });
+
+  it("Emergency withdraw from Pool", async () => {
+    console.log('>>>emergencyWithdrawFromPool test');
+    const userAddress = user.address
+    const _depositAmount = await TokenUtils.balanceOf(UNDERLYING, userAddress);
+    const before = await strategyAaveMaiBal.getMostUnderlyingBalance()
+    console.log('>>>before      ', before.toString());
+
+    await VaultUtils.deposit(user, vault, _depositAmount);
+
+    const afterDeposit = await strategyAaveMaiBal.getMostUnderlyingBalance()
+    console.log('>>>afterDeposit', afterDeposit.toString());
+
+    const strategyGov = strategyAaveMaiBal.connect(signer);
+    await strategyGov.emergencyExit();
+
+    const afterExit = await strategyAaveMaiBal.getMostUnderlyingBalance()
+    console.log('>>>afterExit   ', afterExit.toString());
+
+    expect(before).to.be.equal(0)
+    expect(afterDeposit).to.be.above(before);
+    expect(afterExit).to.be.equal(0)
+  });
+
+  it("Coverage calls", async () => {
+    console.log('>>>Coverage calls test');
+    const platformId = await strategyAaveMaiBal.platform();
+    console.log('>>>platformId', platformId);
+
+    const assets = await strategyAaveMaiBal.assets();
+    console.log('>>>assets', assets);
+
+    const poolTotalAmount = await strategyAaveMaiBal.poolTotalAmount()
+    console.log('>>>poolTotalAmount', poolTotalAmount);
+
+    const unwrappingPipe = (await ethers.getContractAt('UnwrappingPipe',
+      await strategyAaveMaiBal.pipes(UNWRAPPING_PIPE_INDEX))) as UnwrappingPipe;
+    const unwrappingPipeOutputBalance = await unwrappingPipe.outputBalance();
+    console.log('>>>unwrappingPipe OutputBalance', unwrappingPipeOutputBalance);
+    await unwrappingPipe.rebalance(); // for Pipe.sol coverage
+
+    const aaveWethPipe = (await ethers.getContractAt('AaveWethPipe',
+      await strategyAaveMaiBal.pipes(AAVE_PIPE_INDEX))) as AaveWethPipe;
+    const aaveWethPipeSourceBalance = await aaveWethPipe.sourceBalance();
+    console.log('>>>unwrappingPipe SourceBalance', aaveWethPipeSourceBalance);
+
+    const readyToClaim = await strategyAaveMaiBal.readyToClaim()
+    console.log('readyToClaim', readyToClaim);
+
+    const availableMai = await strategyAaveMaiBal.availableMai();
+    console.log('availableMai', availableMai);
+
+    expect(platformId).is.eq(STRATEGY_PLATFORM_ID);
+
+  });
 
 });

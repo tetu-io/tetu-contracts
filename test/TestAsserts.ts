@@ -1,5 +1,5 @@
 import chai from "chai";
-import {BigNumber, ContractTransaction, Event} from "ethers";
+import {BigNumber, ContractTransaction, Event, utils} from "ethers";
 import chaiAsPromised from "chai-as-promised";
 
 const {expect} = chai;
@@ -8,11 +8,11 @@ chai.use(chaiAsPromised);
 export class TestAsserts {
 
   public static async assertEvent(
-      tx: ContractTransaction,
-      eventName: string,
-      // tslint:disable-next-line:no-any
-      args: any[],
-      eIdx = 0
+    tx: ContractTransaction,
+    eventName: string,
+    // tslint:disable-next-line:no-any
+    args: any[],
+    eIdx = 0
   ) {
     const receipt = await tx.wait();
 
@@ -32,7 +32,12 @@ export class TestAsserts {
         expect(value).is.eq(args[i], `Arg ${i} is not equal`);
       }
     });
+  }
 
+  public static closeTo(actual: BigNumber, expected: BigNumber, deltaFactor: number, dec = 18) {
+    const actualN = +utils.formatUnits(actual);
+    const expectedN = +utils.formatUnits(expected);
+    expect(actualN).to.be.closeTo(expectedN, expectedN * deltaFactor);
   }
 
 }
