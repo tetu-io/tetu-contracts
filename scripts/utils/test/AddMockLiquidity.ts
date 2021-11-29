@@ -2,10 +2,10 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../../../test/UniswapUtils";
-import {RopstenAddresses} from "../../../test/RopstenAddresses";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {RunHelper} from "../RunHelper";
+import {RopstenAddresses} from "../../addresses/RopstenAddresses";
 
 
 async function main() {

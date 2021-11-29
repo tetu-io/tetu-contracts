@@ -1,12 +1,9 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {MaticAddresses} from "../../../test/MaticAddresses";
-import {
-  IAaveProtocolDataProvider, IAToken,
-} from "../../../typechain";
+import {IAaveProtocolDataProvider, IAToken,} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
-
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 
 async function main() {

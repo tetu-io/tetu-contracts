@@ -29,7 +29,8 @@ interface IStrategy {
     CAFE, // 11
     TETU_SWAP, // 12
     SPOOKY, // 13
-    AAVE_LEND //14
+    AAVE_LEND, //14
+    GEIST //15
 
   }
 

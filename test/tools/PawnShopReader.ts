@@ -8,7 +8,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {PawnShopReader, PriceCalculator, TetuPawnShop, TetuProxyGov} from "../../typechain";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
 
 const {expect} = chai;

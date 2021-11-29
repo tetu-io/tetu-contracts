@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {ContractReader, IStrategy} from "../../../../typechain";
 import {appendFileSync, mkdir} from "fs";
 import {DeployerUtils} from "../../DeployerUtils";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];

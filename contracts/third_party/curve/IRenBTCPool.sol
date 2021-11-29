@@ -12,4 +12,6 @@ interface IRenBTCPool {
     uint256[2] calldata _amounts,
     uint256 _min_mint_amount,
     bool _use_underlying) external returns (uint256);
+
+  function exchange_underlying(int128 i, int128 j, uint256 dx, uint256 min_dy) external;
 }

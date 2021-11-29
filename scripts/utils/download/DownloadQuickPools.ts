@@ -9,7 +9,7 @@ import {
   SmartVault
 } from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../../../test/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {utils} from "ethers";
 import {VaultUtils} from "../../../test/VaultUtils";
 import {TokenUtils} from "../../../test/TokenUtils";
