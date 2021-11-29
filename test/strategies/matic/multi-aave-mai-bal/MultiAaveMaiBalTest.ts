@@ -56,34 +56,48 @@ describe('Universal MultiAaveMaiBal tests', async () => {
 
   const STRATEGY_PLATFORM_ID = 15;
 
-  const UNDERLYING = MaticAddresses.AAVE_TOKEN // WMATIC_TOKEN
+  // const UNDERLYING = MaticAddresses.WMATIC_TOKEN
+  const UNDERLYING = MaticAddresses.AAVE_TOKEN 
+  // const UNDERLYING = MaticAddresses.DAI_TOKEN
+  // const UNDERLYING = MaticAddresses.WETH_TOKEN
+  // const UNDERLYING = MaticAddresses.WBTC_TOKEN
 
   const UNWRAPPING_PIPE_INDEX = 0;
   const AAVE_PIPE_INDEX = 1;
   const MAI_PIPE_INDEX = 3;
   const BAL_PIPE_INDEX = 4;
 
-  const TIME_SHIFT = 60 * 60 * 24 * 30;  // months;
-  const MIN_PPFS_RATE = 0.995;
-
-  let MAI_STABLECOIN_ADDRESS: string;
+  let STABLECOIN_ADDRESS: string;
   let PRICE_SLOT_INDEX: string;
   if (UNDERLYING === MaticAddresses.WMATIC_TOKEN) {
-    MAI_STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
+    STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
     PRICE_SLOT_INDEX = '0x10'
     /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to MAI_STABLECOIN_ADDRESS
-    find ethPriceSource() address at the list, and use its index. !Do not forget to convert decimal index to hexadecimal
-    async function main() {
-      let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
-      for (let index = 0; index < 40; index++){
-      console.log(`[${index}]` +
-        await web3.eth.getStorageAt(contractAddress, index))
-      }
-    }
-     */
+        find ethPriceSource() address at the list, and use its index. !Do not forget to convert decimal index to hexadecimal
+        async function main() {
+          let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
+          for (let index = 0; index < 40; index++){
+          console.log(`[${index}]` +
+            await web3.eth.getStorageAt(contractAddress, index))
+          }
+        }
+    */
+
+  } else if (UNDERLYING === MaticAddresses.WMATIC_TOKEN) {
+      STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
+
   } else if (UNDERLYING === MaticAddresses.AAVE_TOKEN) {
-    MAI_STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
-    PRICE_SLOT_INDEX = '0x10'
+      STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)
+
+  } else if (UNDERLYING === MaticAddresses.DAI_TOKEN) {
+      STABLECOIN_ADDRESS = '0xD2FE44055b5C874feE029119f70336447c8e8827';  // camDAI MAI Vault (camDAIMVT)
+      PRICE_SLOT_INDEX = '0x0f' // different from default slot
+
+  } else if (UNDERLYING === MaticAddresses.WETH_TOKEN) {
+      STABLECOIN_ADDRESS = '0x11A33631a5B5349AF3F165d2B7901A4d67e561ad'; // camWETH MAI Vault (camWEMVT)
+
+  } else if (UNDERLYING === MaticAddresses.WBTC_TOKEN) {
+      STABLECOIN_ADDRESS = '0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0'; // camWBTC MAI Vault (camWBMVT)
   }
 
   const USER_WMATIC_AMOUNT = utils.parseUnits('10000')
@@ -276,7 +290,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     console.log('>>>Rebalance test');
     const strategyGov = strategyAaveMaiBal.connect(signer);
 
-    const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', MAI_STABLECOIN_ADDRESS)) as IErc20Stablecoin;
+    const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', STABLECOIN_ADDRESS)) as IErc20Stablecoin;
 
     await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
     const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
