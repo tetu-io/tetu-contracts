@@ -102,18 +102,6 @@ describe('Universal MultiAaveMaiBal tests', async () => {
   let strategy: IStrategy;
   let lpForTargetToken: string;
 
-  const airdropTokenToPipe = async function (pipeIndex: number, tokenAddress: string, amount: BigNumber) {
-    // claim aave rewards on mai
-    console.log('claimAaveRewards');
-    await iCamToken.claimAaveRewards();
-
-    // air drop reward token
-    await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, tokenAddress, amount);
-    const bal = await TokenUtils.balanceOf(tokenAddress, airDropper.address);
-    const pipeAddress = await strategyAaveMaiBal.pipes(pipeIndex);
-    await TokenUtils.transfer(tokenAddress, airDropper, pipeAddress, bal.toString());
-  }
-
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
     // const [signer, user] = await ethers.getSigners();
@@ -154,10 +142,11 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
 
     console.log('buyToken for user')
-    await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, USER_WMATIC_AMOUNT);
-    await UniswapUtils.buyToken(user, MaticAddresses.SUSHI_ROUTER, UNDERLYING, DEPOSIT_AMOUNT);
+    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, user.address, USER_WMATIC_AMOUNT);
+    await TokenUtils.getToken(UNDERLYING, user.address, DEPOSIT_AMOUNT);
+    await TokenUtils.getToken(UNDERLYING, signer.address, DEPOSIT_AMOUNT);
     // console.log('buyToken for airDropper')
-    await UniswapUtils.buyToken(airDropper, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, REWARDS_AMOUNT);
+    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, airDropper.address, REWARDS_AMOUNT);
 
     const bal = await TokenUtils.balanceOf(UNDERLYING, user.address);
     console.log("User UNDERLYING balance: ", bal.toString());
