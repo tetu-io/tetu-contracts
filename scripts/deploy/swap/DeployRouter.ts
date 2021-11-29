@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
 import {TetuSwapRouter} from "../../../typechain";
-import {MaticAddresses} from "../../../test/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 
 async function main() {

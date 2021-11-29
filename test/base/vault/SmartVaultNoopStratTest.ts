@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import chai from "chai";
 import {EvilHackerContract, NoopStrategy, SmartVault} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../../MaticAddresses";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {VaultUtils} from "../../VaultUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";

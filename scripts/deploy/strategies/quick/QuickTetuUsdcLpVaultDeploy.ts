@@ -8,9 +8,9 @@ import {
   SmartVault,
   VaultController
 } from "../../../../typechain";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {TokenUtils} from "../../../../test/TokenUtils";
 import {RunHelper} from "../../../utils/RunHelper";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 
 async function main() {

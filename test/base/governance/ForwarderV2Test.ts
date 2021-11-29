@@ -1,14 +1,7 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {
-  Controller,
-  ForwarderV2,
-  IStrategy,
-  IUniswapV2Factory,
-  SmartVault
-} from "../../../typechain";
+import {Controller, ForwarderV2, IUniswapV2Factory} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
@@ -18,6 +11,7 @@ import {utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -32,6 +26,8 @@ describe("ForwarderV2 tests", function () {
   let forwarder: ForwarderV2;
   let tetuLp: string;
   const amount = utils.parseUnits('10', 6);
+  let usdc: string;
+  let factory: string;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
@@ -47,17 +43,16 @@ describe("ForwarderV2 tests", function () {
     await core.controller.setRewardDistribution([forwarder.address], true);
 
     await core.announcer.announceRatioChange(9, 50, 100);
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+    await TimeUtils.advanceBlocksOnTs(1);
     await core.controller.setPSNumeratorDenominator(50, 100);
 
+    usdc = await DeployerUtils.getUSDCAddress();
     await UniswapUtils.wrapMatic(signer); // 10m wmatic
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000'));
-
     const amountLp = '10000000';
-    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, utils.parseUnits(amountLp, 6))
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amountLp, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
-    const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
+    const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amountLp);
 
@@ -67,18 +62,19 @@ describe("ForwarderV2 tests", function () {
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amountLp);
 
+    factory = await DeployerUtils.getDefaultNetworkFactory();
     tetuLp = await UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
-      MaticAddresses.USDC_TOKEN,
+      usdc,
       utils.parseUnits(amountLp, 18).toString(),
       utils.parseUnits(amountLp, 6).toString(),
-      MaticAddresses.QUICK_FACTORY,
-      MaticAddresses.QUICK_ROUTER
+      factory,
+      await DeployerUtils.getRouterByFactory(factory)
     );
 
     await StrategyTestUtils.initForwarder(forwarder);
-    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, amount)
+    await TokenUtils.getToken(usdc, signer.address, amount)
   });
 
   after(async function () {
@@ -95,11 +91,11 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should not setup wrong lps arrays", async () => {
-    await expect(forwarder.addLargestLps([MaticAddresses.QUICK_FACTORY], [])).rejectedWith("F2: Wrong arrays");
+    await expect(forwarder.addLargestLps([Misc.ZERO_ADDRESS], [])).rejectedWith("F2: Wrong arrays");
   });
 
   it("should not setup wrong lps", async () => {
-    await expect(forwarder.addLargestLps([MaticAddresses.USDC_TOKEN], [MaticAddresses.QUICK_WMATIC_ETH])).rejectedWith("F2: Wrong LP");
+    await expect(forwarder.addLargestLps([Misc.ZERO_ADDRESS], [tetuLp])).rejectedWith("F2: Wrong LP");
   });
 
   it("should not distribute  with zero fund token", async () => {
@@ -108,53 +104,34 @@ describe("ForwarderV2 tests", function () {
     const controller = controllerLogic.attach(controllerProxy.address) as Controller;
     await controller.initialize();
     const feeRewardForwarder = (await DeployerUtils.deployForwarderV2(signer, controller.address))[0];
-    await expect(feeRewardForwarder.distribute(1, MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS)).is.rejectedWith('F2: Fund token is zero')
+    await expect(feeRewardForwarder.distribute(1, Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS)).is.rejectedWith('F2: Fund token is zero')
   });
 
   it("should not distribute without liq path", async () => {
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, amount.toString());
-    expect(forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, core.psVault.address)).rejectedWith('psToken not added to vault');
+    await TokenUtils.approve(usdc, signer, forwarder.address, amount.toString());
+    expect(forwarder.distribute(amount, usdc, core.psVault.address)).rejectedWith('psToken not added to vault');
   });
 
   it("should distribute", async () => {
-    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
-      't',
-      async vaultAddress => DeployerUtils.deployContract(
-        signer,
-        'StrategyWaultSingle',
-        core.controller.address,
-        vaultAddress,
-        MaticAddresses.WEXpoly_TOKEN,
-        1
-      ) as Promise<IStrategy>,
-      core.controller,
-      core.vaultController,
-      core.rewardToken.address,
-      signer
-    );
-    const vault = data[1] as SmartVault;
-    const psRatioNom = (await core.controller.psNumerator()).toNumber();
-    const psRatioDen = (await core.controller.psDenominator()).toNumber();
-    const psRatio = psRatioNom / psRatioDen;
-    console.log('psRatio', psRatio);
-
+    const vault = core.psVault;
     await forwarder.addLargestLps(
       [core.rewardToken.address],
       [tetuLp]
     );
-    expect(+utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(amount))
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, amount.toString());
-    await forwarder.distribute(amount, MaticAddresses.USDC_TOKEN, vault.address);
+    await core.vaultController.addRewardTokens([vault.address], vault.address);
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(amount))
+    await TokenUtils.approve(usdc, signer, forwarder.address, amount.toString());
+    await forwarder.distribute(amount, vault.address, vault.address);
 
-    const qsFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', MaticAddresses.QUICK_FACTORY) as IUniswapV2Factory;
+    const qsFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', factory) as IUniswapV2Factory;
 
-    const lpToken = await qsFactory.getPair(MaticAddresses.USDC_TOKEN, core.rewardToken.address);
-    expect(lpToken.toLowerCase()).is.not.eq(MaticAddresses.ZERO_ADDRESS);
+    const lpToken = await qsFactory.getPair(usdc, core.rewardToken.address);
+    expect(lpToken.toLowerCase()).is.not.eq(Misc.ZERO_ADDRESS);
 
-    const fundKeeperUSDCBal = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, core.fundKeeper.address), 6);
+    const fundKeeperUSDCBal = +utils.formatUnits(await TokenUtils.balanceOf(usdc, core.fundKeeper.address), 6);
     const fundKeeperLPBal = +utils.formatUnits(await TokenUtils.balanceOf(lpToken, core.fundKeeper.address));
     const psVaultBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken.address, core.psVault.address));
-    const forwarderUsdcBal = +utils.formatUnits(await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, forwarder.address), 6);
+    const forwarderUsdcBal = +utils.formatUnits(await TokenUtils.balanceOf(usdc, forwarder.address), 6);
     const forwarderTetuBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken.address, forwarder.address));
 
     console.log('fundKeeperUSDCBal', fundKeeperUSDCBal);
@@ -169,18 +146,31 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should liquidate usdc to weth", async () => {
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, forwarder.address, utils.parseUnits('1000', 6).toString());
-    await forwarder.liquidate(MaticAddresses.USDC_TOKEN, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('1000', 6));
+    const tokenIn = usdc;
+    const dec = await TokenUtils.decimals(tokenIn);
+    const _amount = utils.parseUnits('1000', dec);
+    await TokenUtils.approve(usdc, signer, forwarder.address, _amount.toString());
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), dec)).is.greaterThanOrEqual(+utils.formatUnits(_amount))
+    await forwarder.liquidate(usdc, core.rewardToken.address, _amount);
   });
 
-  it("should liquidate fxs to tetu", async () => {
-    await forwarder.addLargestLps(
-      [MaticAddresses.FXS_TOKEN],
-      [MaticAddresses.QUICK_FRAX_FXS]
-    );
-    await TokenUtils.getToken(MaticAddresses.FXS_TOKEN, signer.address);
-    await TokenUtils.approve(MaticAddresses.FXS_TOKEN, signer, forwarder.address, utils.parseUnits('1000').toString());
-    await forwarder.liquidate(MaticAddresses.FXS_TOKEN, MaticAddresses.CRV_TOKEN, utils.parseUnits('1000'));
-  });
+  // it("should liquidate fxs to tetu", async () => {
+  //   await forwarder.addLargestLps(
+  //     [MaticAddresses.FXS_TOKEN],
+  //     [MaticAddresses.QUICK_FRAX_FXS]
+  //   );
+  //   await TokenUtils.getToken(MaticAddresses.FXS_TOKEN, signer.address);
+  //   await TokenUtils.approve(MaticAddresses.FXS_TOKEN, signer, forwarder.address, utils.parseUnits('1000').toString());
+  //   await forwarder.liquidate(MaticAddresses.FXS_TOKEN, MaticAddresses.CRV_TOKEN, utils.parseUnits('1000'));
+  // });
+  //
+  // // todo add to prod and move block
+  // it.skip("should liquidate quick to polyDoge", async () => {
+  //   const tokenIn = MaticAddresses.QUICK_TOKEN;
+  //   const dec = await TokenUtils.decimals(tokenIn);
+  //   await TokenUtils.getToken(tokenIn, signer.address);
+  //   await TokenUtils.approve(tokenIn, signer, forwarder.address, utils.parseUnits('1000', dec).toString());
+  //   await forwarder.liquidate(tokenIn, MaticAddresses.polyDoge_TOKEN, utils.parseUnits('1000', dec));
+  // });
 
 });

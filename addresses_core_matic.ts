@@ -5,7 +5,7 @@ export class MaticCoreAddresses {
   public static ADDRESSES = new CoreAddresses(
     '0x6678814c273d5088114B6E40cC49C8DB04F9bC29', // controller
     '0x286c02C93f3CF48BB759A93756779A1C78bCF833', // announcer
-    '0xcc2102a214cd1fbf6284F39c9CB02896319d89fE', // forwarder new 0xD3a69BfaC779AE0D97ae7c4f1Bb77d2Be6C2B943 logic 0xF65cF81195B4Ea9e072500f33caF7436F348805A
+    '0xD3a69BfaC779AE0D97ae7c4f1Bb77d2Be6C2B943', // forwarder
     '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F', // bookkeeper
     '0x265b28905493812F99a0cBc27186369875a5c4bc', // notifier
     '0x81367059892aa1D8503a79a0Af9254DD0a09afBF', // mint helper

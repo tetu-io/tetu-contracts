@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ISpookyMasterChef} from "../../../typechain";
 import {McLpDownloader} from "./McLpDownloader";
-import {FtmAddresses} from "../../../test/FtmAddresses";
+import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 
 async function main() {

@@ -11,7 +11,7 @@ import {
   TetuSwapPair__factory,
   TetuSwapRouter
 } from "../../typechain";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../UniswapUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
@@ -501,6 +501,7 @@ describe("Tetu Swap base tests", function () {
     const inputIn = await lpCtr.getAmountIn(amountOut, reserves[0], reserves[1]);
     console.log('inputIn', inputIn.toString());
     await TokenUtils.transfer(tokenA, signer, lp, inputIn.toString());
+    await lpCtr.sync();
     await lpCtr.swap(
       0,
       amountOut,

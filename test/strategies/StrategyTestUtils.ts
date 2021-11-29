@@ -1,29 +1,23 @@
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {UniswapUtils} from "../UniswapUtils";
-import {MaticAddresses} from "../MaticAddresses";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {
-  Announcer,
-  Controller,
-  ForwarderV2,
-  IStrategy,
-  PriceCalculator,
-  RewardToken,
-  SmartVault
-} from "../../typechain";
+import {ForwarderV2, IStrategy, IUniswapV2Pair, PriceCalculator, SmartVault} from "../../typechain";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
-import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
-import {StrategyInfo} from "./StrategyInfo";
 import {ethers} from "hardhat";
-import {VaultUtils} from "../VaultUtils";
 import {readFileSync} from "fs";
+import {Misc} from "../../scripts/utils/tools/Misc";
+import {DeployInfo} from "./DeployInfo";
+import logSettings from "../../log_settings";
+import {Logger} from "tslog";
+import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
+
+const log: Logger = new Logger(logSettings);
 
 export class StrategyTestUtils {
-  public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
-  public static readonly SECONDS_OF_YEAR = StrategyTestUtils.SECONDS_OF_DAY * 365;
 
   public static async deploy(
     signer: SignerWithAddress,
@@ -32,7 +26,8 @@ export class StrategyTestUtils {
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     underlying: string
   ): Promise<[SmartVault, IStrategy, string]> {
-
+    const start = Date.now();
+    log.info("Starting deploy")
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
       vaultName,
       strategyDeployer,
@@ -41,141 +36,23 @@ export class StrategyTestUtils {
       core.psVault.address,
       signer
     );
-
+    log.info("Vault deployed")
     const vault = data[1] as SmartVault;
     const strategy = data[2] as IStrategy;
 
     const rewardTokenLp = await UniswapUtils.createTetuUsdc(
       signer, core, "1000000"
     );
+    log.info("LP created");
 
     await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
+    log.info("Path setup completed");
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
 
+    Misc.printDuration('Vault and strategy deployed and initialized', start);
     return [vault, strategy, rewardTokenLp];
-  }
-
-  public static async doHardWorkSimple(info: StrategyInfo, deposit: string, toClaimCalcFunc: (() => Promise<BigNumber[]>) | null) {
-    const bbRatio = (await info.strategy.buyBackRatio()).toNumber();
-    const den = (await info.core.controller.psDenominator()).toNumber();
-    const newNum = +(den / 2).toFixed()
-    console.log('new ps ratio', newNum, den)
-    await info.core.announcer.announceRatioChange(9, newNum, den);
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
-    await info.core.controller.setPSNumeratorDenominator(newNum, den);
-
-    const vaultForUser = info.vault.connect(info.user);
-
-    const rt0 = (await vaultForUser.rewardTokens())[0];
-
-    const userUnderlyingBalance = await TokenUtils.balanceOf(info.underlying, info.user.address);
-
-    const undDec = await TokenUtils.decimals(info.underlying);
-
-    console.log("deposit", deposit);
-    await VaultUtils.deposit(info.user, info.vault, BigNumber.from(deposit));
-
-    const rewardBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
-    const vaultBalanceBefore = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
-    const psBalanceBefore = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
-    const userEarnedTotal = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
-
-    // *********** TIME MACHINE GO BRRRRR***********
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7);
-
-    // ** calculate to claim
-    let totalToClaim = 0;
-    if (toClaimCalcFunc != null) {
-      const targetTokenPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(info.core.rewardToken.address));
-      console.log('targetTokenPrice', targetTokenPrice);
-      const toClaim = await toClaimCalcFunc();
-      const rts = await info.strategy.rewardTokens();
-      for (let i = 0; i < toClaim.length; i++) {
-        const rt = rts[i];
-        const rtDec = await TokenUtils.decimals(rt);
-        const rtPrice = +utils.formatUnits(await info.calculator.getPriceWithDefaultOutput(rt));
-        const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
-        console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);
-        totalToClaim += rtAmount;
-      }
-    }
-
-    const oldPpfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
-
-    // ** doHardWork
-    await VaultUtils.doHardWorkAndCheck(info.vault);
-
-    const ppfs = +utils.formatUnits(await info.vault.getPricePerFullShare(), undDec);
-    if (await info.vault.ppfsDecreaseAllowed() && oldPpfs >= 1) {
-      expect(ppfs).is.greaterThanOrEqual(oldPpfs * 0.999);
-    } else {
-      expect(ppfs).is.greaterThanOrEqual(oldPpfs);
-    }
-
-    const earned = +utils.formatUnits(await info.core.bookkeeper.targetTokenEarned(info.strategy.address));
-    if (bbRatio > 1000) {
-      expect(earned).is.not.equal(0);
-    }
-    // ** check to claim
-    if (toClaimCalcFunc != null) {
-      console.log('earned', earned, totalToClaim);
-      expect(earned).is.approximately(totalToClaim, totalToClaim * 2); // very approximately
-    }
-
-    await StrategyTestUtils.checkStrategyRewardsBalance(info.strategy, ['0', '0']);
-
-    if (bbRatio > 1000) {
-      // check vault balance
-      const vaultBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.vault.address);
-      expect(vaultBalanceAfter.sub(vaultBalanceBefore)).is.not.eq("0", "vault reward should increase");
-
-      // check ps balance
-      const psBalanceAfter = await TokenUtils.balanceOf(info.core.rewardToken.address, info.core.psVault.address);
-      expect(psBalanceAfter.sub(psBalanceBefore)).is.not.eq("0", "ps balance should increase");
-    }
-
-    // check reward for user
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7); // 1 week
-    await vaultForUser.getAllRewards();
-    const rewardBalanceAfter = await TokenUtils.balanceOf(info.core.psVault.address, info.user.address);
-    expect(rewardBalanceAfter.sub(rewardBalanceBefore).toString())
-      .is.not.eq("0", "should have earned iToken rewards");
-
-    // ************* EXIT ***************
-    await vaultForUser.exit();
-    const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(info.underlying, info.user.address);
-
-    if (await info.vault.ppfsDecreaseAllowed()) {
-      expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec) * 0.999,
-        "should have more or equal underlying than deposited");
-    } else {
-      expect(+utils.formatUnits(userUnderlyingBalanceAfter, undDec))
-        .is.greaterThanOrEqual(+utils.formatUnits(userUnderlyingBalance, undDec),
-        "should have more or equal underlying than deposited");
-    }
-
-    const vaultBal = await vaultForUser.underlyingBalanceWithInvestment();
-    const vaultUndBal = await vaultForUser.underlyingBalanceInVault();
-    const strPoolBal = await info.strategy.rewardPoolBalance();
-    const strUndBal = await info.strategy.underlyingBalance();
-    console.log('vaultBal', vaultBal.toString());
-    console.log('vaultUndBal', vaultUndBal.toString());
-    console.log('strPoolBal', strPoolBal.toString());
-    console.log('strUndBal', strUndBal.toString());
-    expect(vaultBal).is.eq(0);
-    expect(vaultUndBal).is.eq(0);
-    expect(strPoolBal).is.eq(0);
-    expect(strUndBal).is.eq(0);
-
-    const userEarnedTotalAfter = await info.core.bookkeeper.userEarned(info.user.address, info.vault.address, rt0);
-    console.log('user total earned rt0', +utils.formatUnits(userEarnedTotal), +utils.formatUnits(userEarnedTotalAfter),
-      +utils.formatUnits(userEarnedTotalAfter) - +utils.formatUnits(userEarnedTotal))
-    expect(+utils.formatUnits(userEarnedTotalAfter))
-      .is.greaterThan(+utils.formatUnits(userEarnedTotal));
-    await info.strategy.continueInvesting();
   }
 
   public static async checkStrategyRewardsBalance(strategy: IStrategy, balances: string[]) {
@@ -191,18 +68,6 @@ export class StrategyTestUtils {
     }
   }
 
-  public static async checkStrategyBalances(strategy: IStrategy, vault: SmartVault, deposit: BigNumber) {
-    const invested = deposit;
-
-    expect(await strategy.underlyingBalance()).at.eq("0", "all assets invested");
-    const stratInvested = await strategy.investedUnderlyingBalance();
-    expect(+utils.formatUnits(stratInvested))
-      .is.greaterThanOrEqual(+utils.formatUnits(invested),
-      "assets in the pool should be more or equal than invested");
-    expect(await vault.underlyingBalanceInVault())
-      .at.eq(deposit.sub(invested), "all assets in strategy");
-  }
-
   public static async deposit(
     user: SignerWithAddress,
     vault: SmartVault,
@@ -211,148 +76,126 @@ export class StrategyTestUtils {
   ) {
     const dec = await TokenUtils.decimals(underlying);
     const bal = await TokenUtils.balanceOf(underlying, user.address);
-    console.log('balance', utils.formatUnits(bal, dec), bal.toString());
+    log.info('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec))
       .is.greaterThanOrEqual(+utils.formatUnits(deposit, dec), 'not enough balance')
     const vaultForUser = vault.connect(user);
     await TokenUtils.approve(underlying, user, vault.address, deposit);
-    console.log('deposit', BigNumber.from(deposit).toString())
+    log.info('deposit', BigNumber.from(deposit).toString())
     await vaultForUser.depositAndInvest(BigNumber.from(deposit));
   }
 
-  public static async checkEmergencyExit(info: StrategyInfo) {
-    const deposit = await TokenUtils.balanceOf(info.underlying, info.user.address);
-
-    await VaultUtils.deposit(info.user, info.vault, deposit);
-
-    await StrategyTestUtils.checkStrategyBalances(info.strategy, info.vault, BigNumber.from(deposit));
-
-    await info.strategy.emergencyExit();
-
-    expect(await info.strategy.pausedInvesting()).is.eq(true);
-    await info.strategy.continueInvesting();
-    expect(await info.strategy.pausedInvesting()).is.eq(false);
-
-    expect(await info.strategy.rewardPoolBalance())
-      .is.eq("0", "assets in the pool");
-  }
-
-  public static async exit(
-    vaultForUser: SmartVault,
-    userAddress: string,
-    deposit: string,
-    underlying: string,
-    userUnderlyingBalance: BigNumber
-  ) {
-    console.log('try withdraw')
-    await vaultForUser.withdraw(BigNumber.from(deposit).div(2));
-    const undDec = await TokenUtils.decimals(underlying);
-    const currentBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, userAddress), undDec);
-    const expectedBal = +utils.formatUnits(userUnderlyingBalance.sub(BigNumber.from(deposit).div(2)), undDec);
-    expect(currentBal)
-      .is.approximately(expectedBal, expectedBal * 0.01, "should have a half of underlying");
-    console.log('try exit')
-    await vaultForUser.exit();
-    expect(await TokenUtils.balanceOf(underlying, userAddress))
-      .is.eq(userUnderlyingBalance, "should have all underlying");
-    console.log('user exited');
-  }
-
-  public static async saveBalances(rewardReceiver: string, strategy: IStrategy): Promise<BigNumber[]> {
-    const tokens = await strategy.rewardTokens();
+  public static async saveStrategyRtBalances(strategy: IStrategy): Promise<BigNumber[]> {
+    const rts = await strategy.rewardTokens();
     const balances: BigNumber[] = [];
-    for (const item of tokens) {
-      balances.push(await TokenUtils.balanceOf(item, rewardReceiver));
+    for (const rt of rts) {
+      balances.push(await TokenUtils.balanceOf(rt, strategy.address));
     }
     return balances;
   }
 
-  public static async commonTests(info: StrategyInfo) {
-    expect(await info.strategy.unsalvageableTokens(info.underlying)).is.eq(true);
-    expect(await info.strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.eq(false);
-    expect(await info.strategy.buyBackRatio()).is.not.eq("0");
-    expect(await info.strategy.platform()).is.not.eq(0);
-    expect((await info.strategy.assets()).length).is.not.eq(0);
-    expect(await info.strategy.poolTotalAmount()).is.not.eq('0');
-    // expect(await info.strategy.poolWeeklyRewardsAmount()).is.not.eq('0');
-  }
-
-
-  public static async getBlockTime(): Promise<number> {
-    const block = await ethers.provider.getBlockNumber();
-    console.log('block', block);
-    return (await ethers.provider.getBlock(block))?.timestamp;
-  }
-
-  public static async deployStrategy(
-    strategyName: string,
-    signer: SignerWithAddress,
-    coreContracts: CoreContractsWrapper,
-    underlying: string,
-    underlyingName: string) {
-
-    return StrategyTestUtils.deploy(
-      signer,
-      coreContracts,
-      underlyingName,
-      vaultAddress => DeployerUtils.deployContract(
-        signer,
-        strategyName,
-        coreContracts.controller.address,
-        underlying,
-        vaultAddress
-      ) as Promise<IStrategy>,
-      underlying
-    );
-  }
-
-  public static async updatePSRatio(announcer: Announcer, controller: Controller, numenator: number, denumenatior: number, wait = 1) {
-    console.log('new ps ratio', numenator, denumenatior.toFixed())
-    await announcer.announceRatioChange(9, numenator, denumenatior);
-    await TimeUtils.advanceBlocksOnTs(wait);
-    await controller.setPSNumeratorDenominator(numenator, denumenatior);
-  }
-
-  public static async calculateTotalToClaim(calculator: PriceCalculator, strategy: IStrategy, rewardToken: RewardToken) {
-    const targetTokenPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rewardToken.address));
-    console.log('targetTokenPrice', targetTokenPrice);
-    const toClaim = await strategy.readyToClaim();
-    const rts = await strategy.rewardTokens();
-    let totalToClaim = 0;
-
-    for (let i = 0; i < toClaim.length; i++) {
-      const rt = rts[i];
-      const rtDec = await TokenUtils.decimals(rt);
-      const rtPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(rt));
-      const rtAmount = +utils.formatUnits(toClaim[i], rtDec) * rtPrice / targetTokenPrice;
-      console.log('toClaim', i, rtAmount, +utils.formatUnits(toClaim[i], rtDec), rtPrice);
-      totalToClaim += rtAmount;
-    }
-    return totalToClaim
+  public static async commonTests(strategy: IStrategy, underlying: string) {
+    expect(await strategy.unsalvageableTokens(underlying)).is.eq(true);
+    expect(await strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.eq(false);
+    expect(await strategy.buyBackRatio()).is.not.eq("0");
+    expect(await strategy.platform()).is.not.eq(0);
+    expect((await strategy.assets()).length).is.not.eq(0);
+    expect(await strategy.poolTotalAmount()).is.not.eq('0');
+    await strategy.continueInvesting();
   }
 
   public static async initForwarder(forwarder: ForwarderV2) {
+    const start = Date.now();
     await forwarder.setLiquidityNumerator(50);
-    await forwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+    await forwarder.setLiquidityRouter(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
     await StrategyTestUtils.setConversionPaths(forwarder);
+    Misc.printDuration('Forwarder initialized', start);
   }
 
   public static async setConversionPaths(forwarder: ForwarderV2) {
     const net = (await ethers.provider.getNetwork()).chainId;
     const bc: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8'));
-    await forwarder.addBlueChipsLps(bc);
+
+    const batch = 20;
+    for (let i = 0; i < bc.length / batch; i++) {
+      const l = bc.slice(i * batch, i * batch + batch)
+      log.info('addBlueChipsLps', l.length);
+      await forwarder.addBlueChipsLps(l);
+    }
 
     const tokens: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8'));
     const lps: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8'));
-    const batch = 30;
     for (let i = 0; i < tokens.length / batch; i++) {
       const t = tokens.slice(i * batch, i * batch + batch)
       const l = lps.slice(i * batch, i * batch + batch)
-      // console.log('t', t)
-      // console.log('l', l)
+      // log.info('t', t)
+      // log.info('l', l)
+      log.info('addLargestLps', t.length);
       await forwarder.addLargestLps(t, l);
     }
   }
 
+  public static async deployCoreAndInit(deployInfo: DeployInfo, deploy: boolean) {
+    const start = Date.now();
+    const signer = await DeployerUtils.impersonate();
+    if (deploy) {
+      deployInfo.core = await DeployerUtils.deployAllCoreContracts(signer);
+      await StrategyTestUtils.initForwarder(deployInfo.core.feeRewardForwarder);
+    } else {
+      deployInfo.core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    }
+    deployInfo.tools = await DeployerUtils.getToolsAddressesWrapper(signer);
+    Misc.printDuration('Deploy core contracts completed', start);
+  }
+
+  public static async getUnderlying(
+    underlying: string,
+    amountN: number,
+    signer: SignerWithAddress,
+    calculator: PriceCalculator,
+    recipients: string[],
+  ) {
+    log.info('get underlying', amountN, recipients.length, underlying);
+    const start = Date.now();
+    const uName = await TokenUtils.tokenSymbol(underlying);
+    const uDec = await TokenUtils.decimals(underlying);
+    const uPrice = await PriceCalculatorUtils.getPriceCached(underlying);
+    const uPriceN = +utils.formatUnits(uPrice);
+    log.info('Underlying price: ', uPriceN);
+
+    const amountAdjustedN = amountN / uPriceN;
+    const amountAdjusted = utils.parseUnits(amountAdjustedN.toFixed(uDec), uDec);
+    log.info('Get underlying: ', uName, amountAdjustedN);
+
+    // const amountAdjustedN2 = amountAdjustedN * (recipients.length + 1);
+    const amountAdjusted2 = amountAdjusted.mul(recipients.length + 1);
+
+    let isLp = false;
+    try {
+      await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair).getReserves();
+      isLp = true;
+    } catch (e) {
+    }
+
+    let balance = amountAdjusted2;
+    if (isLp) {
+      await UniswapUtils.getTokensAndAddLiq(
+        signer,
+        underlying,
+        amountN,
+        calculator
+      );
+      balance = await TokenUtils.balanceOf(underlying, signer.address);
+    } else {
+      await TokenUtils.getToken(underlying, signer.address, amountAdjusted2);
+    }
+
+    for (const recipient of recipients) {
+      await TokenUtils.transfer(underlying, signer, recipient, balance.div(recipients.length + 1).toString())
+    }
+    const finalBal = await TokenUtils.balanceOf(underlying, signer.address);
+    Misc.printDuration('Get underlying finished for', start);
+    return finalBal;
+  }
 
 }
