@@ -142,7 +142,8 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   }
 
   /// @dev Return true if we can gain profit with folding
-  function _isFoldingProfitable() internal view override returns (bool) {
+  function _isFoldingProfitable() internal pure override returns (bool) {
+    // todo
     //    (uint256 supplyRewardsInWethPT,
     //    uint256 borrowRewardsInWethPT,
     //    uint256 supplyUnderlyingProfitInWethPT,

@@ -12,6 +12,7 @@ import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
 import {DeployInfo} from "./DeployInfo";
 import {SpecificStrategyTest} from "./SpecificStrategyTest";
 import {BigNumber} from "ethers";
+import {UniswapUtils} from "../UniswapUtils";
 
 async function universalStrategyTest(
   name: string,
@@ -74,7 +75,7 @@ async function universalStrategyTest(
       deployInfo.vault = vault;
       deployInfo.strategy = strategy;
 
-      // buy assets
+      // get underlying
       userBalance = await StrategyTestUtils.getUnderlying(
         underlying,
         deposit,
@@ -82,6 +83,7 @@ async function universalStrategyTest(
         deployInfo?.tools?.calculator as PriceCalculator,
         [signer.address],
       );
+      await UniswapUtils.wrapMatic(this.signer);
       Misc.printDuration('Test Preparations completed', start);
     });
 

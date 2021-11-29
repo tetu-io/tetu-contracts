@@ -102,7 +102,10 @@ export class StrategyTestUtils {
     expect(await strategy.platform()).is.not.eq(0);
     expect((await strategy.assets()).length).is.not.eq(0);
     expect(await strategy.poolTotalAmount()).is.not.eq('0');
+    await strategy.emergencyExit();
+    expect(await strategy.pausedInvesting()).is.eq(true);
     await strategy.continueInvesting();
+    expect(await strategy.pausedInvesting()).is.eq(false);
   }
 
   public static async initForwarder(forwarder: ForwarderV2) {
