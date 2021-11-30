@@ -146,11 +146,11 @@ export class VaultUtils {
     const start = Date.now();
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
-      await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
-    } else {
-      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, period)
-    }
+    // if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+    //   await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
+    // } else {
+    //   await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, period)
+    // }
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));
     const xTetuBal = await TokenUtils.balanceOf(core.psVault.address, signer.address);

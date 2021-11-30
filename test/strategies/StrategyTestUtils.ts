@@ -45,8 +45,8 @@ export class StrategyTestUtils {
     );
     log.info("LP created");
 
-    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
-    log.info("Path setup completed");
+    // await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
+    // log.info("Path setup completed");
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
