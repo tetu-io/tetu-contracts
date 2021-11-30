@@ -5,7 +5,7 @@ pragma solidity 0.8.4;
 interface IScreamController {
 
   function claimComp(address holder, address[] memory cTokens) external;
-
+  function compAccrued(address account) external view returns (uint);
 
 //  /*** Assets You Are In ***/
 // todo revisit
@@ -89,6 +89,4 @@ interface IScreamController {
   function markets(address rToken) external view returns (bool isListed, uint collateralFactorMantissa);
 
   function getAccountLiquidity(address account) external view returns (uint, uint, uint);
-
-  function rewardAccrued(address account) external view returns (uint);
 }
