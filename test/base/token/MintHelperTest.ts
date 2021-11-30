@@ -1,7 +1,6 @@
 import {ethers} from "hardhat";
 import chai from "chai";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 import {utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -11,6 +10,7 @@ import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelper, RewardToken} from "../../../typechain";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {TokenUtils} from "../../TokenUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -22,7 +22,8 @@ describe("Mint helper tests", () => {
   let signerAddress: string;
   let core: CoreContractsWrapper;
   let minter: MintHelper;
-  const opCode = 16;
+  let usdc: string;
+  let networkToken: string;
 
   before(async () => {
     snapshot = await TimeUtils.snapshot();
@@ -31,9 +32,10 @@ describe("Mint helper tests", () => {
     // deploy core contracts
     core = await DeployerUtils.deployAllCoreContracts(signer);
     minter = core.mintHelper;
-    await UniswapUtils.wrapMatic(signer);
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.QUICK_ROUTER,
-        MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    await UniswapUtils.wrapNetworkToken(signer);
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("10000", 6))
   });
 
   after(async function () {
@@ -70,32 +72,32 @@ describe("Mint helper tests", () => {
   it("Mint tokens", async () => {
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', core.notifyHelper.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress))
-    .at.eq(utils.parseUnits("9900", 18));
+      .at.eq(utils.parseUnits("9900", 18));
 
     await MintHelperUtils.mint(core.controller, core.announcer, '200', core.notifyHelper.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
-    .at.eq(utils.parseUnits("9919.8", 18));
+      .at.eq(utils.parseUnits("9919.8", 18));
   });
 
   it("Wrong minter deploy", async () => {
     await expect(DeployerUtils.deployMintHelper(
-        signer, core.controller.address,
-        [signer.address, core.psVault.address], [2100, 10]
+      signer, core.controller.address,
+      [signer.address, core.psVault.address], [2100, 10]
     )).to.be.rejectedWith("wrong sum of fraction");
 
     await expect(DeployerUtils.deployMintHelper(
-        signer, core.controller.address,
-        [signer.address, MaticAddresses.ZERO_ADDRESS], [2100, 900]
+      signer, core.controller.address,
+      [signer.address, Misc.ZERO_ADDRESS], [2100, 900]
     )).to.be.rejectedWith("Address should not be 0");
 
     await expect(DeployerUtils.deployMintHelper(
-        signer, core.controller.address,
-        [signer.address], [2100, 900]
+      signer, core.controller.address,
+      [signer.address], [2100, 900]
     )).to.be.rejectedWith("wrong size");
 
     await expect(DeployerUtils.deployMintHelper(
-        signer, core.controller.address,
-        [signer.address, core.psVault.address], [3000, 0]
+      signer, core.controller.address,
+      [signer.address, core.psVault.address], [3000, 0]
     )).to.be.rejectedWith("Ratio should not be 0");
   });
 
@@ -109,7 +111,7 @@ describe("Mint helper tests", () => {
     await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address, false);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address, false))
-    .rejectedWith("limit exceeded")
+      .rejectedWith("limit exceeded")
   });
 
   it("Should not mint more than max emission per week for first mint", async () => {
@@ -117,7 +119,7 @@ describe("Mint helper tests", () => {
     await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address, false);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address, false))
-    .rejectedWith("ERC20Capped: cap exceeded")
+      .rejectedWith("ERC20Capped: cap exceeded")
   });
   it("Should mint max emission per week", async () => {
     await MintHelperUtils.mint(core.controller, core.announcer, '100', core.notifyHelper.address);
@@ -126,10 +128,10 @@ describe("Mint helper tests", () => {
     const totalAmount = await core.rewardToken.totalSupply();
     const mintingStartTs = await core.rewardToken.mintingStartTs();
     console.log('maxTotalAmount',
-        utils.formatUnits(maxTotalAmount, 18),
-        utils.formatUnits(totalAmount, 18),
-        curWeek.toString(),
-        mintingStartTs.toString(),
+      utils.formatUnits(maxTotalAmount, 18),
+      utils.formatUnits(totalAmount, 18),
+      curWeek.toString(),
+      mintingStartTs.toString(),
     );
     const mintAmount = utils.formatUnits(maxTotalAmount.sub(totalAmount), 18);
     expect(mintAmount).at.eq("129746027.0");
@@ -146,7 +148,7 @@ describe("Mint helper tests", () => {
     expect(maxTotalAmount.sub(totalAmount).toString()).at.eq("259492154000000000000000000");
     await MintHelperUtils.mint(core.controller, core.announcer, mintAmount, core.notifyHelper.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
-    .at.eq("25689733146000000000000000");
+      .at.eq("25689733146000000000000000");
   });
   it("Should mint all emission", async () => {
     await MintHelperUtils.mint(core.controller, core.announcer, '1', core.notifyHelper.address);
@@ -164,35 +166,35 @@ describe("Mint helper tests", () => {
     const devExpected = totalNet * 0.3;
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
-    .at.eq(utils.parseUnits(devExpected.toFixed(), 18));
+      .at.eq(utils.parseUnits(devExpected.toFixed(), 18));
   });
   it("log2 test", async () => {
     const _signer = (await ethers.getSigners())[0];
     const rewardToken = await DeployerUtils.deployContract(
-        _signer, "RewardToken", MaticAddresses.USDC_TOKEN) as RewardToken;
+      _signer, "RewardToken", usdc) as RewardToken;
     expect((await rewardToken._log2(utils.parseUnits("1", 18))).toString())
-    .at.eq("0");
+      .at.eq("0");
 
     expect((await rewardToken._log2(utils.parseUnits("2", 18))).toString())
-    .at.eq(utils.parseUnits("1", 18));
+      .at.eq(utils.parseUnits("1", 18));
 
     expect((await rewardToken._log2(utils.parseUnits("8", 18))).toString())
-    .at.eq(utils.parseUnits("3", 18));
+      .at.eq(utils.parseUnits("3", 18));
 
     expect((await rewardToken._log2(utils.parseUnits("5", 18))).toString())
-    .at.eq("2321928094887362334");
+      .at.eq("2321928094887362334");
 
     expect((await rewardToken._log2(utils.parseUnits("500", 18))).toString())
-    .at.eq("8965784284662087030");
+      .at.eq("8965784284662087030");
 
     expect((await rewardToken._log2(utils.parseUnits("123456789", 18))).toString())
-    .at.eq("26879430932860473806");
+      .at.eq("26879430932860473806");
 
     expect((await rewardToken._log2(utils.parseUnits("123456789123456789", 18))).toString())
-    .at.eq("56776783788289429979");
+      .at.eq("56776783788289429979");
 
     expect((await rewardToken._log2(utils.parseUnits("123456789123456789123456789123456789", 18))).toString())
-    .at.eq("116571489496261952241");
+      .at.eq("116571489496261952241");
 
     await expect(rewardToken._log2(2)).rejectedWith('log input should be greater 1e18');
   });
@@ -236,22 +238,22 @@ describe("Mint helper tests", () => {
   });
 
   it("change dev funds", async () => {
-    await minter.setDevFunds([MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], [1000, 2000]);
+    await minter.setDevFunds([networkToken, usdc], [1000, 2000]);
 
     expect(await minter.devFundsLength()).is.eq(2);
-    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
-    expect((await minter.devFundsList(1)).toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN);
+    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(networkToken);
+    expect((await minter.devFundsList(1)).toLowerCase()).is.eq(usdc);
 
-    await minter.setDevFunds([MaticAddresses.WMATIC_TOKEN], [3000]);
+    await minter.setDevFunds([networkToken], [3000]);
 
     expect(await minter.devFundsLength()).is.eq(1);
-    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(networkToken);
 
-    await minter.setDevFunds([MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], [1000, 2000]);
+    await minter.setDevFunds([networkToken, usdc], [1000, 2000]);
 
     expect(await minter.devFundsLength()).is.eq(2);
-    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
-    expect((await minter.devFundsList(1)).toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN);
+    expect((await minter.devFundsList(0)).toLowerCase()).is.eq(networkToken);
+    expect((await minter.devFundsList(1)).toLowerCase()).is.eq(usdc);
   });
 
   it("mint all available emission", async () => {

@@ -14,9 +14,9 @@ import {
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {BigNumber, utils} from "ethers";
-import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TokenUtils} from "../TokenUtils";
-import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
+import {CoreContractsWrapper} from "../CoreContractsWrapper";
+import {ethers} from "hardhat";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -30,33 +30,38 @@ const vaultsSet = new Set<string>([
 describe("auto rewarder tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
-  let gov: SignerWithAddress;
+  let signer: SignerWithAddress;
   let priceCalculator: PriceCalculator;
   let rewardCalculator: RewardCalculator;
   let rewarder: AutoRewarder;
   let bookkeeper: Bookkeeper;
   let controller: Controller;
   let announcer: Announcer;
-  let coreAddresses: CoreAddresses;
+  let core: CoreContractsWrapper;
+  let usdc: string;
+  let networkToken: string;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
-    gov = await DeployerUtils.impersonate();
+    signer = await DeployerUtils.impersonate();
 
-    coreAddresses = await DeployerUtils.getCoreAddresses();
-    const controllerAdr = coreAddresses.controller;
-    const announcerAdr = coreAddresses.announcer;
-    const bookkeeperAdr = coreAddresses.bookkeeper;
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
+    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
 
-    bookkeeper = await DeployerUtils.connectInterface(gov, 'Bookkeeper', bookkeeperAdr) as Bookkeeper;
-    controller = await DeployerUtils.connectInterface(gov, 'Controller', controllerAdr) as Controller;
-    announcer = await DeployerUtils.connectInterface(gov, 'Announcer', announcerAdr) as Announcer;
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    const tools = await DeployerUtils.getToolsAddressesWrapper(signer);
 
-    priceCalculator = (await DeployerUtils.deployPriceCalculatorMatic(gov, controllerAdr))[0] as PriceCalculator;
-    rewardCalculator = (await DeployerUtils.deployRewardCalculator(gov, controllerAdr, priceCalculator.address))[0] as RewardCalculator;
+    bookkeeper = core.bookkeeper
+    controller = core.controller
+    announcer = core.announcer
+
+    priceCalculator = tools.calculator
+    rewardCalculator = (await DeployerUtils.deployRewardCalculator(signer, controller.address, priceCalculator.address))[0] as RewardCalculator;
     rewarder = (await DeployerUtils.deployAutoRewarder(
-      gov,
-      controllerAdr,
+      signer,
+      controller.address,
       rewardCalculator.address,
       utils.parseUnits('0.231').toString(),
       utils.parseUnits('1000').toString()
@@ -84,7 +89,7 @@ describe("auto rewarder tests", function () {
 
     await MintHelperUtils.mintAll(controller, announcer, rewarder.address);
 
-    const bal = await TokenUtils.balanceOf(coreAddresses.rewardToken, rewarder.address);
+    const bal = await TokenUtils.balanceOf(core.rewardToken.address, rewarder.address);
     console.log('minted', utils.formatUnits(bal));
 
     const vaults = await bookkeeper.vaults();
@@ -107,7 +112,7 @@ describe("auto rewarder tests", function () {
 
     for (let i = 0; i < vaults.length; i = i + step) {
       console.log('distribute', i, i + step);
-      await distribute(rewarder, step);
+      await distribute(rewarder, step, core.psVault.address);
     }
 
     const distributed = await rewarder.distributed();
@@ -115,12 +120,17 @@ describe("auto rewarder tests", function () {
   });
 
   it("distribute to vaults set", async () => {
+    const net = await ethers.provider.getNetwork();
+    // todo creat on fantom
+    if (net.chainId !== 137) {
+      return;
+    }
     const rewardsPerDay = await rewarder.rewardsPerDay();
     console.log('rewards per day', utils.formatUnits(rewardsPerDay));
 
-    await TokenUtils.getToken(coreAddresses.rewardToken, rewarder.address, utils.parseUnits('100000'));
+    await TokenUtils.getToken(core.rewardToken.address, rewarder.address, utils.parseUnits('100000'));
 
-    const bal = await TokenUtils.balanceOf(coreAddresses.rewardToken, rewarder.address);
+    const bal = await TokenUtils.balanceOf(core.rewardToken.address, rewarder.address);
     console.log('minted', utils.formatUnits(bal));
 
     const vaults = Array.from(vaultsSet.keys());
@@ -143,7 +153,7 @@ describe("auto rewarder tests", function () {
 
     for (let i = 0; i < vaults.length; i = i + step) {
       console.log('distribute', i, i + step);
-      await distribute(rewarder, step);
+      await distribute(rewarder, step, core.psVault.address);
     }
 
     let distributedSum = BigNumber.from(0)
@@ -197,7 +207,7 @@ describe("auto rewarder tests", function () {
 
     for (let i = 0; i < vaults.length; i = i + step) {
       console.log('distribute2', i, i + step);
-      await distribute(rewarder, step);
+      await distribute(rewarder, step, core.psVault.address);
     }
 
     expect(await rewarder.distributed()).is.eq(0);
@@ -215,8 +225,8 @@ describe("auto rewarder tests", function () {
 
 });
 
-async function distribute(rewarder: AutoRewarder, count: number) {
-  const xTetuVault = await DeployerUtils.connectInterface(rewarder.signer as SignerWithAddress, 'SmartVault', MaticAddresses.xTETU) as SmartVault
+async function distribute(rewarder: AutoRewarder, count: number, xTetu: string) {
+  const xTetuVault = await DeployerUtils.connectInterface(rewarder.signer as SignerWithAddress, 'SmartVault', xTetu) as SmartVault
   const vaultsSize = (await rewarder.vaultsSize()).toNumber();
   // console.log('vaultsSize', vaultsSize);
   const currentId = (await rewarder.lastDistributedId()).toNumber();

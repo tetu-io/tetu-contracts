@@ -2,7 +2,6 @@ import {ethers} from "hardhat";
 import chai from "chai";
 import {EvilHackerContract, NoopStrategy, SmartVault} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {VaultUtils} from "../../VaultUtils";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
@@ -13,6 +12,7 @@ import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -24,34 +24,38 @@ const REWARD_DURATION = 60 * 60;
 describe("SmartVaultNoopStrat", () => {
   let snapshot: string;
   let snapshotForEach: string;
-  const underlying = MaticAddresses.USDC_TOKEN;
+
   let signer: SignerWithAddress;
   let signerAddress: string;
   let core: CoreContractsWrapper;
   let vault: SmartVault;
   let strategy: NoopStrategy;
   let vaultRewardToken0: string;
+  let networkToken: string;
+  let usdc: string;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     signerAddress = signer.address;
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
 
     core = await DeployerUtils.deployAllCoreContracts(signer);
     vaultRewardToken0 = core.psVault.address;
     vault = await DeployerUtils.deploySmartVault(signer);
 
     strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
+      core.controller.address, usdc, vault.address, [Misc.ZERO_ADDRESS], [usdc], 1) as NoopStrategy;
 
     await vault.initializeSmartVault(
       "NOOP",
       "tNOOP",
       core.controller.address,
-      underlying,
+      usdc,
       REWARD_DURATION,
       false,
-      MaticAddresses.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
@@ -59,7 +63,7 @@ describe("SmartVaultNoopStrat", () => {
 
     await new VaultUtils(vault).checkEmptyVault(
       strategy.address,
-      underlying,
+      usdc,
       vaultRewardToken0,
       signerAddress,
       TO_INVEST_NUMERATOR,
@@ -67,20 +71,20 @@ describe("SmartVaultNoopStrat", () => {
       REWARD_DURATION
     );
 
-    await UniswapUtils.wrapMatic(signer);
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.QUICK_ROUTER,
-      MaticAddresses.USDC_TOKEN, utils.parseUnits("10000", 18))
+    await UniswapUtils.wrapNetworkToken(signer);
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
+    await TokenUtils.wrapNetworkToken(signer, '10000000');
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
     const lpAddress = await UniswapUtils.addLiquidity(
       signer,
       core.rewardToken.address,
-      MaticAddresses.USDC_TOKEN,
+      usdc,
       utils.parseUnits("100", 18).toString(),
       utils.parseUnits("100", 6).toString(),
-      MaticAddresses.QUICK_FACTORY,
-      MaticAddresses.QUICK_ROUTER,
+      await DeployerUtils.getDefaultNetworkFactory(),
+      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
     );
     expect(await TokenUtils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 
@@ -104,11 +108,11 @@ describe("SmartVaultNoopStrat", () => {
       // const vaultUtils = new VaultUtils(vault);
 
       // ************** DEPOSIT *******************************
-      let balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      let balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
 
       await VaultUtils.deposit(signer, vault, BigNumber.from("1000000"));
 
-      let balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      let balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
       expect(balanceAfter.toFixed(6)).is.eq((balanceBefore - (+utils.formatUnits("1000000", 6))).toFixed(6));
 
       expect(await TokenUtils.balanceOf(vault.address, signerAddress)).at.eq("1000000");
@@ -122,19 +126,19 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.bookkeeper.vaultUsersQuantity(vault.address)).at.eq("1");
 
       // ************** GOV ACTIONS *******************************
-      await core.vaultController.addRewardTokens([vault.address], MaticAddresses.WMATIC_TOKEN);
-      await core.vaultController.removeRewardTokens([vault.address], MaticAddresses.WMATIC_TOKEN);
+      await core.vaultController.addRewardTokens([vault.address], networkToken);
+      await core.vaultController.removeRewardTokens([vault.address], networkToken);
       await expect(core.vaultController.removeRewardTokens([vault.address], core.psVault.address)).rejectedWith('');
 
       expect(await vault.rewardTokensLength()).at.eq(1);
       await vault.doHardWork();
 
       // ************** WITHDRAW *******************************
-      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
 
       await vault.withdraw(BigNumber.from("500000"));
 
-      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
       expect(balanceAfter).is.eq(balanceBefore + (+utils.formatUnits("500000", 6)));
 
 
@@ -147,23 +151,23 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.bookkeeper.vaultUsersQuantity(vault.address)).at.eq("1");
 
       // **************** DEPOSIT FOR ************
-      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
 
-      await TokenUtils.approve(underlying, signer, vault.address, "250000");
+      await TokenUtils.approve(usdc, signer, vault.address, "250000");
       await vault.depositFor(BigNumber.from("250000"), signerAddress);
 
-      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
       expect(balanceAfter).is.eq(balanceBefore - (+utils.formatUnits("250000", 6)));
 
       expect(await TokenUtils.balanceOf(vault.address, signerAddress)).at.eq("750000");
       expect(await vault.underlyingBalanceInVault()).at.eq("250000");
 
       // ************* EXIT ***************
-      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
       const fBal = await TokenUtils.balanceOf(vault.address, signerAddress);
       await vault.exit();
 
-      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signerAddress), 6);
+      balanceAfter = +utils.formatUnits(await TokenUtils.balanceOf(usdc, signerAddress), 6);
       expect(balanceAfter).is.eq(balanceBefore + (+utils.formatUnits(fBal, 6)));
 
       expect(await vault.underlyingBalanceWithInvestment()).at.eq("0");
@@ -179,7 +183,7 @@ describe("SmartVaultNoopStrat", () => {
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
 
       // ***************** CLAIM REWARDS ****************
-      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(usdc, signer, vault.address, "1000000");
       await vault.deposit(BigNumber.from("1000000"));
 
       await TimeUtils.advanceBlocksOnTs(60);
@@ -192,7 +196,7 @@ describe("SmartVaultNoopStrat", () => {
       expect(+utils.formatUnits(rewards, 18)).at.greaterThanOrEqual(0.45);
       await vault.withdraw(BigNumber.from("1000000"));
       await vault.getReward(core.psVault.address);
-      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(usdc, signer, vault.address, "1000000");
       await vault.deposit(BigNumber.from("1000000"));
       const rewardBalance = await TokenUtils.balanceOf(vaultRewardToken0, signerAddress);
       console.log("rewards balance", utils.formatUnits(rewardBalance, 18));
@@ -207,7 +211,7 @@ describe("SmartVaultNoopStrat", () => {
     });
     it("Active status", async () => {
       await core.vaultController.changeVaultsStatuses([vault.address], [false]);
-      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(usdc, signer, vault.address, "1000000");
       await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV:03');
     });
     it("investedUnderlyingBalance with zero pool", async () => {
@@ -229,7 +233,7 @@ describe("SmartVaultNoopStrat", () => {
       expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
 
       // ***************** CLAIM REWARDS ****************
-      await TokenUtils.approve(underlying, signer, vault.address, "1000000");
+      await TokenUtils.approve(usdc, signer, vault.address, "1000000");
       await vault.deposit(BigNumber.from("1000000"));
 
       await TimeUtils.advanceBlocksOnTs(60);
@@ -273,7 +277,7 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not add underlying reward token", async () => {
-      await expect(core.vaultController.addRewardTokens([vault.address], underlying)).rejectedWith('');
+      await expect(core.vaultController.addRewardTokens([vault.address], usdc)).rejectedWith('');
     });
 
     it("should not add exist reward token", async () => {
@@ -281,7 +285,7 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not remove not exist reward token", async () => {
-      await expect(core.vaultController.removeRewardTokens([vault.address], MaticAddresses.QUICK_TOKEN)).rejectedWith('');
+      await expect(core.vaultController.removeRewardTokens([vault.address], networkToken)).rejectedWith('');
     });
 
     it("should not remove not finished reward token", async () => {
@@ -297,10 +301,10 @@ describe("SmartVaultNoopStrat", () => {
         "NOOP",
         "tNOOP",
         core.controller.address,
-        underlying,
+        usdc,
         REWARD_DURATION,
         false,
-        MaticAddresses.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS
       );
       expect(await vault1.underlyingBalanceWithInvestment()).is.eq(0);
       await expect(vault1.doHardWork()).rejectedWith('')
@@ -320,7 +324,7 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not deposit for zero address", async () => {
-      await expect(vault.depositFor(1, MaticAddresses.ZERO_ADDRESS)).rejectedWith('SV:13');
+      await expect(vault.depositFor(1, Misc.ZERO_ADDRESS)).rejectedWith('SV:13');
     });
 
     it("rebalance with zero amount", async () => {
@@ -336,7 +340,7 @@ describe("SmartVaultNoopStrat", () => {
 
     it("should not notify with unknown token", async () => {
       await expect(vault.notifyTargetRewardAmount(
-        MaticAddresses.ZERO_ADDRESS,
+        Misc.ZERO_ADDRESS,
         '1'
       )).rejectedWith('SV:15');
     });

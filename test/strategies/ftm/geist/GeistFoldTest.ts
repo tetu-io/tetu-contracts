@@ -39,7 +39,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Geist Fold tests', async () => {
+describe.skip('Universal Geist Fold tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;

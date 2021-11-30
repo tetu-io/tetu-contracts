@@ -1,6 +1,5 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Bookkeeper} from "../../../typechain";
 import {ethers} from "hardhat";
@@ -12,6 +11,7 @@ import {VaultUtils} from "../../VaultUtils";
 import {BigNumber} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -32,7 +32,7 @@ describe("Bookkeeper tests", function () {
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer);
     bookkeeper = core.bookkeeper;
-    await UniswapUtils.wrapMatic(signer); // 10m wmatic
+    await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
   });
 
   after(async function () {
@@ -49,7 +49,7 @@ describe("Bookkeeper tests", function () {
   });
 
   it("should not deploy with zero controller", async () => {
-    await expect(DeployerUtils.deployBookkeeper(signer, MaticAddresses.ZERO_ADDRESS)).rejectedWith('zero address');
+    await expect(DeployerUtils.deployBookkeeper(signer, Misc.ZERO_ADDRESS)).rejectedWith('zero address');
   });
 
   it("should not register strat action for non strat", async () => {
@@ -57,27 +57,27 @@ describe("Bookkeeper tests", function () {
   });
 
   it("should not register ppfs change for non forwarder", async () => {
-    await expect(bookkeeper.registerPpfsChange(MaticAddresses.ZERO_ADDRESS, '1')).is.rejectedWith("B: Only exist forwarder or strategy");
+    await expect(bookkeeper.registerPpfsChange(Misc.ZERO_ADDRESS, '1')).is.rejectedWith("B: Only exist forwarder or strategy");
   });
 
   it("should not register user action for non vault", async () => {
-    await expect(bookkeeper.registerUserAction(MaticAddresses.ZERO_ADDRESS, '1', true)).is.rejectedWith("B: Only exist vault");
+    await expect(bookkeeper.registerUserAction(Misc.ZERO_ADDRESS, '1', true)).is.rejectedWith("B: Only exist vault");
   });
 
   it("should not add vault", async () => {
-    await expect(bookkeeper.connect(signer1).addVault(MaticAddresses.ZERO_ADDRESS)).is.rejectedWith("not controller");
+    await expect(bookkeeper.connect(signer1).addVault(Misc.ZERO_ADDRESS)).is.rejectedWith("not controller");
   });
 
   it("should not add strategy", async () => {
-    await expect(bookkeeper.connect(signer1).addStrategy(MaticAddresses.ZERO_ADDRESS)).is.rejectedWith("not controller");
+    await expect(bookkeeper.connect(signer1).addStrategy(Misc.ZERO_ADDRESS)).is.rejectedWith("not controller");
   });
 
   it("is governance", async () => {
-    expect(await bookkeeper.connect(signer1).isGovernance(MaticAddresses.ZERO_ADDRESS)).is.eq(false);
+    expect(await bookkeeper.connect(signer1).isGovernance(Misc.ZERO_ADDRESS)).is.eq(false);
   });
 
   it("last hardwork", async () => {
-    expect((await bookkeeper.connect(signer1).lastHardWork(MaticAddresses.ZERO_ADDRESS))[1]).is.eq(0);
+    expect((await bookkeeper.connect(signer1).lastHardWork(Misc.ZERO_ADDRESS))[1]).is.eq(0);
   });
 
   it("existed vault and strategy should not be added", async () => {
@@ -98,7 +98,7 @@ describe("Bookkeeper tests", function () {
     expect(vaults.length).is.greaterThanOrEqual(1);
     expect(strategies.length).is.greaterThanOrEqual(1);
 
-    await bookkeeper.addVaultAndStrategy(MaticAddresses.ZERO_ADDRESS, MaticAddresses.ZERO_ADDRESS);
+    await bookkeeper.addVaultAndStrategy(Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS);
     expect((await bookkeeper.vaults()).length).is.eq(vaults.length + 1, 'existed vault should not be added');
     expect((await bookkeeper.strategies()).length).is.eq(strategies.length + 1, 'existed strategy should not be added');
   });
