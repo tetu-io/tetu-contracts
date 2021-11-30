@@ -1,34 +1,27 @@
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {utils} from "ethers";
-import {TokenUtils} from "../../../TokenUtils";
-import {
-  Bookkeeper,
-  IERC20,
-  PriceCalculator,
-  SmartVault,
-  StrategyAaveFold
-} from "../../../../typechain";
-import {TimeUtils} from "../../../TimeUtils";
-import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DeployInfo} from "../../DeployInfo";
-import {PriceCalculatorUtils} from "../../../PriceCalculatorUtils";
+import {Bookkeeper, FoldingBase, IERC20, SmartVault} from "../../typechain";
+import {SpecificStrategyTest} from "./SpecificStrategyTest";
+import {DeployInfo} from "./DeployInfo";
+import {TokenUtils} from "../TokenUtils";
+import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
+import {TimeUtils} from "../TimeUtils";
+import {VaultUtils} from "../VaultUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-export class AaveProfitabilityTest extends SpecificStrategyTest {
+export class FoldingProfitabilityTest extends SpecificStrategyTest {
 
   public async do(
     deployInfo: DeployInfo
   ): Promise<void> {
-    it("AAVE profitability test", async function () {
-      const calculator = deployInfo.tools?.calculator as PriceCalculator;
+    it("Folding profitability test", async function () {
       const bookkeeper = deployInfo?.core?.bookkeeper as Bookkeeper;
       const tetu = deployInfo?.core?.rewardToken as IERC20;
-      const strategy = (deployInfo?.strategy as StrategyAaveFold);
+      const strategy = (deployInfo?.strategy as FoldingBase);
       const underlying = deployInfo?.underlying as string;
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;

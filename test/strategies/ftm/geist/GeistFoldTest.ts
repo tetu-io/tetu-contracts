@@ -10,8 +10,8 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {IStrategy, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {GeistDoHardWork} from "./GeistDoHardWork";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
+import {FoldingDoHardWork} from "../../FoldingDoHardWork";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -130,7 +130,7 @@ describe('Universal Geist Fold tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new GeistDoHardWork(
+      return new FoldingDoHardWork(
         _signer,
         _user,
         _core,
