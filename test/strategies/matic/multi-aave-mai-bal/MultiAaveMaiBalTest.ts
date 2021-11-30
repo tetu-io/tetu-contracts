@@ -85,10 +85,6 @@ describe('Universal MultiAaveMaiBal tests', async () => {
         }
     */
 
-  } else if (UNDERLYING === MaticAddresses.WMATIC_TOKEN) {
-    camToken = MaticAddresses.CAMWMATIC_TOKEN;
-    STABLECOIN_ADDRESS = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'; // camWMATIC MAI Vault (cMVT)
-
   } else if (UNDERLYING === MaticAddresses.AAVE_TOKEN) {
     camToken = MaticAddresses.CAMAAVE_TOKEN;
     STABLECOIN_ADDRESS = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'; // camAAVE MAI Vault (camAMVT)

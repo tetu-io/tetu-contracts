@@ -25,8 +25,8 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       console.log('>>>PumpIn on hardwork');
       const strategyGov = strategyAaveMaiBal.connect(signer);
       const amount = utils.parseUnits('10')
-      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER,
-        underlying, amount);
+      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, amount);
+      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, underlying, amount);
       const bal = await TokenUtils.balanceOf(underlying, signer.address)
       console.log('>>>bal   ', bal);
       await TokenUtils.transfer(underlying, signer, strategyGov.address, bal.toString());

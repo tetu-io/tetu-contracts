@@ -61,6 +61,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     {
         WMATIC = _WMATIC;
         _rewardTokens = __rewardTokens;
+        _assets.push(_underlyingToken);
     }
 
 
@@ -139,9 +140,12 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
         return toClaim;
     }
 
-    /// @dev Returns pool total amount
+    /// @dev Returns underlying pool total amount
+    /// @dev Only for statistic
     function poolTotalAmount() external pure override returns (uint256) {
-        return 0;
+        // We may use few pools in the pipeline.
+        // If you know what pool total amount you need for statistic purposes, you can override it in strategy implementation
+        return 1; // for tests it now stubbed to 1
     }
 
     /// @dev Returns assets array

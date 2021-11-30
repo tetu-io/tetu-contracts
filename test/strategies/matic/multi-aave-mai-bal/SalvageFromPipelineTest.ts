@@ -31,8 +31,8 @@ export class SalvageFromPipelineTest extends SpecificStrategyTest {
       console.log('>>>amountPerPipe', amountPerPipe.toString());
       const totalAmount = amountPerPipe.mul(pipesLength)
       console.log('>>>totalAmount  ', totalAmount.toString());
-      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER,
-        token, totalAmount);
+      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, totalAmount);
+      await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, token, totalAmount);
 
       const balanceAfterBuy = await TokenUtils.balanceOf(token, signer.address)
       console.log('>>>balanceAfterBuy', balanceAfterBuy.toString());

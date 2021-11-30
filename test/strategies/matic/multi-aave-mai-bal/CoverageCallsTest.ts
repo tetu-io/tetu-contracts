@@ -45,10 +45,10 @@ export class CoverageCallsTest extends SpecificStrategyTest {
       console.log('>>>unwrappingPipe SourceBalance', aaveWethPipeSourceBalance);
 
       const readyToClaim = await strategyAaveMaiBal.readyToClaim()
-      console.log('readyToClaim', readyToClaim);
+      console.log('>>>readyToClaim', readyToClaim);
 
       const availableMai = await strategyAaveMaiBal.availableMai();
-      console.log('availableMai', availableMai);
+      console.log('>>>availableMai', availableMai);
 
       expect(platformId).is.eq(15);
     });

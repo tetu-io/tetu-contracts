@@ -43,6 +43,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     await cam.claimAaveRewards();
 
     // air drop reward token
+    await UniswapUtils.buyToken(this.airDropper, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, this.airDropAmount);
     await UniswapUtils.buyToken(this.airDropper, MaticAddresses.SUSHI_ROUTER, this.airDropToken, this.airDropAmount);
     const bal = await TokenUtils.balanceOf(this.airDropToken, this.airDropper.address);
     const pipeAddress = await strategyAaveMaiBal.pipes(this.airDropPipeIndex);

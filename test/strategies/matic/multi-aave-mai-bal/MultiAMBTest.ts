@@ -44,7 +44,6 @@ const argv = require('yargs/yargs')()
     },
   }).argv;
 
-const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal AMB tests', async () => {
@@ -54,15 +53,35 @@ describe('Universal AMB tests', async () => {
   }
 
   const infos: {
-    underlying: string,
     underlyingName: string,
+    underlying: string,
     camToken: string,
   }[] = [
     {
-      underlying: MaticAddresses.AAVE_TOKEN,
       underlyingName: 'AAVE',
+      underlying: MaticAddresses.AAVE_TOKEN,
       camToken: MaticAddresses.CAMAAVE_TOKEN,
-    }
+    },
+    // {
+    //   underlyingName: 'WMATIC',
+    //   underlying: MaticAddresses.WMATIC_TOKEN,
+    //   camToken: MaticAddresses.CAMWMATIC_TOKEN,
+    // },
+    // {
+    //   underlyingName: 'DAI',
+    //   underlying: MaticAddresses.DAI_TOKEN,
+    //   camToken: MaticAddresses.CAMDAI_TOKEN,
+    // },
+    // {
+    //   underlyingName: 'WBTC',
+    //   underlying: MaticAddresses.WBTC_TOKEN,
+    //   camToken: MaticAddresses.CAMWBTC_TOKEN,
+    // },
+    // {
+    //   underlyingName: 'WETH',
+    //   underlying: MaticAddresses.WETH_TOKEN,
+    //   camToken: MaticAddresses.CAMWETH_TOKEN,
+    // },
   ]
 
   const deployInfo: DeployInfo = new DeployInfo();
