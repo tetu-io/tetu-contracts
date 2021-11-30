@@ -6,7 +6,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {RunHelper} from "./RunHelper";
 import {utils} from "ethers";
 import {expect} from "chai";
-import {UniswapUtils} from "../../test/UniswapUtils";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 
 
@@ -43,13 +42,15 @@ async function main() {
   const vaults = await contractReader.vaults();
   console.log('vaults', vaults.length);
 
-  await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10'));
-
   for (let i = 0; i < vaults.length; i++) {
     try {
       const vault = vaults[i];
       console.log(i, await contractReader.vaultName(vault));
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+      const platform = await contractReader.strategyPlatform(await vCtr.strategy());
+      if (platform !== 3) {
+        continue;
+      }
 
       const und = await vCtr.underlying();
       const undPrice = +utils.formatUnits(await contractReader.getPrice(und));
@@ -59,19 +60,18 @@ async function main() {
       const strategy = await vCtr.strategy();
       const undBalStrat = +utils.formatUnits(await TokenUtils.balanceOf(und, strategy), undDec);
       if (undBal * undPrice < 100 && undBalStrat * undPrice < 100) {
-        console.log('too low und balance', vault,
-          (undBal * undPrice).toFixed(2), (undBalStrat * undPrice).toFixed(2));
+        // console.log('too low und balance', vault,
+        //   (undBal * undPrice).toFixed(2), (undBalStrat * undPrice).toFixed(2));
         continue;
       }
       console.log('vault bal', (undBal * undPrice).toFixed(2));
       console.log('strat bal', (undBalStrat * undPrice).toFixed(2));
 
-      const platform = await contractReader.strategyPlatform(await vCtr.strategy())
+
       if ((await contractReader.strategyAssets(await vCtr.strategy())).length !== 2
         || exclude.has(vault.toLowerCase())
         || !(await contractReader.vaultActive(vault))
         || (undBal * undPrice) + (undBalStrat * undPrice) < 100
-        // || (platform !== 3)
       ) {
         continue;
       }
@@ -82,15 +82,15 @@ async function main() {
         zap,
         contractReader,
         vault,
-        MaticAddresses.WMATIC_TOKEN,
+        MaticAddresses.USDC_TOKEN,
         0.01,
         10
       );
 
       const amountShare = await TokenUtils.balanceOf(vault, signer.address);
       if (amountShare.isZero()) {
-        console.log('zero balance');
-        continue;
+        console.log('ERROR! zero balance', vault);
+        return;
       }
 
       await zapOutVaultWithLp(
@@ -99,11 +99,11 @@ async function main() {
         zap,
         contractReader,
         vault,
-        MaticAddresses.WMATIC_TOKEN,
+        MaticAddresses.USDC_TOKEN,
         amountShare.toString()
       );
     } catch (e) {
-      console.error('error with', vaults[i]);
+      console.error('error with', vaults[i], e);
     }
 
 
