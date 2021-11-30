@@ -89,12 +89,13 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
   ////////////BASIC STRATEGY FUNCTIONS/////////
   /////////////////////////////////////////////
 
-  /// @notice Return approximately amount of reward tokens ready to claim in Iron Controller contract
+  /// @notice Return approximately amount of reward tokens ready to claim in Scream Controller contract
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
-    rewards[0] = IScreamController(screamController).rewardAccrued(address(this));
+    rewards[0] = IScreamController(screamController).compAccrued(address(this));
+    console.log("readyToClaim: %s", rewards[0]);
     return rewards;
   }
 
