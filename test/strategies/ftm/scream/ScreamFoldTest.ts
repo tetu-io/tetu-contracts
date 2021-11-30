@@ -1,42 +1,60 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../MaticAddresses";
 import {readFileSync} from "fs";
-import {startIronFoldStrategyTest} from "../../IronFoldStrategyTest";
 import {config as dotEnvConfig} from "dotenv";
-import {startScreamFoldStrategyTest} from "./ScreamFoldStrategyTest";
-import {FtmAddresses} from "../../../FtmAddresses";
+import {universalStrategyTest} from "../../UniversalStrategyTest";
+import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {IStrategy, SmartVault} from "../../../../typechain";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
+import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
+import {ScreamDoHardWork} from "./ScreamDoHardWork";
+import {DeployInfo} from "../../DeployInfo";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  disableStrategyTests: {
-    type: "boolean",
-    default: false,
-  },
-  onlyOneIronFoldStrategyTest: {
-    type: "number",
-    default: 1,
-  }
-}).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+    onlyOneScreamFoldStrategyTest: {
+      type: "number",
+      default: -1,
+    },
+    deployCoreContracts: {
+      type: "boolean",
+      default: false,
+    },
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+  }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Scream Fold tests', async () => {
-  if (argv.disableStrategyTests) {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/scream_markets.csv', 'utf8').split(/\r?\n/);
+  const deployInfo: DeployInfo = new DeployInfo();
+
+  before(async function () {
+    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+  });
 
   infos.forEach(info => {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const rTokenName = strat[1];
-    const rTokenAddress = strat[2];
+    const scTokenName = strat[1];
+    const scTokenAddress = strat[2];
     const token = strat[3];
     const tokenName = strat[4];
     const collateralFactor = strat[5];
@@ -47,22 +65,91 @@ describe('Universal Scream Fold tests', async () => {
       return;
     }
 
-    if (argv.onlyOneIronFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneIronFoldStrategyTest) {
+    if (argv.onlyOneScreamFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneScreamFoldStrategyTest) {
       return;
     }
 
-    console.log('strat', idx, rTokenName);
+    console.log('Start test strategy', idx, scTokenName);
+    // **********************************************
+    // ************** CONFIG*************************
+    // **********************************************
+    const strategyContractName = 'StrategyScreamFold';
+    const underlying = token;
+    // add custom liquidation path if necessary
+    const forwarderConfigurator = null;
+    // only for strategies where we expect PPFS fluctuations
+    const ppfsDecreaseAllowed = true;
+    // only for strategies where we expect PPFS fluctuations
+    const balanceTolerance = 0.00001;
+    const finalBalanceTolerance = 0.00001;
+    const deposit = 100_000;
+    // at least 3
+    const loops = 9;
+    // number of blocks or timestamp value
+    const loopValue = 3000;
+    // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
+    const advanceBlocks = true;
+    // **********************************************
 
-    /* tslint:disable:no-floating-promises */
-    startScreamFoldStrategyTest(
-        'StrategyScreamFold',
-        FtmAddresses.SPOOKY_SWAP_FACTORY,
-        token.toLowerCase(),
+    const deployer = (signer: SignerWithAddress) => {
+      const core = deployInfo.core as CoreContractsWrapper;
+      return StrategyTestUtils.deploy(
+        signer,
+        core,
         tokenName,
-        [FtmAddresses.SCREAM_TOKEN],
-        rTokenAddress,
-        borrowTarget,
-        collateralFactor
+        vaultAddress => {
+          const strategyArgs = [
+            core.controller.address,
+            vaultAddress,
+            underlying,
+            scTokenAddress,
+            borrowTarget,
+            collateralFactor
+          ];
+          return DeployerUtils.deployContract(
+            signer,
+            strategyContractName,
+            ...strategyArgs
+          ) as Promise<IStrategy>
+        },
+        underlying
+      );
+    };
+    const hwInitiator = (
+      _signer: SignerWithAddress,
+      _user: SignerWithAddress,
+      _core: CoreContractsWrapper,
+      _tools: ToolsContractsWrapper,
+      _underlying: string,
+      _vault: SmartVault,
+      _strategy: IStrategy,
+      _balanceTolerance: number
+    ) => {
+      return new ScreamDoHardWork(
+        _signer,
+        _user,
+        _core,
+        _tools,
+        _underlying,
+        _vault,
+        _strategy,
+        _balanceTolerance,
+        finalBalanceTolerance
+      );
+    };
+
+    universalStrategyTest(
+      'ScreamTest_' + scTokenName,
+      deployInfo,
+      deployer,
+      hwInitiator,
+      forwarderConfigurator,
+      ppfsDecreaseAllowed,
+      balanceTolerance,
+      deposit,
+      loops,
+      loopValue,
+      advanceBlocks,
     );
   });
 });
