@@ -744,7 +744,6 @@ export class DeployerUtils {
     if (!tools) {
       throw Error('No config for ' + net.chainId);
     }
-    console.log('tools', tools);
     return new ToolsContractsWrapper(
       await DeployerUtils.connectInterface(signer, "PriceCalculator", tools.calculator) as PriceCalculator,
       await DeployerUtils.connectInterface(signer, "ContractReader", tools.reader) as ContractReader,
