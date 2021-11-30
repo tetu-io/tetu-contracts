@@ -329,6 +329,7 @@ describe('Universal MultiAaveMaiBal tests', async () => {
     console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
     const ethPriceSourceSlotIndex = PRICE_SLOT_INDEX;
+    console.log('>>>ethPriceSourceSlotIndex', ethPriceSourceSlotIndex);
     const adrOriginal = await DeployerUtils.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
     console.log('>>>adrOriginal        ', adrOriginal)
     // set matic price source to our mock contract
