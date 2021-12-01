@@ -35,7 +35,7 @@ interface IChefIncentivesController {
 
   function registeredTokens(uint id) external view returns (address);
 
-  function poolInfo(uint256 _pid) external view returns (PoolInfo memory);
+  function poolInfo(address _token) external view returns (PoolInfo memory);
 
   function emissionSchedule(uint256 id) external view returns (EmissionPoint memory);
 

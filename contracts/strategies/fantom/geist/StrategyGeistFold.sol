@@ -21,16 +21,20 @@ contract StrategyGeistFold is GeistFoldStrategyBase {
   address private constant GEIST = address(0xd8321AA83Fb0a4ECd6348D4577431310A6E0814d);
   address private constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
   address public constant AAVE_LENDING_POOL = 0x9FAD24f572045c7869117160A571B2e50b10d068;
-  address public constant CHEF_INCENTIVES_CONTROLLER = 0x297FddC5c33Ef988dd03bd13e162aE084ea1fE57;
+  address public constant MULTI_FEE_DISTRIBUTOR = 0x49c93a95dbcc9A6A4D8f77E59c038ce5020e82f8;
   address public constant AAVE_DATA_PROVIDER = 0xf3B0611e2E4D2cd6aB4bb3e01aDe211c3f42A8C3;
   address public constant AAVE_LENDING_POOL_ADDRESSES_PROVIDER = 0x6c793c628Fe2b480c5e6FB7957dDa4b9291F9c9b;
+  address public constant CHEF_INCENTIVES_CONTROLLER = 0x297FddC5c33Ef988dd03bd13e162aE084ea1fE57;
+  address public constant LP_WITH_GEIST = 0x668AE94D0870230AC007a01B471D02b2c94DDcB9;
 
   GeistData private _geistData = GeistData(
     WFTM,
     AAVE_LENDING_POOL,
-    CHEF_INCENTIVES_CONTROLLER,
+    MULTI_FEE_DISTRIBUTOR,
     AAVE_DATA_PROVIDER,
-    AAVE_LENDING_POOL_ADDRESSES_PROVIDER
+    AAVE_LENDING_POOL_ADDRESSES_PROVIDER,
+    CHEF_INCENTIVES_CONTROLLER,
+    LP_WITH_GEIST
   );
 
   address[] private _poolRewards = [GEIST];

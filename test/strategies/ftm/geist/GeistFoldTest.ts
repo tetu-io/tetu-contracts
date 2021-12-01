@@ -7,11 +7,12 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {IStrategy, SmartVault} from "../../../../typechain";
+import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {FoldingDoHardWork} from "../../FoldingDoHardWork";
+import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -39,7 +40,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe.skip('Universal Geist Fold tests', async () => {
+describe('Universal Geist Fold tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
@@ -81,12 +82,17 @@ describe.skip('Universal Geist Fold tests', async () => {
     const strategyContractName = 'StrategyGeistFold';
     const underlying = token;
     // add custom liquidation path if necessary
-    const forwarderConfigurator = null;
+    const forwarderConfigurator = async (forwarder: ForwarderV2) => {
+      await forwarder.addLargestLps(
+        [FtmAddresses.GEIST_TOKEN],
+        ['0x668AE94D0870230AC007a01B471D02b2c94DDcB9']
+      );
+    };
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.001;
-    const finalBalanceTolerance = 0.0001;
+    const finalBalanceTolerance = 0.001;
     const deposit = 100_000;
     // at least 3
     const loops = 9;
@@ -94,7 +100,7 @@ describe.skip('Universal Geist Fold tests', async () => {
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    const specificTests: SpecificStrategyTest[] = [];
+    const specificTests = [new FoldingProfitabilityTest()];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -130,7 +136,7 @@ describe.skip('Universal Geist Fold tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new FoldingDoHardWork(
+      const hw = new FoldingDoHardWork(
         _signer,
         _user,
         _core,
@@ -141,6 +147,8 @@ describe.skip('Universal Geist Fold tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
       );
+      hw.toClaimCheckTolerance = 0.5;
+      return hw;
     };
 
     universalStrategyTest(

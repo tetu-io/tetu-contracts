@@ -14,22 +14,20 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
     await super.loopStartActions(i);
     const start = Date.now();
     const foldContract = await DeployerUtils.connectInterface(this.signer, 'FoldingBase', this.strategy.address) as FoldingBase
-    let folding = await foldContract.foldEnabled();
+    let foldingState = (await foldContract.foldState()).toNumber();
     // switch off folding on the 1/3 of cycles
-    if (i === Math.floor(this.loops / 3) && folding) {
-      await foldContract.setFold(false);
-      await foldContract.rebalance();
-      folding = await foldContract.foldEnabled();
-      expect(folding).is.eq(false);
+    if (i === Math.floor(this.loops / 3) && foldingState !== 2) {
+      await foldContract.setFold(2);
+      foldingState = (await foldContract.foldState()).toNumber();
+      expect(foldingState).is.eq(2);
+    } else if (i === Math.floor(this.loops / 3) * 2 && foldingState !== 1) { // switch on folding on the 2/3 of cycles
+      await foldContract.setFold(1);
+      foldingState = (await foldContract.foldState()).toNumber();
+      expect(foldingState).is.eq(1);
+    } else if (foldingState !== 0) {
+      await foldContract.setFold(0);
     }
-    // switch on folding on the 2/3 of cycles
-    if (i === Math.floor(this.loops / 3) * 2 && !folding) {
-      await foldContract.setFold(true);
-      await foldContract.rebalance();
-      folding = await foldContract.foldEnabled();
-      expect(folding).is.eq(true);
-    }
-    console.log('------ FOLDING', 'cycle:' + i, 'enabled:' + folding, 'profitable:' + await foldContract.isFoldingProfitable());
+    console.log('------ FOLDING', 'cycle:' + i, 'enabled:' + foldingState, 'profitable:' + await foldContract.isFoldingProfitable());
     Misc.printDuration('Loop preparation for folding completed', start);
   }
 

@@ -22,7 +22,9 @@ interface IFoldStrategy {
 
   function collateralFactorNumerator() external view returns (uint);
 
-  function foldEnabled() external view returns (bool);
+  function fold() external view returns (bool);
+
+  function foldState() external view returns (uint);
 
   function suppliedInUnderlying() external view returns (uint);
 
@@ -30,7 +32,7 @@ interface IFoldStrategy {
 
   function isFoldingProfitable() external view returns (bool);
 
-  function setFold(bool value) external;
+  function setFold(uint value) external;
 
   function rebalance() external;
 
