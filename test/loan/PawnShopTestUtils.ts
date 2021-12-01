@@ -1,11 +1,12 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TetuPawnShop} from "../../typechain";
 import {PawnShopUtils} from "./PawnShopUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {BigNumber} from "ethers";
+import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
+import {Misc} from "../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -111,11 +112,11 @@ export class PawnShopTestUtils {
     expect(collateral.collateralTokenId.toString()).is.eq(collateralId);
 
     const acquired = l.acquired;
-    expect(acquired.acquiredToken.toLowerCase()).is.eq(MaticAddresses.USDC_TOKEN);
+    expect(acquired.acquiredToken.toLowerCase()).is.eq(await DeployerUtils.getUSDCAddress());
     expect(acquired.acquiredAmount.toString()).is.eq(acquiredAmount);
 
     const execution = l.execution;
-    expect(execution.lender.toLowerCase()).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(execution.lender.toLowerCase()).is.eq(Misc.ZERO_ADDRESS);
     expect(execution.posStartBlock).is.eq(0);
     expect(execution.posStartTs).is.eq(0);
 
@@ -127,7 +128,7 @@ export class PawnShopTestUtils {
 
     expect(await shop.openPositions(listIndex)).is.eq(id);
     expect((await shop.positionsByCollateral(collateralToken, cIndex))).is.eq(id);
-    expect((await shop.positionsByAcquired(MaticAddresses.USDC_TOKEN, aIndex))).is.eq(id);
+    expect((await shop.positionsByAcquired(await DeployerUtils.getUSDCAddress(), aIndex))).is.eq(id);
     expect((await shop.borrowerPositions(signer.address, bIndex))).is.eq(id);
   }
 

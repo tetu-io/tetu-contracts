@@ -50,7 +50,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.5.0";
+  string public constant VERSION = "1.5.1";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
@@ -503,7 +503,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Mint shares and transfer underlying from user to the vault
   ///         New shares = (invested amount * total supply) / underlyingBalanceWithInvestment()
-  function _deposit(uint256 amount, address sender, address beneficiary) internal updateRewards(sender) {
+  function _deposit(uint256 amount, address sender, address beneficiary) internal updateRewards(beneficiary) {
     require(amount > 0, "SV:12");
     require(beneficiary != address(0), "SV:13");
 

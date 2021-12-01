@@ -1,5 +1,5 @@
 import {McLpStrategyDeployer} from "../McLpStrategyDeployer";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 async function main() {
   await McLpStrategyDeployer.deploy(

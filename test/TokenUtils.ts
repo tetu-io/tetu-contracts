@@ -1,11 +1,13 @@
 import {ethers} from "hardhat";
-import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic} from "../typechain";
+import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic, RewardToken} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {MaticAddresses} from "./MaticAddresses";
+import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
+import {Misc} from "../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -16,8 +18,8 @@ export class TokenUtils {
   public static TOKEN_HOLDERS = new Map<string, string>([
     [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
     [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
-    [MaticAddresses.WBTC_TOKEN, '0x5c2ed810328349100a66b82b78a1791b101c9d61'.toLowerCase()], // aave
-    [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave
+    [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
+    [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
     [MaticAddresses.USDT_TOKEN, '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe'.toLowerCase()], // adr
     [MaticAddresses.QUICK_TOKEN, '0xdB74C5D4F154BBD0B8e0a28195C68ab2721327e5'.toLowerCase()], // dquick
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
@@ -28,6 +30,21 @@ export class TokenUtils {
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.ICE_TOKEN, '0xb1bf26c7b43d2485fa07694583d2f17df0dde010'.toLowerCase()], // blueIce
     [MaticAddresses.IRON_TOKEN, '0xCaEb732167aF742032D13A9e76881026f91Cd087'.toLowerCase()], // ironSwap
+    [MaticAddresses.DAI_TOKEN, '0x9b17bAADf0f21F03e35249e0e59723F34994F806'.toLowerCase()], // anyswap
+    [MaticAddresses.LINK_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
+    [MaticAddresses.CRV_TOKEN, '0x98B5F32dd9670191568b661a3e847Ed764943875'.toLowerCase()], // qi
+    [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], //
+    [FtmAddresses.USDC_TOKEN, '0xe578c856933d8e1082740bf7661e379aa2a30b26'.toLowerCase()], // geist
+    [FtmAddresses.fUSDT_TOKEN, '0x940f41f0ec9ba1a34cf001cc03347ac092f5f6b5'.toLowerCase()], // geist
+    [FtmAddresses.FTM_TOKEN, '0x39b3bd37208cbade74d0fcbdbb12d606295b430a'.toLowerCase()], // geist
+    [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
+    [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
+    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
+    [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
+    [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
+    [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
+    [FtmAddresses.TETU_TOKEN, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
+    [FtmAddresses.DAI_TOKEN, '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E'.toLowerCase()], // itself
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -65,8 +82,8 @@ export class TokenUtils {
     return token.transfer(destination, BigNumber.from(amount))
   }
 
-  public static async wrapMatic(signer: SignerWithAddress, amount: string) {
-    const token = await ethers.getContractAt("IWmatic", MaticAddresses.WMATIC_TOKEN, signer) as IWmatic;
+  public static async wrapNetworkToken(signer: SignerWithAddress, amount: string) {
+    const token = await ethers.getContractAt("IWmatic", await DeployerUtils.getNetworkTokenAddress(), signer) as IWmatic;
     return token.deposit({value: utils.parseUnits(amount, 18).toString()})
   }
 
@@ -113,7 +130,14 @@ export class TokenUtils {
   }
 
   public static async getToken(token: string, to: string, amount?: BigNumber) {
+    const start = Date.now();
     console.log('transfer token from biggest holder', token, amount?.toString());
+    if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
+      const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
+      const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
+      await tokenCtr.mint(to, amount as BigNumber);
+      return amount;
+    }
     const holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
     if (!holder) {
       throw new Error('Please add holder for ' + token);
@@ -126,6 +150,7 @@ export class TokenUtils {
     } else {
       await TokenUtils.transfer(token, signer, to, balance.toString());
     }
+    Misc.printDuration('getToken completed', start);
     return balance;
   }
 

@@ -9,11 +9,11 @@ import {
   SmartVault
 } from "../../typechain";
 import {UniswapUtils} from "../../test/UniswapUtils";
-import {MaticAddresses} from "../../test/MaticAddresses";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../test/TokenUtils";
 import {RunHelper} from "./RunHelper";
 import {config as dotEnvConfig} from "dotenv";
+import {MaticAddresses} from "../addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -27,9 +27,7 @@ const argv = require('yargs/yargs')()
         '1',
         '4',
         '6',
-        '7',
         '10',
-        '12',
       ]
     },
     startDistributeFrom: {
@@ -115,11 +113,10 @@ async function main() {
   }
 
   if (argv.fork) {
-    const signerI = await DeployerUtils.impersonate(signer.address);
-    await UniswapUtils.buyToken(signerI, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000')); // 500m wmatic
-    await UniswapUtils.buyToken(signerI, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
-    await UniswapUtils.buyToken(signerI, MaticAddresses.TETU_SWAP_ROUTER, MaticAddresses.TETU_TOKEN, utils.parseUnits('2000000'));
-    await TokenUtils.transfer(MaticAddresses.TETU_TOKEN, signerI, rewarder.address, (await TokenUtils.balanceOf(MaticAddresses.TETU_TOKEN, signer.address)).toString());
+    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, utils.parseUnits('1000000'));
+    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, utils.parseUnits('1000000', 6));
+    await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('1000000'));
+    await TokenUtils.transfer(MaticAddresses.TETU_TOKEN, signer, rewarder.address, (await TokenUtils.balanceOf(MaticAddresses.TETU_TOKEN, signer.address)).toString());
   }
 
   const vaultForDistributionSize = (await rewarder.vaultsSize()).toNumber();

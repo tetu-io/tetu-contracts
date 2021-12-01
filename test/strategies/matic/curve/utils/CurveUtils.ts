@@ -1,14 +1,7 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber, utils} from "ethers";
-import {
-  FeeRewardForwarder,
-  IAavePool,
-  IERC20,
-  IRenBTCPool,
-  ITricryptoPool,
-  RewardToken
-} from "../../../../../typechain";
-import {MaticAddresses} from "../../../../MaticAddresses";
+import {IAavePool, IERC20, IRenBTCPool, ITricryptoPool} from "../../../../../typechain";
+import {MaticAddresses} from "../../../../../scripts/addresses/MaticAddresses";
 import {ethers} from "hardhat";
 import {expect} from "chai";
 import {UniswapUtils} from "../../../../UniswapUtils";
@@ -17,24 +10,24 @@ import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
 
 export class CurveUtils {
 
-  public static async configureFeeRewardForwarder(feeRewardForwarder: FeeRewardForwarder, rewardToken: RewardToken) {
-    for (const rt of [MaticAddresses.WMATIC_TOKEN, MaticAddresses.CRV_TOKEN]) {
-      await feeRewardForwarder.setConversionPath(
-        [rt, MaticAddresses.USDC_TOKEN, rewardToken.address],
-        [MaticAddresses.SUSHI_ROUTER, MaticAddresses.QUICK_ROUTER]
-      );
-      await feeRewardForwarder.setConversionPath(
-        [rt, MaticAddresses.USDC_TOKEN],
-        [MaticAddresses.SUSHI_ROUTER]
-      );
-    }
-    await feeRewardForwarder.setLiquidityNumerator(50);
-    await feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
+  public static async isCurve(signer: SignerWithAddress, token: string) {
+    const name = await TokenUtils.tokenName(token);
+    return name.startsWith('Curve');
   }
 
-  public static async addLiquidityAave(investor: SignerWithAddress) {
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000')); // 100m wmatic
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('100000000'));
+  public static async addLiquidity(signer: SignerWithAddress, token: string, amountN: number) {
+    token = token.toLowerCase();
+    if (token === MaticAddresses.AM3CRV_TOKEN) {
+      await CurveUtils.addLiquidityAave(signer, amountN);
+    } else if (token === MaticAddresses.USD_BTC_ETH_CRV_TOKEN) {
+      await CurveUtils.addLiquidityTrirypto(signer, amountN);
+    } else if (token === MaticAddresses.BTCCRV_TOKEN) {
+      await CurveUtils.addLiquidityRen(signer, amountN);
+    }
+  }
+
+  public static async addLiquidityAave(investor: SignerWithAddress, amountN: number) {
+    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('1000000'));
     const usdcUserBalance = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
     const aavePool = await ethers.getContractAt("IAavePool", MaticAddresses.CURVE_AAVE_POOL, investor) as IAavePool;
     const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, investor) as IERC20;
@@ -43,22 +36,33 @@ export class CurveUtils {
 
   }
 
-  public static async addLiquidityRen(investor: SignerWithAddress) {
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000000')); // 100m wmatic
-    await UniswapUtils.getTokenFromHolder(investor, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('2053400'));
+  public static async addLiquidityRen(investor: SignerWithAddress, amountN: number) {
+    const dec = await TokenUtils.decimals(MaticAddresses.WBTC_TOKEN);
+    const amount = utils.parseUnits('0.01', dec);
+    await TokenUtils.getToken(MaticAddresses.WBTC_TOKEN, investor.address, amount);
     const renBTCPool = await ethers.getContractAt("IRenBTCPool", MaticAddresses.CURVE_renBTC_POOL, investor) as IRenBTCPool;
-    const wbtcToken = await ethers.getContractAt("IERC20", MaticAddresses.WBTC_TOKEN, investor) as IERC20;
-    await wbtcToken.approve(MaticAddresses.CURVE_renBTC_POOL, "2053400", {from: investor.address});
-    await renBTCPool.add_liquidity([2053400, 0], 0, true);
+    await TokenUtils.approve(MaticAddresses.WBTC_TOKEN, investor, MaticAddresses.CURVE_renBTC_POOL, amount.toString());
+    await renBTCPool.add_liquidity([amount, 0], 0, true);
   }
 
-  public static async addLiquidityTrirypto(investor: SignerWithAddress) {
+  public static async addLiquidityTrirypto(investor: SignerWithAddress, amountN: number) {
     console.log('try to deposit to atricrypto')
     await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, investor.address, utils.parseUnits('10000', 6));
     const pool = await ethers.getContractAt("ITricryptoPool", MaticAddresses.CURVE_aTricrypto3_POOL, investor) as ITricryptoPool;
     const bal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, investor, pool.address, bal.toString());
     await pool.add_liquidity([0, bal, 0, 0, 0], 0);
+  }
+
+  public static async swapTokens(trader: SignerWithAddress, token: string) {
+    token = token.toLowerCase();
+    if (token === MaticAddresses.AM3CRV_TOKEN) {
+      await CurveUtils.swapTokensAAVE(trader);
+    } else if (token === MaticAddresses.USD_BTC_ETH_CRV_TOKEN) {
+      await CurveUtils.swapTricrypto(trader);
+    } else if (token === MaticAddresses.BTCCRV_TOKEN) {
+      await CurveUtils.swapRen(trader);
+    }
   }
 
   public static async swapTokensAAVE(trader: SignerWithAddress) {
@@ -86,5 +90,15 @@ export class CurveUtils {
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, pool.address, utils.parseUnits('10000', 6).mul(2).toString());
     await pool.exchange_underlying(1, 0, utils.parseUnits('10000', 6), 0, signer.address);
     console.log('swap tricrypto completed')
+  }
+
+  public static async swapRen(signer: SignerWithAddress) {
+    console.log('swap ren')
+    const amount = utils.parseUnits('1', 8);
+    await TokenUtils.getToken(MaticAddresses.WBTC_TOKEN, signer.address, amount);
+    const pool = await DeployerUtils.connectInterface(signer, 'IRenBTCPool', MaticAddresses.CURVE_renBTC_POOL) as IRenBTCPool;
+    await TokenUtils.approve(MaticAddresses.WBTC_TOKEN, signer, pool.address, amount.mul(2).toString());
+    await pool.exchange_underlying(0, 1, amount, 0);
+    console.log('swap ren completed')
   }
 }

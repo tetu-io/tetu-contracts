@@ -30,7 +30,7 @@ async function main() {
   const deployed = [];
 
   const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+    signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -71,19 +71,23 @@ async function main() {
     if (!(await vCtr.active())) {
       console.log('vault not active', vAdr)
       // continue;
+    } else {
+      // todo update only disabled vaults
+      console.log('skip active', vAdr)
+      continue;
     }
 
     console.log('strat', idx, lpName);
 
     const strategy = await DeployerUtils.deployContract(
-        signer,
-        'StrategySushiSwapLpWithAc',
-        core.controller,
-        vAdr,
-        lpAddress,
-        token0,
-        token1,
-        idx
+      signer,
+      'StrategySushiSwapLpWithAc',
+      core.controller,
+      vAdr,
+      lpAddress,
+      token0,
+      token1,
+      idx
     ) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
@@ -106,8 +110,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

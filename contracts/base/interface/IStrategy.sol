@@ -27,7 +27,11 @@ interface IStrategy {
     IRON_LEND, // 9
     HERMES, // 10
     CAFE, // 11
-    TETU_SWAP // 12
+    TETU_SWAP, // 12
+    SPOOKY, // 13
+    AAVE_LEND, //14
+    GEIST //15
+
   }
 
   // *************** GOVERNANCE ACTIONS **************
@@ -44,6 +48,8 @@ interface IStrategy {
   function investAllUnderlying() external;
 
   function emergencyExit() external;
+
+  function pauseInvesting() external;
 
   function continueInvesting() external;
 

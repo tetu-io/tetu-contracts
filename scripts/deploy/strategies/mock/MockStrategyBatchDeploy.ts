@@ -11,9 +11,9 @@ import {
 import {utils} from "ethers";
 import {TokenUtils} from "../../../../test/TokenUtils";
 import {RunHelper} from "../../../utils/RunHelper";
-import {RopstenAddresses} from "../../../../test/RopstenAddresses";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {config as dotEnvConfig} from "dotenv";
+import {RopstenAddresses} from "../../../addresses/RopstenAddresses";
+import {Misc} from "../../../utils/tools/Misc";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -138,7 +138,7 @@ async function main() {
         strategyUnderlying,
         rewardDuration,
         false,
-        MaticAddresses.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS
     ));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));

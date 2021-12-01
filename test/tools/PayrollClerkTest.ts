@@ -10,7 +10,6 @@ import {MintHelperUtils} from "../MintHelperUtils";
 import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
-import {MaticAddresses} from "../MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -22,6 +21,8 @@ describe("Payroll Clerk tests", function () {
   let core: CoreContractsWrapper;
   let clerk: PayrollClerk;
   let calculator: PriceCalculator;
+  let usdc: string;
+  let networkToken: string;
 
   before(async function () {
     this.timeout(1200000);
@@ -29,9 +30,14 @@ describe("Payroll Clerk tests", function () {
     signer = (await ethers.getSigners())[0];
     core = await DeployerUtils.deployAllCoreContracts(signer);
 
-    calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0] as PriceCalculator;
+    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
 
     clerk = (await DeployerUtils.deployPayrollClerk(signer, core.controller.address, calculator.address))[0];
+
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
+    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
 
     await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "10000");
   });
@@ -81,25 +87,25 @@ describe("Payroll Clerk tests", function () {
     expect(await clerk.workersLength()).is.eq(1);
     expect((await clerk.allWorkers())[0]).is.eq(signer.address);
     expect(await clerk.isGovernance(signer.address)).is.eq(true);
-    await clerk.changeTokens([core.rewardToken.address, MaticAddresses.WMATIC_TOKEN], [50, 50]);
+    await clerk.changeTokens([core.rewardToken.address, networkToken], [50, 50]);
 
     await MintHelperUtils.mint(core.controller, core.announcer, '10000', signer.address);
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000").toString());
 
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000'));
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, clerk.address, utils.parseUnits("1000").toString());
+    // await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, networkToken, utils.parseUnits('10000'));
+    await TokenUtils.transfer(networkToken, signer, clerk.address, utils.parseUnits("1000").toString());
 
     const balance1 = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
-    const balance2 = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
+    const balance2 = await TokenUtils.balanceOf(networkToken, signer.address);
 
     await clerk.multiplePay([signer.address], [2]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(balance1.add(utils.parseUnits("100")));
 
-    const p2 = await calculator.getPriceWithDefaultOutput(MaticAddresses.WMATIC_TOKEN);
+    const p2 = await calculator.getPriceWithDefaultOutput(networkToken);
 
-    expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address))
+    expect(await TokenUtils.balanceOf(networkToken, signer.address))
       .eq(balance2.add(utils.parseUnits("100").mul(1e9).mul(1e9).div(p2)));
   });
 

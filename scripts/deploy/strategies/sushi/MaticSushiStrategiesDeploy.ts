@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, Controller, IStrategy, VaultController} from "../../../../typechain";
-import {readFileSync} from "fs";
+import {Bookkeeper, ContractReader, IStrategy} from "../../../../typechain";
+import {appendFileSync, readFileSync} from "fs";
 
 
 async function main() {
@@ -9,21 +9,19 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
-
   const infos = readFileSync('scripts/utils/download/data/sushi_pools.csv', 'utf8').split(/\r?\n/);
 
   const deployed = [];
   const vaultNames = new Set<string>();
 
-  const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+  const cReader = await DeployerUtils.connectContract(signer, "ContractReader", tools.reader) as ContractReader;
+  const bookkeeper = await DeployerUtils.connectContract(signer, "Bookkeeper", core.bookkeeper) as Bookkeeper;
 
-  const deployedVaultAddresses = await cReader.vaults();
-  console.log('all vaults size', deployedVaultAddresses.length);
+  const vSize = (await bookkeeper.vaultsLength()).toNumber();
+  console.log('all vaults size', vSize);
 
-  for (const vAdr of deployedVaultAddresses) {
+  for (let i = 0; i < vSize; i++) {
+    const vAdr = await bookkeeper._vaults(i);
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
@@ -44,6 +42,11 @@ async function main() {
       continue;
     }
 
+    if (+alloc === 0) {
+      console.log('no rewards', idx);
+      continue;
+    }
+
     const vaultNameWithoutPrefix = `SUSHI_${token0Name}_${token1Name}`;
 
     if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
@@ -54,24 +57,23 @@ async function main() {
     console.log('strat', idx, lpName);
     // tslint:disable-next-line:no-any
     const data: any[] = [];
-    data.push(await DeployerUtils.deployAndInitVaultAndStrategy(
-        vaultNameWithoutPrefix,
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategySushiSwapLp',
-            core.controller,
-            vaultAddress,
-            lpAddress,
-            token0,
-            token1,
-            idx
-        ) as Promise<IStrategy>,
-        controller,
-        vaultController,
-        core.psVault,
+    data.push(...await DeployerUtils.deployVaultAndStrategy(
+      vaultNameWithoutPrefix,
+      async vaultAddress => DeployerUtils.deployContract(
         signer,
-        60 * 60 * 24 * 28,
-        true
+        'StrategySushiSwapLpWithAc',
+        core.controller,
+        vaultAddress,
+        lpAddress,
+        token0,
+        token1,
+        idx
+      ) as Promise<IStrategy>,
+      core.controller,
+      core.psVault,
+      signer,
+      60 * 60 * 24 * 28,
+      true
     ));
     data.push([
       core.controller,
@@ -82,6 +84,9 @@ async function main() {
       idx
     ]);
     deployed.push(data);
+
+    const txt = `${vaultNameWithoutPrefix}:     vault: ${data[1].address}     strategy: ${data[2].address}\n`;
+    appendFileSync(`./tmp/deployed/vaults.txt`, txt, 'utf8');
   }
 
   await DeployerUtils.wait(5);
@@ -90,13 +95,13 @@ async function main() {
     await DeployerUtils.verify(data[0].address);
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);
-    await DeployerUtils.verifyWithArgs(data[2].address, data[3]);
+    await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/matic/sushiswap/StrategySushiSwapLpWithAc.sol:StrategySushiSwapLpWithAc', data[3]);
   }
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

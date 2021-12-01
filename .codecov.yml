@@ -5,7 +5,14 @@ coverage:
   status:
     patch:
       default:
-        target: 95%
+        target: 60%
     project:
       default:
         threshold: 1%
+ignore:
+  - "contracts/tools"
+  - "contracts/test"
+  - "contracts/third_party"
+  - "contracts/strategies"
+  - "contracts/infrastructure"
+  - "contracts/base/strategies"

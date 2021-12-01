@@ -11,6 +11,8 @@ async function main() {
   let data: [PriceCalculator, TetuProxyGov, PriceCalculator];
   if (net.name === "matic") {
     data = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller, true);
+  } else if (net.chainId === 250) {
+    data = await DeployerUtils.deployPriceCalculatorFantom(signer, core.controller, true);
   } else {
     data = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller);
   }
@@ -22,8 +24,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

@@ -7,9 +7,9 @@ import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {PawnShopReader, PriceCalculator, TetuPawnShop, TetuProxyGov} from "../../typechain";
 import {utils} from "ethers";
-import {UniswapUtils} from "../UniswapUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
+import {Misc} from "../../scripts/utils/tools/Misc";
+import {TokenUtils} from "../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -28,6 +28,8 @@ describe("pawnshop reader tests", function () {
   let calculator: PriceCalculator;
   let shop: TetuPawnShop;
   let lastLenderBid = 0;
+  let usdc: string;
+  let networkToken: string;
 
 
   before(async function () {
@@ -38,29 +40,32 @@ describe("pawnshop reader tests", function () {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     const logic = await DeployerUtils.deployContract(signer, "PawnShopReader") as PawnShopReader;
     const proxy = await DeployerUtils.deployContract(
-        signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+      signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, MaticAddresses.ZERO_ADDRESS) as TetuPawnShop;
-    calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, Misc.ZERO_ADDRESS) as TetuPawnShop;
+    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 
     await reader.initialize(core.controller.address, calculator.address, shop.address);
-
-    await UniswapUtils.getTokenFromHolder(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
-    await UniswapUtils.getTokenFromHolder(user1, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
-    await UniswapUtils.getTokenFromHolder(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('500000000'));
-    await UniswapUtils.getTokenFromHolder(user2, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
+    await TokenUtils.getToken(usdc, user1.address, utils.parseUnits('100000', 6));
+    await TokenUtils.getToken(usdc, user2.address, utils.parseUnits('100000', 6));
+    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    await TokenUtils.getToken(networkToken, user1.address, utils.parseUnits('10000'));
+    await TokenUtils.getToken(networkToken, user2.address, utils.parseUnits('10000'));
 
     for (let i = 0; i < EXECUTED_POSITION_COUNT; i++) {
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-          user1,
-          shop,
-          MaticAddresses.WMATIC_TOKEN,
-          '10' + i,
-          '555' + i,
-          99 + i,
-          10 + i
+        user1,
+        shop,
+        networkToken,
+        '10' + i,
+        '555' + i,
+        99 + i,
+        10 + i
       );
       await PawnShopTestUtils.bidAndCheck(posId, '555' + i, user2, shop);
     }
@@ -71,13 +76,13 @@ describe("pawnshop reader tests", function () {
         aAmount = '0';
       }
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-          user1,
-          shop,
-          MaticAddresses.WMATIC_TOKEN,
-          '10' + i,
-          aAmount,
-          99 + i,
-          10 + i
+        user1,
+        shop,
+        networkToken,
+        '10' + i,
+        aAmount,
+        99 + i,
+        10 + i
       );
       if (aAmount === '0') {
         await PawnShopTestUtils.bidAndCheck(posId, '555' + i, user2, shop);
@@ -139,8 +144,8 @@ describe("pawnshop reader tests", function () {
   });
 
   it("read all positions by collateral", async () => {
-    const positions = await reader.positionsByCollateral(MaticAddresses.WMATIC_TOKEN, 0, 1000);
-    const allPosSize = await shop.positionsByCollateralSize(MaticAddresses.WMATIC_TOKEN);
+    const positions = await reader.positionsByCollateral(networkToken, 0, 1000);
+    const allPosSize = await shop.positionsByCollateralSize(networkToken);
 
     let i = EXECUTED_POSITION_COUNT;
     for (const pos of positions) {
@@ -152,14 +157,14 @@ describe("pawnshop reader tests", function () {
   });
 
   it("read exact position by collateral", async () => {
-    const positions = await reader.positionsByCollateral(MaticAddresses.WMATIC_TOKEN, 2, 2);
+    const positions = await reader.positionsByCollateral(networkToken, 2, 2);
     expect(positions.length).is.eq(1);
     expect(positions[0].id).is.eq(5);
   });
 
   it("read all positions by acquired", async () => {
-    const positions = await reader.positionsByAcquired(MaticAddresses.USDC_TOKEN, 0, 1000);
-    const allPosSize = await shop.positionsByAcquiredSize(MaticAddresses.USDC_TOKEN);
+    const positions = await reader.positionsByAcquired(usdc, 0, 1000);
+    const allPosSize = await shop.positionsByAcquiredSize(usdc);
 
     let i = EXECUTED_POSITION_COUNT;
     for (const pos of positions) {
@@ -171,7 +176,7 @@ describe("pawnshop reader tests", function () {
   });
 
   it("read exact position by acquired", async () => {
-    const positions = await reader.positionsByAcquired(MaticAddresses.USDC_TOKEN, 2, 2);
+    const positions = await reader.positionsByAcquired(usdc, 2, 2);
     expect(positions.length).is.eq(1);
     expect(positions[0].id).is.eq(5);
   });

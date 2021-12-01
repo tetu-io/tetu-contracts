@@ -1,10 +1,10 @@
 import {TokenUtils} from "../TokenUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {TetuPawnShop} from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {utils} from "ethers";
+import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -15,30 +15,30 @@ export class PawnShopUtils {
 
 
   public static async openErc20ForUsdc(
-      signer: SignerWithAddress,
-      shop: TetuPawnShop,
-      collateralToken: string,
-      collateralAmount: string,
-      acquiredAmount: string,
-      posDurationBlocks = 99,
-      posFee = 100
+    signer: SignerWithAddress,
+    shop: TetuPawnShop,
+    collateralToken: string,
+    collateralAmount: string,
+    acquiredAmount: string,
+    posDurationBlocks = 99,
+    posFee = 100
   ): Promise<number> {
     console.log("Try to open erc20 position for usdc");
     const bal = await TokenUtils.balanceOf(collateralToken, signer.address);
     const dec = await TokenUtils.decimals(collateralToken);
     expect(+utils.formatUnits(bal, dec))
-    .is.greaterThanOrEqual(+utils.formatUnits(collateralAmount, dec),
-        'not enough balance for open position')
+      .is.greaterThanOrEqual(+utils.formatUnits(collateralAmount, dec),
+      'not enough balance for open position')
 
     await TokenUtils.approve(collateralToken, signer, shop.address, collateralAmount);
     await shop.connect(signer).openPosition(
-        collateralToken,
-        collateralAmount,
-        0,
-        MaticAddresses.USDC_TOKEN,
-        acquiredAmount,
-        posDurationBlocks,
-        posFee
+      collateralToken,
+      collateralAmount,
+      0,
+      await DeployerUtils.getUSDCAddress(),
+      acquiredAmount,
+      posDurationBlocks,
+      posFee
     );
     const id = (await shop.positionCounter()).toNumber() - 1;
     console.log('Position opened', id);
@@ -46,25 +46,25 @@ export class PawnShopUtils {
   }
 
   public static async openNftForUsdc(
-      signer: SignerWithAddress,
-      shop: TetuPawnShop,
-      collateralToken: string,
-      collateralId: string,
-      acquiredAmount: string,
-      posDurationBlocks = 99,
-      posFee = 100
+    signer: SignerWithAddress,
+    shop: TetuPawnShop,
+    collateralToken: string,
+    collateralId: string,
+    acquiredAmount: string,
+    posDurationBlocks = 99,
+    posFee = 100
   ): Promise<number> {
     console.log("Try to open NFT position for usdc", collateralId);
 
     await TokenUtils.approveNFT(collateralToken, signer, shop.address, collateralId);
     await shop.connect(signer).openPosition(
-        collateralToken,
-        0,
-        collateralId,
-        MaticAddresses.USDC_TOKEN,
-        acquiredAmount,
-        posDurationBlocks,
-        posFee
+      collateralToken,
+      0,
+      collateralId,
+      await DeployerUtils.getUSDCAddress(),
+      acquiredAmount,
+      posDurationBlocks,
+      posFee
     );
     const id = (await shop.positionCounter()).toNumber() - 1;
     console.log('NFT Position opened', id);

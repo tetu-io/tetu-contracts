@@ -1,15 +1,15 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
-  IDragonLair, IStakingDualRewards,
-  IStakingRewards,
+  IDragonLair,
+  IStakingDualRewards,
   IStakingRewardsFactoryV2,
   IUniswapV2Pair,
   PriceCalculator,
   SmartVault
 } from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../../../test/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {utils} from "ethers";
 import {VaultUtils} from "../../../test/VaultUtils";
 import {TokenUtils} from "../../../test/TokenUtils";
@@ -132,19 +132,19 @@ async function downloadQuick() {
     const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100
 
     const data = i + ',' +
-        'QUICK_' + token0Name + '_' + token1Name + ',' +
-        lp + ',' +
-        token0 + ',' +
-        token0Name + ',' +
-        token1 + ',' +
-        token1Name + ',' +
-        info[0] + ',' +
-        notifiedAmountUsd.toFixed(2) + ',' +
-        underlyingToVault.get(lp.toLowerCase()) + ',' +
-        (notifiedAmountUsd * weekDurationRatio).toFixed(2) + ',' +
-        tvlUsd.toFixed(2) + ',' +
-        apr.toFixed(2) + ',' +
-        currentRewards.get(lp.toLowerCase())
+      'QUICK_' + token0Name + '_' + token1Name + ',' +
+      lp + ',' +
+      token0 + ',' +
+      token0Name + ',' +
+      token1 + ',' +
+      token1Name + ',' +
+      info[0] + ',' +
+      notifiedAmountUsd.toFixed(2) + ',' +
+      underlyingToVault.get(lp.toLowerCase()) + ',' +
+      (notifiedAmountUsd * weekDurationRatio).toFixed(2) + ',' +
+      tvlUsd.toFixed(2) + ',' +
+      apr.toFixed(2) + ',' +
+      currentRewards.get(lp.toLowerCase())
     ;
     console.log(data);
     infos += data + '\n';
@@ -159,8 +159,8 @@ async function downloadQuick() {
 }
 
 downloadQuick()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

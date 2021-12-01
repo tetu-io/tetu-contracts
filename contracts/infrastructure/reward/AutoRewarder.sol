@@ -28,7 +28,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   uint256 public constant PERIOD = 22 hours;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
@@ -70,7 +70,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   }
 
   /// @dev Capacity for daily distribution. Calculates based on TETU vesting logic
-  function maxRewardsPerDay() public view returns (uint256) {
+  function maxRewardsPerDay() public view virtual returns (uint256) {
     return (_maxSupplyPerWeek(tetuToken().currentWeek())
     - _maxSupplyPerWeek(tetuToken().currentWeek() - 1))
     * networkRatio() / (7 days / PERIOD) / NETWORK_RATIO_DENOMINATOR;
@@ -130,6 +130,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
         continue;
       }
       RewardInfo memory info = lastInfo[_vaults[i]];
+      require(block.timestamp - info.time > PERIOD, "AR: Info too young");
 
       uint256 rewards = rc.strategyRewardsUsd(ISmartVault(_vaults[i]).strategy(), PERIOD);
 
@@ -149,6 +150,8 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
     require(_vaults.length == _strategyRewards.length, "AR: Wrong arrays");
     for (uint256 i = 0; i < _vaults.length; i++) {
       RewardInfo memory info = lastInfo[_vaults[i]];
+      require(block.timestamp - info.time > PERIOD, "AR: Info too young");
+
       uint256 rewards = _strategyRewards[i];
       // new vault
       if (info.vault == address(0)) {
@@ -165,6 +168,9 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
 
   /// @dev Calculate distribution amount and notify given vault
   function _distribute(address _vault) internal {
+    if (!ISmartVault(_vault).active()) {
+      return;
+    }
     RewardInfo memory info = lastInfo[_vault];
     require(info.vault == _vault, "AR: Info not found");
     require(block.timestamp - info.time < PERIOD, "AR: Info too old");
