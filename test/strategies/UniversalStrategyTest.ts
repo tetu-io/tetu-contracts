@@ -83,7 +83,7 @@ async function universalStrategyTest(
         deployInfo?.tools?.calculator as PriceCalculator,
         [signer.address],
       );
-      await UniswapUtils.wrapMatic(this.signer);
+      await UniswapUtils.wrapNetworkToken(this.signer);
       Misc.printDuration('Test Preparations completed', start);
     });
 
