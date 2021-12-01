@@ -895,8 +895,8 @@ export class DeployerUtils {
     }
   }
 
-  public static async getStorageAt(address: string, index: string) {
-    return ethers.provider.getStorageAt(address, index);
+  public static async isNetwork(id: number) {
+    return (await ethers.provider.getNetwork()).chainId === id;
   }
 
   public static async setStorageAt(address: string, index: string, value: string) {
