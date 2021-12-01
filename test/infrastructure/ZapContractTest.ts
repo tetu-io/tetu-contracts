@@ -270,7 +270,6 @@ describe("Zap contract tests", function () {
         continue;
       }
 
-      // await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10'));
       await TokenUtils.getToken(usdc, user.address, utils.parseUnits('10', 6));
 
       await vaultLpTest(
