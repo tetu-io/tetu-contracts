@@ -21,7 +21,9 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
-    vaultNames.add(await cReader.vaultName(vAdr));
+    const name = await cReader.vaultName(vAdr)
+    vaultNames.add(name);
+    console.log('name', name);
   }
 
   mkdir('./tmp/deployed', {recursive: true}, (err) => {
