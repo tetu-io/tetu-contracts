@@ -47,7 +47,7 @@ describe("ForwarderV2 tests", function () {
     await core.controller.setPSNumeratorDenominator(50, 100);
 
     usdc = await DeployerUtils.getUSDCAddress();
-    await UniswapUtils.wrapMatic(signer); // 10m wmatic
+    await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
     const amountLp = '10000000';
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amountLp, 6))
     const rewardTokenAddress = core.rewardToken.address;
@@ -71,6 +71,11 @@ describe("ForwarderV2 tests", function () {
       utils.parseUnits(amountLp, 6).toString(),
       factory,
       await DeployerUtils.getRouterByFactory(factory)
+    );
+
+    await forwarder.addLargestLps(
+      [rewardTokenAddress],
+      [tetuLp]
     );
 
     await StrategyTestUtils.initForwarder(forwarder);
@@ -113,15 +118,13 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should distribute", async () => {
+    const _amount = utils.parseUnits('10', 6);
     const vault = core.psVault;
-    await forwarder.addLargestLps(
-      [core.rewardToken.address],
-      [tetuLp]
-    );
     await core.vaultController.addRewardTokens([vault.address], vault.address);
-    expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(amount))
-    await TokenUtils.approve(usdc, signer, forwarder.address, amount.toString());
-    await forwarder.distribute(amount, vault.address, vault.address);
+    await TokenUtils.getToken(usdc, signer.address, _amount);
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(_amount, 6))
+    await TokenUtils.approve(usdc, signer, forwarder.address, _amount.toString());
+    await forwarder.distribute(_amount, usdc, vault.address);
 
     const qsFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', factory) as IUniswapV2Factory;
 
@@ -145,12 +148,12 @@ describe("ForwarderV2 tests", function () {
     expect(forwarderTetuBal).is.eq(0);
   });
 
-  it("should liquidate usdc to weth", async () => {
-    const tokenIn = usdc;
-    const dec = await TokenUtils.decimals(tokenIn);
+  it("should liquidate usdc to tetu", async () => {
+    const dec = await TokenUtils.decimals(usdc);
     const _amount = utils.parseUnits('1000', dec);
+    await TokenUtils.getToken(usdc, signer.address, _amount);
     await TokenUtils.approve(usdc, signer, forwarder.address, _amount.toString());
-    expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), dec)).is.greaterThanOrEqual(+utils.formatUnits(_amount))
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), dec)).is.greaterThanOrEqual(+utils.formatUnits(_amount, dec))
     await forwarder.liquidate(usdc, core.rewardToken.address, _amount);
   });
 

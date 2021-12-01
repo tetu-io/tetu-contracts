@@ -49,6 +49,8 @@ interface IStrategy {
 
   function emergencyExit() external;
 
+  function pauseInvesting() external;
+
   function continueInvesting() external;
 
   // **************** VIEWS ***************

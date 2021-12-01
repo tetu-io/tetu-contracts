@@ -43,6 +43,7 @@ export class DoHardWorkLoopBase {
   vaultPPFS = BigNumber.from(0);
   priceCache = new Map<string, BigNumber>();
   totalToClaimInTetuN = 0;
+  toClaimCheckTolerance = 0.5;
 
   constructor(
     signer: SignerWithAddress,
@@ -136,7 +137,7 @@ export class DoHardWorkLoopBase {
     if (this.totalToClaimInTetuN !== 0) {
       const earnedN = +utils.formatUnits(this.stratEarned);
       const earnedNAdjusted = earnedN / (this.bbRatio / 10000);
-      expect(earnedNAdjusted).is.greaterThanOrEqual(this.totalToClaimInTetuN * 0.5); // very approximately
+      expect(earnedNAdjusted).is.greaterThanOrEqual(this.totalToClaimInTetuN * this.toClaimCheckTolerance); // very approximately
     }
   }
 

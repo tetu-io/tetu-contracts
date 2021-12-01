@@ -17,11 +17,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./StrategyBase.sol";
 import "../interface/ISmartVault.sol";
 import "../../third_party/IERC20Extended.sol";
+import "../interface/IFoldStrategy.sol";
 
 /// @title Abstract contract for folding strategy
 /// @author JasperS13
 /// @author belbix
-abstract contract FoldingBase is StrategyBase {
+abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -31,18 +32,20 @@ abstract contract FoldingBase is StrategyBase {
   uint256 public _FACTOR_DENOMINATOR = 10000;
 
   /// @notice Numerator value for the targeted borrow rate
-  uint256 public borrowTargetFactorNumeratorStored;
-  uint256 public borrowTargetFactorNumerator;
+  uint256 public override borrowTargetFactorNumeratorStored;
+  uint256 public override borrowTargetFactorNumerator;
   /// @notice Numerator value for the asset market collateral value
-  uint256 public collateralFactorNumerator;
+  uint256 public override collateralFactorNumerator;
   /// @notice Use folding
-  bool public fold = true;
+  bool public override fold = true;
+  /// @dev 0 - default mode, 1 - always enable, 2 - always disable
+  uint public override foldState;
 
   /// @notice Strategy balance parameters to be tracked
-  uint256 public suppliedInUnderlying;
-  uint256 public borrowedInUnderlying;
+  uint256 public override suppliedInUnderlying;
+  uint256 public override borrowedInUnderlying;
 
-  event FoldChanged(bool value);
+  event FoldStateChanged(uint value);
   event FoldStopped();
   event FoldStarted(uint256 borrowTargetFactorNumerator);
   event MaxDepthReached();
@@ -97,44 +100,53 @@ abstract contract FoldingBase is StrategyBase {
   // ************* VIEW **********************
 
   /// @dev Return true if we can gain profit with folding
-  function isFoldingProfitable() public view returns (bool) {
+  function isFoldingProfitable() public view override returns (bool) {
     return _isFoldingProfitable();
-  }
-
-  function _borrowTarget() internal returns (uint256) {
-    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
-    uint256 balance = supplied - borrowed;
-    return balance * borrowTargetFactorNumerator
-    / (_FACTOR_DENOMINATOR - borrowTargetFactorNumerator);
   }
 
   // ************* GOV ACTIONS **************
 
-  /// @dev Set use folding
-  function setFold(bool _fold) public restricted {
-    _setFold(_fold);
+  /// @dev Set folding state
+  /// @param _state 0 - default mode, 1 - always enable, 2 - always disable
+  function setFold(uint _state) external override restricted {
+    require(_state != foldState, "FB: The same folding state");
+    if (_state == 0) {
+      if (!isFoldingProfitable() && fold) {
+        _stopFolding();
+      } else if (isFoldingProfitable() && !fold) {
+        _startFolding();
+      }
+    } else if (_state == 1) {
+      _startFolding();
+    } else if (_state == 2) {
+      _stopFolding();
+    } else {
+      revert("FB: Wrong folding state");
+    }
+    foldState = _state;
+    emit FoldStateChanged(_state);
   }
 
   /// @dev Rebalances the borrow ratio
-  function rebalance() public restricted {
+  function rebalance() external override restricted {
     _rebalance();
   }
 
   /// @dev Set borrow rate target
-  function setBorrowTargetFactorNumeratorStored(uint256 _target) public restricted {
+  function setBorrowTargetFactorNumeratorStored(uint256 _target) external override restricted {
     _setBorrowTargetFactorNumeratorStored(_target);
   }
 
-  function stopFolding() public restricted {
+  function stopFolding() external override restricted {
     _stopFolding();
   }
 
-  function startFolding() public restricted {
+  function startFolding() external override restricted {
     _startFolding();
   }
 
   /// @dev Set collateral rate for asset market
-  function setCollateralFactorNumerator(uint256 _target) external restricted {
+  function setCollateralFactorNumerator(uint256 _target) external override restricted {
     require(_target < _FACTOR_DENOMINATOR, "FS: Collateral factor cannot be this high");
     collateralFactorNumerator = _target;
     emit CollateralFactorNumeratorChanged(_target);
@@ -155,13 +167,21 @@ abstract contract FoldingBase is StrategyBase {
     investAllUnderlying();
     _claimReward();
     _compound();
+    // supply underlying for avoiding liquidation in case of reward is the same as underlying
+    if (underlyingBalance() > 0) {
+      _supply(underlyingBalance());
+    }
     liquidateReward();
-    if (!isFoldingProfitable() && fold) {
-      stopFolding();
-    } else if (isFoldingProfitable() && !fold) {
-      startFolding();
+    if (foldState == 0) {
+      if (!isFoldingProfitable() && fold) {
+        _stopFolding();
+      } else if (isFoldingProfitable() && !fold) {
+        _startFolding();
+      } else {
+        _rebalance();
+      }
     } else {
-      rebalance();
+      _rebalance();
     }
   }
 
@@ -204,12 +224,6 @@ abstract contract FoldingBase is StrategyBase {
     emit Rebalanced(supplied, borrowed, borrowTarget);
   }
 
-  /// @dev Set use folding
-  function _setFold(bool _fold) internal {
-    fold = _fold;
-    emit FoldChanged(_fold);
-  }
-
   /// @dev Set borrow rate target
   function _setBorrowTargetFactorNumeratorStored(uint256 _target) internal {
     require(_target == 0 || _target < collateralFactorNumerator, "FS: Target should be lower than collateral limit");
@@ -222,14 +236,14 @@ abstract contract FoldingBase is StrategyBase {
 
   function _stopFolding() internal {
     borrowTargetFactorNumerator = 0;
-    _setFold(false);
+    fold = false;
     _rebalance();
     emit FoldStopped();
   }
 
   function _startFolding() internal {
     borrowTargetFactorNumerator = borrowTargetFactorNumeratorStored;
-    _setFold(true);
+    fold = true;
     _rebalance();
     emit FoldStarted(borrowTargetFactorNumeratorStored);
   }
@@ -237,6 +251,13 @@ abstract contract FoldingBase is StrategyBase {
   //////////////////////////////////////////////////////
   //////////// FOLDING LOGIC FUNCTIONS /////////////////
   //////////////////////////////////////////////////////
+
+  function _borrowTarget() internal returns (uint256) {
+    (uint256 supplied, uint256 borrowed) = _getInvestmentData();
+    uint256 balance = supplied - borrowed;
+    return balance * borrowTargetFactorNumerator
+    / (_FACTOR_DENOMINATOR - borrowTargetFactorNumerator);
+  }
 
   /// @dev Deposit underlying to rToken contract
   /// @param amount Deposit amount
@@ -246,7 +267,7 @@ abstract contract FoldingBase is StrategyBase {
       // we need to sell excess in non hardWork function for keeping ppfs ~1
       _liquidateExcessUnderlying();
     }
-    if (!fold) {
+    if (foldState == 2 || !fold) {
       return;
     }
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();

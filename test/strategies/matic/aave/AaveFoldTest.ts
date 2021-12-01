@@ -10,8 +10,8 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {IStrategy, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {AaveDoHardWork} from "./AaveDoHardWork";
-import {AaveProfitabilityTest} from "./AaveProfitabilityTest";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
+import {FoldingDoHardWork} from "../../FoldingDoHardWork";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -89,12 +89,12 @@ describe('Universal Aave Fold tests', async () => {
     const finalBalanceTolerance = 0.0001;
     const deposit = 100_000;
     // at least 3
-    const loops = 9;
+    const loops = 3;
     // number of blocks or timestamp value
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    const specificTests = [new AaveProfitabilityTest()];
+    const specificTests = [new FoldingProfitabilityTest()];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -130,7 +130,7 @@ describe('Universal Aave Fold tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new AaveDoHardWork(
+      return new FoldingDoHardWork(
         _signer,
         _user,
         _core,

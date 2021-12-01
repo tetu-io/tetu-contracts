@@ -9,8 +9,9 @@ import {IStrategy, SmartVault, StrategyIronFold} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {IronDoHardWork} from "./IronDoHardWork";
 import {DeployInfo} from "../../DeployInfo";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
+import {FoldingDoHardWork} from "../../FoldingDoHardWork";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -89,6 +90,7 @@ describe('Universal Iron Fold tests', async () => {
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
+    const specificTests = [new FoldingProfitabilityTest()];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -125,7 +127,7 @@ describe('Universal Iron Fold tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new IronDoHardWork(
+      return new FoldingDoHardWork(
         _signer,
         _user,
         _core,
@@ -150,6 +152,7 @@ describe('Universal Iron Fold tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
+      specificTests
     );
   });
 });
