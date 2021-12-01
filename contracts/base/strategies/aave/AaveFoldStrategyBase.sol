@@ -43,7 +43,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant override STRATEGY_NAME = "AaveFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev 2 is Variable
@@ -205,7 +205,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     (uint256 emissionPerSecond,,) = aaveController.assets(token);
     uint256 tokenPrecision = 10 ** (IERC20Extended(token)).decimals();
     uint256 totalStakedScaled = IScaledBalanceToken(token).scaledTotalSupply();
-    uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION * tokenPrecision / aaveIndex  / totalStakedScaled;
+    uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION * tokenPrecision / aaveIndex / totalStakedScaled;
     return rewards * tokenPrecision / _PRECISION;
   }
 

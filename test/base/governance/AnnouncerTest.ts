@@ -8,10 +8,10 @@ import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {TokenUtils} from "../../TokenUtils";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {BigNumber, utils} from "ethers";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {VaultUtils} from "../../VaultUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -25,6 +25,7 @@ describe("Announcer tests", function () {
   let controller: Controller;
   let announcer: Announcer;
   let timeLockDuration: number;
+  let usdc: string;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
@@ -34,8 +35,8 @@ describe("Announcer tests", function () {
     controller = core.controller;
     announcer = core.announcer;
     timeLockDuration = (await core.announcer.timeLock()).toNumber();
-
-    await UniswapUtils.wrapMatic(signer); // 10m wmatic
+    usdc = await DeployerUtils.getUSDCAddress();
+    await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
   });
 
   after(async function () {
@@ -75,7 +76,7 @@ describe("Announcer tests", function () {
     const opHash = web3.utils.keccak256(web3.utils.encodePacked(opCode, num, den) as string);
     expect(await announcer.timeLockSchedule(opHash)).is.not.eq(0);
 
-    await announcer.closeAnnounce(opCode, opHash, MaticAddresses.ZERO_ADDRESS);
+    await announcer.closeAnnounce(opCode, opHash, Misc.ZERO_ADDRESS);
     expect(await announcer.timeLockIndexes(opCode)).is.eq(0);
     expect(await announcer.timeLockSchedule(opHash)).is.eq(0);
   });
@@ -164,7 +165,7 @@ describe("Announcer tests", function () {
     const opCode = 4;
 
     const mintHelper = (await DeployerUtils.deployMintHelper(
-        signer, core.controller.address, [signer.address], [3000]))[0].address;
+      signer, core.controller.address, [signer.address], [3000]))[0].address;
 
     await announcer.announceAddressChange(opCode, mintHelper);
 
@@ -342,12 +343,13 @@ describe("Announcer tests", function () {
     const opCode = 11;
     const amount = 1000;
 
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, core.controller.address, amount.toString());
+    await TokenUtils.getToken(usdc, signer.address, BigNumber.from(amount));
+    await TokenUtils.transfer(usdc, signer, core.controller.address, amount.toString());
 
-    const balUser = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balController = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
+    const balUser = await TokenUtils.balanceOf(usdc, signer.address);
+    const balController = await TokenUtils.balanceOf(usdc, core.controller.address);
 
-    await announcer.announceTokenMove(opCode, signer.address, MaticAddresses.WMATIC_TOKEN, amount);
+    await announcer.announceTokenMove(opCode, signer.address, usdc, amount);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
@@ -355,16 +357,16 @@ describe("Announcer tests", function () {
     const info = await announcer.timeLockInfo(index);
     expect(info.target).is.eq(signer.address);
     expect(info.adrValues.length).is.eq(1);
-    expect(info.adrValues[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    expect(info.adrValues[0].toLowerCase()).is.eq(usdc);
     expect(info.numValues.length).is.eq(1);
     expect(info.numValues[0]).is.eq(amount);
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.controllerTokenMove(signer.address, MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.controllerTokenMove(signer.address, usdc, amount);
 
-    const balUserAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balControllerAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
+    const balUserAfter = await TokenUtils.balanceOf(usdc, signer.address);
+    const balControllerAfter = await TokenUtils.balanceOf(usdc, core.controller.address);
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balControllerAfter).is.eq(balController.sub(amount));
@@ -375,12 +377,13 @@ describe("Announcer tests", function () {
     const amount = 1000;
     const contract = await core.psVault.strategy();
 
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
+    await TokenUtils.getToken(usdc, signer.address, BigNumber.from(amount));
+    await TokenUtils.transfer(usdc, signer, contract, amount.toString());
 
-    const balUser = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balContract = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUser = await TokenUtils.balanceOf(usdc, signer.address);
+    const balContract = await TokenUtils.balanceOf(usdc, contract);
 
-    await announcer.announceTokenMove(opCode, contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await announcer.announceTokenMove(opCode, contract, usdc, amount);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
@@ -388,16 +391,16 @@ describe("Announcer tests", function () {
     const info = await announcer.timeLockInfo(index);
     expect(info.target).is.eq(contract);
     expect(info.adrValues.length).is.eq(1);
-    expect(info.adrValues[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    expect(info.adrValues[0].toLowerCase()).is.eq(usdc);
     expect(info.numValues.length).is.eq(1);
     expect(info.numValues[0]).is.eq(amount);
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.strategyTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.strategyTokenMove(contract, usdc, amount);
 
-    const balUserAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, signer.address);
-    const balContractAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUserAfter = await TokenUtils.balanceOf(usdc, signer.address);
+    const balContractAfter = await TokenUtils.balanceOf(usdc, contract);
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balContractAfter).is.eq(balContract.sub(amount));
@@ -412,7 +415,7 @@ describe("Announcer tests", function () {
     expect(index).is.eq(1);
 
     const info = await announcer.timeLockInfo(index);
-    expect(info.target).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(info.target).is.eq(Misc.ZERO_ADDRESS);
     expect(info.adrValues.length).is.eq(0);
     expect(info.numValues.length).is.eq(1);
     expect(info.numValues[0]).is.eq(amount);
@@ -434,7 +437,7 @@ describe("Announcer tests", function () {
     expect(index).is.eq(1);
 
     const info = await announcer.timeLockInfo(index);
-    expect(info.target).is.eq(MaticAddresses.ZERO_ADDRESS);
+    expect(info.target).is.eq(Misc.ZERO_ADDRESS);
     expect(info.adrValues.length).is.eq(0);
     expect(info.numValues.length).is.eq(1);
     expect(info.numValues[0]).is.eq(amount);
@@ -451,12 +454,13 @@ describe("Announcer tests", function () {
     const amount = 1000;
     const contract = core.fundKeeper.address;
 
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, contract, amount.toString());
+    await TokenUtils.getToken(usdc, signer.address, BigNumber.from(amount));
+    await TokenUtils.transfer(usdc, signer, contract, amount.toString());
 
-    const balUser = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
-    const balContract = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUser = await TokenUtils.balanceOf(usdc, core.controller.address);
+    const balContract = await TokenUtils.balanceOf(usdc, contract);
 
-    await announcer.announceTokenMove(opCode, contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await announcer.announceTokenMove(opCode, contract, usdc, amount);
 
     const index = await announcer.timeLockIndexes(opCode);
     expect(index).is.eq(1);
@@ -464,16 +468,16 @@ describe("Announcer tests", function () {
     const info = await announcer.timeLockInfo(index);
     expect(info.target).is.eq(contract);
     expect(info.adrValues.length).is.eq(1);
-    expect(info.adrValues[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
+    expect(info.adrValues[0].toLowerCase()).is.eq(usdc);
     expect(info.numValues.length).is.eq(1);
     expect(info.numValues[0]).is.eq(amount);
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.fundKeeperTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await controller.fundKeeperTokenMove(contract, usdc, amount);
 
-    const balUserAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address);
-    const balContractAfter = await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, contract);
+    const balUserAfter = await TokenUtils.balanceOf(usdc, core.controller.address);
+    const balContractAfter = await TokenUtils.balanceOf(usdc, contract);
 
     expect(balUserAfter).is.eq(balUser.add(amount));
     expect(balContractAfter).is.eq(balContract.sub(amount));
@@ -510,7 +514,7 @@ describe("Announcer tests", function () {
 
     const target = core.psVault.address;
     const newImpl = await DeployerUtils.deployContract(signer, 'NoopStrategy',
-        controller.address, core.rewardToken.address, core.psVault.address, [], [core.rewardToken.address], 1) as IStrategy;
+      controller.address, core.rewardToken.address, core.psVault.address, [], [core.rewardToken.address], 1) as IStrategy;
 
     await announcer.announceStrategyUpgrades([target], [newImpl.address]);
 
@@ -533,11 +537,11 @@ describe("Announcer tests", function () {
   it("should stop vault with time-lock", async () => {
     const opCode = 22;
     const target = core.psVault.address;
-    const amount = utils.parseUnits('1000');
+    const amount = utils.parseUnits('1000', 6);
 
-    const rt = MaticAddresses.WMATIC_TOKEN;
+    const rt = usdc;
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('100000000'));
+    await TokenUtils.getToken(usdc, signer.address, amount);
     await core.vaultController.addRewardTokens([target], rt);
     await TokenUtils.approve(rt, signer, target, amount.toString());
     await core.psVault.notifyTargetRewardAmount(rt, amount);
@@ -593,13 +597,13 @@ describe("Announcer tests", function () {
     const forDev = curNetAmount * 0.3;
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
-    .is.eq(balanceNotifier.add(forVaults));
+      .is.eq(balanceNotifier.add(forVaults));
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
-    .is.eq(balanceFund.add(toMint - curNetAmount));
+      .is.eq(balanceFund.add(toMint - curNetAmount));
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
-    .is.eq(balanceSigner.add(forDev));
+      .is.eq(balanceSigner.add(forDev));
   });
 
   it("should change Announcer with time-lock", async () => {
@@ -627,7 +631,7 @@ describe("Announcer tests", function () {
 
   it("should not mint zero amount", async () => {
     await expect(core.announcer.announceMint(0, core.notifyHelper.address, core.fundKeeper.address, false))
-    .rejectedWith('zero amount');
+      .rejectedWith('zero amount');
   });
 
   it("should make multiple time-lock changes", async () => {
@@ -664,13 +668,13 @@ describe("Announcer tests", function () {
     let forDev = curNetAmount * 0.3;
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
-    .is.eq(balanceNotifier.add(forVaults));
+      .is.eq(balanceNotifier.add(forVaults));
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
-    .is.eq(balanceFund.add(toMint - curNetAmount));
+      .is.eq(balanceFund.add(toMint - curNetAmount));
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
-    .is.eq(balanceSigner.add(forDev));
+      .is.eq(balanceSigner.add(forDev));
 
     console.log('mint first completed');
 
@@ -726,13 +730,13 @@ describe("Announcer tests", function () {
     forDev = curNetAmount * 0.3;
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, core.notifyHelper.address))
-    .is.eq(balanceNotifier.add(forVaults));
+      .is.eq(balanceNotifier.add(forVaults));
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, core.fundKeeper.address))
-    .is.eq(balanceFund.add(toMint - curNetAmount));
+      .is.eq(balanceFund.add(toMint - curNetAmount));
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
-    .is.eq(balanceSigner.add(forDev));
+      .is.eq(balanceSigner.add(forDev));
   });
 
   it("should make multiple time-lock changes 2", async () => {
@@ -763,7 +767,7 @@ describe("Announcer tests", function () {
     console.log('gov change completed');
 
 
-    await announcer.connect(signer1).closeAnnounce(opCodeMint, '0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33', MaticAddresses.ZERO_ADDRESS);
+    await announcer.connect(signer1).closeAnnounce(opCodeMint, '0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33', Misc.ZERO_ADDRESS);
 
     // *************** CHANGE ANNOUNCER
     const changeAnnouncer = 17;

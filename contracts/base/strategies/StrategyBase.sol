@@ -154,6 +154,10 @@ abstract contract StrategyBase is IStrategy, Controllable {
     pausedInvesting = true;
   }
 
+  /// @notice Pause investing into the underlying reward pools
+  function pauseInvesting() external override onlyControllerOrGovernance {
+    pausedInvesting = true;
+  }
 
   /// @notice Resumes the ability to invest into the underlying reward pools
   function continueInvesting() external override onlyControllerOrGovernance {

@@ -82,8 +82,8 @@ export class TokenUtils {
     return token.transfer(destination, BigNumber.from(amount))
   }
 
-  public static async wrapMatic(signer: SignerWithAddress, amount: string) {
-    const token = await ethers.getContractAt("IWmatic", MaticAddresses.WMATIC_TOKEN, signer) as IWmatic;
+  public static async wrapNetworkToken(signer: SignerWithAddress, amount: string) {
+    const token = await ethers.getContractAt("IWmatic", await DeployerUtils.getNetworkTokenAddress(), signer) as IWmatic;
     return token.deposit({value: utils.parseUnits(amount, 18).toString()})
   }
 

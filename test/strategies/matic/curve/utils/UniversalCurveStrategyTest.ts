@@ -30,7 +30,7 @@ async function startCurveStratTest(
   // add custom liquidation path if necessary
   const forwarderConfigurator = null;
   // only for strategies where we expect PPFS fluctuations
-  const ppfsDecreaseAllowed = true;
+  const ppfsDecreaseAllowed = false;
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;

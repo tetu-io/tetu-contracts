@@ -4,7 +4,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {IUniswapV2Pair, TetuSwapFactory, TetuSwapRouter} from "../../typechain";
-import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {utils} from "ethers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers} from "hardhat";
@@ -50,22 +49,22 @@ describe("Tetu Swap specific tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it('swap btc-eth', async () => {
-    const tokenA = MaticAddresses.WBTC_TOKEN;
-    const tokenB = MaticAddresses.WETH_TOKEN;
-
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('200'));
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'));
-    const pair = await factory.getPair(tokenA, tokenB);
-    await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', pair) as IUniswapV2Pair).sync()
-    await UniswapUtils.swapExactTokensForTokens(
-      signer,
-      [tokenA, tokenB],
-      utils.parseUnits("0.000932", 8).toString(),
-      signer.address,
-      router.address
-    );
-  });
+  // it('swap btc-eth', async () => {
+  //   const tokenA = MaticAddresses.WBTC_TOKEN;
+  //   const tokenB = MaticAddresses.WETH_TOKEN;
+  //
+  //   await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('200'));
+  //   await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'));
+  //   const pair = await factory.getPair(tokenA, tokenB);
+  //   await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', pair) as IUniswapV2Pair).sync()
+  //   await UniswapUtils.swapExactTokensForTokens(
+  //     signer,
+  //     [tokenA, tokenB],
+  //     utils.parseUnits("0.000932", 8).toString(),
+  //     signer.address,
+  //     router.address
+  //   );
+  // });
 
 
 });

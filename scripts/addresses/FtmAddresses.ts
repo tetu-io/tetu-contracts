@@ -15,6 +15,7 @@ export class FtmAddresses {
   public static fUSDT_TOKEN = "0x049d68029688eabf473097a2fc38ef61633a3c7a".toLowerCase();
   public static FTM_TOKEN = "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83".toLowerCase();
   public static BOO_TOKEN = "0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE".toLowerCase();
+  public static GEIST_TOKEN = "0xd8321AA83Fb0a4ECd6348D4577431310A6E0814d".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();

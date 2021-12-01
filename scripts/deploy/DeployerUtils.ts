@@ -205,6 +205,17 @@ export class DeployerUtils {
     return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
+  public static async deployPriceCalculator(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return DeployerUtils.deployPriceCalculatorMatic(signer, controller, wait);
+    } else if (net.chainId === 250) {
+      return DeployerUtils.deployPriceCalculatorFantom(signer, controller, wait);
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
   public static async deployPriceCalculatorMatic(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
@@ -238,7 +249,7 @@ export class DeployerUtils {
     return [calculator, proxy, logic];
   }
 
-  public static async deployPriceCalculatorFtm(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+  public static async deployPriceCalculatorFantom(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
@@ -331,6 +342,21 @@ export class DeployerUtils {
     multiSwap: string
   ): Promise<ZapContract> {
     return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
+  }
+
+  public static async deployMultiSwap(
+    signer: SignerWithAddress,
+    controllerAddress: string,
+    calculatorAddress: string
+  ): Promise<MultiSwap> {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return DeployerUtils.deployMultiSwapMatic(signer, controllerAddress, calculatorAddress);
+    } else if (net.chainId === 250) {
+      return DeployerUtils.deployMultiSwapFantom(signer, controllerAddress, calculatorAddress);
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
   }
 
   public static async deployMultiSwapMatic(
@@ -553,6 +579,37 @@ export class DeployerUtils {
     return [vaultLogic, vault, strategy];
   }
 
+  public static async deployDefaultNoopStrategyAndVault(
+    signer: SignerWithAddress,
+    controller: Controller,
+    vaultController: VaultController,
+    underlying: string,
+    vaultRewardToken: string,
+    rewardToken: string = ''
+  ) {
+    const netToken = await DeployerUtils.getNetworkTokenAddress();
+    if (rewardToken === '') {
+      rewardToken = netToken;
+    }
+    return DeployerUtils.deployAndInitVaultAndStrategy(
+      't',
+      vaultAddress => DeployerUtils.deployContract(
+        signer,
+        'NoopStrategy',
+        controller.address, // _controller
+        underlying, // _underlying
+        vaultAddress,
+        [rewardToken], // __rewardTokens
+        [underlying], // __assets
+        1 // __platform
+      ) as Promise<IStrategy>,
+      controller,
+      vaultController,
+      vaultRewardToken,
+      signer
+    );
+  }
+
   // ************** VERIFY **********************
 
   public static async verify(address: string) {
@@ -687,7 +744,6 @@ export class DeployerUtils {
     if (!tools) {
       throw Error('No config for ' + net.chainId);
     }
-    console.log('tools', tools);
     return new ToolsContractsWrapper(
       await DeployerUtils.connectInterface(signer, "PriceCalculator", tools.calculator) as PriceCalculator,
       await DeployerUtils.connectInterface(signer, "ContractReader", tools.reader) as ContractReader,
@@ -762,6 +818,17 @@ export class DeployerUtils {
     }
   }
 
+  public static async getNetworkTokenAddress() {
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      return MaticAddresses.WMATIC_TOKEN;
+    } else if (net.chainId === 250) {
+      return FtmAddresses.FTM_TOKEN;
+    } else {
+      throw Error('No config for ' + net.chainId);
+    }
+  }
+
   public static async getTETUAddress() {
     const net = await ethers.provider.getNetwork();
     if (net.chainId === 137) {
@@ -826,6 +893,10 @@ export class DeployerUtils {
     } else {
       throw Error('No config for ' + net.chainId);
     }
+  }
+
+  public static async isNetwork(id: number) {
+    return (await ethers.provider.getNetwork()).chainId === id;
   }
 
 

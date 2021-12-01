@@ -23,7 +23,9 @@ import "../../../third_party/aave/IAaveIncentivesController.sol";
 import "../../../third_party/aave/IProtocolDataProvider.sol";
 import "../../../third_party/aave/DataTypes.sol";
 import "../../../third_party/aave/IPriceOracle.sol";
+import "../../../third_party/geist/IMultiFeeDistribution.sol";
 import "../../../third_party/geist/IChefIncentivesController.sol";
+
 
 /// @title Abstract contract for Geist lending strategy implementation with folding functionality
 /// @author belbix
@@ -53,9 +55,12 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   ILendingPool private lPool;
   IProtocolDataProvider private dataProvider;
   ILendingPoolAddressesProvider private lendingPoolAddressesProvider;
+  IMultiFeeDistribution private multiFeeDistributor;
   IChefIncentivesController private chef;
 
 
+  address public networkToken;
+  address public lpWithGeist;
   address public override aToken;
   address public override dToken;
 
@@ -64,9 +69,11 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   struct GeistData {
     address networkToken;
     address pool;
-    address chef;
+    address multiFeeDistributor;
     address dataProvider;
     address addressesProvider;
+    address chef;
+    address lpWithGeist;
   }
 
   /// @notice Contract constructor using on strategy implementation
@@ -87,9 +94,12 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     _borrowTargetFactorNumerator,
     _collateralFactorNumerator
   ) {
+    networkToken = _geistData.networkToken;
+    lpWithGeist = _geistData.lpWithGeist;
     lPool = ILendingPool(_geistData.pool);
     dataProvider = IProtocolDataProvider(_geistData.dataProvider);
     lendingPoolAddressesProvider = ILendingPoolAddressesProvider(_geistData.addressesProvider);
+    multiFeeDistributor = IMultiFeeDistribution(_geistData.multiFeeDistributor);
     chef = IChefIncentivesController(_geistData.chef);
 
     (aToken,,dToken) = dataProvider.getReserveTokensAddresses(_underlying);
@@ -109,14 +119,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @return Array with amounts ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory rewards = new uint256[](1);
-
-    uint rewardSum = 0;
-    uint[] memory result = chef.claimableReward(address(this), claimableTokens);
-    for (uint i = 0; i < result.length; i++) {
-      rewardSum += result[i];
-    }
-
-    rewards[0] = rewardSum;
+    rewards[0] = chef.claimableReward(address(this), claimableTokens)[0] / 2;
     return rewards;
   }
 
@@ -143,18 +146,18 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   /// @dev Return true if we can gain profit with folding
   function _isFoldingProfitable() internal view override returns (bool) {
-    //    (uint256 supplyRewardsInWethPT,
-    //    uint256 borrowRewardsInWethPT,
-    //    uint256 supplyUnderlyingProfitInWethPT,
-    //    uint256 debtUnderlyingCostInWethPT) = totalRewardPredictionInWeth(_PROFITABILITY_PERIOD);
-    //    uint256 foldingProfitPerToken = supplyRewardsInWethPT + borrowRewardsInWethPT + supplyUnderlyingProfitInWethPT;
-    //    return foldingProfitPerToken > debtUnderlyingCostInWethPT;
-    return true;
+    (uint256 supplyRewards,
+    uint256 borrowRewar,
+    uint256 supplyUnderlyingProfit,
+    uint256 debtUnderlyingCost) = _totalRewardPredictionNormalised(_PROFITABILITY_PERIOD);
+    uint256 foldingProfitPerToken = supplyRewards + borrowRewar + supplyUnderlyingProfit;
+    return foldingProfitPerToken > debtUnderlyingCost;
   }
 
   /// @dev Claim distribution rewards
   function _claimReward() internal override {
     chef.claim(address(this), claimableTokens);
+    multiFeeDistributor.exit();
   }
 
   function _supply(uint256 amount) internal override updateSupplyInTheEnd {
@@ -208,100 +211,155 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /////////////////////////////////////////////
 
 
-  //  /// @notice return WMATIC reward forecast for aave token (supply or debt)
-  //  /// @param _seconds time period for the forecast
-  //  /// @param token address (supply or debt)
-  //  /// @param aaveIndex see ReserveData for detail (liquidityIndex or variableBorrowIndex)
-  //  /// @return forecasted amount of WMATIC tokens
-  //  function rewardPrediction(uint256 _seconds, address token, uint256 aaveIndex) private view returns (uint256){
-  //    (uint256 emissionPerSecond,,) = aaveController.assets(token);
-  //    uint256 tokenPrecision = 10 ** (IERC20Extended(token)).decimals();
-  //    uint256 totalStakedScaled = IScaledBalanceToken(token).scaledTotalSupply();
-  //    uint256 rewards = emissionPerSecond * _seconds * _RAY_PRECISION / aaveIndex * tokenPrecision / totalStakedScaled;
-  //    return rewards * tokenPrecision / _PRECISION;
-  //  }
-  //
-  //  /// @notice return underlying reward forecast for aave supply token
-  //  /// @dev Don't use it in any internal logic, only for statistical purposes
-  //  /// @param _seconds time period for the forecast
-  //  /// @param currentLiquidityRate from the AAVE dataProvider
-  //  /// @return forecasted amount of underlying tokens
-  //  function rewardUnderlyingPrediction(
-  //    uint256 _seconds,
-  //    uint256 currentLiquidityRate
-  //  ) private pure returns (uint256){
-  //    uint256 underlyingPerSecond = currentLiquidityRate / _SECONDS_PER_YEAR;
-  //    uint256 predictedUnderlyingEarned = underlyingPerSecond * _seconds;
-  //    return predictedUnderlyingEarned * _PRECISION / _RAY_PRECISION;
-  //  }
-  //
-  //  /// @notice returns forecast of the debt cost in the underlying tokens
-  //  /// @dev Don't use it in any internal logic, only for statistical purposes
-  //  /// @param _seconds time period for the forecast
-  //  /// @return forecasted amount of underlying tokens which needs to be payed as debt interest
-  //  function debtCostPrediction(
-  //    uint256 _seconds,
-  //    uint256 currentVariableBorrowRate
-  //  ) private pure returns (uint256){
-  //    uint256 debtUnderlyingPerSecond = currentVariableBorrowRate / _SECONDS_PER_YEAR;
-  //    uint256 predictedDebtCost = debtUnderlyingPerSecond * _seconds;
-  //    return predictedDebtCost * _PRECISION / _RAY_PRECISION;
-  //  }
-  //
-  //  /// @notice returns forecast of all rewards (WMATIC and underlying) for the given period of time
-  //  /// @dev Don't use it in any internal logic, only for statistical purposes
-  //  /// @param _seconds time period for the forecast
-  //  function totalRewardPrediction(uint256 _seconds) private view returns (
-  //    uint256 supplyRewards,
-  //    uint256 borrowRewards,
-  //    uint256 supplyUnderlyingProfit,
-  //    uint256 debtUnderlyingCost
-  //  ){
-  //    (address aTokenAddress,,address variableDebtTokenAddress) = dataProvider.getReserveTokensAddresses(_underlyingToken);
-  //    DataTypes.ReserveData memory rd = lPool.getReserveData(_underlyingToken);
-  //    supplyRewards = rewardPrediction(_seconds, aTokenAddress, rd.liquidityIndex);
-  //    borrowRewards = rewardPrediction(_seconds, variableDebtTokenAddress, rd.variableBorrowIndex);
-  //    supplyUnderlyingProfit = rewardUnderlyingPrediction(_seconds, rd.currentLiquidityRate);
-  //    debtUnderlyingCost = debtCostPrediction(_seconds, rd.currentVariableBorrowRate);
-  //
-  //    return (supplyRewards, borrowRewards, supplyUnderlyingProfit, debtUnderlyingCost);
-  //  }
-  //  /// @notice returns forecast of all rewards (WMATIC and underlying)
-  //  ///         for the given period of time in WETH token using AAVE price oracle
-  //  /// @dev Don't use it in any internal logic, only for statistical purposes
-  //  /// @param _seconds time period for the forecast
-  //  function totalRewardPredictionInWeth(uint256 _seconds) private view returns (
-  //    uint256 supplyRewardsInWeth,
-  //    uint256 borrowRewardsInWeth,
-  //    uint256 supplyUnderlyingProfitInWeth,
-  //    uint256 debtUnderlyingCostInWeth
-  //  ){
-  //    IPriceOracle priceOracle = IPriceOracle(lendingPoolAddressesProvider.getPriceOracle());
-  //    uint256 underlyingInWeth = priceOracle.getAssetPrice(_underlyingToken);
-  //    uint256 rewardInWeth = priceOracle.getAssetPrice(_rewardTokens[0]);
-  //
-  //    (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction(_seconds);
-  //    // oracle price denominated in ETH and always have 18 decimals
-  //    supplyRewardsInWeth = supplyRewards * rewardInWeth / _PRECISION;
-  //    borrowRewardsInWeth = borrowRewards * rewardInWeth / _PRECISION;
-  //    supplyUnderlyingProfitInWeth = supplyUnderlyingProfit * underlyingInWeth / _PRECISION;
-  //    debtUnderlyingCostInWeth = debtUnderlyingCost * underlyingInWeth / _PRECISION;
-  //  }
-  //
-  //  /// @notice number of decimals for the supply token
-  //  function supplyTokenDecimals() private view returns (uint8) {
-  //    return IERC20Extended(aToken).decimals();
-  //  }
-  //
-  //  /// @notice number of decimals for the debt token
-  //  function debtTokenDecimals() private view returns (uint8) {
-  //    return IERC20Extended(dToken).decimals();
-  //  }
-  //
-  //  /// @notice number of decimals for the underlying token
-  //  function underlyingDecimals() private view returns (uint8) {
-  //    return IERC20Extended(_underlyingToken).decimals();
-  //  }
+  function rewardPrediction(uint256 _seconds, address token) external view returns (uint256) {
+    return _rewardPrediction(_seconds, token);
+  }
+  /// @notice return reward forecast for token (supply or debt)
+  /// @param _seconds time period for the forecast
+  /// @param token address (supply or debt)
+  /// @return forecasted amount of tokens
+  function _rewardPrediction(uint256 _seconds, address token) private view returns (uint256){
+    uint rewardPerSecond = chef.rewardsPerSecond();
+    uint allocPoint = chef.poolInfo(token).allocPoint;
+    uint totalAllocPoint = chef.totalAllocPoint();
+    uint totalSupply = chef.poolInfo(token).totalSupply;
+    uint rewardPerTotalSupply = rewardPerSecond * allocPoint * _seconds / totalAllocPoint / 2;
+    return rewardPerTotalSupply * 1e18 / totalSupply;
+  }
+
+  function rewardUnderlyingPrediction(uint256 _seconds, uint256 currentLiquidityRate) external pure returns (uint256){
+    return _rewardUnderlyingPrediction(_seconds, currentLiquidityRate);
+  }
+  /// @notice return underlying reward forecast for aave supply token
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @param _seconds time period for the forecast
+  /// @param currentLiquidityRate from the AAVE dataProvider
+  /// @return forecasted amount of underlying tokens
+  function _rewardUnderlyingPrediction(
+    uint256 _seconds,
+    uint256 currentLiquidityRate
+  ) private pure returns (uint256){
+    uint256 underlyingPerSecond = currentLiquidityRate / _SECONDS_PER_YEAR;
+    uint256 predictedUnderlyingEarned = underlyingPerSecond * _seconds;
+    return predictedUnderlyingEarned * _PRECISION / _RAY_PRECISION;
+  }
+
+  function debtCostPrediction(
+    uint256 _seconds,
+    uint256 currentVariableBorrowRate
+  ) external pure returns (uint256){
+    return _debtCostPrediction(_seconds, currentVariableBorrowRate);
+  }
+  /// @notice returns forecast of the debt cost in the underlying tokens
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @param _seconds time period for the forecast
+  /// @return forecasted amount of underlying tokens which needs to be payed as debt interest
+  function _debtCostPrediction(
+    uint256 _seconds,
+    uint256 currentVariableBorrowRate
+  ) private pure returns (uint256){
+    uint256 debtUnderlyingPerSecond = currentVariableBorrowRate / _SECONDS_PER_YEAR;
+    uint256 predictedDebtCost = debtUnderlyingPerSecond * _seconds;
+    return predictedDebtCost * _PRECISION / _RAY_PRECISION;
+  }
+
+  function totalRewardPrediction(uint256 _seconds) external view returns (
+    uint256 supplyRewards,
+    uint256 borrowRewards,
+    uint256 supplyUnderlyingProfit,
+    uint256 debtUnderlyingCost
+  ){
+    return _totalRewardPrediction(_seconds);
+  }
+
+  /// @notice returns forecast of all rewards (WMATIC and underlying) for the given period of time
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @param _seconds time period for the forecast
+  function _totalRewardPrediction(uint256 _seconds) private view returns (
+    uint256 supplyRewards,
+    uint256 borrowRewards,
+    uint256 supplyUnderlyingProfit,
+    uint256 debtUnderlyingCost
+  ){
+    DataTypes.ReserveData memory rd = lPool.getReserveData(_underlyingToken);
+    supplyRewards = _rewardPrediction(_seconds, aToken);
+    borrowRewards = _rewardPrediction(_seconds, dToken);
+    supplyUnderlyingProfit = _rewardUnderlyingPrediction(_seconds, rd.currentLiquidityRate);
+    debtUnderlyingCost = _debtCostPrediction(_seconds, rd.currentVariableBorrowRate);
+  }
+
+  function totalRewardPredictionInWeth(uint256 _seconds) external view returns (
+    uint256 supplyRewardsInWeth,
+    uint256 borrowRewardsInWeth,
+    uint256 supplyUnderlyingProfitInWeth,
+    uint256 debtUnderlyingCostInWeth
+  ){
+    return _totalRewardPredictionNormalised(_seconds);
+  }
+
+  /// @notice returns forecast of all rewards (WMATIC and underlying)
+  ///         for the given period of time in WETH token using AAVE price oracle
+  /// @dev Don't use it in any internal logic, only for statistical purposes
+  /// @param _seconds time period for the forecast
+  function _totalRewardPredictionNormalised(uint256 _seconds) private view returns (
+    uint256 supplyRewardsInUsd,
+    uint256 borrowRewardsInUsd,
+    uint256 supplyUnderlyingProfitInUsd,
+    uint256 debtUnderlyingCostInUsd
+  ){
+    IPriceOracle priceOracle = IPriceOracle(lendingPoolAddressesProvider.getPriceOracle());
+    uint256 underlyingPrice = priceOracle.getAssetPrice(_underlyingToken);
+    uint256 wftmPrice = priceOracle.getAssetPrice(networkToken);
+    uint256 rewardPrice = _getPriceFromLp(lpWithGeist, _rewardTokens[0]) * wftmPrice / _PRECISION;
+
+    (
+    uint256 supplyRewards,
+    uint256 borrowRewards,
+    uint256 supplyUnderlyingProfit,
+    uint256 debtUnderlyingCost
+    ) = _totalRewardPrediction(_seconds);
+    // price denominated in USD and always have 18 decimals
+    supplyRewardsInUsd = supplyRewards * rewardPrice / _PRECISION;
+    borrowRewardsInUsd = borrowRewards * rewardPrice / _PRECISION;
+    supplyUnderlyingProfitInUsd = supplyUnderlyingProfit * underlyingPrice / _PRECISION;
+    debtUnderlyingCostInUsd = debtUnderlyingCost * underlyingPrice / _PRECISION;
+  }
+
+  /// @notice number of decimals for the supply token
+  function supplyTokenDecimals() private view returns (uint8) {
+    return IERC20Extended(aToken).decimals();
+  }
+
+  /// @notice number of decimals for the debt token
+  function debtTokenDecimals() private view returns (uint8) {
+    return IERC20Extended(dToken).decimals();
+  }
+
+  /// @notice number of decimals for the underlying token
+  function underlyingDecimals() private view returns (uint8) {
+    return IERC20Extended(_underlyingToken).decimals();
+  }
+
+  function _getPriceFromLp(address lpAddress, address token) private view returns (uint256) {
+    IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
+    address token0 = pair.token0();
+    address token1 = pair.token1();
+    (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+    uint256 token0Decimals = IERC20Extended(token0).decimals();
+    uint256 token1Decimals = IERC20Extended(token1).decimals();
+
+    // both reserves should have the same decimals
+    reserve0 = reserve0 * _PRECISION / (10 ** token0Decimals);
+    reserve1 = reserve1 * _PRECISION / (10 ** token1Decimals);
+
+    if (token == token0) {
+      return reserve1 * _PRECISION / reserve0;
+    } else if (token == token1) {
+      return reserve0 * _PRECISION / reserve1;
+    } else {
+      revert("GFS: token not in lp");
+    }
+  }
 
 
 }

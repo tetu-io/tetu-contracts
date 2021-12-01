@@ -9,8 +9,8 @@ import {TimeUtils} from "../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -33,7 +33,7 @@ describe("Diamond vault test", () => {
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
 
-    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
+    const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 
     multicall = await DeployerUtils.deployContract(signer, "Multicall") as Multicall;
     const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
@@ -65,7 +65,7 @@ describe("Diamond vault test", () => {
     console.log('vault.address', vault.address);
     const rt = vault.address;
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [Misc.ZERO_ADDRESS], [underlying], 1) as NoopStrategy;
     await vault.initializeSmartVault(
       "NOOP",
       "tNOOP",

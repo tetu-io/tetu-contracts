@@ -12,7 +12,7 @@ async function main() {
   if (net.name === "matic") {
     data = await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller, true);
   } else if (net.chainId === 250) {
-    data = await DeployerUtils.deployPriceCalculatorFtm(signer, core.controller, true);
+    data = await DeployerUtils.deployPriceCalculatorFantom(signer, core.controller, true);
   } else {
     data = await DeployerUtils.deployPriceCalculatorTestNet(signer, core.controller);
   }

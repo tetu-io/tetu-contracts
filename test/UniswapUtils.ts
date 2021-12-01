@@ -1,5 +1,4 @@
 import {ethers} from "hardhat";
-import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {
   IFireBirdFactory,
   IFireBirdRouter,
@@ -18,6 +17,7 @@ import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {PriceCalculatorUtils} from "./PriceCalculatorUtils";
+import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 
 export class UniswapUtils {
   public static deadline = "1000000000000";
@@ -216,7 +216,7 @@ export class UniswapUtils {
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
-    const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
+    const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
@@ -230,14 +230,15 @@ export class UniswapUtils {
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
+    const factory = await DeployerUtils.getDefaultNetworkFactory();
     const lp = await UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
-      MaticAddresses.USDC_TOKEN,
+      usdc,
       utils.parseUnits(amount, 18).toString(),
       utils.parseUnits(amount, 6).toString(),
-      MaticAddresses.QUICK_FACTORY,
-      MaticAddresses.QUICK_ROUTER
+      factory,
+      await DeployerUtils.getRouterByFactory(factory)
     );
     await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [lp]);
     return lp;
@@ -252,7 +253,7 @@ export class UniswapUtils {
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
-    const usdcBal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, signer.address);
+    const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
@@ -315,7 +316,7 @@ export class UniswapUtils {
     router: string,
     token: string,
     amountForSell: BigNumber,
-    oppositeToken: string = MaticAddresses.WMATIC_TOKEN,
+    oppositeToken: string | null = null,
     wait = false
   ) {
     await TokenUtils.getToken(token, signer.address);
@@ -341,38 +342,6 @@ export class UniswapUtils {
     //     router
     //   ), true, wait);
     // }
-  }
-
-  public static async buyToken(
-    signer: SignerWithAddress,
-    router: string,
-    token: string,
-    amountForSell: BigNumber,
-    oppositeToken: string = MaticAddresses.WMATIC_TOKEN,
-    wait = false
-  ) {
-    const dec = await TokenUtils.decimals(token);
-    const symbol = await TokenUtils.tokenSymbol(token);
-    const balanceBefore = +utils.formatUnits(await TokenUtils.balanceOf(token, signer.address), dec);
-    console.log('try to buy', symbol, amountForSell.toString(), 'balance', balanceBefore);
-    if (token === MaticAddresses.WMATIC_TOKEN) {
-      return RunHelper.runAndWait(() =>
-          TokenUtils.wrapMatic(signer, utils.formatUnits(amountForSell, 18)),
-        true, wait);
-    } else {
-      const oppositeTokenDec = await TokenUtils.decimals(oppositeToken);
-      const oppositeTokenBal = +utils.formatUnits(await TokenUtils.balanceOf(oppositeToken, signer.address), oppositeTokenDec);
-      if (oppositeTokenBal === 0) {
-        throw Error('Need to refuel signer with ' + await TokenUtils.tokenSymbol(oppositeToken) + ' ' + oppositeTokenBal);
-      }
-      return RunHelper.runAndWait(() => UniswapUtils.swapExactTokensForTokens(
-        signer,
-        [oppositeToken, token],
-        amountForSell.toString(),
-        signer.address,
-        router
-      ), true, wait);
-    }
   }
 
   public static async getTokensAndAddLiq(
@@ -417,8 +386,8 @@ export class UniswapUtils {
     Misc.printDuration('UniswapUtils: buyTokensAndAddLiq finished', start);
   }
 
-  public static async wrapMatic(signer: SignerWithAddress) {
-    await TokenUtils.wrapMatic(signer, utils.formatUnits(utils.parseUnits('10000000'))); // 10m wmatic
+  public static async wrapNetworkToken(signer: SignerWithAddress) {
+    await TokenUtils.wrapNetworkToken(signer, utils.formatUnits(utils.parseUnits('10000000'))); // 10m wmatic
   }
 
   public static async getPairFromFactory(signer: SignerWithAddress, token0: string, token1: string, factory: string): Promise<string> {
@@ -434,19 +403,6 @@ export class UniswapUtils {
 
   public static encodePrice(reserve0: BigNumber, reserve1: BigNumber) {
     return [reserve1.mul(BigNumber.from(2).pow(112)).div(reserve0), reserve0.mul(BigNumber.from(2).pow(112)).div(reserve1)]
-  }
-
-  public static async buyAllBigTokens(
-    signer: SignerWithAddress
-  ) {
-    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address);
-    await TokenUtils.getToken(MaticAddresses.WETH_TOKEN, signer.address);
-    await TokenUtils.getToken(MaticAddresses.WBTC_TOKEN, signer.address);
-    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address);
-    await TokenUtils.getToken(MaticAddresses.USDT_TOKEN, signer.address);
-    await TokenUtils.getToken(MaticAddresses.QUICK_TOKEN, signer.address);
-    await TokenUtils.getToken(MaticAddresses.FRAX_TOKEN, signer.address);
-
   }
 
 }

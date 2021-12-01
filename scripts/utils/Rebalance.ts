@@ -43,7 +43,7 @@ async function main() {
   const vaults = await contractReader.vaults();
   console.log('vaults', vaults.length);
 
-  await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10'));
+  // await UniswapUtils.buyToken(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10'));
 
   for (let i = 0; i < vaults.length; i++) {
     try {

@@ -9,9 +9,9 @@ import {TimeUtils} from "../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {UniswapUtils} from "../../UniswapUtils";
 import {ZapUtils} from "../../ZapUtils";
+import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -25,13 +25,15 @@ describe("Smart vault rewards test", () => {
   let zapContract: ZapContract;
   let multiSwap: MultiSwap;
   let multicall: Multicall;
+  let usdc: string;
+  let networkToken: string;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     core = await DeployerUtils.deployAllCoreContracts(signer);
 
-    const calculator = (await DeployerUtils.deployPriceCalculatorMatic(signer, core.controller.address))[0];
+    const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 
     multicall = await DeployerUtils.deployContract(signer, "Multicall") as Multicall;
     const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
@@ -40,11 +42,14 @@ describe("Smart vault rewards test", () => {
 
     await contractReader.initialize(core.controller.address, calculator.address);
 
-    multiSwap = await DeployerUtils.deployMultiSwapMatic(signer, core.controller.address, calculator.address);
+    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     await core.controller.addToWhiteList(zapContract.address);
 
-    await UniswapUtils.buyAllBigTokens(signer);
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
+    await TokenUtils.wrapNetworkToken(signer, '10000000');
   });
 
   after(async function () {
@@ -60,17 +65,23 @@ describe("Smart vault rewards test", () => {
   });
 
 
-  it("check reward vesting for multiple accounts with SUSHI rewards and LP underlying", async () => {
-    const underlying = await UniswapUtils.addLiquidity(signer, MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN,
-      utils.parseUnits('10000').toString(), utils.parseUnits('10000', 6).toString(),
-      MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
+  it("check reward vesting for multiple accounts with MATIC rewards and LP underlying", async () => {
+    const underlying = await UniswapUtils.addLiquidity(
+      signer,
+      networkToken,
+      usdc,
+      utils.parseUnits('10000').toString(),
+      utils.parseUnits('10000', 6).toString(),
+      await DeployerUtils.getDefaultNetworkFactory(),
+      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+    );
 
-    const rt = MaticAddresses.SUSHI_TOKEN;
+    const rt = networkToken;
 
     // ******** DEPLOY VAULT *******
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [Misc.ZERO_ADDRESS], [networkToken, usdc], 1) as NoopStrategy;
     await vault.initializeSmartVault(
       "NOOP",
       "tNOOP",
@@ -78,7 +89,7 @@ describe("Smart vault rewards test", () => {
       underlying,
       60 * 60 * 24 * 28,
       false,
-      MaticAddresses.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);
@@ -97,7 +108,7 @@ describe("Smart vault rewards test", () => {
 
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
 
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits('300'), MaticAddresses.WETH_TOKEN);
+    await TokenUtils.getToken(rt, signer.address, utils.parseUnits('300'));
     await TokenUtils.approve(rt, signer, vault.address, rewardsTotalAmount.toString());
     await vault.notifyTargetRewardAmount(rt, rewardsTotalAmount);
 
@@ -112,7 +123,7 @@ describe("Smart vault rewards test", () => {
 
 
     await TokenUtils.transfer(underlying, signer, user1.address, utils.parseUnits(user1Deposit, underlyingDec).toString());
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, user2.address, utils.parseUnits('10000').toString());
+    await TokenUtils.transfer(networkToken, signer, user2.address, utils.parseUnits('10000').toString());
     // await Erc20Utils.transfer(underlying, signer, user2.address, utils.parseUnits(user2Deposit, underlyingDec).toString());
     await TokenUtils.transfer(underlying, signer, user3.address, utils.parseUnits(user3Deposit, underlyingDec).toString());
     await TokenUtils.transfer(underlying, signer, user4.address, utils.parseUnits(user4Deposit, underlyingDec).toString());
@@ -168,7 +179,7 @@ describe("Smart vault rewards test", () => {
             zapContract,
             contractReader,
             vault.address,
-            MaticAddresses.WMATIC_TOKEN,
+            networkToken,
             user2Staked.toString(),
             2
           );
@@ -181,7 +192,7 @@ describe("Smart vault rewards test", () => {
             zapContract,
             contractReader,
             vault.address,
-            MaticAddresses.WMATIC_TOKEN,
+            networkToken,
             1000,
             2
           );
@@ -312,16 +323,21 @@ describe("Smart vault rewards test", () => {
 
   it("check reward with transfers", async () => {
 
-    const underlying = await UniswapUtils.addLiquidity(signer, MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN,
-      utils.parseUnits('100000').toString(), utils.parseUnits('100000', 6).toString(),
-      MaticAddresses.SUSHI_FACTORY, MaticAddresses.SUSHI_ROUTER);
-
-    const rt = MaticAddresses.SUSHI_TOKEN;
+    const underlying = await UniswapUtils.addLiquidity(
+      signer,
+      networkToken,
+      usdc,
+      utils.parseUnits('10000').toString(),
+      utils.parseUnits('10000', 6).toString(),
+      await DeployerUtils.getDefaultNetworkFactory(),
+      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+    );
+    const rt = networkToken;
 
     // ******** DEPLOY VAULT *******
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
-      core.controller.address, underlying, vault.address, [MaticAddresses.ZERO_ADDRESS], [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN], 1) as NoopStrategy;
+      core.controller.address, underlying, vault.address, [Misc.ZERO_ADDRESS], [networkToken, usdc], 1) as NoopStrategy;
     await vault.initializeSmartVault(
       "NOOP",
       "tNOOP",
@@ -329,7 +345,7 @@ describe("Smart vault rewards test", () => {
       underlying,
       60 * 60 * 24 * 28,
       false,
-      MaticAddresses.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);
@@ -344,7 +360,7 @@ describe("Smart vault rewards test", () => {
 
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
 
-    await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, rt, utils.parseUnits('300'), MaticAddresses.WETH_TOKEN);
+    await TokenUtils.getToken(rt, signer.address, utils.parseUnits('300'));
     await TokenUtils.approve(rt, signer, vault.address, rewardsTotalAmount.toString());
     await vault.notifyTargetRewardAmount(rt, rewardsTotalAmount);
 
