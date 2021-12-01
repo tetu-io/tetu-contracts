@@ -27,6 +27,7 @@ export class ScreamDoHardWork extends DoHardWorkLoopBase {
       folding = await foldContract.fold();
       expect(folding).is.eq(true);
     }
+
     console.log('------ FOLDING', 'cycle:' + i, 'enabled:' + folding, 'profitable:' + await foldContract.isFoldingProfitable());
     Misc.printDuration('Loop preparation completed', start);
   }

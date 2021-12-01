@@ -823,7 +823,7 @@ export class DeployerUtils {
     if (net.chainId === 137) {
       return MaticAddresses.WMATIC_TOKEN;
     } else if (net.chainId === 250) {
-      return FtmAddresses.FTM_TOKEN;
+      return FtmAddresses.WFTM_TOKEN;
     } else {
       throw Error('No config for ' + net.chainId);
     }
