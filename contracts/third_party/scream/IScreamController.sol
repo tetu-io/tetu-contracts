@@ -6,6 +6,8 @@ interface IScreamController {
 
   function claimComp(address holder, address[] memory cTokens) external;
   function compAccrued(address account) external view returns (uint);
+  function compSpeeds(address scToken) external view returns (uint);
+
 
 //  /*** Assets You Are In ***/
 // todo revisit
@@ -80,7 +82,6 @@ interface IScreamController {
     address RTokenCollateral,
     uint repayAmount) external view returns (uint, uint);
 
-  function rewardSpeeds(address rToken) external view returns (uint);
 
   function oracle() external view returns (address);
 
