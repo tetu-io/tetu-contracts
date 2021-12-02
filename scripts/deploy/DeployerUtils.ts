@@ -899,6 +899,14 @@ export class DeployerUtils {
     return (await ethers.provider.getNetwork()).chainId === id;
   }
 
+  public static async getStorageAt(address: string, index: string) {
+    return ethers.provider.getStorageAt(address, index);
+  }
+
+  public static async setStorageAt(address: string, index: string, value: string) {
+    await ethers.provider.send("hardhat_setStorageAt", [address, index, value]);
+    await ethers.provider.send("evm_mine", []); // Just mines to the next block
+  }
 
   // ****************** WAIT ******************
 

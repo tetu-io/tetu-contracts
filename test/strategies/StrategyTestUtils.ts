@@ -63,8 +63,9 @@ export class StrategyTestUtils {
     }
     for (let i = 0; i < tokens.length; i++) {
       const rtDec = await TokenUtils.decimals(tokens[i]);
+      const expected = utils.formatUnits(balances[i] || 0, rtDec);
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokens[i], strategy.address), rtDec))
-        .is.approximately(+utils.formatUnits(balances[i], rtDec), 0.0000000001, 'strategy has wrong reward balance for ' + i);
+        .is.approximately(+expected, 0.0000000001, 'strategy has wrong reward balance for ' + i);
     }
   }
 
@@ -101,7 +102,10 @@ export class StrategyTestUtils {
     expect(await strategy.platform()).is.not.eq(0);
     expect((await strategy.assets()).length).is.not.eq(0);
     expect(await strategy.poolTotalAmount()).is.not.eq('0');
+    await strategy.emergencyExit();
+    expect(await strategy.pausedInvesting()).is.eq(true);
     await strategy.continueInvesting();
+    expect(await strategy.pausedInvesting()).is.eq(false);
   }
 
   public static async initForwarder(forwarder: ForwarderV2) {

@@ -69,7 +69,7 @@ export default {
       },
     },
     ftm: {
-      url: argv.ftmRpcUrl,
+      url: argv.ftmRpcUrl || '',
       timeout: 99999,
       chainId: 250,
       gas: 10_000_000,
@@ -116,7 +116,7 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 150
+            runs: 150,
           }
         }
       },

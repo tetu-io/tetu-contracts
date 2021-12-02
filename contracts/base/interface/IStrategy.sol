@@ -30,8 +30,8 @@ interface IStrategy {
     TETU_SWAP, // 12
     SPOOKY, // 13
     AAVE_LEND, //14
-    GEIST //15
-
+    AAVE_MAI_BAL, // 15
+    GEIST //16
   }
 
   // *************** GOVERNANCE ACTIONS **************

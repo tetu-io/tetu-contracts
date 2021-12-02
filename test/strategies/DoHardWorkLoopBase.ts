@@ -148,8 +148,7 @@ export class DoHardWorkLoopBase {
     const userBalanceN = +utils.formatUnits(userBalance.add(1), this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(this.userDeposited.sub(this.userWithdrew), this.undDec);
 
-    const percent = 100 - (userBalanceN / userBalanceExpectedN * 100);
-    console.log('User balance +-:', percent.toFixed(6) + '%');
+    console.log('User balance +-:', this.toPercent(userBalanceN, userBalanceExpectedN));
     expect(userBalanceN).is.greaterThanOrEqual(userBalanceExpectedN - (userBalanceExpectedN * this.balanceTolerance),
       'User has wrong balance inside the vault.\n' +
       'If you expect not zero balance it means the vault has a nature of PPFS decreasing.\n' +
@@ -161,8 +160,7 @@ export class DoHardWorkLoopBase {
     const userUndBal = await TokenUtils.balanceOf(this.underlying, this.user.address);
     const userUndBalN = +utils.formatUnits(userUndBal, this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(expectedBalance, this.undDec);
-    const percent = 100 - (userUndBalN / userBalanceExpectedN * 100);
-    console.log('User balance +-:', percent.toFixed(6) + '%');
+    console.log('User balance +-:', this.toPercent(userUndBalN, userBalanceExpectedN));
     expect(userUndBalN).is.greaterThanOrEqual(userBalanceExpectedN - (userBalanceExpectedN * this.balanceTolerance),
       'User has not enough balance');
   }
@@ -330,7 +328,7 @@ export class DoHardWorkLoopBase {
     const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
     const userUnderlyingBalanceAfterN = +utils.formatUnits(userUnderlyingBalanceAfter, this.undDec);
     const userBalanceExpected = userDepositedN - (userDepositedN * this.finalBalanceTolerance);
-    console.log('User final balance +-: ', 100 - (userDepositedN / userUnderlyingBalanceAfterN * 100));
+    console.log('User final balance +-: ', this.toPercent(userDepositedN, userUnderlyingBalanceAfterN));
     expect(userUnderlyingBalanceAfterN).is.greaterThanOrEqual(userBalanceExpected, "user should have more underlying");
   }
 
@@ -347,5 +345,10 @@ export class DoHardWorkLoopBase {
     }
     this.priceCache.set(token, price);
     return price;
+  }
+
+  private toPercent(actual: number, expected: number): string {
+    const percent = (actual / expected * 100) - 100;
+    return percent.toFixed(6) + '%';
   }
 }
