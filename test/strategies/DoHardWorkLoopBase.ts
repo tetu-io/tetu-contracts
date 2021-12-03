@@ -328,7 +328,7 @@ export class DoHardWorkLoopBase {
     const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
     const userUnderlyingBalanceAfterN = +utils.formatUnits(userUnderlyingBalanceAfter, this.undDec);
     const userBalanceExpected = userDepositedN - (userDepositedN * this.finalBalanceTolerance);
-    console.log('User final balance +-: ', this.toPercent(userDepositedN, userUnderlyingBalanceAfterN));
+    console.log('User final balance +-: ', this.toPercent(userUnderlyingBalanceAfterN, userDepositedN));
     expect(userUnderlyingBalanceAfterN).is.greaterThanOrEqual(userBalanceExpected, "user should have more underlying");
   }
 

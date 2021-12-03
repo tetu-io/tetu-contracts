@@ -1,15 +1,7 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {
-  Bookkeeper,
-  IERC20,
-  IErc20Stablecoin,
-  PriceSource,
-  SmartVault,
-  StrategyAaveFold,
-  StrategyAaveMaiBal
-} from "../../../../typechain";
+import {IErc20Stablecoin, PriceSource, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";

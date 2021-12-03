@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: ISC
 pragma solidity ^0.8.0;
 
-import "./../../../../third_party/qudao-mai/PriceSource.sol";
+import "../third_party/qidao/PriceSource.sol";
+
 
 /// @title Mai Stablecoin Pipe Mocked Price Source Contract (Used for tests only)
 /// @author bogdoslav

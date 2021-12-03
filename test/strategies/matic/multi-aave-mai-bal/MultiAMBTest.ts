@@ -6,7 +6,7 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
+import {ForwarderV2, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
@@ -109,17 +109,19 @@ describe('Universal AMB tests', async () => {
         signer,
         core,
         info.underlyingName,
-        vaultAddress => {
+        async vaultAddress => {
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
             underlying
           ];
-          return DeployerUtils.deployContract(
+          const strat = await DeployerUtils.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs
-          ) as Promise<IStrategy>;
+          ) as StrategyAaveMaiBal;
+          await strat.init();
+          return strat
         },
         underlying
       );

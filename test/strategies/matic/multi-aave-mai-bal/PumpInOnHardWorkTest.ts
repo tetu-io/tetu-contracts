@@ -7,7 +7,6 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {UniswapUtils} from "../../../UniswapUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -25,8 +24,8 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       console.log('>>>PumpIn on hardwork');
       const strategyGov = strategyAaveMaiBal.connect(signer);
       const amount = utils.parseUnits('10')
-      await TokenUtils.getToken(signer.address, MaticAddresses.WMATIC_TOKEN, amount);
-      await TokenUtils.getToken(signer.address, underlying, amount);
+      await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, amount);
+      await TokenUtils.getToken(underlying, signer.address, amount);
       const bal = await TokenUtils.balanceOf(underlying, signer.address)
       console.log('>>>bal   ', bal);
       await TokenUtils.transfer(underlying, signer, strategyGov.address, bal.toString());

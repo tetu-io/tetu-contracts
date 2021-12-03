@@ -1,194 +1,239 @@
 // SPDX-License-Identifier: ISC
-pragma solidity ^0.8.0;
+/**
+* By using this software, you understand, acknowledge and accept that Tetu
+* and/or the underlying software are provided “as is” and “as available”
+* basis and without warranties or representations of any kind either expressed
+* or implied. Any use of this open source software released under the ISC
+* Internet Systems Consortium license is done at your own risk to the fullest
+* extent permissible pursuant to applicable law any and all liability as well
+* as all warranties, including any fitness for a particular purpose with respect
+* to Tetu and/or the underlying software and the use thereof are disclaimed.
+*/
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../pipes/Pipe.sol";
-import "./LinearPipelineCalculator.sol";
+pragma solidity 0.8.4;
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import "hardhat/console.sol";
+import "../../../interface/ILinearPipeline.sol";
+import "../../../interface/IPipe.sol";
 
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-contract LinearPipeline {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+contract LinearPipeline is ILinearPipeline {
+  using SafeERC20 for IERC20;
 
-    address private immutable _underlyingToken;
-    LinearPipelineCalculator public calculator;
-    Pipe[] public pipes;
+  address private immutable _pipelineUnderlyingToken;
+  IPipe[] public override pipes;
 
-    constructor(address underlyingToken) {
-        console.log('LinearPipelineCalculator constructor address(this)', address(this));
-        calculator = new LinearPipelineCalculator(this);
-        _underlyingToken = underlyingToken;
+  constructor(address _underlyingToken) {
+    _pipelineUnderlyingToken = _underlyingToken;
+  }
+
+  // ***************************************
+  // ************** VIEWS ******************
+  // ***************************************
+
+  /// @dev Returns pipes array length
+  /// @return pipes array length
+  function pipesLength() external view override returns (uint256){
+    return pipes.length;
+  }
+
+  /// @dev Checks if re-balance need some pipe(s)
+  /// @return returns true when re-balance needed
+  function isRebalanceNeeded() external view override returns (bool) {
+    for (uint256 i = 0; i < pipes.length; i++) {
+      if (pipes[i].needsRebalance()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// @dev Returns balance of output (lp) token of the last pipe
+  function getMostUnderlyingBalance() external view override returns (uint256) {
+    return _getMostUnderlyingBalance();
+  }
+
+  /// @dev Returns balance of output (lp) token of the last pipe
+  function _getMostUnderlyingBalance() internal view returns (uint256) {
+    return pipes[pipes.length - 1].outputBalance();
+  }
+
+  // ***************************************
+  // ************** EXTERNAL ***************
+  // ***************************************
+
+  /// @dev Function to calculate amount we will receive when we withdraw amountIn from last pipe to pipe with toPipeIndex.
+  ///      Return amountOut in revert message
+  /// @param amountIn in most output tokens (lp tokens of the last pipe)
+  /// @param toPipeIndex index of the pipe we should to pump out
+  function getAmountOutReverted(uint256 amountIn, uint256 toPipeIndex) public override {
+    uint256 amountOut = _pumpOut(amountIn, toPipeIndex);
+    // store answer in revert message data
+    assembly {
+      let ptr := mload(0x40)
+      mstore(ptr, amountOut)
+      revert(ptr, 32)
+    }
+  }
+
+  // ***************************************
+  // ************** INTERNAL ***************
+  // ***************************************
+
+  /// @dev Returns amount out (when we withdraw amountIn most underlying tokens to pipe with specified index)
+  /// @param amountIn in output units of last pipe
+  /// @param toPipeIndex index of the last pipe to pump out
+  function _getAmountOut(uint256 amountIn, uint256 toPipeIndex) internal returns (uint256) {
+    try LinearPipeline(address(this)).getAmountOutReverted(amountIn, toPipeIndex)
+    {} catch (bytes memory reason) {
+      return parseRevertReason(reason);
+    }
+    return 0;
+  }
+
+  /// @dev Adds pipe to the end of pipeline and connects it
+  /// @param newPipe to be added
+  function _addPipe(IPipe newPipe) internal {
+    pipes.push(newPipe);
+
+    if (pipes.length > 1) {
+      IPipe prevPipe = pipes[pipes.length - 2];
+      require(prevPipe.outputToken() == newPipe.sourceToken(), 'LPL: Pipe incompatible with previous pipe');
+      prevPipe.setNextPipe(address(newPipe));
+      newPipe.setPrevPipe(address(prevPipe));
+    } else {// first pipe should have pipeline as prev pipe to send tokens on get()
+      newPipe.setPrevPipe(address(this));
+    }
+  }
+
+  /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
+  /// @param sourceAmount in source units
+  /// @return outputAmount in most underlying units
+  function _pumpIn(uint256 sourceAmount, uint256 fromPipeIndex) internal returns (uint256 outputAmount)  {
+    if (sourceAmount == 0) {
+      return 0;
+    }
+    outputAmount = sourceAmount;
+    for (uint256 i = fromPipeIndex; i < pipes.length; i++) {
+      outputAmount = pipes[i].put(outputAmount);
+    }
+  }
+
+  /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
+  /// @param sourceAmount in source units
+  /// @return outputAmount in most underlying units
+  function _pumpIn(uint256 sourceAmount) internal returns (uint256 outputAmount)  {
+    if (sourceAmount == 0) {
+      return 0;
+    }
+    // send token to first pipe
+    IERC20(_pipelineUnderlyingToken).safeTransfer(address(pipes[0]), sourceAmount);
+    outputAmount = _pumpIn(sourceAmount, 0);
+  }
+
+  /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
+  /// @param underlyingAmount in most underlying units
+  /// @param toPipeIndex pump out to pipe with this index
+  /// @return amountOut in source units
+  function _pumpOut(uint256 underlyingAmount, uint256 toPipeIndex) internal returns (uint256 amountOut) {
+    if (underlyingAmount == 0) {
+      return 0;
+    }
+    amountOut = underlyingAmount;
+    for (uint256 i = pipes.length; i > toPipeIndex; i--) {
+      amountOut = pipes[i - 1].get(amountOut);
+    }
+  }
+
+  /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
+  /// @param sourceAmount in source units
+  /// @param toPipeIndex pump out to pipe with this index
+  /// @return amountOut in source units of pipe with toPipeIndex
+  function _pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex) internal returns (uint256 amountOut) {
+    if (sourceAmount == 0) {
+      return 0;
+    }
+    uint256 underlyingAmount = getAmountInForAmountOut(sourceAmount, toPipeIndex);
+    return _pumpOut(underlyingAmount, toPipeIndex);
+  }
+
+  /// @dev Re-balance pipe
+  /// @param pipeIndex index of the pipe to rebalance
+  function _rebalancePipe(uint256 pipeIndex) internal {
+    IPipe pipe = pipes[pipeIndex];
+    if (!pipe.needsRebalance()) {
+      return;
     }
 
-    /// @dev Returns pipes array length
-    /// @return pipes array length
-    function pipesLength() public view returns (uint256){
-        return pipes.length;
+    (uint256 imbalance, bool deficit) = pipe.rebalance();
+    if (imbalance > 0) {
+      if (deficit) {
+        _pumpOutSource(imbalance, pipeIndex + 1);
+        // call rebalance again after we have closed deficit
+        pipe.rebalance();
+      } else {
+        _pumpIn(imbalance, pipeIndex + 1);
+      }
     }
+  }
 
-    /// @dev Adds pipe to the end of pipeline and connects it
-    /// @param newPipe to be added
-    function addPipe(Pipe newPipe) internal {
-        console.log('+addPipe ', address(newPipe), newPipe.name());
-        pipes.push(newPipe);
-        console.log('   pipes.length', pipes.length);
-
-        if (pipes.length > 1) {
-            Pipe prevPipe = pipes[pipes.length - 2];
-            console.log('   prevPipe    ', prevPipe.name());
-            require(prevPipe.outputToken() == newPipe.sourceToken(), 'LPL: Pipe incompatible with previous pipe');
-            prevPipe.setNextPipe(address(newPipe));
-            newPipe.setPrevPipe(address(prevPipe));
-        } else { // first pipe should have pipeline as prev pipe to send tokens on get()
-            newPipe.setPrevPipe(address(this));
-            console.log('   prevPipe    ', 'LinearPipeline');
-        }
+  /// @dev Re-balance all pipes
+  function _rebalanceAllPipes() internal {
+    for (uint256 i = 0; i < pipes.length; i++) {
+      _rebalancePipe(i);
     }
+  }
 
-    /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
-    /// @param sourceAmount in source units
-    /// @return outputAmount in most underlying units
-    function pumpIn(uint256 sourceAmount, uint256 fromPipeIndex)
-    internal returns (uint256 outputAmount)  {
-        console.log('=== pumpIn sourceAmount, fromPipeIndex', sourceAmount, fromPipeIndex);
-        if (sourceAmount == 0) return 0;
-        outputAmount = sourceAmount;
-        uint256 len = pipes.length;
-        for (uint256 i = fromPipeIndex; i < len; i++) {
-            console.log('+++ put amountIn', pipes[i].name(), outputAmount);
-            outputAmount = pipes[i].put(outputAmount);
-        }
-        console.log('last amount', outputAmount);
+  /// @dev Calls claim() for all pipes
+  function _claimFromAllPipes() internal {
+    for (uint256 i = 0; i < pipes.length; i++) {
+      pipes[i].claim();
     }
+  }
 
-    /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
-    /// @param sourceAmount in source units
-    /// @return outputAmount in most underlying units
-    function pumpIn(uint256 sourceAmount)
-    internal returns (uint256 outputAmount)  {
-        console.log('=== pumpIn sourceAmount', sourceAmount);
-        if (sourceAmount == 0) return 0;
-        // send token to first pipe
-        IERC20(_underlyingToken).safeTransfer(address(pipes[0]), sourceAmount);
-        outputAmount = pumpIn(sourceAmount, 0);
-        console.log('last amount', outputAmount);
+  /// @notice Pipeline can claim coins that are somehow transferred into the pipes
+  /// @param recipient Recipient address
+  /// @param recipient Token address
+  function _salvageFromAllPipes(address recipient, address token) internal {
+    for (uint256 i = 0; i < pipes.length; i++) {
+      pipes[i].salvageFromPipe(recipient, token);
     }
+  }
 
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
-    /// @param underlyingAmount in most underlying units
-    /// @param toPipeIndex pump out to pipe with this index
-    /// @return amountOut in source units
-    function pumpOut(uint256 underlyingAmount, uint256 toPipeIndex)
-    internal returns (uint256 amountOut) {
-        console.log('=== pumpOut underlyingAmount, toPipeIndex', underlyingAmount, toPipeIndex);
-        if (underlyingAmount == 0) return 0;
-        amountOut = underlyingAmount;
-        uint256 len = pipes.length;
-        for (uint256 i = len; i > toPipeIndex; i--) {
-            Pipe pipe = pipes[i - 1];
-            console.log('--- get amountOut', pipe.name(), amountOut);
-            amountOut = pipe.get(amountOut);
-            console.log('- amountOut', amountOut);
-        }
-        console.log('last amount', amountOut);
+  /// @dev Returns total amount out (when we withdraw all most underlying tokens)
+  function getTotalAmountOut() internal returns (uint256) {
+    return _getAmountOut(_getMostUnderlyingBalance(), 0);
+  }
 
+  /// @dev Calculates how much we have to pump out to receive amountOut
+  /// @param amountOut in source units of toPipeIndex
+  /// @param toPipeIndex index of the pipe to pump out
+  function getAmountInForAmountOut(uint256 amountOut, uint256 toPipeIndex) internal returns (uint256 amountIn) {
+    if (amountOut == 0) {
+      return 0;
     }
-
-    /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
-    /// @param sourceAmount in source units
-    /// @param toPipeIndex pump out to pipe with this index
-    /// @return amountOut in source units of pipe with toPipeIndex
-    function pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex)
-    internal returns (uint256 amountOut) {
-        console.log('pumpOutSource sourceAmount, toPipeIndex', sourceAmount, toPipeIndex);
-        if (sourceAmount == 0) return 0;
-        uint256 underlyingAmount = calculator.getAmountInForAmountOut(sourceAmount, toPipeIndex);
-        return pumpOut(underlyingAmount, toPipeIndex);
+    uint256 totalIn = _getMostUnderlyingBalance();
+    uint256 totalOut = _getAmountOut(totalIn, toPipeIndex);
+    if (totalOut == 0) {
+      return 0;
     }
+    amountIn = totalIn * amountOut / totalOut;
+  }
 
-    /// @dev Re-balance pipe
-    /// @param pipeIndex index of the pipe to rebalance
-    function rebalancePipe(uint256 pipeIndex) internal {
-        Pipe pipe = pipes[pipeIndex];
-        if (!pipe.needsRebalance()) return;
-
-        (uint256 imbalance, bool deficit) = pipe.rebalance();
-        if (imbalance > 0) {
-            if (deficit) {
-                console.log('rebalancePipe', pipe.name());
-                console.log('imbalance, deficit', imbalance, deficit);
-                pumpOutSource(imbalance, pipeIndex.add(1));
-                // call rebalance again after we have closed deficit
-                pipe.rebalance();
-            } else {
-                pumpIn(imbalance, pipeIndex.add(1));
-            }
-        }
+  /// @dev Parses a revert reason that should contain the numeric answer
+  /// @param reason encoded revert reason
+  /// @return numeric answer
+  function parseRevertReason(bytes memory reason) private pure returns (uint256) {
+    if (reason.length != 32) {
+      if (reason.length < 68) revert('LPL: Unexpected revert');
+      assembly {
+        reason := add(reason, 0x04)
+      }
+      revert(abi.decode(reason, (string)));
     }
-
-    /// @dev Re-balance all pipes
-    function rebalanceAllPipes() public {
-        uint256 len = pipes.length;
-        for (uint256 i = 0; i < len; i++) {
-            rebalancePipe(i);
-        }
-    }
-
-    /// @dev Checks if re-balance need some pipe(s)
-    /// @return returns true when re-balance needed
-    function isRebalanceNeeded() external view returns (bool) {
-        uint256 len = pipes.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (pipes[i].needsRebalance()) return true;
-        }
-        return false;
-    }
-
-    /// @dev Calls claim() for all pipes
-    function claimFromAllPipes() internal {
-        uint256 len = pipes.length;
-        for (uint256 i = 0; i < len; i++) {
-            pipes[i].claim();
-        }
-    }
-
-    /// @dev Function to calculate amount we will receive when we withdraw amountIn from last pipe to pipe with toPipeIndex. Should be called from another contract (LinearPipelineCalculator.sol)
-    /// @param amountIn in most output tokens (lp tokens of the last pipe)
-    /// @param toPipeIndex index of the pipe we should to pump out
-    function getAmountOutReverted(uint256 amountIn, uint256 toPipeIndex)
-    public {
-        uint256 amountOut = pumpOut(amountIn, toPipeIndex);
-        console.log('getAmountOutReverted amountOut', amountOut);
-        // store answer in revert message data
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, amountOut)
-            revert(ptr, 32)
-        }
-    }
-
-    /// @dev Returns balance of output (lp) token of the last pipe
-    function getMostUnderlyingBalance() public view returns (uint256) {
-        uint256 last = pipes.length - 1;
-        uint256 mostUnderlyingBalance = pipes[last].outputBalance();
-        console.log('mostUnderlyingBalance', mostUnderlyingBalance);
-        return mostUnderlyingBalance;
-    }
-
-    /// @notice Pipeline can claim coins that are somehow transferred into the pipes
-    /// @param recipient Recipient address
-    /// @param recipient Token address
-    function salvageFromAllPipes(address recipient, address token)
-    internal {
-        uint256 len = pipes.length;
-        for (uint256 i = 0; i < len; i++) {
-            pipes[i].salvageFromPipe(recipient, token);
-        }
-    }
+    return abi.decode(reason, (uint256));
+  }
 
 }
