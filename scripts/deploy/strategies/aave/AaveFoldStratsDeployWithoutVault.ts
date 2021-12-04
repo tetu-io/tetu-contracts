@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy} from "../../../../typechain";
-import {mkdir, readFileSync, writeFileSync} from "fs";
+import {appendFileSync, mkdir, readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -28,6 +28,7 @@ async function main() {
     vaultsByUnderlying.set(underlying, vAdr);
   }
 
+  appendFileSync(`./tmp/deployed/AAVE_STRATS.txt`, '-------------------\n', 'utf8');
   for (const info of infos) {
     const strat = info.split(',');
 
@@ -51,22 +52,13 @@ async function main() {
       continue;
     }
 
-    if (idx === '0') {
-      console.log('dai excluded');
-      continue;
-    }
-    if (idx === '1') {
-      console.log('usdc excluded');
-      continue;
-    }
-
     const vault = vaultsByUnderlying.get(tokenAddress.toLowerCase()) as string;
     const vaultName = await cReader.vaultUnderlying(vault);
 
     console.log('strat', idx, aTokenName, vaultName);
 
-    const collateralFactor = (ltv * 0.99).toFixed(0);
-    const borrowTarget = (ltv * 0.9).toFixed(0);
+    const collateralFactor = (ltv).toFixed(0);
+    const borrowTarget = (ltv * 0.99).toFixed(0);
 
     const strategyArgs = [
       core.controller,
@@ -88,8 +80,8 @@ async function main() {
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
-    const txt = `strategy: ${strategy.address}`;
-    writeFileSync(`./tmp/deployed/AAVE_STRAT_${tokenName}.txt`, txt, 'utf8');
+    const txt = `${tokenName} vault: ${vault} strategy: ${strategy.address}\n`;
+    appendFileSync(`./tmp/deployed/AAVE_STRATS.txt`, txt, 'utf8');
   }
 
 }
