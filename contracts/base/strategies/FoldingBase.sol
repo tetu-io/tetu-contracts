@@ -30,6 +30,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   uint256 public constant MAX_DEPTH = 20;
   /// @notice Denominator value for the both above mentioned ratios
   uint256 public _FACTOR_DENOMINATOR = 10000;
+  uint256 public _BORROW_FACTOR = 9900;
 
   /// @notice Numerator value for the targeted borrow rate
   uint256 public override borrowTargetFactorNumeratorStored;
@@ -252,6 +253,18 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   //////////// FOLDING LOGIC FUNCTIONS /////////////////
   //////////////////////////////////////////////////////
 
+  function _maxRedeem() internal returns (uint){
+    (uint supplied, uint borrowed) = _getInvestmentData();
+    if (collateralFactorNumerator == 0) {
+      return supplied;
+    }
+    uint256 requiredCollateral = borrowed * _FACTOR_DENOMINATOR / collateralFactorNumerator;
+    if (supplied < requiredCollateral) {
+      return 0;
+    }
+    return supplied - requiredCollateral;
+  }
+
   function _borrowTarget() internal returns (uint256) {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 balance = supplied - borrowed;
@@ -276,12 +289,13 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget - borrowed;
       uint256 maxBorrow = (supplied * collateralFactorNumerator / _FACTOR_DENOMINATOR) - borrowed;
+      // need to reduce max borrow for keep a gap for negative balance fluctuation
+      maxBorrow = maxBorrow * _BORROW_FACTOR / _FACTOR_DENOMINATOR;
       _borrow(Math.min(wantBorrow, maxBorrow));
       uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
       if (underlyingBalance > 0) {
         _supply(underlyingBalance);
       }
-
       // need to update local balances
       (supplied, borrowed) = _getInvestmentData();
       i++;
@@ -293,7 +307,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @dev Redeems a set amount of underlying tokens while keeping the borrow ratio healthy.
-  ///      This function must nor revert transaction
+  ///      This function must not revert transaction
   function _redeemPartialWithLoan(uint256 amount) internal updateSupplyInTheEnd {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 oldBalance = supplied - borrowed;
@@ -332,9 +346,16 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     }
     underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
     if (underlyingBalance < amount) {
-      uint256 toRedeem = amount - underlyingBalance;
-      // redeem the most we can redeem
-      _redeemUnderlying(toRedeem);
+      uint toRedeem = amount - underlyingBalance;
+      if (toRedeem != 0) {
+        // redeem the most we can redeem
+        _redeemUnderlying(toRedeem);
+      }
+    }
+    // supply excess underlying balance in the end
+    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (underlyingBalance > amount) {
+      _supply(underlyingBalance - amount);
     }
   }
 

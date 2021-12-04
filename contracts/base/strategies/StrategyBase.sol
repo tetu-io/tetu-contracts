@@ -21,7 +21,6 @@ import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../interface/ISmartVault.sol";
-import "hardhat/console.sol"; //TODO rm
 
 /// @title Abstract contract for base strategy functionality
 /// @author belbix
@@ -242,7 +241,6 @@ abstract contract StrategyBase is IStrategy, Controllable {
     uint targetTokenEarnedTotal = 0;
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
-      console.log('_liquidateReward amount', amount); //TODO rm
       if (amount != 0) {
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
@@ -258,7 +256,6 @@ abstract contract StrategyBase is IStrategy, Controllable {
           } catch {}
         }
         targetTokenEarnedTotal += targetTokenEarned;
-        console.log('_liquidateReward targetTokenEarnedTotal', targetTokenEarnedTotal);//TODO rm
       }
     }
     if (targetTokenEarnedTotal > 0) {

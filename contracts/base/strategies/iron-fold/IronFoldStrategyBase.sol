@@ -150,8 +150,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   }
 
   function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
-    // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    amountUnderlying = Math.min(amountUnderlying, CompleteRToken(rToken).balanceOfUnderlying(address(this)));
+    amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
     if (amountUnderlying > 0) {
       uint256 redeemCode = 999;
       try CompleteRToken(rToken).redeemUnderlying(amountUnderlying) returns (uint256 code) {
@@ -192,15 +191,10 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
   function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
-    // amount of liquidity
-    uint256 available = CompleteRToken(rToken).getCash();
-    // amount we supplied
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
-    // amount we borrowed
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
-
-    _redeemPartialWithLoan(Math.min(available, balance));
+    _redeemPartialWithLoan(balance);
 
     // we have a little amount of supply after full exit
     // better to redeem rToken amount for avoid rounding issues

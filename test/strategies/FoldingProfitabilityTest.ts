@@ -87,7 +87,7 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
       const totalFoldingProfitUSD = foldingTetuProfitUSD + foldingUnderlyingProfitUSD;
 
       const difference = totalFoldingProfitUSD / totalLendingProfitUSD * 100 - 100;
-      const isFoldingProfitableReal = difference > 0;
+      const isFoldingProfitableReal = difference > -0.1;
 
       console.log("===========================");
       console.log("=========Lending===========");

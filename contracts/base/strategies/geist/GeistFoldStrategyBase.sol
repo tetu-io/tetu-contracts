@@ -176,10 +176,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   /// @dev Redeem liquidity in underlying
   function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
-    // we can have a little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    (uint supplied, uint borrowed) = _getInvestmentData();
-    uint balance = supplied - borrowed;
-    amountUnderlying = Math.min(amountUnderlying, balance);
+    amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
     if (amountUnderlying > 0) {
       lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
     }
@@ -197,11 +194,9 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev Redeems the maximum amount of underlying.
   ///      Either all of the balance or all of the available liquidity.
   function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
-    // amount of liquidity
-    (uint256 availableLiquidity,,,,,,,,,) = dataProvider.getReserveData(_underlyingToken);
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 balance = supplied - borrowed;
-    _redeemPartialWithLoan(Math.min(availableLiquidity, balance));
+    _redeemPartialWithLoan(balance);
     (supplied,) = _getInvestmentData();
     _redeemUnderlying(supplied);
   }

@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneAaveFoldStrategyTest: {
       type: "number",
-      default: 5,
+      default: -1,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -63,8 +63,8 @@ describe('Universal Aave Fold tests', async () => {
     const usageAsCollateralEnabled = start[9];
     const borrowingEnabled = start[10];
     const ltvNum = Number(ltv);
-    const collateralFactor = (ltvNum * 0.99).toFixed(0);
-    const borrowTarget = (ltvNum * 0.9).toFixed(0);
+    const collateralFactor = (ltvNum).toFixed(0);
+    const borrowTarget = (ltvNum * 0.99).toFixed(0);
 
     if (!idx || idx === 'idx') {
       console.log('skip ', tokenName);
@@ -89,7 +89,7 @@ describe('Universal Aave Fold tests', async () => {
     const finalBalanceTolerance = 0.0001;
     const deposit = 100_000;
     // at least 3
-    const loops = 3;
+    const loops = 15;
     // number of blocks or timestamp value
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp

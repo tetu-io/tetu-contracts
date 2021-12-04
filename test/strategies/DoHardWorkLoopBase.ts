@@ -43,7 +43,7 @@ export class DoHardWorkLoopBase {
   vaultPPFS = BigNumber.from(0);
   priceCache = new Map<string, BigNumber>();
   totalToClaimInTetuN = 0;
-  toClaimCheckTolerance = 0.5;
+  toClaimCheckTolerance = 0.3;
 
   constructor(
     signer: SignerWithAddress,
