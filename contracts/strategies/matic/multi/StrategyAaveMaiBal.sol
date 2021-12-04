@@ -71,104 +71,24 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
   constructor(
     address _controller,
     address _vault,
-    address _underlying
+    address _underlying,
+    address[] memory _pipes
   ) AaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray) {
+    _initPipes(_pipes);
   }
 
-  // todo move
-  function init() external onlyControllerOrGovernance {
-    address pipeline = address(this);
-    address _underlying = _underlyingToken;
-    // Pipes data
-    address amToken;
-    address camToken;
-    address stablecoin;
-
-    if (_underlying == _WMATIC) {
-      amToken = _amWMATIC;
-      camToken = _camWMATIC;
-      stablecoin = _camWMATICVault;
-      // camWMATIC MAI Vault (cMVT)
-
-      AaveWethPipe.AaveWethPipeData memory aaveWethPipeData = AaveWethPipe.AaveWethPipeData({
-      eth : _ETHER,
-      wethGateway : 0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97, // for MATIC deposits
-      pool : _AAVE_POOL, // LendingPool
-      lpToken : amToken,
-      rewardToken : _WMATIC
-      });
-
-      _addPipe(new UnwrappingPipe(pipeline, _WMATIC, _ETHER));
-      _addPipe(new AaveWethPipe(pipeline, aaveWethPipeData));
-
-    } else {
-
-      if (_underlying == _AAVE) {
-        amToken = _amAAVE;
-        camToken = _camAAVE;
-        stablecoin = _camAAVEVault;
-
-      } else if (_underlying == _DAI) {
-        amToken = _amDAI;
-        camToken = _camDAI;
-        stablecoin = _camDAIVault;
-        maiDefaultCollateralToDebtTargetPercentage -= (135 - 110);
-      } else if (_underlying == _WETH) {
-        amToken = _amWETH;
-        camToken = _camWETH;
-        stablecoin = _camWETHVault;
-
-      } else if (_underlying == _WBTC) {
-        amToken = _amWBTC;
-        camToken = _camWBTC;
-        stablecoin = _camWBTCVault;
-
-      } else {
-        revert('SAMB: Underlying not supported');
-      }
-
-      AaveAmPipe.AaveAmPipeData memory aaveAmPipeData = AaveAmPipe.AaveAmPipeData({
-      pool : _AAVE_POOL,
-      sourceToken : _underlying,
-      lpToken : amToken,
-      rewardToken : _WMATIC
-      });
-
-      _addPipe(new NoopPipe(pipeline, _underlying));
-      // add no operation pipe to preserve pipes index for tests
-      _addPipe(new AaveAmPipe(pipeline, aaveAmPipeData));
-
+  /// @dev 0 - AaveAmPipe
+  ///      1 - MaiCamPipe
+  ///      2 - MaiStablecoinPipe
+  ///      3 - BalVaultPipe
+  function _initPipes(address[] memory _pipes) private {
+    require(_pipes.length == 4, "Wrong pipes");
+    for (uint i; i < _pipes.length; i++) {
+      IPipe(_pipes[i]).setPipeline(address(this));
+      _addPipe(IPipe(_pipes[i]));
     }
-
-    MaiCamPipe.MaiCamPipeData memory maiCamTokenPipeData = MaiCamPipe.MaiCamPipeData({
-    sourceToken : amToken,
-    lpToken : camToken,
-    rewardToken : _QI
-    });
-
-    MaiStablecoinPipe.MaiStablecoinPipeData memory maiStablecoinPipeData = MaiStablecoinPipe.MaiStablecoinPipeData({
-    sourceToken : camToken,
-    stablecoin : stablecoin,
-    borrowToken : _miMATIC,
-    targetPercentage : maiDefaultCollateralToDebtTargetPercentage,
-    maxImbalance : _maxTargetPercentageImbalance, // max targetPercentage deviation (+/-) to call rebalance
-    rewardToken : _QI
-    });
-
-    BalVaultPipe.BalVaultPipeData memory balVaultPipeData = BalVaultPipe.BalVaultPipeData({
-    sourceToken : _miMATIC,
-    vault : 0xBA12222222228d8Ba445958a75a0704d566BF2C8, // BalancerVault
-    poolID : 0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012, // StablePool
-    tokenIndex : 2,
-    lpToken : 0x06Df3b2bbB68adc8B0e302443692037ED9f91b42, // Balancer Polygon Stable Pool (BPSP)
-    rewardToken : _BAL
-    });
-
-    _addPipe(new MaiCamPipe(pipeline, maiCamTokenPipeData));
-    MaiStablecoinPipe maiStablecoinPipe = new MaiStablecoinPipe(pipeline, maiStablecoinPipeData);
-    _addPipe(maiStablecoinPipe);
-    _addPipe(new BalVaultPipe(pipeline, balVaultPipeData));
-    _maiStablecoinPipe = IMaiStablecoinPipe(maiStablecoinPipe);
+    // pipe with index 2 must be MaiStablecoinPipe
+    _maiStablecoinPipe = IMaiStablecoinPipe(_pipes[2]);
   }
 
 

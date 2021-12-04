@@ -14,6 +14,10 @@ pragma solidity 0.8.4;
 
 interface IPipe {
 
+  function init() external view returns (bool);
+
+  function pipeline() external view returns (address);
+
   function name() external view returns (string memory);
 
   function sourceToken() external view returns (address);
@@ -27,6 +31,8 @@ interface IPipe {
   function prevPipe() external view returns (address);
 
   function nextPipe() external view returns (address);
+
+  function setPipeline(address _pipeline) external;
 
   function setNextPipe(address _nextPipe) external;
 

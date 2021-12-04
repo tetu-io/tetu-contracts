@@ -31,8 +31,7 @@ contract AaveAmPipe is Pipe {
 
   AaveAmPipeData public pipeData;
 
-  constructor(address _pipeline, AaveAmPipeData memory _d) Pipe(
-    _pipeline,
+  constructor(AaveAmPipeData memory _d) Pipe(
     'AaveAmPipe',
     _d.sourceToken,
     _d.lpToken

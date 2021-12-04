@@ -41,8 +41,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   IErc20Stablecoin private _stablecoin;
   uint256 private vaultID;
 
-  constructor(address _pipeline, MaiStablecoinPipeData memory _d) Pipe(
-    _pipeline,
+  constructor(MaiStablecoinPipeData memory _d) Pipe(
     'MaiStablecoinPipe',
     _d.sourceToken,
     _d.borrowToken

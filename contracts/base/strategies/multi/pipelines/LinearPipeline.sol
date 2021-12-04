@@ -96,6 +96,9 @@ contract LinearPipeline is ILinearPipeline {
   /// @dev Adds pipe to the end of pipeline and connects it
   /// @param newPipe to be added
   function _addPipe(IPipe newPipe) internal {
+    require(newPipe.init(), "LPL: New pipe not initialized");
+    require(newPipe.pipeline() == address(this), "LPL: Wrong pipe owner");
+
     pipes.push(newPipe);
 
     if (pipes.length > 1) {

@@ -20,8 +20,7 @@ import "../../../../third_party/uniswap/IWETH.sol";
 /// @author bogdoslav
 contract UnwrappingPipe is Pipe {
 
-  constructor(address _pipeline, address _weth, address _ether) Pipe(
-    _pipeline,
+  constructor(address _weth, address _ether) Pipe(
     'UnwrappingPipe',
     _weth,
     _ether

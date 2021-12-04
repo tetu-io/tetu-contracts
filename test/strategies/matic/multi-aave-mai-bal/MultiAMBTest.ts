@@ -21,6 +21,7 @@ import {WithdrawAndClaimTest} from "./WithdrawAndClaimTest";
 import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
+import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
 
 
 dotEnvConfig();
@@ -103,6 +104,10 @@ describe('Universal AMB tests', async () => {
     const BAL_PIPE_INDEX = 4;
     // **********************************************
 
+    const pipes: string[] = [];
+    // tslint:disable-next-line
+    const pipesArgs: any[][] = [];
+
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
@@ -110,18 +115,52 @@ describe('Universal AMB tests', async () => {
         core,
         info.underlyingName,
         async vaultAddress => {
+          // -----------------
+          const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
+            signer,
+            underlying,
+            info.amToken
+          );
+          pipes.push(aaveAmPipeData[0].address);
+          pipesArgs.push(aaveAmPipeData[1]);
+          // -----------------
+          const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
+            signer,
+            info.amToken,
+            info.camToken
+          );
+          pipes.push(maiCamPipeData[0].address);
+          pipesArgs.push(maiCamPipeData[1]);
+          // -----------------
+          const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
+            signer,
+            info.camToken,
+            info.stablecoin,
+            info.amToken,
+            info.targetPercentage,
+          );
+          pipes.push(maiStablecoinPipeData[0].address);
+          pipesArgs.push(maiStablecoinPipeData[1]);
+          // -----------------
+          const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
+            signer
+          );
+          pipes.push(balVaultPipeData[0].address);
+          pipesArgs.push(balVaultPipeData[1]);
+          // -----------------
+
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
-            underlying
+            underlying,
+            pipes
           ];
-          const strat = await DeployerUtils.deployContract(
+
+          return await DeployerUtils.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs
-          ) as StrategyAaveMaiBal;
-          await strat.init();
-          return strat
+          ) as StrategyAaveMaiBal
         },
         underlying
       );

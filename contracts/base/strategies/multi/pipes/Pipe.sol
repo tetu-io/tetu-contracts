@@ -21,8 +21,11 @@ import "../../../interface/IPipe.sol";
 abstract contract Pipe is IPipe {
   using SafeERC20 for IERC20;
 
+  /// @dev After adding the pipe to a pipeline it should be immediately initialized
+  bool public override init = false;
+
   /// @notice Address of the master pipeline
-  address public pipeline;
+  address public override pipeline;
 
   /// @notice Pipe name for statistical purposes only
   /// @dev initialize it in constructor
@@ -44,16 +47,13 @@ abstract contract Pipe is IPipe {
   address public override nextPipe;
 
   constructor (
-    address _pipeline,
     string memory _name,
     address _sourceToken,
     address _outputToken
   ) {
-    require(_pipeline != address(0), "Zero pipeline");
     require(_sourceToken != address(0), "Zero source token");
     require(_outputToken != address(0), "Zero output token");
 
-    pipeline = _pipeline;
     name = _name;
     sourceToken = _sourceToken;
     outputToken = _outputToken;
@@ -65,6 +65,13 @@ abstract contract Pipe is IPipe {
       "PIPE: caller is not the pipeline"
     );
     _;
+  }
+
+  /// @dev After adding the pipe to a pipeline it should be immediately initialized
+  function setPipeline(address _pipeline) external override {
+    require(!init, "PIPE: Already init");
+    pipeline = _pipeline;
+    init = true;
   }
 
   /// @dev Size of reward tokens array

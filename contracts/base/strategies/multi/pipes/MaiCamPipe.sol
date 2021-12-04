@@ -31,8 +31,7 @@ contract MaiCamPipe is Pipe {
   MaiCamPipeData public pipeData;
 
   /// @dev creates context
-  constructor(address _pipeline, MaiCamPipeData memory _d) Pipe(
-    _pipeline,
+  constructor(MaiCamPipeData memory _d) Pipe(
     'MaiCamTokenPipe',
     _d.sourceToken,
     _d.lpToken

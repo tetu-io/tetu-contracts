@@ -19,8 +19,7 @@ import "./Pipe.sol";
 contract NoopPipe is Pipe {
   using SafeERC20 for IERC20;
 
-  constructor(address _pipeline, address token) Pipe(
-    _pipeline,
+  constructor(address token) Pipe(
     'NoopPipe',
     token,
     token

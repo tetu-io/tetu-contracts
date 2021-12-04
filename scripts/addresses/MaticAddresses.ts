@@ -58,6 +58,7 @@ export class MaticAddresses {
   public static BAL_TOKEN = "0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3".toLowerCase();
   public static CAMWMATIC_TOKEN = "0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B".toLowerCase();
   public static CAMAAVE_TOKEN = "0xeA4040B21cb68afb94889cB60834b13427CFc4EB".toLowerCase();
+  public static AMAAVE_TOKEN = "0x1d2a0E5EC8E5bBDCA5CB219e649B565d8e5c3360".toLowerCase();
   public static CAMDAI_TOKEN = "0xE6C23289Ba5A9F0Ef31b8EB36241D5c800889b7b".toLowerCase();
   public static CAMWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
   public static CAMWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
@@ -172,6 +173,13 @@ export class MaticAddresses {
 
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
+  public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf';
+  public static camAAVEVault = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40';
+
+  // BALANCER
+  public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
+  public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012';
+  public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42';
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,

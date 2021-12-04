@@ -32,8 +32,7 @@ contract AaveWethPipe is Pipe {
 
   AaveWethPipeData public pipeData;
 
-  constructor(address _pipeline, AaveWethPipeData memory _d) Pipe(
-    _pipeline,
+  constructor(AaveWethPipeData memory _d) Pipe(
     'AaveWethPipe',
     _d.eth,
     _d.lpToken
