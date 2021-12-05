@@ -197,29 +197,19 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     uint256 value = collateral * ethPrice / _stablecoin.getTokenPriceSource();
     amount = value * 100 / pipeData.targetPercentage;
   }
-/*
-  /// @dev converts borrow amount to collateral amount using target Collateral to Debt percentage
-  /// @param borrowAmount amount in borrow token
-  /// @param percentage is Collateral to Debt percentage from 135 and above
-  function _borrowToCollateralTokenAmountPercentage(uint256 borrowAmount, uint256 percentage)
-  private view returns (uint256 amount) {
-    uint256 ethPrice = _stablecoin.getEthPriceSource();
-    uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
-    uint256 closingFee = _stablecoin.closingFee();
-
-    // from https://github.com/0xlaozi/qidao/blob/308754139e0d701bdd2c8d4f66ae14ef8b2acdca/contracts/Stablecoin.sol#L212
-    uint256 fee = (borrowAmount * closingFee * tokenPriceSource) / (ethPrice * 10000);
-    amount = borrowAmount * tokenPriceSource * percentage / (ethPrice*100) - fee;
-  }*/
 
   /// @dev Returns how many collateral tokens excess necessary amount
   ///      to cover borrow amount with target collateral to debt percentage
   function _collateralTokensUnlocked()
   private view returns (uint256 amount) {
+    uint256 collateral = _stablecoin.vaultCollateral(vaultID);
+    uint256 borrowedAmount = _stablecoin.vaultDebt(vaultID);
+    if (borrowedAmount == 0) {
+      return collateral;
+    }
+
     uint256 ethPrice = _stablecoin.getEthPriceSource();
     uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
-    uint256 borrowedAmount = _stablecoin.vaultDebt(vaultID);
-    uint256 collateral = _stablecoin.vaultCollateral(vaultID);
     // collateral needed to have current borrowed tokens with target collateral to debt percentage
     uint256 collateralNeeded = borrowedAmount * tokenPriceSource * pipeData.targetPercentage
         / (ethPrice*100);
