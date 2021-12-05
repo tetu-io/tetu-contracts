@@ -126,26 +126,26 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
 
   /// @dev Returns true when rebalance needed
   function needsRebalance() override external view returns (bool){
-    uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
-    if (collateralPercentage == 0) {
+    uint256 currentPercentage = _stablecoin.checkCollateralPercentage(vaultID);
+    if (currentPercentage == 0) {
       // no debt or collateral
       return false;
     }
-    return ((collateralPercentage + pipeData.maxImbalance) < pipeData.targetPercentage)
-    || (collateralPercentage > (uint256(pipeData.targetPercentage) + pipeData.maxImbalance));
+    return ((currentPercentage + pipeData.maxImbalance) < pipeData.targetPercentage)
+    || (currentPercentage > (uint256(pipeData.targetPercentage) + pipeData.maxImbalance));
   }
 
   /// @dev function for re balancing. When rebalance
   /// @return imbalance in underlying units
   /// @return deficit - when true, then asks to receive underlying imbalance amount, when false - put imbalance to next pipe,
   function rebalance() override onlyPipeline external returns (uint256 imbalance, bool deficit) {
-    uint256 collateralPercentage = _stablecoin.checkCollateralPercentage(vaultID);
-    if (collateralPercentage == 0) {
+    uint256 currentPercentage = _stablecoin.checkCollateralPercentage(vaultID);
+    if (currentPercentage == 0) {
       // no debt or collateral
       return (0, false);
     }
 
-    if ((collateralPercentage + pipeData.maxImbalance) < pipeData.targetPercentage) {
+    if ((currentPercentage + pipeData.maxImbalance) < pipeData.targetPercentage) {
       // we have deficit
       uint256 targetBorrow = _percentageToBorrowTokenAmount();
       uint256 debt = _stablecoin.vaultDebt(vaultID);
@@ -165,7 +165,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
         return (repayAmount - paidAmount, true);
       }
 
-    } else if (collateralPercentage > (uint256(pipeData.targetPercentage) + pipeData.maxImbalance)) {
+    } else if (currentPercentage > (uint256(pipeData.targetPercentage) + pipeData.maxImbalance)) {
       // we have excess
       uint256 targetBorrow = _percentageToBorrowTokenAmount();
       uint256 debt = _stablecoin.vaultDebt(vaultID);
