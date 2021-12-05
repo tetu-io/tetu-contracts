@@ -12,6 +12,7 @@ import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -48,7 +49,7 @@ describe("ForwarderV2 tests", function () {
 
     usdc = await DeployerUtils.getUSDCAddress();
     await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
-    const amountLp = '10000000';
+    const amountLp = '100000';
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amountLp, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -157,23 +158,26 @@ describe("ForwarderV2 tests", function () {
     await forwarder.liquidate(usdc, core.rewardToken.address, _amount);
   });
 
-  // it("should liquidate fxs to tetu", async () => {
-  //   await forwarder.addLargestLps(
-  //     [MaticAddresses.FXS_TOKEN],
-  //     [MaticAddresses.QUICK_FRAX_FXS]
-  //   );
-  //   await TokenUtils.getToken(MaticAddresses.FXS_TOKEN, signer.address);
-  //   await TokenUtils.approve(MaticAddresses.FXS_TOKEN, signer, forwarder.address, utils.parseUnits('1000').toString());
-  //   await forwarder.liquidate(MaticAddresses.FXS_TOKEN, MaticAddresses.CRV_TOKEN, utils.parseUnits('1000'));
-  // });
-  //
-  // // todo add to prod and move block
-  // it.skip("should liquidate quick to polyDoge", async () => {
-  //   const tokenIn = MaticAddresses.QUICK_TOKEN;
-  //   const dec = await TokenUtils.decimals(tokenIn);
-  //   await TokenUtils.getToken(tokenIn, signer.address);
-  //   await TokenUtils.approve(tokenIn, signer, forwarder.address, utils.parseUnits('1000', dec).toString());
-  //   await forwarder.liquidate(tokenIn, MaticAddresses.polyDoge_TOKEN, utils.parseUnits('1000', dec));
-  // });
+  it.skip("should liquidate sushi to fxs", async () => {
+    await forwarder.addLargestLps(
+      [MaticAddresses.FXS_TOKEN],
+      ['0x4756FF6A714AB0a2c69a566E548B59c72eB26725']
+    );
+    const tokenIn = MaticAddresses.SUSHI_TOKEN;
+    const dec = await TokenUtils.decimals(tokenIn);
+    const _amount = utils.parseUnits('1', dec);
+    await TokenUtils.getToken(tokenIn, signer.address, _amount);
+    await TokenUtils.approve(tokenIn, signer, forwarder.address, _amount.toString());
+    await forwarder.liquidate(tokenIn, MaticAddresses.FXS_TOKEN, _amount);
+  });
+
+  it.skip("should liquidate sushi to fxs", async () => {
+    const tokenIn = MaticAddresses.SUSHI_TOKEN;
+    const dec = await TokenUtils.decimals(tokenIn);
+    const _amount = utils.parseUnits('1', dec);
+    await TokenUtils.getToken(tokenIn, signer.address, _amount);
+    await TokenUtils.approve(tokenIn, signer, forwarder.address, _amount.toString());
+    await forwarder.liquidate(tokenIn, MaticAddresses.polyDoge_TOKEN, _amount);
+  });
 
 });

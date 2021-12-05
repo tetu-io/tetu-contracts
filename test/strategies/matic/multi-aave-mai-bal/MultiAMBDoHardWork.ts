@@ -2,7 +2,6 @@ import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {ICamToken, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {UniswapUtils} from "../../../UniswapUtils";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -43,8 +42,8 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     await cam.claimAaveRewards();
 
     // air drop reward token
-    await TokenUtils.getToken(this.airDropper.address, MaticAddresses.WMATIC_TOKEN, this.airDropAmount);
-    await TokenUtils.getToken(this.airDropper.address, this.airDropToken, this.airDropAmount);
+    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, this.airDropper.address, this.airDropAmount);
+    await TokenUtils.getToken(this.airDropToken, this.airDropper.address, this.airDropAmount);
     const bal = await TokenUtils.balanceOf(this.airDropToken, this.airDropper.address);
     const pipeAddress = await strategyAaveMaiBal.pipes(this.airDropPipeIndex);
     await TokenUtils.transfer(this.airDropToken, this.airDropper, pipeAddress, bal.toString());

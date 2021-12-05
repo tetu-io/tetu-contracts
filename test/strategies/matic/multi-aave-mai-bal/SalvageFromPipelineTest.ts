@@ -7,7 +7,6 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {UniswapUtils} from "../../../UniswapUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -31,8 +30,8 @@ export class SalvageFromPipelineTest extends SpecificStrategyTest {
       console.log('>>>amountPerPipe', amountPerPipe.toString());
       const totalAmount = amountPerPipe.mul(pipesLength)
       console.log('>>>totalAmount  ', totalAmount.toString());
-      await TokenUtils.getToken(signer.address, MaticAddresses.WMATIC_TOKEN, totalAmount);
-      await TokenUtils.getToken(signer.address, token, totalAmount);
+      await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, totalAmount);
+      await TokenUtils.getToken(token, signer.address, totalAmount);
 
       const balanceAfterBuy = await TokenUtils.balanceOf(token, signer.address)
       console.log('>>>balanceAfterBuy', balanceAfterBuy.toString());

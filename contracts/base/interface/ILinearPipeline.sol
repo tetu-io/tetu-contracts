@@ -12,30 +12,18 @@
 
 pragma solidity 0.8.4;
 
-import "./Pipe.sol";
+import "./IPipe.sol";
 
-/// @title No operation Pipe Contract
-/// @author bogdoslav
-contract NoopPipe is Pipe {
-  using SafeERC20 for IERC20;
+interface ILinearPipeline {
 
-  constructor(address token) Pipe(
-    'NoopPipe',
-    token,
-    token
-  ) {
-  }
+  function pipes(uint index) external view returns (IPipe);
 
-  /// @dev Just send to next pipe
-  function put(uint256) override onlyPipeline public returns (uint256 output) {
-    output = _erc20Balance(outputToken);
-    _transferERC20toNextPipe(outputToken, output);
-  }
+  function pipesLength() external view returns (uint);
 
-  /// @dev Just send to prev pipe
-  function get(uint256) override onlyPipeline public returns (uint256 output) {
-    output = _erc20Balance(sourceToken);
-    _transferERC20toPrevPipe(sourceToken, output);
-  }
+  function isRebalanceNeeded() external view returns (bool);
+
+  function getMostUnderlyingBalance() external view returns (uint);
+
+  function getAmountOutReverted(uint256 amountIn, uint256 toPipeIndex) external;
 
 }

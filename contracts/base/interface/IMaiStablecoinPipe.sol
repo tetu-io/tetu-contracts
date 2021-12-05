@@ -12,30 +12,12 @@
 
 pragma solidity 0.8.4;
 
-import "./Pipe.sol";
+interface IMaiStablecoinPipe {
 
-/// @title No operation Pipe Contract
-/// @author bogdoslav
-contract NoopPipe is Pipe {
-  using SafeERC20 for IERC20;
+  function setTargetPercentage(uint256 _targetPercentage) external;
 
-  constructor(address token) Pipe(
-    'NoopPipe',
-    token,
-    token
-  ) {
-  }
+  function targetPercentage() external view returns (uint256);
 
-  /// @dev Just send to next pipe
-  function put(uint256) override onlyPipeline public returns (uint256 output) {
-    output = _erc20Balance(outputToken);
-    _transferERC20toNextPipe(outputToken, output);
-  }
-
-  /// @dev Just send to prev pipe
-  function get(uint256) override onlyPipeline public returns (uint256 output) {
-    output = _erc20Balance(sourceToken);
-    _transferERC20toPrevPipe(sourceToken, output);
-  }
+  function availableMai() external view returns (uint256);
 
 }

@@ -4,11 +4,17 @@ const infos: {
   underlyingName: string,
   underlying: string,
   camToken: string,
+  amToken: string,
+  stablecoin: string,
+  targetPercentage: string,
 }[] = [
   {
     underlyingName: 'AAVE',
     underlying: MaticAddresses.AAVE_TOKEN,
     camToken: MaticAddresses.CAMAAVE_TOKEN,
+    amToken: MaticAddresses.AMAAVE_TOKEN,
+    stablecoin: MaticAddresses.camAAVEVault,
+    targetPercentage: '200',
   },
   // {
   //   underlyingName: 'WMATIC',

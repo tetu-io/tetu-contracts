@@ -43,7 +43,7 @@ export class DoHardWorkLoopBase {
   vaultPPFS = BigNumber.from(0);
   priceCache = new Map<string, BigNumber>();
   totalToClaimInTetuN = 0;
-  toClaimCheckTolerance = 0.5;
+  toClaimCheckTolerance = 0.3;
 
   constructor(
     signer: SignerWithAddress,
@@ -328,7 +328,7 @@ export class DoHardWorkLoopBase {
     const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
     const userUnderlyingBalanceAfterN = +utils.formatUnits(userUnderlyingBalanceAfter, this.undDec);
     const userBalanceExpected = userDepositedN - (userDepositedN * this.finalBalanceTolerance);
-    console.log('User final balance +-: ', this.toPercent(userDepositedN, userUnderlyingBalanceAfterN));
+    console.log('User final balance +-: ', this.toPercent(userUnderlyingBalanceAfterN, userDepositedN));
     expect(userUnderlyingBalanceAfterN).is.greaterThanOrEqual(userBalanceExpected, "user should have more underlying");
   }
 
