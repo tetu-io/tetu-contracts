@@ -206,7 +206,8 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     amount = borrowAmount * tokenPriceSource * percentage / (ethPrice*100) - fee;
   }*/
 
-  /// @dev Returns
+  /// @dev Returns how many collateral tokens excess necessary amount
+  ///      to cover borrow amount with target collateral to debt percentage
   function _collateralTokensUnlocked()
   private view returns (uint256 amount) {
     uint256 ethPrice = _stablecoin.getEthPriceSource();
