@@ -87,7 +87,10 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   /// @dev Function to withdraw from pool
   function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override updateTotalAmount {
     _claimFromAllPipes();
-    _pumpOutSource(underlyingAmount, 0);
+    // update cached _totalAmount, and recalculate amount
+    uint256 newTotalAmount = getTotalAmountOut();
+    uint256 amount = underlyingAmount * newTotalAmount / _totalAmount;
+    _pumpOutSource(amount, 0);
   }
 
   /// @dev Emergency withdraws all most underlying from the pool
@@ -128,7 +131,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
   /// @dev Sets targetPercentage for MaiStablecoinPipe
   /// @param _targetPercentage - target collateral to debt percentage
-  function setTargetPercentage(uint256 _targetPercentage) onlyControllerOrGovernance external {
+  function setTargetPercentage(uint256 _targetPercentage) onlyControllerOrGovernance updateTotalAmount external {
     _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
     _rebalanceAllPipes();
   }
