@@ -62,9 +62,15 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   }
 
   /// @dev Gets targetPercentage
-  /// @return collateral to debt percentage
+  /// @return target collateral to debt percentage
   function targetPercentage() external view override returns (uint256) {
     return pipeData.targetPercentage;
+  }
+
+  /// @dev Gets collateralPercentage
+  /// @return current collateral to debt percentage
+  function collateralPercentage() external view override returns (uint256) {
+    return _stablecoin.checkCollateralPercentage(vaultID);
   }
 
   /// @dev function for depositing to collateral then borrowing
