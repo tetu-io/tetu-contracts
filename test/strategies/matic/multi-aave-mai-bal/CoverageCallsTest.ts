@@ -1,10 +1,9 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {AaveWethPipe, SmartVault, StrategyAaveMaiBal, UnwrappingPipe} from "../../../../typechain";
+import {SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
-import {ethers} from "hardhat";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -32,17 +31,6 @@ export class CoverageCallsTest extends SpecificStrategyTest {
 
       const poolTotalAmount = await strategyAaveMaiBal.poolTotalAmount()
       console.log('>>>poolTotalAmount', poolTotalAmount);
-
-      const unwrappingPipe = (await ethers.getContractAt('UnwrappingPipe',
-        await strategyAaveMaiBal.pipes(UNWRAPPING_PIPE_INDEX))) as UnwrappingPipe;
-      const unwrappingPipeOutputBalance = await unwrappingPipe.outputBalance();
-      console.log('>>>unwrappingPipe OutputBalance', unwrappingPipeOutputBalance);
-      await unwrappingPipe.rebalance(); // for Pipe.sol coverage
-
-      const aaveWethPipe = (await ethers.getContractAt('AaveWethPipe',
-        await strategyAaveMaiBal.pipes(AAVE_PIPE_INDEX))) as AaveWethPipe;
-      const aaveWethPipeSourceBalance = await aaveWethPipe.sourceBalance();
-      console.log('>>>unwrappingPipe SourceBalance', aaveWethPipeSourceBalance);
 
       const readyToClaim = await strategyAaveMaiBal.readyToClaim()
       console.log('>>>readyToClaim', readyToClaim);

@@ -191,7 +191,6 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   private view returns (uint256 amount) {
     uint256 ethPrice = _stablecoin.getEthPriceSource();
     uint256 value = collateral * ethPrice / _stablecoin.getTokenPriceSource();
-    //        amount = toDecimals(value * 100 / percentage, collateralDecimals(), borrowDecimals());
     amount = value * 100 / percentage;
   }
 
