@@ -41,6 +41,8 @@ abstract contract ForwarderV2Storage is Initializable {
   mapping(address => mapping(address => LpData)) public blueChipsLps;
   /// @dev Factory address to fee value map
   mapping(address => UniFee) public uniPlatformFee;
+  /// @dev Hold blue chips tokens addresses
+  mapping(address => bool) public blueChipsTokens;
 
   /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);

@@ -101,7 +101,7 @@ describe('Universal AMB tests', async () => {
       new CoverageCallsTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('100');
-    const BAL_PIPE_INDEX = 4;
+    const BAL_PIPE_INDEX = 3;
     // **********************************************
 
     const pipes: string[] = [];
