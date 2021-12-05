@@ -82,7 +82,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    uint256 repaidAmount = repay(amount);
+    repay(amount);
     uint256 withdrawAmount = _collateralTokensUnlocked();
     withdrawCollateral(withdrawAmount);
     output = _erc20Balance(sourceToken);
