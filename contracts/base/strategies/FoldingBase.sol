@@ -415,7 +415,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       // -1 for avoiding problem with rounding
       uint256 toLiquidate = (totalUnderlyingBalance - IERC20Extended(_smartVault).totalSupply()) - 1;
       if (underlyingBalance() < toLiquidate) {
-        _redeemPartialWithLoan(toLiquidate - underlyingBalance());
+        _redeemPartialWithLoan(toLiquidate);
       }
       toLiquidate = Math.min(underlyingBalance(), toLiquidate);
       if (toLiquidate != 0) {
