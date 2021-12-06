@@ -147,6 +147,11 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   function collateralPercentage() external view returns (uint256) {
     return _maiStablecoinPipe.collateralPercentage();
   }
+  /// @dev Gets liquidationPrice of MaiStablecoinPipe
+  /// @return price of source token when vault will be liquidated
+  function liquidationPrice() external view returns (uint256) {
+    return _maiStablecoinPipe.liquidationPrice();
+  }
 
   /// @dev Gets available MAI to borrow at the Mai Stablecoin contract. Should be checked at UI before deposit
   /// @return MAI (miMATIC) supply

@@ -7,6 +7,7 @@ const infos: {
   amToken: string,
   stablecoin: string,
   targetPercentage: string,
+  liquidationPercentage: string,
 }[] = [
   {
     underlyingName: 'AAVE',
@@ -15,6 +16,7 @@ const infos: {
     amToken: MaticAddresses.AMAAVE_TOKEN,
     stablecoin: MaticAddresses.camAAVEVault,
     targetPercentage: '200',
+    liquidationPercentage: '135',
   },
   // {
   //   underlyingName: 'WMATIC',

@@ -38,6 +38,11 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
       const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
       console.log('>>>needed0', needed0);
+      const collateralPercentage0 = await strategyAaveMaiBal.collateralPercentage();
+      console.log('>>>collateralPercentage0', collateralPercentage0.toString());
+      const liquidationPrice0 = await strategyAaveMaiBal.liquidationPrice();
+      console.log('>>>liquidationPrice0', liquidationPrice0.toString());
+
 
       await VaultUtils.deposit(user, vault, BigNumber.from(bal));
       console.log('>>>deposited');
@@ -48,7 +53,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const bal1 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal1', bal1.toString())
 
-      // *** mock price *2 ***
+      // *** mock price +20% ***
 
       const stablecoinEthPrice = await stablecoin.getEthPriceSource()
       console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
@@ -60,7 +65,9 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       const mockPriceSource = await DeployerUtils.deployContract(
         signer, 'MockPriceSource', 0);
-      await mockPriceSource.setPrice(priceSourcePrice.mul(2));
+      const mockPricePercents = 150;
+      const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
+      await mockPriceSource.setPrice(mockPrice);
       const [, mockSourcePrice, ,] = await mockPriceSource.latestRoundData();
       console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
@@ -78,6 +85,10 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>stablecoinEthPrice2', stablecoinEthPrice2.toString())
       const needed1 = await strategyAaveMaiBal.isRebalanceNeeded();
       console.log('>>>needed1', needed1);
+      const collateralPercentage1 = await strategyAaveMaiBal.collateralPercentage();
+      console.log('>>>collateralPercentage1', collateralPercentage1.toString());
+      const liquidationPrice1 = await strategyAaveMaiBal.liquidationPrice();
+      console.log('>>>liquidationPrice1', liquidationPrice1.toString());
 
       expect(stablecoinEthPrice2).to.be.equal(mockSourcePrice)
 
@@ -87,6 +98,10 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const bal2 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal2', bal2.toString())
       const needed2 = await strategyAaveMaiBal.isRebalanceNeeded();
+      const collateralPercentage2 = await strategyAaveMaiBal.collateralPercentage();
+      console.log('>>>collateralPercentage2', collateralPercentage2.toString());
+      const liquidationPrice2 = await strategyAaveMaiBal.liquidationPrice();
+      console.log('>>>liquidationPrice2', liquidationPrice2.toString());
 
       // ***** check balance after matic price changed back ***
 
@@ -96,21 +111,38 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
       const needed3 = await strategyAaveMaiBal.isRebalanceNeeded();
       console.log('>>>needed3', needed3);
+      const collateralPercentage3 = await strategyAaveMaiBal.collateralPercentage();
+      console.log('>>>collateralPercentage3', collateralPercentage3.toString());
+      const liquidationPrice3 = await strategyAaveMaiBal.liquidationPrice();
+      console.log('>>>liquidationPrice3', liquidationPrice3.toString());
 
       await strategyGov.rebalanceAllPipes()
       console.log('>>>rebalanced');
       const bal3 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal3', bal3.toString())
+      const collateralPercentage4 = await strategyAaveMaiBal.collateralPercentage();
+      console.log('>>>collateralPercentage4', collateralPercentage4.toString());
+      const liquidationPrice4 = await strategyAaveMaiBal.liquidationPrice();
+      console.log('>>>liquidationPrice4', liquidationPrice4.toString());
 
       expect(bal0).to.be.eq(bal1);
       const dec = await TokenUtils.decimals(underlying);
-      TestAsserts.closeTo(bal2, bal1.mul(2), 0.005, dec);
+      TestAsserts.closeTo(bal2, bal1.mul(mockPricePercents).div(100), 0.005, dec);
       TestAsserts.closeTo(bal3, bal1, 0.005, dec);
 
       expect(needed0).is.eq(false);
       expect(needed1).is.eq(true);
       expect(needed2).is.eq(false);
       expect(needed3).is.eq(true);
+
+      const targetPercentage = (await strategyAaveMaiBal.targetPercentage());
+
+      expect(collateralPercentage0).is.eq(0);
+      TestAsserts.closeTo(collateralPercentage1, targetPercentage.mul(mockPricePercents).div(100), 1, 0);
+      TestAsserts.closeTo(collateralPercentage2, targetPercentage, 1, 0);
+      TestAsserts.closeTo(collateralPercentage3, targetPercentage.mul(100).div(mockPricePercents), 1, 0);
+      TestAsserts.closeTo(collateralPercentage4, targetPercentage, 1, 0);
+
     });
   }
 
