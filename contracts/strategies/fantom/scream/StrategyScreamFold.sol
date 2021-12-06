@@ -30,7 +30,9 @@ contract StrategyScreamFold is ScreamFoldStrategyBase {
     address _underlying,
     address _scToken,
     uint256 _borrowTargetFactorNumerator,
-    uint256 _collateralFactorNumerator
+    uint256 _collateralFactorNumerator,
+    address _lpWithScream,
+    address _scNetworkToken
   ) ScreamFoldStrategyBase(
       _controller,
       _underlying,
@@ -39,7 +41,9 @@ contract StrategyScreamFold is ScreamFoldStrategyBase {
       _scToken,
       _SCREAM_CONTROLLER,
       _borrowTargetFactorNumerator,
-      _collateralFactorNumerator
+      _collateralFactorNumerator,
+      _lpWithScream,
+      _scNetworkToken
   ) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(_underlying);
