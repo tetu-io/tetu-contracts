@@ -62,6 +62,7 @@ export class MaticAddresses {
   public static CAMDAI_TOKEN = "0xE6C23289Ba5A9F0Ef31b8EB36241D5c800889b7b".toLowerCase();
   public static CAMWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
   public static CAMWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
+  public static miFARM_TOKEN = "0xab0b2ddB9C7e440fAc8E140A89c0dbCBf2d7Bbff".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
