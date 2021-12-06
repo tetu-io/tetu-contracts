@@ -98,6 +98,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>needed3', needed3);
 
       await strategyGov.rebalanceAllPipes()
+      console.log('>>>rebalanced');
       const bal3 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal3', bal3.toString())
 
