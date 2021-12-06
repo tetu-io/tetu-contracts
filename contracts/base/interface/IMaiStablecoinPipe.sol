@@ -18,6 +18,8 @@ interface IMaiStablecoinPipe {
 
   function targetPercentage() external view returns (uint256);
 
+  function collateralPercentage() external view returns (uint256);
+
   function availableMai() external view returns (uint256);
 
 }
