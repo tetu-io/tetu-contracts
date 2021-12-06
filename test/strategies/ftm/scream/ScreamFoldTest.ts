@@ -59,8 +59,15 @@ describe('Universal Scream Fold tests', async () => {
     const tokenName = strat[4];
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
+    const tvl = strat[7];
+    const tvlNum = Number(tvl);
+    const supplyCap = strat[8];
 
-    if (!idx || idx === 'idx' || collateralFactor === '0') {
+    // skip FRAX token (no price)
+    // skip YFI token (no rewards)
+    // skip BIFI token (no rewards)
+    // skip TUSD token (no liquidation route)
+    if (!idx || idx === 'idx' || collateralFactor === '-1' || supplyCap !== '0' || tvlNum < 50000 || ['FRAX', 'YFI', 'BIFI', 'TUSD'].some(i => i === tokenName)) {
       console.log('skip', idx);
       return;
     }
@@ -82,7 +89,7 @@ describe('Universal Scream Fold tests', async () => {
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0.00001;
-    const deposit = 100_000;
+    const deposit = 10_000;
     // at least 3
     const loops = 9;
     // number of blocks or timestamp value
@@ -104,7 +111,9 @@ describe('Universal Scream Fold tests', async () => {
             underlying,
             scTokenAddress,
             borrowTarget,
-            collateralFactor
+            collateralFactor,
+            "0x30872e4fc4edbfd7a352bfc2463eb4fae9c09086", // LP_WFTM_SCREAM
+            "0x5aa53f03197e08c4851cad8c92c7922da5857e5d"  // scWFTM
           ];
           return DeployerUtils.deployContract(
             signer,
@@ -139,7 +148,7 @@ describe('Universal Scream Fold tests', async () => {
     };
 
     universalStrategyTest(
-      'ScreamTest_' + scTokenName,
+      'ScreamTest_' + tokenName,
       deployInfo,
       deployer,
       hwInitiator,
