@@ -230,7 +230,9 @@ contract LinearPipeline is ILinearPipeline {
   /// @return numeric answer
   function parseRevertReason(bytes memory reason) private pure returns (uint256) {
     if (reason.length != 32) {
-      if (reason.length < 68) revert('LPL: Unexpected revert');
+      if (reason.length < 68) {
+        revert('LPL: Unexpected revert');
+      }
       assembly {
         reason := add(reason, 0x04)
       }

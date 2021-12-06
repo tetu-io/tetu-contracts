@@ -54,10 +54,10 @@ async function main() {
   for (let i = 0; i < markets.length; i++) {
     console.log('id', i);
 
-    if (i === 5 || i === 6) {
-      console.log('skip volatile assets')
-      continue;
-    }
+    // if (i === 5 || i === 6) {
+    //   console.log('skip volatile assets')
+    //   continue;
+    // }
 
 
     const rTokenAdr = markets[i];
