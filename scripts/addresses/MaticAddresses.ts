@@ -88,6 +88,7 @@ export class MaticAddresses {
   public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
   public static QUICK_STAKING_FACTORY_V2 = "0x8aAA5e259F74c8114e0a471d9f2ADFc66Bfe09ed".toLowerCase();
   public static QUICK_STAKING_FACTORY_V3 = "0x9Dd12421C637689c3Fc6e661C9e2f02C2F61b3Eb".toLowerCase();
+  public static QUICK_STAKING_FACTORY_SYRUP = "0x5D7284e0aCF4dc3b623c93302Ed490fC97aCA8A4".toLowerCase();
   public static QUICK_WMATIC_USDC = "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827".toLowerCase();
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
