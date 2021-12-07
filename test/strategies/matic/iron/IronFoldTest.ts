@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneIronFoldStrategyTest: {
       type: "number",
-      default: -1,
+      default: 5,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -61,7 +61,7 @@ describe('Universal Iron Fold tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (!idx || idx === 'idx' || collateralFactor === '0') {
+    if (!idx || idx === 'idx') {
       console.log('skip', idx);
       return;
     }

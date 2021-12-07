@@ -12,6 +12,7 @@ import {mkdir, readFileSync, writeFileSync} from "fs";
 const alreadyDeployed = new Set<string>([
   '0',
   '1',
+  '2',
   '3',
   '4',
 ]);
@@ -57,7 +58,7 @@ async function main() {
       continue;
     }
 
-    const vaultNameWithoutPrefix = `IRON_LOAN_${tokenName}`;
+    const vaultNameWithoutPrefix = `${tokenName}`;
 
     if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
       console.log('Strategy already exist', vaultNameWithoutPrefix);
