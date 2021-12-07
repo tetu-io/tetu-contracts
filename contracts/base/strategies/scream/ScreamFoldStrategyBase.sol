@@ -78,15 +78,15 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
     _borrowTargetFactorNumerator,
     _collateralFactorNumerator
   ) {
-    require(_scToken != address(0), "IFS: Zero address rToken");
-    require(_screamController != address(0), "IFS: Zero address screamController");
+    require(_scToken != address(0), "SFS: Zero address rToken");
+    require(_screamController != address(0), "SFS: Zero address screamController");
     scToken = _scToken;
     screamController = _screamController;
     lpWithScream = _lpWithScream;
     scNetworkToken = _scNetworkToken;
     priceOracle = PriceOracle(IScreamController(screamController).oracle());
     address _lpt = CompleteCToken(scToken).underlying();
-    require(_lpt == _underlyingToken, "IFS: Wrong underlying");
+    require(_lpt == _underlyingToken, "SFS: Wrong underlying");
   }
 
   /////////////////////////////////////////////
@@ -142,17 +142,16 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
     IERC20(_underlyingToken).safeApprove(scToken, 0);
     IERC20(_underlyingToken).safeApprove(scToken, amount);
-    require(CompleteCToken(scToken).mint(amount) == 0, "IFS: Supplying failed");
+    require(CompleteCToken(scToken).mint(amount) == 0, "SFS: Supplying failed");
   }
 
   function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
     // Borrow, check the balance for this contract's address
-    require(CompleteCToken(scToken).borrow(amountUnderlying) == 0, "IFS: Borrow failed");
+    require(CompleteCToken(scToken).borrow(amountUnderlying) == 0, "SFS: Borrow failed");
   }
 
   function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
-    // we can have a very little gap, it will slightly decrease ppfs and should be covered with reward liquidation process
-    amountUnderlying = Math.min(amountUnderlying, CompleteCToken(scToken).balanceOfUnderlying(address(this)));
+    amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
     if (amountUnderlying > 0) {
       uint256 redeemCode = 999;
       try CompleteCToken(scToken).redeemUnderlying(amountUnderlying) returns (uint256 code) {
@@ -172,7 +171,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
   function _redeemLoanToken(uint256 amount) internal updateSupplyInTheEnd {
     if (amount > 0) {
       uint256 res = CompleteCToken(scToken).redeem(amount);
-      require(res == 0, "IFS: Redeem failed");
+      require(res == 0, "SFS: Redeem failed");
     }
   }
 
@@ -180,21 +179,16 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
     if (amountUnderlying != 0) {
       IERC20(_underlyingToken).safeApprove(scToken, 0);
       IERC20(_underlyingToken).safeApprove(scToken, amountUnderlying);
-      require(CompleteCToken(scToken).repayBorrow(amountUnderlying) == 0, "IFS: Repay failed");
+      require(CompleteCToken(scToken).repayBorrow(amountUnderlying) == 0, "SFS: Repay failed");
     }
   }
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
   function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
-    // amount of liquidity
-    uint256 available = CompleteCToken(scToken).getCash();
-    // amount we supplied
     uint256 supplied = CompleteCToken(scToken).balanceOfUnderlying(address(this));
-    // amount we borrowed
     uint256 borrowed = CompleteCToken(scToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
-
-    _redeemPartialWithLoan(Math.min(available, balance));
+    _redeemPartialWithLoan(balance);
 
     // we have a little amount of supply after full exit
     // better to redeem rToken amount for avoid rounding issues
@@ -296,7 +290,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
     } else if (token == token1) {
       return reserve0 * _PRECISION / reserve1;
     } else {
-      revert("GFS: token not in lp");
+      revert("SFS: token not in lp");
     }
   }
 
