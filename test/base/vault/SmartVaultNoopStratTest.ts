@@ -212,7 +212,7 @@ describe("SmartVaultNoopStrat", () => {
     it("Active status", async () => {
       await core.vaultController.changeVaultsStatuses([vault.address], [false]);
       await TokenUtils.approve(usdc, signer, vault.address, "1000000");
-      await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV:03');
+      await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV: Not active');
     });
     it("investedUnderlyingBalance with zero pool", async () => {
       expect(await core.psEmptyStrategy.investedUnderlyingBalance()).is.eq("0");
@@ -252,18 +252,18 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not doHardWork from users", async () => {
-      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("not controller");
+      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Not controller or gov");
     });
 
     it("should not deposit from contract", async () => {
       const extUser = (await ethers.getSigners())[1];
       const contract = await DeployerUtils.deployContract(extUser, 'EvilHackerContract') as EvilHackerContract;
-      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('not allowed');
+      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Not allowed');
     });
 
     it("should not notify from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('only distr');
+      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Only distributor');
     });
 
     it("should not doHardWork on strat from ext user", async () => {
@@ -311,20 +311,20 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not withdraw when supply is zero", async () => {
-      await expect(vault.withdraw(1)).rejectedWith('SV:10');
+      await expect(vault.withdraw(1)).rejectedWith('SV: No shares for withdraw');
     });
 
     it("should not withdraw zero amount", async () => {
       await VaultUtils.deposit(signer, vault, BigNumber.from("1"));
-      await expect(vault.withdraw(0)).rejectedWith('SV:11');
+      await expect(vault.withdraw(0)).rejectedWith('SV: Zero amount for withdraw');
     });
 
     it("should not deposit zero amount", async () => {
-      await expect(vault.deposit(0)).rejectedWith('SV:12');
+      await expect(vault.deposit(0)).rejectedWith('SV: Zero amount');
     });
 
     it("should not deposit for zero address", async () => {
-      await expect(vault.depositFor(1, Misc.ZERO_ADDRESS)).rejectedWith('SV:13');
+      await expect(vault.depositFor(1, Misc.ZERO_ADDRESS)).rejectedWith('SV: Zero beneficiary for deposit');
     });
 
     it("rebalance with zero amount", async () => {
@@ -335,14 +335,14 @@ describe("SmartVaultNoopStrat", () => {
       await expect(vault.notifyTargetRewardAmount(
         core.rewardToken.address,
         '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-      )).rejectedWith('SV:14');
+      )).rejectedWith('SV: Amount overflow');
     });
 
     it("should not notify with unknown token", async () => {
       await expect(vault.notifyTargetRewardAmount(
         Misc.ZERO_ADDRESS,
         '1'
-      )).rejectedWith('SV:15');
+      )).rejectedWith('SV: RT not found');
     });
 
   });

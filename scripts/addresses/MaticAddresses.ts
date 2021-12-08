@@ -63,6 +63,8 @@ export class MaticAddresses {
   public static CAMWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
   public static CAMWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
   public static miFARM_TOKEN = "0xab0b2ddB9C7e440fAc8E140A89c0dbCBf2d7Bbff".toLowerCase();
+  public static KLIMA_TOKEN = "0x4e78011ce80ee02d2c3e649fb657e45898257815".toLowerCase();
+  public static BCT_TOKEN = "0x2F800Db0fdb5223b3C3f354886d907A671414A7F".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -175,13 +177,19 @@ export class MaticAddresses {
 
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
-  public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf';
-  public static camAAVEVault = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40';
+  public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'.toLowerCase();
+  public static camAAVEVault = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'.toLowerCase();
 
   // BALANCER
-  public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-  public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012';
-  public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42';
+  public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
+  public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012'.toLowerCase();
+  public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
+
+  // KLIMA
+  public static KLIMA_STAKING = '0x25d28a24Ceb6F81015bB0b2007D795ACAc411b4d'.toLowerCase();
+  public static sKLIMA = '0xb0C22d8D350C67420f06F48936654f567C73E8C8'.toLowerCase();
+  public static KLIMA_DISTRIBUTOR = '0x4cC7584C3f8FAABf734374ef129dF17c3517e9cB'.toLowerCase();
+  public static KLIMA_TREASURY = '0x7Dd4f0B986F032A44F913BF92c9e8b7c17D77aD7'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
