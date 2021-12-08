@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {PayrollClerk} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {PayrollClerk} from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
 

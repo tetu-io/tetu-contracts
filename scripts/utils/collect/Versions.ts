@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, IVersion} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {Bookkeeper, ContractReader, IVersion} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 

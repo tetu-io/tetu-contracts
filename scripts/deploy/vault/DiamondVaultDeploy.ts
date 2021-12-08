@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
 import {NoopStrategy, SmartVault} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 

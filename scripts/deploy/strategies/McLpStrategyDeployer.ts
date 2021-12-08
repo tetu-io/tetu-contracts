@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {DeployerUtils} from "../DeployerUtils";
 import {
   ContractReader,

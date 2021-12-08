@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {IUniswapV2Pair, LiquidityBalancer} from "../../typechain";
-import {TokenUtils} from "../../test/TokenUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {IUniswapV2Pair, LiquidityBalancer} from "../../../typechain";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {utils} from "ethers";
-import {RunHelper} from "./RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
 
 dotEnvConfig();

@@ -4,7 +4,7 @@ import {utils} from "ethers";
 import {UniswapUtils} from "../../../test/UniswapUtils";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {RunHelper} from "../RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 import {RopstenAddresses} from "../../addresses/RopstenAddresses";
 
 

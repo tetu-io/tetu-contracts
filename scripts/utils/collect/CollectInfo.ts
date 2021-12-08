@@ -1,10 +1,10 @@
 import {ethers, web3} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, ContractUtils, SmartVault} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {Bookkeeper, ContractReader, ContractUtils, SmartVault} from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Web3Utils} from "./Web3Utils";
+import {Web3Utils} from "../tools/Web3Utils";
 
 const vaultsForParsing = new Set<string>([
   "0x6C3246e749472879D1088C24Dacd2A37CAaEe9B1".toLowerCase(),

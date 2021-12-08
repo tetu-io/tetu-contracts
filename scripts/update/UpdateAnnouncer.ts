@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Announcer, Controller} from "../../typechain";
-import {RunHelper} from "../utils/RunHelper";
+import {RunHelper} from "../utils/tools/RunHelper";
 
 
 async function main() {
