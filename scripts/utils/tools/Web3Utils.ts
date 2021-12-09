@@ -1,5 +1,5 @@
 import {web3} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
 
 export class Web3Utils {
 

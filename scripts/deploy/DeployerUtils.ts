@@ -37,7 +37,7 @@ import {Addresses} from "../../addresses";
 import {CoreAddresses} from "../models/CoreAddresses";
 import {ToolsAddresses} from "../models/ToolsAddresses";
 import axios from "axios";
-import {RunHelper} from "../utils/RunHelper";
+import {RunHelper} from "../utils/tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
 import {ToolsContractsWrapper} from "../../test/ToolsContractsWrapper";
 import {Misc} from "../utils/tools/Misc";

@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {AutoRewarder, Bookkeeper, ContractReader, SmartVault} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {AutoRewarder, Bookkeeper, ContractReader, SmartVault} from "../../../typechain";
 import {utils} from "ethers";
 
 const EXCLUDED_PLATFORM = new Set<string>([

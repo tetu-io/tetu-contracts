@@ -11,7 +11,7 @@ import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {expect} from "chai";
-import {RunHelper} from "../scripts/utils/RunHelper";
+import {RunHelper} from "../scripts/utils/tools/RunHelper";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";

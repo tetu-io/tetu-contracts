@@ -4,7 +4,7 @@ import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {writeFileSync} from "fs";
 import {Bookkeeper, Controller} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 
 const TIME_LOCK = 60 * 60 * 48;
 

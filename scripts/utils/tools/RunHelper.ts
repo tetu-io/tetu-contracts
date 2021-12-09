@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
 import {ContractTransaction} from "ethers";
-import {DeployerUtils} from "../deploy/DeployerUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Logger} from "tslog";
-import logSettings from "../../log_settings";
-import {Misc} from "./tools/Misc";
+import logSettings from "../../../log_settings";
+import {Misc} from "./Misc";
 
 const log: Logger = new Logger(logSettings);
 

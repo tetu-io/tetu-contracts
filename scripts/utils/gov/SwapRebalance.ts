@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
   IUniswapV2Factory,
   IUniswapV2Pair,
@@ -8,13 +8,13 @@ import {
   TetuSwapFactory,
   TetuSwapPair,
   TetuSwapRouter
-} from "../../typechain";
-import {TokenUtils} from "../../test/TokenUtils";
+} from "../../../typechain";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {BigNumber, utils} from "ethers";
-import {RunHelper} from "./RunHelper";
-import {UniswapUtils} from "../../test/UniswapUtils";
+import {RunHelper} from "../tools/RunHelper";
+import {UniswapUtils} from "../../../test/UniswapUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {MaticAddresses} from "../addresses/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 const MIN_AMOUNT_TO_REBALANCE = 100;
 

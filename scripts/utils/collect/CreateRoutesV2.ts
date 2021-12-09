@@ -1,14 +1,14 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
   Bookkeeper,
   ContractReader,
   IUniswapV2Pair,
   PriceCalculator,
   SmartVault
-} from "../../typechain";
+} from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
-import {TokenUtils} from "../../test/TokenUtils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {utils} from "ethers";
 
 async function main() {

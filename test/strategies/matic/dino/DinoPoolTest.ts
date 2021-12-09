@@ -15,10 +15,6 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneWaultStrategyTest: {
-      type: "number",
-      default: 2,
-    },
     deployCoreContracts: {
       type: "boolean",
       default: false,

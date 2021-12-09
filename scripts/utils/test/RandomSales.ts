@@ -4,7 +4,7 @@ import {IUniswapV2Pair} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {UniswapUtils} from "../../../test/UniswapUtils";
 import {BigNumber, utils} from "ethers";
-import {RunHelper} from "../RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 import {RopstenAddresses} from "../../addresses/RopstenAddresses";
 
 

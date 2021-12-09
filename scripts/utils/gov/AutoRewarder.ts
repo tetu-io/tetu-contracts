@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {
   AutoRewarder,
   Bookkeeper,
@@ -7,13 +7,13 @@ import {
   Controller,
   RewardCalculator,
   SmartVault
-} from "../../typechain";
-import {UniswapUtils} from "../../test/UniswapUtils";
+} from "../../../typechain";
+import {UniswapUtils} from "../../../test/UniswapUtils";
 import {BigNumber, utils} from "ethers";
-import {TokenUtils} from "../../test/TokenUtils";
-import {RunHelper} from "./RunHelper";
+import {TokenUtils} from "../../../test/TokenUtils";
+import {RunHelper} from "../tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
-import {MaticAddresses} from "../addresses/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires

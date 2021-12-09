@@ -3,7 +3,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {Controller, NoopStrategy, SmartVault} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {Misc} from "../../utils/tools/Misc";
 
 

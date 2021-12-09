@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {ContractReader, RewardCalculator, SmartVault} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {ContractReader, RewardCalculator, SmartVault} from "../../../typechain";
 import {utils} from "ethers";
 import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../addresses/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 const EXCLUDED_PLATFORM = new Set<string>([
   '0',

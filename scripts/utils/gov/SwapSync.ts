@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, TetuSwapFactory, TetuSwapPair} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {Bookkeeper, TetuSwapFactory, TetuSwapPair} from "../../../typechain";
 
 
 async function main() {

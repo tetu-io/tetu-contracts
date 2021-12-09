@@ -1,5 +1,5 @@
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {StrategySpookySwapLp} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {StrategySpookySwapLp} from "../../../typechain";
 import {ethers} from "hardhat";
 
 async function main() {
