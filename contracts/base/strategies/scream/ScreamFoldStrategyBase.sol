@@ -22,8 +22,6 @@ import "../../../third_party/scream/PriceOracle.sol";
 import "../../interface/IScreamFoldStrategy.sol";
 import "../../interface/IScreamFoldStrategy.sol";
 
-import "hardhat/console.sol";
-
 
 
 /// @title Abstract contract for Scream lending strategy implementation with folding functionality
@@ -127,8 +125,13 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
 
   /// @dev Return true if we can gain profit with folding
   function _isFoldingProfitable() internal view override returns (bool) {
-    // compare values per block per 1$
-    return rewardsRateNormalised() > foldCostRatePerToken();
+    (uint256 supplyRewardsInUSDC,
+    uint256 borrowRewardsInUSDC,
+    uint256 supplyUnderlyingProfitInUSDC,
+    uint256 debtUnderlyingCostInUSDC) = totalRewardPredictionInUSDC();
+
+    uint256 foldingProfitPerToken = supplyRewardsInUSDC + borrowRewardsInUSDC + supplyUnderlyingProfitInUSDC;
+    return foldingProfitPerToken > debtUnderlyingCostInUSDC;
   }
 
   /// @dev Claim distribution rewards
@@ -210,50 +213,51 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
     return IERC20Extended(_underlyingToken).decimals();
   }
 
-  /// @dev Calculate expected rewards rate for reward token
-  function rewardsRateNormalised() public view returns (uint256){
+  /// @notice returns forecast of all rewards (SCREAM and underlying) for the given period of time
+  function totalRewardPrediction() private view returns (
+    uint256 supplyRewards,
+    uint256 borrowRewards,
+    uint256 supplyUnderlyingProfit,
+    uint256 debtUnderlyingCost
+  ){
     CompleteCToken rt = CompleteCToken(scToken);
-
     // get reward per token for both - suppliers and borrowers
     uint256 rewardSpeed = IScreamController(screamController).compSpeeds(scToken);
-    // using internal Scream Oracle the safest way
-    uint256 rewardTokenPrice = getRewardTokenPrice();
-    // normalize reward speed to USD price
-    uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
-
     // get total supply, cash and borrows, and normalize them to 18 decimals
     uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** decimals());
     uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals());
-
-    // for avoiding revert for empty market
-    if (totalSupply == 0 || totalBorrows == 0) {
-      return 0;
-    }
 
     // exchange rate between scToken and underlyingToken
     uint256 scTokenExchangeRate = rt.exchangeRateStored() * (10 ** decimals()) / (10 ** underlyingDecimals());
 
     // amount of reward tokens per block for 1 supplied underlyingToken
-    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / scTokenExchangeRate * 1e18 / totalSupply / 2;
-    // amount of reward tokens per block for 1 borrowed underlyingToken
-    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows / 2;
+    supplyRewards = rewardSpeed * 1e18 / scTokenExchangeRate * 1e18 / totalSupply;
 
-    return rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken;
+    // amount of reward tokens per block for 1 borrowed underlyingToken
+    borrowRewards = rewardSpeed * 1e18 / totalBorrows;
+
+    supplyUnderlyingProfit = rt.supplyRatePerBlock();
+    debtUnderlyingCost = rt.borrowRatePerBlock();
+    return (supplyRewards, borrowRewards, supplyUnderlyingProfit, debtUnderlyingCost);
   }
 
-  /// @dev Return a normalized to 18 decimal cost of folding
-  function foldCostRatePerToken() public view returns (uint256) {
-    CompleteCToken rt = CompleteCToken(scToken);
+  /// @notice returns forecast of all rewards (SCREAM and underlying)
+  ///         for the given period of time in USDC token using SCREAM price oracle
+  function totalRewardPredictionInUSDC() private view returns (
+    uint256 supplyRewardsInUSDC,
+    uint256 borrowRewardsInUSDC,
+    uint256 supplyUnderlyingProfitInUSDC,
+    uint256 debtUnderlyingCostInUSDC
+  ){
+    uint256 rewardTokenUSDC = getRewardTokenPrice();
+    uint256 scTokenUSDC = scTokenUnderlyingPrice(scToken);
 
-    // if for some reason supply rate higher than borrow we pay nothing for the borrows
-    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
-      return 1;
-    }
-    uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
-    uint256 _scTokenPrice = scTokenUnderlyingPrice(scToken);
+    (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction();
 
-    // let's calculate profit for 1 token
-    return foldRateCost * _scTokenPrice / 1e18;
+    supplyRewardsInUSDC = supplyRewards * rewardTokenUSDC / _PRECISION;
+    borrowRewardsInUSDC = borrowRewards * rewardTokenUSDC / _PRECISION;
+    supplyUnderlyingProfitInUSDC = supplyUnderlyingProfit * scTokenUSDC / _PRECISION;
+    debtUnderlyingCostInUSDC = debtUnderlyingCost * scTokenUSDC / _PRECISION;
   }
 
   /// @dev Return scToken price from Scream Oracle solution. Can be used on-chain safely

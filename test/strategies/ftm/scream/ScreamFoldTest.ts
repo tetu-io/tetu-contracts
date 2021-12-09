@@ -11,6 +11,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {ScreamDoHardWork} from "./ScreamDoHardWork";
 import {DeployInfo} from "../../DeployInfo";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -96,6 +97,7 @@ describe('Universal Scream Fold tests', async () => {
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
+    const specificTests = [new FoldingProfitabilityTest()];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -148,7 +150,7 @@ describe('Universal Scream Fold tests', async () => {
     };
 
     universalStrategyTest(
-      'ScreamTest_' + tokenName,
+      'Scream Test_' + tokenName,
       deployInfo,
       deployer,
       hwInitiator,
@@ -159,6 +161,7 @@ describe('Universal Scream Fold tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
+      specificTests,
     );
   });
 });
