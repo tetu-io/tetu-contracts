@@ -64,6 +64,13 @@ async function main() {
       continue;
     }
 
+    const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', await vCtr.strategy()) as IStrategy;
+    const strName = await strCtr.STRATEGY_NAME();
+    if (strName === 'QuickStrategyDualBaseAC' || strName === 'QuickStrategyDualBase') {
+      console.log('dual strategy!');
+      continue;
+    }
+
     console.log('strat', pool, lpName, vAdr, lpAddress, token0, token1);
 
     const strategy = await DeployerUtils.deployContract(
