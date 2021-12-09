@@ -61,10 +61,6 @@ async function main() {
 
     if (!(await vCtr.active())) {
       console.log('vault not active', vAdr)
-      // continue;
-    } else {
-      // todo only deactivated
-      console.log('skip active vault', vAdr)
       continue;
     }
 
