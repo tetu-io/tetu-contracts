@@ -32,9 +32,12 @@ export class FtmAddresses {
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
   public static SPOOKY_SWAP_ROUTER = "0xF491e7B69E4244ad4002BC14e878a34207E38c29".toLowerCase();
   public static SPOOKY_MASTERCHEF = "0x2b2929E785374c651a81A63878Ab22742656DcDd".toLowerCase();
+  public static SPOOKY_WFTM_SCREAM = "0x30872e4fc4edbfd7a352bfc2463eb4fae9c09086".toLowerCase();
 
   // Scream
   public static SCREAM_CONTROLLER = "0x260E596DAbE3AFc463e75B6CC05d8c46aCAcFB09".toLowerCase();
+  public static SCREAM_scWFTM = "0x5aa53f03197e08c4851cad8c92c7922da5857e5d".toLowerCase();
+
   // TetuSwap
   public static TETU_SWAP_FACTORY = "".toLowerCase();
   public static TETU_SWAP_ROUTER = "".toLowerCase();
