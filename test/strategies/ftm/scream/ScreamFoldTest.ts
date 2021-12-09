@@ -12,7 +12,6 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {ScreamDoHardWork} from "./ScreamDoHardWork";
 import {DeployInfo} from "../../DeployInfo";
 import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
-import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -117,9 +116,7 @@ describe('Universal Scream Fold tests', async () => {
             underlying,
             scTokenAddress,
             borrowTarget,
-            collateralFactor,
-            FtmAddresses.SPOOKY_WFTM_SCREAM, // LP_WFTM_SCREAM
-            FtmAddresses.SCREAM_scWFTM  // scWFTM
+            collateralFactor
           ];
           return DeployerUtils.deployContract(
             signer,

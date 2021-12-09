@@ -21,8 +21,7 @@ import "../../../third_party/scream/IScreamController.sol";
 import "../../../third_party/scream/PriceOracle.sol";
 import "../../interface/IScreamFoldStrategy.sol";
 import "../../interface/IScreamFoldStrategy.sol";
-
-
+import "../../UniPairLib.sol";
 
 /// @title Abstract contract for Scream lending strategy implementation with folding functionality
 /// @author OlegN
@@ -273,29 +272,8 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
 
   function getRewardTokenPrice() private view returns (uint256){
     uint256 scWftmPrice = priceOracle.getUnderlyingPrice(scNetworkToken);
-    uint256 rewardPrice = _getPriceFromLp(lpWithScream, SCREAM_R_TOKEN) * scWftmPrice / _PRECISION;
+    uint256 rewardPrice = UniPairLib.getPrice(lpWithScream, SCREAM_R_TOKEN) * scWftmPrice / _PRECISION;
     return rewardPrice;
-  }
-
-  function _getPriceFromLp(address lpAddress, address token) private view returns (uint256) {
-    IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
-    address token0 = pair.token0();
-    address token1 = pair.token1();
-    (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
-    uint256 token0Decimals = IERC20Extended(token0).decimals();
-    uint256 token1Decimals = IERC20Extended(token1).decimals();
-
-    // both reserves should have the same decimals
-    reserve0 = reserve0 * _PRECISION / (10 ** token0Decimals);
-    reserve1 = reserve1 * _PRECISION / (10 ** token1Decimals);
-
-    if (token == token0) {
-      return reserve1 * _PRECISION / reserve0;
-    } else if (token == token1) {
-      return reserve0 * _PRECISION / reserve1;
-    } else {
-      revert("SFS: token not in lp");
-    }
   }
 
 }

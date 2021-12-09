@@ -16,7 +16,9 @@ import "../../../base/strategies/scream/ScreamFoldStrategyBase.sol";
 
 contract StrategyScreamFold is ScreamFoldStrategyBase {
 
-  // SCREAM CONTROLLER
+  // SPOOKY_WFTM_SCREAM
+  address public constant _SCREAM_LP = address(0x30872e4fc4edbFD7a352bFC2463eb4fAe9C09086);
+  address public constant _scWFTM = address(0x5AA53f03197E08C4851CAD8C92c7922DA5857E5d);
   address public constant _SCREAM_CONTROLLER = address(0x260E596DAbE3AFc463e75B6CC05d8c46aCAcFB09);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.SCREAM_LEND;
   // rewards
@@ -30,20 +32,18 @@ contract StrategyScreamFold is ScreamFoldStrategyBase {
     address _underlying,
     address _scToken,
     uint256 _borrowTargetFactorNumerator,
-    uint256 _collateralFactorNumerator,
-    address _lpWithScream,
-    address _scNetworkToken
+    uint256 _collateralFactorNumerator
   ) ScreamFoldStrategyBase(
-      _controller,
-      _underlying,
-      _vault,
-      _poolRewards,
-      _scToken,
-      _SCREAM_CONTROLLER,
-      _borrowTargetFactorNumerator,
-      _collateralFactorNumerator,
-      _lpWithScream,
-      _scNetworkToken
+    _controller,
+    _underlying,
+    _vault,
+    _poolRewards,
+    _scToken,
+    _SCREAM_CONTROLLER,
+    _borrowTargetFactorNumerator,
+    _collateralFactorNumerator,
+    _SCREAM_LP,
+    _scWFTM
   ) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(_underlying);
