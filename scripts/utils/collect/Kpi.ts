@@ -1,11 +1,11 @@
 import {ethers, web3} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {ContractReader, IStrategy, SmartVault} from "../../typechain";
-import {Web3Utils} from "./Web3Utils";
-import {TokenUtils} from "../../test/TokenUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {ContractReader, IStrategy, SmartVault} from "../../../typechain";
+import {Web3Utils} from "../tools/Web3Utils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {utils} from "ethers";
 import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../addresses/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 const EVENT_NOTIFY = '0xac24935fd910bc682b5ccb1a07b718cadf8cf2f6d1404c4f3ddc3662dae40e29';
 const START_BLOCK = 17462342;

@@ -9,7 +9,7 @@ import {
   VaultController
 } from "../../../../typechain";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {RunHelper} from "../../../utils/RunHelper";
+import {RunHelper} from "../../../utils/tools/RunHelper";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 

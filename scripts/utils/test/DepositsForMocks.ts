@@ -3,7 +3,7 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {utils} from "ethers";
-import {RunHelper} from "../RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 import {VaultUtils} from "../../../test/VaultUtils";
 
 

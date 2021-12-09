@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {ContractReader, MultiSwap, SmartVault, ZapContract} from "../../typechain";
-import {TokenUtils} from "../../test/TokenUtils";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {ContractReader, MultiSwap, SmartVault, ZapContract} from "../../../typechain";
+import {TokenUtils} from "../../../test/TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {RunHelper} from "./RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 
 
 const exclude = new Set<string>([

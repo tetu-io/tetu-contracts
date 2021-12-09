@@ -60,6 +60,7 @@ export class TokenUtils {
     [MaticAddresses.BAL_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
     [FtmAddresses.WBTC_TOKEN, '0x38aca5484b8603373acc6961ecd57a6a594510a3'.toLowerCase()], // geist
     [FtmAddresses.WETH_TOKEN, '0x25c130b2624cf12a4ea30143ef50c5d68cefa22f'.toLowerCase()], // geist
+    [MaticAddresses.KLIMA_TOKEN, '0x65A5076C0BA74e5f3e069995dc3DAB9D197d995c'.toLowerCase()], // gnosis
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

@@ -256,15 +256,17 @@ export class DoHardWorkLoopBase {
     // ** calculate to claim
     this.totalToClaimInTetuN = 0;
     const toClaim = await this.strategy.readyToClaim();
-    const tetuPriceN = +utils.formatUnits(await this.getPrice(this.core.rewardToken.address));
-    const rts = await this.strategy.rewardTokens();
-    for (let i = 0; i < rts.length; i++) {
-      const rt = rts[i];
-      const rtDec = await TokenUtils.decimals(rt);
-      const rtPriceN = +utils.formatUnits(await this.getPrice(rt));
-      const toClaimInTetuN = +utils.formatUnits(toClaim[i], rtDec) * rtPriceN / tetuPriceN;
-      console.log('toClaim', i, toClaimInTetuN);
-      this.totalToClaimInTetuN += toClaimInTetuN;
+    if (toClaim.length !== 0) {
+      const tetuPriceN = +utils.formatUnits(await this.getPrice(this.core.rewardToken.address));
+      const rts = await this.strategy.rewardTokens();
+      for (let i = 0; i < rts.length; i++) {
+        const rt = rts[i];
+        const rtDec = await TokenUtils.decimals(rt);
+        const rtPriceN = +utils.formatUnits(await this.getPrice(rt));
+        const toClaimInTetuN = +utils.formatUnits(toClaim[i], rtDec) * rtPriceN / tetuPriceN;
+        console.log('toClaim', i, toClaimInTetuN);
+        this.totalToClaimInTetuN += toClaimInTetuN;
+      }
     }
     Misc.printDuration('fAfterBlocAdvance completed', start);
   }

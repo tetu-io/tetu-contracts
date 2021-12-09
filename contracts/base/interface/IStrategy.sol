@@ -33,7 +33,8 @@ interface IStrategy {
     AAVE_MAI_BAL, // 15
     GEIST, //16
     HARVEST, //17
-    SCREAM_LEND //18
+    SCREAM_LEND, //18
+    KLIMA //19
   }
 
   // *************** GOVERNANCE ACTIONS **************

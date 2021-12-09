@@ -10,7 +10,7 @@ import {
 } from "../../../../typechain";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {RunHelper} from "../../../utils/RunHelper";
+import {RunHelper} from "../../../utils/tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
 import {RopstenAddresses} from "../../../addresses/RopstenAddresses";
 import {Misc} from "../../../utils/tools/Misc";

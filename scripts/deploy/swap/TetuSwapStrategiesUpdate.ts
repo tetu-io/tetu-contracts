@@ -7,7 +7,7 @@ import {
   TetuSwapFactory,
   TetuSwapPair
 } from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
 

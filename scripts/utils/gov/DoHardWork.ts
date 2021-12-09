@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../deploy/DeployerUtils";
-import {Bookkeeper, Controller, IStrategy, PriceCalculator} from "../../typechain";
+import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {Bookkeeper, Controller, IStrategy, PriceCalculator} from "../../../typechain";
 import {utils} from "ethers";
-import {TokenUtils} from "../../test/TokenUtils";
-import {RunHelper} from "./RunHelper";
+import {TokenUtils} from "../../../test/TokenUtils";
+import {RunHelper} from "../tools/RunHelper";
 
 
 async function main() {
