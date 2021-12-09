@@ -37,7 +37,18 @@ export class TokenUtils {
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], //
     [FtmAddresses.USDC_TOKEN, '0xe578c856933d8e1082740bf7661e379aa2a30b26'.toLowerCase()], // geist
     [FtmAddresses.fUSDT_TOKEN, '0x940f41f0ec9ba1a34cf001cc03347ac092f5f6b5'.toLowerCase()], // geist
-    [FtmAddresses.FTM_TOKEN, '0x39b3bd37208cbade74d0fcbdbb12d606295b430a'.toLowerCase()], // geist
+    [FtmAddresses.WFTM_TOKEN, '0x39b3bd37208cbade74d0fcbdbb12d606295b430a'.toLowerCase()], // geist
+    [FtmAddresses.WBTC_TOKEN, '0x38aca5484b8603373acc6961ecd57a6a594510a3'.toLowerCase()], // geist
+    [FtmAddresses.CRV_TOKEN, '0xd4F94D0aaa640BBb72b5EEc2D85F6D114D81a88E'.toLowerCase()], // geist
+    [FtmAddresses.YFI_TOKEN, '0x0845c0bfe75691b1e21b24351aac581a7fb6b7df'.toLowerCase()], // yearn
+    [FtmAddresses.FUSD_TOKEN, '0x3bfC4807c49250b7D966018EE596fd9D5C677e3D'.toLowerCase()], // wallet
+    [FtmAddresses.LINK_TOKEN, '0xd061c6586670792331E14a80f3b3Bb267189C681'.toLowerCase()], // Spirit LPs (SPIRIT-LP)
+    [FtmAddresses.DOLA_TOKEN, '0x4d7928e993125A9Cefe7ffa9aB637653654222E2'.toLowerCase()], // xChainFed
+    [FtmAddresses.MIM_TOKEN, '0x2dd7c9371965472e5a5fd28fbe165007c61439e1'.toLowerCase()], // curve pool
+    [FtmAddresses.BIFI_TOKEN, '0x7fb900c14c9889a559c777d016a885995ce759ee'.toLowerCase()], // BeefyRewardPool
+    [FtmAddresses.TUSD_TOKEN, '0xa3abb8bcc6ffea82d3a0a8f800050f684db27db8'.toLowerCase()], // Some strategy
+    [FtmAddresses.FBTC_TOKEN, '0x1f45Df42E81892260f50A256bBE7120d6624c2F1'.toLowerCase()], // wallet
+    [FtmAddresses.FETH_TOKEN, '0x15a3f675184a4e09877ed10ad8080438ea9e35ae'.toLowerCase()], // wallet
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
     [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
     [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet

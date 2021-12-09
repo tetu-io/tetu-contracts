@@ -261,7 +261,7 @@ export class DeployerUtils {
       FtmAddresses.DAI_TOKEN,
       FtmAddresses.fUSDT_TOKEN,
       FtmAddresses.WBTC_TOKEN,
-      FtmAddresses.FTM_TOKEN
+      FtmAddresses.WFTM_TOKEN
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(FtmAddresses.USDC_TOKEN), true, wait);
@@ -823,7 +823,7 @@ export class DeployerUtils {
     if (net.chainId === 137) {
       return MaticAddresses.WMATIC_TOKEN;
     } else if (net.chainId === 250) {
-      return FtmAddresses.FTM_TOKEN;
+      return FtmAddresses.WFTM_TOKEN;
     } else {
       throw Error('No config for ' + net.chainId);
     }
