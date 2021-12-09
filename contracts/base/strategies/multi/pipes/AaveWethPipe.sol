@@ -49,6 +49,7 @@ contract AaveWethPipe is Pipe {
   /// @param amount to deposit (MATIC)
   /// @return output amount of output units (amMATIC)
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
+    amount = maxSourceAmount(amount);
     IWETHGateway(pipeData.wethGateway).depositETH{value : amount}(pipeData.pool, address(this), 0);
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
@@ -57,7 +58,8 @@ contract AaveWethPipe is Pipe {
   /// @dev Withdraws MATIC from Aave
   /// @param amount to unwrap
   /// @return output amount of source units (MATIC)
-  function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
+  function get(uint256 amount) override onlyPipeline  external returns (uint256 output) {
+    amount = maxOutputAmount(amount);
     _erc20Approve(outputToken, pipeData.wethGateway, amount);
     IWETHGateway(pipeData.wethGateway).withdrawETH(pipeData.pool, amount, address(this));
 
@@ -69,7 +71,7 @@ contract AaveWethPipe is Pipe {
 
   /// @dev available MATIC source balance
   /// @return balance in source units
-  function sourceBalance() override external view returns (uint256) {
+  function sourceBalance() override public view returns (uint256) {
     return address(this).balance;
   }
 

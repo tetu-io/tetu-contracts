@@ -15,6 +15,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../interface/ILinearPipeline.sol";
 import "../../../interface/IPipe.sol";
+import "../pipes/PipeLib.sol";
 
 
 /// @title Pipe Base Contract
@@ -96,7 +97,7 @@ contract LinearPipeline is ILinearPipeline {
   /// @dev Adds pipe to the end of pipeline and connects it
   /// @param newPipe to be added
   function _addPipe(IPipe newPipe) internal {
-    require(newPipe.init(), "LPL: New pipe not initialized");
+    require(newPipe.pipeline() != address(0), "LPL: New pipe not initialized");
     require(newPipe.pipeline() == address(this), "LPL: Wrong pipe owner");
 
     pipes.push(newPipe);
@@ -118,9 +119,10 @@ contract LinearPipeline is ILinearPipeline {
     if (sourceAmount == 0) {
       return 0;
     }
-    outputAmount = sourceAmount;
+    outputAmount = 0;
     for (uint256 i = fromPipeIndex; i < pipes.length; i++) {
-      outputAmount = pipes[i].put(outputAmount);
+      outputAmount = pipes[i].put(sourceAmount);
+      sourceAmount = PipeLib.MAX_AMOUNT;
     }
   }
 
@@ -144,9 +146,10 @@ contract LinearPipeline is ILinearPipeline {
     if (underlyingAmount == 0) {
       return 0;
     }
-    amountOut = underlyingAmount;
+    amountOut = 0;
     for (uint256 i = pipes.length; i > toPipeIndex; i--) {
-      amountOut = pipes[i - 1].get(amountOut);
+      amountOut = pipes[i - 1].get(underlyingAmount);
+      underlyingAmount = PipeLib.MAX_AMOUNT;
     }
   }
 
@@ -177,7 +180,7 @@ contract LinearPipeline is ILinearPipeline {
         // call rebalance again after we have closed deficit
         pipe.rebalance();
       } else {
-        _pumpIn(imbalance, pipeIndex + 1);
+        _pumpIn(PipeLib.MAX_AMOUNT, pipeIndex + 1);
       }
     }
   }

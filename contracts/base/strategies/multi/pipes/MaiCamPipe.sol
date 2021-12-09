@@ -46,6 +46,7 @@ contract MaiCamPipe is Pipe {
   /// @param amount in source units
   /// @return output in underlying units
   function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
+    amount = maxSourceAmount(amount);
     _erc20Approve(sourceToken, pipeData.lpToken, amount);
     ICamToken(outputToken).enter(amount);
     output = _erc20Balance(outputToken);
@@ -55,7 +56,8 @@ contract MaiCamPipe is Pipe {
   /// @dev function for de-vesting, withdrawals, leaves, paybacks
   /// @param amount in underlying units
   /// @return output in source units
-  function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
+  function get(uint256 amount) override onlyPipeline  public returns (uint256 output) {
+    amount = maxOutputAmount(amount);
     ICamToken(pipeData.lpToken).leave(amount);
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);

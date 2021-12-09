@@ -122,6 +122,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @param amount in source units
   /// @return output in underlying units
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
+    amount = maxSourceAmount(amount);
     depositCollateral(amount);
     uint256 borrowAmount = _canSafelyBorrowMore();
     borrow(borrowAmount);
@@ -133,6 +134,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
+    amount = maxOutputAmount(amount);
     repay(amount);
     uint256 withdrawAmount = _collateralTokensUnlocked();
     withdrawCollateral(withdrawAmount);

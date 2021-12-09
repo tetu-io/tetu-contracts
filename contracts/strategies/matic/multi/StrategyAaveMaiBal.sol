@@ -19,7 +19,6 @@ import "../../../base/strategies/multi/pipes/AaveAmPipe.sol";
 import "../../../base/strategies/multi/pipes/MaiCamPipe.sol";
 import "../../../base/strategies/multi/pipes/BalVaultPipe.sol";
 import "../../../base/strategies/multi/pipes/UnwrappingPipe.sol";
-import "../../../base/strategies/multi/pipes/NoopPipe.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy Polygon Implementation. Compatible with: WMATIC, AAVE, DAI, WETH, WBTC
 /// @author belbix, bogdoslav

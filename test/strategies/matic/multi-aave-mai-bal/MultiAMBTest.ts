@@ -22,6 +22,7 @@ import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
 import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
+import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 
 
 dotEnvConfig();
@@ -99,6 +100,7 @@ describe('Universal AMB tests', async () => {
       new WithdrawAndClaimTest(),
       new EmergencyWithdrawFromPoolTest(),
       new CoverageCallsTest(),
+      new MoreMaiFromBalTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('100');
     const BAL_PIPE_INDEX = 3;

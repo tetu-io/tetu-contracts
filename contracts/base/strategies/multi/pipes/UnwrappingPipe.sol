@@ -31,6 +31,7 @@ contract UnwrappingPipe is Pipe {
   /// @param amount to unwrap
   /// @return output amount of output units
   function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
+    amount = maxSourceAmount(amount);
     IWETH(sourceToken).withdraw(amount);
     output = address(this).balance;
 
@@ -42,7 +43,8 @@ contract UnwrappingPipe is Pipe {
   /// @dev wraps WETH back
   /// @param amount to wrap
   /// @return output amount of source units
-  function get(uint256 amount) override onlyPipeline public returns (uint256 output) {
+  function get(uint256 amount) override onlyPipeline  public returns (uint256 output) {
+    amount = maxOutputAmount(amount);
     IWETH(sourceToken).deposit{value : amount}();
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
