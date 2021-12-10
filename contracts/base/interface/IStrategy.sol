@@ -31,7 +31,10 @@ interface IStrategy {
     SPOOKY, // 13
     AAVE_LEND, //14
     AAVE_MAI_BAL, // 15
-    GEIST //16
+    GEIST, //16
+    HARVEST, //17
+    SCREAM_LEND, //18
+    KLIMA //19
   }
 
   // *************** GOVERNANCE ACTIONS **************
