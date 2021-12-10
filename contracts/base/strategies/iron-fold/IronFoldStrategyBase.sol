@@ -37,6 +37,8 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   string public constant VERSION = "1.3.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
+  /// @dev precision for the folding profitability calculation
+  uint256 private constant _PRECISION = 10 ** 18;
   /// @dev ICE rToken address for reward price determination
   address public constant ICE_R_TOKEN = 0xf535B089453dfd8AE698aF6d7d5Bc9f804781b81;
   address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
@@ -118,8 +120,13 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
 
   /// @dev Return true if we can gain profit with folding
   function _isFoldingProfitable() internal view override returns (bool) {
-    // compare values per block per 1$
-    return rewardsRateNormalised() > foldCostRatePerToken();
+    (uint256 supplyRewardsInUSDC,
+    uint256 borrowRewardsInUSDC,
+    uint256 supplyUnderlyingProfitInUSDC,
+    uint256 debtUnderlyingCostInUSDC) = totalRewardPredictionInUSDC();
+
+    uint256 foldingProfitPerToken = supplyRewardsInUSDC + borrowRewardsInUSDC + supplyUnderlyingProfitInUSDC;
+    return foldingProfitPerToken > debtUnderlyingCostInUSDC;
   }
 
   /// @dev Claim distribution rewards
@@ -216,50 +223,49 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     return IERC20Extended(_underlyingToken).decimals();
   }
 
-  /// @dev Calculate expected rewards rate for reward token
-  function rewardsRateNormalised() public view returns (uint256){
+  /// @notice returns forecast of all rewards (ICE and underlying) for the given period of time
+  function totalRewardPrediction() private view returns (
+    uint256 supplyRewards,
+    uint256 borrowRewards,
+    uint256 supplyUnderlyingProfit,
+    uint256 debtUnderlyingCost
+  ){
     CompleteRToken rt = CompleteRToken(rToken);
-
     // get reward per token for both - suppliers and borrowers
     uint256 rewardSpeed = IronControllerInterface(ironController).rewardSpeeds(rToken);
-    // using internal Iron Oracle the safest way
-    uint256 rewardTokenPrice = rTokenUnderlyingPrice(ICE_R_TOKEN);
-    // normalize reward speed to USD price
-    uint256 rewardSpeedUsd = rewardSpeed * rewardTokenPrice / 1e18;
-
     // get total supply, cash and borrows, and normalize them to 18 decimals
     uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** decimals());
     uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals());
-
-    // for avoiding revert for empty market
-    if (totalSupply == 0 || totalBorrows == 0) {
-      return 0;
-    }
 
     // exchange rate between rToken and underlyingToken
     uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** decimals()) / (10 ** underlyingDecimals());
 
     // amount of reward tokens per block for 1 supplied underlyingToken
-    uint256 rewardSpeedUsdPerSuppliedToken = rewardSpeedUsd * 1e18 / rTokenExchangeRate * 1e18 / totalSupply / 2;
+    supplyRewards = rewardSpeed * 1e18 / rTokenExchangeRate * 1e18 / totalSupply;
     // amount of reward tokens per block for 1 borrowed underlyingToken
-    uint256 rewardSpeedUsdPerBorrowedToken = rewardSpeedUsd * 1e18 / totalBorrows / 2;
-
-    return rewardSpeedUsdPerSuppliedToken + rewardSpeedUsdPerBorrowedToken;
+    borrowRewards = rewardSpeed * 1e18 / totalBorrows;
+    supplyUnderlyingProfit = rt.supplyRatePerBlock();
+    debtUnderlyingCost = rt.borrowRatePerBlock();
+    return (supplyRewards, borrowRewards, supplyUnderlyingProfit, debtUnderlyingCost);
   }
 
-  /// @dev Return a normalized to 18 decimal cost of folding
-  function foldCostRatePerToken() public view returns (uint256) {
-    CompleteRToken rt = CompleteRToken(rToken);
+  /// @notice returns forecast of all rewards (ICE and underlying)
+  ///         for the given period of time in USDC token using ICE price oracle
+  function totalRewardPredictionInUSDC() private view returns (
+    uint256 supplyRewardsInUSDC,
+    uint256 borrowRewardsInUSDC,
+    uint256 supplyUnderlyingProfitInUSDC,
+    uint256 debtUnderlyingCostInUSDC
+  ){
+    uint256 rewardTokenUSDC = IronPriceOracle(IronControllerInterface(ironController).oracle()).getUnderlyingPrice(ICE_R_TOKEN);
+    uint256 rTokenUSDC = rTokenUnderlyingPrice(rToken);
+    (uint256 supplyRewards, uint256 borrowRewards,
+    uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction();
 
-    // if for some reason supply rate higher than borrow we pay nothing for the borrows
-    if (rt.supplyRatePerBlock() >= rt.borrowRatePerBlock()) {
-      return 1;
-    }
-    uint256 foldRateCost = rt.borrowRatePerBlock() - rt.supplyRatePerBlock();
-    uint256 _rTokenPrice = rTokenUnderlyingPrice(rToken);
-
-    // let's calculate profit for 1 token
-    return foldRateCost * _rTokenPrice / 1e18;
+    supplyRewardsInUSDC = supplyRewards * rewardTokenUSDC / _PRECISION;
+    borrowRewardsInUSDC = borrowRewards * rewardTokenUSDC / _PRECISION;
+    supplyUnderlyingProfitInUSDC = supplyUnderlyingProfit * rTokenUSDC / _PRECISION;
+    debtUnderlyingCostInUSDC = debtUnderlyingCost * rTokenUSDC / _PRECISION;
   }
 
   /// @dev Return rToken price from Iron Oracle solution. Can be used on-chain safely

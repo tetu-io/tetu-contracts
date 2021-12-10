@@ -11,7 +11,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployInfo} from "../../DeployInfo";
 import {FoldingDoHardWork} from "../../FoldingDoHardWork";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -90,9 +90,10 @@ describe('Universal Iron Fold tests', async () => {
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    // todo fix
-    // const specificTests = [new FoldingProfitabilityTest()];
-    const specificTests: SpecificStrategyTest[] = [];
+    let specificTests = [new FoldingProfitabilityTest()];
+    if(borrowTarget==='0'){
+      specificTests = []
+    }
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {

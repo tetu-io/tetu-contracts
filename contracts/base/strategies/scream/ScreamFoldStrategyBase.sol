@@ -20,7 +20,6 @@ import "../../../third_party/scream/CompleteCToken.sol";
 import "../../../third_party/scream/IScreamController.sol";
 import "../../../third_party/scream/PriceOracle.sol";
 import "../../interface/IScreamFoldStrategy.sol";
-import "../../interface/IScreamFoldStrategy.sol";
 import "../../UniPairLib.sol";
 
 /// @title Abstract contract for Scream lending strategy implementation with folding functionality
