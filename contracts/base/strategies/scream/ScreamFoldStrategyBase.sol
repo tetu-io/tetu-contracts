@@ -19,12 +19,11 @@ import "../FoldingBase.sol";
 import "../../../third_party/scream/CompleteCToken.sol";
 import "../../../third_party/scream/IScreamController.sol";
 import "../../../third_party/scream/PriceOracle.sol";
-import "../../interface/IScreamFoldStrategy.sol";
 import "../../UniPairLib.sol";
 
 /// @title Abstract contract for Scream lending strategy implementation with folding functionality
 /// @author OlegN
-abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
+abstract contract ScreamFoldStrategyBase is FoldingBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -42,9 +41,9 @@ abstract contract ScreamFoldStrategyBase is FoldingBase, IScreamFoldStrategy {
   address public constant SCREAM_R_TOKEN = 0xe0654C8e6fd4D733349ac7E09f6f23DA256bF475;
 
   /// @notice scToken address
-  address public override scToken;
+  address public scToken;
   /// @notice Scream Controller address
-  address public override screamController;
+  address public screamController;
   /// @dev lp with Scream tokens used for price calculation
   address private lpWithScream;
   /// @dev WFTM token address
