@@ -170,6 +170,7 @@ export class DoHardWorkLoopBase {
     if ((await TokenUtils.balanceOf(this.vault.address, this.user.address)).isZero()) {
       return;
     }
+    console.log('PPFS before withdraw', (await this.vault.getPricePerFullShare()).toString());
     await this.userCheckBalanceInVault();
     if (exit) {
       console.log('exit');
@@ -185,14 +186,17 @@ export class DoHardWorkLoopBase {
       this.userWithdrew = this.userWithdrew.add(userUndBalAfter.sub(userUndBal));
     }
     console.log('userWithdrew', this.userWithdrew.toString());
+    console.log('PPFS after withdraw', (await this.vault.getPricePerFullShare()).toString());
   }
 
   // don't use for initial deposit
   protected async deposit(amount: BigNumber, invest: boolean) {
+    console.log('PPFS before deposit', (await this.vault.getPricePerFullShare()).toString());
     await VaultUtils.deposit(this.user, this.vault, amount, invest);
     this.userWithdrew = this.userWithdrew.sub(amount);
     console.log('userWithdrew', this.userWithdrew.toString());
     await this.userCheckBalanceInVault();
+    console.log('PPFS after deposit', (await this.vault.getPricePerFullShare()).toString());
   }
 
   protected async loopEndActions(i: number) {
