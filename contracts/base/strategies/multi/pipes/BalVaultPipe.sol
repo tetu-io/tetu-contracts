@@ -17,9 +17,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/balancer/IBVault.sol";
-import "./../../../../third_party/balancer/IMockStableMath.sol";
-import "./../../../../third_party/balancer/IStablePool.sol";
-import "./../../../../third_party/balancer/IBasePool.sol";
 
 /// @title Balancer Vault Pipe Contract
 /// @author bogdoslav
@@ -78,7 +75,7 @@ contract BalVaultPipe is Pipe {
   /// @dev Exits from the Balancer pool
   /// @param amount in underlying units
   /// @return output in source units
-  function get(uint256 amount) override onlyPipeline  external returns (uint256 output) {
+  function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxOutputAmount(amount);
     uint256 lpBalance = _erc20Balance(outputToken);
     amount = Math.min(amount, lpBalance);

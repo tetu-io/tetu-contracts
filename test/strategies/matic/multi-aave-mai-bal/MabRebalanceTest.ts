@@ -1,7 +1,13 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {IErc20Stablecoin, PriceSource, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {
+  IErc20Stablecoin,
+  IStrategy,
+  PriceSource,
+  SmartVault,
+  StrategyAaveMaiBal
+} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
@@ -10,7 +16,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {TestAsserts} from "../../../TestAsserts";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {MABUtils} from "./MABUtils";
+import {AMBUtils} from "./AMBUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -25,8 +31,10 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const signer = deployInfo?.signer as SignerWithAddress;
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
+      const strategy = deployInfo?.strategy as IStrategy;
+      await AMBUtils.refuelMAI(user, strategy.address);
 
-      const {stablecoinAddress, priceSlotIndex,} = MABUtils.getSlotsInfo(underlying);
+      const {stablecoinAddress, priceSlotIndex,} = AMBUtils.getSlotsInfo(underlying);
       const bal = await TokenUtils.balanceOf(underlying, user.address);
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
 

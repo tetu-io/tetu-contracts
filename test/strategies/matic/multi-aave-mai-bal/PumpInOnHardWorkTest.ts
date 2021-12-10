@@ -1,12 +1,13 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, StrategyAaveMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+import {AMBUtils} from "./AMBUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -19,6 +20,8 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
     it("PumpIn on hardwork", async () => {
       const signer = deployInfo?.signer as SignerWithAddress;
       const underlying = deployInfo?.underlying as string;
+      const strategy = deployInfo?.strategy as IStrategy;
+      await AMBUtils.refuelMAI(signer, strategy.address);
 
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
       console.log('>>>PumpIn on hardwork');

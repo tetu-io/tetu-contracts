@@ -13,9 +13,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/IErc20Stablecoin.sol";
@@ -207,8 +205,11 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
 
     uint256 ethPrice = _stablecoin.getEthPriceSource();
     uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
-
-    borrowAmount = (collateral * ethPrice * 100) / (tokenPriceSource * pipeData.targetPercentage);
+    if (pipeData.targetPercentage == 0 || tokenPriceSource == 0) {
+      borrowAmount = 0;
+    } else {
+      borrowAmount = (collateral * ethPrice * 100) / (tokenPriceSource * pipeData.targetPercentage);
+    }
   }
 
   /// @dev Returns how much more we can safely borrow (based on percentage)
@@ -238,9 +239,9 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
     // collateral needed to have current borrowed tokens with target collateral to debt percentage
     uint256 collateralNeeded = (borrowedAmount * tokenPriceSource * pipeData.targetPercentage)
-        / (ethPrice * 100);
+    / (ethPrice * 100);
 
-    if (collateral<collateralNeeded) {
+    if (collateral < collateralNeeded) {
       return 0;
     } else {
       return collateral - collateralNeeded;

@@ -1,14 +1,21 @@
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {ICamToken, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {
+  ICamToken,
+  IStrategy,
+  MaiStablecoinPipe,
+  SmartVault,
+  StrategyAaveMaiBal
+} from "../../../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {BigNumber} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {AMBUtils} from "./AMBUtils";
 
 chai.use(chaiAsPromised);
 
@@ -28,6 +35,11 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     this.airDropToken = airDropToken;
     this.airDropAmount = airDropAmount;
     this.airDropPipeIndex = airDropPipeIndex;
+  }
+
+  protected async init() {
+    await super.init();
+    await AMBUtils.refuelMAI(this.signer, this.strategy.address);
   }
 
   public async afterBlocAdvance() {

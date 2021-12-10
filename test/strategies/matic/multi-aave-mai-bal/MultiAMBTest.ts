@@ -13,7 +13,7 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {MultiAaveMaiBalTest} from "./MultiAMBDoHardWork";
 import {utils} from "ethers";
-import {MABTargetPercentageTest} from "./MABTargetPercentageTest";
+import {AMBTargetPercentageTest} from "./AMBTargetPercentageTest";
 import {MabRebalanceTest} from "./MabRebalanceTest";
 import {SalvageFromPipelineTest} from "./SalvageFromPipelineTest";
 import {PumpInOnHardWorkTest} from "./PumpInOnHardWorkTest";
@@ -93,7 +93,7 @@ describe('Universal AMB tests', async () => {
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [
-      new MABTargetPercentageTest(),
+      new AMBTargetPercentageTest(),
       new MabRebalanceTest(),
       new SalvageFromPipelineTest(),
       new PumpInOnHardWorkTest(),
