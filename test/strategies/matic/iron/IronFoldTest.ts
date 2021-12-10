@@ -83,7 +83,10 @@ describe('Universal Iron Fold tests', async () => {
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0.00001;
-    const deposit = 100_000;
+    let deposit = 100_000;
+    if (rTokenName === 'rICE') {
+      deposit = 10_000;
+    }
     // at least 3
     const loops = 15;
     // number of blocks or timestamp value

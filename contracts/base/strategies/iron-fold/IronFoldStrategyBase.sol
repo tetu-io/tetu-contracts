@@ -236,6 +236,9 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     // get total supply, cash and borrows, and normalize them to 18 decimals
     uint256 totalSupply = rt.totalSupply() * 1e18 / (10 ** decimals());
     uint256 totalBorrows = rt.totalBorrows() * 1e18 / (10 ** underlyingDecimals());
+    if (totalSupply == 0 || totalBorrows == 0) {
+      return (0, 0, 0, 0);
+    }
 
     // exchange rate between rToken and underlyingToken
     uint256 rTokenExchangeRate = rt.exchangeRateStored() * (10 ** decimals()) / (10 ** underlyingDecimals());
