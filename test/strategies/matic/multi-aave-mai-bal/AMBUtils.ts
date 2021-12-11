@@ -9,8 +9,11 @@ export class AMBUtils {
   public static getSlotsInfo(underlying: string): { stablecoinAddress: string, priceSlotIndex: string, camToken: string } {
     underlying = underlying.toLowerCase();
     let stablecoinAddress: string;
-    /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to MAI_STABLECOIN_ADDRESS
-          find ethPriceSource() address at the list, and use its index. !Do not forget to convert decimal index to hexadecimal
+    /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to stablecoinAddress
+          find ethPriceSource() address at the list, and use its index.
+          !Do not forget to convert decimal index to hexadecimal
+          !Index must have no leading zeros (0xf, but no 0x0f) https://github.com/nomiclabs/hardhat/issues/1700
+
           async function main() {
             let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
             for (let index = 0; index < 40; index++){
@@ -19,7 +22,7 @@ export class AMBUtils {
             }
           }
       */
-    let priceSlotIndex = '0x10';
+    let priceSlotIndex = '0x10';  // default slot for almost all tokens
     let camToken: string;
     if (underlying === MaticAddresses.WMATIC_TOKEN) {
       camToken = MaticAddresses.camWMATIC_TOKEN;
@@ -35,7 +38,7 @@ export class AMBUtils {
     } else if (underlying === MaticAddresses.DAI_TOKEN) {
       camToken = MaticAddresses.camDAI_TOKEN;
       stablecoinAddress = '0xD2FE44055b5C874feE029119f70336447c8e8827';  // camDAI MAI Vault (camDAIMVT)
-      priceSlotIndex = '0x0f' // different from default slot
+      priceSlotIndex = '0xf' // different from default slot. Param must have no leading zeros https://github.com/nomiclabs/hardhat/issues/1700
 
     } else if (underlying === MaticAddresses.WETH_TOKEN) {
       camToken = MaticAddresses.camWETH_TOKEN;

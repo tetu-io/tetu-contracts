@@ -73,7 +73,6 @@ abstract contract Pipe is IPipe {
     } else {
       return amount;
     }
-
   }
 
   /// @dev Replaces MAX constant to output token balance. Should be used at get() function start

@@ -61,7 +61,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const bal1 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal1', bal1.toString())
 
-      // *** mock price +20% ***
+      // *** mock price +50% ***
 
       const stablecoinEthPrice = await stablecoin.getEthPriceSource()
       console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
