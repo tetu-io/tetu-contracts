@@ -51,9 +51,10 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
   }
 
   modifier updateBalance() {
-    // assume that we will able to unstake sKLIMA to KLIMA with 1:1 ratio
-    _balanceSnapshot = IERC20(sKLIMA).balanceOf(address(this));
+    // do not update balance before function call
+    // some logic, such as deposit, requires not updated balance
     _;
+    // assume that we will able to unstake sKLIMA to KLIMA with 1:1 ratio
     _balanceSnapshot = IERC20(sKLIMA).balanceOf(address(this));
   }
 
@@ -77,15 +78,26 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
       IKlimaStaking(klimaStaking).stake(amount, address(this));
       IKlimaStaking(klimaStaking).claim(address(this));
     }
+    // need to keep PPFS on ~1 for any deposit/withdraw action
+    // for deposits need to liquidate excess after stake action
+    IKlimaStaking(klimaStaking).rebase();
+    // for this strategy we should revert transaction if we can't liquidate excess
+    // otherwise PPFS can be updated after rebalance and stay higher than 1
     _liquidateExcessUnderlying();
   }
 
   /// @dev Withdraw staked tokens from KlimaStaking
   function withdrawAndClaimFromPool(uint256 amount) internal override updateBalance {
+    // need to keep PPFS on ~1 for any deposit/withdraw action
+    // for withdrawing need to liquidate before rebalance action
+    IKlimaStaking(klimaStaking).rebase();
+    // for this strategy we should revert transaction if we can't liquidate excess
+    // otherwise PPFS can be updated after rebalance and stay higher than 1
+    _liquidateExcessUnderlying();
+
     IERC20(sKLIMA).safeApprove(klimaStaking, 0);
     IERC20(sKLIMA).safeApprove(klimaStaking, amount);
-    IKlimaStaking(klimaStaking).unstake(amount, true);
-    _liquidateExcessUnderlying();
+    IKlimaStaking(klimaStaking).unstake(amount, false);
   }
 
   /// @dev Withdraw staked tokens from KlimaStaking without rebase
@@ -121,6 +133,8 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
   /// @dev We should keep PPFS ~1
   ///      This function must not ruin transaction
   function _liquidateExcessUnderlying() internal updateBalance {
+    // update balance for make sure that we will count PPFS correctly
+    _balanceSnapshot = IERC20(sKLIMA).balanceOf(address(this));
     address forwarder = IController(controller()).feeRewardForwarder();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
@@ -149,19 +163,18 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
         IERC20(_underlyingToken).safeApprove(forwarder, 0);
         IERC20(_underlyingToken).safeApprove(forwarder, toLiquidate);
 
-        // it will sell reward token to Target Token and distribute it to SmartVault and PS
-        // we must not ruin transaction in any case
-        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-        try IFeeRewardForwarder(forwarder).distribute(toLiquidate, _underlyingToken, _smartVault)
-        returns (uint256 targetTokenEarned) {
-          if (targetTokenEarned > 0) {
-            IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-          }
-        } catch {
-          emit UnderlyingLiquidationFailed();
+        uint256 targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(toLiquidate, _underlyingToken, _smartVault);
+        if (targetTokenEarned > 0) {
+          IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
         }
+
       }
     }
+  }
+
+  /// @dev Klima asset too fluctuated and difference between share and underlying can be a huge
+  function toleranceNominator() internal pure override returns (uint){
+    return 0;
   }
 
 }
