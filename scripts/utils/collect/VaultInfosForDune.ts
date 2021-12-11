@@ -3,6 +3,7 @@
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ethers} from "hardhat";
 import {writeFileSync} from "fs";
+import {SmartVault} from "../../../typechain";
 
 
 async function main() {
@@ -17,7 +18,8 @@ async function main() {
     'underlying,\n' +
     'decimals,\n' +
     'uniswap_pair,\n' +
-    'date_created) as (\n' +
+    'date_created,\n' +
+    'platform) as (\n' +
     'select\n';
 
   const vaults = await core.bookkeeper.vaults();
@@ -29,12 +31,15 @@ async function main() {
     }
     let info = '';
     const underlying = await tools.reader.vaultUnderlying(vault);
+    const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+    const strategy = await vCtr.strategy();
     info += `'${vault}',`;
     info += `'${formatName(await tools.reader.vaultName(vault))}',`;
     info += `'${underlying}',`;
     info += `${(await tools.reader.vaultDecimals(vault)).toNumber()},`;
     info += `'${(await tools.calculator.getLargestPool(underlying, []))[2]}',`;
-    info += `${await tools.reader.vaultCreated(vault)}\n`;
+    info += `${await tools.reader.vaultCreated(vault)},`;
+    info += `'${await tools.reader.strategyPlatform(strategy)}'\n`;
     txt += info;
     console.log(info);
   }
