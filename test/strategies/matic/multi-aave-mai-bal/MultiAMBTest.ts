@@ -23,6 +23,7 @@ import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
 import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
+import {ethers} from "hardhat";
 
 
 dotEnvConfig();
@@ -55,10 +56,11 @@ describe('Universal AMB tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-
+  let airdroper: SignerWithAddress;
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
+    airdroper = (await ethers.getSigners())[2];
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
   });
 
@@ -109,7 +111,6 @@ describe('Universal AMB tests', async () => {
     const pipes: string[] = [];
     // tslint:disable-next-line
     const pipesArgs: any[][] = [];
-
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
@@ -189,7 +190,7 @@ describe('Universal AMB tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
         info.camToken,
-        _signer,
+        airdroper,
         MaticAddresses.BAL_TOKEN,
         AIRDROP_REWARDS_AMOUNT,
         BAL_PIPE_INDEX,
