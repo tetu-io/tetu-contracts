@@ -67,7 +67,7 @@ async function main() {
 
     const strategy = await DeployerUtils.deployContract(
         signer,
-        'StrategyQuickSwapLpDual',
+        'StrategyQuickSwapLpDualAC',
         core.controller,
         vAdr,
         lpAddress,
@@ -81,7 +81,7 @@ async function main() {
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
-      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/quick/StrategyQuickSwapLpDual.sol:StrategyQuickSwapLpDual', [
+      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/quick/StrategyQuickSwapLpDualAC.sol:StrategyQuickSwapLpDualAC', [
         core.controller,
         vAdr,
         lpAddress,

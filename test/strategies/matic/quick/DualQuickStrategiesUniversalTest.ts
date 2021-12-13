@@ -44,7 +44,7 @@ describe('Universal Quick Dual tests', async () => {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
   });
 
-  const strategyName = 'StrategyQuickSwapLpDual';
+  const strategyName = 'StrategyQuickSwapLpDualAC';
 
   infos.forEach(info => {
     const strat = info.split(',');

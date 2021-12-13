@@ -70,10 +70,13 @@ async function main() {
 
     if (!(await vCtr.active())) {
       console.log('vault not active', vAdr)
-      // continue;
-    } else {
-      // todo update only disabled vaults
-      console.log('skip active', vAdr)
+      continue;
+    }
+
+    const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', await vCtr.strategy()) as IStrategy;
+    const strName = await strCtr.STRATEGY_NAME();
+    if (strName === 'MCv2StrategyAC') {
+      console.log('already ac');
       continue;
     }
 

@@ -195,7 +195,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
       withdrawAndClaimFromPool(toWithdraw);
     }
     uint amountAdjusted = Math.min(amount, underlyingBalance());
-    require(amountAdjusted > amount * _TOLERANCE_NOMINATOR / _TOLERANCE_DENOMINATOR, "SB: Withdrew too low");
+    require(amountAdjusted > amount * toleranceNominator() / _TOLERANCE_DENOMINATOR, "SB: Withdrew too low");
     IERC20(_underlyingToken).safeTransfer(_smartVault, amountAdjusted);
   }
 
@@ -209,6 +209,12 @@ abstract contract StrategyBase is IStrategy, Controllable {
   }
 
   // ***************** INTERNAL ************************
+
+  /// @dev Tolerance to difference between asked and received values on user withdraw action
+  ///      Where 0 is full tolerance, and range of 1-999 means how many % of tokens do you expect as minimum
+  function toleranceNominator() internal pure virtual returns (uint){
+    return _TOLERANCE_NOMINATOR;
+  }
 
   /// @dev Withdraw everything from external pool
   function exitRewardPool() internal virtual {
