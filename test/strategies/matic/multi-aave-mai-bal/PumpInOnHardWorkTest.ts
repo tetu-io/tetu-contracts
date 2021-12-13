@@ -28,7 +28,12 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       const strategyGov = strategyAaveMaiBal.connect(signer);
       const amount = utils.parseUnits('10')
       await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, amount);
-      await TokenUtils.getToken(underlying, signer.address, amount);
+      if (underlying.toLowerCase() === MaticAddresses.WBTC_TOKEN) {
+        // send 1% of the biggest holder balance (as WBTC have 8 decimals and 'amount' too big)
+        await TokenUtils.getToken(underlying, signer.address)
+      } else {
+        await TokenUtils.getToken(underlying, signer.address, amount)
+      }
       const bal = await TokenUtils.balanceOf(underlying, signer.address)
       console.log('>>>bal   ', bal);
       await TokenUtils.transfer(underlying, signer, strategyGov.address, bal.toString());

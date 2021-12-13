@@ -7,7 +7,7 @@ const infos: {
   amToken: string,
   stablecoin: string,
   targetPercentage: string,
-  liquidationPercentage: string,
+  collateralNumerator?: string, // will be used '1' on deploy, when undefined
 }[] = [
   {
     underlyingName: 'AAVE',
@@ -16,7 +16,6 @@ const infos: {
     amToken: MaticAddresses.amAAVE_TOKEN,
     stablecoin: MaticAddresses.camAAVEVault,
     targetPercentage: '200',
-    liquidationPercentage: '135',
   },
   {
     underlyingName: 'WMATIC',
@@ -25,7 +24,6 @@ const infos: {
     amToken: MaticAddresses.amWMATIC_TOKEN,
     stablecoin: MaticAddresses.camWMATICVault,
     targetPercentage: '200',
-    liquidationPercentage: '135',
   },
   {
     underlyingName: 'DAI',
@@ -34,7 +32,6 @@ const infos: {
     amToken: MaticAddresses.amDAI_TOKEN,
     stablecoin: MaticAddresses.camDAIVault,
     targetPercentage: '175',
-    liquidationPercentage: '110',
   },
   {
     underlyingName: 'WBTC',
@@ -43,7 +40,7 @@ const infos: {
     amToken: MaticAddresses.amWBTC_TOKEN,
     stablecoin: MaticAddresses.camWBTCVault,
     targetPercentage: '200',
-    liquidationPercentage: '135',
+    collateralNumerator: '10000000000' // 10**10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao
   },
   {
     underlyingName: 'WETH',
@@ -52,7 +49,6 @@ const infos: {
     amToken: MaticAddresses.amETH_TOKEN,
     stablecoin: MaticAddresses.camWETHVault,
     targetPercentage: '200',
-    liquidationPercentage: '135',
   },
 ]
 

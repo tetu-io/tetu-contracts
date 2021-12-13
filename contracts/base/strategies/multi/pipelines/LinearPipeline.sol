@@ -130,12 +130,15 @@ contract LinearPipeline is ILinearPipeline {
   /// @param sourceAmount in source units
   /// @return outputAmount in most underlying units
   function _pumpIn(uint256 sourceAmount) internal returns (uint256 outputAmount)  {
+    if (sourceAmount == PipeLib.MAX_AMOUNT) {
+      sourceAmount = IERC20(_pipelineUnderlyingToken).balanceOf(address(this));
+    }
     if (sourceAmount == 0) {
       return 0;
     }
     // send token to first pipe
     IERC20(_pipelineUnderlyingToken).safeTransfer(address(pipes[0]), sourceAmount);
-    outputAmount = _pumpIn(sourceAmount, 0);
+    outputAmount = _pumpIn(PipeLib.MAX_AMOUNT, 0);
   }
 
   /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex

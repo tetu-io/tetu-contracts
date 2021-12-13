@@ -140,7 +140,7 @@ describe('Universal AMB tests', async () => {
             info.stablecoin,
             info.amToken,
             info.targetPercentage,
-            info.liquidationPercentage,
+            info.collateralNumerator || '1'
           );
           pipes.push(maiStablecoinPipeData[0].address);
           pipesArgs.push(maiStablecoinPipeData[1]);

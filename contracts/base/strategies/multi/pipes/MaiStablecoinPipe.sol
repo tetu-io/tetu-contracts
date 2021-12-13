@@ -32,8 +32,8 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     address borrowToken; // mai (miMATIC) for example
     uint256 targetPercentage; // Collateral to Debt target percentage
     uint256 maxImbalance;     // Maximum Imbalance in percents
-    uint256 liquidationPercentage; // Collateral to Debt liquidation percentage
     address rewardToken;
+    uint256 collateralNumerator; // 1 for all tokens except 10*10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao as it have only 8 decimals
   }
 
   MaiStablecoinPipeData public pipeData;
@@ -65,7 +65,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     return IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
   }
 
-  /// @dev Returns price of source token, when vault will be liquidated, based on liquidationPercentage
+  /// @dev Returns price of source token, when vault will be liquidated, based on _minimumCollateralPercentage
   ///      collateral to debt percentage. Returns 0 when no debt or collateral
   function liquidationPrice()
   external view override returns (uint256 price) {
@@ -78,8 +78,8 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
       return 0;
     }
     uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
-    price = (borrowedAmount * tokenPriceSource * pipeData.liquidationPercentage)
-    / (collateral * 100);
+    price = (borrowedAmount * tokenPriceSource * _stablecoin._minimumCollateralPercentage())
+    / (collateral * 100 * pipeData.collateralNumerator);
   }
 
   /// @dev Gets targetPercentage
@@ -192,7 +192,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   // ***************************************
 
   /// @dev base function for all calculations below is: (each side in borrow token price * 100)
-  /// collateral * ethPrice * 100 = borrow * tokenPrice * percentage
+  /// collateral * collateralNumerator * ethPrice * 100 = borrow * tokenPrice * percentage
 
   /// @dev Returns how much we can safely borrow total (based on percentage)
   /// @return borrowAmount amount of borrow token for target percentage
@@ -208,7 +208,8 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     if (pipeData.targetPercentage == 0 || tokenPriceSource == 0) {
       borrowAmount = 0;
     } else {
-      borrowAmount = (collateral * ethPrice * 100) / (tokenPriceSource * pipeData.targetPercentage);
+      borrowAmount = (collateral * pipeData.collateralNumerator * ethPrice * 100)
+      / (tokenPriceSource * pipeData.targetPercentage);
     }
   }
 
@@ -239,7 +240,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
     // collateral needed to have current borrowed tokens with target collateral to debt percentage
     uint256 collateralNeeded = (borrowedAmount * tokenPriceSource * pipeData.targetPercentage)
-    / (ethPrice * 100);
+    / (ethPrice * 100 * pipeData.collateralNumerator);
 
     if (collateral < collateralNeeded) {
       return 0;
