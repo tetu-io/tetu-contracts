@@ -23,4 +23,50 @@ export class Misc {
     return ts.toNumber();
   }
 
+  public static platformName(n: number): string {
+    switch (n) {
+      case  0:
+        return 'UNKNOWN'
+      case  1:
+        return 'TETU'
+      case  2:
+        return 'QUICK'
+      case  3:
+        return 'SUSHI'
+      case  4:
+        return 'WAULT'
+      case  5:
+        return 'IRON'
+      case  6:
+        return 'COSMIC'
+      case  7:
+        return 'CURVE'
+      case  8:
+        return 'DINO'
+      case  9:
+        return 'IRON_LEND'
+      case 10:
+        return 'HERMES'
+      case 11:
+        return 'CAFE'
+      case 12:
+        return 'TETU_SWAP'
+      case 13:
+        return 'SPOOKY'
+      case 14:
+        return 'AAVE_LEND'
+      case 15:
+        return 'AAVE_MAI_BAL'
+      case 16:
+        return 'GEIST'
+      case 17:
+        return 'HARVEST'
+      case 18:
+        return 'SCREAM_LEND'
+      case 19:
+        return 'KLIMA'
+    }
+    return n + '';
+  }
+
 }
