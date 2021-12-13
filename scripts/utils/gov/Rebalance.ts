@@ -71,7 +71,7 @@ async function main() {
         || exclude.has(vault.toLowerCase())
         || !(await contractReader.vaultActive(vault))
         || (undBal * undPrice) + (undBalStrat * undPrice) < 100
-        // || (platform !== 3)
+        || (platform !== 2)
       ) {
         continue;
       }
@@ -82,26 +82,26 @@ async function main() {
         zap,
         contractReader,
         vault,
-        MaticAddresses.WMATIC_TOKEN,
+        MaticAddresses.USDC_TOKEN,
         0.01,
         10
       );
 
-      const amountShare = await TokenUtils.balanceOf(vault, signer.address);
-      if (amountShare.isZero()) {
-        console.log('zero balance');
-        continue;
-      }
+      // const amountShare = await TokenUtils.balanceOf(vault, signer.address);
+      // if (amountShare.isZero()) {
+      //   console.log('zero balance');
+      //   continue;
+      // }
 
-      await zapOutVaultWithLp(
-        signer,
-        mSwap,
-        zap,
-        contractReader,
-        vault,
-        MaticAddresses.WMATIC_TOKEN,
-        amountShare.toString()
-      );
+      // await zapOutVaultWithLp(
+      //   signer,
+      //   mSwap,
+      //   zap,
+      //   contractReader,
+      //   vault,
+      //   MaticAddresses.USDC_TOKEN,
+      //   amountShare.toString()
+      // );
     } catch (e) {
       console.error('error with', vaults[i]);
     }
@@ -163,7 +163,7 @@ async function zapInVaultWithLp(
     tokensOutLps.push(lps);
   }
 
-  await RunHelper.runAndWait(() => TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString()));
+  // await RunHelper.runAndWait(() => TokenUtils.approve(tokenIn, signer, zapContract.address, amount.toString()));
   await RunHelper.runAndWait(() => zapContract.connect(signer).zapIntoLp(
     vault,
     tokenIn,

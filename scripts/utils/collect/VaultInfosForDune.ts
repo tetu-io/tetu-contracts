@@ -4,6 +4,7 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ethers} from "hardhat";
 import {writeFileSync} from "fs";
 import {SmartVault} from "../../../typechain";
+import {Misc} from "../tools/Misc";
 
 
 async function main() {
@@ -39,7 +40,7 @@ async function main() {
     info += `${(await tools.reader.vaultDecimals(vault)).toNumber()},`;
     info += `'${(await tools.calculator.getLargestPool(underlying, []))[2]}',`;
     info += `${await tools.reader.vaultCreated(vault)},`;
-    info += `'${await tools.reader.strategyPlatform(strategy)}'\n`;
+    info += `'${Misc.platformName(await tools.reader.strategyPlatform(strategy))}'\n`;
     txt += info;
     console.log(info);
   }
