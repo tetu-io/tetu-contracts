@@ -166,7 +166,8 @@ describe('Universal AMB tests', async () => {
             ...strategyArgs
           ) as StrategyAaveMaiBal
         },
-        underlying
+        underlying,
+        25
       );
     };
     const hwInitiator = (

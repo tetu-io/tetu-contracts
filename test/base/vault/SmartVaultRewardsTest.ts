@@ -89,7 +89,8 @@ describe("Smart vault rewards test", () => {
       underlying,
       60 * 60 * 24 * 28,
       false,
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
+      0
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);
@@ -345,7 +346,8 @@ describe("Smart vault rewards test", () => {
       underlying,
       60 * 60 * 24 * 28,
       false,
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
+      0
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);

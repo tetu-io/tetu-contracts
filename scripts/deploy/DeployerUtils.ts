@@ -455,7 +455,8 @@ export class DeployerUtils {
       rewardToken.address,
       psRewardDuration,
       false,
-      MaticAddresses.ZERO_ADDRESS
+      MaticAddresses.ZERO_ADDRESS,
+      0
     ), true, wait);
 
     // ******* SETUP CONTROLLER ********
@@ -517,6 +518,7 @@ export class DeployerUtils {
     vaultRewardToken: string,
     signer: SignerWithAddress,
     rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
     wait = false
   ): Promise<[SmartVault, SmartVault, IStrategy]> {
     const start = Date.now();
@@ -536,7 +538,8 @@ export class DeployerUtils {
       strategyUnderlying,
       rewardDuration,
       false,
-      vaultRewardToken
+      vaultRewardToken,
+      depositFee
     ), true, wait);
     Misc.printDuration(vaultName + ' vault initialized', startInit);
 
@@ -553,6 +556,7 @@ export class DeployerUtils {
     vaultRewardToken: string,
     signer: SignerWithAddress,
     rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
     wait = false
   ): Promise<[SmartVault, SmartVault, IStrategy]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
@@ -574,7 +578,8 @@ export class DeployerUtils {
       strategyUnderlying,
       rewardDuration,
       false,
-      vaultRewardToken
+      vaultRewardToken,
+      depositFee
     ), true, wait);
     return [vaultLogic, vault, strategy];
   }

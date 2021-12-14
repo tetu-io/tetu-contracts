@@ -25,7 +25,8 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       true,
-      vault.address
+      vault.address,
+    0
   ));
 
   await DeployerUtils.wait(5);

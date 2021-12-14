@@ -1,17 +1,11 @@
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {
-  ICamToken,
-  IStrategy,
-  MaiStablecoinPipe,
-  SmartVault,
-  StrategyAaveMaiBal
-} from "../../../../typechain";
+import {ICamToken, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";

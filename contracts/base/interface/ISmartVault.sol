@@ -118,5 +118,7 @@ interface ISmartVault {
 
   function toInvest() external view returns (uint256);
 
+  function depositFeeNumerator() external view returns (uint256);
+
   function lockAllowed() external view returns (bool);
 }
