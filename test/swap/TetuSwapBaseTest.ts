@@ -25,8 +25,9 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 
-const IRON_FOLD_USDC = '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7';
-const IRON_FOLD_USDT = '0xE680e0317402ad3CB37D5ed9fc642702658Ef57F';
+const PS = '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454';
+const USDC_VAULT = '0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7';
+const USDT_VAULT = '0xE680e0317402ad3CB37D5ed9fc642702658Ef57F';
 
 const tokenA = MaticAddresses.USDC_TOKEN;
 const tokenB = MaticAddresses.USDT_TOKEN;
@@ -68,8 +69,8 @@ describe("Tetu Swap base tests", function () {
     user = (await ethers.getSigners())[0];
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
-    vaultUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDC) as SmartVault;
-    vaultUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDT) as SmartVault;
+    vaultUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', USDC_VAULT) as SmartVault;
+    vaultUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', USDT_VAULT) as SmartVault;
 
     factory = (await DeployerUtils.deploySwapFactory(signer, core.controller.address))[0] as TetuSwapFactory;
     router = await DeployerUtils.deployContract(signer, 'TetuSwapRouter', factory.address, MaticAddresses.WMATIC_TOKEN) as TetuSwapRouter;
@@ -78,15 +79,15 @@ describe("Tetu Swap base tests", function () {
     await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000000'));
     await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDT_TOKEN, utils.parseUnits('2000000'));
 
-    ironFoldUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDC) as SmartVault;
-    ironFoldUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', IRON_FOLD_USDT) as SmartVault;
+    ironFoldUsdcCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', USDC_VAULT) as SmartVault;
+    ironFoldUsdtCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', USDT_VAULT) as SmartVault;
 
     // * setup LP
 
     tokenADec = await TokenUtils.decimals(tokenA);
     tokenBDec = await TokenUtils.decimals(tokenB);
 
-    await factory.createPair(IRON_FOLD_USDC, IRON_FOLD_USDT);
+    await factory.createPair(USDC_VAULT, USDT_VAULT);
     console.log('pair created')
 
     lp = await factory.getPair(tokenA, tokenB);
@@ -99,8 +100,8 @@ describe("Tetu Swap base tests", function () {
 
     expect(await lpCtr.symbol()).is.eq('TLP_USDC_USDT');
 
-    expect((await lpCtr.vault0()).toLowerCase()).is.eq(IRON_FOLD_USDC.toLowerCase());
-    expect((await lpCtr.vault1()).toLowerCase()).is.eq(IRON_FOLD_USDT.toLowerCase());
+    expect((await lpCtr.vault0()).toLowerCase()).is.eq(USDC_VAULT.toLowerCase());
+    expect((await lpCtr.vault1()).toLowerCase()).is.eq(USDT_VAULT.toLowerCase());
 
     await UniswapUtils.addLiquidity(
       signer,
@@ -254,9 +255,11 @@ describe("Tetu Swap base tests", function () {
         router.address
       );
 
-      await factory.announceVaultsChange(IRON_FOLD_USDC, IRON_FOLD_USDT);
+      await expect(factory.setVaultsForPair(PS, USDT_VAULT)).revertedWith("TSF: Pair not found");
+      await expect(factory.setVaultsForPair(USDC_VAULT, USDT_VAULT)).revertedWith("TSF: Too early");
+      await factory.announceVaultsChange(USDC_VAULT, USDT_VAULT);
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
-      await factory.setVaultsForPair(IRON_FOLD_USDC, IRON_FOLD_USDT);
+      await factory.setVaultsForPair(USDC_VAULT, USDT_VAULT);
 
       const userTokenABalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenA, signer.address), tokenADec);
       const userTokenBBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, signer.address), tokenBDec);
@@ -381,12 +384,18 @@ describe("Tetu Swap base tests", function () {
     await expect(lpCtr.setFee(0)).rejectedWith('TSP: Not factory')
   });
 
-  it('set fee too high', async () => {
-    await expect(factory.setPairFee(lp, 100)).rejectedWith('TSP: Too high fee')
+  it('set fee negative cases', async () => {
+    await expect(factory.setPairsFee([lp], 100)).rejectedWith("TSF: Too early")
+    await factory.announcePairsFeeChange([lp]);
+    await expect(factory.announcePairsFeeChange([lp])).rejectedWith("TSF: Time-lock already defined");
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await expect(factory.setPairsFee([lp], 100)).rejectedWith('TSP: Too high fee')
   });
 
   it('set fee', async () => {
-    await factory.setPairFee(lp, 0);
+    await factory.announcePairsFeeChange([lp]);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await factory.setPairsFee([lp], 0);
     expect(await lpCtr.fee()).is.eq(0);
   });
 

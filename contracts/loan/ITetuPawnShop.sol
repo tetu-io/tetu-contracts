@@ -16,14 +16,42 @@ pragma solidity 0.8.4;
 /// @author belbix
 interface ITetuPawnShop {
 
-  event PositionOpened(uint256 posId);
+  event PositionOpened(
+    uint256 posId,
+    address collateralToken,
+    uint256 collateralAmount,
+    uint256 collateralTokenId,
+    address acquiredToken,
+    uint256 acquiredAmount,
+    uint256 posDurationBlocks,
+    uint256 posFee
+  );
   event PositionClosed(uint256 posId);
-  event BidExecuted(uint256 posId, address lender, uint256 amount);
-  event AuctionBidOpened(uint256 posId, uint256 bidId);
+  event BidExecuted(
+    uint256 posId,
+    uint256 amount,
+    address acquiredMoneyHolder,
+    address lender
+  );
+  event AuctionBidOpened(uint256 posId, uint256 bidId, uint256 amount, address lender);
   event PositionClaimed(uint256 posId);
   event PositionRedeemed(uint256 posId);
   event AuctionBidAccepted(uint256 posId, uint256 bidId);
   event AuctionBidClosed(uint256 posId, uint256 bidId);
+  event GovernanceActionAnnounced(uint256 id, address addressValue, uint256 uintValue);
+  event OwnerChanged(address oldOwner, address newOwner);
+  event FeeRecipientChanged(address oldRecipient, address newRecipient);
+  event PlatformFeeChanged(uint256 oldFee, uint256 newFee);
+  event DepositAmountChanged(uint256 oldAmount, uint256 newAmount);
+  event DepositTokenChanged(address oldToken, address newToken);
+
+  enum GovernanceAction {
+    ChangeOwner, // 0
+    ChangeFeeRecipient, // 1
+    ChangePlatformFee, // 2
+    ChangePositionDepositAmount, // 3
+    ChangePositionDepositToken // 4
+  }
 
   enum AssetType {
     ERC20, // 0
@@ -36,6 +64,12 @@ interface ITetuPawnShop {
     BY_ACQUIRED, // 2
     BORROWER_POSITION, // 3
     LENDER_POSITION // 4
+  }
+
+  struct TimeLock {
+    uint256 time;
+    address addressValue;
+    uint256 uintValue;
   }
 
   struct Position {
@@ -193,6 +227,14 @@ interface ITetuPawnShop {
   ///      Close auction bid and transfer acquired tokens to lender
   function closeAuctionBid(uint256 bidId) external;
 
+  /// @dev Announce governance action
+  function announceGovernanceAction(GovernanceAction id, address addressValue, uint256 uintValue) external;
+
+  /// @dev Set new contract owner
+  function setOwner(address _newOwner) external;
+
+  /// @dev Set new fee recipient
+  function setFeeRecipient(address _newFeeRecipient) external;
 
   /// @dev Platform fee in range 0 - 500, with denominator 10000
   function setPlatformFee(uint256 _value) external;
