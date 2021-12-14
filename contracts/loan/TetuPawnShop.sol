@@ -13,19 +13,19 @@
 pragma solidity 0.8.4;
 
 // use copies of openzeppelin contracts with changed names for avoid dependency issues
-import "../openzeppelin/OZERC721Holder.sol";
-import "../openzeppelin/OZIERC721.sol";
-import "../openzeppelin/OZSafeERC20.sol";
-import "../openzeppelin/OZIERC20.sol";
-import "../openzeppelin/OZReentrancyGuard.sol";
+import "../openzeppelin/ERC721Holder.sol";
+import "../openzeppelin/IERC721.sol";
+import "../openzeppelin/SafeERC20.sol";
+import "../openzeppelin/IERC20.sol";
+import "../openzeppelin/ReentrancyGuard.sol";
 import "./ITetuPawnShop.sol";
 import "./IFeeRewardForwarder.sol";
 import "./ArrayLib.sol";
 
 /// @title Contract for handling deals between two parties
 /// @author belbix
-contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
-  using OZSafeERC20 for OZIERC20;
+contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
+  using SafeERC20 for IERC20;
   using ArrayLib for uint256[];
 
   /// @dev Tetu Controller address requires for governance actions
@@ -202,7 +202,16 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
 
     _takeDeposit(pos.id);
     _transferCollateral(pos.collateral, msg.sender, address(this));
-    emit PositionOpened(pos.id);
+    emit PositionOpened(
+      pos.id,
+      _collateralToken,
+      _collateralAmount,
+      _collateralTokenId,
+      _acquiredToken,
+      _acquiredAmount,
+      _posDurationBlocks,
+      _posFee
+    );
     return pos.id;
   }
 
@@ -244,11 +253,11 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
     require(pos.execution.lender == msg.sender, "TPS: Only lender can claim");
     uint256 posEnd = pos.execution.posStartBlock + pos.info.posDurationBlocks;
     require(posEnd < block.number, "TPS: Too early to claim");
+    require(pos.open, "TPS: Position closed");
 
     _endPosition(pos);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
-    pos.open = false;
     emit PositionClaimed(id);
   }
 
@@ -258,13 +267,13 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
     require(pos.id == id, "TPS: Wrong ID");
     require(pos.borrower == msg.sender, "TPS: Only borrower can redeem");
     require(pos.execution.lender != address(0), "TPS: Not executed position");
+    require(pos.open, "TPS: Position closed");
 
     _endPosition(pos);
     uint256 toSend = _toRedeem(id);
-    OZIERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, pos.execution.lender, toSend);
+    IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, pos.execution.lender, toSend);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
-    pos.open = false;
     emit PositionRedeemed(id);
   }
 
@@ -306,7 +315,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
 
     lenderOpenBids[_bid.lender][pos.id] = 0;
     _bid.open = false;
-    OZIERC20(pos.acquired.acquiredToken).safeTransfer(msg.sender, _bid.amount);
+    IERC20(pos.acquired.acquiredToken).safeTransfer(msg.sender, _bid.amount);
     emit AuctionBidClosed(pos.id, bidId);
   }
 
@@ -316,7 +325,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   function _takeDeposit(uint256 posId) internal {
     Position storage pos = positions[posId];
     if (pos.depositToken != address(0)) {
-      OZIERC20(pos.depositToken).safeTransferFrom(pos.borrower, address(this), pos.depositAmount);
+      IERC20(pos.depositToken).safeTransferFrom(pos.borrower, address(this), pos.depositAmount);
     }
   }
 
@@ -324,7 +333,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   function _returnDeposit(uint256 posId) internal {
     Position storage pos = positions[posId];
     if (pos.depositToken != address(0)) {
-      OZIERC20(pos.depositToken).safeTransfer(pos.borrower, pos.depositAmount);
+      IERC20(pos.depositToken).safeTransfer(pos.borrower, pos.depositAmount);
     }
   }
 
@@ -340,10 +349,10 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
     uint256 feeAmount = amount * platformFee / DENOMINATOR;
     uint256 toSend = amount - feeAmount;
     if (acquiredMoneyHolder == address(this)) {
-      OZIERC20(pos.acquired.acquiredToken).safeTransfer(pos.borrower, toSend);
+      IERC20(pos.acquired.acquiredToken).safeTransfer(pos.borrower, toSend);
     } else {
-      OZIERC20(pos.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, pos.borrower, toSend);
-      OZIERC20(pos.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, address(this), feeAmount);
+      IERC20(pos.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, pos.borrower, toSend);
+      IERC20(pos.acquired.acquiredToken).safeTransferFrom(acquiredMoneyHolder, address(this), feeAmount);
     }
     _transferFee(pos.acquired.acquiredToken, feeAmount);
 
@@ -360,7 +369,12 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
       _transferCollateral(pos.collateral, address(this), lender);
       _endPosition(pos);
     }
-    emit BidExecuted(pos.id, lender, amount);
+    emit BidExecuted(
+      pos.id,
+      amount,
+      acquiredMoneyHolder,
+      lender
+    );
   }
 
   /// @dev Open an auction bid
@@ -389,17 +403,18 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
     // write index + 1 for keep zero as empty value
     lenderOpenBids[lender][pos.id] = positionToBidIds[pos.id].length;
 
-    OZIERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, address(this), amount);
 
     lastAuctionBidTs[pos.id] = block.timestamp;
     auctionBids[_bid.id] = _bid;
     auctionBidCounter++;
-    emit AuctionBidOpened(pos.id, _bid.id);
+    emit AuctionBidOpened(pos.id, _bid.id, amount, lender);
   }
 
   /// @dev Finalize position. Remove position from indexes
   function _endPosition(Position storage pos) internal {
     require(pos.execution.posEndTs == 0, "TPS: Position claimed");
+    pos.open = false;
     pos.execution.posEndTs = block.timestamp;
     borrowerPositions[pos.borrower].removeIndexed(posIndexes[IndexType.BORROWER_POSITION], pos.id);
     if (pos.execution.lender != address(0)) {
@@ -412,12 +427,12 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   function _transferCollateral(PositionCollateral memory _collateral, address _sender, address _recipient) internal {
     if (_collateral.collateralType == AssetType.ERC20) {
       if (_sender == address(this)) {
-        OZIERC20(_collateral.collateralToken).safeTransfer(_recipient, _collateral.collateralAmount);
+        IERC20(_collateral.collateralToken).safeTransfer(_recipient, _collateral.collateralAmount);
       } else {
-        OZIERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
+        IERC20(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralAmount);
       }
     } else if (_collateral.collateralType == AssetType.ERC721) {
-      OZIERC721(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralTokenId);
+      IERC721(_collateral.collateralToken).safeTransferFrom(_sender, _recipient, _collateral.collateralTokenId);
     } else {
       revert("TPS: Wrong asset type");
     }
@@ -430,7 +445,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
     if (amount == 0) {
       return;
     }
-    OZIERC20(token).safeTransfer(feeRecipient, amount);
+    IERC20(token).safeTransfer(feeRecipient, amount);
   }
 
   /// @dev Remove position from common indexes
@@ -476,7 +491,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   //noinspection NoReturn
   function _isERC721(address _token) private view returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try OZIERC721(_token).supportsInterface{gas : 30000}(type(OZIERC721).interfaceId) returns (bool result){
+    try IERC721(_token).supportsInterface{gas : 30000}(type(IERC721).interfaceId) returns (bool result){
       return result;
     } catch {
       return false;
@@ -491,7 +506,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   //noinspection NoReturn
   function _isERC20(address _token) private view returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try OZIERC20(_token).totalSupply{gas : 30000}() returns (uint256){
+    try IERC20(_token).totalSupply{gas : 30000}() returns (uint256){
       return true;
     } catch {
       return false;
@@ -548,12 +563,14 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
       addressValue,
       uintValue
     );
+    emit GovernanceActionAnnounced(uint256(id), addressValue, uintValue);
   }
 
   /// @inheritdoc ITetuPawnShop
   function setOwner(address _newOwner) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangeOwner, _newOwner, 0) {
     require(_newOwner != address(0), "TPS: Zero address");
+    emit OwnerChanged(owner, _newOwner);
     owner = _newOwner;
   }
 
@@ -561,6 +578,7 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   function setFeeRecipient(address _newFeeRecipient) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangeFeeRecipient, _newFeeRecipient, 0) {
     require(_newFeeRecipient != address(0), "TPS: Zero address");
+    emit FeeRecipientChanged(feeRecipient, _newFeeRecipient);
     feeRecipient = _newFeeRecipient;
   }
 
@@ -568,18 +586,21 @@ contract TetuPawnShop is OZERC721Holder, OZReentrancyGuard, ITetuPawnShop {
   function setPlatformFee(uint256 _value) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangePlatformFee, address(0), _value) {
     require(_value <= PLATFORM_FEE_MAX, "TPS: Too high fee");
+    emit PlatformFeeChanged(platformFee, _value);
     platformFee = _value;
   }
 
   /// @inheritdoc ITetuPawnShop
   function setPositionDepositAmount(uint256 _value) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangePositionDepositAmount, address(0), _value) {
+    emit DepositAmountChanged(positionDepositAmount, _value);
     positionDepositAmount = _value;
   }
 
   /// @inheritdoc ITetuPawnShop
   function setPositionDepositToken(address _value) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangePositionDepositToken, _value, 0) {
+    emit DepositTokenChanged(positionDepositToken, _value);
     positionDepositToken = _value;
   }
 }

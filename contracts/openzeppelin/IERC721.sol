@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-import "./OZIERC165.sol";
+import "./IERC165.sol";
 
 /**
  * @dev Required interface of an ERC721 compliant contract.
  */
-interface OZIERC721 is OZIERC165 {
+interface IERC721 is IERC165 {
   /**
    * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
    */

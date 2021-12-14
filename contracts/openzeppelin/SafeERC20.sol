@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./OZIERC20.sol";
-import "./OZAddress.sol";
+import "./IERC20.sol";
+import "./Address.sol";
 
 /**
  * @title SafeERC20
@@ -14,11 +14,11 @@ import "./OZAddress.sol";
  * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
  * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
  */
-library OZSafeERC20 {
-  using OZAddress for address;
+library SafeERC20 {
+  using Address for address;
 
   function safeTransfer(
-    OZIERC20 token,
+    IERC20 token,
     address to,
     uint256 value
   ) internal {
@@ -26,7 +26,7 @@ library OZSafeERC20 {
   }
 
   function safeTransferFrom(
-    OZIERC20 token,
+    IERC20 token,
     address from,
     address to,
     uint256 value
@@ -42,7 +42,7 @@ library OZSafeERC20 {
    * {safeDecreaseAllowance} instead.
    */
   function safeApprove(
-    OZIERC20 token,
+    IERC20 token,
     address spender,
     uint256 value
   ) internal {
@@ -57,7 +57,7 @@ library OZSafeERC20 {
   }
 
   function safeIncreaseAllowance(
-    OZIERC20 token,
+    IERC20 token,
     address spender,
     uint256 value
   ) internal {
@@ -66,7 +66,7 @@ library OZSafeERC20 {
   }
 
   function safeDecreaseAllowance(
-    OZIERC20 token,
+    IERC20 token,
     address spender,
     uint256 value
   ) internal {
@@ -84,7 +84,7 @@ library OZSafeERC20 {
    * @param token The token targeted by the call.
    * @param data The call data (encoded using abi.encode or one of its variants).
    */
-  function _callOptionalReturn(OZIERC20 token, bytes memory data) private {
+  function _callOptionalReturn(IERC20 token, bytes memory data) private {
     // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
     // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
     // the target address contains contract code and also asserts for success in the low-level call.

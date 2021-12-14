@@ -16,14 +16,34 @@ pragma solidity 0.8.4;
 /// @author belbix
 interface ITetuPawnShop {
 
-  event PositionOpened(uint256 posId);
+  event PositionOpened(
+    uint256 posId,
+    address collateralToken,
+    uint256 collateralAmount,
+    uint256 collateralTokenId,
+    address acquiredToken,
+    uint256 acquiredAmount,
+    uint256 posDurationBlocks,
+    uint256 posFee
+  );
   event PositionClosed(uint256 posId);
-  event BidExecuted(uint256 posId, address lender, uint256 amount);
-  event AuctionBidOpened(uint256 posId, uint256 bidId);
+  event BidExecuted(
+    uint256 posId,
+    uint256 amount,
+    address acquiredMoneyHolder,
+    address lender
+  );
+  event AuctionBidOpened(uint256 posId, uint256 bidId, uint256 amount, address lender);
   event PositionClaimed(uint256 posId);
   event PositionRedeemed(uint256 posId);
   event AuctionBidAccepted(uint256 posId, uint256 bidId);
   event AuctionBidClosed(uint256 posId, uint256 bidId);
+  event GovernanceActionAnnounced(uint256 id, address addressValue, uint256 uintValue);
+  event OwnerChanged(address oldOwner, address newOwner);
+  event FeeRecipientChanged(address oldRecipient, address newRecipient);
+  event PlatformFeeChanged(uint256 oldFee, uint256 newFee);
+  event DepositAmountChanged(uint256 oldAmount, uint256 newAmount);
+  event DepositTokenChanged(address oldToken, address newToken);
 
   enum GovernanceAction {
     ChangeOwner, // 0

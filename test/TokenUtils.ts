@@ -10,6 +10,8 @@ import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
+const IERC20Contract = 'contracts\\openzeppelin\\IERC20.sol:IERC20';
+
 export class TokenUtils {
 
   // use the most neutral place, some contracts (like swap pairs) can be used in tests and direct transfer ruin internal logic
@@ -31,19 +33,19 @@ export class TokenUtils {
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
+    const token = await ethers.getContractAt(IERC20Contract, tokenAddress) as IERC20;
     return token.balanceOf(account);
   }
 
   public static async totalSupply(tokenAddress: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
+    const token = await ethers.getContractAt(IERC20Contract, tokenAddress) as IERC20;
     return token.totalSupply();
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
     // await TokenUtils.checkBalance(tokenAddress, signer.address, amount);
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
+    const token = await ethers.getContractAt(IERC20Contract, tokenAddress, signer) as IERC20;
     return token.approve(spender, BigNumber.from(amount));
   }
 
@@ -55,13 +57,13 @@ export class TokenUtils {
   }
 
   public static async allowance(tokenAddress: string, signer: SignerWithAddress, spender: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
+    const token = await ethers.getContractAt(IERC20Contract, tokenAddress, signer) as IERC20;
     return token.allowance(signer.address, spender);
   }
 
   public static async transfer(tokenAddress: string, signer: SignerWithAddress, destination: string, amount: string) {
     console.log('transfer', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
+    const token = await ethers.getContractAt(IERC20Contract, tokenAddress, signer) as IERC20;
     return token.transfer(destination, BigNumber.from(amount))
   }
 

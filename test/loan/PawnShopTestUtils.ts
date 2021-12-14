@@ -221,6 +221,7 @@ export class PawnShopTestUtils {
     const cBalanceBefore = await TokenUtils.balanceOf(l.collateral.collateralToken, signer.address);
 
     await PawnShopUtils.claim(id, signer, shop);
+    await expect(PawnShopUtils.claim(id, signer, shop)).revertedWith('TPS: Position closed');
 
     const lAfter = await shop.positions(id);
 
@@ -240,6 +241,7 @@ export class PawnShopTestUtils {
     const toRedeem = await shop.toRedeem(id);
 
     await PawnShopUtils.redeem(id, signer, shop);
+    await expect(PawnShopUtils.redeem(id, signer, shop)).rejectedWith('TPS: Position closed');
 
     const lAfter = await shop.positions(id);
 
