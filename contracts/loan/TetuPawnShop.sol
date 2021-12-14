@@ -18,9 +18,8 @@ import "../openzeppelin/IERC721.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
+import "../base/ArrayLib.sol";
 import "./ITetuPawnShop.sol";
-import "./IFeeRewardForwarder.sol";
-import "./ArrayLib.sol";
 
 /// @title Contract for handling deals between two parties
 /// @author belbix
