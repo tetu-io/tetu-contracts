@@ -35,18 +35,12 @@ describe("Tetu pawnshop base tests", function () {
     user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, core.rewardToken.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop',
+      signer.address,
+      core.rewardToken.address,
+      core.controller.address
+    ) as TetuPawnShop;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
-
-    await shop.setPositionDepositToken(core.rewardToken.address);
-
-    await core.feeRewardForwarder.setConversionPath(
-        [MaticAddresses.USDC_TOKEN, core.rewardToken.address],
-        [MaticAddresses.QUICK_ROUTER]
-    );
-
-    await core.feeRewardForwarder.setLiquidityNumerator(50);
-    await core.feeRewardForwarder.setLiquidityRouter(MaticAddresses.QUICK_ROUTER);
 
     await nft.mint(user1.address);
     await nft.mint(user1.address);
@@ -64,13 +58,13 @@ describe("Tetu pawnshop base tests", function () {
     await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('2000'));
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address)
     await UniswapUtils.addLiquidity(
-        signer,
-        core.rewardToken.address,
-        MaticAddresses.USDC_TOKEN,
-        utils.parseUnits('50', 18).toString(),
-        utils.parseUnits('255', 6).toString(),
-        MaticAddresses.QUICK_FACTORY,
-        MaticAddresses.QUICK_ROUTER
+      signer,
+      core.rewardToken.address,
+      MaticAddresses.USDC_TOKEN,
+      utils.parseUnits('50', 18).toString(),
+      utils.parseUnits('255', 6).toString(),
+      MaticAddresses.QUICK_FACTORY,
+      MaticAddresses.QUICK_ROUTER
     );
     await TokenUtils.approve(core.rewardToken.address, user1, shop.address, utils.parseUnits('10000').toString());
   });
@@ -93,13 +87,13 @@ describe("Tetu pawnshop base tests", function () {
 
     for (let i = 0; i < 3; i++) {
       await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-          user1,
-          shop,
-          collateralToken,
-          '10' + i,
-          '555' + i,
-          99 + i,
-          10 + i
+        user1,
+        shop,
+        collateralToken,
+        '10' + i,
+        '555' + i,
+        99 + i,
+        10 + i
       );
 
       if (i !== 0 && i % 2 === 0) {
@@ -113,13 +107,13 @@ describe("Tetu pawnshop base tests", function () {
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        collateralToken,
-        utils.parseUnits('10').toString(),
-        acquiredAmount,
-        0,
-        0
+      user1,
+      shop,
+      collateralToken,
+      utils.parseUnits('10').toString(),
+      acquiredAmount,
+      0,
+      0
     );
 
     await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop)
@@ -130,13 +124,13 @@ describe("Tetu pawnshop base tests", function () {
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        collateralToken,
-        '10',
-        acquiredAmount,
-        1,
-        0
+      user1,
+      shop,
+      collateralToken,
+      '10',
+      acquiredAmount,
+      1,
+      0
     );
 
     await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
@@ -149,13 +143,13 @@ describe("Tetu pawnshop base tests", function () {
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        collateralToken,
-        '10',
-        acquiredAmount,
-        1,
-        0
+      user1,
+      shop,
+      collateralToken,
+      '10',
+      acquiredAmount,
+      1,
+      0
     );
     await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
     await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
@@ -164,26 +158,26 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction and claim", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        MaticAddresses.WMATIC_TOKEN,
-        '10',
-        '0',
-        1,
-        0
+      user1,
+      shop,
+      MaticAddresses.WMATIC_TOKEN,
+      '10',
+      '0',
+      1,
+      0
     );
 
     await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
 
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, user3, shop.address, '555');
-    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TL: New bid lower than previous');
+    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TPS: New bid lower than previous');
 
     await PawnShopTestUtils.bidAndCheck(id, '556', user3, shop);
 
     const bidId2 = await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop);
     const bidId3 = await PawnShopTestUtils.getBidIdAndCheck(id, user3.address, shop);
 
-    await expect(shop.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TL: Auction is not ended");
+    await expect(shop.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TPS: Auction is not ended");
 
     await PawnShopTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, shop)
 
@@ -199,13 +193,13 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction and redeem", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        MaticAddresses.WMATIC_TOKEN,
-        '10',
-        '0',
-        1,
-        0
+      user1,
+      shop,
+      MaticAddresses.WMATIC_TOKEN,
+      '10',
+      '0',
+      1,
+      0
     );
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
@@ -222,13 +216,13 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction and close", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        MaticAddresses.WMATIC_TOKEN,
-        '10',
-        '0',
-        1,
-        0
+      user1,
+      shop,
+      MaticAddresses.WMATIC_TOKEN,
+      '10',
+      '0',
+      1,
+      0
     );
 
     await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
@@ -243,13 +237,13 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction with instant deal", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
-        user1,
-        shop,
-        MaticAddresses.WMATIC_TOKEN,
-        '10',
-        '0',
-        0,
-        0
+      user1,
+      shop,
+      MaticAddresses.WMATIC_TOKEN,
+      '10',
+      '0',
+      0,
+      0
     );
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
@@ -266,13 +260,13 @@ describe("Tetu pawnshop base tests", function () {
   it("NFT bid on position with instant execution", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
-        user1,
-        shop,
-        nft.address,
-        '1',
-        acquiredAmount,
-        0,
-        0
+      user1,
+      shop,
+      nft.address,
+      '1',
+      acquiredAmount,
+      0,
+      0
     );
 
     await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop)
@@ -281,13 +275,13 @@ describe("Tetu pawnshop base tests", function () {
   it("NFT bid on position and claim", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
-        user1,
-        shop,
-        nft.address,
-        '1',
-        acquiredAmount,
-        1,
-        0
+      user1,
+      shop,
+      nft.address,
+      '1',
+      acquiredAmount,
+      1,
+      0
     );
 
     await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
@@ -298,13 +292,13 @@ describe("Tetu pawnshop base tests", function () {
   it("NFT open position and redeem", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
-        user1,
-        shop,
-        nft.address,
-        '1',
-        acquiredAmount,
-        1,
-        0
+      user1,
+      shop,
+      nft.address,
+      '1',
+      acquiredAmount,
+      1,
+      0
     );
     await PawnShopTestUtils.bidAndCheck(id, acquiredAmount, user2, shop);
     await PawnShopTestUtils.redeemAndCheck(id, user1, shop);
