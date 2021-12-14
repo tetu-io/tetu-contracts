@@ -63,7 +63,8 @@ async function main() {
       tetuLp,
       60 * 60 * 24 * 28,
       false,
-      core.psVault
+      core.psVault,
+    0
   );
 
   await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);

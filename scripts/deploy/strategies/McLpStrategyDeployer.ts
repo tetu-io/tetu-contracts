@@ -77,7 +77,8 @@ export class McLpStrategyDeployer {
         underlying,
         60 * 60 * 24 * 28,
         false,
-        core.psVault
+        core.psVault,
+      0
     ));
 
     // ! gov actions

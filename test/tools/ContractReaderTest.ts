@@ -278,7 +278,8 @@ describe("contract reader tests", function () {
       underlying,
       60 * 60 * 24 * 28,
       false,
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
+      0
     );
     await core.controller.addVaultAndStrategy(vault.address, strategy.address);
     await core.vaultController.addRewardTokens([vault.address], rt);

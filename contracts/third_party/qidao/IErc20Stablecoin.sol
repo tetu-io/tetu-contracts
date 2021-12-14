@@ -7,7 +7,7 @@ interface IErc20Stablecoin {
     function ethPriceSource() external view returns (address);
 //
 //    uint256 external _minimumCollateralPercentage;
-//
+    function _minimumCollateralPercentage() external view returns (uint256);
 //    uint256 external vaultCount;
 //    uint256 external closingFee;
     function closingFee() external view returns (uint256);

@@ -1,11 +1,12 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {TokenUtils} from "../../../TokenUtils";
-import {SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {VaultUtils} from "../../../VaultUtils";
+import {AMBUtils} from "./AMBUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -21,6 +22,8 @@ export class EmergencyWithdrawFromPoolTest extends SpecificStrategyTest {
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategy = deployInfo?.strategy as IStrategy;
+      await AMBUtils.refuelMAI(user, strategy.address);
 
       console.log('>>>emergencyWithdrawFromPool test');
       const userAddress = user.address

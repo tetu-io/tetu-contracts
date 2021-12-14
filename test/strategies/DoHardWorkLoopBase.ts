@@ -27,6 +27,7 @@ export class DoHardWorkLoopBase {
   vaultForUser: SmartVault;
   undDec = 0;
   userDeposited = BigNumber.from(0);
+  signerDeposited = BigNumber.from(0);
   userWithdrew = BigNumber.from(0);
   userRTBal = BigNumber.from(0);
   vaultRTBal = BigNumber.from(0);
@@ -105,12 +106,15 @@ export class DoHardWorkLoopBase {
   protected async enterToVault() {
     // initial deposit from signer
     await VaultUtils.deposit(this.signer, this.vault, this.userDeposited.div(2));
+    this.signerDeposited = this.userDeposited.div(2);
     await VaultUtils.deposit(this.user, this.vault, this.userDeposited);
     await this.userCheckBalanceInVault();
 
     // remove excess tokens
-    const excessBal = await TokenUtils.balanceOf(this.underlying, this.user.address);
-    await TokenUtils.transfer(this.underlying, this.user, this.tools.utils.address, excessBal.toString());
+    const excessBalUser = await TokenUtils.balanceOf(this.underlying, this.user.address);
+    await TokenUtils.transfer(this.underlying, this.user, this.tools.utils.address, excessBalUser.toString());
+    const excessBalSigner = await TokenUtils.balanceOf(this.underlying, this.signer.address);
+    await TokenUtils.transfer(this.underlying, this.signer, this.tools.utils.address, excessBalSigner.toString());
   }
 
   protected async loopStartActions(i: number) {
@@ -148,7 +152,7 @@ export class DoHardWorkLoopBase {
     const userBalanceN = +utils.formatUnits(userBalance.add(1), this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(this.userDeposited.sub(this.userWithdrew), this.undDec);
 
-    console.log('User balance +-:', this.toPercent(userBalanceN, userBalanceExpectedN));
+    console.log('User balance +-:', DoHardWorkLoopBase.toPercent(userBalanceN, userBalanceExpectedN));
     expect(userBalanceN).is.greaterThanOrEqual(userBalanceExpectedN - (userBalanceExpectedN * this.balanceTolerance),
       'User has wrong balance inside the vault.\n' +
       'If you expect not zero balance it means the vault has a nature of PPFS decreasing.\n' +
@@ -160,7 +164,7 @@ export class DoHardWorkLoopBase {
     const userUndBal = await TokenUtils.balanceOf(this.underlying, this.user.address);
     const userUndBalN = +utils.formatUnits(userUndBal, this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(expectedBalance, this.undDec);
-    console.log('User balance +-:', this.toPercent(userUndBalN, userBalanceExpectedN));
+    console.log('User balance +-:', DoHardWorkLoopBase.toPercent(userUndBalN, userBalanceExpectedN));
     expect(userUndBalN).is.greaterThanOrEqual(userBalanceExpectedN - (userBalanceExpectedN * this.balanceTolerance),
       'User has not enough balance');
   }
@@ -334,8 +338,15 @@ export class DoHardWorkLoopBase {
     const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
     const userUnderlyingBalanceAfterN = +utils.formatUnits(userUnderlyingBalanceAfter, this.undDec);
     const userBalanceExpected = userDepositedN - (userDepositedN * this.finalBalanceTolerance);
-    console.log('User final balance +-: ', this.toPercent(userUnderlyingBalanceAfterN, userDepositedN));
+    console.log('User final balance +-: ', DoHardWorkLoopBase.toPercent(userUnderlyingBalanceAfterN, userDepositedN));
     expect(userUnderlyingBalanceAfterN).is.greaterThanOrEqual(userBalanceExpected, "user should have more underlying");
+
+    const signerDepositedN = +utils.formatUnits(this.signerDeposited, this.undDec);
+    const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(this.underlying, this.signer.address);
+    const signerUnderlyingBalanceAfterN = +utils.formatUnits(signerUnderlyingBalanceAfter, this.undDec);
+    const signerBalanceExpected = signerDepositedN - (signerDepositedN * this.finalBalanceTolerance);
+    console.log('Signer final balance +-: ', DoHardWorkLoopBase.toPercent(signerUnderlyingBalanceAfterN, signerDepositedN));
+    expect(signerUnderlyingBalanceAfterN).is.greaterThanOrEqual(signerBalanceExpected, "signer should have more underlying");
   }
 
   private async getPrice(token: string): Promise<BigNumber> {
@@ -353,7 +364,7 @@ export class DoHardWorkLoopBase {
     return price;
   }
 
-  private toPercent(actual: number, expected: number): string {
+  private static toPercent(actual: number, expected: number): string {
     const percent = (actual / expected * 100) - 100;
     return percent.toFixed(6) + '%';
   }

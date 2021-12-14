@@ -75,7 +75,8 @@ describe("Controller tests", function () {
       usdc,
       REWARD_DURATION,
       false,
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
+      0
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
       controller.address, usdc, vault.address, [], [usdc], 1) as NoopStrategy;
@@ -98,7 +99,8 @@ describe("Controller tests", function () {
       usdc,
       REWARD_DURATION,
       false,
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
+      0
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
       controller.address, usdc, vault.address, [Misc.ZERO_ADDRESS], [usdc], 1) as NoopStrategy;

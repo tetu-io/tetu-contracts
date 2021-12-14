@@ -107,7 +107,8 @@ async function main() {
         noopStrategyUnderlying,
         rewardDuration,
         false,
-        poolReward
+        poolReward,
+      0
     ));
 
     const poolRewardDecimals = await TokenUtils.decimals(poolReward);
@@ -138,7 +139,8 @@ async function main() {
         strategyUnderlying,
         rewardDuration,
         false,
-        Misc.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
+      0
     ));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));

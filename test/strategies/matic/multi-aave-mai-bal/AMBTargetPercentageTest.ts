@@ -1,18 +1,19 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {TestAsserts} from "../../../TestAsserts";
+import {AMBUtils} from "./AMBUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-export class MABTargetPercentageTest extends SpecificStrategyTest {
+export class AMBTargetPercentageTest extends SpecificStrategyTest {
 
   public async do(
     deployInfo: DeployInfo
@@ -22,6 +23,8 @@ export class MABTargetPercentageTest extends SpecificStrategyTest {
       const underlying = deployInfo?.underlying as string;
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
+      const strategy = deployInfo?.strategy as IStrategy;
+      await AMBUtils.refuelMAI(user, strategy.address);
 
       const bal = await TokenUtils.balanceOf(underlying, user.address);
 

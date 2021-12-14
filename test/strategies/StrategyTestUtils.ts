@@ -24,7 +24,8 @@ export class StrategyTestUtils {
     core: CoreContractsWrapper,
     vaultName: string,
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
-    underlying: string
+    underlying: string,
+    depositFee = 0,
   ): Promise<[SmartVault, IStrategy, string]> {
     const start = Date.now();
     log.info("Starting deploy")
@@ -34,7 +35,9 @@ export class StrategyTestUtils {
       core.controller,
       core.vaultController,
       core.psVault.address,
-      signer
+      signer,
+      60 * 60 * 24 * 28,
+      depositFee
     );
     log.info("Vault deployed")
     const vault = data[1] as SmartVault;
@@ -110,7 +113,7 @@ export class StrategyTestUtils {
 
   public static async initForwarder(forwarder: ForwarderV2) {
     const start = Date.now();
-    await forwarder.setLiquidityNumerator(50);
+    await forwarder.setLiquidityNumerator(30);
     await forwarder.setLiquidityRouter(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
     await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);

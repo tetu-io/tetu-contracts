@@ -39,6 +39,10 @@ export class CoverageCallsTest extends SpecificStrategyTest {
       console.log('>>>availableMai', availableMai);
 
       expect(platformId).is.eq(15);
+
+      const liquidationPrice = await strategyAaveMaiBal.liquidationPrice();
+      console.log('>>>liquidationPrice', liquidationPrice.toString());
+
     });
   }
 

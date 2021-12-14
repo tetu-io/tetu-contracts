@@ -56,12 +56,6 @@ export class MaticAddresses {
   public static amWBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
   public static polyDoge_TOKEN = "0x8A953CfE442c5E8855cc6c61b1293FA648BAE472".toLowerCase();
   public static BAL_TOKEN = "0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3".toLowerCase();
-  public static CAMWMATIC_TOKEN = "0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B".toLowerCase();
-  public static CAMAAVE_TOKEN = "0xeA4040B21cb68afb94889cB60834b13427CFc4EB".toLowerCase();
-  public static AMAAVE_TOKEN = "0x1d2a0E5EC8E5bBDCA5CB219e649B565d8e5c3360".toLowerCase();
-  public static CAMDAI_TOKEN = "0xE6C23289Ba5A9F0Ef31b8EB36241D5c800889b7b".toLowerCase();
-  public static CAMWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
-  public static CAMWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
   public static miFARM_TOKEN = "0xab0b2ddB9C7e440fAc8E140A89c0dbCBf2d7Bbff".toLowerCase();
   public static KLIMA_TOKEN = "0x4e78011ce80ee02d2c3e649fb657e45898257815".toLowerCase();
   public static BCT_TOKEN = "0x2F800Db0fdb5223b3C3f354886d907A671414A7F".toLowerCase();
@@ -178,7 +172,23 @@ export class MaticAddresses {
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
   public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'.toLowerCase();
+  public static amAAVE_TOKEN = "0x1d2a0E5EC8E5bBDCA5CB219e649B565d8e5c3360".toLowerCase();
+  public static amWMATIC_TOKEN = "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4".toLowerCase();
+  public static amDAI_TOKEN = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e".toLowerCase();
+  public static amETH_TOKEN = "0x28424507fefb6f7f8E9D3860F56504E4e5f5f390".toLowerCase();
+  public static amBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
+
+  // qidao
+  public static camWMATICVault = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'.toLowerCase();
+  public static camWMATIC_TOKEN = "0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B".toLowerCase();
   public static camAAVEVault = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'.toLowerCase();
+  public static camAAVE_TOKEN = "0xeA4040B21cb68afb94889cB60834b13427CFc4EB".toLowerCase();
+  public static camDAIVault = "0xD2FE44055b5C874feE029119f70336447c8e8827".toLowerCase();
+  public static camDAI_TOKEN = "0xE6C23289Ba5A9F0Ef31b8EB36241D5c800889b7b".toLowerCase();
+  public static camWETHVault = "0x11A33631a5B5349AF3F165d2B7901A4d67e561ad".toLowerCase();
+  public static camWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
+  public static camWBTCVault = "0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0".toLowerCase();
+  public static camWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
 
   // BALANCER
   public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();

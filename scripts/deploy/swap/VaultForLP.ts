@@ -81,7 +81,8 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       false,
-      core.psVault
+      core.psVault,
+      0
     ));
 
     const txt = `${vaultNameWithoutPrefix} vault: ${vault.address} strategy: ${strategy.address} pair ${pair}\n`;

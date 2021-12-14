@@ -12,10 +12,9 @@
 
 pragma solidity 0.8.4;
 
-interface IScreamFoldStrategy {
+library PipeLib {
 
-  function scToken() external view returns (address);
-
-  function screamController() external view returns (address);
+  /// @dev Constant value to get or put all available token amount
+  uint256 public constant MAX_AMOUNT = type(uint).max;
 
 }

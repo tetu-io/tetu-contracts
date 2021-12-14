@@ -42,7 +42,8 @@ export class AMBPipeDeployer {
     camToken: string,
     stablecoin: string,
     amToken: string,
-    targetPercentage: string
+    targetPercentage: string,
+    collateralNumerator: string,
   ): Promise<[MaiStablecoinPipe, string[]]> {
     const args: string[] = [
       camToken,
@@ -50,7 +51,8 @@ export class AMBPipeDeployer {
       MaticAddresses.miMATIC_TOKEN,
       targetPercentage,
       '10', // max targetPercentage deviation (+/-) to call rebalance
-      MaticAddresses.QI_TOKEN
+      MaticAddresses.QI_TOKEN,
+      collateralNumerator,
     ];
     return [(await DeployerUtils.deployContract(signer, "MaiStablecoinPipe", args) as MaiStablecoinPipe), args];
   }

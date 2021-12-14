@@ -36,10 +36,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.6.0";
+  string public constant VERSION = "1.7.0";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
+  uint256 public constant DEPOSIT_FEE_DENOMINATOR = 10000;
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -90,7 +91,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     address _underlying,
     uint256 _duration,
     bool _lockAllowed,
-    address _rewardToken
+    address _rewardToken,
+    uint _depositFee
   ) external initializer {
     __ERC20_init(_name, _symbol);
 
@@ -107,6 +109,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     }
     // set 100% to invest
     _setToInvest(TO_INVEST_DENOMINATOR);
+    // set deposit fee
+    if (_depositFee > 0) {
+      require(_depositFee <= DEPOSIT_FEE_DENOMINATOR / 100);
+      _setDepositFeeNumerator(_depositFee);
+    }
   }
 
   // *************** EVENTS ***************************
@@ -421,6 +428,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Return amount of the underlying asset ready to invest to the strategy
   function availableToInvestOut() public view override returns (uint256) {
+    if (strategy() == address(0)) {
+      return 0;
+    }
     uint256 wantInvestInTotal = underlyingBalanceWithInvestment()
     .mul(toInvest()).div(TO_INVEST_DENOMINATOR);
     uint256 alreadyInvested = IStrategy(strategy()).investedUnderlyingBalance();
@@ -443,7 +453,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     require(numberOfShares > 0, "SV: Zero amount for withdraw");
 
     // store totalSupply before shares burn
-    uint256 totalSupply = totalSupply();
+    uint256 _totalSupply = totalSupply();
 
     // this logic not eligible for normal vaults
     // lockAllowed unchangeable attribute even for proxy upgrade process
@@ -458,10 +468,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
     uint256 underlyingAmountToWithdraw = underlyingBalanceWithInvestment()
     .mul(numberOfShares)
-    .div(totalSupply);
+    .div(_totalSupply);
     if (underlyingAmountToWithdraw > underlyingBalanceInVault()) {
       // withdraw everything from the strategy to accurately check the share value
-      if (numberOfShares == totalSupply) {
+      if (numberOfShares == _totalSupply) {
         IStrategy(strategy()).withdrawAllToVault();
       } else {
         uint256 missing = underlyingAmountToWithdraw.sub(underlyingBalanceInVault());
@@ -474,7 +484,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       // recalculate to improve accuracy
       underlyingAmountToWithdraw = MathUpgradeable.min(underlyingBalanceWithInvestment()
       .mul(numberOfShares)
-      .div(totalSupply), underlyingBalanceInVault());
+      .div(_totalSupply), underlyingBalanceInVault());
     }
 
     // need to burn shares after strategy withdraw for properly PPFS calculation
@@ -534,6 +544,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     if (toMint == 0) {
       return;
     }
+    toMint = toMint * (DEPOSIT_FEE_DENOMINATOR - depositFeeNumerator()) / DEPOSIT_FEE_DENOMINATOR;
     _mint(beneficiary, toMint);
 
     IERC20Upgradeable(underlying()).safeTransferFrom(sender, address(this), amount);
@@ -549,6 +560,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice Transfer underlying to the strategy
   function invest() internal {
+    require(strategy() != address(0));
     uint256 availableAmount = availableToInvestOut();
     if (availableAmount > 0) {
       IERC20Upgradeable(underlying()).safeTransfer(address(strategy()), availableAmount);

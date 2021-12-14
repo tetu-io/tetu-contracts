@@ -47,6 +47,7 @@ contract AaveAmPipe is Pipe {
   /// @param amount to deposit (TOKEN)
   /// @return output amount of output units (amTOKEN)
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
+    amount = maxSourceAmount(amount);
     _erc20Approve(sourceToken, pipeData.pool, amount);
     ILendingPool(pipeData.pool).deposit(sourceToken, amount, address(this), 0);
     output = _erc20Balance(outputToken);
@@ -57,6 +58,7 @@ contract AaveAmPipe is Pipe {
   /// @param amount to withdraw
   /// @return output amount of source token
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
+    amount = maxOutputAmount(amount);
     _erc20Approve(outputToken, pipeData.pool, amount);
     ILendingPool(pipeData.pool).withdraw(sourceToken, amount, address(this));
     output = _erc20Balance(sourceToken);

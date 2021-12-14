@@ -13,7 +13,7 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {MultiAaveMaiBalTest} from "./MultiAMBDoHardWork";
 import {utils} from "ethers";
-import {MABTargetPercentageTest} from "./MABTargetPercentageTest";
+import {AMBTargetPercentageTest} from "./AMBTargetPercentageTest";
 import {MabRebalanceTest} from "./MabRebalanceTest";
 import {SalvageFromPipelineTest} from "./SalvageFromPipelineTest";
 import {PumpInOnHardWorkTest} from "./PumpInOnHardWorkTest";
@@ -22,6 +22,8 @@ import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
 import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
+import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
+import {ethers} from "hardhat";
 
 
 dotEnvConfig();
@@ -54,10 +56,11 @@ describe('Universal AMB tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-
+  let airdroper: SignerWithAddress;
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
+    airdroper = (await ethers.getSigners())[2];
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
   });
 
@@ -92,22 +95,22 @@ describe('Universal AMB tests', async () => {
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [
-      new MABTargetPercentageTest(),
+      new AMBTargetPercentageTest(),
       new MabRebalanceTest(),
       new SalvageFromPipelineTest(),
       new PumpInOnHardWorkTest(),
       new WithdrawAndClaimTest(),
       new EmergencyWithdrawFromPoolTest(),
       new CoverageCallsTest(),
+      new MoreMaiFromBalTest(),
     ];
-    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('100');
+    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10');
     const BAL_PIPE_INDEX = 3;
     // **********************************************
 
     const pipes: string[] = [];
     // tslint:disable-next-line
     const pipesArgs: any[][] = [];
-
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
@@ -138,6 +141,7 @@ describe('Universal AMB tests', async () => {
             info.stablecoin,
             info.amToken,
             info.targetPercentage,
+            info.collateralNumerator || '1'
           );
           pipes.push(maiStablecoinPipeData[0].address);
           pipesArgs.push(maiStablecoinPipeData[1]);
@@ -162,7 +166,8 @@ describe('Universal AMB tests', async () => {
             ...strategyArgs
           ) as StrategyAaveMaiBal
         },
-        underlying
+        underlying,
+        25
       );
     };
     const hwInitiator = (
@@ -186,7 +191,7 @@ describe('Universal AMB tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
         info.camToken,
-        _signer,
+        airdroper,
         MaticAddresses.BAL_TOKEN,
         AIRDROP_REWARDS_AMOUNT,
         BAL_PIPE_INDEX,

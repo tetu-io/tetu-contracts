@@ -36,7 +36,8 @@ async function main() {
         strategyUnderlying,
         rewardDuration,
         false,
-        Misc.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
+      0
     );
     await vaultController.addRewardTokens([vault.address], vaultRewardToken);
     await vaultController.addRewardTokens([vault.address], mocks.get('weth') as string);

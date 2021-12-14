@@ -14,8 +14,6 @@ pragma solidity 0.8.4;
 
 interface IPipe {
 
-  function init() external view returns (bool);
-
   function pipeline() external view returns (address);
 
   function name() external view returns (string memory);

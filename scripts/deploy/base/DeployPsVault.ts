@@ -35,7 +35,8 @@ export default async function main() {
     core.rewardToken,
     psRewardDuration,
     false,
-    Misc.ZERO_ADDRESS
+    Misc.ZERO_ADDRESS,
+    0
   ), true, wait);
   await RunHelper.runAndWait(() => controller.setRewardToken(core.rewardToken), true, wait);
   await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);

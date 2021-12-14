@@ -15,25 +15,24 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../interface/IPipe.sol";
+import "./PipeLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
 abstract contract Pipe is IPipe {
   using SafeERC20 for IERC20;
 
-  /// @dev After adding the pipe to a pipeline it should be immediately initialized
-  bool public override init = false;
-
   /// @notice Address of the master pipeline
-  address public override pipeline;
+  /// @dev After adding the pipe to a pipeline it should be immediately initialized
+  address public override pipeline = address(0);
 
   /// @notice Pipe name for statistical purposes only
   /// @dev initialize it in constructor
   string public override name;
-  /// @notice Source token address type for statistical purposes only
+  /// @notice Source token address type
   /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
   address public immutable override sourceToken;
-  /// @notice Output token address type for statistical purposes only
+  /// @notice Output token address type
   /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
   address public immutable override outputToken;
 
@@ -67,11 +66,28 @@ abstract contract Pipe is IPipe {
     _;
   }
 
+  /// @dev Replaces MAX constant to source token balance. Should be used at put() function start
+  function maxSourceAmount(uint256 amount) internal view returns (uint256) {
+    if (amount == PipeLib.MAX_AMOUNT) {
+      return sourceBalance();
+    } else {
+      return amount;
+    }
+  }
+
+  /// @dev Replaces MAX constant to output token balance. Should be used at get() function start
+  function maxOutputAmount(uint256 amount) internal view returns (uint256) {
+    if (amount == PipeLib.MAX_AMOUNT) {
+      return outputBalance();
+    } else {
+      return amount;
+    }
+  }
+
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
   function setPipeline(address _pipeline) external override {
-    require(!init, "PIPE: Already init");
+    require(pipeline == address(0), "PIPE: Already init");
     pipeline = _pipeline;
-    init = true;
   }
 
   /// @dev Size of reward tokens array
@@ -92,11 +108,13 @@ abstract contract Pipe is IPipe {
   }
 
   /// @dev function for investing, deposits, entering, borrowing. Do not forget to transfer assets to next pipe
+  /// @dev In almost all cases overrides should have maxSourceAmount(amount)modifier
   /// @param amount in source units
   /// @return output in underlying units
   function put(uint256 amount) virtual override external returns (uint256 output);
 
   /// @dev function for de-vesting, withdrawals, leaves, paybacks. Amount in underlying units. Do not forget to transfer assets to prev pipe
+  /// @dev In almost all cases overrides should have maxOutputAmount(amount)modifier
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) virtual override external returns (uint256 output);
@@ -131,15 +149,15 @@ abstract contract Pipe is IPipe {
     }
   }
 
-  /// @dev available source balance (tokens, matic etc). Must be implemented for first pipe in line.
+  /// @dev available source balance (tokens, matic etc).
   /// @return balance in source units
-  function sourceBalance() external view virtual override returns (uint256) {
+  function sourceBalance() public view virtual override returns (uint256) {
     return _erc20Balance(sourceToken);
   }
 
-  /// @dev underlying balance (LP tokens, collateral etc). Must be implemented for last pipe in line and all pipes after balancing pipes.
+  /// @dev underlying balance (LP tokens, collateral etc).
   /// @return balance in underlying units
-  function outputBalance() virtual override external view returns (uint256) {
+  function outputBalance() public view virtual override returns (uint256) {
     return _erc20Balance(outputToken);
   }
 

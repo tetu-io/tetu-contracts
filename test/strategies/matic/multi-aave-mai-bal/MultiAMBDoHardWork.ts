@@ -9,8 +9,8 @@ import {BigNumber} from "ethers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {AMBUtils} from "./AMBUtils";
 
-const {expect} = chai;
 chai.use(chaiAsPromised);
 
 export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
@@ -29,6 +29,11 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     this.airDropToken = airDropToken;
     this.airDropAmount = airDropAmount;
     this.airDropPipeIndex = airDropPipeIndex;
+  }
+
+  protected async init() {
+    await super.init();
+    await AMBUtils.refuelMAI(this.signer, this.strategy.address);
   }
 
   public async afterBlocAdvance() {
