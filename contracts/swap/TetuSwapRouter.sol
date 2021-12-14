@@ -12,9 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "../openzeppelin/IERC20.sol";
 import "./libraries/TransferHelper.sol";
 import "./libraries/TetuSwapLibrary.sol";
 import "./interfaces/ITetuSwapERC20.sol";
@@ -26,10 +24,11 @@ import "./interfaces/IWETH.sol";
 /// @title UniswapV2Router02 https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
 /// @dev Few changes for compatability with Tetu Swap
 contract TetuSwapRouter is ITetuSwapRouter {
-  using SafeMath for uint;
 
   address public immutable override factory;
   address public immutable override WETH;
+
+  event EthReceived(address sender);
 
   modifier ensure(uint deadline) {
     require(deadline >= block.timestamp, "TSR: EXPIRED");
@@ -37,13 +36,16 @@ contract TetuSwapRouter is ITetuSwapRouter {
   }
 
   constructor(address _factory, address _WETH) {
+    require(_factory != address(0), "TSR: Zero factory");
+    require(_WETH != address(0), "TSR: Zero WETH");
     factory = _factory;
     WETH = _WETH;
   }
 
   receive() external payable {
-    assert(msg.sender == WETH);
+    require(msg.sender == WETH, "TSR: ETH sender is not WETH contract");
     // only accept ETH via fallback from the WETH contract
+    emit EthReceived(msg.sender);
   }
 
   // **** ADD LIQUIDITY ****
@@ -355,7 +357,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
       {// scope to avoid stack too deep errors
         (uint reserve0, uint reserve1,) = pair.getReserves();
         (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-        amountInput = pair.balanceOfVaultUnderlying(input).sub(reserveInput);
+        amountInput = pair.balanceOfVaultUnderlying(input) - reserveInput;
         amountOutput = TetuSwapLibrary.getAmountOut(
           amountInput,
           reserveInput,
@@ -382,7 +384,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
     _swapSupportingFeeOnTransferTokens(path, to);
     require(
-      IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+      IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
       "TSR: INSUFFICIENT_OUTPUT_AMOUNT"
     );
   }
@@ -406,7 +408,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
     _swapSupportingFeeOnTransferTokens(path, to);
     require(
-      IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+      IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
       "TSR: INSUFFICIENT_OUTPUT_AMOUNT"
     );
   }
