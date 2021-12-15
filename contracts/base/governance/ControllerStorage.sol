@@ -140,6 +140,17 @@ abstract contract ControllerStorage is Initializable, IController {
     return getAddress("fund");
   }
 
+  function _setDistributor(address _address) internal {
+    emit UpdatedAddressSlot("distributor", distributor(), _address);
+    setAddress("distributor", _address);
+  }
+
+  /// @notice Return Reward distributor address
+  /// @return Distributor address
+  function distributor() public override view returns (address) {
+    return getAddress("distributor");
+  }
+
   function _setAnnouncer(address _address) internal {
     emit UpdatedAddressSlot("announcer", announcer(), _address);
     setAddress("announcer", _address);

@@ -36,6 +36,8 @@ interface IController {
 
   function fund() external view returns (address);
 
+  function distributor() external view returns (address);
+
   function announcer() external view returns (address);
 
   function vaultController() external view returns (address);
@@ -73,11 +75,5 @@ interface IController {
 
   function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) external;
 
-  function addToWhiteListMulti(address[] calldata _targets) external;
-
-  function addToWhiteList(address _target) external;
-
-  function removeFromWhiteListMulti(address[] calldata _targets) external;
-
-  function removeFromWhiteList(address _target) external;
+  function changeWhiteListStatus(address[] calldata _targets, bool status) external;
 }

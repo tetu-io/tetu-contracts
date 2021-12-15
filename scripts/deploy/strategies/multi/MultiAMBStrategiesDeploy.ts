@@ -24,7 +24,7 @@ async function main() {
   for (const vAdr of deployedVaultAddresses) {
     const name = await cReader.vaultName(vAdr)
     vaultNames.add(name);
-    console.log('name', name);
+    // console.log('name', name);
   }
 
   mkdir('./tmp/deployed', {recursive: true}, (err) => {
@@ -116,12 +116,8 @@ async function main() {
     for (let i = 0; i < pipes.length; i++) {
       const pipeAdr = pipes[i];
       const pipeArg = pipesArgs[i];
-      await DeployerUtils.verifyWithArgs(pipeAdr, pipeArg);
+      await DeployerUtils.verifyWithArgs(pipeAdr, [pipeArg]);
     }
-    // await DeployerUtils.verifyWithArgs(aaveAmPipeData[0].address, aaveAmPipeData[1]);
-    // await DeployerUtils.verifyWithArgs(maiCamPipeData[0].address, maiCamPipeData[1]);
-    // await DeployerUtils.verifyWithArgs(maiStablecoinPipeData[0].address, maiStablecoinPipeData[1]);
-    // await DeployerUtils.verifyWithArgs(balVaultPipeData[0].address, balVaultPipeData[1]);
   }
   await DeployerUtils.wait(5);
 
