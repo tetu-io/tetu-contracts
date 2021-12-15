@@ -336,7 +336,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // mint - assuming it is deposit action
     if (from == address(0)) {
       // new deposit
-      if (userBoostTs[to] == 0) {
+      if (_underlyingBalanceWithInvestmentForHolder(to) == 0) {
         userBoostTs[to] = block.timestamp;
       }
 
@@ -361,7 +361,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       || from == controller(), "SV: Transfer forbidden for locked funds");
 
       // if recipient didn't have deposit - start boost time
-      if (userBoostTs[to] == 0) {
+      if (_underlyingBalanceWithInvestmentForHolder(to) == 0) {
         userBoostTs[to] = block.timestamp;
       }
 
@@ -409,6 +409,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   ///         underlyingBalanceWithInvestment() * balanceOf(holder) / totalSupply()
   function underlyingBalanceWithInvestmentForHolder(address holder)
   external view override returns (uint256) {
+    return _underlyingBalanceWithInvestmentForHolder(holder);
+  }
+
+  function _underlyingBalanceWithInvestmentForHolder(address holder) internal view returns (uint256) {
     if (totalSupply() == 0) {
       return 0;
     }
