@@ -25,7 +25,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneGeistFoldStrategyTest: {
       type: "number",
-      default: -1,
+      default: 1,
     },
     deployCoreContracts: {
       type: "boolean",
