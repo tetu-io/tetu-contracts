@@ -15,7 +15,7 @@ const infos: {
     camToken: MaticAddresses.camAAVE_TOKEN,
     amToken: MaticAddresses.amAAVE_TOKEN,
     stablecoin: MaticAddresses.camAAVEVault,
-    targetPercentage: '200',
+    targetPercentage: '300',
   },
   {
     underlyingName: 'WMATIC',
@@ -23,7 +23,7 @@ const infos: {
     camToken: MaticAddresses.camWMATIC_TOKEN,
     amToken: MaticAddresses.amWMATIC_TOKEN,
     stablecoin: MaticAddresses.camWMATICVault,
-    targetPercentage: '200',
+    targetPercentage: '300',
   },
   {
     underlyingName: 'DAI',
@@ -31,7 +31,7 @@ const infos: {
     camToken: MaticAddresses.camDAI_TOKEN,
     amToken: MaticAddresses.amDAI_TOKEN,
     stablecoin: MaticAddresses.camDAIVault,
-    targetPercentage: '175',
+    targetPercentage: '250',
   },
   {
     underlyingName: 'WBTC',
@@ -39,7 +39,7 @@ const infos: {
     camToken: MaticAddresses.camWBTC_TOKEN,
     amToken: MaticAddresses.amWBTC_TOKEN,
     stablecoin: MaticAddresses.camWBTCVault,
-    targetPercentage: '200',
+    targetPercentage: '300',
     collateralNumerator: '10000000000' // 10**10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao
   },
   {
@@ -48,7 +48,7 @@ const infos: {
     camToken: MaticAddresses.camWETH_TOKEN,
     amToken: MaticAddresses.amETH_TOKEN,
     stablecoin: MaticAddresses.camWETHVault,
-    targetPercentage: '200',
+    targetPercentage: '300',
   },
 ]
 
