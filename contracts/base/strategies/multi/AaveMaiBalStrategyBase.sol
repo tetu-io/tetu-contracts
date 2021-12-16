@@ -170,7 +170,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     // transfers token to this contract
   }
 
-  function rebalanceAllPipes() external onlyControllerOrGovernance updateTotalAmount {
+  function rebalanceAllPipes() external restricted updateTotalAmount {
     _rebalanceAllPipes();
   }
 
