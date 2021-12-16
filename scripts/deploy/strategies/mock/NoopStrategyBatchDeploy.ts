@@ -43,7 +43,7 @@ async function main() {
     await vaultController.addRewardTokens([vault.address], mocks.get('weth') as string);
     await vaultController.addRewardTokens([vault.address], mocks.get('sushi') as string);
 
-    await controller.addVaultAndStrategy(vault.address, strategy.address);
+    await controller.addVaultsAndStrategies([vault.address], [strategy.address]);
 
     datas.push([vaultLogic, vault, strategy]);
   }

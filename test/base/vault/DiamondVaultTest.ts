@@ -76,7 +76,7 @@ describe("Diamond vault test", () => {
       rt,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await vault.setLockPenalty(LOCK_PENALTY);
     await vault.setLockPeriod(LOCK_DURATION);
 

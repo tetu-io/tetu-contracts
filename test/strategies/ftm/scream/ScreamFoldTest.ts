@@ -88,7 +88,7 @@ describe('Universal Scream Fold tests', async () => {
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.00001;
-    const finalBalanceTolerance = 0.00001;
+    const finalBalanceTolerance = 0.001;
     let deposit = 100_000;
     // not enough money on holder
     if (tokenName === 'CRV') {

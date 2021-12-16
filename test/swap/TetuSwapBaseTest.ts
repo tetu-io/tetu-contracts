@@ -117,8 +117,12 @@ describe("Tetu Swap base tests", function () {
 
     lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
 
-    // todo make network independent
-    expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
+
+    if ((await ethers.provider.getNetwork()).chainId === 250) {
+      expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
+    } else if ((await ethers.provider.getNetwork()).chainId === 250) {
+      expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
+    }
 
     expect((await lpCtr.vault0()).toLowerCase()).is.eq(vault0.toLowerCase());
     expect((await lpCtr.vault1()).toLowerCase()).is.eq(vault1.toLowerCase());

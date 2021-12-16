@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 interface IController {
 
-  function addVaultAndStrategy(address _vault, address _strategy) external;
+  function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external;
 
   function addStrategy(address _strategy) external;
 
@@ -35,6 +35,8 @@ interface IController {
   function psVault() external view returns (address);
 
   function fund() external view returns (address);
+
+  function distributor() external view returns (address);
 
   function announcer() external view returns (address);
 
@@ -73,11 +75,5 @@ interface IController {
 
   function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) external;
 
-  function addToWhiteListMulti(address[] calldata _targets) external;
-
-  function addToWhiteList(address _target) external;
-
-  function removeFromWhiteListMulti(address[] calldata _targets) external;
-
-  function removeFromWhiteList(address _target) external;
+  function changeWhiteListStatus(address[] calldata _targets, bool status) external;
 }

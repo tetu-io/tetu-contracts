@@ -59,7 +59,7 @@ describe("SmartVaultNoopStrat", () => {
       Misc.ZERO_ADDRESS,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
     await core.vaultController.setToInvest([vault.address], 1000);
 
