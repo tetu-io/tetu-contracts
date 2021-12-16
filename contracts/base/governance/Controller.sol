@@ -203,6 +203,8 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     address(0)
   ) {
     onlyGovernance();
+    require(distributor() != address(0), "C: Zero distributor");
+    require(fund() != address(0), "C: Zero fund");
     IMintHelper(mintHelper()).mintAndDistribute(totalAmount, distributor(), fund(), mintAllAvailable);
     emit Minted(mintHelper(), totalAmount, distributor(), fund(), mintAllAvailable);
   }

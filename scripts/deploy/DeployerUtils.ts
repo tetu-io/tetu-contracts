@@ -468,6 +468,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address), true, wait);
+    await RunHelper.runAndWait(() => controller.setDistributor(notifyHelper.address), true, wait);
 
     try {
       const tokens = await DeployerUtils.getTokenAddresses()

@@ -590,7 +590,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+    await controller.mintAndDistribute(toMint, false);
 
     const curNetAmount = toMint * 0.33;
     const forVaults = curNetAmount * 0.7;
@@ -661,7 +661,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+    await controller.mintAndDistribute(toMint,  false);
 
     let curNetAmount = toMint * 0.33;
     let forVaults = curNetAmount * 0.7;
@@ -723,7 +723,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.connect(signer1).mintAndDistribute(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
+    await controller.connect(signer1).mintAndDistribute(toMint,  false);
 
     curNetAmount = toMint * 0.33;
     forVaults = curNetAmount * 0.7;
@@ -743,7 +743,8 @@ describe("Announcer tests", function () {
     const opCodeMint = 16;
     const opCodeGovChange = 0;
     const not = '0x099C314F792e1F91f53765Fc64AaDCcf4dCf1538';
-    const fk = '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2';
+    await controller.setDistributor(not);
+    const fk = await controller.fund();
 
     // mint
     await announcer.announceMint(0, not, fk, true);
@@ -752,7 +753,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.mintAndDistribute(0, not, fk, true);
+    await controller.mintAndDistribute(0, true);
     console.log('mint first completed');
 
     await announcer.announceMint(0, not, fk, true);
@@ -787,20 +788,21 @@ describe("Announcer tests", function () {
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
     // mint 2
+    await controller.connect(signer1).setDistributor(core.notifyHelper.address);
     await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
-    await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
+    await controller.connect(signer1).mintAndDistribute(0, true);
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
     // mint 3
     await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
-    await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
+    await controller.connect(signer1).mintAndDistribute(0, true);
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
     // mint 4
     await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
-    await controller.connect(signer1).mintAndDistribute(0, core.notifyHelper.address, fk, true);
+    await controller.connect(signer1).mintAndDistribute(0, true);
   });
 
 });

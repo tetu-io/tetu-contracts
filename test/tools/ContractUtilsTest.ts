@@ -35,7 +35,7 @@ describe("Contract utils tests", function () {
   });
 
   it("names", async () => {
-    expect((await utils.erc20Names(ercTokens))[0]).is.eq('USD Coin');
+    expect((await utils.erc20Names(ercTokens))[0]).is.contain('USD Coin');
   });
 
   it("decimals", async () => {
