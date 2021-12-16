@@ -1,7 +1,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {ContractReader} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 
 
 async function main() {
@@ -14,7 +14,7 @@ async function main() {
   const contractReader = logic.attach(proxy.address) as ContractReader;
 
   await RunHelper.runAndWait(() => contractReader.initialize(core.controller, tools.calculator));
-  // await contractReader.setPriceCalculator(tools.calculator);
+  await contractReader.setPriceCalculator(tools.calculator);
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);

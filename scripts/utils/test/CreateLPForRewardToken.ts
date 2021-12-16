@@ -1,8 +1,8 @@
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ethers} from "hardhat";
-import {MaticAddresses} from "../../../test/MaticAddresses";
 import {utils} from "ethers";
 import {UniswapUtils} from "../../../test/UniswapUtils";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 
 async function main() {

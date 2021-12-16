@@ -1,6 +1,5 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {FundKeeper} from "../../../typechain";
 import {ethers} from "hardhat";
@@ -9,6 +8,7 @@ import {TimeUtils} from "../../TimeUtils";
 import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {TokenUtils} from "../../TokenUtils";
+import {utils} from "ethers";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -21,6 +21,7 @@ describe("Fund Keeper tests", function () {
   let signerAddress: string;
   let core: CoreContractsWrapper;
   let fundKeeper: FundKeeper;
+  let usdc: string;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
@@ -29,7 +30,8 @@ describe("Fund Keeper tests", function () {
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer);
     fundKeeper = core.fundKeeper;
-    await UniswapUtils.wrapMatic(signer); // 10m wmatic
+    usdc = await DeployerUtils.getUSDCAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
   });
 
   after(async function () {
@@ -46,28 +48,28 @@ describe("Fund Keeper tests", function () {
   });
 
   it("salvage tokens", async () => {
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
+    await TokenUtils.transfer(usdc, signer, fundKeeper.address, '1000');
 
-    await core.announcer.announceTokenMove(13, core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000');
+    await core.announcer.announceTokenMove(13, core.fundKeeper.address, usdc, '1000');
     await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
-    await core.controller.fundKeeperTokenMove(core.fundKeeper.address, MaticAddresses.WMATIC_TOKEN, '1000')
+    await core.controller.fundKeeperTokenMove(core.fundKeeper.address, usdc, '1000')
 
-    expect(await TokenUtils.balanceOf(MaticAddresses.WMATIC_TOKEN, core.controller.address))
+    expect(await TokenUtils.balanceOf(usdc, core.controller.address))
     .is.eq('1000');
   });
 
   it("should not salvage more than balance", async () => {
-    await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, signer, fundKeeper.address, '1000');
+    await TokenUtils.transfer(usdc, signer, fundKeeper.address, '1000');
 
     const opCode = 13;
     const amount = 1001;
     const contract = core.fundKeeper.address;
 
-    await core.announcer.announceTokenMove(opCode, contract, MaticAddresses.WMATIC_TOKEN, amount);
+    await core.announcer.announceTokenMove(opCode, contract, usdc, amount);
 
     await TimeUtils.advanceBlocksOnTs((await core.announcer.timeLock()).toNumber());
 
-    await expect(core.controller.fundKeeperTokenMove(contract, MaticAddresses.WMATIC_TOKEN, amount)).rejectedWith("not enough balance");
+    await expect(core.controller.fundKeeperTokenMove(contract, usdc, amount)).rejectedWith("not enough balance");
   });
 
 

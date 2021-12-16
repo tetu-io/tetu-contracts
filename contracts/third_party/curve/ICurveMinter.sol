@@ -5,6 +5,8 @@ pragma solidity 0.8.4;
 interface ICurveMinter {
   function coins(uint256 i) external view returns (address);
 
+  function balances(uint256 i) external view returns (uint256);
+
   function lp_token() external view returns (address);
 
   function get_virtual_price() external view returns (uint);

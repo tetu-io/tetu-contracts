@@ -1,12 +1,10 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../MaticAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {VaultController} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
-import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 
 const {expect} = chai;
@@ -17,12 +15,13 @@ const REWARD_DURATION = 60 * 60;
 describe("Controller tests", function () {
   let snapshotBefore: string;
   let snapshot: string;
-  const underlying = MaticAddresses.USDC_TOKEN;
   let signer: SignerWithAddress;
   let signer1: SignerWithAddress;
   let signerAddress: string;
   let core: CoreContractsWrapper;
   let vaultController: VaultController;
+  let usdc: string;
+  let networkToken: string;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
@@ -31,7 +30,8 @@ describe("Controller tests", function () {
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer);
     vaultController = core.vaultController;
-    await UniswapUtils.wrapMatic(signer); // 10m wmatic
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
   });
 
   after(async function () {
@@ -54,10 +54,10 @@ describe("Controller tests", function () {
 
   it("should change reward tokens", async () => {
     expect((await core.psVault.rewardTokens()).length).is.eq(0);
-    await vaultController.addRewardTokens([core.psVault.address], MaticAddresses.WMATIC_TOKEN);
-    await vaultController.addRewardTokens([core.psVault.address], MaticAddresses.USDC_TOKEN);
-    expect((await core.psVault.rewardTokens())[0].toLowerCase()).is.eq(MaticAddresses.WMATIC_TOKEN);
-    await vaultController.removeRewardTokens([core.psVault.address], MaticAddresses.WMATIC_TOKEN);
+    await vaultController.addRewardTokens([core.psVault.address], networkToken);
+    await vaultController.addRewardTokens([core.psVault.address], usdc);
+    expect((await core.psVault.rewardTokens())[0].toLowerCase()).is.eq(networkToken);
+    await vaultController.removeRewardTokens([core.psVault.address], networkToken);
     expect((await core.psVault.rewardTokens()).length).is.eq(1);
   });
 

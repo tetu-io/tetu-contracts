@@ -30,7 +30,7 @@ abstract contract MCv2StrategyAC is StrategyBase, IMasterChefStrategyV3 {
   string public constant override STRATEGY_NAME = "MCv2StrategyAC";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev 1% buyback
   uint256 private constant _BUY_BACK_RATIO = 100;
   address private constant _SUSHI = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);

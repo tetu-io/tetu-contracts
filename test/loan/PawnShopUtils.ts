@@ -1,10 +1,10 @@
 import {TokenUtils} from "../TokenUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {TetuPawnShop} from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {utils} from "ethers";
+import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -35,7 +35,7 @@ export class PawnShopUtils {
       collateralToken,
       collateralAmount,
       0,
-      MaticAddresses.USDC_TOKEN,
+      await DeployerUtils.getUSDCAddress(),
       acquiredAmount,
       posDurationBlocks,
       posFee
@@ -61,7 +61,7 @@ export class PawnShopUtils {
       collateralToken,
       0,
       collateralId,
-      MaticAddresses.USDC_TOKEN,
+      await DeployerUtils.getUSDCAddress(),
       acquiredAmount,
       posDurationBlocks,
       posFee

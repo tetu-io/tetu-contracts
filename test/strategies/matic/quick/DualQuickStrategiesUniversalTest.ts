@@ -1,35 +1,50 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../MaticAddresses";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
+import {DeployInfo} from "../../DeployInfo";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  disableStrategyTests: {
-    type: "boolean",
-    default: false,
-  },
-  onlyOneQuickDualStrategyTest: {
-    type: "number",
-    default: 1,
-  }
-}).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+    onlyOneQuickDualStrategyTest: {
+      type: "number",
+      default: 1,
+    },
+    deployCoreContracts: {
+      type: "boolean",
+      default: false,
+    },
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+  }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Quick Dual tests', async () => {
-  if (argv.disableStrategyTests) {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/quick_pools_dual.csv', 'utf8').split(/\r?\n/);
 
-  const strategyName = 'StrategyQuickSwapLpDual';
+  const deployInfo: DeployInfo = new DeployInfo();
+  before(async function () {
+    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+  });
+
+  const strategyName = 'StrategyQuickSwapLpDualAC';
 
   infos.forEach(info => {
     const strat = info.split(',');
@@ -57,15 +72,15 @@ describe('Universal Quick Dual tests', async () => {
 
     /* tslint:disable:no-floating-promises */
     startDefaultLpStrategyTest(
-        strategyName,
-        MaticAddresses.QUICK_FACTORY,
-        lpAddress.toLowerCase(),
-        token0,
-        token0Name,
-        token1,
-        token1Name,
-        pool,
-        [MaticAddresses.QUICK_TOKEN, MaticAddresses.WMATIC_TOKEN]
+      strategyName,
+      MaticAddresses.QUICK_FACTORY,
+      lpAddress.toLowerCase(),
+      token0,
+      token0Name,
+      token1,
+      token1Name,
+      pool,
+      deployInfo
     );
   });
 

@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 2
       - uses: actions/setup-node@v2
         with:
-          node-version: 12.x
+          node-version: 14.x
       - uses: actions/cache@v2
         id: cache
         with:
@@ -52,4 +52,7 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           TETU_INFURA_KEY: ${{secrets.TETU_INFURA_KEY}}
           TETU_MATIC_RPC_URL: ${{secrets.TETU_MATIC_RPC_URL}}
+          TETU_FTM_RPC_URL: ${{secrets.TETU_FTM_RPC_URL}}
+          TETU_DEPLOY_CORE_CONTRACTS: ${{secrets.TETU_DEPLOY_CORE_CONTRACTS}}
+          TETU_HARDHAT_CHAIN_ID: ${{secrets.TETU_HARDHAT_CHAIN_ID}}
       - uses: codecov/codecov-action@v2

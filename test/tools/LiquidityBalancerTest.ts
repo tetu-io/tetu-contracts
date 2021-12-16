@@ -9,7 +9,6 @@ import {LiquidityBalancer} from "../../typechain";
 import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
-import {MaticAddresses} from "../MaticAddresses";
 import {MintHelperUtils} from "../MintHelperUtils";
 
 const {expect} = chai;
@@ -24,7 +23,9 @@ describe("liquidity balancer tsets", function () {
   let liquidityBalancer: LiquidityBalancer;
   let token: string;
   let lp: string;
-
+  let usdc: string;
+  let networkToken: string;
+  let router: string;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
@@ -47,6 +48,14 @@ describe("liquidity balancer tsets", function () {
 
     expect(await liquidityBalancer.isGovernance(signer.address)).is.eq(true);
     lp = await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "1000");
+
+    usdc = await DeployerUtils.getUSDCAddress();
+    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
+    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+
+    const factory = await DeployerUtils.getDefaultNetworkFactory();
+    router = await DeployerUtils.getRouterByFactory(factory);
   });
 
   after(async function () {
@@ -63,13 +72,6 @@ describe("liquidity balancer tsets", function () {
 
 
   it("should sell tokens", async () => {
-    await UniswapUtils.swapNETWORK_COINForExactTokens(
-      signer,
-      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
-      utils.parseUnits("1000000", 6).toString(),
-      MaticAddresses.QUICK_ROUTER
-    );
-
     const lpInfo = await UniswapUtils.getLpInfo(lp, signer, token);
     const tokenStacked = lpInfo[0];
     const oppositeToken = lpInfo[1];
@@ -84,7 +86,7 @@ describe("liquidity balancer tsets", function () {
       'price: ' + price
     );
 
-    await liquidityBalancer.setRouter(lp, MaticAddresses.QUICK_ROUTER);
+    await liquidityBalancer.setRouter(lp, router);
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits("10000000"));
     await liquidityBalancer.setTargetPrice(token, utils.parseUnits("0.2"));
 
@@ -93,10 +95,10 @@ describe("liquidity balancer tsets", function () {
       // buy TargetToken for USDC
       await UniswapUtils.swapExactTokensForTokens(
         signer,
-        [MaticAddresses.USDC_TOKEN, token],
+        [usdc, token],
         utils.parseUnits("1000", 6).toString(),
         signer.address,
-        MaticAddresses.QUICK_ROUTER
+        router
       );
 
       const targetPrice = +utils.formatUnits(await liquidityBalancer.priceTargets(token));
@@ -118,18 +120,18 @@ describe("liquidity balancer tsets", function () {
   it("should remove liquidity and buyback", async () => {
     await UniswapUtils.swapNETWORK_COINForExactTokens(
       signer,
-      [MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN],
+      [networkToken, usdc],
       utils.parseUnits("1000000", 6).toString(),
-      MaticAddresses.QUICK_ROUTER
+      router
     );
 
     // buy TargetToken for USDC
     await UniswapUtils.swapExactTokensForTokens(
       signer,
-      [MaticAddresses.USDC_TOKEN, token],
+      [usdc, token],
       utils.parseUnits("1000", 6).toString(),
       signer.address,
-      MaticAddresses.QUICK_ROUTER
+      router
     );
 
     const lpContract = await UniswapUtils.connectLpContract(lp, signer);
@@ -150,7 +152,7 @@ describe("liquidity balancer tsets", function () {
       'price: ' + price
     );
 
-    await liquidityBalancer.setRouter(lp, MaticAddresses.QUICK_ROUTER);
+    await liquidityBalancer.setRouter(lp, router);
 
     await liquidityBalancer.setTargetPrice(token, utils.parseUnits("0.2"));
 
@@ -187,10 +189,10 @@ describe("liquidity balancer tsets", function () {
       // buy TargetToken for USDC
       await UniswapUtils.swapExactTokensForTokens(
         signer,
-        [MaticAddresses.USDC_TOKEN, token],
+        [usdc, token],
         utils.parseUnits("1000", 6).toString(),
         signer.address,
-        MaticAddresses.QUICK_ROUTER
+        router
       );
     }
   });
@@ -207,6 +209,28 @@ describe("liquidity balancer tsets", function () {
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits("1"));
     await liquidityBalancer.changeLiquidity(token, lp);
   });
+
+  // todo fix
+  // it("should move liquidity", async () => {
+  //   await liquidityBalancer.setRouter(MaticAddresses.SUSHI_TETU_USDC, MaticAddresses.SUSHI_ROUTER);
+  //   await liquidityBalancer.setRouter(MaticAddresses.QUICK_TETU_USDC, router);
+  //   await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('100000'))
+  //   await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('1000', 6))
+  //   await UniswapUtils.addLiquidity(
+  //     signer,
+  //     MaticAddresses.TETU_TOKEN,
+  //     usdc,
+  //     utils.parseUnits('10000').toString(),
+  //     utils.parseUnits('1000', 6).toString(),
+  //     MaticAddresses.SUSHI_FACTORY,
+  //     MaticAddresses.SUSHI_ROUTER
+  //   );
+  //   const lpBal = await TokenUtils.balanceOf(MaticAddresses.SUSHI_TETU_USDC, signer.address);
+  //   await TokenUtils.transfer(MaticAddresses.SUSHI_TETU_USDC, signer, liquidityBalancer.address, lpBal.toString());
+  //   await liquidityBalancer.moveLiquidity(MaticAddresses.SUSHI_TETU_USDC, MaticAddresses.QUICK_TETU_USDC);
+  //   expect(await TokenUtils.balanceOf(MaticAddresses.SUSHI_TETU_USDC, liquidityBalancer.address)).is.eq(0);
+  //   expect(await TokenUtils.balanceOf(MaticAddresses.QUICK_TETU_USDC, liquidityBalancer.address)).is.not.eq(0);
+  // });
 });
 
 

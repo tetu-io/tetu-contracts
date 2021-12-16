@@ -12,11 +12,13 @@
 pragma solidity 0.8.4;
 
 import "../../../base/strategies/curve/CurveStrategyBase.sol";
+import "../../../third_party/curve/IRenBTCPool.sol";
 
 
 /// @title Contract for Curve REN strategy implementation
 /// @author Oleg N
 contract CurveRenStrategy is CurveStrategyBase {
+  using SafeERC20 for IERC20;
 
   /// rewards
   address private constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
@@ -30,6 +32,7 @@ contract CurveRenStrategy is CurveStrategyBase {
 
   /// @notice Curve gauge rewards pool
   address private constant _GAUGE = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
+  address private constant _POOL = address(0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67);
 
   address[] private _assets = [WBTC, RENBTC];
 
@@ -50,7 +53,20 @@ contract CurveRenStrategy is CurveStrategyBase {
   }
 
   function rtToUnderlying(address rt, uint toCompound) internal override {
-    //todo
+    if (toCompound == 0) {
+      return;
+    }
+    address forwarder = IController(controller()).feeRewardForwarder();
+    // use WBTC for autocompound
+    IERC20(rt).safeApprove(forwarder, 0);
+    IERC20(rt).safeApprove(forwarder, toCompound);
+    uint amount = IFeeRewardForwarder(forwarder).liquidate(rt, WBTC, toCompound);
+    require(amount != 0, "CS: Liquidated zero");
+    IERC20(WBTC).safeApprove(_POOL, 0);
+    IERC20(WBTC).safeApprove(_POOL, amount);
+    // first coin is WBTC
+    IRenBTCPool(_POOL).add_liquidity([amount, 0], 0, true);
+    // now we have underlying tokens
   }
 
 }

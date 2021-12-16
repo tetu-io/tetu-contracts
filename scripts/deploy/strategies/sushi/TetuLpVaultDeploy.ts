@@ -8,8 +8,8 @@ import {
   SmartVault,
   VaultController
 } from "../../../../typechain";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
 import {TokenUtils} from "../../../../test/TokenUtils";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 
 async function main() {
@@ -63,7 +63,8 @@ async function main() {
       tetuLp,
       60 * 60 * 24 * 28,
       false,
-      core.psVault
+      core.psVault,
+    0
   );
 
   await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);

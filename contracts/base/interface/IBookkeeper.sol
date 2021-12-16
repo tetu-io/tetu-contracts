@@ -61,9 +61,9 @@ interface IBookkeeper {
 
   /// @notice Return total earned TETU tokens for strategy
   /// @dev Should be incremented after strategy rewards distribution
-  /// @param vault Strategy address
+  /// @param strategy Strategy address
   /// @return Earned TETU tokens
-  function targetTokenEarned(address vault) external view returns (uint256);
+  function targetTokenEarned(address strategy) external view returns (uint256);
 
   /// @notice Return share(xToken) balance of given user
   /// @dev Should be calculated for each xToken transfer

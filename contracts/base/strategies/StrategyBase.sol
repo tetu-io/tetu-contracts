@@ -20,6 +20,7 @@ import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "../interface/ISmartVault.sol";
 
 /// @title Abstract contract for base strategy functionality
 /// @author belbix
@@ -28,6 +29,8 @@ abstract contract StrategyBase is IStrategy, Controllable {
   using SafeERC20 for IERC20;
 
   uint256 internal constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 internal constant _TOLERANCE_DENOMINATOR = 1000;
+  uint256 internal constant _TOLERANCE_NOMINATOR = 999;
 
   //************************ VARIABLES **************************
   address internal _underlyingToken;
@@ -151,6 +154,10 @@ abstract contract StrategyBase is IStrategy, Controllable {
     pausedInvesting = true;
   }
 
+  /// @notice Pause investing into the underlying reward pools
+  function pauseInvesting() external override onlyControllerOrGovernance {
+    pausedInvesting = true;
+  }
 
   /// @notice Resumes the ability to invest into the underlying reward pools
   function continueInvesting() external override onlyControllerOrGovernance {
@@ -187,8 +194,9 @@ abstract contract StrategyBase is IStrategy, Controllable {
       uint256 toWithdraw = Math.min(rewardPoolBalance(), needToWithdraw);
       withdrawAndClaimFromPool(toWithdraw);
     }
-
-    IERC20(_underlyingToken).safeTransfer(_smartVault, Math.min(amount, underlyingBalance()));
+    uint amountAdjusted = Math.min(amount, underlyingBalance());
+    require(amountAdjusted > amount * toleranceNominator() / _TOLERANCE_DENOMINATOR, "SB: Withdrew too low");
+    IERC20(_underlyingToken).safeTransfer(_smartVault, amountAdjusted);
   }
 
   /// @notice Stakes everything the strategy holds into the reward pool
@@ -201,6 +209,12 @@ abstract contract StrategyBase is IStrategy, Controllable {
   }
 
   // ***************** INTERNAL ************************
+
+  /// @dev Tolerance to difference between asked and received values on user withdraw action
+  ///      Where 0 is full tolerance, and range of 1-999 means how many % of tokens do you expect as minimum
+  function toleranceNominator() internal pure virtual returns (uint){
+    return _TOLERANCE_NOMINATOR;
+  }
 
   /// @dev Withdraw everything from external pool
   function exitRewardPool() internal virtual {
@@ -230,6 +244,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   function _liquidateReward(bool revertOnErrors) internal {
     address forwarder = IController(controller()).feeRewardForwarder();
+    uint targetTokenEarnedTotal = 0;
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
@@ -246,10 +261,11 @@ abstract contract StrategyBase is IStrategy, Controllable {
             targetTokenEarned = r;
           } catch {}
         }
-        if (targetTokenEarned > 0) {
-          IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-        }
+        targetTokenEarnedTotal += targetTokenEarned;
       }
+    }
+    if (targetTokenEarnedTotal > 0) {
+      IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
     }
   }
 
@@ -259,7 +275,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);
@@ -275,7 +291,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i);
       if (amount != 0) {
-        uint toCompound = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, toCompound);

@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {Controller, IStrategy, SmartVault, VaultController} from "../../../../typechain";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
+import {Misc} from "../../../utils/tools/Misc";
 
 
 async function main() {
@@ -36,7 +36,8 @@ async function main() {
         strategyUnderlying,
         rewardDuration,
         false,
-        MaticAddresses.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
+      0
     );
     await vaultController.addRewardTokens([vault.address], vaultRewardToken);
     await vaultController.addRewardTokens([vault.address], mocks.get('weth') as string);

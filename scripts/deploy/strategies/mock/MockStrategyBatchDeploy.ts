@@ -10,10 +10,10 @@ import {
 } from "../../../../typechain";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {RunHelper} from "../../../utils/RunHelper";
-import {RopstenAddresses} from "../../../../test/RopstenAddresses";
-import {MaticAddresses} from "../../../../test/MaticAddresses";
+import {RunHelper} from "../../../utils/tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
+import {RopstenAddresses} from "../../../addresses/RopstenAddresses";
+import {Misc} from "../../../utils/tools/Misc";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -107,7 +107,8 @@ async function main() {
         noopStrategyUnderlying,
         rewardDuration,
         false,
-        poolReward
+        poolReward,
+      0
     ));
 
     const poolRewardDecimals = await TokenUtils.decimals(poolReward);
@@ -138,7 +139,8 @@ async function main() {
         strategyUnderlying,
         rewardDuration,
         false,
-        MaticAddresses.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
+      0
     ));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));

@@ -3,7 +3,7 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Bookkeeper, ERC20PresetMinterPauser, NotifyHelper} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {BigNumber, utils} from "ethers";
-import {RunHelper} from "../RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 
 
 async function main() {

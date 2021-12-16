@@ -1,21 +1,20 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
 import {
-  ContractReader, IStrategy,
-  NoopStrategy,
+  ContractReader,
+  IStrategy,
   SmartVault,
   TetuSwapFactory,
   TetuSwapPair
 } from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 const STRATEGY_NAME = 'StrategyTetuSwap';
 
-const excludeVaults = new Set<string>([
-]);
+const excludeVaults = new Set<string>([]);
 
 async function main() {
   mkdir('./tmp/deployed', {recursive: true}, (err) => {
@@ -51,12 +50,18 @@ async function main() {
     const token0Name = await TokenUtils.tokenSymbol(token0);
     const token1Name = await TokenUtils.tokenSymbol(token1);
     const vaultNameWithoutPrefix = `TETU_SWAP_${token0Name}_${token1Name}`;
-    console.log('deploy', vaultNameWithoutPrefix, 'pair', pair);
 
     if (excludeVaults.has(vaultNameWithoutPrefix)) {
-      console.log('already deployed');
+      console.log('excluded');
       continue;
     }
+
+    if (vaultNames.has(vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
+      continue;
+    }
+
+    console.log('deploy', vaultNameWithoutPrefix, 'pair', pair);
 
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
@@ -68,10 +73,6 @@ async function main() {
 
     const strategyUnderlying = await strategy.underlying();
 
-    if (vaultNames.has(vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
-      continue;
-    }
 
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       vaultNameWithoutPrefix,
@@ -80,7 +81,8 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       false,
-      core.psVault
+      core.psVault,
+      0
     ));
 
     const txt = `${vaultNameWithoutPrefix} vault: ${vault.address} strategy: ${strategy.address} pair ${pair}\n`;

@@ -5,7 +5,6 @@ import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {ContractUtils} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {MaticAddresses} from "../MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -15,13 +14,15 @@ describe("Contract utils tests", function () {
   let signer: SignerWithAddress;
   let utils: ContractUtils;
 
-  const ercTokens = [MaticAddresses.USDC_TOKEN, MaticAddresses.WETH_TOKEN];
+  const ercTokens: string[] = [];
 
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     utils = await DeployerUtils.deployContract(signer, "ContractUtils") as ContractUtils;
+    ercTokens.push(await DeployerUtils.getUSDCAddress())
+    ercTokens.push(await DeployerUtils.getNetworkTokenAddress())
   });
 
   after(async function () {
@@ -34,7 +35,7 @@ describe("Contract utils tests", function () {
   });
 
   it("names", async () => {
-    expect((await utils.erc20Names(ercTokens))[0]).is.eq('USD Coin (PoS)');
+    expect((await utils.erc20Names(ercTokens))[0]).is.eq('USD Coin');
   });
 
   it("decimals", async () => {
