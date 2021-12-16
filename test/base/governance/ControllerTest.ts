@@ -86,7 +86,7 @@ describe("Controller tests", function () {
     expect((await bookkeeper.vaults())[1]).at.eq(vault.address);
     expect((await bookkeeper.strategies())[1]).at.eq(strategy.address);
 
-    await expect(controller.connect(signer1).addVaultAndStrategy(usdc, usdc))
+    await expect(controller.connect(signer1).addVaultsAndStrategies([usdc], [usdc]))
       .to.be.rejectedWith("C: Not governance");
   });
   it("should doHardWork", async () => {
@@ -103,7 +103,7 @@ describe("Controller tests", function () {
     );
     const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
       controller.address, usdc, vault.address, [Misc.ZERO_ADDRESS], [usdc], 1) as NoopStrategy;
-    await controller.addVaultAndStrategy(vault.address, strategy.address);
+    await controller.addVaultsAndStrategies([vault.address], [strategy.address]);
 
     await controller.doHardWork(vault.address);
 
@@ -161,15 +161,15 @@ describe("Controller tests", function () {
   });
 
   it("should not add zero vault", async () => {
-    await expect(controller.addVaultAndStrategy(Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS)).rejectedWith('new vault shouldn\'t be empty');
+    await expect(controller.addVaultsAndStrategies([Misc.ZERO_ADDRESS], [Misc.ZERO_ADDRESS])).rejectedWith('new vault shouldn\'t be empty');
   });
 
   it("should not add exist vault", async () => {
-    await expect(controller.addVaultAndStrategy(core.psVault.address, Misc.ZERO_ADDRESS)).rejectedWith('vault already exists');
+    await expect(controller.addVaultsAndStrategies([core.psVault.address], [Misc.ZERO_ADDRESS])).rejectedWith('vault already exists');
   });
 
   it("should not add zero strategy", async () => {
-    await expect(controller.addVaultAndStrategy(core.bookkeeper.address, Misc.ZERO_ADDRESS)).rejectedWith('new strategy must not be empty');
+    await expect(controller.addVaultsAndStrategies([core.bookkeeper.address], [Misc.ZERO_ADDRESS])).rejectedWith('new strategy must not be empty');
   });
 
   it("should not setup reward token without announce", async () => {

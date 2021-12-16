@@ -107,26 +107,26 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @dev Operations allowed only for Governance address
   function onlyGovernance() view private {
-    require(governance() == msg.sender, "C: Not governance");
+    require(_governance() == msg.sender, "C: Not governance");
   }
 
   /// @dev Operations allowed for Governance or Dao addresses
   function onlyGovernanceOrDao() view private {
-    require(governance() == msg.sender || dao() == msg.sender, "C: Not governance or dao");
+    require(_governance() == msg.sender || _dao() == msg.sender, "C: Not governance or dao");
   }
 
   /// @dev Operation should be announced (exist in timeLockSchedule map) or new value
   modifier timeLock(bytes32 opHash, IAnnouncer.TimeLockOpCodes opCode, bool isEmptyValue, address target) {
     // empty values setup without time-lock
     if (!isEmptyValue) {
-      require(announcer() != address(0), "C: Zero announcer");
-      require(IAnnouncer(announcer()).timeLockSchedule(opHash) > 0, "C: Not announced");
-      require(IAnnouncer(announcer()).timeLockSchedule(opHash) < block.timestamp, "C: Too early");
+      require(_announcer() != address(0), "C: Zero announcer");
+      require(IAnnouncer(_announcer()).timeLockSchedule(opHash) > 0, "C: Not announced");
+      require(IAnnouncer(_announcer()).timeLockSchedule(opHash) < block.timestamp, "C: Too early");
     }
     _;
     // clear announce after update
     if (!isEmptyValue) {
-      IAnnouncer(announcer()).clearAnnounce(opHash, opCode, target);
+      IAnnouncer(_announcer()).clearAnnounce(opHash, opCode, target);
     }
   }
 
@@ -212,29 +212,29 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   //  ---------------------- TIME-LOCK ADDRESS CHANGE --------------------------
 
   /// @notice Only Governance can do it. Change governance address.
-  /// @param _governance New governance address
-  function setGovernance(address _governance) external
+  /// @param newValue New governance address
+  function setGovernance(address newValue) external
   timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Governance, _governance)),
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Governance, newValue)),
     IAnnouncer.TimeLockOpCodes.Governance,
-    governance() == address(0),
+    _governance() == address(0),
     address(0)
   ) {
     onlyGovernance();
-    _setGovernance(_governance);
+    _setGovernance(newValue);
   }
 
   /// @notice Only Governance can do it. Change DAO address.
-  /// @param _dao New DAO address
-  function setDao(address _dao) external
+  /// @param newValue New DAO address
+  function setDao(address newValue) external
   timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Dao, _dao)),
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Dao, newValue)),
     IAnnouncer.TimeLockOpCodes.Dao,
-    dao() == address(0),
+    _dao() == address(0),
     address(0)
   ) {
     onlyGovernance();
-    _setDao(_dao);
+    _setDao(newValue);
   }
 
   /// @notice Only Governance can do it. Change FeeRewardForwarder address.
@@ -253,16 +253,16 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @notice Only Governance can do it. Change Bookkeeper address.
-  /// @param _bookkeeper New Bookkeeper address
-  function setBookkeeper(address _bookkeeper) external
+  /// @param newValue New Bookkeeper address
+  function setBookkeeper(address newValue) external
   timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Bookkeeper, _bookkeeper)),
+    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Bookkeeper, newValue)),
     IAnnouncer.TimeLockOpCodes.Bookkeeper,
-    bookkeeper() == address(0),
+    _bookkeeper() == address(0),
     address(0)
   ) {
     onlyGovernance();
-    _setBookkeeper(_bookkeeper);
+    _setBookkeeper(newValue);
   }
 
   /// @notice Only Governance can do it. Change MintHelper address.
@@ -338,16 +338,16 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function setAnnouncer(address _newValue) external {
     onlyGovernance();
     bytes32 opHash = keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Announcer, _newValue));
-    if (announcer() != address(0)) {
-      require(IAnnouncer(announcer()).timeLockSchedule(opHash) > 0, "C: Not announced");
-      require(IAnnouncer(announcer()).timeLockSchedule(opHash) < block.timestamp, "C: Too early");
+    if (_announcer() != address(0)) {
+      require(IAnnouncer(_announcer()).timeLockSchedule(opHash) > 0, "C: Not announced");
+      require(IAnnouncer(_announcer()).timeLockSchedule(opHash) < block.timestamp, "C: Too early");
     }
 
     _setAnnouncer(_newValue);
     // clear announce after update not necessary
 
     // check new announcer implementation for reducing the chance of DoS
-    IAnnouncer.TimeLockInfo memory info = IAnnouncer(announcer()).timeLockInfo(0);
+    IAnnouncer.TimeLockInfo memory info = IAnnouncer(_announcer()).timeLockInfo(0);
     require(info.opCode == IAnnouncer.TimeLockOpCodes.ZeroPlaceholder, "C: Wrong");
   }
 
@@ -431,7 +431,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     // the strategy is responsible for maintaining the list of
     // salvagable tokens, to make sure that governance cannot come
     // in and take away the coins
-    IStrategy(_strategy).salvage(governance(), _token, _amount);
+    IStrategy(_strategy).salvage(_governance(), _token, _amount);
     emit StrategyTokenMoved(_strategy, _token, _amount);
   }
 
@@ -512,19 +512,18 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Only Governance can do it. Register pairs Vault/Strategy
   /// @param _vaults Vault addresses
   /// @param _strategies Strategy addresses
-  function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external {
+  function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external override {
     onlyGovernance();
     require(_vaults.length == _strategies.length, "arrays wrong length");
     for (uint256 i = 0; i < _vaults.length; i++) {
-      addVaultAndStrategy(_vaults[i], _strategies[i]);
+      _addVaultAndStrategy(_vaults[i], _strategies[i]);
     }
   }
 
   /// @notice Only Governance can do it. Register a pair Vault/Strategy
   /// @param _vault Vault addresses
   /// @param _strategy Strategy addresses
-  function addVaultAndStrategy(address _vault, address _strategy) public override {
-    onlyGovernance();
+  function _addVaultAndStrategy(address _vault, address _strategy) private {
     require(_vault != address(0), "new vault shouldn't be empty");
     require(!vaults[_vault], "vault already exists");
     require(!strategies[_strategy], "strategy already exists");
@@ -532,7 +531,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     require(IControllable(_vault).isController(address(this)));
 
     vaults[_vault] = true;
-    IBookkeeper(bookkeeper()).addVault(_vault);
+    IBookkeeper(_bookkeeper()).addVault(_vault);
 
     // adding happens while setting
     _setVaultStrategy(_vault, _strategy);
@@ -545,7 +544,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     require(vaults[msg.sender], "C: Not vault");
     if (!strategies[_strategy]) {
       strategies[_strategy] = true;
-      IBookkeeper(bookkeeper()).addStrategy(_strategy);
+      IBookkeeper(_bookkeeper()).addStrategy(_strategy);
     }
   }
 
@@ -571,21 +570,21 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @param _adr Address for check
   /// @return true if it is a DAO address
   function isDao(address _adr) external view override returns (bool) {
-    return dao() == _adr;
+    return _dao() == _adr;
   }
 
   /// @notice Return true if the given address is a HardWorker or Governance
   /// @param _adr Address for check
   /// @return true if it is a HardWorker or Governance
   function isHardWorker(address _adr) external override view returns (bool) {
-    return hardWorkers[_adr] || governance() == _adr;
+    return hardWorkers[_adr] || _governance() == _adr;
   }
 
   /// @notice Return true if the given address is a Reward Distributor or Governance or Strategy
   /// @param _adr Address for check
   /// @return true if it is a Reward Distributor or Governance or Strategy
   function isRewardDistributor(address _adr) external override view returns (bool) {
-    return rewardDistribution[_adr] || governance() == _adr || strategies[_adr];
+    return rewardDistribution[_adr] || _governance() == _adr || strategies[_adr];
   }
 
   /// @notice Return true if the given address is allowed for claim rewards without penalties
@@ -606,7 +605,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function isAllowedUser(address _adr) external view override returns (bool) {
     return isNotSmartContract(_adr)
     || whiteList[_adr]
-    || governance() == _adr
+    || _governance() == _adr
     || hardWorkers[_adr]
     || rewardDistribution[_adr]
     || pureRewardConsumers[_adr]

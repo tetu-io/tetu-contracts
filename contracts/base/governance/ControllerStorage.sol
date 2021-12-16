@@ -31,35 +31,43 @@ abstract contract ControllerStorage is Initializable, IController {
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
-  /// @param _governance Governance address
+  /// @param __governance Governance address
   function initializeControllerStorage(
-    address _governance
+    address __governance
   ) public initializer {
-    _setGovernance(_governance);
+    _setGovernance(__governance);
   }
 
   // ******************* SETTERS AND GETTERS **********************
 
   // ----------- ADDRESSES ----------
   function _setGovernance(address _address) internal {
-    emit UpdatedAddressSlot("governance", governance(), _address);
+    emit UpdatedAddressSlot("governance", _governance(), _address);
     setAddress("governance", _address);
   }
 
   /// @notice Return governance address
   /// @return Governance address
-  function governance() public override view returns (address) {
+  function governance() external override view returns (address) {
+    return _governance();
+  }
+
+  function _governance() internal view returns (address) {
     return getAddress("governance");
   }
 
   function _setDao(address _address) internal {
-    emit UpdatedAddressSlot("dao", dao(), _address);
+    emit UpdatedAddressSlot("dao", _dao(), _address);
     setAddress("dao", _address);
   }
 
   /// @notice Return DAO address
   /// @return DAO address
-  function dao() public override view returns (address) {
+  function dao() external override view returns (address) {
+    return _dao();
+  }
+
+  function _dao() internal view returns (address) {
     return getAddress("dao");
   }
 
@@ -75,13 +83,17 @@ abstract contract ControllerStorage is Initializable, IController {
   }
 
   function _setBookkeeper(address _address) internal {
-    emit UpdatedAddressSlot("bookkeeper", bookkeeper(), _address);
+    emit UpdatedAddressSlot("bookkeeper", _bookkeeper(), _address);
     setAddress("bookkeeper", _address);
   }
 
   /// @notice Return Bookkeeper address
   /// @return Bookkeeper address
-  function bookkeeper() public override view returns (address) {
+  function bookkeeper() external override view returns (address) {
+    return _bookkeeper();
+  }
+
+  function _bookkeeper() internal view returns (address) {
     return getAddress("bookkeeper");
   }
 
@@ -152,13 +164,17 @@ abstract contract ControllerStorage is Initializable, IController {
   }
 
   function _setAnnouncer(address _address) internal {
-    emit UpdatedAddressSlot("announcer", announcer(), _address);
+    emit UpdatedAddressSlot("announcer", _announcer(), _address);
     setAddress("announcer", _address);
   }
 
   /// @notice Return Announcer address
   /// @return Announcer address
-  function announcer() public override view returns (address) {
+  function announcer() external override view returns (address) {
+    return _announcer();
+  }
+
+  function _announcer() internal view returns (address) {
     return getAddress("announcer");
   }
 

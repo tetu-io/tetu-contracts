@@ -484,7 +484,7 @@ export class DeployerUtils {
 
     // need to add after adding bookkeeper
     await RunHelper.runAndWait(() =>
-        controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
+        controller.addVaultsAndStrategies([psVault.address], [psEmptyStrategy.address]),
       true, wait);
 
     Misc.printDuration('Core contracts deployed', start);
@@ -544,7 +544,7 @@ export class DeployerUtils {
     ), true, wait);
     Misc.printDuration(vaultName + ' vault initialized', startInit);
 
-    await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
+    await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([vault.address], [strategy.address]), true, wait);
     await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
     Misc.printDuration(vaultName + ' deployAndInitVaultAndStrategy completed', start);
     return [vaultLogic, vault, strategy];

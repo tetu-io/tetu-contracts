@@ -118,7 +118,7 @@ describe("Notify Helper test", () => {
       rt,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await vault.setLockPenalty(10);
     await vault.setLockPeriod(1);
 

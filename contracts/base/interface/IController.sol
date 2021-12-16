@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 interface IController {
 
-  function addVaultAndStrategy(address _vault, address _strategy) external;
+  function addVaultsAndStrategies(address[] memory _vaults, address[] memory _strategies) external;
 
   function addStrategy(address _strategy) external;
 

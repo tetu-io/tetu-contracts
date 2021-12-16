@@ -92,7 +92,7 @@ describe("Smart vault rewards test", () => {
       Misc.ZERO_ADDRESS,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], rt);
 
     // ********** INIT VARS **************
@@ -349,7 +349,7 @@ describe("Smart vault rewards test", () => {
       Misc.ZERO_ADDRESS,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], rt);
 
     // ********** INIT VARS **************
