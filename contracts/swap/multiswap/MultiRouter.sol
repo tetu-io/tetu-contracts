@@ -14,6 +14,32 @@ pragma solidity 0.8.4;
 
 /// @title MultiRouter
 /// @dev Multi Swap Router
-contract MultiRouter /*is IMultiRouter*/ {
-  // TODO
+contract MultiRouter /*is IMultiRouter*/ { // TODO interface
+
+  enum PoolType {
+    Uniswap2,
+    Tetuswap
+  }
+
+  struct Step {
+    address pool;
+    uint256 amount0Out;
+    uint256 amount1Out;
+    PoolType poolType;
+  }
+
+  struct Pool {
+    address adr;
+    uint256 reserveA;
+    uint256 reserveB;
+    PoolType poolType;
+  }
+
+  function findBestPaths(address tokenIn, address tokenOut, uint256 amountIn)
+  public view returns (Step[]) {
+    Step[] memory steps;
+
+
+    return steps;
+  }
 }
