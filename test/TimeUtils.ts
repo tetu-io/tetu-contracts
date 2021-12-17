@@ -2,6 +2,7 @@ import {expect} from "chai";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
+import {Multicall__factory} from "../typechain";
 
 export class TimeUtils {
 
@@ -62,7 +63,9 @@ export class TimeUtils {
   }
 
   public static async getBlockTime(): Promise<number> {
-    return (await ethers.provider.getBlock(await ethers.provider._getFastBlockNumber())).timestamp
+    const tools = await DeployerUtils.getToolsAddresses();
+    const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
+    return (await multicall.getCurrentBlockTimestamp()).toNumber();
   }
 
   public static async snapshot() {
