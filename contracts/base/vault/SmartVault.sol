@@ -36,7 +36,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.7.0";
+  string public constant VERSION = "1.8.0";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
@@ -216,6 +216,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _setActive(_active);
   }
 
+  /// @notice Change the protection mode status.
+  ///          Protection mode means claim rewards on withdraw and 0% initial reward boost
+  /// @param _active Status true - active, false - deactivated
+  function changeProtectionMode(bool _active) external override {
+    require(isGovernance(msg.sender), "SV: Not governance");
+    _setProtectionMode(_active);
+  }
+
   /// @notice Earn some money for honest work
   function doHardWork() external override {
     require(isController(msg.sender) || isGovernance(msg.sender), "SV: Not controller or gov");
@@ -296,6 +304,12 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Withdraw shares partially without touching rewards
   function withdraw(uint256 numberOfShares) external override {
     _onlyAllowedUsers(msg.sender);
+
+    // assume that allowed users is trusted contracts with internal specific logic
+    // for compatability we should not claim rewards on withdraw for them
+    if (_protectionMode() && !IController(controller()).isAllowedUser(msg.sender)) {
+      getAllRewards();
+    }
 
     _withdraw(numberOfShares);
   }
@@ -735,6 +749,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
         // not 100% boost
         uint256 boostDuration = _vaultController().rewardBoostDuration();
         uint256 rewardRatioWithoutBoost = _vaultController().rewardRatioWithoutBoost();
+        if (_protectionMode()) {
+          rewardRatioWithoutBoost = 0;
+        }
         if (currentBoostDuration < boostDuration) {
           uint256 rewardWithoutBoost = reward.mul(rewardRatioWithoutBoost).div(100);
           // calculate boosted part of rewards

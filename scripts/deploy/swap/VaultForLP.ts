@@ -41,7 +41,7 @@ async function main() {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
-  for (let i = 0; i < length; i++) {
+  for (let i = 19; i < length; i++) {
     const pair = await factory.allPairs(i);
     const pairCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', pair) as TetuSwapPair;
     const token0 = await pairCtr.token0();

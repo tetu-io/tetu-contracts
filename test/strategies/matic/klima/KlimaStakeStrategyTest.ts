@@ -8,7 +8,7 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
+import {ForwarderV2, IStrategy, SmartVault, SmartVault__factory} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {KlimaStakingDoHardWork} from "./KlimaStakingDoHardWork";
@@ -82,7 +82,7 @@ describe('Klima staking tests', async () => {
       signer,
       core,
       vaultName,
-      vaultAddress => {
+      async vaultAddress => {
         const strategyArgs = [
           core.controller.address,
           vaultAddress,

@@ -18,6 +18,8 @@ interface ISmartVault {
 
   function changeActivityStatus(bool _active) external;
 
+  function changeProtectionMode(bool _active) external;
+
   function changePpfsDecreaseAllowed(bool _value) external;
 
   function setLockPeriod(uint256 _value) external;
@@ -121,4 +123,6 @@ interface ISmartVault {
   function depositFeeNumerator() external view returns (uint256);
 
   function lockAllowed() external view returns (bool);
+
+  function protectionMode() external view returns (bool);
 }
