@@ -51,22 +51,24 @@ contract BalVaultPipe is Pipe {
   /// @return output in underlying units
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxSourceAmount(amount);
-    (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
-    require(pipeData.sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
-    uint256[] memory maxAmountsIn = new uint256[](4);
-    maxAmountsIn[pipeData.tokenIndex] = amount;
+    if (amount != 0) {
+      (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
+      require(pipeData.sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
+      uint256[] memory maxAmountsIn = new uint256[](4);
+      maxAmountsIn[pipeData.tokenIndex] = amount;
 
-    bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, maxAmountsIn, 1);
+      bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, maxAmountsIn, 1);
 
-    IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
-    assets : asIAsset(tokens),
-    maxAmountsIn : maxAmountsIn,
-    userData : userData,
-    fromInternalBalance : false
-    });
+      IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
+      assets : asIAsset(tokens),
+      maxAmountsIn : maxAmountsIn,
+      userData : userData,
+      fromInternalBalance : false
+      });
 
-    _erc20Approve(sourceToken, pipeData.vault, amount);
-    IBVault(pipeData.vault).joinPool(pipeData.poolID, address(this), address(this), request);
+      _erc20Approve(sourceToken, pipeData.vault, amount);
+      IBVault(pipeData.vault).joinPool(pipeData.poolID, address(this), address(this), request);
+    }
 
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
@@ -77,25 +79,27 @@ contract BalVaultPipe is Pipe {
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxOutputAmount(amount);
-    uint256 lpBalance = _erc20Balance(outputToken);
-    amount = Math.min(amount, lpBalance);
+    if (amount != 0) {
+      uint256 lpBalance = _erc20Balance(outputToken);
+      amount = Math.min(amount, lpBalance);
 
-    (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
-    require(sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
-    uint256[] memory minAmountsOut = new uint256[](4);
-    minAmountsOut[pipeData.tokenIndex] = 1;
+      (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
+      require(sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
+      uint256[] memory minAmountsOut = new uint256[](4);
+      minAmountsOut[pipeData.tokenIndex] = 1;
 
-    bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, pipeData.tokenIndex);
+      bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, pipeData.tokenIndex);
 
-    IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
-    assets : asIAsset(tokens),
-    minAmountsOut : minAmountsOut,
-    userData : userData,
-    toInternalBalance : false
-    });
+      IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
+      assets : asIAsset(tokens),
+      minAmountsOut : minAmountsOut,
+      userData : userData,
+      toInternalBalance : false
+      });
 
-    _erc20Approve(outputToken, pipeData.vault, amount);
-    IBVault(pipeData.vault).exitPool(pipeData.poolID, address(this), payable(address(this)), request);
+      _erc20Approve(outputToken, pipeData.vault, amount);
+      IBVault(pipeData.vault).exitPool(pipeData.poolID, address(this), payable(address(this)), request);
+    }
 
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);

@@ -198,7 +198,7 @@ abstract contract Pipe is IPipe {
   /// @param _token ERC20 token address
   /// @param amount to transfer
   function _transferERC20toNextPipe(address _token, uint256 amount) internal {
-    if (hasNextPipe()) {
+    if (amount != 0 && hasNextPipe()) {
       IERC20(_token).safeTransfer(nextPipe, amount);
     }
   }
@@ -207,7 +207,7 @@ abstract contract Pipe is IPipe {
   /// @param _token ERC20 token address
   /// @param amount to transfer
   function _transferERC20toPrevPipe(address _token, uint256 amount) internal {
-    if (hasPrevPipe()) {
+    if (amount != 0 && hasPrevPipe()) {
       IERC20(_token).safeTransfer(prevPipe, amount);
     }
   }

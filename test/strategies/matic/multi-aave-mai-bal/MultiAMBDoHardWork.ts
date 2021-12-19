@@ -1,5 +1,12 @@
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {ICamToken, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {
+  ICamToken,
+  IErc20Stablecoin,
+  IStrategy,
+  PriceSource,
+  SmartVault,
+  StrategyAaveMaiBal
+} from "../../../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
@@ -10,6 +17,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {AMBUtils} from "./AMBUtils";
+import {ethers} from "hardhat";
 
 chai.use(chaiAsPromised);
 
@@ -52,6 +60,32 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     const bal = await TokenUtils.balanceOf(this.airDropToken, this.airDropper.address);
     const pipeAddress = await strategyAaveMaiBal.pipes(this.airDropPipeIndex);
     await TokenUtils.transfer(this.airDropToken, this.airDropper, pipeAddress, bal.toString());
+
+    // *** mock price ***
+
+    const {stablecoinAddress, priceSlotIndex,} = AMBUtils.getSlotsInfo(this.underlying);
+    const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', stablecoinAddress)) as IErc20Stablecoin;
+
+    const priceSourceAddress = await stablecoin.ethPriceSource()
+    const priceSource = (await ethers.getContractAt('PriceSource', priceSourceAddress)) as PriceSource;
+    const [, priceSourcePrice, ,] = await priceSource.latestRoundData()
+
+    const mockPriceSource = await DeployerUtils.deployContract(
+        this.signer, 'MockPriceSource', 0);
+    const mockPricePercents = 75; // % from original price
+    const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
+    await mockPriceSource.setPrice(mockPrice);
+    // const [, mockSourcePrice, ,] = await mockPriceSource.latestRoundData();
+    const ethPriceSourceSlotIndex = priceSlotIndex;
+    // set matic price source to our mock contract
+    // convert address string to bytes32 string
+    const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
+    await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
+
+    // rebalance strategy
+    const strategyGov = strategyAaveMaiBal.connect(this.signer);
+    await strategyGov.rebalanceAllPipes()
+
 
   }
 
