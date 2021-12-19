@@ -89,7 +89,7 @@ export class MoreMaiFromBalTest extends SpecificStrategyTest {
 
       expect(miBalanceOnBal3.toNumber()).to.equal(0) // should all deposited
       expect(miBalanceOnMai3.toNumber()).to.equal(0) // should all deposited
-      TestAsserts.closeTo(bal4, bal1.add(addAmount), 0.005, dec);
+      TestAsserts.closeTo(bal4, bal1.add(addAmount), 0.006, dec);
 
     });
 

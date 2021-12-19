@@ -42,6 +42,8 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
       IPipe(_pipes[i]).setPipeline(address(this));
       _addPipe(IPipe(_pipes[i]));
     }
+    // pipe with index 1 must be MaiCamPipe
+    _maiCamPipe = IPipe(_pipes[1]);
     // pipe with index 2 must be MaiStablecoinPipe
     _maiStablecoinPipe = IMaiStablecoinPipe(_pipes[2]);
   }

@@ -13,6 +13,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./../../../third_party/IERC20Extended.sol";
 import "./../StrategyBase.sol";
 import "./pipelines/LinearPipeline.sol";
 import "../../interface/IMaiStablecoinPipe.sol";
@@ -37,6 +38,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   uint256 private _totalAmount = 0;
 
   IMaiStablecoinPipe internal _maiStablecoinPipe;
+  IPipe internal _maiCamPipe;
 
   /// @notice Contract constructor
   constructor(
@@ -146,9 +148,15 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     return _maiStablecoinPipe.collateralPercentage();
   }
   /// @dev Gets liquidationPrice of MaiStablecoinPipe
-  /// @return price of source token when vault will be liquidated
-  function liquidationPrice() external view returns (uint256) {
-    return _maiStablecoinPipe.liquidationPrice();
+  /// @return price of source (am) token when vault will be liquidated
+  function liquidationPrice() external view returns (uint256 price) {
+    uint256 camLiqPrice = _maiStablecoinPipe.liquidationPrice();
+    // balance of amToken locked in camToken
+    uint256 amBalance = IERC20(_maiCamPipe.sourceToken()).balanceOf(_maiCamPipe.outputToken());
+    // camToken total supply
+    uint256 totalSupply = IERC20Extended(_maiCamPipe.outputToken()).totalSupply();
+
+    price = camLiqPrice * totalSupply / amBalance;
   }
 
   /// @dev Gets available MAI to borrow at the Mai Stablecoin contract. Should be checked at UI before deposit
