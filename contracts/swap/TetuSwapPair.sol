@@ -34,7 +34,7 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   // ********** CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   uint public constant PRECISION = 10000;
   uint public constant MAX_FEE = 30;
   uint public constant override MINIMUM_LIQUIDITY = 10 ** 3;
