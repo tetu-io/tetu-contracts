@@ -36,7 +36,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.8.0";
+  string public constant VERSION = "1.8.1";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
@@ -629,6 +629,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       // not 100% boost
       uint256 boostDuration = _vaultController().rewardBoostDuration();
       uint256 rewardRatioWithoutBoost = _vaultController().rewardRatioWithoutBoost();
+      if (_protectionMode()) {
+        rewardRatioWithoutBoost = 0;
+      }
       if (currentBoostDuration < boostDuration) {
         uint256 rewardWithoutBoost = reward.mul(rewardRatioWithoutBoost).div(100);
         // calculate boosted part of rewards
