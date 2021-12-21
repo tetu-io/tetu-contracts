@@ -28,7 +28,7 @@ import "../infrastructure/price/IPriceCalculator.sol";
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.5";
+  string public constant VERSION = "1.0.6";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -613,7 +613,11 @@ contract ContractReader is Initializable, Controllable {
       // not 100% boost
       uint256 boostDuration = IVaultController(IController(controller()).vaultController()).rewardBoostDuration();
       uint256 rewardRatioWithoutBoost = IVaultController(IController(controller()).vaultController()).rewardRatioWithoutBoost();
-      if (sv.protectionMode()) {
+      bool pm = false;
+      try sv.protectionMode() returns (bool protectionMode) {
+        pm = protectionMode;
+      } catch {}
+      if (pm) {
         rewardRatioWithoutBoost = 0;
       }
       if (currentBoostDuration < boostDuration) {

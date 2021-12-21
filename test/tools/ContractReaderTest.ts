@@ -39,8 +39,8 @@ describe("contract reader tests", function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
-    // core = await DeployerUtils.getCoreAddressesWrapper(signer);
-    core = await DeployerUtils.deployAllCoreContracts(signer);
+    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    // core = await DeployerUtils.deployAllCoreContracts(signer);
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     const proxy = await DeployerUtils.deployContract(
       signer, "TetuProxyGov", logic.address) as TetuProxyGov;
@@ -217,6 +217,11 @@ describe("contract reader tests", function () {
     const info = infos[0];
     expect(info.vault.name).is.eq('TETU_PS');
   });
+
+  it("t", async () => {
+    const v = await contractReader.userRewardsBoost(signer.address, '0xAcEE7Bd17E7B04F7e48b29c0C91aF67758394f0f');
+  });
+
 
   it("vault + user infos pages for other user", async () => {
     const infos = await contractReader.connect(signer1).vaultWithUserInfoPages(signer1.address, 0, 1);
