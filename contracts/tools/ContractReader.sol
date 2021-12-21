@@ -596,14 +596,14 @@ contract ContractReader is Initializable, Controllable {
     uint256[] memory rewards = new uint256[](rewardTokens.length);
     for (uint256 i = 0; i < rewardTokens.length; i++) {
       rewards[i] = normalizePrecision(
-        ISmartVault(_vault).earnedWithBoost(rewardTokens[i], _user),
+        _vaultEarnedWithBoost(_vault, rewardTokens[i], _user),
         ERC20(rewardTokens[i]).decimals()
       );
     }
     return rewards;
   }
 
-  function vaultEarnedWithBoost(address vault, address rt, address account) public view returns (uint256) {
+  function _vaultEarnedWithBoost(address vault, address rt, address account) internal view returns (uint256) {
     ISmartVault sv = ISmartVault(vault);
     uint256 reward = sv.earned(rt, account);
     uint256 boostStart = sv.userBoostTs(account);
@@ -648,7 +648,7 @@ contract ContractReader is Initializable, Controllable {
     for (uint256 i = 0; i < rewardTokens.length; i++) {
       uint256 price = getPrice(rewardTokens[i]);
       rewards[i] = normalizePrecision(
-        ISmartVault(_vault).earnedWithBoost(rewardTokens[i], _user).mul(price).div(PRECISION),
+        _vaultEarnedWithBoost(_vault, rewardTokens[i], _user).mul(price).div(PRECISION),
         ERC20(rewardTokens[i]).decimals()
       );
     }
