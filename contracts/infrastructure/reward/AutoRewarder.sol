@@ -28,7 +28,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
   uint256 public constant PERIOD = 22 hours;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
@@ -196,17 +196,27 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   function notifyVaultWithTetuToken(uint256 _amount, address _vault) internal {
     require(_vault != psVault(), "AR: PS forbidden");
     require(_amount != 0, "AR: Zero amount to notify");
+
+    address[] memory rts = ISmartVault(_vault).rewardTokens();
+    require(rts.length > 0, "AR: No reward tokens");
+    address rt = rts[0];
     address _tetuToken = ISmartVault(psVault()).underlying();
 
-    // deposit token to PS
-    IERC20(_tetuToken).safeApprove(psVault(), 0);
-    IERC20(_tetuToken).safeApprove(psVault(), _amount);
-    ISmartVault(psVault()).deposit(_amount);
-    uint256 amountToSend = IERC20(psVault()).balanceOf(address(this));
+    uint256 amountToSend;
+    if (rt == psVault()) {
+      uint rtBalanceBefore = IERC20(psVault()).balanceOf(address(this));
+      IERC20(_tetuToken).safeApprove(psVault(), _amount);
+      ISmartVault(psVault()).deposit(_amount);
+      amountToSend = IERC20(psVault()).balanceOf(address(this)) - rtBalanceBefore;
+    } else if (rt == _tetuToken) {
+      amountToSend = _amount;
+    } else {
+      revert("AR: First reward token not TETU nor xTETU");
+    }
 
-    IERC20(psVault()).safeApprove(_vault, 0);
-    IERC20(psVault()).safeApprove(_vault, amountToSend);
-    ISmartVault(_vault).notifyTargetRewardAmount(psVault(), amountToSend);
+    IERC20(rt).safeApprove(_vault, 0);
+    IERC20(rt).safeApprove(_vault, amountToSend);
+    ISmartVault(_vault).notifyTargetRewardAmount(rt, amountToSend);
   }
 
   /// @dev Reset numbers between cycles

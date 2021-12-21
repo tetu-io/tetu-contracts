@@ -27,6 +27,7 @@ export class FtmAddresses {
   public static TUSD_TOKEN = "0x9879aBDea01a879644185341F7aF7d8343556B7a".toLowerCase();
   public static FBTC_TOKEN = "0xe1146b9AC456fCbB60644c36Fd3F868A9072fc6E".toLowerCase();
   public static FETH_TOKEN = "0x658b0c7613e890EE50B8C4BC6A3f41ef411208aD".toLowerCase();
+  public static FRAX_TOKEN = "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
@@ -39,11 +40,15 @@ export class FtmAddresses {
   public static SCREAM_scWFTM = "0x5aa53f03197e08c4851cad8c92c7922da5857e5d".toLowerCase();
 
   // TetuSwap
-  public static TETU_SWAP_FACTORY = "".toLowerCase();
-  public static TETU_SWAP_ROUTER = "".toLowerCase();
+  public static TETU_SWAP_FACTORY = "0xFB6A440af0bbBAd0cC5f24323c7Df9d400084a12".toLowerCase();
+  public static TETU_SWAP_ROUTER = "0xbd21EC4b56A50aBF3C52ca9977C26291632Ce5A6".toLowerCase();
 
   // Geist
   public static GEIST_PROTOCOL_DATA_PROVIDER = "0xf3B0611e2E4D2cd6aB4bb3e01aDe211c3f42A8C3".toLowerCase();
+
+  // spirit swap
+  public static SPIRIT_SWAP_FACTORY = "0xEF45d134b73241eDa7703fa787148D9C9F4950b0".toLowerCase();
+  public static SPIRIT_SWAP_ROUTER = "0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

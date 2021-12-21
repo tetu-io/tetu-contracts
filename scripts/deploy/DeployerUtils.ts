@@ -266,6 +266,8 @@ export class DeployerUtils {
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(FtmAddresses.USDC_TOKEN), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPOOKY_SWAP_FACTORY, "Spooky LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPIRIT_SWAP_FACTORY, "Spirit LPs"), true, wait);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -396,9 +398,13 @@ export class DeployerUtils {
       calculatorAddress,
       [
         FtmAddresses.SPOOKY_SWAP_FACTORY,
+        FtmAddresses.TETU_SWAP_FACTORY,
+        FtmAddresses.SPIRIT_SWAP_FACTORY,
       ],
       [
-        FtmAddresses.SPOOKY_SWAP_ROUTER
+        FtmAddresses.SPOOKY_SWAP_ROUTER,
+        FtmAddresses.TETU_SWAP_ROUTER,
+        FtmAddresses.SPIRIT_SWAP_ROUTER,
       ]
     ) as MultiSwap;
   }
