@@ -19,6 +19,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../base/governance/Controllable.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
+import "../base/interface/IVaultController.sol";
 import "../base/interface/IStrategy.sol";
 import "../infrastructure/price/IPriceCalculator.sol";
 
@@ -27,7 +28,7 @@ import "../infrastructure/price/IPriceCalculator.sol";
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.4";
+  string public constant VERSION = "1.0.5";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -600,6 +601,30 @@ contract ContractReader is Initializable, Controllable {
       );
     }
     return rewards;
+  }
+
+  function vaultEarnedWithBoost(address vault, address rt, address account) public view returns (uint256) {
+    ISmartVault sv = ISmartVault(vault);
+    uint256 reward = sv.earned(rt, account);
+    uint256 boostStart = sv.userBoostTs(account);
+    // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
+    if (boostStart != 0 && boostStart < block.timestamp) {
+      uint256 currentBoostDuration = block.timestamp.sub(boostStart);
+      // not 100% boost
+      uint256 boostDuration = IVaultController(IController(controller()).vaultController()).rewardBoostDuration();
+      uint256 rewardRatioWithoutBoost = IVaultController(IController(controller()).vaultController()).rewardRatioWithoutBoost();
+      if (sv.protectionMode()) {
+        rewardRatioWithoutBoost = 0;
+      }
+      if (currentBoostDuration < boostDuration) {
+        uint256 rewardWithoutBoost = reward.mul(rewardRatioWithoutBoost).div(100);
+        // calculate boosted part of rewards
+        reward = rewardWithoutBoost.add(
+          reward.sub(rewardWithoutBoost).mul(currentBoostDuration).div(boostDuration)
+        );
+      }
+    }
+    return reward;
   }
 
   // normalized precision

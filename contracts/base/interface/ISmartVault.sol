@@ -98,13 +98,13 @@ interface ISmartVault {
 
   function rewardsForToken(address _rt, address account) external view returns (uint256);
 
-  function userLastWithdrawTs(address _user) external returns (uint256);
+  function userLastWithdrawTs(address _user) external view returns (uint256);
 
-  function userLastDepositTs(address _user) external returns (uint256);
+  function userLastDepositTs(address _user) external view returns (uint256);
 
-  function userBoostTs(address _user) external returns (uint256);
+  function userBoostTs(address _user) external view returns (uint256);
 
-  function userLockTs(address _user) external returns (uint256);
+  function userLockTs(address _user) external view returns (uint256);
 
   function addRewardToken(address rt) external;
 
