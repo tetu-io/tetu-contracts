@@ -45,7 +45,7 @@ const argv = require('yargs/yargs')()
     },
     ftmForkBlock: {
       type: "number",
-      default: 23667400
+      default: 25728086
     },
   }).argv;
 

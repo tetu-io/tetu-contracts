@@ -50,6 +50,10 @@ export class FtmAddresses {
   public static SPIRIT_SWAP_FACTORY = "0xEF45d134b73241eDa7703fa787148D9C9F4950b0".toLowerCase();
   public static SPIRIT_SWAP_ROUTER = "0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52".toLowerCase();
 
+  // curve
+  public static CURVE_tricrypto_POOL = "0x3a1659Ddcf2339Be3aeA159cA010979FB49155FF".toLowerCase();
+  public static USD_BTC_ETH_CRV_TOKEN = "0x58e57cA18B7A47112b877E31929798Cd3D703b0f".toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
     FtmAddresses.fUSDT_TOKEN,
