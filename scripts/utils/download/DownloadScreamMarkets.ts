@@ -34,7 +34,7 @@ async function main() {
     const token = await scTokenCtr.underlying();
     const tokenName = await TokenUtils.tokenSymbol(token);
     const collateralFactor = +utils.formatUnits((await controller.markets(scTokenAdr)).collateralFactorMantissa) * 10000;
-    const borrowTarget = Math.floor(collateralFactor * 0.9);
+    const borrowTarget = Math.floor(collateralFactor * 0.99);
     const undDec = await TokenUtils.decimals(token);
     const supplyCap = await controller.supplyCaps(scTokenAdr);
     console.log(' >> supplyCap', supplyCap.toString())

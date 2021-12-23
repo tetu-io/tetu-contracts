@@ -218,6 +218,7 @@ describe("contract reader tests", function () {
     expect(info.vault.name).is.eq('TETU_PS');
   });
 
+
   it("vault + user infos pages for other user", async () => {
     const infos = await contractReader.connect(signer1).vaultWithUserInfoPages(signer1.address, 0, 1);
     expect(infos.length).is.eq(1);

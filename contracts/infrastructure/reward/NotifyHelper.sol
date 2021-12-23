@@ -24,7 +24,7 @@ contract NotifyHelper is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.2.1";
+  string public constant VERSION = "1.3.0";
 
   mapping(address => bool) public alreadyNotified;
   address[] public alreadyNotifiedList;
@@ -63,11 +63,13 @@ contract NotifyHelper is Controllable {
       require(amounts[i] > 0, "NH: Notify zero");
       require(!alreadyNotified[vaults[i]], "NH: Duplicate pool");
       require(IController(controller()).isValidVault(vaults[i]), "NH: Vault not registered");
+      address[] memory rts = ISmartVault(vaults[i]).rewardTokens();
+      require(rts.length != 0, "NH: No rewards");
 
       // we need specific logic for dxTETU because locked assets can't be transferred easy
       if (vaults[i] == dxTetu && token == ISmartVault(psVault()).underlying()) {
         notifyVaultWithDXTetu(amounts[i]);
-      } else if (token == ISmartVault(psVault()).underlying()) {
+      } else if (token == ISmartVault(psVault()).underlying() && rts[0] == psVault()) {
         notifyVaultWithPsToken(amounts[i], vaults[i]);
       } else {
         notifyVault(amounts[i], vaults[i], token);

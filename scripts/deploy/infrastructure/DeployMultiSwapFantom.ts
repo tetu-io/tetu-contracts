@@ -17,9 +17,13 @@ async function main() {
     tools.calculator,
     [
       FtmAddresses.SPOOKY_SWAP_FACTORY,
+      FtmAddresses.TETU_SWAP_FACTORY,
+      FtmAddresses.SPIRIT_SWAP_FACTORY,
     ],
     [
-      FtmAddresses.SPOOKY_SWAP_ROUTER
+      FtmAddresses.SPOOKY_SWAP_ROUTER,
+      FtmAddresses.TETU_SWAP_ROUTER,
+      FtmAddresses.SPIRIT_SWAP_ROUTER,
     ]
   ]);
 }

@@ -38,7 +38,7 @@ async function startCurveStratTest(
   // at least 3
   const loops = 3;
   // number of blocks or timestamp value
-  const loopValue = 300;
+  const loopValue = 3000;
   // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
   const advanceBlocks = true;
   const specificTests: SpecificStrategyTest[] = [];

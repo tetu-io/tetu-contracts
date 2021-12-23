@@ -24,7 +24,7 @@ contract TetuSwapFactory is Controllable, FactoryStorage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
   uint256 public constant TIME_LOCK = 48 hours;
   uint256 public constant DEFAULT_FEE = 10;
 

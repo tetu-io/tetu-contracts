@@ -216,7 +216,7 @@ describe("Notify Helper test", () => {
       [allVaults[0], allVaults[0]],
       amount,
       rt)
-    ).rejectedWith('NH: PS forbidden');
+    ).rejectedWith("NH: No rewards");
   });
 
   it("should not notify with duplicate vault", async () => {

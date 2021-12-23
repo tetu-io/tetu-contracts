@@ -27,7 +27,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 

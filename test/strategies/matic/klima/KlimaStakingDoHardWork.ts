@@ -15,6 +15,9 @@ export class KlimaStakingDoHardWork extends DoHardWorkLoopBase {
 
   public async loopStartActions(i: number) {
     await super.loopStartActions(i);
+    const gov = await DeployerUtils.impersonate(MaticAddresses.GOV_ADDRESS);
+    await this.vault.connect(gov).changeProtectionMode(true);
+
     const dec = await TokenUtils.decimals(MaticAddresses.KLIMA_TOKEN);
     const amount = utils.parseUnits('10000', dec);
 

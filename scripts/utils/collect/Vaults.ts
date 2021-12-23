@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ethers} from "hardhat";
-import {appendFileSync} from "fs";
+import {writeFileSync} from "fs";
 
 
 async function main() {
@@ -8,13 +8,14 @@ async function main() {
   const core = await DeployerUtils.getCoreAddressesWrapper(signer);
   const tools = await DeployerUtils.getToolsAddressesWrapper(signer);
 
+  let txt = '';
   const vaults = await core.bookkeeper.vaults();
   for (const vault of vaults) {
     const vName = await tools.reader.vaultName(vault);
-    const txt = `${vName} - ${vault}`;
+    txt += `${vName} - ${vault}\n`;
     console.log(txt);
-    appendFileSync(`./tmp/vaults.txt`, txt, 'utf8');
   }
+  writeFileSync(`./tmp/vaults.txt`, txt, 'utf8');
 }
 
 main()
