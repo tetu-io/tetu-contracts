@@ -269,6 +269,10 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPIRIT_SWAP_FACTORY, "Spirit LPs"), true, wait);
 
+    // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
+    await calculator.setReplacementTokens(FtmAddresses.renCRV_TOKEN, FtmAddresses.WBTC_TOKEN);
+    await calculator.setReplacementTokens(FtmAddresses.g3CRV_TOKEN, FtmAddresses.USDC_TOKEN);
+
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
   }

@@ -28,6 +28,7 @@ export class FtmAddresses {
   public static FBTC_TOKEN = "0xe1146b9AC456fCbB60644c36Fd3F868A9072fc6E".toLowerCase();
   public static FETH_TOKEN = "0x658b0c7613e890EE50B8C4BC6A3f41ef411208aD".toLowerCase();
   public static FRAX_TOKEN = "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355".toLowerCase();
+  public static renBTC_TOKEN = "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
@@ -52,7 +53,13 @@ export class FtmAddresses {
 
   // curve
   public static CURVE_tricrypto_POOL = "0x3a1659Ddcf2339Be3aeA159cA010979FB49155FF".toLowerCase();
+  public static CURVE_geist_POOL = "0x0fa949783947Bf6c1b171DB13AEACBB488845B3f".toLowerCase();
+  public static CURVE_2_POOL = "0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40".toLowerCase();
+  public static CURVE_ren_POOL = "0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604".toLowerCase();
   public static USD_BTC_ETH_CRV_TOKEN = "0x58e57cA18B7A47112b877E31929798Cd3D703b0f".toLowerCase();
+  public static g3CRV_TOKEN = "0xD02a30d33153877BC20e5721ee53DeDEE0422B2F".toLowerCase();
+  public static _2poolCrv_TOKEN = "0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40".toLowerCase();
+  public static renCRV_TOKEN = "0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
