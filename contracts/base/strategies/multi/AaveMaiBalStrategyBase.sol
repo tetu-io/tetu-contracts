@@ -160,9 +160,18 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   }
 
   /// @dev Gets available MAI to borrow at the Mai Stablecoin contract. Should be checked at UI before deposit
-  /// @return MAI (miMATIC) supply
+  /// @return amToken maximum deposit
   function availableMai() external view returns (uint256) {
     return _maiStablecoinPipe.availableMai();
+  }
+
+  /// @dev Returns maximal possible amToken deposit. Should be checked at UI before deposit
+  /// @return max amToken maximum deposit
+  function maxDeposit() external view returns (uint256 max) {
+    uint256 camMaxDeposit = _maiStablecoinPipe.maxDeposit();
+    uint256 amBalance = IERC20(_maiCamPipe.sourceToken()).balanceOf(_maiCamPipe.outputToken());
+    uint256 totalSupply = IERC20Extended(_maiCamPipe.outputToken()).totalSupply();
+    max = camMaxDeposit * amBalance / totalSupply;
   }
 
   // ***************************************

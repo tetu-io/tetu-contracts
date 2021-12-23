@@ -81,6 +81,15 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     / (collateral * 100 * pipeData.collateralNumerator);
   }
 
+  /// @dev Returns maximal possible deposit of amToken, based on available mai and target percentage.
+  /// @return max camToken maximum deposit
+  function maxDeposit() external view override returns (uint256 max) {
+    uint256 _availableMai = IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
+    uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
+    uint256 amPrice = _stablecoin.getEthPriceSource();
+    max = _availableMai * tokenPriceSource * pipeData.targetPercentage / (amPrice * 100 * pipeData.collateralNumerator);
+  }
+
   /// @dev Gets targetPercentage
   /// @return target collateral to debt percentage
   function targetPercentage() external view override returns (uint256) {

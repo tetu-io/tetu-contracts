@@ -24,4 +24,6 @@ interface IMaiStablecoinPipe {
 
   function availableMai() external view returns (uint256);
 
-}
+  function maxDeposit() external view returns (uint256);
+
+  }
