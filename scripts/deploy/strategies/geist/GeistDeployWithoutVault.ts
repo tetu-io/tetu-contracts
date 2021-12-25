@@ -3,7 +3,14 @@ import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy} from "../../../../typechain";
 import {appendFileSync, mkdir, readFileSync} from "fs";
 
-const alreadyDeployed = new Set<string>([]);
+const alreadyDeployed = new Set<string>([
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+]);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -12,7 +19,7 @@ async function main() {
 
   const infos = readFileSync('scripts/utils/download/data/geist_markets.csv', 'utf8').split(/\r?\n/);
 
-  const vaultNames = new Set<string>();
+  const vaultsByUnderlying = new Map<string, string>();
 
   const cReader = await DeployerUtils.connectContract(
     signer, "ContractReader", tools.reader) as ContractReader;
@@ -21,9 +28,14 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
-    vaultNames.add(await cReader.vaultName(vAdr));
+    const underlying = (await cReader.vaultUnderlying(vAdr)).toLowerCase();
+    if (vaultsByUnderlying.has(underlying)) {
+      throw Error('duplicate und');
+    }
+    vaultsByUnderlying.set(underlying, vAdr);
   }
 
+  appendFileSync(`./tmp/deployed/GEIST_STRATS_UPD.txt`, '-------------------\n', 'utf8');
   for (const info of infos) {
     const strat = info.split(',');
 
@@ -47,58 +59,36 @@ async function main() {
       continue;
     }
 
-    const vaultNameWithoutPrefix = `${tokenName}`;
+    const vault = vaultsByUnderlying.get(tokenAddress.toLowerCase()) as string;
+    const vaultName = await cReader.vaultUnderlying(vault);
 
-    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
-      continue;
-    }
-
-    console.log('strat', idx, aTokenName, vaultNameWithoutPrefix);
+    console.log('strat', idx, aTokenName, vaultName);
 
     const collateralFactor = (ltv).toFixed(0);
-    // on fantom we have low gas limit and not able to use full power of folding
     const borrowTarget = (ltv * 0.87).toFixed(0);
 
-    let strategyArgs;
-
-    const data = await DeployerUtils.deployVaultAndStrategy(
-      vaultNameWithoutPrefix,
-      (vaultAddress) => {
-        strategyArgs = [
-          core.controller,
-          vaultAddress,
-          tokenAddress,
-          borrowTarget,
-          collateralFactor
-        ]
-        return DeployerUtils.deployContract(
-          signer,
-          'StrategyGeistFold',
-          ...strategyArgs
-        ) as Promise<IStrategy>
-      },
+    const strategyArgs = [
       core.controller,
-      core.rewardToken,
+      vault,
+      tokenAddress,
+      borrowTarget,
+      collateralFactor
+    ];
+    const strategy = await DeployerUtils.deployContract(
       signer,
-      60 * 60 * 24 * 28,
-      0,
-      true,
-    );
-
+      'StrategyGeistFold',
+      ...strategyArgs
+    ) as IStrategy;
 
     await DeployerUtils.wait(5);
 
-    await DeployerUtils.verify(data[0].address);
-    await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
-    await DeployerUtils.verifyProxy(data[1].address);
-    await DeployerUtils.verifyWithContractName(data[2].address, 'contracts/strategies/fantom/geist/StrategyGeistFold.sol:StrategyGeistFold', strategyArgs);
+    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/fantom/geist/StrategyGeistFold.sol:StrategyGeistFold', strategyArgs);
 
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
-    const txt = `vault: ${data[1].address} strategy: ${data[2].address} server.js`;
-    appendFileSync(`./tmp/deployed/GEIST.txt`, txt, 'utf8');
+    const txt = `${tokenName} vault: ${vault} strategy: ${strategy.address}\n`;
+    appendFileSync(`./tmp/deployed/GEIST_STRATS_UPD.txt`, txt, 'utf8');
   }
 
 }

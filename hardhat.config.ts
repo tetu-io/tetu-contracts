@@ -57,7 +57,9 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
       timeout: 99999,
-      gas: 19_000_000,
+      gas: argv.hardhatChainId === 137 ? 19_000_000 :
+        argv.hardhatChainId === 250 ? 11_000_000 :
+          9_000_000,
       forking: {
         url:
           argv.hardhatChainId === 137 ? argv.maticRpcUrl :

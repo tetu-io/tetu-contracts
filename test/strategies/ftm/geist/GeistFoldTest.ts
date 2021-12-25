@@ -65,7 +65,7 @@ describe('Universal Geist Fold tests', async () => {
     const borrowingEnabled = start[10];
     const ltvNum = Number(ltv);
     const collateralFactor = (ltvNum).toFixed(0);
-    const borrowTarget = (ltvNum * 0.99).toFixed(0);
+    const borrowTarget = (ltvNum * 0.87).toFixed(0);
 
     if (!idx || idx === 'idx') {
       console.log('skip ', tokenName);

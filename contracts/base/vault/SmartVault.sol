@@ -36,7 +36,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.8.1";
+  string public constant VERSION = "1.8.2";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
@@ -560,6 +560,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     : amount.mul(totalSupply()).div(underlyingBalanceWithInvestment());
     // no revert for this case for keep compatability
     if (toMint == 0) {
+      _setReentrantLock(false);
       return;
     }
     toMint = toMint * (DEPOSIT_FEE_DENOMINATOR - depositFeeNumerator()) / DEPOSIT_FEE_DENOMINATOR;

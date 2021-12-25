@@ -13,7 +13,6 @@ import {appendFileSync, mkdir} from "fs";
 import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
-const STRATEGY_NAME = 'StrategyTetuSwap';
 
 const excludeVaults = new Set<string>([]);
 
@@ -26,6 +25,13 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
+
+  let strategyName = 'StrategyTetuSwap';
+  let strategyPath = `contracts/strategies/matic/tetu/${strategyName}.sol:${strategyName}`;
+  if ((await ethers.provider.getNetwork()).chainId === 250) {
+    strategyName = 'StrategyTetuSwapFantom';
+    strategyPath = `contracts/strategies/fantom/tetu/${strategyName}.sol:${strategyName}`;
+  }
 
   const factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', core.swapFactory) as TetuSwapFactory;
 
@@ -74,7 +80,7 @@ async function main() {
 
     const strategyArgs = [core.controller, vault.address, pair];
 
-    const strategy = await DeployerUtils.deployContract(signer, STRATEGY_NAME, ...strategyArgs) as IStrategy;
+    const strategy = await DeployerUtils.deployContract(signer, strategyName, ...strategyArgs) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
 
@@ -97,7 +103,7 @@ async function main() {
     await DeployerUtils.verify(vaultLogic.address);
     await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
-    await DeployerUtils.verifyWithContractName(strategy.address, `contracts/strategies/matic/tetu/${STRATEGY_NAME}.sol:${STRATEGY_NAME}`, [
+    await DeployerUtils.verifyWithContractName(strategy.address, strategyPath, [
       ...strategyArgs
     ]);
   }
