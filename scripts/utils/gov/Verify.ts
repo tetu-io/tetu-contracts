@@ -1,5 +1,4 @@
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {AaveAmPipe, AaveMaiBalStrategyBase} from "../../../typechain";
 import {ethers} from "hardhat";
 
 async function main() {
@@ -7,34 +6,20 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
 
   const adrs = [
-    "0xcF8E39462985126eDe59814960983F16E378ff8c",
-    "0xB6E6A0f377e9950DAECdb6cB9E5B45B4688bFD70",
-    "0x5E1BEfD7eAbeFbb2A6Ab88131731772Ccff1be1f",
-    "0x96e6A7C9441a1093377D367cb6CAD25AA6EAA0e5",
-    "0x47A0eCc413e29DaD8C6589D645979F9e9c7C9DeE",
+    "0x11253fF148902A837A6f5c7Cd113d46B58A5CeA5",
   ]
 
   for (const adr of adrs) {
-    const strategy = await DeployerUtils.connectInterface(signer, 'AaveMaiBalStrategyBase', adr) as AaveMaiBalStrategyBase;
+    await DeployerUtils.verifyWithArgs(adr, [
+      core.controller,
+      '0x715aC7649612ecBbf3AdE416b4fd56698291820b',
+      '0x7AfC060acCA7ec6985d982dD85cC62B111CAc7a7',
+      '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+      '0x42d61D766B85431666B39B89C43011f24451bFf6',
+      '0x64D2B3994F64E3E82E48CC92e1122489e88e8727',
+      ['0x831753DD7087CaC61aB5644b308642cc1c33Dc13', '0x42d61D766B85431666B39B89C43011f24451bFf6']
+    ]);
 
-    const pipesLength = (await strategy.pipesLength()).toNumber();
-    for (let i = 0; i < pipesLength; i++) {
-      const pipeAdr = await strategy.pipes(i);
-
-      if (i === 0) {
-        const aaveAmPipe = await DeployerUtils.connectInterface(signer, 'AaveAmPipe', pipeAdr) as AaveAmPipe;
-        const arg = await aaveAmPipe.pipeData();
-        await DeployerUtils.verifyWithArgs(pipeAdr, [arg]);
-      }
-
-    }
-
-    // await DeployerUtils.verifyWithContractName(adr, 'contracts/strategies/matic/multi/StrategyAaveMaiBal.sol:StrategyAaveMaiBal', [
-    //   core.controller,
-    //   await strategy.vault(),
-    //   await strategy.underlying(),
-    //   pipes
-    // ]);
   }
 
 

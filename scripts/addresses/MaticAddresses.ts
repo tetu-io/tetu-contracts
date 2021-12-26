@@ -59,6 +59,7 @@ export class MaticAddresses {
   public static miFARM_TOKEN = "0xab0b2ddB9C7e440fAc8E140A89c0dbCBf2d7Bbff".toLowerCase();
   public static KLIMA_TOKEN = "0x4e78011ce80ee02d2c3e649fb657e45898257815".toLowerCase();
   public static BCT_TOKEN = "0x2F800Db0fdb5223b3C3f354886d907A671414A7F".toLowerCase();
+  public static PSP_TOKEN = "0x42d61D766B85431666B39B89C43011f24451bFf6".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

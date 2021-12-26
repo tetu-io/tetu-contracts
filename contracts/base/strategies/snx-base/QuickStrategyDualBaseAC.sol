@@ -31,13 +31,10 @@ abstract contract QuickStrategyDualBaseAC is StrategyBase, IStrategyWithPool {
   string public constant override STRATEGY_NAME = "QuickStrategyDualBaseAC";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 100;  // for non full buyback need to implement liquidation
-  address public constant WMATIC = address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
-  address public constant QUICK = address(0x831753DD7087CaC61aB5644b308642cc1c33Dc13);
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
-  address[] private quickPoolRewards = [QUICK, WMATIC];
 
   /// @notice QuickSwap Dual farm pool
   address public override pool;
@@ -51,13 +48,14 @@ abstract contract QuickStrategyDualBaseAC is StrategyBase, IStrategyWithPool {
     address _underlying,
     address _vault,
     address _rewardPool,
-    address _router
-  ) StrategyBase(_controller, _underlying, _vault, quickPoolRewards, _BUY_BACK_RATIO) {
+    address _router,
+    address[] memory __rewardTokens
+  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_rewardPool != address(0), "zero address pool");
     pool = _rewardPool;
     require(address(IStakingDualRewards(pool).stakingToken()) == _underlying, "wrong underlying");
     require(address(IStakingDualRewards(pool).rewardsTokenA()) == D_QUICK, "wrong token A");
-    require(address(IStakingDualRewards(pool).rewardsTokenB()) == WMATIC, "wrong token B");
+    require(address(IStakingDualRewards(pool).rewardsTokenB()) == __rewardTokens[1], "wrong token B");
 
     _unsalvageableTokens[D_QUICK] = true;
     router = _router;

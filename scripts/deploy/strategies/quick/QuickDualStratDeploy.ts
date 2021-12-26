@@ -1,24 +1,24 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {readFileSync} from "fs";
+import {appendFileSync, mkdir, readFileSync} from "fs";
 import {ContractReader, Controller, IStrategy, VaultController} from "../../../../typechain";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 
 async function main() {
+  mkdir('./tmp/deployed', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
-
-  const infos = readFileSync('scripts/utils/download/data/quick_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/quick_pools_dual.csv', 'utf8').split(/\r?\n/);
 
   const deployed = [];
   const vaultNames = new Set<string>();
 
-  const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+  const cReader = await DeployerUtils.connectContract(signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -38,9 +38,12 @@ async function main() {
     const token1 = strat[5];
     const token1Name = strat[6];
     const pool = strat[7];
-    const duration = strat[9];
+    const rewardAmount = strat[8];
+    const r0 = strat[14];
+    const r1 = strat[15];
+    const rewards = [MaticAddresses.QUICK_TOKEN, r1];
 
-    if (+duration <= 0 || !token0 || ids === 'idx') {
+    if (+rewardAmount <= 0 || !token0 || ids === 'idx') {
       console.log('skip', ids);
       continue;
     }
@@ -52,38 +55,41 @@ async function main() {
       continue;
     }
 
+    let strategyArgs;
     console.log('strat', ids, lpName);
     // tslint:disable-next-line:no-any
     const data: any[] = []
-    data.push(await DeployerUtils.deployAndInitVaultAndStrategy(
-        vaultNameWithoutPrefix,
-        async vaultAddress => DeployerUtils.deployContract(
-            signer,
-            'StrategyQuickSwapLpV2',
-            core.controller,
-            vaultAddress,
-            lpAddress,
-            token0,
-            token1,
-            pool
-        ) as Promise<IStrategy>,
-        controller,
-        vaultController,
-        core.psVault,
-        signer,
-        60 * 60 * 24 * 28,
-        0,
-        true
-    ));
-    data.push([
+    data.push(await DeployerUtils.deployVaultAndStrategy(
+      vaultNameWithoutPrefix,
+      async vaultAddress => {
+        strategyArgs = [
+          core.controller,
+          vaultAddress,
+          lpAddress.toLowerCase(),
+          token0,
+          token1,
+          pool,
+          rewards
+        ];
+        return DeployerUtils.deployContract(
+          signer,
+          'StrategyQuickSwapLpDualAC',
+          ...strategyArgs
+        ) as Promise<IStrategy>
+      },
       core.controller,
-      data[1].address,
-      lpAddress,
-      token0,
-      token1,
-      pool
-    ]);
+      core.psVault,
+      signer,
+      60 * 60 * 24 * 28,
+      0,
+      true
+    ));
+    data.push(strategyArgs);
     deployed.push(data);
+
+
+    const txt = `vault: ${data[0][1].address} strategy: ${data[0][2].address}`;
+    appendFileSync(`./tmp/deployed/QUICK_DUAL.txt`, txt, 'utf8');
   }
 
   await DeployerUtils.wait(5);
@@ -93,14 +99,13 @@ async function main() {
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);
     await DeployerUtils.verifyWithArgs(data[2].address, data[3]);
-
   }
 }
 
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

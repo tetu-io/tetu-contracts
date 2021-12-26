@@ -29,8 +29,9 @@ contract StrategyQuickSwapLpDualAC is QuickStrategyDualBaseAC {
     address _underlying,
     address _token0,
     address _token1,
-    address _quickRewardPool
-  ) QuickStrategyDualBaseAC(_controller, _underlying, _vault, _quickRewardPool, QUICK_ROUTER) {
+    address _quickRewardPool,
+    address[] memory _quickPoolRewards
+  ) QuickStrategyDualBaseAC(_controller, _underlying, _vault, _quickRewardPool, QUICK_ROUTER, _quickPoolRewards) {
     require(_underlying != address(0), "zero underlying");
     require(_token0 != address(0), "zero token0");
     require(_token1 != address(0), "zero token1");

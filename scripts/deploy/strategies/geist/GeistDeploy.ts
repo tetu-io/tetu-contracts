@@ -97,7 +97,7 @@ async function main() {
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
-    const txt = `vault: ${data[1].address} strategy: ${data[2].address} server.js`;
+    const txt = `vault: ${data[1].address} strategy: ${data[2].address}`;
     appendFileSync(`./tmp/deployed/GEIST.txt`, txt, 'utf8');
   }
 
