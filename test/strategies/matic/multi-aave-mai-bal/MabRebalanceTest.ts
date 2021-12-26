@@ -61,7 +61,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const bal1 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal1', bal1.toString())
 
-      // *** mock price +50% ***
+      // *** mock price +100% ***
 
       const stablecoinEthPrice = await stablecoin.getEthPriceSource()
       console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
@@ -73,7 +73,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       const mockPriceSource = await DeployerUtils.deployContract(
         signer, 'MockPriceSource', 0);
-      const mockPricePercents = 150;
+      const mockPricePercents = 200;
       const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
       await mockPriceSource.setPrice(mockPrice);
       const [, mockSourcePrice, ,] = await mockPriceSource.latestRoundData();
@@ -102,7 +102,8 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       // ***** check balance after matic price changed x2 ***
 
-      await strategyGov.rebalanceAllPipes()
+      await expect(strategyGov.rebalanceAllPipes())
+        .to.emit(strategyGov, 'RebalancedAllPipes')
       const bal2 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal2', bal2.toString())
       const needed2 = await strategyAaveMaiBal.isRebalanceNeeded();
@@ -124,7 +125,8 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const liquidationPrice3 = await strategyAaveMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice3', liquidationPrice3.toString());
 
-      await strategyGov.rebalanceAllPipes()
+      await expect(strategyGov.rebalanceAllPipes())
+        .to.emit(strategyGov, 'RebalancedAllPipes')
       console.log('>>>rebalanced');
       const bal3 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal3', bal3.toString())

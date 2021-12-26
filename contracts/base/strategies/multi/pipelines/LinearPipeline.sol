@@ -26,6 +26,8 @@ contract LinearPipeline is ILinearPipeline {
   address private immutable _pipelineUnderlyingToken;
   IPipe[] public override pipes;
 
+  event RebalancedAllPipes();
+
   constructor(address _underlyingToken) {
     _pipelineUnderlyingToken = _underlyingToken;
   }
@@ -193,6 +195,7 @@ contract LinearPipeline is ILinearPipeline {
     for (uint256 i = 0; i < pipes.length; i++) {
       _rebalancePipe(i);
     }
+    emit RebalancedAllPipes();
   }
 
   /// @dev Calls claim() for all pipes

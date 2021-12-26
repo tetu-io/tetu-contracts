@@ -45,6 +45,9 @@ abstract contract Pipe is IPipe {
   /// @notice Previous pipe in pipeline
   address public override nextPipe;
 
+  event Get(address pipe, uint256 amount, uint256 output);
+  event Put(address pipe, uint256 amount, uint256 output);
+
   constructor (
     string memory _name,
     address _sourceToken,
