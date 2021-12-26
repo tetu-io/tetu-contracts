@@ -1,7 +1,7 @@
-import {expect} from "chai";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
+import {Multicall__factory} from "../typechain";
 
 export class TimeUtils {
 
@@ -41,28 +41,16 @@ export class TimeUtils {
 
   // doesn't work, need to investigate
   public static async currentBlock() {
-    let count = 0;
-    while (true) {
-      count++;
-      const blockNumber = await ethers.provider.getBlockNumber();
-      try {
-        expect(blockNumber).is.greaterThan(0);
-        const block = await ethers.provider.getBlock(blockNumber);
-        expect(block.timestamp > 0).is.eq(true);
-        if (!!block) {
-          return block;
-        }
-      } catch (e) {
-        console.log('wrong last block!', blockNumber, e);
-      }
-      console.log('wrong last block!', blockNumber);
-      await TimeUtils.advanceBlocksOnTs(1);
-      expect(count < 100000).is.eq(true);
-    }
+    const tools = await DeployerUtils.getToolsAddresses();
+    const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
+    const blockHash = await multicall.getLastBlockHash();
+    return (await ethers.provider.getBlock(blockHash)).number;
   }
 
   public static async getBlockTime(): Promise<number> {
-    return (await ethers.provider.getBlock(await ethers.provider._getFastBlockNumber())).timestamp
+    const tools = await DeployerUtils.getToolsAddresses();
+    const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
+    return (await multicall.getCurrentBlockTimestamp()).toNumber();
   }
 
   public static async snapshot() {

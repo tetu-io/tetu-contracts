@@ -149,7 +149,7 @@ export class VaultUtils {
     if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
       await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
     } else {
-      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, period)
+      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, false, period)
     }
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));

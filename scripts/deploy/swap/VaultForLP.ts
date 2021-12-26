@@ -10,6 +10,7 @@ import {
 import {RunHelper} from "../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
+import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 const STRATEGY_NAME = 'StrategyTetuSwap';
@@ -46,6 +47,10 @@ async function main() {
     const pairCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', pair) as TetuSwapPair;
     const token0 = await pairCtr.token0();
     const token1 = await pairCtr.token1();
+
+    if (token0.toLowerCase() !== FtmAddresses.USDC_TOKEN && token1.toLowerCase() !== FtmAddresses.USDC_TOKEN) {
+      continue;
+    }
 
     const token0Name = await TokenUtils.tokenSymbol(token0);
     const token1Name = await TokenUtils.tokenSymbol(token1);

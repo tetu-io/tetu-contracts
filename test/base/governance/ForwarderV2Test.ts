@@ -79,6 +79,12 @@ describe("ForwarderV2 tests", function () {
       [tetuLp]
     );
 
+    await forwarder.setUniPlatformFee(
+      factory,
+      9970,
+      10000
+    );
+
     await StrategyTestUtils.initForwarder(forwarder);
     await TokenUtils.getToken(usdc, signer.address, amount)
   });

@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic, RewardToken} from "../typechain";
+import {ERC20__factory, IERC721Enumerable__factory, IWmatic, RewardToken} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
@@ -53,6 +53,7 @@ export class TokenUtils {
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
     [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
     [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
+    [FtmAddresses.USD_BTC_ETH_CRV_TOKEN, '0x00702bbdead24c40647f235f15971db0867f6bdb'.toLowerCase()], // gauge
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
     [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
@@ -66,37 +67,31 @@ export class TokenUtils {
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
-    return token.balanceOf(account);
+    return ERC20__factory.connect(tokenAddress, ethers.provider).balanceOf(account);
   }
 
   public static async totalSupply(tokenAddress: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
-    return token.totalSupply();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).totalSupply();
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return token.approve(spender, BigNumber.from(amount));
+    return ERC20__factory.connect(tokenAddress, signer).approve(spender, BigNumber.from(amount));
   }
 
   public static async approveNFT(tokenAddress: string, signer: SignerWithAddress, spender: string, id: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), id);
     await TokenUtils.checkNftBalance(tokenAddress, signer.address, id);
-    const token = await ethers.getContractAt("ERC721", tokenAddress, signer) as ERC721;
-    return token.approve(spender, id);
+    return ERC20__factory.connect(tokenAddress, signer).approve(spender, id);
   }
 
   public static async allowance(tokenAddress: string, signer: SignerWithAddress, spender: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return token.allowance(signer.address, spender);
+    return ERC20__factory.connect(tokenAddress, signer).allowance(signer.address, spender);
   }
 
   public static async transfer(tokenAddress: string, signer: SignerWithAddress, destination: string, amount: string) {
     console.log('transfer', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return token.transfer(destination, BigNumber.from(amount))
+    return ERC20__factory.connect(tokenAddress, signer).transfer(destination, BigNumber.from(amount))
   }
 
   public static async wrapNetworkToken(signer: SignerWithAddress, amount: string) {
@@ -105,18 +100,15 @@ export class TokenUtils {
   }
 
   public static async decimals(tokenAddress: string): Promise<number> {
-    const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return token.decimals();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).decimals();
   }
 
   public static async tokenName(tokenAddress: string): Promise<string> {
-    const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return token.name();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).name();
   }
 
   public static async tokenSymbol(tokenAddress: string): Promise<string> {
-    const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return token.symbol();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).symbol();
   }
 
   public static async checkBalance(tokenAddress: string, account: string, amount: string) {
@@ -126,8 +118,7 @@ export class TokenUtils {
   }
 
   public static async tokenOfOwnerByIndex(tokenAddress: string, account: string, index: number) {
-    const token = await ethers.getContractAt("IERC721Enumerable", tokenAddress) as IERC721Enumerable;
-    return token.tokenOfOwnerByIndex(account, index);
+    return IERC721Enumerable__factory.connect(tokenAddress, ethers.provider).tokenOfOwnerByIndex(account, index);
   }
 
   public static async checkNftBalance(tokenAddress: string, account: string, id: string) {

@@ -44,7 +44,7 @@ describe("Smart vault rewards test", () => {
 
     multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
-    await core.controller.addToWhiteList(zapContract.address);
+    await core.controller.changeWhiteListStatus([zapContract.address], true);
 
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
@@ -92,7 +92,7 @@ describe("Smart vault rewards test", () => {
       Misc.ZERO_ADDRESS,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], rt);
 
     // ********** INIT VARS **************
@@ -349,7 +349,7 @@ describe("Smart vault rewards test", () => {
       Misc.ZERO_ADDRESS,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], rt);
 
     // ********** INIT VARS **************

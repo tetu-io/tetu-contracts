@@ -1,12 +1,19 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber, utils} from "ethers";
-import {IAavePool, IERC20, IRenBTCPool, ITricryptoPool} from "../../../../../typechain";
+import {
+  IAavePool,
+  IERC20,
+  IRenBTCPool,
+  ITricryptoPool,
+  ITricryptoPoolFtm
+} from "../../../../../typechain";
 import {MaticAddresses} from "../../../../../scripts/addresses/MaticAddresses";
 import {ethers} from "hardhat";
 import {expect} from "chai";
 import {UniswapUtils} from "../../../../UniswapUtils";
 import {TokenUtils} from "../../../../TokenUtils";
 import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
+import {FtmAddresses} from "../../../../../scripts/addresses/FtmAddresses";
 
 export class CurveUtils {
 
@@ -62,6 +69,8 @@ export class CurveUtils {
       await CurveUtils.swapTricrypto(trader);
     } else if (token === MaticAddresses.BTCCRV_TOKEN) {
       await CurveUtils.swapRen(trader);
+    } else if (token === FtmAddresses.USD_BTC_ETH_CRV_TOKEN) {
+      await CurveUtils.swapTricryptoFantom(trader);
     }
   }
 
@@ -90,6 +99,17 @@ export class CurveUtils {
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, pool.address, utils.parseUnits('10000', 6).mul(2).toString());
     await pool.exchange_underlying(1, 0, utils.parseUnits('10000', 6), 0, signer.address);
     console.log('swap tricrypto completed')
+  }
+
+  public static async swapTricryptoFantom(signer: SignerWithAddress) {
+    console.log('swap tricrypto ftm')
+    const token = FtmAddresses.fUSDT_TOKEN;
+    const dec = await TokenUtils.decimals(token);
+    await TokenUtils.getToken(token, signer.address, utils.parseUnits('10000', dec));
+    const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPoolFtm', FtmAddresses.CURVE_tricrypto_POOL) as ITricryptoPoolFtm;
+    await TokenUtils.approve(token, signer, pool.address, utils.parseUnits('10000', dec).mul(2).toString());
+    await pool.exchange(0, 1, utils.parseUnits('10000', dec), 0, false);
+    console.log('swap tricrypto ftm completed')
   }
 
   public static async swapRen(signer: SignerWithAddress) {

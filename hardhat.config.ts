@@ -45,7 +45,7 @@ const argv = require('yargs/yargs')()
     },
     ftmForkBlock: {
       type: "number",
-      default: 23667400
+      default: 25789434
     },
   }).argv;
 
@@ -59,8 +59,14 @@ export default {
       timeout: 99999*2,
       gas: 19_000_000,
       forking: {
-        url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
-        blockNumber: argv.hardhatChainId === 137 ? argv.maticForkBlock : argv.ftmForkBlock
+        url:
+          argv.hardhatChainId === 137 ? argv.maticRpcUrl :
+            argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+              undefined,
+        blockNumber:
+          argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
+            argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+              undefined
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
