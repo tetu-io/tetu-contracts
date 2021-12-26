@@ -72,7 +72,7 @@ contract BalVaultPipe is Pipe {
 
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
-    emit Put(address(this), amount, output);
+    emit Put(amount, output);
 
   }
 
@@ -105,7 +105,7 @@ contract BalVaultPipe is Pipe {
 
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
-    emit Get(address(this), amount, output);
+    emit Get(amount, output);
   }
 
   /// @dev Casts IERC20[] to IAsset[]
