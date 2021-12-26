@@ -52,6 +52,7 @@ contract AaveAmPipe is Pipe {
     ILendingPool(pipeData.pool).deposit(sourceToken, amount, address(this), 0);
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
+    emit Put(address(this), amount, output);
   }
 
   /// @dev Withdraws from Aave
@@ -63,6 +64,7 @@ contract AaveAmPipe is Pipe {
     ILendingPool(pipeData.pool).withdraw(sourceToken, amount, address(this));
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
+    emit Get(address(this), amount, output);
   }
 
 }

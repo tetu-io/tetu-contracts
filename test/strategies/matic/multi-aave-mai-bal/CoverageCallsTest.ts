@@ -19,6 +19,7 @@ export class CoverageCallsTest extends SpecificStrategyTest {
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
       const UNWRAPPING_PIPE_INDEX = 0;
       const AAVE_PIPE_INDEX = 1;
 
@@ -42,6 +43,21 @@ export class CoverageCallsTest extends SpecificStrategyTest {
 
       const liquidationPrice = await strategyAaveMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice', liquidationPrice.toString());
+
+      // maxImbalance
+      const maxImbalance0 = await strategyAaveMaiBal.maxImbalance()
+      const targetMaxImbalance1 = maxImbalance0.add(1)
+      await expect(strategyGov.setMaxImbalance(targetMaxImbalance1))
+        .to.emit(strategyGov, 'SetMaxImbalance')
+        .withArgs(targetMaxImbalance1)
+      const maxImbalance1 = await strategyAaveMaiBal.maxImbalance()
+      await strategyGov.setMaxImbalance(maxImbalance0)
+      const maxImbalance2 = await strategyAaveMaiBal.maxImbalance()
+
+      // default value should be 100
+      expect(maxImbalance0).is.eq(100);
+      expect(maxImbalance1).is.eq(101);
+      expect(maxImbalance2).is.eq(100);
 
     });
   }

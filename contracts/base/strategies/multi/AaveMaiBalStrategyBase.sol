@@ -27,7 +27,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
@@ -39,6 +39,10 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
   IMaiStablecoinPipe internal _maiStablecoinPipe;
   IPipe internal _maiCamPipe;
+
+  event SalvagedFromPipeline(address recipient, address token);
+  event SetTargetPercentage(uint256 _targetPercentage);
+  event SetMaxImbalance(uint256 _maxImbalance);
 
   /// @notice Contract constructor
   constructor(
@@ -129,17 +133,16 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
     return Platform.AAVE_MAI_BAL;
   }
 
-  /// @dev Sets targetPercentage for MaiStablecoinPipe
-  /// @param _targetPercentage - target collateral to debt percentage
-  function setTargetPercentage(uint256 _targetPercentage) onlyControllerOrGovernance updateTotalAmount external {
-    _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
-    _rebalanceAllPipes();
-  }
-
   /// @dev Gets targetPercentage of MaiStablecoinPipe
   /// @return target collateral to debt percentage
   function targetPercentage() external view returns (uint256) {
     return _maiStablecoinPipe.targetPercentage();
+  }
+
+  /// @dev Gets maxImbalance of MaiStablecoinPipe
+  /// @return maximum imbalance (+/-%) to do re-balance
+  function maxImbalance() external view returns (uint256) {
+    return _maiStablecoinPipe.maxImbalance();
   }
 
   /// @dev Gets collateralPercentage of MaiStablecoinPipe
@@ -183,11 +186,29 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   /// @param recipient Recipient address
   /// @param token Token address
   function salvageFromPipeline(address recipient, address token) external onlyControllerOrGovernance updateTotalAmount {
-    _salvageFromAllPipes(recipient, token);
     // transfers token to this contract
+    _salvageFromAllPipes(recipient, token);
+    emit SalvagedFromPipeline(recipient, token);
   }
 
   function rebalanceAllPipes() external restricted updateTotalAmount {
+    _rebalanceAllPipes();
+  }
+
+  /// @dev Sets targetPercentage for MaiStablecoinPipe and re-balances all pipes
+  /// @param _targetPercentage - target collateral to debt percentage
+  function setTargetPercentage(uint256 _targetPercentage) onlyControllerOrGovernance updateTotalAmount external {
+    _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
+    emit SetTargetPercentage(_targetPercentage);
+    _rebalanceAllPipes();
+  }
+
+
+  /// @dev Sets maxImbalance for maiStablecoinPipe and re-balances all pipes
+  /// @param _maxImbalance - maximum imbalance deviation (+/-%)
+  function setMaxImbalance(uint256 _maxImbalance) onlyControllerOrGovernance updateTotalAmount external {
+    _maiStablecoinPipe.setMaxImbalance(_maxImbalance);
+    emit SetMaxImbalance(_maxImbalance);
     _rebalanceAllPipes();
   }
 

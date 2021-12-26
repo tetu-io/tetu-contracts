@@ -39,6 +39,10 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   IErc20Stablecoin private _stablecoin;
   uint256 private vaultID;
 
+  event Rebalanced(uint256 borrowed, uint256 repaid);
+  event Borrowed(uint256 amount);
+  event Repaid(uint256 amount);
+
   constructor(MaiStablecoinPipeData memory _d) Pipe(
     'MaiStablecoinPipe',
     _d.sourceToken,
@@ -96,6 +100,12 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     return pipeData.targetPercentage;
   }
 
+  /// @dev Gets maxImbalance
+  /// @return maximum imbalance (+/-%) to do re-balance
+  function maxImbalance() external view override returns (uint256) {
+    return pipeData.maxImbalance;
+  }
+
   /// @dev Gets collateralPercentage
   /// @return current collateral to debt percentage
   function collateralPercentage() external view override returns (uint256) {
@@ -118,6 +128,12 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   // ***************************************
 
 
+  /// @dev Sets maxImbalance
+  /// @param _maxImbalance - maximum imbalance deviation (+/-%)
+  function setMaxImbalance(uint256 _maxImbalance) onlyPipeline override external {
+    pipeData.maxImbalance = _maxImbalance;
+  }
+
   /// @dev Sets targetPercentage
   /// @param _targetPercentage - target collateral to debt percentage
   function setTargetPercentage(uint256 _targetPercentage) onlyPipeline override external {
@@ -136,6 +152,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     }
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(pipeData.borrowToken, output);
+    emit Put(address(this), amount, output);
   }
 
   /// @dev function for repaying debt then withdrawing from collateral
@@ -157,6 +174,8 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     }
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
+    emit Get(address(this), amount, output);
+
   }
 
   /// @dev function for re balancing. When rebalance
@@ -271,6 +290,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   function borrow(uint256 amount) private {
     if (amount != 0) {
       _stablecoin.borrowToken(vaultID, amount);
+      emit Borrowed(amount);
     }
   }
 
@@ -283,6 +303,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
       _erc20Approve(pipeData.borrowToken, pipeData.stablecoin, repayAmount);
       _stablecoin.payBackToken(vaultID, repayAmount);
     }
+    emit Repaid(repayAmount);
     return repayAmount;
   }
 
