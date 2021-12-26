@@ -14,6 +14,10 @@ pragma solidity 0.8.4;
 
 interface IMaiStablecoinPipe {
 
+  function setMaxImbalance(uint256 _maxImbalance) external;
+
+  function maxImbalance() external view returns (uint256);
+
   function setTargetPercentage(uint256 _targetPercentage) external;
 
   function targetPercentage() external view returns (uint256);
@@ -24,4 +28,6 @@ interface IMaiStablecoinPipe {
 
   function availableMai() external view returns (uint256);
 
-}
+  function maxDeposit() external view returns (uint256);
+
+  }

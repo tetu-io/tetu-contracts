@@ -56,7 +56,7 @@ export default {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
-      timeout: 99999,
+      timeout: 99999 * 2,
       gas: argv.hardhatChainId === 137 ? 19_000_000 :
         argv.hardhatChainId === 250 ? 11_000_000 :
           9_000_000,

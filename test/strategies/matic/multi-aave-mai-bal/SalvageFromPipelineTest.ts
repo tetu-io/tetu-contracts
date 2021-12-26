@@ -44,7 +44,9 @@ export class SalvageFromPipelineTest extends SpecificStrategyTest {
       const balanceBefore = await TokenUtils.balanceOf(token, signer.address)
       console.log('>>>balanceBefore', balanceBefore);
 
-      await strategyGov.salvageFromPipeline(signer.address, token);
+      await expect(strategyGov.salvageFromPipeline(signer.address, token))
+        .to.emit(strategyGov, 'SalvagedFromPipeline')
+        .withArgs(signer.address, utils.getAddress(token))
 
       const balanceAfter = await TokenUtils.balanceOf(token, signer.address)
       console.log('>>>balanceAfter ', balanceAfter);
