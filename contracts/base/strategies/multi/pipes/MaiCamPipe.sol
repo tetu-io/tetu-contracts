@@ -51,7 +51,7 @@ contract MaiCamPipe is Pipe {
     ICamToken(outputToken).enter(amount);
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
-    emit Put(address(this), amount, output);
+    emit Put(amount, output);
   }
 
   /// @dev function for de-vesting, withdrawals, leaves, paybacks
@@ -62,7 +62,7 @@ contract MaiCamPipe is Pipe {
     ICamToken(pipeData.lpToken).leave(amount);
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
-    emit Get(address(this), amount, output);
+    emit Get(amount, output);
   }
 
 }
