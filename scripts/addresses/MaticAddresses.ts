@@ -131,10 +131,8 @@ export class MaticAddresses {
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
 
   // Dino
-  // Currently, DinoSwap DEX Router is integrated via SushiSwap —
-  // router functionality will be added to incorporate additional DEXs in the
-  // near future.
-  // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
+  public static DINO_FACTORY = "0x624Ccf581371F8A4493e6AbDE46412002555A1b6".toLowerCase();
+  public static DINO_ROUTER = "0x6AC823102CB347e1f5925C634B80a98A3aee7E03".toLowerCase();
   public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
   public static DINO_DINO_USDC = "0x3324af8417844e70b81555A6D1568d78f4D4Bf1f".toLowerCase();
   public static DINO_DINO_WETH = "0x9f03309A588e33A239Bf49ed8D68b2D45C7A1F11".toLowerCase();
@@ -227,6 +225,8 @@ export class MaticAddresses {
         return MaticAddresses.CAFE_ROUTER;
       case MaticAddresses.TETU_SWAP_FACTORY:
         return MaticAddresses.TETU_SWAP_ROUTER;
+      case MaticAddresses.DINO_FACTORY:
+        return MaticAddresses.DINO_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

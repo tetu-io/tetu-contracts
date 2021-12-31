@@ -9,8 +9,8 @@ export class MaticToolsAddresses {
     '0xFE700D523094Cc6C673d78F1446AE0743C89586E', // rebalancer
     '0x9Accc3016c0CE34e1D127849A18DF4Bd6Ecb7aB3', // payrollClerk
     '0x0000000000000000000000000000000000000000', // mockFaucet
-    '0xf2547B486e685Feaa31c49e035080d6A7DE0e441', // multiSwap
-    '0x8e365e2f1cc56D9cD0Eb3B0a00705d089Ca1dFA1', // zapContract
+    '0xFAce0FF59Cb97c1Bca061e78c8F73095B6590d16', // multiSwap
+    '0xb907b3F16D46Eb7Ce974696AB09c723408883eDB', // zapContract
     '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
     '0x48aD115540a0f9E128Ee62dF5Ce519451ba5F6E0', // pawnshopReader
   );

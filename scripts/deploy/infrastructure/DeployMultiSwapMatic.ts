@@ -22,6 +22,7 @@ async function main() {
       MaticAddresses.TETU_SWAP_FACTORY,
       MaticAddresses.CAFE_FACTORY,
       MaticAddresses.DFYN_FACTORY,
+      MaticAddresses.DINO_FACTORY,
     ],
     [
       MaticAddresses.QUICK_ROUTER,
@@ -30,6 +31,7 @@ async function main() {
       MaticAddresses.TETU_SWAP_ROUTER,
       MaticAddresses.CAFE_ROUTER,
       MaticAddresses.DFYN_ROUTER,
+      MaticAddresses.DINO_ROUTER,
     ]
   ]);
 }

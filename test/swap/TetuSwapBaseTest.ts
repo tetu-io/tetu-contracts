@@ -123,9 +123,10 @@ describe("Tetu Swap base tests", function () {
     } else if ((await ethers.provider.getNetwork()).chainId === 250) {
       expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
     }
-
-    expect((await lpCtr.vault0()).toLowerCase()).is.eq(vault0.toLowerCase());
-    expect((await lpCtr.vault1()).toLowerCase()).is.eq(vault1.toLowerCase());
+    const lpV0 = (await lpCtr.vault0()).toLowerCase();
+    const lpV1 = (await lpCtr.vault1()).toLowerCase();
+    expect(lpV0 === vault0.toLowerCase() || lpV0 === vault1.toLowerCase()).is.eq(true);
+    expect(lpV1 === vault0.toLowerCase() || lpV1 === vault1.toLowerCase()).is.eq(true);
 
     await UniswapUtils.addLiquidity(
       signer,

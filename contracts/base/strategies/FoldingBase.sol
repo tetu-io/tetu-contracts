@@ -105,6 +105,10 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     return _isFoldingProfitable();
   }
 
+  function _isAutocompound() internal view virtual returns (bool) {
+    return _buyBackRatio != _BUY_BACK_DENOMINATOR;
+  }
+
   // ************* GOV ACTIONS **************
 
   /// @dev Set folding state
@@ -153,6 +157,12 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     emit CollateralFactorNumeratorChanged(_target);
   }
 
+  /// @dev Set buy back denominator
+  function setBuyBack(uint256 _value) external restricted {
+    require(_value <= _BUY_BACK_DENOMINATOR, "FS: Too high");
+    _buyBackRatio = _value;
+  }
+
   //////////////////////////////////////////////////////
   //////////// STRATEGY FUNCTIONS IMPLEMENTATIONS //////
   //////////////////////////////////////////////////////
@@ -167,7 +177,11 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   function doHardWork() external onlyNotPausedInvesting override restricted {
     investAllUnderlying();
     _claimReward();
-    _compound();
+    if (_isAutocompound()) {
+      _autocompound();
+    } else {
+      _compound();
+    }
     // supply underlying for avoiding liquidation in case of reward is the same as underlying
     if (underlyingBalance() > 0) {
       _supply(underlyingBalance());
@@ -277,8 +291,10 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
       _supply(amount);
-      // we need to sell excess in non hardWork function for keeping ppfs ~1
-      _liquidateExcessUnderlying();
+      if (!_isAutocompound()) {
+        // we need to sell excess in non hardWork function for keeping ppfs ~1
+        _liquidateExcessUnderlying();
+      }
     }
     if (foldState == 2 || !fold) {
       return;
@@ -363,7 +379,36 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   ///////////////// LIQUIDATION ////////////////////////
   //////////////////////////////////////////////////////
 
+  function _autocompound() internal {
+    require(_isAutocompound(), "FB: Must use compound");
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      address rt = _rewardTokens[i];
+      // a little threshold
+      if (amount > 1000) {
+        uint toDistribute = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount - toDistribute;
+        console.log("toDistribute", toDistribute);
+        console.log("toCompound", toCompound);
+        address forwarder = IController(controller()).feeRewardForwarder();
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, amount);
+        IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, toCompound);
+        try IFeeRewardForwarder(forwarder).distribute(toDistribute, _underlyingToken, _smartVault)
+        returns (uint256 targetTokenEarned) {
+          if (targetTokenEarned > 0) {
+            IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+          }
+        } catch {
+          emit UnderlyingLiquidationFailed();
+        }
+      }
+    }
+
+  }
+
   function _compound() internal {
+    require(!_isAutocompound(), "FB: Must use autocompound");
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
@@ -376,8 +421,6 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
         // it will sell reward token to Target Token and send back
         if (amount != 0) {
           address forwarder = IController(controller()).feeRewardForwarder();
-          // keep a bit for for distributing for catch all necessary events
-          amount = amount * 90 / 100;
           IERC20(rt).safeApprove(forwarder, 0);
           IERC20(rt).safeApprove(forwarder, amount);
           uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);

@@ -30,10 +30,12 @@ export class PriceCalculatorUtils {
     const net = await ethers.provider.getNetwork();
     if (net.chainId === 137) {
       network = 'MATIC';
-    } else if (net.chainId === 250) {
       const tools = await DeployerUtils.getToolsAddresses();
       return PriceCalculator__factory.connect(tools.calculator, ethers.provider).getPriceWithDefaultOutput(token);
-      // network = 'FANTOM';
+    } else if (net.chainId === 250) {
+      network = 'FANTOM';
+      const tools = await DeployerUtils.getToolsAddresses();
+      return PriceCalculator__factory.connect(tools.calculator, ethers.provider).getPriceWithDefaultOutput(token);
     } else {
       throw Error('No config for ' + net.chainId);
     }

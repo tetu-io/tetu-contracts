@@ -6,6 +6,7 @@ import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {RunHelper} from "../../../../scripts/utils/tools/RunHelper";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -18,7 +19,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneDinoStrategyTest: {
       type: "number",
-      default: 10,
+      default: -1,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -32,7 +33,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe.skip('Universal Dino tests', async () => {
+describe('Universal Dino tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
@@ -41,6 +42,7 @@ describe.skip('Universal Dino tests', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    // await deployInfo?.tools?.calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, "Dinoswap V2");
   });
 
   infos.forEach(info => {
@@ -68,7 +70,7 @@ describe.skip('Universal Dino tests', async () => {
 
     /* tslint:disable:no-floating-promises */
     startDefaultLpStrategyTest(
-      'StrategyDinoSwapLp',
+      'StrategyDinoSwapV2LpAc',
       MaticAddresses.SUSHI_FACTORY,
       lpAddress.toLowerCase(),
       token0,

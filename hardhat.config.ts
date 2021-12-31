@@ -29,6 +29,10 @@ const argv = require('yargs/yargs')()
     ftmRpcUrl: {
       type: "string",
     },
+    ethRpcUrl: {
+      type: "string",
+      default: ''
+    },
     infuraKey: {
       type: "string",
     },
@@ -41,7 +45,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 22389500
+      default: 23106175
     },
     ftmForkBlock: {
       type: "number",
@@ -92,6 +96,11 @@ export default {
       gas: 19_000_000,
       gasPrice: 100_000_000_000,
       // gasMultiplier: 2,
+      accounts: [argv.privateKey],
+    },
+    eth: {
+      url: argv.ethRpcUrl,
+      chainId: 1,
       accounts: [argv.privateKey],
     },
     mumbai: {

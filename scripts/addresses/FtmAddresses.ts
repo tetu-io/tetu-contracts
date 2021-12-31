@@ -35,6 +35,7 @@ export class FtmAddresses {
   public static SPOOKY_SWAP_ROUTER = "0xF491e7B69E4244ad4002BC14e878a34207E38c29".toLowerCase();
   public static SPOOKY_MASTERCHEF = "0x2b2929E785374c651a81A63878Ab22742656DcDd".toLowerCase();
   public static SPOOKY_WFTM_SCREAM = "0x30872e4fc4edbfd7a352bfc2463eb4fae9c09086".toLowerCase();
+  public static SPOOKY_TETU_USDC = "0x1b989bDE3aA642831596000e985b7D5EAeF2503e".toLowerCase();
 
   // Scream
   public static SCREAM_CONTROLLER = "0x260E596DAbE3AFc463e75B6CC05d8c46aCAcFB09".toLowerCase();
