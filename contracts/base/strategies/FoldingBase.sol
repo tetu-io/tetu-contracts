@@ -388,8 +388,6 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       if (amount > 1000) {
         uint toDistribute = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
         uint toCompound = amount - toDistribute;
-        console.log("toDistribute", toDistribute);
-        console.log("toCompound", toCompound);
         address forwarder = IController(controller()).feeRewardForwarder();
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, amount);
