@@ -23,6 +23,7 @@ import "../interface/IFundKeeper.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
+import "../interface/IAaveMaiBalStrategyBase.sol";
 import "./ControllerStorage.sol";
 import "./Controllable.sol";
 
@@ -561,6 +562,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
       ISmartVault(_vault).getPricePerFullShare(),
       block.timestamp
     );
+  }
+
+  /// @notice Only HardWorker can do it. Call rebalanceAllPipes for given Strategy
+  /// @param _strategy Vault addresses
+  function rebalanceAllPipes(address _strategy) external override {
+    require(hardWorkers[msg.sender], "C: Not hardworker");
+    require(strategies[_strategy], "C: Not strategy");
+    IAaveMaiBalStrategyBase(_strategy).rebalanceAllPipes();
   }
 
   // ***************** EXTERNAL *******************************

@@ -70,6 +70,8 @@ interface IController {
 
   function isValidStrategy(address _strategy) external view returns (bool);
 
+  function rebalanceAllPipes(address _strategy) external;
+
   // ************ DAO ACTIONS *************
   function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) external;
 
