@@ -60,6 +60,7 @@ export class MaticAddresses {
   public static KLIMA_TOKEN = "0x4e78011ce80ee02d2c3e649fb657e45898257815".toLowerCase();
   public static BCT_TOKEN = "0x2F800Db0fdb5223b3C3f354886d907A671414A7F".toLowerCase();
   public static PSP_TOKEN = "0x42d61D766B85431666B39B89C43011f24451bFf6".toLowerCase();
+  public static VSQ_TOKEN = "0x29F1e986FCa02B7E54138c04C4F503DdDD250558".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -199,6 +200,12 @@ export class MaticAddresses {
   public static sKLIMA = '0xb0C22d8D350C67420f06F48936654f567C73E8C8'.toLowerCase();
   public static KLIMA_DISTRIBUTOR = '0x4cC7584C3f8FAABf734374ef129dF17c3517e9cB'.toLowerCase();
   public static KLIMA_TREASURY = '0x7Dd4f0B986F032A44F913BF92c9e8b7c17D77aD7'.toLowerCase();
+
+  // VESQ
+  public static VESQ_STAKING = '0x2F3E9e54bD4513D1B49A6d915F9a83310638CFC2'.toLowerCase();
+  public static sVESQ = '0xbb0FDc2Fe6D3cEB6Bf76Cc955173a07EDbF57494'.toLowerCase();
+  public static VESQ_DISTRIBUTOR = '0xabE372DCFB8800B3cDE30f1d6666401C765f2F3B'.toLowerCase();
+  public static VESQ_TREASURY = '0x8c7290399cECbBBf31E471951Cc4C2ce91F5073c'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,

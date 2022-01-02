@@ -9,8 +9,8 @@ import {RunHelper} from "../tools/RunHelper";
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
-  // const signer = (await ethers.getSigners())[0];
-  const signer = await DeployerUtils.impersonate('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94');
+  const signer = (await ethers.getSigners())[0];
+  // const signer = await DeployerUtils.impersonate('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94');
 
   const controller = await DeployerUtils.connectProxy(core.controller, signer, "Controller") as Controller;
   const bookkeeper = await DeployerUtils.connectProxy(core.bookkeeper, signer, "Bookkeeper") as Bookkeeper;
@@ -22,7 +22,7 @@ async function main() {
   // noinspection InfiniteLoopJS
   while (true) {
     // tslint:disable-next-line:prefer-for-of
-    for (let i = 25; i < vaults.length; i++) {
+    for (let i = 0; i < vaults.length; i++) {
       const vault = vaults[i];
       const vaultContract = await DeployerUtils.connectVault(vault, signer);
       const strategy = await vaultContract.strategy();

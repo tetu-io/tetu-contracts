@@ -45,7 +45,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 23106175
+      default: 23238072
     },
     ftmForkBlock: {
       type: "number",
@@ -94,7 +94,7 @@ export default {
       timeout: 99999,
       chainId: 137,
       gas: 19_000_000,
-      gasPrice: 100_000_000_000,
+      // gasPrice: 100_000_000_000,
       // gasMultiplier: 2,
       accounts: [argv.privateKey],
     },

@@ -34,7 +34,8 @@ interface IStrategy {
     GEIST, //16
     HARVEST, //17
     SCREAM_LEND, //18
-    KLIMA //19
+    KLIMA, //19
+    VESQ //20
   }
 
   // *************** GOVERNANCE ACTIONS **************

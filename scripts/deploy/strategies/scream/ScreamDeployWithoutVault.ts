@@ -4,6 +4,10 @@ import {ContractReader, IStrategy} from "../../../../typechain";
 import {appendFileSync, mkdir, readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([
+  '14',
+  '17',
+  '18',
+  '19',
 ]);
 
 async function main() {
@@ -11,7 +15,11 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const infos = readFileSync('scripts/utils/download/data/geist_markets.csv', 'utf8').split(/\r?\n/);
+  mkdir('./tmp/deployed', {recursive: true}, (err) => {
+    if (err) throw err;
+  });
+
+  const infos = readFileSync('scripts/utils/download/data/scream_markets.csv', 'utf8').split(/\r?\n/);
 
   const vaultsByUnderlying = new Map<string, string>();
 
@@ -29,19 +37,20 @@ async function main() {
     vaultsByUnderlying.set(underlying, vAdr);
   }
 
-  appendFileSync(`./tmp/deployed/GEIST_STRATS_UPD.txt`, '-------------------\n', 'utf8');
+  appendFileSync(`./tmp/deployed/SCREAM_STRATS_UPD.txt`, '-------------------\n', 'utf8');
+
+  // *********** DEPLOY VAULT
   for (const info of infos) {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const tokenName = strat[1];
-    const tokenAddress = strat[2];
-    const aTokenName = strat[3];
-    const aTokenAddress = strat[4];
-    const dTokenName = strat[5];
-    const dTokenAddress = strat[6];
-    const ltv = +strat[7];
-    const liquidationThreshold = strat[8];
+    const scTokenName = strat[1];
+    const scTokenAddress = strat[2];
+    const tokenAddress = strat[3];
+    const tokenName = strat[4];
+    const collateralFactor = strat[5];
+    const borrowTarget = strat[6];
+    const tvl = strat[7];
 
     if (idx === 'idx' || !tokenAddress) {
       console.log('skip', idx);
@@ -56,33 +65,31 @@ async function main() {
     const vault = vaultsByUnderlying.get(tokenAddress.toLowerCase()) as string;
     const vaultName = await cReader.vaultUnderlying(vault);
 
-    console.log('strat', idx, aTokenName, vaultName);
-
-    const collateralFactor = (ltv).toFixed(0);
-    const borrowTarget = (ltv * 0.87).toFixed(0);
+    console.log('strat', idx, scTokenName, vaultName);
 
     const strategyArgs = [
       core.controller,
       vault,
       tokenAddress,
+      scTokenAddress,
       borrowTarget,
       collateralFactor
     ];
     const strategy = await DeployerUtils.deployContract(
       signer,
-      'StrategyGeistFold',
+      'StrategyScreamFold',
       ...strategyArgs
     ) as IStrategy;
 
     await DeployerUtils.wait(5);
 
-    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/fantom/geist/StrategyGeistFold.sol:StrategyGeistFold', strategyArgs);
+    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/fantom/scream/StrategyScreamFold.sol:StrategyScreamFold', strategyArgs);
 
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
     const txt = `${tokenName} vault: ${vault} strategy: ${strategy.address}\n`;
-    appendFileSync(`./tmp/deployed/GEIST_STRATS_UPD.txt`, txt, 'utf8');
+    appendFileSync(`./tmp/deployed/SCREAM_STRATS_UPD.txt`, txt, 'utf8');
   }
 
 }
