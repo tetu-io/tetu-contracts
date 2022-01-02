@@ -12,12 +12,8 @@
 
 pragma solidity 0.8.4;
 
-/// @dev This interface contains additional functions for Controllable class
-///      Don't extend exist Controllable for the reason huge coherence
-interface IControllableExtended {
+interface IBalancingStrategy {
 
-  function created() external view returns (uint256 ts);
-
-  function controller() external view returns (address adr);
+  function rebalanceAllPipes() external;
 
 }
