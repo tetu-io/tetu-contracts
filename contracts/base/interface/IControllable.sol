@@ -18,5 +18,4 @@ interface IControllable {
 
   function isGovernance(address _contract) external view returns (bool);
 
-  function controller() external view returns (address adr);
 }

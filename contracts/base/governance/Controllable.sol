@@ -83,7 +83,7 @@ abstract contract Controllable is Initializable, IControllable {
 
   /// @notice Return controller address saved in the contract slot
   /// @return adr Controller address
-  function controller() public override view returns (address adr) {
+  function controller() public view returns (address adr) {
     bytes32 slot = _CONTROLLER_SLOT;
     assembly {
       adr := sload(slot)

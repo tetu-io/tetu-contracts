@@ -564,11 +564,12 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     );
   }
 
-  /// @notice Only HardWorker can do it. Call rebalanceAllPipes for given Strategy
+  /// @notice Only HardWorker can do it. Call rebalanceAllPipes for given Strategy (AMB Platform)
   /// @param _strategy Vault addresses
-  function rebalanceAllPipes(address _strategy) external override {
+  function rebalance(address _strategy) external override {
     require(hardWorkers[msg.sender], "C: Not hardworker");
     require(strategies[_strategy], "C: Not strategy");
+    require(IStrategy(_strategy).platform() == IStrategy.Platform.AAVE_MAI_BAL, "C: Wrong platform");
     IAaveMaiBalStrategyBase(_strategy).rebalanceAllPipes();
   }
 
