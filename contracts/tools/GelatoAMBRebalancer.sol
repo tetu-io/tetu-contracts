@@ -16,7 +16,7 @@ import "../third_party/gelato/PokeMeReady.sol";
 import "../base/interface/ILinearPipeline.sol";
 import "../base/interface/IAaveMaiBalStrategyBase.sol";
 import "../base/interface/IController.sol";
-import "../base/interface/IControllable.sol";
+import "../base/interface/IControllableExtended.sol";
 
 contract GelatoAMBRebalancer is PokeMeReady {
 
@@ -29,8 +29,8 @@ contract GelatoAMBRebalancer is PokeMeReady {
   /// @param AMBStrategy AMB strategy address
   function rebalanceAllPipes(address AMBStrategy)
   external onlyPokeMe {
-    address controller = IControllable(AMBStrategy).controller();
-    IController(controller).rebalanceAllPipes(AMBStrategy);
+    address controller = IControllableExtended(AMBStrategy).controller();
+    IController(controller).rebalance(AMBStrategy);
     emit GelatoRebalanceAllPipes(AMBStrategy);
   }
 
