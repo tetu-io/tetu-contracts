@@ -14,7 +14,6 @@ pragma solidity 0.8.4;
 
 import "../third_party/gelato/PokeMeReady.sol";
 import "../base/interface/ILinearPipeline.sol";
-import "../base/interface/IAaveMaiBalStrategyBase.sol";
 import "../base/interface/IController.sol";
 import "../base/interface/IControllableExtended.sol";
 

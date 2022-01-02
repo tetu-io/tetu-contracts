@@ -23,7 +23,7 @@ import "../interface/IFundKeeper.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
-import "../interface/IAaveMaiBalStrategyBase.sol";
+import "../interface/IBalancingStrategy.sol";
 import "./ControllerStorage.sol";
 import "./Controllable.sol";
 
@@ -569,8 +569,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function rebalance(address _strategy) external override {
     require(hardWorkers[msg.sender], "C: Not hardworker");
     require(strategies[_strategy], "C: Not strategy");
-    require(IStrategy(_strategy).platform() == IStrategy.Platform.AAVE_MAI_BAL, "C: Wrong platform");
-    IAaveMaiBalStrategyBase(_strategy).rebalanceAllPipes();
+    IBalancingStrategy(_strategy).rebalanceAllPipes();
   }
 
   // ***************** EXTERNAL *******************************
