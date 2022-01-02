@@ -137,9 +137,12 @@ describe('Balancer AM tests', async () => {
       console.log("balance1: ", balances[0].toString());
       console.log("balance2: ", balances[1].toString());
 
-      await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, investor, pool.address, "10000");
+§      await TokenUtils.transfer(MaticAddresses.WMATIC_TOKEN, investor, pool.address, "1000");
+      await TokenUtils.transfer(MaticAddresses.WBTC_TOKEN, investor, pool.address, "20");
 
-      await vault.swap(singleSwap, funds, limit, deadline);
+      await pool.joinPool();
+
+      // await vault.swap(singleSwap, funds, limit, deadline);
 
 
 
