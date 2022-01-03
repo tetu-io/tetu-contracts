@@ -17,7 +17,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/nacho/ITShareRewardPool.sol";
-import "../../interface/IMasterChefStrategyCafe.sol";
 
 
 /// @title Abstract contract for NachoLP strategy implementation
@@ -81,7 +80,7 @@ abstract contract NachoLPStrategyBase is StrategyBase{
     return toClaim;
   }
 
-  /// @notice TVL of the underlying in the MasterChef pool
+  /// @notice TVL of the underlying in the TShareRewardPool pool
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
@@ -99,7 +98,7 @@ abstract contract NachoLPStrategyBase is StrategyBase{
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
-  /// @dev Deposit underlying to MasterChef pool
+  /// @dev Deposit underlying to TShareRewardPool pool
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
     IERC20(_underlyingToken).safeApprove(address(tShareRewardPool), 0);
@@ -108,7 +107,7 @@ abstract contract NachoLPStrategyBase is StrategyBase{
     tShareRewardPool.deposit(poolID, amount);
   }
 
-  /// @dev Withdraw underlying from MasterChef pool
+  /// @dev Withdraw underlying from TShareRewardPool pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
     tShareRewardPool.withdraw(poolID, amount);
