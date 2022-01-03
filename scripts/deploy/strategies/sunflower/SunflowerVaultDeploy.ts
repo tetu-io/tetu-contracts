@@ -3,9 +3,9 @@ import {DeployStubVault} from "../DeployStubVault";
 
 async function main() {
   await DeployStubVault.deploy(
-    'miFARM',
-    MaticAddresses.miFARM_TOKEN,
-    17
+    'SFF',
+    MaticAddresses.SFF_TOKEN,
+    22
   )
 }
 

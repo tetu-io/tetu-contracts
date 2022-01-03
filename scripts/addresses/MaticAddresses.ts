@@ -61,6 +61,7 @@ export class MaticAddresses {
   public static BCT_TOKEN = "0x2F800Db0fdb5223b3C3f354886d907A671414A7F".toLowerCase();
   public static PSP_TOKEN = "0x42d61D766B85431666B39B89C43011f24451bFf6".toLowerCase();
   public static VSQ_TOKEN = "0x29F1e986FCa02B7E54138c04C4F503DdDD250558".toLowerCase();
+  public static SFF_TOKEN = "0xdf9B4b57865B403e08c85568442f95c26b7896b0".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

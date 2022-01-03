@@ -35,7 +35,9 @@ interface IStrategy {
     HARVEST, //17
     SCREAM_LEND, //18
     KLIMA, //19
-    VESQ //20
+    VESQ, //20
+    QIDAO, //21
+    SUNFLOWER //22
   }
 
   // *************** GOVERNANCE ACTIONS **************

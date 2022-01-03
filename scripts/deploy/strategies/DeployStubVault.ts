@@ -3,13 +3,12 @@ import {DeployerUtils} from "../DeployerUtils";
 import {ContractReader, IStrategy} from "../../../typechain";
 import {writeFileSync} from "fs";
 
-export class SingleTokenVaultStrategyDeploy {
-
+export class DeployStubVault {
 
   public static async deploy(
-    underlying: string,
     tokenName: string,
-    strategyName: string
+    tokenAddress: string,
+    platformId: number
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -27,21 +26,29 @@ export class SingleTokenVaultStrategyDeploy {
       vaultNames.add(await cReader.vaultName(vAdr));
     }
 
-    const vaultNameWithoutPrefix = tokenName;
-
-    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + tokenName)) {
+      console.log('Strategy already exist', tokenName);
     }
 
+    const UNDERLYING = tokenAddress;
+
     const [vaultLogic, vault, strategy] = await DeployerUtils.deployVaultAndStrategy(
-      vaultNameWithoutPrefix,
-      async vaultAddress => DeployerUtils.deployContract(
-        signer,
-        strategyName,
-        core.controller,
-        vaultAddress,
-        underlying
-      ) as Promise<IStrategy>,
+      tokenName,
+      (vaultAddress) => {
+        const args = [
+          core.controller, // _controller
+          UNDERLYING, // _underlying
+          vaultAddress, // _vault
+          [], // __rewardTokens
+          [UNDERLYING], // __assets
+          platformId, // __platform
+        ];
+        return DeployerUtils.deployContract(
+          signer,
+          'NoopStrategy',
+          ...args
+        ) as Promise<IStrategy>;
+      },
       core.controller,
       core.psVault,
       signer,
@@ -56,12 +63,15 @@ export class SingleTokenVaultStrategyDeploy {
     await DeployerUtils.verifyProxy(vault.address);
     await DeployerUtils.verifyWithArgs(strategy.address, [
       core.controller,
+      UNDERLYING,
       vault.address,
-      underlying
+      [], // __rewardTokens
+      [UNDERLYING], // __assets
+      17, // __platform
     ]);
 
     const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
+    writeFileSync(`./tmp/deployed/${tokenName}.txt`, txt, 'utf8');
   }
 
 }

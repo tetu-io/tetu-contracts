@@ -1,11 +1,11 @@
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
-import {DeployStubVault} from "../DeployStubVault";
+import {SingleTokenVaultStrategyDeploy} from "../SingleTokenVaultStrategyDeploy";
 
 async function main() {
-  await DeployStubVault.deploy(
-    'miFARM',
-    MaticAddresses.miFARM_TOKEN,
-    17
+  await SingleTokenVaultStrategyDeploy.deploy(
+    MaticAddresses.VSQ_TOKEN,
+    'VSQ',
+    'StrategyVesqStaking'
   )
 }
 
