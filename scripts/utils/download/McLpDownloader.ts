@@ -50,7 +50,8 @@ export class McLpDownloader {
       if (vInfo.active) {
         console.log(vInfo.addr);
         const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
-        const rewards = await VaultUtils.vaultRewardsAmount(vctr, core.psVault);
+        const rts = await vctr.rewardTokens();
+        const rewards = await VaultUtils.vaultRewardsAmount(vctr, rts[0]);
         console.log('rewards', rewards);
         currentRewards.set(vInfo.underlying.toLowerCase(), rewards);
       }

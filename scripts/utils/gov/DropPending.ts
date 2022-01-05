@@ -30,7 +30,8 @@ const argv = require('yargs/yargs')()
   }).argv;
 
 async function main() {
-  const signer = (await ethers.getSigners())[0];
+  const signer = new ethers.Wallet(argv.speedUpPrivateKey, ethers.provider);
+  console.log('signer', signer.address);
 
   while (true) {
     const nonce = await web3.eth.getTransactionCount(signer.address)
@@ -60,6 +61,7 @@ async function main() {
     await web3.eth.sendSignedTransaction(txRaw, (err, res) => {
       console.log('result', err, res);
     });
+    // break
   }
 
 }

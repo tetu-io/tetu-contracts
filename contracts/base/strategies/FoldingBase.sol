@@ -111,6 +111,19 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
 
   // ************* GOV ACTIONS **************
 
+  function claimReward() external hardWorkers {
+    _claimReward();
+  }
+
+  /// @dev Liquidate rewards and do underlying compound
+  function compound() external hardWorkers {
+    if (_isAutocompound()) {
+      _autocompound();
+    } else {
+      _compound();
+    }
+  }
+
   /// @dev Set folding state
   /// @param _state 0 - default mode, 1 - always enable, 2 - always disable
   function setFold(uint _state) external override restricted {
@@ -133,8 +146,23 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @dev Rebalances the borrow ratio
-  function rebalance() external override restricted {
+  function rebalance() external override hardWorkers {
     _rebalance();
+  }
+
+  /// @dev Check fold state and rebalance if needed
+  function checkFold() external hardWorkers {
+    if (foldState == 0) {
+      if (!isFoldingProfitable() && fold) {
+        _stopFolding();
+      } else if (isFoldingProfitable() && !fold) {
+        _startFolding();
+      } else {
+        _rebalance();
+      }
+    } else {
+      _rebalance();
+    }
   }
 
   /// @dev Set borrow rate target
@@ -174,7 +202,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     _claimReward();
     if (_isAutocompound()) {

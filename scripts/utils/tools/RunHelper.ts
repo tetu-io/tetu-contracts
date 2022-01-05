@@ -31,6 +31,7 @@ export class RunHelper {
       await DeployerUtils.delay(10000);
     }
     log.info('transaction result', tr.hash, receipt?.status);
+    log.info('gas used', receipt.gasUsed.toString());
     if (receipt?.status !== 1 && stopOnError) {
       throw Error("Wrong status!");
     }

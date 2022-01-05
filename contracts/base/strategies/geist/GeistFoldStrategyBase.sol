@@ -221,12 +221,13 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @param token address (supply or debt)
   /// @return forecasted amount of tokens
   function _rewardPrediction(uint256 _seconds, address token) private view returns (uint256){
+    uint dec = IERC20Extended(token).decimals();
     uint rewardPerSecond = chef.rewardsPerSecond();
     uint allocPoint = chef.poolInfo(token).allocPoint;
     uint totalAllocPoint = chef.totalAllocPoint();
     uint totalSupply = chef.poolInfo(token).totalSupply;
     uint rewardPerTotalSupply = rewardPerSecond * allocPoint * _seconds / totalAllocPoint / 2;
-    return rewardPerTotalSupply * 1e18 / totalSupply;
+    return rewardPerTotalSupply * (10 ** dec) / totalSupply;
   }
 
   function rewardUnderlyingPrediction(uint256 _seconds, uint256 currentLiquidityRate) external pure returns (uint256){

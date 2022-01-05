@@ -5,7 +5,7 @@
 export class FtmAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  public static GOV_ADDRESS = "0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94";
+  public static GOV_ADDRESS = "0x11d946C4Df8222940F9e7e6E56042Be2832B0871";
   // tokens
   public static TETU_TOKEN = "0x65c9d9d080714cDa7b5d58989Dc27f897F165179".toLowerCase();
   public static WETH_TOKEN = "0x74b23882a30290451a17c44f4f05243b6b58c76d".toLowerCase();
