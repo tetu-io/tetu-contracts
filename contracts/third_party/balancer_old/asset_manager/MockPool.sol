@@ -83,7 +83,6 @@ contract MockPool is IGeneralPool, IMinimalSwapInfoPool {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external override returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts) {
-        console.log("onJoinPool called");
         emit OnJoinPoolCalled(
             poolId,
             sender,
@@ -94,7 +93,7 @@ contract MockPool is IGeneralPool, IMinimalSwapInfoPool {
             userData
         );
 
-//        (amountsIn, dueProtocolFeeAmounts) = abi.decode(userData, (uint256[], uint256[]));
+        (amountsIn, dueProtocolFeeAmounts) = abi.decode(userData, (uint256[], uint256[]));
     }
 
     function onExitPool(
@@ -156,75 +155,4 @@ contract MockPool is IGeneralPool, IMinimalSwapInfoPool {
                 ? swapRequest.amount.mulDown(_multiplier)
                 : swapRequest.amount.divDown(_multiplier);
     }
-
-    /**
-     * This function demonstrates how to add liquidity to an already initialized pool
-     * It's very similar to the initializePool except we provide different userData
-     */
-    function joinPool() public {
-        (IERC20[] memory tokens, , ) = _vault.getPoolTokens(_poolId);
-
-        uint256 bal0 = tokens[0].balanceOf(address(this));
-        uint256 bal1 = tokens[1].balanceOf(address(this));
-
-        console.log("token 0", address(tokens[0]));
-        console.log("token 1", address(tokens[1]));
-
-        console.log("token 0 bal", bal0);
-        console.log("token 1", bal1);
-
-        _erc20Approve(address(tokens[0]), address(_vault), 100);
-        _erc20Approve(address(tokens[1]), address(_vault), 100);
-
-        uint256[] memory maxAmountsIn = new uint256[](tokens.length);
-        maxAmountsIn[0] = 10;
-        maxAmountsIn[1] = 0;
-
-        // Now the pool is initialized we have to encode a different join into the userData
-//        bytes memory userData = abi.encode(IVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, maxAmountsIn, 1);
-//        console.log("userData, %s", userData);
-////        bytes memory userData = bytes(0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000);
-//
-//        IVault.JoinPoolRequest memory request = IVault.JoinPoolRequest({
-//            assets: _convertERC20sToAssets(tokens),
-//            maxAmountsIn: maxAmountsIn,
-//            userData: userData,
-//            fromInternalBalance: false
-//        });
-
-        bytes memory userData = abi.encode(
-            WeightedPoolUserData.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT,
-            maxAmountsIn,
-            uint256(0)
-        );
-
-        IVault.JoinPoolRequest memory request = IVault.JoinPoolRequest(_convertERC20sToAssets(tokens), maxAmountsIn, userData, true);
-
-        _vault.joinPool(_poolId, address(this), address(this), request);
-
-
-
-
-//        _vault.joinPool(_poolId, address(this), address(this), request);
-    }
-
-    /**
-     * @dev This helper function is a fast and cheap way to convert between IERC20[] and IAsset[] types
-     */
-    function _convertERC20sToAssets(IERC20[] memory tokens) internal pure returns (IAsset[] memory assets) {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            assets := tokens
-        }
-    }
-
-    /// @dev Approve to spend ERC20 token amount for spender
-    /// @param _token ERC20 token address
-    /// @param spender address
-    /// @param amount to spend
-    function _erc20Approve(address _token, address spender, uint256 amount) internal {
-        IERC20(_token).approve(spender, 0);
-        IERC20(_token).approve(spender, amount);
-    }
-
 }

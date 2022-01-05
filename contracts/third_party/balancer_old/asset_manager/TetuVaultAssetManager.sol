@@ -27,9 +27,10 @@ pragma experimental ABIEncoderV2;
 contract TetuVaultAssetManager is RewardsAssetManager {
     using SafeERC20 for IERC20;
 
-    address public constant VAULT = address(0xF20fcd005AFDd3AD48C85d0222210fe168DDd10c);
+    address public constant VAULT = address(0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7);
+    address public constant xTetu = address(0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454);
 
-    address public underlyingToken; // wbtc
+    address public underlyingToken;
 
 
     // @notice rewards distributor for pool which owns this asset manager
@@ -58,7 +59,10 @@ contract TetuVaultAssetManager is RewardsAssetManager {
      * @return the amount deposited
      */
     function _invest(uint256 amount, uint256) internal override returns (uint256) {
+        console.log("invest amount: %s", amount);
         uint256 balance = IERC20(underlyingToken).balanceOf(address(this));
+        console.log("invest balance: %s", balance);
+
         if (amount < balance) {
             balance = amount;
         }
@@ -66,6 +70,7 @@ contract TetuVaultAssetManager is RewardsAssetManager {
         IERC20(underlyingToken).safeApprove(VAULT, balance);
 
         // invest to VAULT
+        console.log("invest deposit");
         ISmartVault(VAULT).deposit(balance);
         console.log("invest > AUM: %s", _getAUM());
         console.log("invested %s of  %s", balance, underlyingToken);
@@ -78,17 +83,20 @@ contract TetuVaultAssetManager is RewardsAssetManager {
      * @return the number of tokens to return to the vault
      */
     function _divest(uint256 amountUnderlying, uint256) internal override returns (uint256) {
+        amountUnderlying = Math.min(amountUnderlying, _getAUM());
         console.log("_divest request amountUnderlying: %s", amountUnderlying);
-//        amountUnderlying = Math.min(amountUnderlying, _getAUM());
-//        if (amountUnderlying > 0) {
-//            CompleteRToken(rToken).redeemUnderlying(amountUnderlying);
-//        }
+        if (amountUnderlying > 0) {
+            ISmartVault(VAULT).withdraw(amountUnderlying);
+        }
 //        // what to do if can't withdraw?
-//        console.log("divest > AUM: %s", _getAUM());
-//        console.log("divested %s of  %s", amountUnderlying, underlyingToken);
-//
-//        return amountUnderlying;
-        return 42;
+        console.log("divest > AUM: %s", _getAUM());
+
+        uint devested = IERC20(underlyingToken).balanceOf(address(this));
+
+        console.log("divested %s of  %s", devested, underlyingToken);
+
+       return amountUnderlying;
+
     }
 
 
