@@ -16,8 +16,8 @@ pragma solidity 0.8.4;
 pragma experimental ABIEncoderV2;
 
 import "./MockPool.sol";
-import "../IVault.sol";
-import "../IAssetManager.sol";
+import "./IVault.sol";
+import "./IAssetManager.sol";
 contract MockAssetManagedPool is MockPool {
     constructor(IVault vault, IVault.PoolSpecialization specialization) MockPool(vault, specialization) {
         // solhint-disable-previous-line no-empty-blocks

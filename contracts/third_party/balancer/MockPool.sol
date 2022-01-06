@@ -18,11 +18,11 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../IVault.sol";
-import "../IGeneralPool.sol";
-import "../IMinimalSwapInfoPool.sol";
+import "./IVault.sol";
+import "./IGeneralPool.sol";
+import "./IMinimalSwapInfoPool.sol";
 import "./WeightedPoolUserData.sol";
-import "../math/FixedPoint.sol";
+import "./math/FixedPoint.sol";
 
 
 import "hardhat/console.sol";

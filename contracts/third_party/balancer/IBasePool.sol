@@ -11,77 +11,81 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 pragma solidity 0.8.4;
 pragma experimental ABIEncoderV2;
 
-
-// This contract relies on tons of immutable state variables to perform efficient lookup, without resorting to storage
-// reads. Because immutable arrays are not supported, we instead declare a fixed set of state variables plus a total
-// count, resulting in a large number of state variables.
-
-// solhint-disable max-states-count
+import "./IVault.sol";
+import "./IPoolSwapStructs.sol";
 
 /**
- * @dev Reference implementation for the base layer of a Pool contract that manages a single Pool with an immutable set
- * of registered tokens, no Asset Managers, an admin-controlled swap fee percentage, and an emergency pause mechanism.
- *
- * Note that neither swap fees nor the pause mechanism are used by this contract. They are passed through so that
- * derived contracts can use them via the `_addSwapFeeAmount` and `_subtractSwapFeeAmount` functions, and the
- * `whenNotPaused` modifier.
- *
- * No admin permissions are checked here: instead, this contract delegates that to the Vault's own Authorizer.
- *
- * Because this contract doesn't implement the swap hooks, derived contracts should generally inherit from
- * BaseGeneralPool or BaseMinimalSwapInfoPool. Otherwise, subclasses must inherit from the corresponding interfaces
- * and implement the swap callbacks themselves.
+ * @dev Interface for adding and removing liquidity that all Pool contracts should implement. Note that this is not
+ * the complete Pool contract interface, as it is missing the swap hooks. Pool contracts should also inherit from
+ * either IGeneralPool or IMinimalSwapInfoPool
  */
-interface IBasePool {
-//    uint256 private constant _MIN_TOKENS = 2;
-//    uint256 private constant _MAX_TOKENS = 8;
-//
-//    // 1e18 corresponds to 1.0, or a 100% fee
-//    uint256 private constant _MIN_SWAP_FEE_PERCENTAGE = 1e12; // 0.0001%
-//    uint256 private constant _MAX_SWAP_FEE_PERCENTAGE = 1e17; // 10%
-//
-//    uint256 private constant _MINIMUM_BPT = 1e6;
-//
-//    uint256 internal _swapFeePercentage;
-//
-//    IVault private immutable _vault;
-//    bytes32 private immutable _poolId;
-//    uint256 private immutable _totalTokens;
-//
-//    IERC20 internal immutable _token0;
-//    IERC20 internal immutable _token1;
-//    IERC20 internal immutable _token2;
-//    IERC20 internal immutable _token3;
-//    IERC20 internal immutable _token4;
-//    IERC20 internal immutable _token5;
-//    IERC20 internal immutable _token6;
-//    IERC20 internal immutable _token7;
-//
-//    // All token balances are normalized to behave as if the token had 18 decimals. We assume a token's decimals will
-//    // not change throughout its lifetime, and store the corresponding scaling factor for each at construction time.
-//    // These factors are always greater than or equal to one: tokens with more than 18 decimals are not supported.
-//
-//    uint256 private immutable _scalingFactor0;
-//    uint256 private immutable _scalingFactor1;
-//    uint256 private immutable _scalingFactor2;
-//    uint256 private immutable _scalingFactor3;
-//    uint256 private immutable _scalingFactor4;
-//    uint256 private immutable _scalingFactor5;
-//    uint256 private immutable _scalingFactor6;
-//    uint256 private immutable _scalingFactor7;
-//
-//    event SwapFeePercentageChanged(uint256 swapFeePercentage);
+interface IBasePool is IPoolSwapStructs {
+    /**
+     * @dev Called by the Vault when a user calls `IVault.joinPool` to add liquidity to this Pool. Returns how many of
+     * each registered token the user should provide, as well as the amount of protocol fees the Pool owes to the Vault.
+     * The Vault will then take tokens from `sender` and add them to the Pool's balances, as well as collect
+     * the reported amount in protocol fees, which the pool should calculate based on `protocolSwapFeePercentage`.
+     *
+     * Protocol fees are reported and charged on join events so that the Pool is free of debt whenever new users join.
+     *
+     * `sender` is the account performing the join (from which tokens will be withdrawn), and `recipient` is the account
+     * designated to receive any benefits (typically pool shares). `balances` contains the total balances
+     * for each token the Pool registered in the Vault, in the same order that `IVault.getPoolTokens` would return.
+     *
+     * `lastChangeBlock` is the last block in which *any* of the Pool's registered tokens last changed its total
+     * balance.
+     *
+     * `userData` contains any pool-specific instructions needed to perform the calculations, such as the type of
+     * join (e.g., proportional given an amount of pool shares, single-asset, multi-asset, etc.)
+     *
+     * Contracts implementing this function should check that the caller is indeed the Vault before performing any
+     * state-changing operations, such as minting pool shares.
+     */
+    function onJoinPool(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts);
 
-
-    // Getters / Setters
-
-    function getVault() external view returns (address);
+    /**
+     * @dev Called by the Vault when a user calls `IVault.exitPool` to remove liquidity from this Pool. Returns how many
+     * tokens the Vault should deduct from the Pool's balances, as well as the amount of protocol fees the Pool owes
+     * to the Vault. The Vault will then take tokens from the Pool's balances and send them to `recipient`,
+     * as well as collect the reported amount in protocol fees, which the Pool should calculate based on
+     * `protocolSwapFeePercentage`.
+     *
+     * Protocol fees are charged on exit events to guarantee that users exiting the Pool have paid their share.
+     *
+     * `sender` is the account performing the exit (typically the pool shareholder), and `recipient` is the account
+     * to which the Vault will send the proceeds. `balances` contains the total token balances for each token
+     * the Pool registered in the Vault, in the same order that `IVault.getPoolTokens` would return.
+     *
+     * `lastChangeBlock` is the last block in which *any* of the Pool's registered tokens last changed its total
+     * balance.
+     *
+     * `userData` contains any pool-specific instructions needed to perform the calculations, such as the type of
+     * exit (e.g., proportional given an amount of pool shares, single-asset, multi-asset, etc.)
+     *
+     * Contracts implementing this function should check that the caller is indeed the Vault before performing any
+     * state-changing operations, such as burning pool shares.
+     */
+    function onExitPool(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256[] memory amountsOut, uint256[] memory dueProtocolFeeAmounts);
 
     function getPoolId() external view returns (bytes32);
-
-    function getSwapFeePercentage() external view returns (uint256);
-
 }

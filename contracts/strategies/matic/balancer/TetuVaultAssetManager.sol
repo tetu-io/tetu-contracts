@@ -13,11 +13,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import "./RewardsAssetManager.sol";
-import "../../iron/CompleteRToken.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../../base/interface/ISmartVault.sol";
+import "../../../third_party/balancer/RewardsAssetManager.sol";
 
 import "hardhat/console.sol";
 
@@ -28,13 +27,8 @@ contract TetuVaultAssetManager is RewardsAssetManager {
     using SafeERC20 for IERC20;
 
     address public constant VAULT = address(0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7);
-    address public constant xTetu = address(0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454);
 
     address public underlyingToken;
-
-
-    // @notice rewards distributor for pool which owns this asset manager
-    // IMultiRewards public distributor;  // todo Strategy
 
     constructor(
         IVault vault,
@@ -42,7 +36,6 @@ contract TetuVaultAssetManager is RewardsAssetManager {
         address _underlyingToken
     ) RewardsAssetManager(vault, _poolId, IERC20(_underlyingToken)) {
         underlyingToken = _underlyingToken;
-
     }
 
     /**
@@ -50,7 +43,8 @@ contract TetuVaultAssetManager is RewardsAssetManager {
      * @param poolId - the id of the pool
      */
     function initialize(bytes32 poolId) public {
-        _initialize(poolId); //todo not sure if needed
+        _initialize(poolId);
+        //todo not sure if needed
     }
 
     /**
@@ -91,29 +85,36 @@ contract TetuVaultAssetManager is RewardsAssetManager {
         if (amountUnderlying > 0) {
             ISmartVault(VAULT).withdraw(amountUnderlying);
         }
-//        // what to do if can't withdraw?
-        console.log("divest > AUM: %s", _getAUM());
-
-        uint devested = IERC20(underlyingToken).balanceOf(address(this));
-
-        console.log("divested %s of  %s", devested, underlyingToken);
-
-       return amountUnderlying;
-
+        console.log("AUM: %s", _getAUM());
+        uint divested = IERC20(underlyingToken).balanceOf(address(this));
+        console.log("divested %s of  %s", divested, underlyingToken);
+        return divested;
     }
-
 
     /**
-     * @dev Checks RToken balance (ever growing)
+     * @dev Checks balance of managed assets
      */
     function _getAUM() internal view override returns (uint256) {
-        return uint112(ISmartVault(VAULT).underlyingBalanceWithInvestmentForHolder(address(this)));
+        return ISmartVault(VAULT).underlyingBalanceWithInvestmentForHolder(address(this));
     }
 
+    /// @dev Claim all rewards from given vault and send to pool/strategy
     function claimRewards() public {
-        // Claim Iron from incentives controller
-//        address[] memory markets = new address[](1);
-//        markets[0] = rToken;
-//        IronControllerInterface(_IRON_CONTROLLER).claimReward(address(this), markets);
+        _claim();
+    }
+
+    /// @dev Claim all rewards from given vault and send to pool/strategy
+    function _claim() private {
+        ISmartVault sv = ISmartVault(VAULT);
+
+        for (uint i = 0; i < sv.rewardTokensLength(); i++) {
+            address rt = sv.rewardTokens()[i];
+            uint bal = IERC20(rt).balanceOf(address(this));
+            sv.getReward(rt);
+            uint claimed = IERC20(rt).balanceOf(address(this)) - bal;
+            if (claimed > 0) {
+                IERC20(rt).safeTransfer(getPoolAddress(), claimed);
+            }
+        }
     }
 }

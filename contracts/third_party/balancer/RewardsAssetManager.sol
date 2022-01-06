@@ -15,13 +15,13 @@
 
 pragma solidity 0.8.4;
 
-import "../IAssetManager.sol";
-import "../IRelayedBasePool.sol";
-import "../math/Math.sol";
-import "../math/FixedPoint.sol";
-import "../IVault.sol";
+import "./IRelayedBasePool.sol";
+import "./math/FixedPoint.sol";
 
 import "hardhat/console.sol";
+import "./IAssetManager.sol";
+import "./math/Math.sol";
+import "./IVault.sol";
 
 
 pragma experimental ABIEncoderV2;
