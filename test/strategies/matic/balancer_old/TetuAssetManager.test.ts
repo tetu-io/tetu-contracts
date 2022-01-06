@@ -3,10 +3,11 @@ import {BigNumber, Contract, utils} from 'ethers';
 import {expect} from 'chai';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {
-  IERC20,
+  IController,
+  IERC20, ISmartVault,
   IVault,
   MockAssetManagedPool,
-  MockRewardsAssetManager, PriceCalculator,
+  MockRewardsAssetManager, PriceCalculator, RewardToken,
   TetuVaultAssetManager
 } from "../../../../typechain";
 import {BytesLike} from "@ethersproject/bytes";
@@ -20,6 +21,7 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {config as dotEnvConfig} from "dotenv";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
+import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -48,6 +50,11 @@ const setup = async () => {
   const assetManager = await DeployerUtils.deployContract(signer,
     'TetuVaultAssetManager', vault.address, poolId, MaticAddresses.USDC_TOKEN) as TetuVaultAssetManager;
 
+  // add AM to whitelist
+  const gov = await DeployerUtils.impersonate();
+  const vaultController = await DeployerUtils.connectInterface(gov, 'IController', '0x6678814c273d5088114B6E40cC49C8DB04F9bC29') as IController
+  await vaultController.addToWhiteList(assetManager.address);
+
   // Assign assetManager to the USDC_TOKEN token, and other to the other token
   const assetManagers = [assetManager.address, other.address];
 
@@ -69,7 +76,6 @@ const setup = async () => {
   await TokenUtils.approve(MaticAddresses.WMATIC_TOKEN, investor, vault.address, "1000")
   await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, investor.address, bn(1000));
   await TokenUtils.approve(MaticAddresses.USDC_TOKEN, investor, vault.address, "1000")
-
   vault = await ethers.getContractAt(
     "IVault", "0xBA12222222228d8Ba445958a75a0704d566BF2C8", investor) as IVault;
 

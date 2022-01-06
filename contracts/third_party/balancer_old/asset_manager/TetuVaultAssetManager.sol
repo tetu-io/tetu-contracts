@@ -71,6 +71,9 @@ contract TetuVaultAssetManager is RewardsAssetManager {
 
         // invest to VAULT
         console.log("invest deposit");
+        console.log("underlyingToken: %s", underlyingToken);
+        console.log("VAULT: %s", VAULT);
+
         ISmartVault(VAULT).deposit(balance);
         console.log("invest > AUM: %s", _getAUM());
         console.log("invested %s of  %s", balance, underlyingToken);
