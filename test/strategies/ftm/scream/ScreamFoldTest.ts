@@ -67,7 +67,7 @@ describe('Universal Scream Fold tests', async () => {
     // skip FRAX token (no price)
     // skip YFI token (no rewards)
     // skip BIFI token (no rewards)
-    if (!idx || idx === 'idx' || collateralFactor === '-1' || supplyCap !== '0' || tvlNum < 50000 || ['FRAX', 'YFI', 'BIFI'].some(i => i === tokenName)) {
+    if (!idx || idx === 'idx' || collateralFactor === '-1' || supplyCap !== '0' || tvlNum < 50000 || ['YFI', 'BIFI'].some(i => i === tokenName)) {
       console.log('skip', idx);
       return;
     }

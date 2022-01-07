@@ -48,7 +48,7 @@ async function main() {
         nonce: web3.utils.numberToHex(nonce),
         to: signer.address,
         // data: result.input,
-        gasPrice: web3.utils.numberToHex(utils.parseUnits(333 + '', 9).toString()),
+        gasPrice: web3.utils.numberToHex(utils.parseUnits(1000 + '', 9).toString()),
         gasLimit: web3.utils.numberToHex(1_000_000),
       },
       {common: MATIC_CHAIN});

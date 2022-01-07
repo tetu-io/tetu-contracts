@@ -2,6 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy} from "../../../../typechain";
 import {appendFileSync, mkdir, readFileSync} from "fs";
+import {Misc} from "../../../utils/tools/Misc";
 
 const alreadyDeployed = new Set<string>([
 ]);
@@ -59,7 +60,7 @@ async function main() {
     console.log('strat', idx, aTokenName, vaultName);
 
     const collateralFactor = (ltv).toFixed(0);
-    const borrowTarget = (ltv * 0.87).toFixed(0);
+    const borrowTarget = (ltv * Misc.GEIST_BOR_RATIO).toFixed(0);
 
     const strategyArgs = [
       core.controller,

@@ -10,6 +10,7 @@ export class Misc {
   public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
   public static readonly SECONDS_OF_YEAR = Misc.SECONDS_OF_DAY * 365;
   public static readonly ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+  public static readonly GEIST_BOR_RATIO = 0.95;
 
   public static printDuration(text: string, start: number) {
     log.info('>>>' + text, ((Date.now() - start) / 1000).toFixed(1), 'sec');
@@ -65,6 +66,12 @@ export class Misc {
         return 'SCREAM_LEND'
       case 19:
         return 'KLIMA'
+      case 20:
+        return 'VESQ'
+      case 21:
+        return 'QIDAO'
+      case 22:
+        return 'SUNFLOWER'
     }
     return n + '';
   }
