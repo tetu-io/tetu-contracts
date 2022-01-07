@@ -231,7 +231,8 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   /// @dev Withdraw underlying from Iron MasterChef finance
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
-    _claimReward();
+    // don't claim rewards on withdraw action for reducing gas usage
+//    _claimReward();
     _redeemPartialWithLoan(amount);
   }
 

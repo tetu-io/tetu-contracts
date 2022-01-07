@@ -10,7 +10,6 @@ import {
 import {RunHelper} from "../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
-import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 
@@ -28,9 +27,11 @@ async function main() {
 
   let strategyName = 'StrategyTetuSwap';
   let strategyPath = `contracts/strategies/matic/tetu/${strategyName}.sol:${strategyName}`;
+  let rt = core.psVault;
   if ((await ethers.provider.getNetwork()).chainId === 250) {
     strategyName = 'StrategyTetuSwapFantom';
     strategyPath = `contracts/strategies/fantom/tetu/${strategyName}.sol:${strategyName}`;
+    rt = core.rewardToken;
   }
 
   const factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', core.swapFactory) as TetuSwapFactory;
@@ -84,7 +85,6 @@ async function main() {
 
     const strategyUnderlying = await strategy.underlying();
 
-
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       vaultNameWithoutPrefix,
       "x" + vaultNameWithoutPrefix,
@@ -92,7 +92,7 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       false,
-      core.psVault,
+      rt,
       0
     ));
 

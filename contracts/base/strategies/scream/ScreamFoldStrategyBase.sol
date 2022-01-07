@@ -32,7 +32,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
   string public constant override STRATEGY_NAME = "ScreamFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
   /// @dev How much rewards will be used for distribution process
   uint256 private constant _BUY_BACK_RATIO = _BUY_BACK_DENOMINATOR / 10;
   /// @dev precision for the folding profitability calculation

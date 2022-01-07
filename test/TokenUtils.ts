@@ -70,6 +70,7 @@ export class TokenUtils {
     [MaticAddresses.PSP_TOKEN, '0x2ee05fad3b206a232e985acbda949b215c67f00e'.toLowerCase()], // wallet
     [MaticAddresses.VSQ_TOKEN, '0x2f3e9e54bd4513d1b49a6d915f9a83310638cfc2'.toLowerCase()], // VSQStaking
     [FtmAddresses.FRAX_TOKEN, '0x7a656B342E14F745e2B164890E88017e27AE7320'.toLowerCase()], // curve pool
+    [FtmAddresses.SPELL_TOKEN, '0x4f41D03631Ea4dC14016CcF90690d6D22b24C12D'.toLowerCase()], // spirit lp
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

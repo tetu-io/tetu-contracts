@@ -29,6 +29,7 @@ export class FtmAddresses {
   public static FETH_TOKEN = "0x658b0c7613e890EE50B8C4BC6A3f41ef411208aD".toLowerCase();
   public static FRAX_TOKEN = "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355".toLowerCase();
   public static renBTC_TOKEN = "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501".toLowerCase();
+  public static SPELL_TOKEN = "0x468003B688943977e6130F4F68F23aad939a1040".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();

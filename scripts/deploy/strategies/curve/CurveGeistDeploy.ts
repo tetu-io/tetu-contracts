@@ -37,7 +37,7 @@ async function main() {
       vaultAddress
     ) as Promise<IStrategy>,
     core.controller,
-    core.psVault,
+    core.rewardToken,
     signer,
     60 * 60 * 24 * 28,
     0,

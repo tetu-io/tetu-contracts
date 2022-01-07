@@ -46,7 +46,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant override STRATEGY_NAME = "GeistFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
   /// @dev How much rewards will be used for distribution process
   uint256 private constant _BUY_BACK_RATIO = _BUY_BACK_DENOMINATOR / 10;
   /// @dev 2 is Variable
