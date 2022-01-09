@@ -24,7 +24,8 @@ export class StrategyTestUtils {
     core: CoreContractsWrapper,
     vaultName: string,
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
-    underlying: string
+    underlying: string,
+    depositFee = 0,
   ): Promise<[SmartVault, IStrategy, string]> {
     const start = Date.now();
     log.info("Starting deploy")
@@ -34,7 +35,9 @@ export class StrategyTestUtils {
       core.controller,
       core.vaultController,
       core.psVault.address,
-      signer
+      signer,
+      60 * 60 * 24 * 28,
+      depositFee
     );
     log.info("Vault deployed")
     const vault = data[1] as SmartVault;
@@ -63,8 +66,9 @@ export class StrategyTestUtils {
     }
     for (let i = 0; i < tokens.length; i++) {
       const rtDec = await TokenUtils.decimals(tokens[i]);
+      const expected = utils.formatUnits(balances[i] || 0, rtDec);
       expect(+utils.formatUnits(await TokenUtils.balanceOf(tokens[i], strategy.address), rtDec))
-        .is.approximately(+utils.formatUnits(balances[i], rtDec), 0.0000000001, 'strategy has wrong reward balance for ' + i);
+        .is.approximately(+expected, 0.0000000001, 'strategy has wrong reward balance for ' + i);
     }
   }
 
@@ -101,12 +105,15 @@ export class StrategyTestUtils {
     expect(await strategy.platform()).is.not.eq(0);
     expect((await strategy.assets()).length).is.not.eq(0);
     expect(await strategy.poolTotalAmount()).is.not.eq('0');
+    await strategy.emergencyExit();
+    expect(await strategy.pausedInvesting()).is.eq(true);
     await strategy.continueInvesting();
+    expect(await strategy.pausedInvesting()).is.eq(false);
   }
 
   public static async initForwarder(forwarder: ForwarderV2) {
     const start = Date.now();
-    await forwarder.setLiquidityNumerator(50);
+    await forwarder.setLiquidityNumerator(30);
     await forwarder.setLiquidityRouter(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
     await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);

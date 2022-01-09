@@ -9,7 +9,7 @@ import {
   VaultController
 } from "../../../../typechain";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {RunHelper} from "../../../utils/RunHelper";
+import {RunHelper} from "../../../utils/tools/RunHelper";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 
@@ -64,13 +64,9 @@ async function main() {
       tetuLp,
       60 * 60 * 24 * 28,
       false,
-      core.psVault
+      core.psVault,
+    0
   ));
-
-  // ! gov actions
-  if ((await ethers.provider.getNetwork()).name !== "matic") {
-    await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
-  }
 
   await DeployerUtils.wait(5);
 

@@ -140,6 +140,38 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return getUint256("toInvest");
   }
 
+  function _setReentrantLock(bool _value) internal {
+    setBoolean("reentrantLock", _value);
+  }
+
+  /// @notice Vault status
+  function reentrantLock() internal view returns (bool) {
+    return getBoolean("reentrantLock");
+  }
+
+  function _setDepositFeeNumerator(uint256 _value) internal {
+    emit UpdatedUint256Slot("depositFeeNumerator", depositFeeNumerator(), _value);
+    setUint256("depositFeeNumerator", _value);
+  }
+
+  function depositFeeNumerator() public view override returns (uint256) {
+    return getUint256("depositFeeNumerator");
+  }
+
+  function _setProtectionMode(bool _value) internal {
+    emit UpdatedBoolSlot("protectionMode", _protectionMode(), _value);
+    setBoolean("protectionMode", _value);
+  }
+
+  /// @notice Protection mode means claim rewards on withdraw and 0% initial reward boost
+  function protectionMode() external view override returns (bool) {
+    return _protectionMode();
+  }
+
+  function _protectionMode() internal view returns (bool) {
+    return getBoolean("protectionMode");
+  }
+
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
   function setBoolean(string memory key, bool _value) private {

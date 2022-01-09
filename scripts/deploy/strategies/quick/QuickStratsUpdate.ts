@@ -61,10 +61,13 @@ async function main() {
 
     if (!(await vCtr.active())) {
       console.log('vault not active', vAdr)
-      // continue;
-    } else {
-      // todo only deactivated
-      console.log('skip active vault', vAdr)
+      continue;
+    }
+
+    const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', await vCtr.strategy()) as IStrategy;
+    const strName = await strCtr.STRATEGY_NAME();
+    if (strName === 'QuickStrategyDualBaseAC' || strName === 'QuickStrategyDualBase') {
+      console.log('dual strategy!');
       continue;
     }
 

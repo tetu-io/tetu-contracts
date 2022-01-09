@@ -1,20 +1,42 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {IAaveProtocolDataProvider, IAToken,} from "../../../typechain";
+import {IAaveProtocolDataProvider, IAToken, SmartVault,} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {FtmAddresses} from "../../addresses/FtmAddresses";
+import {VaultUtils} from "../../../test/VaultUtils";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
   const dataProvider = await DeployerUtils.connectInterface(
     signer, 'IAaveProtocolDataProvider', FtmAddresses.GEIST_PROTOCOL_DATA_PROVIDER) as IAaveProtocolDataProvider;
 
   const allLendingTokens = await dataProvider.getAllATokens();
   console.log('Lending tokens', allLendingTokens.length);
 
-  let infos: string = 'idx, token_name, token_address, aToken_name, aToken_address, dToken_Name, dToken_address, ltv, liquidationThreshold, usageAsCollateralEnabled, borrowingEnabled\n';
+
+  const vaultInfos = await VaultUtils.getVaultInfoFromServer();
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (const vInfo of vaultInfos) {
+    if (vInfo.platform !== '16') {
+      continue;
+    }
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken));
+    }
+  }
+  console.log('loaded vaults', underlyingStatuses.size);
+
+
+  let infos: string = 'idx, token_name, token_address, aToken_name, aToken_address, dToken_Name, dToken_address, ltv, liquidationThreshold, usageAsCollateralEnabled, borrowingEnabled, vault, cur rewards\n';
   for (let i = 0; i < allLendingTokens.length; i++) {
     console.log('id', i);
 
@@ -47,7 +69,9 @@ async function main() {
       ltv + ',' +
       liquidationThreshold + ',' +
       usageAsCollateralEnabled + ',' +
-      borrowingEnabled
+      borrowingEnabled + ',' +
+      underlyingToVault.get(tokenAdr.toLowerCase()) + ',' +
+      currentRewards.get(tokenAdr.toLowerCase())
 
     console.log(data);
     infos += data + '\n';

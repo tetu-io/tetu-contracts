@@ -57,7 +57,7 @@ describe("Zap contract tests", function () {
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
 
-    await core.controller.addToWhiteList(zapContract.address);
+    await core.controller.changeWhiteListStatus([zapContract.address], true);
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));

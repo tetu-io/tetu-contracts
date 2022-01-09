@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {DeployerUtils} from "../DeployerUtils";
 import {
   ContractReader,
@@ -77,13 +77,9 @@ export class McLpStrategyDeployer {
         underlying,
         60 * 60 * 24 * 28,
         false,
-        core.psVault
+        core.psVault,
+      0
     ));
-
-    // ! gov actions
-    if ((await ethers.provider.getNetwork()).name !== "matic") {
-      await controller.addVaultAndStrategy(vault.address, strategy.address);
-    }
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);

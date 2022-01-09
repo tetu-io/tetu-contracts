@@ -30,6 +30,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   uint256 public constant MAX_DEPTH = 20;
   /// @notice Denominator value for the both above mentioned ratios
   uint256 public _FACTOR_DENOMINATOR = 10000;
+  uint256 public _BORROW_FACTOR = 9900;
 
   /// @notice Numerator value for the targeted borrow rate
   uint256 public override borrowTargetFactorNumeratorStored;
@@ -104,7 +105,24 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     return _isFoldingProfitable();
   }
 
+  function _isAutocompound() internal view virtual returns (bool) {
+    return _buyBackRatio != _BUY_BACK_DENOMINATOR;
+  }
+
   // ************* GOV ACTIONS **************
+
+  function claimReward() external hardWorkers {
+    _claimReward();
+  }
+
+  /// @dev Liquidate rewards and do underlying compound
+  function compound() external hardWorkers {
+    if (_isAutocompound()) {
+      _autocompound();
+    } else {
+      _compound();
+    }
+  }
 
   /// @dev Set folding state
   /// @param _state 0 - default mode, 1 - always enable, 2 - always disable
@@ -128,8 +146,23 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @dev Rebalances the borrow ratio
-  function rebalance() external override restricted {
+  function rebalance() external override hardWorkers {
     _rebalance();
+  }
+
+  /// @dev Check fold state and rebalance if needed
+  function checkFold() external hardWorkers {
+    if (foldState == 0) {
+      if (!isFoldingProfitable() && fold) {
+        _stopFolding();
+      } else if (isFoldingProfitable() && !fold) {
+        _startFolding();
+      } else {
+        _rebalance();
+      }
+    } else {
+      _rebalance();
+    }
   }
 
   /// @dev Set borrow rate target
@@ -152,6 +185,12 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     emit CollateralFactorNumeratorChanged(_target);
   }
 
+  /// @dev Set buy back denominator
+  function setBuyBack(uint256 _value) external restricted {
+    require(_value <= _BUY_BACK_DENOMINATOR, "FS: Too high");
+    _buyBackRatio = _value;
+  }
+
   //////////////////////////////////////////////////////
   //////////// STRATEGY FUNCTIONS IMPLEMENTATIONS //////
   //////////////////////////////////////////////////////
@@ -163,10 +202,14 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     _claimReward();
-    _compound();
+    if (_isAutocompound()) {
+      _autocompound();
+    } else {
+      _compound();
+    }
     // supply underlying for avoiding liquidation in case of reward is the same as underlying
     if (underlyingBalance() > 0) {
       _supply(underlyingBalance());
@@ -188,7 +231,8 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   /// @dev Withdraw underlying from Iron MasterChef finance
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
-    _claimReward();
+    // don't claim rewards on withdraw action for reducing gas usage
+//    _claimReward();
     _redeemPartialWithLoan(amount);
   }
 
@@ -252,6 +296,18 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   //////////// FOLDING LOGIC FUNCTIONS /////////////////
   //////////////////////////////////////////////////////
 
+  function _maxRedeem() internal returns (uint){
+    (uint supplied, uint borrowed) = _getInvestmentData();
+    if (collateralFactorNumerator == 0) {
+      return supplied;
+    }
+    uint256 requiredCollateral = borrowed * _FACTOR_DENOMINATOR / collateralFactorNumerator;
+    if (supplied < requiredCollateral) {
+      return 0;
+    }
+    return supplied - requiredCollateral;
+  }
+
   function _borrowTarget() internal returns (uint256) {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 balance = supplied - borrowed;
@@ -264,8 +320,10 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   function depositToPool(uint256 amount) internal override updateSupplyInTheEnd {
     if (amount > 0) {
       _supply(amount);
-      // we need to sell excess in non hardWork function for keeping ppfs ~1
-      _liquidateExcessUnderlying();
+      if (!_isAutocompound()) {
+        // we need to sell excess in non hardWork function for keeping ppfs ~1
+        _liquidateExcessUnderlying();
+      }
     }
     if (foldState == 2 || !fold) {
       return;
@@ -276,12 +334,13 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     while (borrowed < borrowTarget) {
       uint256 wantBorrow = borrowTarget - borrowed;
       uint256 maxBorrow = (supplied * collateralFactorNumerator / _FACTOR_DENOMINATOR) - borrowed;
+      // need to reduce max borrow for keep a gap for negative balance fluctuation
+      maxBorrow = maxBorrow * _BORROW_FACTOR / _FACTOR_DENOMINATOR;
       _borrow(Math.min(wantBorrow, maxBorrow));
       uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
       if (underlyingBalance > 0) {
         _supply(underlyingBalance);
       }
-
       // need to update local balances
       (supplied, borrowed) = _getInvestmentData();
       i++;
@@ -293,7 +352,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @dev Redeems a set amount of underlying tokens while keeping the borrow ratio healthy.
-  ///      This function must nor revert transaction
+  ///      This function must not revert transaction
   function _redeemPartialWithLoan(uint256 amount) internal updateSupplyInTheEnd {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 oldBalance = supplied - borrowed;
@@ -332,9 +391,16 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     }
     underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
     if (underlyingBalance < amount) {
-      uint256 toRedeem = amount - underlyingBalance;
-      // redeem the most we can redeem
-      _redeemUnderlying(toRedeem);
+      uint toRedeem = amount - underlyingBalance;
+      if (toRedeem != 0) {
+        // redeem the most we can redeem
+        _redeemUnderlying(toRedeem);
+      }
+    }
+    // supply excess underlying balance in the end
+    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (underlyingBalance > amount) {
+      _supply(underlyingBalance - amount);
     }
   }
 
@@ -342,7 +408,34 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   ///////////////// LIQUIDATION ////////////////////////
   //////////////////////////////////////////////////////
 
+  function _autocompound() internal {
+    require(_isAutocompound(), "FB: Must use compound");
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      address rt = _rewardTokens[i];
+      // a little threshold
+      if (amount > 1000) {
+        uint toDistribute = amount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+        uint toCompound = amount - toDistribute;
+        address forwarder = IController(controller()).feeRewardForwarder();
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, amount);
+        IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, toCompound);
+        try IFeeRewardForwarder(forwarder).distribute(toDistribute, _underlyingToken, _smartVault)
+        returns (uint256 targetTokenEarned) {
+          if (targetTokenEarned > 0) {
+            IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+          }
+        } catch {
+          emit UnderlyingLiquidationFailed();
+        }
+      }
+    }
+
+  }
+
   function _compound() internal {
+    require(!_isAutocompound(), "FB: Must use autocompound");
     (suppliedInUnderlying, borrowedInUnderlying) = _getInvestmentData();
     uint256 ppfs = ISmartVault(_smartVault).getPricePerFullShare();
     uint256 ppfsPeg = ISmartVault(_smartVault).underlyingUnit();
@@ -355,8 +448,6 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
         // it will sell reward token to Target Token and send back
         if (amount != 0) {
           address forwarder = IController(controller()).feeRewardForwarder();
-          // keep a bit for for distributing for catch all necessary events
-          amount = amount * 90 / 100;
           IERC20(rt).safeApprove(forwarder, 0);
           IERC20(rt).safeApprove(forwarder, amount);
           uint256 underlyingProfit = IFeeRewardForwarder(forwarder).liquidate(rt, _underlyingToken, amount);
@@ -394,7 +485,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       // -1 for avoiding problem with rounding
       uint256 toLiquidate = (totalUnderlyingBalance - IERC20Extended(_smartVault).totalSupply()) - 1;
       if (underlyingBalance() < toLiquidate) {
-        _redeemPartialWithLoan(toLiquidate - underlyingBalance());
+        _redeemPartialWithLoan(toLiquidate);
       }
       toLiquidate = Math.min(underlyingBalance(), toLiquidate);
       if (toLiquidate != 0) {

@@ -64,7 +64,7 @@ describe.skip("Proxy tests", function () {
       999999
     );
 
-    await core.controller.addVaultAndStrategy(vault.address, psEmptyStrategy1.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [psEmptyStrategy1.address]);
     await core.vaultController.addRewardTokens([vault.address], core.psVault.address)
     await core.vaultController.addRewardTokens([vault.address], core.rewardToken.address)
 

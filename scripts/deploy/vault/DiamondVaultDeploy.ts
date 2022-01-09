@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
 import {NoopStrategy, SmartVault} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 
@@ -25,7 +25,8 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       true,
-      vault.address
+      vault.address,
+    0
   ));
 
   await DeployerUtils.wait(5);

@@ -12,10 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
+import "../openzeppelin/SafeERC20.sol";
+import "../openzeppelin/ReentrancyGuard.sol";
 import "./TetuSwapERC20.sol";
 import "./libraries/UQ112x112.sol";
 import "./libraries/Math.sol";
@@ -36,7 +34,7 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   // ********** CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   uint public constant PRECISION = 10000;
   uint public constant MAX_FEE = 30;
   uint public constant override MINIMUM_LIQUIDITY = 10 ** 3;
@@ -77,6 +75,7 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   event VaultsChanged(address vault0, address vault1);
   event RewardRecipientChanged(address oldRecipient, address newRecipient);
   event Claimed(uint blockTs);
+  event Initialized(address token0, address token1, uint fee);
 
   /// @dev Should be create only from factory
   constructor() {
@@ -103,6 +102,7 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
     _symbol = createPairSymbol(IERC20Name(_token0).symbol(), IERC20Name(_token1).symbol());
     createdTs = block.timestamp;
     createdBlock = block.number;
+    emit Initialized(_token0, _token1, _fee);
   }
 
   function symbol() external override view returns (string memory) {
@@ -171,6 +171,7 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   /// @dev Assume lp token already sent to this contract
   ///      Burn LP tokens and send back underlying assets. Based on vault shares
   function burn(address to) external nonReentrant override returns (uint amount0, uint amount1) {
+    require(totalSupply != 0, "TSP: Total supply is zero");
     uint shareAmount0 = IERC20(vault0).balanceOf(address(this));
     uint shareAmount1 = IERC20(vault1).balanceOf(address(this));
     uint liquidity = balanceOf[address(this)];

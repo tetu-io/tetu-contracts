@@ -35,11 +35,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.2.0";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NOMINATOR = 997;
-  uint constant public ROUTE_LENGTH_MAX = 4;
+  uint constant public ROUTE_LENGTH_MAX = 5;
   uint constant public SLIPPAGE_DENOMINATOR = 100;
   uint constant public SLIPPAGE_NOMINATOR = 95;
 
@@ -120,6 +120,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
       blueChipsLps[lp.token0()][lp.token1()] = LpData(address(lp), lp.token0(), lp.token1());
       blueChipsLps[lp.token1()][lp.token0()] = LpData(address(lp), lp.token0(), lp.token1());
+      blueChipsTokens[lp.token0()] = true;
+      blueChipsTokens[lp.token1()] = true;
     }
   }
 
@@ -134,6 +136,15 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   ///         Sets router for a pair with TETU liquidity
   function setLiquidityRouter(address _value) external onlyControllerOrGovernance {
     _setLiquidityRouter(_value);
+  }
+
+  /// @notice Only Governance or Controller can call it.
+  ///         Sets specific Swap fee for given factory
+  function setUniPlatformFee(address _factory, uint _feeNominator, uint _feeDenominator) external onlyControllerOrGovernance {
+    require(_factory != address(0), "F2: Zero factory");
+    require(_feeNominator <= _feeDenominator, "F2: Wrong values");
+    require(_feeDenominator != 0, "F2: Wrong denominator");
+    uniPlatformFee[_factory] = UniFee(_feeNominator, _feeDenominator);
   }
 
   // ***************** EXTERNAL *******************************
@@ -157,7 +168,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     // calculate require amounts
     uint toFund = _toFundAmount(_amount);
     uint toPsAndLiq = _toPsAndLiqAmount(_amount - toFund);
-    uint toLiq = toPsAndLiq / 2;
+    uint toLiq = _toTetuLiquidityAmount(toPsAndLiq);
     uint toLiqFundTokenPart = toLiq / 2;
     uint toLiqTetuTokenPart = toLiq - toLiqFundTokenPart;
     uint toPs = toPsAndLiq - toLiq;
@@ -388,7 +399,6 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   function _createLiquidationRoute(address _tokenIn, address _tokenOut) internal view returns (LpData[] memory, uint)  {
     LpData[] memory route = new LpData[](ROUTE_LENGTH_MAX);
-
     // in case that we try to liquidate blue chips use bc lps directly
     LpData memory lpDataBC = blueChipsLps[_tokenIn][_tokenOut];
     if (lpDataBC.lp != address(0)) {
@@ -439,31 +449,79 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       return (route, 3);
     }
 
-    // some tokens have primary liquidity with specific token
-    // need to find a liquidity for them
-    LpData memory lpDataMiddle = largestLps[lpDataIn.oppositeToken];
-    require(lpDataMiddle.lp != address(0), "F2: not found LP for middle");
-    route[1] = lpDataMiddle;
-    if (lpDataMiddle.oppositeToken == _tokenOut) {
+    LpData memory lpDataInMiddle;
+    // this case only for a token with specific opposite token in a pair
+    if (!blueChipsTokens[lpDataIn.oppositeToken]) {
+
+      // some tokens have primary liquidity with specific token
+      // need to find a liquidity for them
+      lpDataInMiddle = largestLps[lpDataIn.oppositeToken];
+      require(lpDataInMiddle.lp != address(0), "F2: not found LP for middle in");
+      route[1] = lpDataInMiddle;
+      if (lpDataInMiddle.oppositeToken == _tokenOut) {
+        return (route, 2);
+      }
+
+      // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
+      lpDataBC = blueChipsLps[lpDataInMiddle.oppositeToken][_tokenOut];
+      if (lpDataBC.lp != address(0)) {
+        lpDataBC.token = lpDataInMiddle.oppositeToken;
+        lpDataBC.oppositeToken = _tokenOut;
+        route[2] = lpDataBC;
+        return (route, 3);
+      }
+
+      // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
+      lpDataBC = blueChipsLps[lpDataInMiddle.oppositeToken][lpDataOut.oppositeToken];
+      if (lpDataBC.lp != address(0)) {
+        lpDataBC.token = lpDataInMiddle.oppositeToken;
+        lpDataBC.oppositeToken = lpDataOut.oppositeToken;
+        route[2] = lpDataBC;
+        (lpDataOut.oppositeToken, lpDataOut.token) = (lpDataOut.token, lpDataOut.oppositeToken);
+        route[3] = lpDataOut;
+        return (route, 4);
+      }
+
+    }
+
+
+    // if we don't have pair for token out try to find a middle lp
+    // it needs for cases where tokenOut has a pair with specific token
+    LpData memory lpDataOutMiddle = largestLps[lpDataOut.oppositeToken];
+    require(lpDataOutMiddle.lp != address(0), "F2: not found LP for middle out");
+    // even if we found lpDataInMiddle we have shorter way
+    if (lpDataOutMiddle.oppositeToken == lpDataIn.oppositeToken) {
+      (lpDataOutMiddle.oppositeToken, lpDataOutMiddle.token) = (lpDataOutMiddle.token, lpDataOutMiddle.oppositeToken);
+      route[1] = lpDataOutMiddle;
       return (route, 2);
     }
 
-    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
-    lpDataBC = blueChipsLps[lpDataMiddle.oppositeToken][_tokenOut];
-    if (lpDataBC.lp != address(0)) {
-      route[2] = lpDataBC;
-      return (route, 3);
-    }
-
-    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
-    lpDataBC = blueChipsLps[lpDataMiddle.oppositeToken][lpDataOut.oppositeToken];
-    if (lpDataBC.lp != address(0)) {
-      route[2] = lpDataBC;
-      address tmp = lpDataOut.oppositeToken;
-      lpDataOut.oppositeToken = lpDataOut.token;
-      lpDataOut.token = tmp;
-      route[3] = lpDataOut;
-      return (route, 4);
+    // tokenIn has not pair with bluechips
+    if (lpDataInMiddle.lp != address(0)) {
+      lpDataBC = blueChipsLps[lpDataInMiddle.oppositeToken][lpDataOutMiddle.oppositeToken];
+      if (lpDataBC.lp != address(0)) {
+        lpDataBC.token = lpDataInMiddle.oppositeToken;
+        lpDataBC.oppositeToken = lpDataOutMiddle.oppositeToken;
+        route[2] = lpDataBC;
+        (lpDataOutMiddle.oppositeToken, lpDataOutMiddle.token) = (lpDataOutMiddle.token, lpDataOutMiddle.oppositeToken);
+        route[3] = lpDataOutMiddle;
+        (lpDataOut.oppositeToken, lpDataOut.token) = (lpDataOut.token, lpDataOut.oppositeToken);
+        route[4] = lpDataOut;
+        return (route, 5);
+      }
+    } else {
+      // tokenIn has pair with bluechips
+      lpDataBC = blueChipsLps[lpDataIn.oppositeToken][lpDataOutMiddle.oppositeToken];
+      if (lpDataBC.lp != address(0)) {
+        lpDataBC.token = lpDataIn.oppositeToken;
+        lpDataBC.oppositeToken = lpDataOutMiddle.oppositeToken;
+        route[1] = lpDataBC;
+        (lpDataOutMiddle.oppositeToken, lpDataOutMiddle.token) = (lpDataOutMiddle.token, lpDataOutMiddle.oppositeToken);
+        route[2] = lpDataOutMiddle;
+        (lpDataOut.oppositeToken, lpDataOut.token) = (lpDataOut.token, lpDataOut.oppositeToken);
+        route[3] = lpDataOut;
+        return (route, 4);
+      }
     }
 
     // we are not handling other cases

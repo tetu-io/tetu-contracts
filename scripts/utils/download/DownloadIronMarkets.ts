@@ -54,10 +54,10 @@ async function main() {
   for (let i = 0; i < markets.length; i++) {
     console.log('id', i);
 
-    if (i === 5 || i === 6) {
-      console.log('skip volatile assets')
-      continue;
-    }
+    // if (i === 5 || i === 6) {
+    //   console.log('skip volatile assets')
+    //   continue;
+    // }
 
 
     const rTokenAdr = markets[i];
@@ -75,7 +75,7 @@ async function main() {
     const tokenName = await TokenUtils.tokenSymbol(token);
 
     const collateralFactor = +utils.formatUnits((await controller.markets(rTokenAdr)).collateralFactorMantissa) * 10000;
-    const borrowTarget = Math.floor(collateralFactor * 0.9);
+    const borrowTarget = Math.floor(collateralFactor * 0.99);
 
     const status = underlyingStatuses.get(token.toLowerCase());
     if (status != null && !status) {

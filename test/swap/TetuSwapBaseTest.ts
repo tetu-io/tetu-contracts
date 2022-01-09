@@ -117,11 +117,16 @@ describe("Tetu Swap base tests", function () {
 
     lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
 
-    // todo make network independent
-    expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
 
-    expect((await lpCtr.vault0()).toLowerCase()).is.eq(vault0.toLowerCase());
-    expect((await lpCtr.vault1()).toLowerCase()).is.eq(vault1.toLowerCase());
+    if ((await ethers.provider.getNetwork()).chainId === 250) {
+      expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
+    } else if ((await ethers.provider.getNetwork()).chainId === 250) {
+      expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
+    }
+    const lpV0 = (await lpCtr.vault0()).toLowerCase();
+    const lpV1 = (await lpCtr.vault1()).toLowerCase();
+    expect(lpV0 === vault0.toLowerCase() || lpV0 === vault1.toLowerCase()).is.eq(true);
+    expect(lpV1 === vault0.toLowerCase() || lpV1 === vault1.toLowerCase()).is.eq(true);
 
     await UniswapUtils.addLiquidity(
       signer,
@@ -397,12 +402,18 @@ describe("Tetu Swap base tests", function () {
     await expect(lpCtr.setFee(0)).rejectedWith('TSP: Not factory')
   });
 
-  it('set fee too high', async () => {
-    await expect(factory.setPairFee(lp, 100)).rejectedWith('TSP: Too high fee')
+  it('set fee negative cases', async () => {
+    await expect(factory.setPairsFee([lp], 100)).rejectedWith("TSF: Too early")
+    await factory.announcePairsFeeChange([lp]);
+    await expect(factory.announcePairsFeeChange([lp])).rejectedWith("TSF: Time-lock already defined");
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await expect(factory.setPairsFee([lp], 100)).rejectedWith('TSP: Too high fee')
   });
 
   it('set fee', async () => {
-    await factory.setPairFee(lp, 0);
+    await factory.announcePairsFeeChange([lp]);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
+    await factory.setPairsFee([lp], 0);
     expect(await lpCtr.fee()).is.eq(0);
   });
 

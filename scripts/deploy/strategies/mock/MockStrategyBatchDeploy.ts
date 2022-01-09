@@ -10,7 +10,7 @@ import {
 } from "../../../../typechain";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {RunHelper} from "../../../utils/RunHelper";
+import {RunHelper} from "../../../utils/tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
 import {RopstenAddresses} from "../../../addresses/RopstenAddresses";
 import {Misc} from "../../../utils/tools/Misc";
@@ -107,7 +107,8 @@ async function main() {
         noopStrategyUnderlying,
         rewardDuration,
         false,
-        poolReward
+        poolReward,
+      0
     ));
 
     const poolRewardDecimals = await TokenUtils.decimals(poolReward);
@@ -117,7 +118,7 @@ async function main() {
     await RunHelper.runAndWait(() => TokenUtils.approve(poolReward, signer, pool.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()));
     await RunHelper.runAndWait(() => pool.notifyTargetRewardAmount(poolReward, utils.parseUnits(poolRewardAmountN, poolRewardDecimals)));
 
-    await RunHelper.runAndWait(() => controller.addVaultAndStrategy(pool.address, noopStrategy.address));
+    await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([pool.address], [noopStrategy.address]));
 
     datasPools.push([poolLogic, pool, noopStrategy]);
 
@@ -138,14 +139,15 @@ async function main() {
         strategyUnderlying,
         rewardDuration,
         false,
-        Misc.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
+      0
     ));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultThirdReward));
 
     await RunHelper.runAndWait(() =>
-        controller.addVaultAndStrategy(vault.address, strategy.address));
+        controller.addVaultsAndStrategies([vault.address], [strategy.address]));
 
     const vaultSecondRewardDec = await TokenUtils.decimals(vaultSecondReward);
     const mockContract2 = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", vaultSecondReward) as ERC20PresetMinterPauser;

@@ -29,6 +29,10 @@ const argv = require('yargs/yargs')()
     ftmRpcUrl: {
       type: "string",
     },
+    ethRpcUrl: {
+      type: "string",
+      default: ''
+    },
     infuraKey: {
       type: "string",
     },
@@ -41,11 +45,11 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 21938625
+      default: 23238072
     },
     ftmForkBlock: {
       type: "number",
-      default: 23667400
+      default: 27468274
     },
   }).argv;
 
@@ -56,11 +60,19 @@ export default {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
-      timeout: 99999,
-      gas: 19_000_000,
+      timeout: 99999 * 2,
+      gas: argv.hardhatChainId === 137 ? 19_000_000 :
+        argv.hardhatChainId === 250 ? 11_000_000 :
+          9_000_000,
       forking: {
-        url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : argv.ftmRpcUrl,
-        blockNumber: argv.hardhatChainId === 137 ? argv.maticForkBlock : argv.ftmForkBlock
+        url:
+          argv.hardhatChainId === 137 ? argv.maticRpcUrl :
+            argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+              undefined,
+        blockNumber:
+          argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
+            argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+              undefined
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
@@ -69,7 +81,7 @@ export default {
       },
     },
     ftm: {
-      url: argv.ftmRpcUrl,
+      url: argv.ftmRpcUrl || '',
       timeout: 99999,
       chainId: 250,
       gas: 10_000_000,
@@ -81,9 +93,14 @@ export default {
       url: argv.maticRpcUrl,
       timeout: 99999,
       chainId: 137,
-      gas: 19_000_000,
-      gasPrice: 100_000_000_000,
-      // gasMultiplier: 2,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
+    eth: {
+      url: argv.ethRpcUrl,
+      chainId: 1,
       accounts: [argv.privateKey],
     },
     mumbai: {
@@ -116,7 +133,7 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 150
+            runs: 150,
           }
         }
       },

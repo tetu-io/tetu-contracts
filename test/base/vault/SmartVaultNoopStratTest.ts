@@ -11,7 +11,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelperUtils} from "../../MintHelperUtils";
-import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
@@ -26,6 +25,7 @@ describe("SmartVaultNoopStrat", () => {
   let snapshotForEach: string;
 
   let signer: SignerWithAddress;
+  let user: SignerWithAddress;
   let signerAddress: string;
   let core: CoreContractsWrapper;
   let vault: SmartVault;
@@ -37,6 +37,7 @@ describe("SmartVaultNoopStrat", () => {
   before(async function () {
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
+    user = (await ethers.getSigners())[1];
     signerAddress = signer.address;
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
@@ -55,9 +56,10 @@ describe("SmartVaultNoopStrat", () => {
       usdc,
       REWARD_DURATION,
       false,
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
+      0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
     await core.vaultController.setToInvest([vault.address], 1000);
 
@@ -73,6 +75,7 @@ describe("SmartVaultNoopStrat", () => {
 
     await UniswapUtils.wrapNetworkToken(signer);
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
+    await TokenUtils.getToken(usdc, user.address, utils.parseUnits("1000000", 6))
     await TokenUtils.wrapNetworkToken(signer, '10000000');
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
@@ -88,7 +91,7 @@ describe("SmartVaultNoopStrat", () => {
     );
     expect(await TokenUtils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 
-    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
+    // await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
   });
 
   after(async function () {
@@ -212,7 +215,7 @@ describe("SmartVaultNoopStrat", () => {
     it("Active status", async () => {
       await core.vaultController.changeVaultsStatuses([vault.address], [false]);
       await TokenUtils.approve(usdc, signer, vault.address, "1000000");
-      await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV:03');
+      await expect(vault.deposit(BigNumber.from("1000000"))).rejectedWith('SV: Not active');
     });
     it("investedUnderlyingBalance with zero pool", async () => {
       expect(await core.psEmptyStrategy.investedUnderlyingBalance()).is.eq("0");
@@ -252,28 +255,28 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not doHardWork from users", async () => {
-      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("not controller");
+      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Not controller or gov");
     });
 
     it("should not deposit from contract", async () => {
       const extUser = (await ethers.getSigners())[1];
       const contract = await DeployerUtils.deployContract(extUser, 'EvilHackerContract') as EvilHackerContract;
-      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('not allowed');
+      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Not allowed');
     });
 
     it("should not notify from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('only distr');
+      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Only distributor');
     });
 
     it("should not doHardWork on strat from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('forbidden');
+      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('SB: Not Gov or Vault');
     });
 
     it("should not doHardWork for paused strat", async () => {
       await strategy.emergencyExit();
-      await expect(strategy.doHardWork()).is.rejectedWith('paused');
+      await expect(strategy.doHardWork()).is.rejectedWith('SB: Paused');
     });
 
     it("should not add underlying reward token", async () => {
@@ -304,27 +307,28 @@ describe("SmartVaultNoopStrat", () => {
         usdc,
         REWARD_DURATION,
         false,
-        Misc.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
+        0
       );
       expect(await vault1.underlyingBalanceWithInvestment()).is.eq(0);
       await expect(vault1.doHardWork()).rejectedWith('')
     });
 
     it("should not withdraw when supply is zero", async () => {
-      await expect(vault.withdraw(1)).rejectedWith('SV:10');
+      await expect(vault.withdraw(1)).rejectedWith('SV: No shares for withdraw');
     });
 
     it("should not withdraw zero amount", async () => {
       await VaultUtils.deposit(signer, vault, BigNumber.from("1"));
-      await expect(vault.withdraw(0)).rejectedWith('SV:11');
+      await expect(vault.withdraw(0)).rejectedWith('SV: Zero amount for withdraw');
     });
 
     it("should not deposit zero amount", async () => {
-      await expect(vault.deposit(0)).rejectedWith('SV:12');
+      await expect(vault.deposit(0)).rejectedWith('SV: Zero amount');
     });
 
     it("should not deposit for zero address", async () => {
-      await expect(vault.depositFor(1, Misc.ZERO_ADDRESS)).rejectedWith('SV:13');
+      await expect(vault.depositFor(1, Misc.ZERO_ADDRESS)).rejectedWith('SV: Zero beneficiary for deposit');
     });
 
     it("rebalance with zero amount", async () => {
@@ -335,14 +339,61 @@ describe("SmartVaultNoopStrat", () => {
       await expect(vault.notifyTargetRewardAmount(
         core.rewardToken.address,
         '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-      )).rejectedWith('SV:14');
+      )).rejectedWith('SV: Amount overflow');
     });
 
     it("should not notify with unknown token", async () => {
       await expect(vault.notifyTargetRewardAmount(
         Misc.ZERO_ADDRESS,
         '1'
-      )).rejectedWith('SV:15');
+      )).rejectedWith('SV: RT not found');
+    });
+
+    it("tests deposit fee", async () => {
+      const vault1 = await DeployerUtils.deploySmartVault(signer);
+      await vault1.initializeSmartVault(
+        "NOOP",
+        "tNOOP",
+        core.controller.address,
+        usdc,
+        REWARD_DURATION,
+        false,
+        Misc.ZERO_ADDRESS,
+        50
+      );
+      const vWallet = await DeployerUtils.impersonate(vault1.address);
+
+      const signerBalBefore = await TokenUtils.balanceOf(usdc, signerAddress);
+      const userBalBefore = await TokenUtils.balanceOf(usdc, user.address);
+
+      await VaultUtils.deposit(signer, vault1, BigNumber.from("10000"), false);
+      expect(await TokenUtils.balanceOf(usdc, vault1.address)).is.eq(BigNumber.from(10000));
+      // simulate invest to strategy with fee
+      await TokenUtils.transfer(usdc, vWallet, core.vaultController.address, '50');
+      expect(await TokenUtils.balanceOf(usdc, vault1.address)).is.eq(BigNumber.from(9950));
+      const shareBalSigner = await TokenUtils.balanceOf(vault1.address, signerAddress);
+      const undBalSigner = await vault1.underlyingBalanceWithInvestmentForHolder(signer.address);
+      expect(shareBalSigner).is.eq(BigNumber.from("9950"))
+      expect(undBalSigner).is.eq(BigNumber.from("9950"))
+
+
+      await VaultUtils.deposit(user, vault1, BigNumber.from("10000"), false);
+      // simulate invest to strategy with fee
+      await TokenUtils.transfer(usdc, vWallet, core.vaultController.address, '50');
+      const shareBalUser = await TokenUtils.balanceOf(vault1.address, signerAddress);
+      const undBalUser = await vault1.underlyingBalanceWithInvestmentForHolder(user.address);
+      expect(shareBalUser).is.eq(BigNumber.from("9950"))
+      expect(undBalUser).is.eq(BigNumber.from("9950"))
+      // should be the same
+      expect(undBalSigner).is.eq(BigNumber.from("9950"))
+
+      await vault1.connect(signer).exit();
+      await vault1.connect(user).exit();
+
+      const signerBalAfter = await TokenUtils.balanceOf(usdc, signerAddress);
+      const userBalAfter = await TokenUtils.balanceOf(usdc, user.address);
+      expect(signerBalBefore.sub(50)).is.eq(signerBalAfter);
+      expect(userBalBefore.sub(50)).is.eq(userBalAfter);
     });
 
   });

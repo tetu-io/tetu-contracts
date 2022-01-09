@@ -10,8 +10,8 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployInfo} from "../../DeployInfo";
-import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 import {FoldingDoHardWork} from "../../FoldingDoHardWork";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneIronFoldStrategyTest: {
       type: "number",
-      default: -1,
+      default: 5,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -61,7 +61,7 @@ describe('Universal Iron Fold tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (!idx || idx === 'idx' || collateralFactor === '0') {
+    if (!idx || idx === 'idx') {
       console.log('skip', idx);
       return;
     }
@@ -83,14 +83,20 @@ describe('Universal Iron Fold tests', async () => {
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0.00001;
-    const deposit = 100_000;
+    let deposit = 100_000;
+    if (rTokenName === 'rICE') {
+      deposit = 10_000;
+    }
     // at least 3
-    const loops = 9;
+    const loops = 15;
     // number of blocks or timestamp value
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    const specificTests = [new FoldingProfitabilityTest()];
+    let specificTests = [new FoldingProfitabilityTest()];
+    if(borrowTarget==='0'){
+      specificTests = []
+    }
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {

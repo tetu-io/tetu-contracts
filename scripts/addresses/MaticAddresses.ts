@@ -8,7 +8,7 @@ export class MaticAddresses {
   // https://github.com/sushiswap/default-token-list/blob/master/src/tokens/matic.json#L153
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B";
+  public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B".toLowerCase();
   // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
@@ -55,6 +55,13 @@ export class MaticAddresses {
   public static IRON_TOKEN = "0xD86b5923F3AD7b585eD81B448170ae026c65ae9a".toLowerCase();
   public static amWBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
   public static polyDoge_TOKEN = "0x8A953CfE442c5E8855cc6c61b1293FA648BAE472".toLowerCase();
+  public static BAL_TOKEN = "0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3".toLowerCase();
+  public static miFARM_TOKEN = "0xab0b2ddB9C7e440fAc8E140A89c0dbCBf2d7Bbff".toLowerCase();
+  public static KLIMA_TOKEN = "0x4e78011ce80ee02d2c3e649fb657e45898257815".toLowerCase();
+  public static BCT_TOKEN = "0x2F800Db0fdb5223b3C3f354886d907A671414A7F".toLowerCase();
+  public static PSP_TOKEN = "0x42d61D766B85431666B39B89C43011f24451bFf6".toLowerCase();
+  public static VSQ_TOKEN = "0x29F1e986FCa02B7E54138c04C4F503DdDD250558".toLowerCase();
+  public static SFF_TOKEN = "0xdf9B4b57865B403e08c85568442f95c26b7896b0".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -80,6 +87,7 @@ export class MaticAddresses {
   public static QUICK_STAKING_FACTORY = "0x5eec262B05A57da9beb5FE96a34aa4eD0C5e029f".toLowerCase();
   public static QUICK_STAKING_FACTORY_V2 = "0x8aAA5e259F74c8114e0a471d9f2ADFc66Bfe09ed".toLowerCase();
   public static QUICK_STAKING_FACTORY_V3 = "0x9Dd12421C637689c3Fc6e661C9e2f02C2F61b3Eb".toLowerCase();
+  public static QUICK_STAKING_FACTORY_SYRUP = "0x5D7284e0aCF4dc3b623c93302Ed490fC97aCA8A4".toLowerCase();
   public static QUICK_WMATIC_USDC = "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827".toLowerCase();
   public static QUICK_WMATIC_ETH = "0xadbF1854e5883eB8aa7BAf50705338739e558E5b".toLowerCase();
   public static QUICK_USDC_miMATIC = "0x160532D2536175d65C03B97b0630A9802c274daD".toLowerCase();
@@ -125,10 +133,8 @@ export class MaticAddresses {
   public static WAULT_WMATIC_WETH = "0x679B8Ab80F298bF802fB294137765C6386D43dcA".toLowerCase();
 
   // Dino
-  // Currently, DinoSwap DEX Router is integrated via SushiSwap —
-  // router functionality will be added to incorporate additional DEXs in the
-  // near future.
-  // https://docs.dinoswap.exchange/yield-farming-jurassic-farms/farms
+  public static DINO_FACTORY = "0x624Ccf581371F8A4493e6AbDE46412002555A1b6".toLowerCase();
+  public static DINO_ROUTER = "0x6AC823102CB347e1f5925C634B80a98A3aee7E03".toLowerCase();
   public static DINO_MASTERCHEF = "0x1948abC5400Aa1d72223882958Da3bec643fb4E5".toLowerCase();
   public static DINO_DINO_USDC = "0x3324af8417844e70b81555A6D1568d78f4D4Bf1f".toLowerCase();
   public static DINO_DINO_WETH = "0x9f03309A588e33A239Bf49ed8D68b2D45C7A1F11".toLowerCase();
@@ -166,6 +172,41 @@ export class MaticAddresses {
 
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
+  public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'.toLowerCase();
+  public static amAAVE_TOKEN = "0x1d2a0E5EC8E5bBDCA5CB219e649B565d8e5c3360".toLowerCase();
+  public static amWMATIC_TOKEN = "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4".toLowerCase();
+  public static amDAI_TOKEN = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e".toLowerCase();
+  public static amETH_TOKEN = "0x28424507fefb6f7f8E9D3860F56504E4e5f5f390".toLowerCase();
+  public static amBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
+
+  // qidao
+  public static camWMATICVault = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'.toLowerCase();
+  public static camWMATIC_TOKEN = "0x7068Ea5255cb05931EFa8026Bd04b18F3DeB8b0B".toLowerCase();
+  public static camAAVEVault = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'.toLowerCase();
+  public static camAAVE_TOKEN = "0xeA4040B21cb68afb94889cB60834b13427CFc4EB".toLowerCase();
+  public static camDAIVault = "0xD2FE44055b5C874feE029119f70336447c8e8827".toLowerCase();
+  public static camDAI_TOKEN = "0xE6C23289Ba5A9F0Ef31b8EB36241D5c800889b7b".toLowerCase();
+  public static camWETHVault = "0x11A33631a5B5349AF3F165d2B7901A4d67e561ad".toLowerCase();
+  public static camWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
+  public static camWBTCVault = "0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0".toLowerCase();
+  public static camWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
+
+  // BALANCER
+  public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
+  public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012'.toLowerCase();
+  public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
+
+  // KLIMA
+  public static KLIMA_STAKING = '0x25d28a24Ceb6F81015bB0b2007D795ACAc411b4d'.toLowerCase();
+  public static sKLIMA = '0xb0C22d8D350C67420f06F48936654f567C73E8C8'.toLowerCase();
+  public static KLIMA_DISTRIBUTOR = '0x4cC7584C3f8FAABf734374ef129dF17c3517e9cB'.toLowerCase();
+  public static KLIMA_TREASURY = '0x7Dd4f0B986F032A44F913BF92c9e8b7c17D77aD7'.toLowerCase();
+
+  // VESQ
+  public static VESQ_STAKING = '0x2F3E9e54bD4513D1B49A6d915F9a83310638CFC2'.toLowerCase();
+  public static sVESQ = '0xbb0FDc2Fe6D3cEB6Bf76Cc955173a07EDbF57494'.toLowerCase();
+  public static VESQ_DISTRIBUTOR = '0xabE372DCFB8800B3cDE30f1d6666401C765f2F3B'.toLowerCase();
+  public static VESQ_TREASURY = '0x8c7290399cECbBBf31E471951Cc4C2ce91F5073c'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
@@ -192,6 +233,8 @@ export class MaticAddresses {
         return MaticAddresses.CAFE_ROUTER;
       case MaticAddresses.TETU_SWAP_FACTORY:
         return MaticAddresses.TETU_SWAP_ROUTER;
+      case MaticAddresses.DINO_FACTORY:
+        return MaticAddresses.DINO_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

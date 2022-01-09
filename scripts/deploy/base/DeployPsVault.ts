@@ -3,7 +3,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {Controller, NoopStrategy, SmartVault} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {Misc} from "../../utils/tools/Misc";
 
 
@@ -35,14 +35,15 @@ export default async function main() {
     core.rewardToken,
     psRewardDuration,
     false,
-    Misc.ZERO_ADDRESS
+    Misc.ZERO_ADDRESS,
+    0
   ), true, wait);
   await RunHelper.runAndWait(() => controller.setRewardToken(core.rewardToken), true, wait);
   await RunHelper.runAndWait(() => controller.setPsVault(psVault.address), true, wait);
 
   // need to add after adding bookkeeper
   await RunHelper.runAndWait(() =>
-      controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
+      controller.addVaultsAndStrategies([psVault.address], [psEmptyStrategy.address]),
     true, wait);
 
   // ps

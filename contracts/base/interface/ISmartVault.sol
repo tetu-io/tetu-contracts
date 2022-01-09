@@ -18,6 +18,8 @@ interface ISmartVault {
 
   function changeActivityStatus(bool _active) external;
 
+  function changeProtectionMode(bool _active) external;
+
   function changePpfsDecreaseAllowed(bool _value) external;
 
   function setLockPeriod(uint256 _value) external;
@@ -96,13 +98,13 @@ interface ISmartVault {
 
   function rewardsForToken(address _rt, address account) external view returns (uint256);
 
-  function userLastWithdrawTs(address _user) external returns (uint256);
+  function userLastWithdrawTs(address _user) external view returns (uint256);
 
-  function userLastDepositTs(address _user) external returns (uint256);
+  function userLastDepositTs(address _user) external view returns (uint256);
 
-  function userBoostTs(address _user) external returns (uint256);
+  function userBoostTs(address _user) external view returns (uint256);
 
-  function userLockTs(address _user) external returns (uint256);
+  function userLockTs(address _user) external view returns (uint256);
 
   function addRewardToken(address rt) external;
 
@@ -118,5 +120,9 @@ interface ISmartVault {
 
   function toInvest() external view returns (uint256);
 
+  function depositFeeNumerator() external view returns (uint256);
+
   function lockAllowed() external view returns (bool);
+
+  function protectionMode() external view returns (bool);
 }

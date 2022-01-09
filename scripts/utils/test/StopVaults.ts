@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {RunHelper} from "../RunHelper";
+import {RunHelper} from "../tools/RunHelper";
 
 
 async function main() {

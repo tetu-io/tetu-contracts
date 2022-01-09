@@ -37,7 +37,7 @@ import {Addresses} from "../../addresses";
 import {CoreAddresses} from "../models/CoreAddresses";
 import {ToolsAddresses} from "../models/ToolsAddresses";
 import axios from "axios";
-import {RunHelper} from "../utils/RunHelper";
+import {RunHelper} from "../utils/tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
 import {ToolsContractsWrapper} from "../../test/ToolsContractsWrapper";
 import {Misc} from "../utils/tools/Misc";
@@ -45,6 +45,7 @@ import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
+import {TimeUtils} from "../../test/TimeUtils";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -240,6 +241,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.CAFE_FACTORY, "CafeSwap LPs"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, "Dinoswap V2"), true, wait);
 
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.setReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
@@ -261,11 +263,17 @@ export class DeployerUtils {
       FtmAddresses.DAI_TOKEN,
       FtmAddresses.fUSDT_TOKEN,
       FtmAddresses.WBTC_TOKEN,
-      FtmAddresses.FTM_TOKEN
+      FtmAddresses.WFTM_TOKEN
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(FtmAddresses.USDC_TOKEN), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPOOKY_SWAP_FACTORY, "Spooky LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPIRIT_SWAP_FACTORY, "Spirit LPs"), true, wait);
+
+    // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
+    await calculator.setReplacementTokens(FtmAddresses.renCRV_TOKEN, FtmAddresses.WBTC_TOKEN);
+    await calculator.setReplacementTokens(FtmAddresses.g3CRV_TOKEN, FtmAddresses.USDC_TOKEN);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -374,6 +382,7 @@ export class DeployerUtils {
         MaticAddresses.TETU_SWAP_FACTORY,
         MaticAddresses.CAFE_FACTORY,
         MaticAddresses.DFYN_FACTORY,
+        MaticAddresses.DINO_FACTORY,
       ],
       [
         MaticAddresses.QUICK_ROUTER,
@@ -382,6 +391,7 @@ export class DeployerUtils {
         MaticAddresses.TETU_SWAP_ROUTER,
         MaticAddresses.CAFE_ROUTER,
         MaticAddresses.DFYN_ROUTER,
+        MaticAddresses.DINO_ROUTER,
       ]
     ) as MultiSwap;
   }
@@ -396,9 +406,13 @@ export class DeployerUtils {
       calculatorAddress,
       [
         FtmAddresses.SPOOKY_SWAP_FACTORY,
+        FtmAddresses.TETU_SWAP_FACTORY,
+        FtmAddresses.SPIRIT_SWAP_FACTORY,
       ],
       [
-        FtmAddresses.SPOOKY_SWAP_ROUTER
+        FtmAddresses.SPOOKY_SWAP_ROUTER,
+        FtmAddresses.TETU_SWAP_ROUTER,
+        FtmAddresses.SPIRIT_SWAP_ROUTER,
       ]
     ) as MultiSwap;
   }
@@ -455,7 +469,8 @@ export class DeployerUtils {
       rewardToken.address,
       psRewardDuration,
       false,
-      MaticAddresses.ZERO_ADDRESS
+      MaticAddresses.ZERO_ADDRESS,
+      0
     ), true, wait);
 
     // ******* SETUP CONTROLLER ********
@@ -467,6 +482,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => controller.setFund(fundKeeperData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setAnnouncer(announcerData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address), true, wait);
+    await RunHelper.runAndWait(() => controller.setDistributor(notifyHelper.address), true, wait);
 
     try {
       const tokens = await DeployerUtils.getTokenAddresses()
@@ -482,7 +498,7 @@ export class DeployerUtils {
 
     // need to add after adding bookkeeper
     await RunHelper.runAndWait(() =>
-        controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
+        controller.addVaultsAndStrategies([psVault.address], [psEmptyStrategy.address]),
       true, wait);
 
     Misc.printDuration('Core contracts deployed', start);
@@ -517,6 +533,7 @@ export class DeployerUtils {
     vaultRewardToken: string,
     signer: SignerWithAddress,
     rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
     wait = false
   ): Promise<[SmartVault, SmartVault, IStrategy]> {
     const start = Date.now();
@@ -536,11 +553,12 @@ export class DeployerUtils {
       strategyUnderlying,
       rewardDuration,
       false,
-      vaultRewardToken
+      vaultRewardToken,
+      depositFee
     ), true, wait);
     Misc.printDuration(vaultName + ' vault initialized', startInit);
 
-    await RunHelper.runAndWait(() => controller.addVaultAndStrategy(vault.address, strategy.address), true, wait);
+    await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([vault.address], [strategy.address]), true, wait);
     await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
     Misc.printDuration(vaultName + ' deployAndInitVaultAndStrategy completed', start);
     return [vaultLogic, vault, strategy];
@@ -553,6 +571,7 @@ export class DeployerUtils {
     vaultRewardToken: string,
     signer: SignerWithAddress,
     rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
     wait = false
   ): Promise<[SmartVault, SmartVault, IStrategy]> {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
@@ -574,7 +593,8 @@ export class DeployerUtils {
       strategyUnderlying,
       rewardDuration,
       false,
-      vaultRewardToken
+      vaultRewardToken,
+      depositFee
     ), true, wait);
     return [vaultLogic, vault, strategy];
   }
@@ -823,7 +843,7 @@ export class DeployerUtils {
     if (net.chainId === 137) {
       return MaticAddresses.WMATIC_TOKEN;
     } else if (net.chainId === 250) {
-      return FtmAddresses.FTM_TOKEN;
+      return FtmAddresses.WFTM_TOKEN;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -899,6 +919,14 @@ export class DeployerUtils {
     return (await ethers.provider.getNetwork()).chainId === id;
   }
 
+  public static async getStorageAt(address: string, index: string) {
+    return ethers.provider.getStorageAt(address, index);
+  }
+
+  public static async setStorageAt(address: string, index: string, value: string) {
+    await ethers.provider.send("hardhat_setStorageAt", [address, index, value]);
+    await ethers.provider.send("evm_mine", []); // Just mines to the next block
+  }
 
   // ****************** WAIT ******************
 
@@ -911,6 +939,9 @@ export class DeployerUtils {
     while (true) {
       log.info('wait 10sec');
       await DeployerUtils.delay(10000);
+      if(hre.network.name === 'hardhat') {
+        await TimeUtils.advanceNBlocks(1);
+      }
       if (ethers.provider.blockNumber >= start + blocks) {
         break;
       }

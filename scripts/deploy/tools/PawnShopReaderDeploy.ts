@@ -1,7 +1,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {PawnShopReader} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 
 
 async function main() {

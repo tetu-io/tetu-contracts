@@ -18,4 +18,6 @@ interface IControllableExtended {
 
   function created() external view returns (uint256 ts);
 
+  function controller() external view returns (address adr);
+
 }

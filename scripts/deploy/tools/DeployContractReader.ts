@@ -1,7 +1,7 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
 import {ContractReader} from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 
 
 async function main() {

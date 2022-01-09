@@ -1,21 +1,19 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
 import {
-  ContractReader, IStrategy,
-  NoopStrategy,
+  ContractReader,
+  IStrategy,
   SmartVault,
   TetuSwapFactory,
   TetuSwapPair
 } from "../../../typechain";
-import {RunHelper} from "../../utils/RunHelper";
+import {RunHelper} from "../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
-const STRATEGY_NAME = 'StrategyTetuSwap';
 
-const excludeVaults = new Set<string>([
-]);
+const excludeVaults = new Set<string>([]);
 
 async function main() {
   mkdir('./tmp/deployed', {recursive: true}, (err) => {
@@ -26,6 +24,15 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
+
+  let strategyName = 'StrategyTetuSwap';
+  let strategyPath = `contracts/strategies/matic/tetu/${strategyName}.sol:${strategyName}`;
+  let rt = core.psVault;
+  if ((await ethers.provider.getNetwork()).chainId === 250) {
+    strategyName = 'StrategyTetuSwapFantom';
+    strategyPath = `contracts/strategies/fantom/tetu/${strategyName}.sol:${strategyName}`;
+    rt = core.rewardToken;
+  }
 
   const factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', core.swapFactory) as TetuSwapFactory;
 
@@ -48,15 +55,25 @@ async function main() {
     const token0 = await pairCtr.token0();
     const token1 = await pairCtr.token1();
 
+    // if (token0.toLowerCase() !== FtmAddresses.USDC_TOKEN && token1.toLowerCase() !== FtmAddresses.USDC_TOKEN) {
+    //   continue;
+    // }
+
     const token0Name = await TokenUtils.tokenSymbol(token0);
     const token1Name = await TokenUtils.tokenSymbol(token1);
     const vaultNameWithoutPrefix = `TETU_SWAP_${token0Name}_${token1Name}`;
-    console.log('deploy', vaultNameWithoutPrefix, 'pair', pair);
 
     if (excludeVaults.has(vaultNameWithoutPrefix)) {
-      console.log('already deployed');
+      console.log('excluded');
       continue;
     }
+
+    if (vaultNames.has(vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
+      continue;
+    }
+
+    console.log('deploy', vaultNameWithoutPrefix, 'pair', pair);
 
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
@@ -64,14 +81,9 @@ async function main() {
 
     const strategyArgs = [core.controller, vault.address, pair];
 
-    const strategy = await DeployerUtils.deployContract(signer, STRATEGY_NAME, ...strategyArgs) as IStrategy;
+    const strategy = await DeployerUtils.deployContract(signer, strategyName, ...strategyArgs) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
-
-    if (vaultNames.has(vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
-      continue;
-    }
 
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       vaultNameWithoutPrefix,
@@ -80,7 +92,8 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       false,
-      core.psVault
+      rt,
+      0
     ));
 
     const txt = `${vaultNameWithoutPrefix} vault: ${vault.address} strategy: ${strategy.address} pair ${pair}\n`;
@@ -90,7 +103,7 @@ async function main() {
     await DeployerUtils.verify(vaultLogic.address);
     await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
-    await DeployerUtils.verifyWithContractName(strategy.address, `contracts/strategies/matic/tetu/${STRATEGY_NAME}.sol:${STRATEGY_NAME}`, [
+    await DeployerUtils.verifyWithContractName(strategy.address, strategyPath, [
       ...strategyArgs
     ]);
   }
