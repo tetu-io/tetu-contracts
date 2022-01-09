@@ -129,8 +129,8 @@ describe("contract reader tests", function () {
     const rtBalanceUsdFormatted = +utils.formatUnits(rtBalanceUsd, rtDecimals);
     console.log('rtBalanceUsd', rtBalanceUsd.toString(), rtBalanceUsdFormatted);
     const periodFinish = await core.psVault.periodFinishForToken(rt);
-    const curTime = Math.floor(Date.now() / 1000);
-    const days = (periodFinish.toNumber() - curTime) / (60 * 60 * 24);
+    const time = await TimeUtils.getBlockTime();
+    const days = (periodFinish.toNumber() - time) / (60 * 60 * 24);
     console.log('days', days);
 
     const rewardsPerTvlRatio = rtBalanceUsdFormatted / tvlUsdFormatted;
