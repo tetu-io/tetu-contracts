@@ -4,10 +4,11 @@ import {ContractReader, IStrategy} from "../../../../typechain";
 import {appendFileSync, mkdir, readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([
-  '14',
-  '17',
-  '18',
-  '19',
+  '17', // scFUSD
+  '18', // scLINK
+  '19', // scFRAX
+  '20', // scDOLA
+  '23', // scTUSD
 ]);
 
 async function main() {

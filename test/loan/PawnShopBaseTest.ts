@@ -181,7 +181,7 @@ describe("Tetu pawnshop base tests", function () {
     await TokenUtils.approve(usdc, user3, shop.address, '555');
     await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TPS: New bid lower than previous');
 
-    await PawnShopTestUtils.bidAndCheck(id, '556', user3, shop);
+    await PawnShopTestUtils.bidAndCheck(id, '5560', user3, shop);
 
     const bidId2 = await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop);
     const bidId3 = await PawnShopTestUtils.getBidIdAndCheck(id, user3.address, shop);
