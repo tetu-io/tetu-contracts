@@ -387,7 +387,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
       uint256 lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
       AuctionBid storage lastBid = auctionBids[lastBidId];
-      require(lastBid.amount < amount, "TPS: New bid lower than previous");
+      require(lastBid.amount * 110 / 100 < amount, "TPS: New bid lower than previous");
     }
 
     AuctionBid memory _bid = AuctionBid(

@@ -24,7 +24,7 @@ contract NotifyHelper is Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.3.0";
+  string public constant VERSION = "1.3.1";
 
   mapping(address => bool) public alreadyNotified;
   address[] public alreadyNotifiedList;
@@ -90,6 +90,7 @@ contract NotifyHelper is Controllable {
   }
 
   function notifyVaultWithPsToken(uint256 amount, address vault) internal {
+    require(psVault() != address(0), "NH: Zero xTETU");
     require(vault != psVault(), "NH: PS forbidden");
     address token = ISmartVault(psVault()).underlying();
 
@@ -105,6 +106,7 @@ contract NotifyHelper is Controllable {
   }
 
   function notifyVaultWithDXTetu(uint256 amount) internal {
+    require(dxTetu != address(0), "NH: Zero dxTETU");
     // deposit TETU to xTETU
     address token = ISmartVault(psVault()).underlying();
     IERC20(token).safeApprove(psVault(), 0);

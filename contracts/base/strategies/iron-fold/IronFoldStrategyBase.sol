@@ -34,7 +34,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.3.0";
+  string public constant VERSION = "1.4.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev precision for the folding profitability calculation

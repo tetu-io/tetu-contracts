@@ -67,6 +67,7 @@ describe("auto rewarder tests", function () {
       utils.parseUnits('1000').toString()
     ))[0];
 
+    console.log('gov', await controller.governance())
     // await rewardCalculator.set
     await controller.setRewardDistribution([rewarder.address], true);
   });

@@ -5,7 +5,7 @@
 export class FtmAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  public static GOV_ADDRESS = "0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94";
+  public static GOV_ADDRESS = "0x11d946C4Df8222940F9e7e6E56042Be2832B0871";
   // tokens
   public static TETU_TOKEN = "0x65c9d9d080714cDa7b5d58989Dc27f897F165179".toLowerCase();
   public static WETH_TOKEN = "0x74b23882a30290451a17c44f4f05243b6b58c76d".toLowerCase();
@@ -28,12 +28,15 @@ export class FtmAddresses {
   public static FBTC_TOKEN = "0xe1146b9AC456fCbB60644c36Fd3F868A9072fc6E".toLowerCase();
   public static FETH_TOKEN = "0x658b0c7613e890EE50B8C4BC6A3f41ef411208aD".toLowerCase();
   public static FRAX_TOKEN = "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355".toLowerCase();
+  public static renBTC_TOKEN = "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501".toLowerCase();
+  public static SPELL_TOKEN = "0x468003B688943977e6130F4F68F23aad939a1040".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
   public static SPOOKY_SWAP_ROUTER = "0xF491e7B69E4244ad4002BC14e878a34207E38c29".toLowerCase();
   public static SPOOKY_MASTERCHEF = "0x2b2929E785374c651a81A63878Ab22742656DcDd".toLowerCase();
   public static SPOOKY_WFTM_SCREAM = "0x30872e4fc4edbfd7a352bfc2463eb4fae9c09086".toLowerCase();
+  public static SPOOKY_TETU_USDC = "0x1b989bDE3aA642831596000e985b7D5EAeF2503e".toLowerCase();
 
   // Scream
   public static SCREAM_CONTROLLER = "0x260E596DAbE3AFc463e75B6CC05d8c46aCAcFB09".toLowerCase();
@@ -52,7 +55,13 @@ export class FtmAddresses {
 
   // curve
   public static CURVE_tricrypto_POOL = "0x3a1659Ddcf2339Be3aeA159cA010979FB49155FF".toLowerCase();
+  public static CURVE_geist_POOL = "0x0fa949783947Bf6c1b171DB13AEACBB488845B3f".toLowerCase();
+  public static CURVE_2_POOL = "0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40".toLowerCase();
+  public static CURVE_ren_POOL = "0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604".toLowerCase();
   public static USD_BTC_ETH_CRV_TOKEN = "0x58e57cA18B7A47112b877E31929798Cd3D703b0f".toLowerCase();
+  public static g3CRV_TOKEN = "0xD02a30d33153877BC20e5721ee53DeDEE0422B2F".toLowerCase();
+  public static _2poolCrv_TOKEN = "0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40".toLowerCase();
+  public static renCRV_TOKEN = "0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

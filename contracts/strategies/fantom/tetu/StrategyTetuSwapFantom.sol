@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 import "../../../base/strategies/tetu/TetuSwapStrategyBase.sol";
 
 contract StrategyTetuSwapFantom is TetuSwapStrategyBase {
+  using SafeERC20 for IERC20;
 
   address public constant TETU = address(0x65c9d9d080714cDa7b5d58989Dc27f897F165179);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.TETU_SWAP;
@@ -38,5 +39,22 @@ contract StrategyTetuSwapFantom is TetuSwapStrategyBase {
   // assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {
     return _assets;
+  }
+
+  /// @dev Do something useful with farmed rewards
+  function liquidateReward() internal override {
+    // assume only tetu rewards exist
+    address rt = IController(controller()).rewardToken();
+
+    // it is redirected rewards - PS already had their part of income
+    // in case of pair with xTETU-XXX we not able to separate it
+    uint256 amount = IERC20(rt).balanceOf(address(this));
+    if (amount > 0) {
+      IERC20(rt).safeApprove(_smartVault, 0);
+      IERC20(rt).safeApprove(_smartVault, amount);
+      ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
+    }
+    // if no not enough fees for buybacks it should not ruin hardwork process
+    liquidateRewardSilently();
   }
 }

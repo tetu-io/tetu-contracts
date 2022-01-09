@@ -1,28 +1,62 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {
-  CompleteRToken,
-  IScreamController,
-  PriceOracle,
-} from "../../../typechain";
+import {CompleteRToken, IScreamController, PriceOracle, SmartVault,} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
 import {FtmAddresses} from "../../addresses/FtmAddresses";
+import {VaultUtils} from "../../../test/VaultUtils";
+
+const exclude = new Set<number>([
+  2,
+  4,
+  5,
+  6,
+  9,
+  11,
+  12,
+  13,
+  15,
+  16,
+  22,
+]);
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-
+  const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
   const controller = await DeployerUtils.connectInterface(signer, 'IScreamController', FtmAddresses.SCREAM_CONTROLLER) as IScreamController;
   const priceOracle = await DeployerUtils.connectInterface(signer, 'PriceOracle', await controller.oracle()) as PriceOracle;
 
   const markets = await controller.getAllMarkets();
   console.log('markets', markets.length);
-  console.log(markets);
+  // console.log(markets);
 
-  let infos: string = 'idx, csToken_name, csToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, supplyCap \n';
+
+  const vaultInfos = await VaultUtils.getVaultInfoFromServer();
+  const underlyingStatuses = new Map<string, boolean>();
+  const currentRewards = new Map<string, number>();
+  const underlyingToVault = new Map<string, string>();
+  for (const vInfo of vaultInfos) {
+    if (vInfo.platform !== '18') {
+      continue;
+    }
+    underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
+    underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
+    if (vInfo.active) {
+      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken));
+    }
+  }
+  console.log('loaded vaults', underlyingStatuses.size);
+
+
+  let infos: string = 'idx, csToken_name, csToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, supplyCap, vault, cur rewards \n';
   for (let i = 0; i < markets.length; i++) {
+    if(exclude.has(i)) {
+      continue;
+    }
     console.log('id', i);
     const scTokenAdr = markets[i];
     const scTokenName = await TokenUtils.tokenSymbol(scTokenAdr);
@@ -52,7 +86,9 @@ async function main() {
       (collateralFactor - 1) + ',' +
       borrowTarget + ',' +
       tvl.toFixed(2) + ',' +
-      supplyCap
+      supplyCap + ',' +
+      underlyingToVault.get(token.toLowerCase()) + ',' +
+      currentRewards.get(token.toLowerCase())
 
 
     console.log(data);
@@ -64,7 +100,7 @@ async function main() {
   });
 
   // console.log('data', data);
-  writeFileSync('./tmp/download/iron_markets.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/scream_markets.csv', infos, 'utf8');
   console.log('done');
 }
 

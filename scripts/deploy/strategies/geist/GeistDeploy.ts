@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy} from "../../../../typechain";
-import {appendFileSync, mkdir, readFileSync, writeFileSync} from "fs";
+import {appendFileSync, mkdir, readFileSync} from "fs";
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -57,7 +57,8 @@ async function main() {
     console.log('strat', idx, aTokenName, vaultNameWithoutPrefix);
 
     const collateralFactor = (ltv).toFixed(0);
-    const borrowTarget = (ltv * 0.99).toFixed(0);
+    // on fantom we have low gas limit and not able to use full power of folding
+    const borrowTarget = (ltv * 0.87).toFixed(0);
 
     let strategyArgs;
 
@@ -96,7 +97,7 @@ async function main() {
     mkdir('./tmp/deployed', {recursive: true}, (err) => {
       if (err) throw err;
     });
-    const txt = `vault: ${data[1].address} strategy: ${data[2].address} server.js`;
+    const txt = `vault: ${data[1].address} strategy: ${data[2].address}`;
     appendFileSync(`./tmp/deployed/GEIST.txt`, txt, 'utf8');
   }
 

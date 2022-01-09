@@ -45,6 +45,7 @@ import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
+import {TimeUtils} from "../../test/TimeUtils";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -240,6 +241,7 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DFYN_FACTORY, "Dfyn LP Token"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.CAFE_FACTORY, "CafeSwap LPs"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, "Dinoswap V2"), true, wait);
 
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.setReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
@@ -268,6 +270,10 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPOOKY_SWAP_FACTORY, "Spooky LP"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(FtmAddresses.SPIRIT_SWAP_FACTORY, "Spirit LPs"), true, wait);
+
+    // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
+    await calculator.setReplacementTokens(FtmAddresses.renCRV_TOKEN, FtmAddresses.WBTC_TOKEN);
+    await calculator.setReplacementTokens(FtmAddresses.g3CRV_TOKEN, FtmAddresses.USDC_TOKEN);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -376,6 +382,7 @@ export class DeployerUtils {
         MaticAddresses.TETU_SWAP_FACTORY,
         MaticAddresses.CAFE_FACTORY,
         MaticAddresses.DFYN_FACTORY,
+        MaticAddresses.DINO_FACTORY,
       ],
       [
         MaticAddresses.QUICK_ROUTER,
@@ -384,6 +391,7 @@ export class DeployerUtils {
         MaticAddresses.TETU_SWAP_ROUTER,
         MaticAddresses.CAFE_ROUTER,
         MaticAddresses.DFYN_ROUTER,
+        MaticAddresses.DINO_ROUTER,
       ]
     ) as MultiSwap;
   }
@@ -931,6 +939,9 @@ export class DeployerUtils {
     while (true) {
       log.info('wait 10sec');
       await DeployerUtils.delay(10000);
+      if(hre.network.name === 'hardhat') {
+        await TimeUtils.advanceNBlocks(1);
+      }
       if (ethers.provider.blockNumber >= start + blocks) {
         break;
       }

@@ -31,7 +31,7 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "TetuSwapStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
@@ -98,22 +98,5 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   /// @dev No operations
   function emergencyWithdrawFromPool() internal override {
     // noop
-  }
-
-  /// @dev Do something useful with farmed rewards
-  function liquidateReward() internal override {
-    // assume only xTetu rewards exist
-    address rt = IController(controller()).psVault();
-
-    // it is redirected rewards - PS already had their part of income
-    // in case of pair with xTETU-XXX we not able to separate it
-    uint256 amount = IERC20(rt).balanceOf(address(this));
-    if (amount > 0) {
-      IERC20(rt).safeApprove(_smartVault, 0);
-      IERC20(rt).safeApprove(_smartVault, amount);
-      ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
-    }
-    // if no not enough fees for buybacks it should not ruin hardwork process
-    liquidateRewardSilently();
   }
 }

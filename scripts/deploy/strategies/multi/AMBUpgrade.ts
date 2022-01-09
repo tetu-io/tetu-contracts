@@ -97,7 +97,7 @@ async function main() {
 
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vaultAddress}     strategy: ${strategy.address}\n`;
-    appendFileSync(`./tmp/update/multiAMB_110.txt`, txt, 'utf8');
+    appendFileSync(`./tmp/update/multiAMB_120.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
     for (let i = 0; i < pipes.length; i++) {

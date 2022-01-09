@@ -29,6 +29,10 @@ const argv = require('yargs/yargs')()
     ftmRpcUrl: {
       type: "string",
     },
+    ethRpcUrl: {
+      type: "string",
+      default: ''
+    },
     infuraKey: {
       type: "string",
     },
@@ -41,11 +45,11 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 22389500
+      default: 23238072
     },
     ftmForkBlock: {
       type: "number",
-      default: 25789434
+      default: 27468274
     },
   }).argv;
 
@@ -56,8 +60,10 @@ export default {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
-      timeout: 99999*2,
-      gas: 19_000_000,
+      timeout: 99999 * 2,
+      gas: argv.hardhatChainId === 137 ? 19_000_000 :
+        argv.hardhatChainId === 250 ? 11_000_000 :
+          9_000_000,
       forking: {
         url:
           argv.hardhatChainId === 137 ? argv.maticRpcUrl :
@@ -87,9 +93,14 @@ export default {
       url: argv.maticRpcUrl,
       timeout: 99999,
       chainId: 137,
-      gas: 19_000_000,
-      gasPrice: 100_000_000_000,
-      // gasMultiplier: 2,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
+    eth: {
+      url: argv.ethRpcUrl,
+      chainId: 1,
       accounts: [argv.privateKey],
     },
     mumbai: {

@@ -13,6 +13,7 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {FoldingDoHardWork} from "../../FoldingDoHardWork";
 import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
 import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -65,7 +66,7 @@ describe('Universal Geist Fold tests', async () => {
     const borrowingEnabled = start[10];
     const ltvNum = Number(ltv);
     const collateralFactor = (ltvNum).toFixed(0);
-    const borrowTarget = (ltvNum * 0.99).toFixed(0);
+    const borrowTarget = (ltvNum * Misc.GEIST_BOR_RATIO).toFixed(0);
 
     if (!idx || idx === 'idx') {
       console.log('skip ', tokenName);
