@@ -2,9 +2,28 @@ import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {Multicall} from "../../../typechain";
 import {ethers} from "hardhat";
 import {Logger} from "tslog";
+import Common from "ethereumjs-common";
 import logSettings from "../../../log_settings";
 
 const log: Logger = new Logger(logSettings);
+
+const MATIC_CHAIN = Common.forCustomChain(
+  'mainnet', {
+    name: 'matic',
+    networkId: 137,
+    chainId: 137
+  },
+  'petersburg'
+);
+
+const FANTOM_CHAIN = Common.forCustomChain(
+  'mainnet', {
+    name: 'fantom',
+    networkId: 250,
+    chainId: 250
+  },
+  'petersburg'
+);
 
 export class Misc {
   public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
@@ -22,6 +41,18 @@ export class Misc {
     const ctr = await DeployerUtils.connectInterface(signer, 'Multicall', tools.multicall) as Multicall;
     const ts = await ctr.getCurrentBlockTimestamp();
     return ts.toNumber();
+  }
+
+  public static async getChainConfig() {
+    const net = await ethers.provider.getNetwork();
+    switch (net.chainId) {
+      case 137:
+        return MATIC_CHAIN;
+      case 250:
+        return FANTOM_CHAIN;
+      default:
+        throw new Error('Unknown net ' + net.chainId)
+    }
   }
 
   public static platformName(n: number): string {

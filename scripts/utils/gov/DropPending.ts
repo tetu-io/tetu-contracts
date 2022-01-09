@@ -2,6 +2,7 @@ import {ethers, web3} from "hardhat";
 import {utils} from "ethers";
 import Common from "ethereumjs-common";
 import {config as dotEnvConfig} from "dotenv";
+import {Misc} from "../tools/Misc";
 
 // tslint:disable-next-line:no-var-requires
 const EthereumTx = require('ethereumjs-tx').Transaction
@@ -43,15 +44,17 @@ async function main() {
       return;
     }
 
+    const chain = await Misc.getChainConfig()
     const tx = new EthereumTx(
       {
         nonce: web3.utils.numberToHex(nonce),
+        from: signer.address,
         to: signer.address,
         // data: result.input,
         gasPrice: web3.utils.numberToHex(utils.parseUnits(1000 + '', 9).toString()),
         gasLimit: web3.utils.numberToHex(1_000_000),
       },
-      {common: MATIC_CHAIN});
+      {common: chain});
 
 
     tx.sign(Buffer.from(argv.speedUpPrivateKey, 'hex'));

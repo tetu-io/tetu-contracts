@@ -47,10 +47,14 @@ export class TimeUtils {
     return (await ethers.provider.getBlock(blockHash)).number;
   }
 
-  public static async getBlockTime(): Promise<number> {
+  public static async getBlockTime(block?: number | null): Promise<number> {
     const tools = await DeployerUtils.getToolsAddresses();
     const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
-    return (await multicall.getCurrentBlockTimestamp()).toNumber();
+    if (block) {
+      return (await multicall.getCurrentBlockTimestamp({blockTag: block})).toNumber();
+    } else {
+      return (await multicall.getCurrentBlockTimestamp()).toNumber();
+    }
   }
 
   public static async snapshot() {
