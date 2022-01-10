@@ -9,6 +9,7 @@ import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
+import {ethers} from "hardhat";
 
 export class VaultUtils {
 
@@ -133,7 +134,16 @@ export class VaultUtils {
   }
 
   public static async getVaultInfoFromServer() {
-    return (await axios.get("https://tetu-server-staging.herokuapp.com//api/v1/reader/vaultInfos?network=MATIC")).data;
+    const net = await ethers.provider.getNetwork();
+    let network;
+    if (net.chainId === 137) {
+      network = 'MATIC';
+    } else if (net.chainId === 250) {
+      network = 'FANTOM';
+    } else {
+      throw Error('unknown net ' + net.chainId);
+    }
+    return (await axios.get(`https://tetu-server-staging.herokuapp.com//api/v1/reader/vaultInfos?network=${network}`)).data;
   }
 
   public static async addRewardsXTetu(
@@ -149,7 +159,7 @@ export class VaultUtils {
     if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
       await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
     } else {
-      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, period)
+      await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, false, period)
     }
     await TokenUtils.approve(core.rewardToken.address, signer, core.psVault.address, utils.parseUnits(amount + '').toString());
     await core.psVault.deposit(utils.parseUnits(amount + ''));

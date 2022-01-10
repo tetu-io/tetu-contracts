@@ -50,7 +50,7 @@ export class AMBPipeDeployer {
       stablecoin,
       MaticAddresses.miMATIC_TOKEN,
       targetPercentage,
-      '10', // max targetPercentage deviation (+/-) to call rebalance
+      '100', // max targetPercentage deviation (+/-) to call rebalance
       MaticAddresses.QI_TOKEN,
       collateralNumerator,
     ];

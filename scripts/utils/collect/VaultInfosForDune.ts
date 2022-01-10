@@ -83,7 +83,7 @@ function formatName(name: string) {
     name = name.replace('TETU_AAVE_', '');
   }
   if (name.startsWith('TETU_')) {
-    name = name.replace(/TETU_/g, '')
+    name = name.replace('TETU_', '')
   }
   return name;
 }

@@ -11,7 +11,6 @@ import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {PawnShopTestUtils} from "./PawnShopTestUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
-import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -37,12 +36,18 @@ describe("Tetu pawnshop base tests", function () {
     user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', core.controller.address, core.rewardToken.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop',
+      signer.address,
+      core.rewardToken.address,
+      core.controller.address
+    ) as TetuPawnShop;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
 
+    await shop.announceGovernanceAction(4, core.rewardToken.address, 0);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await shop.setPositionDepositToken(core.rewardToken.address);
 
-    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
+    // await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     await nft.mint(user1.address);
     await nft.mint(user1.address);
@@ -174,14 +179,14 @@ describe("Tetu pawnshop base tests", function () {
     await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
 
     await TokenUtils.approve(usdc, user3, shop.address, '555');
-    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TL: New bid lower than previous');
+    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TPS: New bid lower than previous');
 
-    await PawnShopTestUtils.bidAndCheck(id, '556', user3, shop);
+    await PawnShopTestUtils.bidAndCheck(id, '5560', user3, shop);
 
     const bidId2 = await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop);
     const bidId3 = await PawnShopTestUtils.getBidIdAndCheck(id, user3.address, shop);
 
-    await expect(shop.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TL: Auction is not ended");
+    await expect(shop.connect(user3).closeAuctionBid(bidId3)).rejectedWith("TPS: Auction is not ended");
 
     await PawnShopTestUtils.closeAuctionBidAndCheck(bidId2.toNumber(), user2, shop)
 

@@ -43,7 +43,8 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
-  address public constant CRV_USD_BTC_ETH = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
+  address public constant CRV_USD_BTC_ETH_MATIC = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
+  address public constant CRV_USD_BTC_ETH_FANTOM = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
 
   // ************ VARIABLES **********************
   // !!! DON'T CHANGE NAMES OR ORDERING !!!
@@ -128,7 +129,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       }
     } else if (isIronPair(token)) {
       price = IIronSwap(IIronLpToken(token).swap()).getVirtualPrice();
-    } else if (token == CRV_USD_BTC_ETH) {
+    } else if (token == CRV_USD_BTC_ETH_FANTOM || token == CRV_USD_BTC_ETH_MATIC) {
       ICurveMinter minter = ICurveMinter(ICurveLpToken(token).minter());
       uint tvl = 0;
       for (uint256 i = 0; i < 3; i++) {

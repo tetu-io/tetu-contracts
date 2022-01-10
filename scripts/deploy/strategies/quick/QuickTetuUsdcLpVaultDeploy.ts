@@ -68,11 +68,6 @@ async function main() {
     0
   ));
 
-  // ! gov actions
-  if ((await ethers.provider.getNetwork()).name !== "matic") {
-    await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
-  }
-
   await DeployerUtils.wait(5);
 
 

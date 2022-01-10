@@ -19,7 +19,6 @@ import "./Pipe.sol";
 import "./../../../../third_party/qidao/IErc20Stablecoin.sol";
 import "../../../interface/IMaiStablecoinPipe.sol";
 
-
 /// @title Mai Stablecoin Pipe Contract
 /// @author bogdoslav
 contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
@@ -39,6 +38,10 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   MaiStablecoinPipeData public pipeData;
   IErc20Stablecoin private _stablecoin;
   uint256 private vaultID;
+
+  event Rebalanced(uint256 borrowed, uint256 repaid);
+  event Borrowed(uint256 amount);
+  event Repaid(uint256 amount);
 
   constructor(MaiStablecoinPipeData memory _d) Pipe(
     'MaiStablecoinPipe',
@@ -65,7 +68,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     return IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
   }
 
-  /// @dev Returns price of source token, when vault will be liquidated, based on _minimumCollateralPercentage
+  /// @dev Returns price of source token (cam), when vault will be liquidated, based on _minimumCollateralPercentage
   ///      collateral to debt percentage. Returns 0 when no debt or collateral
   function liquidationPrice()
   external view override returns (uint256 price) {
@@ -82,10 +85,25 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     / (collateral * 100 * pipeData.collateralNumerator);
   }
 
+  /// @dev Returns maximal possible deposit of amToken, based on available mai and target percentage.
+  /// @return max camToken maximum deposit
+  function maxDeposit() external view override returns (uint256 max) {
+    uint256 _availableMai = IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
+    uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
+    uint256 amPrice = _stablecoin.getEthPriceSource();
+    max = _availableMai * tokenPriceSource * pipeData.targetPercentage / (amPrice * 100 * pipeData.collateralNumerator);
+  }
+
   /// @dev Gets targetPercentage
   /// @return target collateral to debt percentage
   function targetPercentage() external view override returns (uint256) {
     return pipeData.targetPercentage;
+  }
+
+  /// @dev Gets maxImbalance
+  /// @return maximum imbalance (+/-%) to do re-balance
+  function maxImbalance() external view override returns (uint256) {
+    return pipeData.maxImbalance;
   }
 
   /// @dev Gets collateralPercentage
@@ -110,6 +128,12 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   // ***************************************
 
 
+  /// @dev Sets maxImbalance
+  /// @param _maxImbalance - maximum imbalance deviation (+/-%)
+  function setMaxImbalance(uint256 _maxImbalance) onlyPipeline override external {
+    pipeData.maxImbalance = _maxImbalance;
+  }
+
   /// @dev Sets targetPercentage
   /// @param _targetPercentage - target collateral to debt percentage
   function setTargetPercentage(uint256 _targetPercentage) onlyPipeline override external {
@@ -121,11 +145,14 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @return output in underlying units
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxSourceAmount(amount);
-    depositCollateral(amount);
-    uint256 borrowAmount = _canSafelyBorrowMore();
-    borrow(borrowAmount);
+    if (amount != 0) {
+      depositCollateral(amount);
+      uint256 borrowAmount = _canSafelyBorrowMore();
+      borrow(borrowAmount);
+    }
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(pipeData.borrowToken, output);
+    emit Put(amount, output);
   }
 
   /// @dev function for repaying debt then withdrawing from collateral
@@ -133,11 +160,22 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxOutputAmount(amount);
-    repay(amount);
-    uint256 withdrawAmount = _collateralTokensUnlocked();
-    withdrawCollateral(withdrawAmount);
+    if (amount != 0) {
+      uint256 debt = _stablecoin.vaultDebt(vaultID);
+      repay(amount);
+      // repay subtracts fee from the collateral, so we get collateral after fees applied
+      uint256 collateral = _stablecoin.vaultCollateral(vaultID);
+      uint256 debtAfterRepay = _stablecoin.vaultDebt(vaultID);
+
+      uint256 withdrawAmount = (debtAfterRepay == 0)
+        ? collateral
+        : (amount * collateral) / debt;
+      withdrawCollateral(withdrawAmount);
+    }
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
+    emit Get(amount, output);
+
   }
 
   /// @dev function for re balancing. When rebalance
@@ -226,29 +264,6 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     }
   }
 
-  /// @dev Returns how many collateral tokens excess necessary amount
-  ///      to cover borrow amount with target collateral to debt percentage
-  function _collateralTokensUnlocked()
-  private view returns (uint256) {
-    uint256 collateral = _stablecoin.vaultCollateral(vaultID);
-    uint256 borrowedAmount = _stablecoin.vaultDebt(vaultID);
-    if (borrowedAmount == 0) {
-      return collateral;
-    }
-
-    uint256 ethPrice = _stablecoin.getEthPriceSource();
-    uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
-    // collateral needed to have current borrowed tokens with target collateral to debt percentage
-    uint256 collateralNeeded = (borrowedAmount * tokenPriceSource * pipeData.targetPercentage)
-    / (ethPrice * 100 * pipeData.collateralNumerator);
-
-    if (collateral < collateralNeeded) {
-      return 0;
-    } else {
-      return collateral - collateralNeeded;
-    }
-  }
-
   // ***************************************
   // ************** PRIVATE ****************
   // ***************************************
@@ -256,30 +271,40 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @dev function for investing, deposits, entering, borrowing
   /// @param amount in source units
   function depositCollateral(uint256 amount) private {
-    _erc20Approve(pipeData.sourceToken, pipeData.stablecoin, amount);
-    _stablecoin.depositCollateral(vaultID, amount);
+    if (amount != 0) {
+      _erc20Approve(pipeData.sourceToken, pipeData.stablecoin, amount);
+      _stablecoin.depositCollateral(vaultID, amount);
+    }
   }
 
   /// @dev function for de-vesting, withdrawals, leaves, paybacks
   /// @param amount in underlying units
   function withdrawCollateral(uint256 amount) private {
-    _stablecoin.withdrawCollateral(vaultID, amount);
+    if (amount != 0) {
+      _stablecoin.withdrawCollateral(vaultID, amount);
+    }
   }
 
   /// @dev Borrow tokens
-  /// @param borrowAmount in underlying units
-  function borrow(uint256 borrowAmount) private {
-    _stablecoin.borrowToken(vaultID, borrowAmount);
+  /// @param amount to borrow in underlying units
+  function borrow(uint256 amount) private {
+    if (amount != 0) {
+      _stablecoin.borrowToken(vaultID, amount);
+      emit Borrowed(amount);
+    }
   }
 
   /// @dev Repay borrowed tokens
   /// @param amount in borrowed tokens
-  /// @return output in borrowed tokens
-  function repay(uint256 amount) private returns (uint256 output) {
+  /// @return repaid in borrowed tokens
+  function repay(uint256 amount) private returns (uint256) {
     uint256 repayAmount = Math.min(amount, _stablecoin.vaultDebt(vaultID));
-    _erc20Approve(pipeData.borrowToken, pipeData.stablecoin, amount);
-    _stablecoin.payBackToken(vaultID, repayAmount);
-    output = repayAmount;
+    if (repayAmount != 0) {
+      _erc20Approve(pipeData.borrowToken, pipeData.stablecoin, repayAmount);
+      _stablecoin.payBackToken(vaultID, repayAmount);
+    }
+    emit Repaid(repayAmount);
+    return repayAmount;
   }
 
 }

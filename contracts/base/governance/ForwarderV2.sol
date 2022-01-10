@@ -35,7 +35,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NOMINATOR = 997;
@@ -138,6 +138,15 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     _setLiquidityRouter(_value);
   }
 
+  /// @notice Only Governance or Controller can call it.
+  ///         Sets specific Swap fee for given factory
+  function setUniPlatformFee(address _factory, uint _feeNominator, uint _feeDenominator) external onlyControllerOrGovernance {
+    require(_factory != address(0), "F2: Zero factory");
+    require(_feeNominator <= _feeDenominator, "F2: Wrong values");
+    require(_feeDenominator != 0, "F2: Wrong denominator");
+    uniPlatformFee[_factory] = UniFee(_feeNominator, _feeDenominator);
+  }
+
   // ***************** EXTERNAL *******************************
 
   /// @notice Only Reward Distributor or Governance or Controller can call it.
@@ -159,7 +168,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     // calculate require amounts
     uint toFund = _toFundAmount(_amount);
     uint toPsAndLiq = _toPsAndLiqAmount(_amount - toFund);
-    uint toLiq = toPsAndLiq / 2;
+    uint toLiq = _toTetuLiquidityAmount(toPsAndLiq);
     uint toLiqFundTokenPart = toLiq / 2;
     uint toLiqTetuTokenPart = toLiq - toLiqFundTokenPart;
     uint toPs = toPsAndLiq - toLiq;

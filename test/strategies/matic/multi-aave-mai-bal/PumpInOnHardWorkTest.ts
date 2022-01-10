@@ -1,5 +1,5 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {IStrategy, StrategyAaveMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -29,8 +29,8 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       const amount = utils.parseUnits('10')
       await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, amount);
       if (underlying.toLowerCase() === MaticAddresses.WBTC_TOKEN) {
-        // send 1% of the biggest holder balance (as WBTC have 8 decimals and 'amount' too big)
-        await TokenUtils.getToken(underlying, signer.address)
+        // send 0.1 WBTC (as WBTC have 8 decimals and 'amount' too big)
+        await TokenUtils.getToken(underlying, signer.address, BigNumber.from(10000000))
       } else {
         await TokenUtils.getToken(underlying, signer.address, amount)
       }

@@ -12,7 +12,6 @@ import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
-const STRATEGY_NAME = 'StrategyTetuSwap';
 
 const excludeVaults = new Set<string>([]);
 
@@ -25,6 +24,15 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
+
+  let strategyName = 'StrategyTetuSwap';
+  let strategyPath = `contracts/strategies/matic/tetu/${strategyName}.sol:${strategyName}`;
+  let rt = core.psVault;
+  if ((await ethers.provider.getNetwork()).chainId === 250) {
+    strategyName = 'StrategyTetuSwapFantom';
+    strategyPath = `contracts/strategies/fantom/tetu/${strategyName}.sol:${strategyName}`;
+    rt = core.rewardToken;
+  }
 
   const factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', core.swapFactory) as TetuSwapFactory;
 
@@ -46,6 +54,10 @@ async function main() {
     const pairCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', pair) as TetuSwapPair;
     const token0 = await pairCtr.token0();
     const token1 = await pairCtr.token1();
+
+    // if (token0.toLowerCase() !== FtmAddresses.USDC_TOKEN && token1.toLowerCase() !== FtmAddresses.USDC_TOKEN) {
+    //   continue;
+    // }
 
     const token0Name = await TokenUtils.tokenSymbol(token0);
     const token1Name = await TokenUtils.tokenSymbol(token1);
@@ -69,10 +81,9 @@ async function main() {
 
     const strategyArgs = [core.controller, vault.address, pair];
 
-    const strategy = await DeployerUtils.deployContract(signer, STRATEGY_NAME, ...strategyArgs) as IStrategy;
+    const strategy = await DeployerUtils.deployContract(signer, strategyName, ...strategyArgs) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
-
 
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       vaultNameWithoutPrefix,
@@ -81,7 +92,7 @@ async function main() {
       strategyUnderlying,
       REWARDS_DURATION,
       false,
-      core.psVault,
+      rt,
       0
     ));
 
@@ -92,7 +103,7 @@ async function main() {
     await DeployerUtils.verify(vaultLogic.address);
     await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
-    await DeployerUtils.verifyWithContractName(strategy.address, `contracts/strategies/matic/tetu/${STRATEGY_NAME}.sol:${STRATEGY_NAME}`, [
+    await DeployerUtils.verifyWithContractName(strategy.address, strategyPath, [
       ...strategyArgs
     ]);
   }

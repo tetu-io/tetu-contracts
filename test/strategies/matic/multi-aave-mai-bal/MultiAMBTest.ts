@@ -24,6 +24,8 @@ import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
 import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
+import {LiquidationPriceTest} from "./LiquidationPriceTest";
+import {MaxDepositTest} from "./MaxDepositTest";
 
 
 dotEnvConfig();
@@ -103,6 +105,8 @@ describe('Universal AMB tests', async () => {
       new EmergencyWithdrawFromPoolTest(),
       new CoverageCallsTest(),
       new MoreMaiFromBalTest(),
+      new LiquidationPriceTest(),
+      new MaxDepositTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10');
     const BAL_PIPE_INDEX = 3;

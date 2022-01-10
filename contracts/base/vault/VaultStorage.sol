@@ -158,6 +158,20 @@ abstract contract VaultStorage is Initializable, ISmartVault {
     return getUint256("depositFeeNumerator");
   }
 
+  function _setProtectionMode(bool _value) internal {
+    emit UpdatedBoolSlot("protectionMode", _protectionMode(), _value);
+    setBoolean("protectionMode", _value);
+  }
+
+  /// @notice Protection mode means claim rewards on withdraw and 0% initial reward boost
+  function protectionMode() external view override returns (bool) {
+    return _protectionMode();
+  }
+
+  function _protectionMode() internal view returns (bool) {
+    return getBoolean("protectionMode");
+  }
+
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
   function setBoolean(string memory key, bool _value) private {

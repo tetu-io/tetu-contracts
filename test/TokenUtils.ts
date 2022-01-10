@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {ERC20, ERC721, IERC20, IERC721Enumerable, IWmatic, RewardToken} from "../typechain";
+import {ERC20__factory, IERC721Enumerable__factory, IWmatic, RewardToken} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
@@ -18,9 +18,10 @@ export class TokenUtils {
   public static TOKEN_HOLDERS = new Map<string, string>([
     [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
     [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
-    [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
+    [MaticAddresses.WBTC_TOKEN, '0x070f5A78963a658d3b8700BAF8e3C08984514eA2'.toLowerCase()],
+    // [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
     // [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
-    [MaticAddresses.USDC_TOKEN, '0x5D6Fcf22Aa4e4Ff8dA0abE329392E7c5306D22F3'.toLowerCase()], // bal
+    [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave
     [MaticAddresses.USDT_TOKEN, '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe'.toLowerCase()], // adr
     [MaticAddresses.QUICK_TOKEN, '0xdB74C5D4F154BBD0B8e0a28195C68ab2721327e5'.toLowerCase()], // dquick
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
@@ -31,7 +32,8 @@ export class TokenUtils {
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.ICE_TOKEN, '0xb1bf26c7b43d2485fa07694583d2f17df0dde010'.toLowerCase()], // blueIce
     [MaticAddresses.IRON_TOKEN, '0xCaEb732167aF742032D13A9e76881026f91Cd087'.toLowerCase()], // ironSwap
-    [MaticAddresses.DAI_TOKEN, '0x9b17bAADf0f21F03e35249e0e59723F34994F806'.toLowerCase()], // anyswap
+    // [MaticAddresses.DAI_TOKEN, '0x9b17bAADf0f21F03e35249e0e59723F34994F806'.toLowerCase()], // anyswap
+    [MaticAddresses.DAI_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
     [MaticAddresses.LINK_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
     [MaticAddresses.CRV_TOKEN, '0x98B5F32dd9670191568b661a3e847Ed764943875'.toLowerCase()], // qi
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], //
@@ -51,7 +53,9 @@ export class TokenUtils {
     [FtmAddresses.FETH_TOKEN, '0x15a3f675184a4e09877ed10ad8080438ea9e35ae'.toLowerCase()], // wallet
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
     [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
+    [FtmAddresses.g3CRV_TOKEN, '0xd4f94d0aaa640bbb72b5eec2d85f6d114d81a88e'.toLowerCase()], // gauge
     [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
+    [FtmAddresses.USD_BTC_ETH_CRV_TOKEN, '0x00702bbdead24c40647f235f15971db0867f6bdb'.toLowerCase()], // gauge
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
     [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
@@ -62,40 +66,40 @@ export class TokenUtils {
     [FtmAddresses.WBTC_TOKEN, '0x38aca5484b8603373acc6961ecd57a6a594510a3'.toLowerCase()], // geist
     [FtmAddresses.WETH_TOKEN, '0x25c130b2624cf12a4ea30143ef50c5d68cefa22f'.toLowerCase()], // geist
     [MaticAddresses.KLIMA_TOKEN, '0x65A5076C0BA74e5f3e069995dc3DAB9D197d995c'.toLowerCase()], // gnosis
+    [FtmAddresses._2poolCrv_TOKEN, '0x8866414733F22295b7563f9C5299715D2D76CAf4'.toLowerCase()], // gauge
+    [FtmAddresses.renCRV_TOKEN, '0xBdFF0C27dd073C119ebcb1299a68A6A92aE607F0'.toLowerCase()], // gauge
+    [MaticAddresses.PSP_TOKEN, '0x2ee05fad3b206a232e985acbda949b215c67f00e'.toLowerCase()], // wallet
+    [MaticAddresses.VSQ_TOKEN, '0x2f3e9e54bd4513d1b49a6d915f9a83310638cfc2'.toLowerCase()], // VSQStaking
+    [FtmAddresses.FRAX_TOKEN, '0x7a656B342E14F745e2B164890E88017e27AE7320'.toLowerCase()], // curve pool
+    [FtmAddresses.SPELL_TOKEN, '0x4f41D03631Ea4dC14016CcF90690d6D22b24C12D'.toLowerCase()], // spirit lp
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
-    return token.balanceOf(account);
+    return ERC20__factory.connect(tokenAddress, ethers.provider).balanceOf(account);
   }
 
   public static async totalSupply(tokenAddress: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress) as IERC20;
-    return token.totalSupply();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).totalSupply();
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return token.approve(spender, BigNumber.from(amount));
+    return ERC20__factory.connect(tokenAddress, signer).approve(spender, BigNumber.from(amount));
   }
 
   public static async approveNFT(tokenAddress: string, signer: SignerWithAddress, spender: string, id: string) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), id);
     await TokenUtils.checkNftBalance(tokenAddress, signer.address, id);
-    const token = await ethers.getContractAt("ERC721", tokenAddress, signer) as ERC721;
-    return token.approve(spender, id);
+    return ERC20__factory.connect(tokenAddress, signer).approve(spender, id);
   }
 
   public static async allowance(tokenAddress: string, signer: SignerWithAddress, spender: string): Promise<BigNumber> {
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return token.allowance(signer.address, spender);
+    return ERC20__factory.connect(tokenAddress, signer).allowance(signer.address, spender);
   }
 
   public static async transfer(tokenAddress: string, signer: SignerWithAddress, destination: string, amount: string) {
     console.log('transfer', await TokenUtils.tokenSymbol(tokenAddress), amount);
-    const token = await ethers.getContractAt("IERC20", tokenAddress, signer) as IERC20;
-    return token.transfer(destination, BigNumber.from(amount))
+    return ERC20__factory.connect(tokenAddress, signer).transfer(destination, BigNumber.from(amount))
   }
 
   public static async wrapNetworkToken(signer: SignerWithAddress, amount: string) {
@@ -104,18 +108,15 @@ export class TokenUtils {
   }
 
   public static async decimals(tokenAddress: string): Promise<number> {
-    const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return token.decimals();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).decimals();
   }
 
   public static async tokenName(tokenAddress: string): Promise<string> {
-    const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return token.name();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).name();
   }
 
   public static async tokenSymbol(tokenAddress: string): Promise<string> {
-    const token = await ethers.getContractAt("ERC20", tokenAddress) as ERC20;
-    return token.symbol();
+    return ERC20__factory.connect(tokenAddress, ethers.provider).symbol();
   }
 
   public static async checkBalance(tokenAddress: string, account: string, amount: string) {
@@ -125,8 +126,7 @@ export class TokenUtils {
   }
 
   public static async tokenOfOwnerByIndex(tokenAddress: string, account: string, index: number) {
-    const token = await ethers.getContractAt("IERC721Enumerable", tokenAddress) as IERC721Enumerable;
-    return token.tokenOfOwnerByIndex(account, index);
+    return IERC721Enumerable__factory.connect(tokenAddress, ethers.provider).tokenOfOwnerByIndex(account, index);
   }
 
   public static async checkNftBalance(tokenAddress: string, account: string, id: string) {

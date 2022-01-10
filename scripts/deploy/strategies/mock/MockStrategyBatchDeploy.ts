@@ -118,7 +118,7 @@ async function main() {
     await RunHelper.runAndWait(() => TokenUtils.approve(poolReward, signer, pool.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()));
     await RunHelper.runAndWait(() => pool.notifyTargetRewardAmount(poolReward, utils.parseUnits(poolRewardAmountN, poolRewardDecimals)));
 
-    await RunHelper.runAndWait(() => controller.addVaultAndStrategy(pool.address, noopStrategy.address));
+    await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([pool.address], [noopStrategy.address]));
 
     datasPools.push([poolLogic, pool, noopStrategy]);
 
@@ -147,7 +147,7 @@ async function main() {
     await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultThirdReward));
 
     await RunHelper.runAndWait(() =>
-        controller.addVaultAndStrategy(vault.address, strategy.address));
+        controller.addVaultsAndStrategies([vault.address], [strategy.address]));
 
     const vaultSecondRewardDec = await TokenUtils.decimals(vaultSecondReward);
     const mockContract2 = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", vaultSecondReward) as ERC20PresetMinterPauser;

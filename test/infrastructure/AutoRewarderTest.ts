@@ -67,6 +67,7 @@ describe("auto rewarder tests", function () {
       utils.parseUnits('1000').toString()
     ))[0];
 
+    console.log('gov', await controller.governance())
     // await rewardCalculator.set
     await controller.setRewardDistribution([rewarder.address], true);
   });
@@ -87,7 +88,7 @@ describe("auto rewarder tests", function () {
     const rewardsPerDay = await rewarder.rewardsPerDay();
     console.log('rewards per day', utils.formatUnits(rewardsPerDay));
 
-    await MintHelperUtils.mintAll(controller, announcer, rewarder.address);
+    await MintHelperUtils.mint(controller, announcer,'0', rewarder.address, true);
 
     const bal = await TokenUtils.balanceOf(core.rewardToken.address, rewarder.address);
     console.log('minted', utils.formatUnits(bal));

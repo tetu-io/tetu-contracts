@@ -36,7 +36,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   address internal _underlyingToken;
   address internal _smartVault;
   mapping(address => bool) internal _unsalvageableTokens;
-  /// @dev we always use 100% buybacks but keep this variable to further possible changes
+  /// @dev Buyback nominator - reflects but does not guarantee that this percent of the profit will go to distribution
   uint256 internal _buyBackRatio;
   /// @dev When this flag is true, the strategy will not be able to invest. But users should be able to withdraw.
   bool public override pausedInvesting = false;
@@ -51,14 +51,25 @@ abstract contract StrategyBase is IStrategy, Controllable {
     require(msg.sender == _smartVault
     || msg.sender == address(controller())
       || isGovernance(msg.sender),
-      "forbidden");
+      "SB: Not Gov or Vault");
+    _;
+  }
+
+  /// @dev Extended strict access with including HardWorkers addresses
+  ///      Use for functions that should be called by HardWorkers
+  modifier hardWorkers() {
+    require(msg.sender == _smartVault
+    || msg.sender == address(controller())
+    || IController(controller()).isHardWorker(msg.sender)
+      || isGovernance(msg.sender),
+      "SB: Not HW or Gov or Vault");
     _;
   }
 
   /// @dev This is only used in `investAllUnderlying()`
   ///      The user can still freely withdraw from the strategy
   modifier onlyNotPausedInvesting() {
-    require(!pausedInvesting, "paused");
+    require(!pausedInvesting, "SB: Paused");
     _;
   }
 
@@ -172,19 +183,19 @@ abstract contract StrategyBase is IStrategy, Controllable {
   function salvage(address recipient, address token, uint256 amount)
   external override onlyController {
     // To make sure that governance cannot come in and take away the coins
-    require(!_unsalvageableTokens[token], "not salvageable");
+    require(!_unsalvageableTokens[token], "SB: Not salvageable");
     IERC20(token).safeTransfer(recipient, amount);
   }
 
   /// @notice Withdraws all the asset to the vault
-  function withdrawAllToVault() external override restricted {
+  function withdrawAllToVault() external override hardWorkers {
     exitRewardPool();
     IERC20(_underlyingToken).safeTransfer(_smartVault, underlyingBalance());
   }
 
   /// @notice Withdraws some asset to the vault
   /// @param amount Asset amount
-  function withdrawToVault(uint256 amount) external override restricted {
+  function withdrawToVault(uint256 amount) external override hardWorkers {
     // Typically there wouldn't be any amount here
     // however, it is possible because of the emergencyExit
     if (amount > underlyingBalance()) {
@@ -200,7 +211,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   }
 
   /// @notice Stakes everything the strategy holds into the reward pool
-  function investAllUnderlying() public override restricted onlyNotPausedInvesting {
+  function investAllUnderlying() public override hardWorkers onlyNotPausedInvesting {
     // this check is needed, because most of the SNX reward pools will revert if
     // you try to stake(0).
     if (underlyingBalance() > 0) {

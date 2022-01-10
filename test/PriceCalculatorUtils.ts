@@ -1,4 +1,4 @@
-import {PriceCalculator} from "../typechain";
+import {PriceCalculator, PriceCalculator__factory} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
 import {expect} from "chai";
@@ -6,6 +6,7 @@ import axios from "axios";
 import {ethers} from "hardhat";
 import {Logger} from "tslog";
 import logSettings from "../log_settings";
+import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 
 const log: Logger = new Logger(logSettings);
 
@@ -29,8 +30,12 @@ export class PriceCalculatorUtils {
     const net = await ethers.provider.getNetwork();
     if (net.chainId === 137) {
       network = 'MATIC';
+      const tools = await DeployerUtils.getToolsAddresses();
+      return PriceCalculator__factory.connect(tools.calculator, ethers.provider).getPriceWithDefaultOutput(token);
     } else if (net.chainId === 250) {
       network = 'FANTOM';
+      const tools = await DeployerUtils.getToolsAddresses();
+      return PriceCalculator__factory.connect(tools.calculator, ethers.provider).getPriceWithDefaultOutput(token);
     } else {
       throw Error('No config for ' + net.chainId);
     }

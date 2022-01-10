@@ -1,21 +1,10 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
-import {
-  ContractReader, IStrategy,
-  NoopStrategy,
-  SmartVault,
-  TetuSwapFactory,
-  TetuSwapPair
-} from "../../../typechain";
-import {RunHelper} from "../../utils/tools/RunHelper";
+import {ContractReader, IStrategy, TetuSwapFactory, TetuSwapPair} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {appendFileSync, mkdir} from "fs";
 
-const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
-const STRATEGY_NAME = 'StrategyTetuSwap';
-
-const excludeVaults = new Set<string>([
-]);
+const excludeVaults = new Set<string>([]);
 
 async function main() {
   mkdir('./tmp/deployed', {recursive: true}, (err) => {
@@ -26,6 +15,13 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
+
+  let strategyName = 'StrategyTetuSwap';
+  let strategyPath = `contracts/strategies/matic/tetu/${strategyName}.sol:${strategyName}`;
+  if ((await ethers.provider.getNetwork()).chainId === 250) {
+    strategyName = 'StrategyTetuSwapFantom';
+    strategyPath = `contracts/strategies/fantom/tetu/${strategyName}.sol:${strategyName}`;
+  }
 
   const factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', core.swapFactory) as TetuSwapFactory;
 
@@ -61,18 +57,18 @@ async function main() {
 
     if (!vAdr) {
       console.log('Vault not found!', vaultNameWithoutPrefix);
-      return;
+      continue;
     }
 
     const strategyArgs = [core.controller, vAdr, pair];
 
-    const strategy = await DeployerUtils.deployContract(signer, STRATEGY_NAME, ...strategyArgs) as IStrategy;
+    const strategy = await DeployerUtils.deployContract(signer, strategyName, ...strategyArgs) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
     appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
-    await DeployerUtils.verifyWithContractName(strategy.address, `contracts/strategies/matic/tetu/${STRATEGY_NAME}.sol:${STRATEGY_NAME}`, [
+    await DeployerUtils.verifyWithContractName(strategy.address, strategyPath, [
       ...strategyArgs
     ]);
   }

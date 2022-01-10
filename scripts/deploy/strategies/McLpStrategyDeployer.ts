@@ -81,11 +81,6 @@ export class McLpStrategyDeployer {
       0
     ));
 
-    // ! gov actions
-    if ((await ethers.provider.getNetwork()).name !== "matic") {
-      await controller.addVaultAndStrategy(vault.address, strategy.address);
-    }
-
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
       await DeployerUtils.verify(vaultLogic.address);

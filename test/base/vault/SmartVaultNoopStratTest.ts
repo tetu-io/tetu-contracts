@@ -59,7 +59,7 @@ describe("SmartVaultNoopStrat", () => {
       Misc.ZERO_ADDRESS,
       0
     );
-    await core.controller.addVaultAndStrategy(vault.address, strategy.address);
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
     await core.vaultController.addRewardTokens([vault.address], vaultRewardToken0);
     await core.vaultController.setToInvest([vault.address], 1000);
 
@@ -271,12 +271,12 @@ describe("SmartVaultNoopStrat", () => {
 
     it("should not doHardWork on strat from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('forbidden');
+      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('SB: Not Gov or Vault');
     });
 
     it("should not doHardWork for paused strat", async () => {
       await strategy.emergencyExit();
-      await expect(strategy.doHardWork()).is.rejectedWith('paused');
+      await expect(strategy.doHardWork()).is.rejectedWith('SB: Paused');
     });
 
     it("should not add underlying reward token", async () => {

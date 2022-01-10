@@ -10,6 +10,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
   const signer = (await ethers.getSigners())[0];
+  // const signer = await DeployerUtils.impersonate('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94');
 
   const controller = await DeployerUtils.connectProxy(core.controller, signer, "Controller") as Controller;
   const bookkeeper = await DeployerUtils.connectProxy(core.bookkeeper, signer, "Bookkeeper") as Bookkeeper;
@@ -20,8 +21,9 @@ async function main() {
 
   // noinspection InfiniteLoopJS
   while (true) {
-    for (let i = vaults.length; i > 0; i--) {
-      const vault = vaults[i - 1];
+    // tslint:disable-next-line:prefer-for-of
+    for (let i = 0; i < vaults.length; i++) {
+      const vault = vaults[i];
       const vaultContract = await DeployerUtils.connectVault(vault, signer);
       const strategy = await vaultContract.strategy();
       const stratContr = await DeployerUtils.connectInterface(signer, 'IStrategy', strategy) as IStrategy;
@@ -48,7 +50,7 @@ async function main() {
       }
 
       if (platform <= 1
-          // || toClaimUsd <= 10
+        // || toClaimUsd <= 10
       ) {
         console.log('no rewards', vaultName, platform, toClaimUsd);
         continue;
@@ -58,7 +60,7 @@ async function main() {
       const ppfs = +utils.formatUnits(await vaultContract.getPricePerFullShare(), undDec);
       const iTokenBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken, vault));
 
-      console.log('DoHardWork for', await vaultContract.name(), iTokenBal);
+      console.log(i, 'DoHardWork for', await vaultContract.name(), iTokenBal);
       // console.log('ps share price', psPpfs);
       console.log('toClaimUsd', toClaimUsd);
 
@@ -71,6 +73,7 @@ async function main() {
       console.log('reward change', iTokenBalAfter - iTokenBal);
       console.log('PPFS change', ppfsAfter - ppfs, ppfs, ppfsAfter);
       console.log('PS ppfs change', psPpfsAfter - psPpfs);
+      console.log('---------------------------------------');
     }
 
     await DeployerUtils.delay(100000 + (Math.random() * 100000));
@@ -78,8 +81,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneScreamFoldStrategyTest: {
       type: "number",
-      default: -1,
+      default: 1,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -67,7 +67,7 @@ describe('Universal Scream Fold tests', async () => {
     // skip FRAX token (no price)
     // skip YFI token (no rewards)
     // skip BIFI token (no rewards)
-    if (!idx || idx === 'idx' || collateralFactor === '-1' || supplyCap !== '0' || tvlNum < 50000 || ['FRAX', 'YFI', 'BIFI'].some(i => i === tokenName)) {
+    if (!idx || idx === 'idx' || collateralFactor === '-1' || supplyCap !== '0' || tvlNum < 50000 || ['YFI', 'BIFI'].some(i => i === tokenName)) {
       console.log('skip', idx);
       return;
     }
@@ -88,7 +88,7 @@ describe('Universal Scream Fold tests', async () => {
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.00001;
-    const finalBalanceTolerance = 0.00001;
+    const finalBalanceTolerance = 0.001;
     let deposit = 100_000;
     // not enough money on holder
     if (tokenName === 'CRV') {

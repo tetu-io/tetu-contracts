@@ -52,7 +52,7 @@ async function downloadQuick() {
   console.log('quickPrice', utils.formatUnits(quickPrice));
   console.log('maticPrice', utils.formatUnits(maticPrice));
 
-  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
+  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards, r0, r1 \n';
   for (let i = 0; i < poolLength; i++) {
     console.log('id', i);
     let lp;
@@ -129,7 +129,10 @@ async function downloadQuick() {
     } catch (e) {
       console.log('error fetch tvl', lp);
     }
-    const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100
+    const apr = ((notifiedAmountUsd / tvlUsd) / durationDays) * 365 * 100;
+
+    const reward0 = await poolContract.rewardsTokenA();
+    const reward1 = await poolContract.rewardsTokenB();
 
     const data = i + ',' +
       'QUICK_' + token0Name + '_' + token1Name + ',' +
@@ -144,7 +147,9 @@ async function downloadQuick() {
       (notifiedAmountUsd * weekDurationRatio).toFixed(2) + ',' +
       tvlUsd.toFixed(2) + ',' +
       apr.toFixed(2) + ',' +
-      currentRewards.get(lp.toLowerCase())
+      currentRewards.get(lp.toLowerCase()) + ',' +
+      reward0 + ',' +
+      reward1
     ;
     console.log(data);
     infos += data + '\n';

@@ -60,9 +60,9 @@ export class MoreMaiFromBalTest extends SpecificStrategyTest {
       const miBalanceOnMai1 = await TokenUtils.balanceOf(token, maiPipe)
       console.log('>>>miBalanceOnMai1', miBalanceOnMai1.toString());
 
-      // increase collateral to debt percentage twice, so debt should be decreased twice
+      // increase collateral to debt percentage, so debt should be decreased twice
       // and additional tokens pumped out
-      await strategyGov.setTargetPercentage(targetPercentageInitial.mul(2))
+      await strategyGov.setTargetPercentage(targetPercentageInitial.mul(3))
       const targetPercentage2 = await strategyGov.targetPercentage()
       console.log('>>>targetPercentage2', targetPercentage2.toString())
       const miBalanceOnBal2 = await TokenUtils.balanceOf(token, balPipe)
@@ -89,7 +89,7 @@ export class MoreMaiFromBalTest extends SpecificStrategyTest {
 
       expect(miBalanceOnBal3.toNumber()).to.equal(0) // should all deposited
       expect(miBalanceOnMai3.toNumber()).to.equal(0) // should all deposited
-      TestAsserts.closeTo(bal4, bal1.add(addAmount), 0.005, dec);
+      TestAsserts.closeTo(bal4, bal1.add(addAmount), 0.007, dec);
 
     });
 

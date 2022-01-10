@@ -75,7 +75,8 @@ describe('Universal Cafe tests', async () => {
       token1,
       token1Name,
       idx,
-      deployInfo
+      deployInfo,
+      10_000
     );
   });
 

@@ -57,12 +57,14 @@ describe("Mint helper tests", () => {
 
     await controller.setMintHelper(newMinter.address);
     await controller.setAnnouncer(announcer.address);
+    await controller.setFund(core.fundKeeper.address);
+    await controller.setDistributor(core.notifyHelper.address);
 
-    await announcer.announceMint(1, signer.address, signer.address, false);
+    await announcer.announceMint(1, core.notifyHelper.address, core.fundKeeper.address, false);
 
     await TimeUtils.advanceBlocksOnTs(1);
 
-    await expect(controller.mintAndDistribute(1, signer.address, signer.address, false)).rejectedWith('Token not init');
+    await expect(controller.mintAndDistribute(1, false)).rejectedWith('Token not init');
   });
 
   it("should not set empty funds", async () => {
@@ -108,17 +110,17 @@ describe("Mint helper tests", () => {
 
     const toMint = maxTotalAmount.sub(totalAmount).add(1);
 
-    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address, false);
+    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
-    await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address, false))
+    await expect(core.controller.mintAndDistribute(toMint, false))
       .rejectedWith("limit exceeded")
   });
 
   it("Should not mint more than max emission per week for first mint", async () => {
     const toMint = utils.parseUnits('10000000000');
-    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.notifyHelper.address, false);
+    await core.announcer.announceMint(toMint, core.notifyHelper.address, core.fundKeeper.address, false);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
-    await expect(core.controller.mintAndDistribute(toMint, core.notifyHelper.address, core.notifyHelper.address, false))
+    await expect(core.controller.mintAndDistribute(toMint, false))
       .rejectedWith("ERC20Capped: cap exceeded")
   });
   it("Should mint max emission per week", async () => {
@@ -260,10 +262,7 @@ describe("Mint helper tests", () => {
     const amount = '0';
     const destination = signer.address;
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).is.eq(0);
-    await core.announcer.announceMint(utils.parseUnits(amount), destination, destination, true);
-    await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
-    await core.controller.mintAndDistribute(utils.parseUnits(amount), destination, destination, true);
-
+    await MintHelperUtils.mint(core.controller, core.announcer, '0', destination, true);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).is.eq('129746127000000000000000000');
   });
 

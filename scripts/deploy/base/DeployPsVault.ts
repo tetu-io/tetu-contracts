@@ -43,7 +43,7 @@ export default async function main() {
 
   // need to add after adding bookkeeper
   await RunHelper.runAndWait(() =>
-      controller.addVaultAndStrategy(psVault.address, psEmptyStrategy.address),
+      controller.addVaultsAndStrategies([psVault.address], [psEmptyStrategy.address]),
     true, wait);
 
   // ps

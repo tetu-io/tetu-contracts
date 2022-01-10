@@ -32,9 +32,9 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
   string public constant override STRATEGY_NAME = "ScreamFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
-  /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  string public constant VERSION = "1.2.0";
+  /// @dev How much rewards will be used for distribution process
+  uint256 private constant _BUY_BACK_RATIO = _BUY_BACK_DENOMINATOR / 10;
   /// @dev precision for the folding profitability calculation
   uint256 private constant _PRECISION = 10 ** 18;
   /// @dev SCREAM token address for reward price determination
@@ -127,7 +127,14 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
     uint256 supplyUnderlyingProfitInUSDC,
     uint256 debtUnderlyingCostInUSDC) = totalRewardPredictionInUSDC();
 
-    uint256 foldingProfitPerToken = supplyRewardsInUSDC + borrowRewardsInUSDC + supplyUnderlyingProfitInUSDC;
+    uint256 claimableRewards = supplyRewardsInUSDC + borrowRewardsInUSDC;
+    if (_isAutocompound()) {
+      claimableRewards = claimableRewards * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
+    }
+    // reduce claimable rewards estimation for keep a gap
+    // this gap will be a minimum generated profit otherwise we will do folding for nothing
+    claimableRewards = claimableRewards * 95 / 100;
+    uint256 foldingProfitPerToken = claimableRewards + supplyUnderlyingProfitInUSDC;
     return foldingProfitPerToken > debtUnderlyingCostInUSDC;
   }
 

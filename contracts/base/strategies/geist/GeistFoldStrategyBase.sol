@@ -46,9 +46,9 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant override STRATEGY_NAME = "GeistFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
-  /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  string public constant VERSION = "1.2.0";
+  /// @dev How much rewards will be used for distribution process
+  uint256 private constant _BUY_BACK_RATIO = _BUY_BACK_DENOMINATOR / 10;
   /// @dev 2 is Variable
   uint256 private constant INTEREST_RATE_MODE = 2;
 
@@ -147,10 +147,17 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev Return true if we can gain profit with folding
   function _isFoldingProfitable() internal view override returns (bool) {
     (uint256 supplyRewards,
-    uint256 borrowRewar,
+    uint256 borrowReward,
     uint256 supplyUnderlyingProfit,
     uint256 debtUnderlyingCost) = _totalRewardPredictionNormalised(_PROFITABILITY_PERIOD);
-    uint256 foldingProfitPerToken = supplyRewards + borrowRewar + supplyUnderlyingProfit;
+    uint256 claimableRewards = supplyRewards + borrowReward;
+    if (_isAutocompound()) {
+      claimableRewards = claimableRewards * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
+    }
+    // reduce claimable rewards estimation for keep a gap
+    // this gap will be a minimum generated profit otherwise we will do folding for nothing
+    claimableRewards = claimableRewards * 95 / 100;
+    uint256 foldingProfitPerToken = claimableRewards + supplyUnderlyingProfit;
     return foldingProfitPerToken > debtUnderlyingCost;
   }
 
@@ -214,12 +221,13 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @param token address (supply or debt)
   /// @return forecasted amount of tokens
   function _rewardPrediction(uint256 _seconds, address token) private view returns (uint256){
+    uint dec = IERC20Extended(token).decimals();
     uint rewardPerSecond = chef.rewardsPerSecond();
     uint allocPoint = chef.poolInfo(token).allocPoint;
     uint totalAllocPoint = chef.totalAllocPoint();
     uint totalSupply = chef.poolInfo(token).totalSupply;
     uint rewardPerTotalSupply = rewardPerSecond * allocPoint * _seconds / totalAllocPoint / 2;
-    return rewardPerTotalSupply * 1e18 / totalSupply;
+    return rewardPerTotalSupply * (10 ** dec) / totalSupply;
   }
 
   function rewardUnderlyingPrediction(uint256 _seconds, uint256 currentLiquidityRate) external pure returns (uint256){

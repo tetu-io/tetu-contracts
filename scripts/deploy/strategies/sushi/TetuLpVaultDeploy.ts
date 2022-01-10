@@ -67,9 +67,6 @@ async function main() {
     0
   );
 
-  await controller.addVaultAndStrategy(tetuLpVault.address, tetuLpEmptyStrategy.address);
-
-
   await DeployerUtils.wait(5);
 
 
