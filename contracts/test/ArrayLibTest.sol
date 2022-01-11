@@ -4,11 +4,11 @@ pragma solidity 0.8.4;
 import "../base/ArrayLib.sol";
 
 contract ArrayLibTest {
-  uint256[] uintArray;
-  address[] addressArray;
-
   using ArrayLib for address[];
   using ArrayLib for uint256[];
+
+  uint256[] uintArray;
+  address[] addressArray;
 
   function containsUint(
     uint256[] calldata _uint,
