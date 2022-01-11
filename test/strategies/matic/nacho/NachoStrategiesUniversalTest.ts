@@ -13,6 +13,7 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
+import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -51,7 +52,6 @@ describe('Universal Nacho tests', async () => {
   });
 
   infos.forEach(info => {
-
     const strat = info.split(',');
     const idx = strat[0];
     const lpName = strat[1];
@@ -61,7 +61,6 @@ describe('Universal Nacho tests', async () => {
     const token1 = strat[5];
     const token1Name = strat[6];
     const rewardPool = strat[7];
-    const rewardToken = strat[8];
 
     if (idx === 'idx' || !token1Name) {
       console.log('skip', idx);
@@ -79,10 +78,13 @@ describe('Universal Nacho tests', async () => {
     const strategyContractName = 'StrategyNachoLp';
     const vaultName = token0Name + "_" + token1Name;
     const underlying = lpAddress;
+    const deposit = 1000;
+    const loopValue = 300;
+    const advanceBlocks = true;
 
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
-        [MaticAddresses.NSHARE],
+        [MaticAddresses.NSHARE_TOKEN],
         ['0x1c84cd20ea6cc100e0a890464411f1365ab1f664']
       );
     };
@@ -108,7 +110,6 @@ describe('Universal Nacho tests', async () => {
             underlying,
             token0,
             token1,
-            [rewardToken],
             rewardPool,
             idx
           ];
@@ -152,10 +153,10 @@ describe('Universal Nacho tests', async () => {
       forwarderConfigurator,
       ppfsDecreaseAllowed,
       balanceTolerance,
-      10,
+      deposit,
       loops,
-      300,
-      true,
+      loopValue,
+      advanceBlocks,
       specificTests,
     );
   });

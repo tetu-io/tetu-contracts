@@ -18,8 +18,8 @@ import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 contract StrategyNachoLp is NachoLPStrategyBase {
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.NACHO;
   address[] private _assets;
-  address private constant _KLIMA = address(0x4e78011Ce80ee02d2c3e649Fb657E45898257815);
-  address[] private _poolRewards = [_KLIMA];
+  address private constant _NSHARE = address(0x948D0a28b600BDBd77AF4ea30E6F338167034181);
+  address[] private _poolRewards = [_NSHARE];
 
   constructor(
     address _controller,
@@ -27,11 +27,10 @@ contract StrategyNachoLp is NachoLPStrategyBase {
     address _underlying,
     address _token0,
     address _token1,
-    address[] memory _rewardTokens,
     address _pool,
     uint256 _poolId
 
-  ) NachoLPStrategyBase(_controller, _underlying, _vault, _rewardTokens, _pool, _poolId) {
+  ) NachoLPStrategyBase(_controller, _underlying, _vault, _poolRewards, _pool, _poolId) {
     require(_underlying != address(0), "zero underlying");
     require(_token0 != address(0), "zero token0");
     require(_token1 != address(0), "zero token1");
