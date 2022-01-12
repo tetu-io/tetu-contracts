@@ -337,9 +337,9 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       // need to reduce max borrow for keep a gap for negative balance fluctuation
       maxBorrow = maxBorrow * _BORROW_FACTOR / _FACTOR_DENOMINATOR;
       _borrow(Math.min(wantBorrow, maxBorrow));
-      uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      if (underlyingBalance > 0) {
-        _supply(underlyingBalance);
+      uint256 _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      if (_underlyingBalance > 0) {
+        _supply(_underlyingBalance);
       }
       // need to update local balances
       (supplied, borrowed) = _getInvestmentData();
@@ -361,7 +361,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       newBalance = oldBalance - amount;
     }
     uint256 newBorrowTarget = newBalance * borrowTargetFactorNumerator / (_FACTOR_DENOMINATOR - borrowTargetFactorNumerator);
-    uint256 underlyingBalance = 0;
+    uint256 _underlyingBalance = 0;
     uint256 i = 0;
     while (borrowed > newBorrowTarget) {
       uint256 requiredCollateral = borrowed * _FACTOR_DENOMINATOR / collateralFactorNumerator;
@@ -374,8 +374,8 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       uint256 toRedeem = Math.min(supplied - requiredCollateral, amount + toRepay);
       _redeemUnderlying(toRedeem);
       // now we can repay our borrowed amount
-      underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      toRepay = Math.min(toRepay, underlyingBalance);
+      _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      toRepay = Math.min(toRepay, _underlyingBalance);
       if (toRepay == 0) {
         // in case of we don't have money for repaying we can't do anything
         break;
@@ -389,18 +389,18 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
         break;
       }
     }
-    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-    if (underlyingBalance < amount) {
-      uint toRedeem = amount - underlyingBalance;
+    _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (_underlyingBalance < amount) {
+      uint toRedeem = amount - _underlyingBalance;
       if (toRedeem != 0) {
         // redeem the most we can redeem
         _redeemUnderlying(toRedeem);
       }
     }
     // supply excess underlying balance in the end
-    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-    if (underlyingBalance > amount) {
-      _supply(underlyingBalance - amount);
+    _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (_underlyingBalance > amount) {
+      _supply(_underlyingBalance - amount);
     }
   }
 

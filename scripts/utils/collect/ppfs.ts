@@ -5,9 +5,9 @@ import {SmartVault__factory} from "../../../typechain";
 import {utils} from "ethers";
 import {TimeUtils} from "../../../test/TimeUtils";
 
-const VAULT = '0x0a4Ed882FD66B2C4eEC49FB16C56C9fe2b97b9E7';
-const BLOCK_START = 25333111;
-const BLOCK_END = 27438190;
+const VAULT = '0x4dd1514c8ef880095AC16332Ff046d0dc2c962AA';
+const BLOCK_START = 22599708;
+const BLOCK_END = 27659658;
 const BLOCK_STEP = 10_000;
 
 async function main() {
