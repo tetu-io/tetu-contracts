@@ -61,7 +61,7 @@ describe("Proxy tests", function () {
     const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy1.address) as SmartVaultV110;
     const psEmptyStrategy1 = await DeployerUtils.deployContract(signer, "NoopStrategy",
-        core.controller.address, networkToken, vault.address, [], [networkToken], 1) as NoopStrategy;
+    core.controller.address, networkToken, vault.address, [], [networkToken], 1) as NoopStrategy;
 
 
     await vault.initializeSmartVault(
@@ -154,4 +154,4 @@ describe("Proxy tests", function () {
     expect(balanceAfter.sub(balanceBefore).toString()).is.eq('10');
   });
 
-  });
+});
