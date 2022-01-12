@@ -6,11 +6,8 @@ import "../base/UniPairLib.sol";
 contract UniPairLibTest {
   using UniPairLib for address;
 
-  uint256 price;
-
-  function getTokenPrice(address _pair, address _token) public returns (uint256) {
-    price = _pair.getPrice(_token);
-    return price;
+  function getTokenPrice(address _pair, address _token) public view returns (uint256) {
+    return _pair.getPrice(_token);
   }
 
 }
