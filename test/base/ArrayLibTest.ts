@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
-import {ContractUtils, ArrayLibTest} from "../../typechain";
+import {ArrayLibTest} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 
 const {expect} = chai;
@@ -12,7 +12,6 @@ chai.use(chaiAsPromised);
 describe("Array lib tests", function () {
   let snapshot: string;
   let signer: SignerWithAddress;
-  let util: ContractUtils;
   let arraylib: ArrayLibTest;
   let usdc: string;
   let tetu: string;
@@ -27,7 +26,6 @@ describe("Array lib tests", function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
-    util = await DeployerUtils.deployContract(signer, "ContractUtils") as ContractUtils;
     arraylib = await DeployerUtils.deployContract(signer, "ArrayLibTest") as ArrayLibTest;
     usdc = await DeployerUtils.getUSDCAddress();
     tetu = await DeployerUtils.getTETUAddress();
