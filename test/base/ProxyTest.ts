@@ -65,11 +65,11 @@ describe("Proxy tests", function () {
 
 
     await vault.initializeSmartVault(
-        "TETU_PS1",
-        "xTETU1",
-        core.controller.address,
-        networkToken,
-        999999
+      "TETU_PS1",
+      "xTETU1",
+      core.controller.address,
+      networkToken,
+      999999
     );
 
     await core.controller.addVaultsAndStrategies([vault.address], [psEmptyStrategy1.address]);
@@ -78,8 +78,8 @@ describe("Proxy tests", function () {
 
     await TokenUtils.approve(tetu, signer, vault.address, utils.parseUnits("100").toString());
     await vault.notifyTargetRewardAmount(
-        tetu,
-        utils.parseUnits("100")
+      tetu,
+      utils.parseUnits("100")
     );
 
     // tslint:disable-next-line:ban-ts-ignore
@@ -93,7 +93,7 @@ describe("Proxy tests", function () {
     await TimeUtils.advanceBlocksOnTs(999);
 
     expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
-        .is.equal(10);
+      .is.equal(10);
 
     expect(await vault.name()).is.eq('TETU_PS1');
 
@@ -103,7 +103,7 @@ describe("Proxy tests", function () {
     expect(+utils.formatUnits(earned)).is.greaterThan(0);
 
     expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
-        .is.equal(10);
+      .is.equal(10);
 
 
     const newVaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
@@ -117,11 +117,11 @@ describe("Proxy tests", function () {
     await TimeUtils.advanceBlocksOnTs(999);
 
     await core.controller.upgradeTetuProxyBatch(
-        [
-          vault.address
-        ], [
-          newVaultLogic.address
-        ]
+      [
+        vault.address
+      ], [
+        newVaultLogic.address
+      ]
     );
 
     await TokenUtils.transfer(vault.address, signer, user1.address, '10');
@@ -142,7 +142,7 @@ describe("Proxy tests", function () {
     expect(await vault.rewardTokensLength()).is.eq(2);
 
     expect(await vault.underlyingBalanceWithInvestmentForHolder(signer.address))
-        .is.equal(10);
+      .is.equal(10);
     expect(+utils.formatUnits(await vault.earned(tetu, signer.address))).is.eq(0);
     const balanceBefore = await TokenUtils.balanceOf(networkToken, signer.address);
 
