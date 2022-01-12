@@ -50,7 +50,7 @@ describe("Proxy tests", function () {
     await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('100000000'));
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     // await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('1000'));
-    if (tetu === await DeployerUtils.getTETUAddress()) {
+    if (tetu ===  (await DeployerUtils.getTETUAddress()).toLowerCase()) {
       await TokenUtils.getToken(tetu, signer.address, utils.parseUnits('1000'));
     } else {
       await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);

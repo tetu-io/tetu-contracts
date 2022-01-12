@@ -38,9 +38,9 @@ describe("Array lib tests", function () {
 
   it("get price test", async () => {
   const pair = await UniswapUtils.createTetuUsdc(signer, core, "10000");
-  const tetuPrice = await unipair.callStatic.getTokenPrice(pair, tetu);
+  const tetuPrice = await unipair.getTokenPrice(pair, tetu);
   expect(parseInt(tetuPrice._hex, 0)).is.equal(10**18)
-  const usdcPrice = await unipair.callStatic.getTokenPrice(pair, usdc);
+  const usdcPrice = await unipair.getTokenPrice(pair, usdc);
   expect(parseInt(usdcPrice._hex, 0)).is.equal(10**18);
   await expect(unipair.callStatic.getTokenPrice(pair, networkToken))
         .is.rejectedWith("SFS: token not in lp");
