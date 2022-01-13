@@ -47,7 +47,7 @@ describe("Proxy tests", function () {
 
 
   it("upgrade proxy v 1-1-0", async () => {
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('100000000'));
+    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('1500'));
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     // await TokenUtils.getToken(MaticAddresses.TETU_TOKEN, signer.address, utils.parseUnits('1000'));
     if (tetu ===  (await DeployerUtils.getTETUAddress()).toLowerCase()) {
