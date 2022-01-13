@@ -62,6 +62,9 @@ export class MaticAddresses {
   public static PSP_TOKEN = "0x42d61D766B85431666B39B89C43011f24451bFf6".toLowerCase();
   public static VSQ_TOKEN = "0x29F1e986FCa02B7E54138c04C4F503DdDD250558".toLowerCase();
   public static SFF_TOKEN = "0xdf9B4b57865B403e08c85568442f95c26b7896b0".toLowerCase();
+  public static NACHO_TOKEN = '0xcD86152047e800d67BDf00A4c635A8B6C0e5C4c2'.toLowerCase();
+  public static NSHARE_TOKEN = '0x948D0a28b600BDBd77AF4ea30E6F338167034181'.toLowerCase();
+  public static NBOND_NOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -207,6 +210,8 @@ export class MaticAddresses {
   public static sVESQ = '0xbb0FDc2Fe6D3cEB6Bf76Cc955173a07EDbF57494'.toLowerCase();
   public static VESQ_DISTRIBUTOR = '0xabE372DCFB8800B3cDE30f1d6666401C765f2F3B'.toLowerCase();
   public static VESQ_TREASURY = '0x8c7290399cECbBBf31E471951Cc4C2ce91F5073c'.toLowerCase();
+
+
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
