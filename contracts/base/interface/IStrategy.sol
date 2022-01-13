@@ -38,7 +38,8 @@ interface IStrategy {
     VESQ, //20
     QIDAO, //21
     SUNFLOWER, //22
-    STRATEGY_SPLITTER //23
+    NACHO, //23
+    STRATEGY_SPLITTER //24
   }
 
   // *************** GOVERNANCE ACTIONS **************
