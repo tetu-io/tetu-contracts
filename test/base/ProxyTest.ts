@@ -5,7 +5,6 @@ import {
   NoopStrategy,
   SmartVault,
   SmartVaultV110,
-  TetuProxyControlled,
   ProxyTest,
 } from "../../typechain";
 import {ethers} from "hardhat";
@@ -179,8 +178,7 @@ describe("Proxy tests", function () {
 
   it('wrong impl test', async () =>{
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV110") as SmartVaultV110;
-    // const vaultLogic =  await DeployerUtils.deployContract(signer, "ProxyTest") as ProxyTest;
-    const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
+    const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy1.address) as SmartVaultV110;
     const newVaultLogic =  await DeployerUtils.deployContract(signer, "ProxyTest") as ProxyTest;
 
