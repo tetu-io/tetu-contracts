@@ -48,13 +48,26 @@ abstract contract StrategySplitterStorage is Initializable {
     return getAddress("vault");
   }
 
-  function _setStrategiesRatioSum(uint _value) internal {
-    emit UpdatedUint256Slot("rSum", _strategiesRatioSum(), _value);
-    setUint256("rSum", _value);
-  }
-
   function _strategiesRatioSum() internal view returns (uint) {
     return getUint256("rSum");
+  }
+
+  function _setNeedRebalance(uint _value) internal {
+    emit UpdatedUint256Slot("needRebalance", _needRebalance(), _value);
+    setUint256("needRebalance", _value);
+  }
+
+  function _needRebalance() internal view returns (uint) {
+    return getUint256("needRebalance");
+  }
+
+  function _setWantToWithdraw(uint _value) internal {
+    emit UpdatedUint256Slot("wantToWithdraw", _wantToWithdraw(), _value);
+    setUint256("wantToWithdraw", _value);
+  }
+
+  function _wantToWithdraw() internal view returns (uint) {
+    return getUint256("wantToWithdraw");
   }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************

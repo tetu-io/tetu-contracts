@@ -27,6 +27,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
 
   address public immutable override factory;
   address public immutable override WETH;
+  string public constant VERSION = "1.1.0";
 
   event EthReceived(address sender);
 
@@ -252,6 +253,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     address to,
     uint deadline
   ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
+    callSync(path);
     amounts = TetuSwapLibrary.getAmountsOut(factory, amountIn, path);
     require(amounts[amounts.length - 1] >= amountOutMin, "TSR: INSUFFICIENT_OUTPUT_AMOUNT");
     TransferHelper.safeTransferFrom(
@@ -267,6 +269,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     address to,
     uint deadline
   ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
+    callSync(path);
     amounts = TetuSwapLibrary.getAmountsIn(factory, amountOut, path);
     require(amounts[0] <= amountInMax, "TSR: EXCESSIVE_INPUT_AMOUNT");
     TransferHelper.safeTransferFrom(
@@ -284,6 +287,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   returns (uint[] memory amounts)
   {
     require(path[0] == WETH, "TSR: INVALID_PATH");
+    callSync(path);
     amounts = TetuSwapLibrary.getAmountsOut(factory, msg.value, path);
     require(amounts[amounts.length - 1] >= amountOutMin, "TSR: INSUFFICIENT_OUTPUT_AMOUNT");
     IWETH(WETH).deposit{value : amounts[0]}();
@@ -299,6 +303,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   returns (uint[] memory amounts)
   {
     require(path[path.length - 1] == WETH, "TSR: INVALID_PATH");
+    callSync(path);
     amounts = TetuSwapLibrary.getAmountsIn(factory, amountOut, path);
     require(amounts[0] <= amountInMax, "TSR: EXCESSIVE_INPUT_AMOUNT");
     TransferHelper.safeTransferFrom(
@@ -317,6 +322,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   returns (uint[] memory amounts)
   {
     require(path[path.length - 1] == WETH, "TSR: INVALID_PATH");
+    callSync(path);
     amounts = TetuSwapLibrary.getAmountsOut(factory, amountIn, path);
     require(amounts[amounts.length - 1] >= amountOutMin, "TSR: INSUFFICIENT_OUTPUT_AMOUNT");
     TransferHelper.safeTransferFrom(
@@ -336,6 +342,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   returns (uint[] memory amounts)
   {
     require(path[0] == WETH, "TSR: INVALID_PATH");
+    callSync(path);
     amounts = TetuSwapLibrary.getAmountsIn(factory, amountOut, path);
     require(amounts[0] <= msg.value, "TSR: EXCESSIVE_INPUT_AMOUNT");
     IWETH(WETH).deposit{value : amounts[0]}();
@@ -348,6 +355,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   // **** SWAP (supporting fee-on-transfer tokens) ****
   // requires the initial amount to have already been sent to the first pair
   function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to) internal virtual {
+    callSync(path);
     for (uint i; i < path.length - 1; i++) {
       (address input, address output) = (path[i], path[i + 1]);
       (address token0,) = TetuSwapLibrary.sortTokens(input, output);
@@ -378,6 +386,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
     address to,
     uint deadline
   ) external virtual override ensure(deadline) {
+    callSync(path);
     TransferHelper.safeTransferFrom(
       path[0], msg.sender, TetuSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
     );
@@ -402,6 +411,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ensure(deadline)
   {
     require(path[0] == WETH, "TSR: INVALID_PATH");
+    callSync(path);
     uint amountIn = msg.value;
     IWETH(WETH).deposit{value : amountIn}();
     assert(IWETH(WETH).transfer(TetuSwapLibrary.pairFor(factory, path[0], path[1]), amountIn));
@@ -426,6 +436,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ensure(deadline)
   {
     require(path[path.length - 1] == WETH, "TSR: INVALID_PATH");
+    callSync(path);
     TransferHelper.safeTransferFrom(
       path[0], msg.sender, TetuSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
     );
@@ -434,6 +445,13 @@ contract TetuSwapRouter is ITetuSwapRouter {
     require(amountOut >= amountOutMin, "TSR: INSUFFICIENT_OUTPUT_AMOUNT");
     IWETH(WETH).withdraw(amountOut);
     TransferHelper.safeTransferETH(to, amountOut);
+  }
+
+  function callSync(address[] memory path) private {
+    require(path.length >= 2, "TSR: INVALID_PATH");
+    for (uint i; i < path.length - 1; i++) {
+      ITetuSwapPair(TetuSwapLibrary.pairFor(factory, path[i], path[i + 1])).sync();
+    }
   }
 
   // **** LIBRARY FUNCTIONS ****

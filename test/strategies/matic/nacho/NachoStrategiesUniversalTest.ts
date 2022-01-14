@@ -26,7 +26,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneNachoStrategyTest: {
       type: "number",
-      default: 1,
+      default: 0,
     },
     deployCoreContracts: {
       type: "boolean",
