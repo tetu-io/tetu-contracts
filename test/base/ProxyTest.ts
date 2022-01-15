@@ -1,7 +1,12 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {NoopStrategy, SmartVault, SmartVaultV110} from "../../typechain";
+import {
+  NoopStrategy,
+  SmartVault,
+  SmartVaultV110,
+  ProxyTest,
+} from "../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
@@ -154,4 +159,51 @@ describe("Proxy tests", function () {
     expect(balanceAfter.sub(balanceBefore).toString()).is.eq('10');
   });
 
+  it('forbidden and not a contract test', async () =>{
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV110") as SmartVaultV110;
+    const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vault = vaultLogic.attach(vaultProxy1.address) as SmartVaultV110;
+
+    await expect(vaultProxy1.upgrade(vault.address)).is.rejectedWith("forbidden");
+    await vault.initializeSmartVault(
+        "TETU_PS1",
+        "xTETU1",
+        signer.address,
+        networkToken,
+        999999
+    );
+    await expect(vaultProxy1.upgrade(signer.address))
+        .is.rejectedWith('UpgradeableProxy: new implementation is not a contract')
+  });
+
+  it('wrong impl test', async () =>{
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVaultV110") as SmartVaultV110;
+    const vaultProxy1 = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vault = vaultLogic.attach(vaultProxy1.address) as SmartVaultV110;
+    const newVaultLogic =  await DeployerUtils.deployContract(signer, "ProxyTest") as ProxyTest;
+
+    await vault.initializeSmartVault(
+        "TETU_PS1",
+        "xTETU1",
+        core.controller.address,
+        networkToken,
+        999999
+    );
+
+    await core.announcer.announceTetuProxyUpgradeBatch([
+      vault.address
+    ], [
+      newVaultLogic.address
+    ]);
+
+    await TimeUtils.advanceBlocksOnTs(999);
+
+    await expect(core.controller.upgradeTetuProxyBatch(
+        [
+          vault.address
+        ], [
+          newVaultLogic.address
+        ]
+    )).is.rejectedWith('wrong impl');
+  });
 });
