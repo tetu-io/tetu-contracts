@@ -36,4 +36,6 @@ interface IStrategySplitter {
 
   function allStrategies() external view returns (address[] memory);
 
+  function strategyRewardTokens() external view returns (address[] memory);
+
 }

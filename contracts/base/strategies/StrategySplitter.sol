@@ -12,12 +12,14 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/SafeERC20.sol";
-import "../interface/IStrategy.sol";
 import "../governance/Controllable.sol";
+import "../interface/IStrategy.sol";
 import "../interface/ISmartVault.sol";
+import "../interface/IStrategySplitter.sol";
 import "./StrategySplitterStorage.sol";
 import "../ArrayLib.sol";
-import "../interface/IStrategySplitter.sol";
+
+import "hardhat/console.sol";
 
 /// @title Proxy solution for connection a vault with multiple strategies
 /// @dev Should be used with TetuProxyControlled.sol
@@ -55,11 +57,15 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   function initialize(
     address _controller,
     address _underlying,
-    address __vault
+    address __vault,
+    address[] memory _strategies
   ) external initializer {
     Controllable.initializeControllable(_controller);
     _setUnderlying(_underlying);
     _setVault(__vault);
+    for (uint i = 0; i < _strategies.length; i++) {
+      _addStrategy(_strategies[i]);
+    }
   }
 
   // ******************** MODIFIERS ****************************
@@ -91,6 +97,10 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   ///      Strategy should have the same underlying with current contract.
   ///      The new strategy will have zero rate. Need to setup correct rate later.
   function addStrategy(address _strategy) external override onlyController {
+    _addStrategy(_strategy);
+  }
+
+  function _addStrategy(address _strategy) internal {
     require(IStrategy(_strategy).underlying() == _underlying(), "SS: Wrong underlying");
     strategies.addUnique(_strategy);
     emit StrategyAdded(_strategy);
@@ -125,21 +135,36 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
     require(sum == STRATEGY_RATIO_DENOMINATOR, "SS: Wrong sum");
 
     // sorting strategies by ratios
-    _sortStrategies();
+    _sortStrategiesByRatios();
   }
 
   /// @dev Insertion sorting algorithm for using with arrays fewer than 10 elements
   ///      Based on https://medium.com/coinmonks/sorting-in-solidity-without-comparison-4eb47e04ff0d
-  function _sortStrategies() internal {
+  function _sortStrategiesByRatios() internal {
+    console.log("sort strategies");
     uint length = strategies.length;
+    console.log("length", length);
     for (uint i = 1; i < length; i++) {
-      uint key = strategiesRatios[strategies[i]];
+      console.log("i", i);
+      address key = strategies[i];
+      console.log("ratio i", i, strategiesRatios[key]);
       uint j = i - 1;
-      while ((int(j) >= 0) && (strategiesRatios[strategies[j]] > key)) {
+      console.log("ratio j", j, strategiesRatios[strategies[j]]);
+      bool changed = false;
+      while (strategiesRatios[strategies[j]] > strategiesRatios[key]) {
+        changed = true;
+        console.log("j", j);
+        console.log("set", j + 1, strategies[j]);
         strategies[j + 1] = strategies[j];
+        if (j == 0) {
+          break;
+        }
         j--;
       }
-      strategies[j + 1] = strategies[i];
+      console.log("set", j + 1, strategies[i]);
+      if (changed) {
+        strategies[j + 1] = key;
+      }
     }
   }
 
@@ -147,24 +172,24 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
 
   /// @dev Try to withdraw all from all strategies. May be too expensive to handle in one tx
   function withdrawAllToVault() external override hardWorkers {
+    console.log("withdrawAllToVault");
     for (uint i = 0; i < strategies.length; i++) {
       IStrategy(strategies[i]).withdrawAllToVault();
     }
     transferAllUnderlyingToVault();
   }
 
-  /// @dev Try to emergency withdraw all from all strategies. May be too expensive to handle in one tx
-  ///      In case of out of gas should be processed for each strategy manually
+  /// @dev We can't call emergency exit on strategies
+  ///      Transfer all available tokens to the vault
   function emergencyExit() external override restricted {
-    for (uint i = 0; i < strategies.length; i++) {
-      IStrategy(strategies[i]).emergencyExit();
-    }
     transferAllUnderlyingToVault();
+    _setOnPause(1);
   }
 
   /// @dev Cascade withdraw from strategies start from with higher ratio until reach the target amount.
   ///      For large amounts with multiple strategies may not be possible to process this function.
   function withdrawToVault(uint256 amount) external override hardWorkers {
+    console.log("withdrawToVault");
     uint uBalance = IERC20(_underlying()).balanceOf(address(this));
     if (uBalance < amount) {
       for (uint i = strategies.length; i > 0; i--) {
@@ -256,6 +281,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
 
   /// @dev Expensive call, probably will need to call each strategy in separated txs
   function doHardWork() external override hardWorkers {
+    console.log("doHardWork");
     for (uint i = 0; i < strategies.length; i++) {
       IStrategy(strategies[i]).doHardWork();
     }
@@ -271,6 +297,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   ///      Require a lot of gas and should be used carefully
   ///      In case of huge gas cost use rebalance for each strategy separately
   function rebalanceAll() external hardWorkers {
+    require(_onPause() == 0, "SS: Paused");
     _setNeedRebalance(0);
     // collect balances sum
     uint _underlyingBalance = IERC20(_underlying()).balanceOf(address(this));
@@ -310,6 +337,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   /// @dev External function for calling rebalance for exact strategy
   ///      Strategies that need withdraw action should be called first
   function rebalance(address _strategy) external hardWorkers {
+    require(_onPause() == 0, "SS: Paused");
     _setNeedRebalance(0);
     _rebalance(_strategy);
     emit Rebalance(_strategy);
@@ -345,18 +373,24 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
     uint _underlyingBalance,
     uint _ratio
   ) internal {
+    console.log("_strategiesBalancesSum", _strategiesBalancesSum);
+    console.log("_strategyBalance", _strategyBalance);
+    console.log("_underlyingBalance", _underlyingBalance);
+    console.log("_ratio", _ratio);
     uint _currentRatio = _strategyBalance * _PRECISION / _strategiesBalancesSum;
-    if (_currentRatio > _ratio) {
+    if (_currentRatio < _ratio) {
       // Need to deposit to the strategy.
       // We are calling investAllUnderlying() because we anyway will spend similar gas
       // in case of withdraw, and we can't predict what will need.
-      uint needToDeposit = _strategiesBalancesSum * (_currentRatio - _ratio) / (STRATEGY_RATIO_DENOMINATOR * _PRECISION);
+      uint needToDeposit = _strategiesBalancesSum * (_ratio - _currentRatio) / (STRATEGY_RATIO_DENOMINATOR * _PRECISION);
+      console.log("needToDeposit", needToDeposit);
       require(_underlyingBalance >= needToDeposit, "SS: Not enough splitter balance");
       IERC20(_underlying()).safeTransfer(_strategy, needToDeposit);
       IStrategy(_strategy).investAllUnderlying();
-    } else if (_currentRatio < _ratio) {
+    } else if (_currentRatio > _ratio) {
       // withdraw from strategy excess value
-      uint needToWithdraw = _strategiesBalancesSum * (_ratio - _currentRatio) / (STRATEGY_RATIO_DENOMINATOR * _PRECISION);
+      uint needToWithdraw = _strategiesBalancesSum * (_currentRatio - _ratio) / (STRATEGY_RATIO_DENOMINATOR * _PRECISION);
+      console.log("needToWithdraw", needToWithdraw);
       require(_strategyBalance >= needToWithdraw, "SS: Not enough strat balance");
       IStrategy(_strategy).withdrawToVault(needToWithdraw);
     }
@@ -366,15 +400,16 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
     _setNeedRebalance(_value);
   }
 
-  function pauseInvesting() external pure override {
-    revert("SS: Not supported");
+  function pauseInvesting() external override restricted {
+    _setOnPause(1);
   }
 
-  function continueInvesting() external pure override {
-    revert("SS: Not supported");
+  function continueInvesting() external override restricted {
+    _setOnPause(0);
   }
 
   function transferAllUnderlyingToVault() internal {
+    console.log("transferAllUnderlyingToVault");
     uint balance = IERC20(_underlying()).balanceOf(address(this));
     if (balance > 0) {
       IERC20(_underlying()).safeTransfer(_vault(), balance);
@@ -385,11 +420,11 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
 
   /// @dev Return array of reward tokens collected across all strategies.
   ///      Has random sorting
-  function rewardTokens() external view override returns (address[] memory) {
-    return _rewardTokens();
+  function strategyRewardTokens() external view override returns (address[] memory) {
+    return _strategyRewardTokens();
   }
 
-  function _rewardTokens() internal view returns (address[] memory) {
+  function _strategyRewardTokens() internal view returns (address[] memory) {
     address[] memory rts = new address[](20);
     uint size = 0;
     for (uint i = 0; i < strategies.length; i++) {
@@ -484,17 +519,19 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
     return result;
   }
 
-  /// @dev No pause on splitter
-  function pausedInvesting() external pure override returns (bool) {
-    return false;
+  /// @dev Paused investing in strategies
+  function pausedInvesting() external view override returns (bool) {
+    return _onPause() == 1;
   }
 
   /// @dev Return ready to claim rewards array
   function readyToClaim() external view override returns (uint256[] memory) {
+    console.log("readyToClaim");
     uint[] memory rewards = new uint[](20);
     address[] memory rts = new address[](20);
     uint size = 0;
     for (uint i = 0; i < strategies.length; i++) {
+      console.log("readyToClaim");
       address[] memory strategyRts = IStrategy(strategies[i]).rewardTokens();
       uint[] memory strategyReadyToClaim = IStrategy(strategies[i]).readyToClaim();
       // don't count, better to skip than ruin
@@ -563,5 +600,40 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
     return strategies;
   }
 
+  // **********************************************
+  // *********** VAULT FUNCTIONS ******************
+  // ****** Simulate vault behaviour **************
+  // **********************************************
+
+  /// @dev Transfer tokens from sender and call the vault notify function.
+  function notifyTargetRewardAmount(address _rewardToken, uint _amount) external {
+    require(IController(controller()).isRewardDistributor(msg.sender), "SS: Only distributor");
+    IERC20(_rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+    IERC20(_rewardToken).safeApprove(_vault(), 0);
+    IERC20(_rewardToken).safeApprove(_vault(), _amount);
+    return ISmartVault(_vault()).notifyTargetRewardAmount(_rewardToken, _amount);
+  }
+
+  function getPricePerFullShare() external view returns (uint256) {
+    return ISmartVault(_vault()).getPricePerFullShare();
+  }
+
+  function underlyingUnit() external view returns (uint256) {
+    return ISmartVault(_vault()).underlyingUnit();
+  }
+
+  function underlyingBalanceWithInvestment() external view returns (uint256) {
+    return ISmartVault(_vault()).underlyingBalanceWithInvestment();
+  }
+
+  function totalSupply() external view returns (uint256) {
+    return IERC20(_vault()).totalSupply();
+  }
+
+  /// @dev !!! THIS FUNCTION HAS CONFLICT WITH STRATEGY INTERFACE !!!
+  ///      We are implementing vault functionality. Don't use strategy rewardTokens() anywhere
+  function rewardTokens() external view override returns (address[] memory) {
+    return ISmartVault(_vault()).rewardTokens();
+  }
 
 }

@@ -1,6 +1,6 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {IStrategy, SmartVault} from "../../typechain";
+import {IStrategy, SmartVault, StrategySplitter__factory} from "../../typechain";
 import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
@@ -265,8 +265,14 @@ export class DoHardWorkLoopBase {
     this.totalToClaimInTetuN = 0;
     const toClaim = await this.strategy.readyToClaim();
     if (toClaim.length !== 0) {
+      const platform = await this.strategy.platform();
       const tetuPriceN = +utils.formatUnits(await this.getPrice(this.core.rewardToken.address));
-      const rts = await this.strategy.rewardTokens();
+      let rts;
+      if (platform === 24) {
+        rts = await StrategySplitter__factory.connect(this.strategy.address, this.signer).strategyRewardTokens();
+      } else {
+        rts = await this.strategy.rewardTokens();
+      }
       for (let i = 0; i < rts.length; i++) {
         const rt = rts[i];
         const rtDec = await TokenUtils.decimals(rt);

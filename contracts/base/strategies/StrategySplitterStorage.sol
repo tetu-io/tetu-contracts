@@ -70,6 +70,15 @@ abstract contract StrategySplitterStorage is Initializable {
     return getUint256("wantToWithdraw");
   }
 
+  function _setOnPause(uint _value) internal {
+    emit UpdatedUint256Slot("onPause", _onPause(), _value);
+    setUint256("onPause", _value);
+  }
+
+  function _onPause() internal view returns (uint) {
+    return getUint256("onPause");
+  }
+
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
   function setAddress(string memory key, address _address) private {
