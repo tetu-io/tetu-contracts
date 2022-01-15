@@ -13,7 +13,6 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -60,7 +59,6 @@ describe('Universal Nacho tests', async () => {
     const token0Name = strat[4];
     const token1 = strat[5];
     const token1Name = strat[6];
-    const rewardPool = strat[7];
 
     if (idx === 'idx' || !token1Name) {
       console.log('skip', idx);
@@ -110,7 +108,6 @@ describe('Universal Nacho tests', async () => {
             underlying,
             token0,
             token1,
-            rewardPool,
             idx
           ];
           return DeployerUtils.deployContract(
