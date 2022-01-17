@@ -30,6 +30,9 @@ export class FtmAddresses {
   public static FRAX_TOKEN = "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355".toLowerCase();
   public static renBTC_TOKEN = "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501".toLowerCase();
   public static SPELL_TOKEN = "0x468003B688943977e6130F4F68F23aad939a1040".toLowerCase();
+  public static TOMB_TOKEN = "0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7".toLowerCase();
+  public static TSHARE_TOKEN = "0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37".toLowerCase();
+  public static TBOND_TOKEN = "0x24248CD1747348bDC971a5395f4b3cd7feE94ea0".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
