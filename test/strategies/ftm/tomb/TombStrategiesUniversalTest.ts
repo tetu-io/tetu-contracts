@@ -1,6 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
@@ -17,33 +17,33 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-  .env('TETU')
-  .options({
-    disableStrategyTests: {
-      type: "boolean",
-      default: false,
-    },
-    onlyOneNachoStrategyTest: {
-      type: "number",
-      default: 0,
-    },
-    deployCoreContracts: {
-      type: "boolean",
-      default: false,
-    },
-    hardhatChainId: {
-      type: "number",
-      default: 137
-    },
-  }).argv;
+    .env('TETU')
+    .options({
+      disableStrategyTests: {
+        type: "boolean",
+        default: false,
+      },
+      onlyOneTombStrategyTest: {
+        type: "number",
+        default: 1,
+      },
+      deployCoreContracts: {
+        type: "boolean",
+        default: true,
+      },
+      hardhatChainId: {
+        type: "number",
+        default: 137
+      },
+    }).argv;
 
 chai.use(chaiAsPromised);
 
-describe('Universal Nacho tests', async () => {
-  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
+describe('Universal Tomb tests', async () => {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/nacho_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/tomb_pools.csv', 'utf8').split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
@@ -64,7 +64,7 @@ describe('Universal Nacho tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (argv.onlyOneNachoStrategyTest !== -1 && +strat[0] !== argv.onlyOneNachoStrategyTest) {
+    if (argv.onlyOneTombStrategyTest !== -1 && +strat[0] !== argv.onlyOneTombStrategyTest) {
       return;
     }
 
@@ -73,17 +73,17 @@ describe('Universal Nacho tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyNachoLp';
+    const strategyContractName = 'StrategyTombLp';
     const vaultName = token0Name + "_" + token1Name;
     const underlying = lpAddress;
-    const deposit = 1000;
+    const deposit = 100_000;
     const loopValue = 300;
     const advanceBlocks = true;
 
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
-        [MaticAddresses.NSHARE_TOKEN],
-        ['0x1c84cd20ea6cc100e0a890464411f1365ab1f664']
+          [FtmAddresses.TSHARE_TOKEN],
+          ['0x4733bc45ef91cf7ccecaeedb794727075fb209f2']
       );
     };
     // only for strategies where we expect PPFS fluctuations
@@ -98,63 +98,63 @@ describe('Universal Nacho tests', async () => {
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
-        signer,
-        core,
-        vaultName,
-        vaultAddress => {
-          const strategyArgs = [
-            core.controller.address,
-            vaultAddress,
-            underlying,
-            token0,
-            token1,
-            idx
-          ];
-          return DeployerUtils.deployContract(
-            signer,
-            strategyContractName,
-            ...strategyArgs
-          ) as Promise<IStrategy>;
-        },
-        underlying
+          signer,
+          core,
+          vaultName,
+          vaultAddress => {
+            const strategyArgs = [
+              core.controller.address,
+              vaultAddress,
+              underlying,
+              token0,
+              token1,
+              idx
+            ];
+            return DeployerUtils.deployContract(
+                signer,
+                strategyContractName,
+                ...strategyArgs
+            ) as Promise<IStrategy>;
+          },
+          underlying
       );
     };
     const hwInitiator = (
-      _signer: SignerWithAddress,
-      _user: SignerWithAddress,
-      _core: CoreContractsWrapper,
-      _tools: ToolsContractsWrapper,
-      _underlying: string,
-      _vault: SmartVault,
-      _strategy: IStrategy,
-      _balanceTolerance: number
+        _signer: SignerWithAddress,
+        _user: SignerWithAddress,
+        _core: CoreContractsWrapper,
+        _tools: ToolsContractsWrapper,
+        _underlying: string,
+        _vault: SmartVault,
+        _strategy: IStrategy,
+        _balanceTolerance: number
     ) => {
       return new DoHardWorkLoopBase(
-        _signer,
-        _user,
-        _core,
-        _tools,
-        _underlying,
-        _vault,
-        _strategy,
-        _balanceTolerance,
-        finalBalanceTolerance,
+          _signer,
+          _user,
+          _core,
+          _tools,
+          _underlying,
+          _vault,
+          _strategy,
+          _balanceTolerance,
+          finalBalanceTolerance,
       );
     };
 
     universalStrategyTest(
-      strategyContractName + '_' + vaultName,
-      deployInfo,
-      deployer,
-      hwInitiator,
-      forwarderConfigurator,
-      ppfsDecreaseAllowed,
-      balanceTolerance,
-      deposit,
-      loops,
-      loopValue,
-      advanceBlocks,
-      specificTests,
+        strategyContractName + '_' + vaultName,
+        deployInfo,
+        deployer,
+        hwInitiator,
+        forwarderConfigurator,
+        ppfsDecreaseAllowed,
+        balanceTolerance,
+        deposit,
+        loops,
+        loopValue,
+        advanceBlocks,
+        specificTests,
     );
   });
 });

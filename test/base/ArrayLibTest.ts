@@ -71,8 +71,8 @@ describe("Array lib tests", function () {
       .is.rejectedWith(INDEX_OUT_OF_BOUND);
     const addressArray = await arraylib.callStatic.removeByIndexAddress(addresses, 0, true);
     expect(await arraylib.callStatic.containsAddress(addressArray, usdc)).is.equal(false);
-    await expect(arraylib.callStatic.removeByIndexUint(addressArray, 10, true))
-      .is.rejectedWith(INDEX_OUT_OF_BOUND);
+    await expect(arraylib.callStatic.removeByIndexAddress(addressArray, 10, true))
+        .is.rejectedWith(INDEX_OUT_OF_BOUND);
   });
 
   it("find and remove test", async () => {
