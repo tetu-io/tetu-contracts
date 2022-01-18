@@ -133,7 +133,7 @@ export class DoHardWorkLoopBase {
   protected async loopStartSnapshot() {
     this.loopStartTs = await Misc.getBlockTsFromChain();
     this.vaultPPFS = await this.vault.getPricePerFullShare();
-    this.stratEarnedTotal = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
+    this.stratEarnedTotal = await this.strategyEarned();
   }
 
   protected async loopEndCheck() {
@@ -227,7 +227,7 @@ export class DoHardWorkLoopBase {
 
   protected async loopPrintROIAndSaveEarned(i: number) {
     const start = Date.now();
-    const stratEarnedTotal = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
+    const stratEarnedTotal = await this.strategyEarned();
     const stratEarnedTotalN = +utils.formatUnits(stratEarnedTotal);
     this.stratEarned = stratEarnedTotal.sub(this.stratEarnedTotal);
     const stratEarnedN = +utils.formatUnits(this.stratEarned);
@@ -368,6 +368,21 @@ export class DoHardWorkLoopBase {
     }
     this.priceCache.set(token, price);
     return price;
+  }
+
+  private async strategyEarned() {
+    let result = BigNumber.from(0);
+    const platform = await this.strategy.platform();
+    if (platform === 24) {
+      const splitter = StrategySplitter__factory.connect(this.strategy.address, this.signer);
+      const strategies = await splitter.allStrategies();
+      for (const s of strategies) {
+        result = result.add(await this.core.bookkeeper.targetTokenEarned(s));
+      }
+    } else {
+      result = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
+    }
+    return result;
   }
 
   private static toPercent(actual: number, expected: number): string {

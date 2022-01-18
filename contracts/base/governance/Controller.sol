@@ -128,9 +128,6 @@ contract Controller is Initializable, Controllable, ControllerStorage {
       require(_announcer() != address(0), "C: Zero announcer");
       require(IAnnouncer(_announcer()).timeLockSchedule(opHash) > 0, "C: Not announced");
       require(IAnnouncer(_announcer()).timeLockSchedule(opHash) < block.timestamp, "C: Too early");
-    }
-    // clear announce
-    if (!isEmptyValue) {
       IAnnouncer(_announcer()).clearAnnounce(opHash, opCode, target);
     }
   }
@@ -171,10 +168,15 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     timeLock(
       keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyUpgrade, _splitter, _strategy)),
       IAnnouncer.TimeLockOpCodes.StrategyUpgrade,
-      IStrategySplitter(_splitter).strategiesLength() == 0,
+      !IStrategySplitter(_splitter).strategiesInited(),
       _splitter
     );
     IStrategySplitter(_splitter).addStrategy(_strategy);
+    rewardDistribution[_strategy] = true;
+    if (!strategies[_strategy]) {
+      strategies[_strategy] = true;
+      IBookkeeper(_bookkeeper()).addStrategy(_strategy);
+    }
   }
 
   /// @notice Only Governance can do it. Upgrade batch announced proxies

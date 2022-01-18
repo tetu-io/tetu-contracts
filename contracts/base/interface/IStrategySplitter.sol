@@ -26,6 +26,8 @@ interface IStrategySplitter {
 
   function setStrategyRatios(address[] memory _strategies, uint[] memory _ratios) external;
 
+  function strategiesInited() external view returns (bool);
+
   function needRebalance() external view returns (uint);
 
   function wantToWithdraw() external view returns (uint);

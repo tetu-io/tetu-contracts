@@ -10,10 +10,10 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {IStrategy, IStrategy__factory, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {SplitterDoHardWork} from "./SplitterDoHardWork";
+import {SplitterSpecificTests} from "./SplitterSpecificTests";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -102,12 +102,12 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
     const finalBalanceTolerance = 0.0001;
     const deposit = 100_000;
     // at least 3
-    const loops = 15;
+    const loops = 5;
     // number of blocks or timestamp value
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    const specificTests: SpecificStrategyTest[] = []; // todo add
+    const specificTests: SpecificStrategyTest[] = [new SplitterSpecificTests()];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -118,22 +118,44 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
         tokenName,
         async vaultAddress => {
           const splitter = await DeployerUtils.deployStrategySplitter(signer);
-
-          const strats: string[] = [
-            await deployAave(signer, aaveStart, core.controller.address, splitter.address),
-            await deployIron(signer, ironStrat, core.controller.address, splitter.address),
-          ];
-
           await splitter.initialize(
             core.controller.address,
             underlying,
             vaultAddress,
-            strats,
           );
+
+          const splitter2 = await DeployerUtils.deployStrategySplitter(signer);
+          await splitter2.initialize(
+            core.controller.address,
+            underlying,
+            splitter.address,
+          );
+
+          // *** INIT FIRST SPLITTER ***
+          const aave = await deployAave(signer, aaveStart, core.controller.address, splitter.address)
+          const iron = await deployIron(signer, ironStrat, core.controller.address, splitter.address)
+          const strats: string[] = [aave, splitter2.address, iron];
+
+          await core.controller.addStrategyToSplitter(splitter.address, aave);
+          await core.controller.addStrategyToSplitter(splitter.address, splitter2.address);
+          await core.controller.addStrategyToSplitter(splitter.address, iron);
 
           await splitter.setStrategyRatios(
             strats,
-            [70, 30]
+            [30, 50, 20]
+          );
+
+          // *** INIT SECOND SPLITTER ***
+          const aave2 = await deployAave(signer, aaveStart, core.controller.address, splitter2.address)
+          const iron2 = await deployIron(signer, ironStrat, core.controller.address, splitter2.address)
+          const strats2: string[] = [aave2, iron2];
+
+          await core.controller.addStrategyToSplitter(splitter2.address, aave2);
+          await core.controller.addStrategyToSplitter(splitter2.address, iron2);
+
+          await splitter2.setStrategyRatios(
+            strats2,
+            [30, 70]
           );
 
           return IStrategy__factory.connect(splitter.address, signer);

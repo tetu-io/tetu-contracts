@@ -163,36 +163,38 @@ library ArrayLib {
     array.pop();
   }
 
-  // -------------- SORTING ---------------------
-  // Based on the article https://medium.com/coinmonks/sorting-in-solidity-without-comparison-4eb47e04ff0d
+  // ************* SORTING *******************
 
   /// @dev Insertion sorting algorithm for using with arrays fewer than 10 elements
-  function insertionSorting(uint256[] storage data) internal {
-    uint length = data.length;
-    for (uint i = 1; i < length; i++) {
-      uint key = data[i];
+  ///      Based on https://medium.com/coinmonks/sorting-in-solidity-without-comparison-4eb47e04ff0d
+  function sortAddressesByUint(address[] storage addressArray, mapping(address => uint) storage uintMap) internal {
+    for (uint i = 1; i < addressArray.length; i++) {
+      address key = addressArray[i];
       uint j = i - 1;
-      while ((int(j) >= 0) && (data[j] > key)) {
-        data[j + 1] = data[j];
-        j--;
+      while ((int(j) >= 0) && uintMap[addressArray[j]] > uintMap[key]) {
+        addressArray[j + 1] = addressArray[j];
+      unchecked {j--;}
       }
-      data[j + 1] = key;
+    unchecked {
+      addressArray[j + 1] = key;
+    }
     }
   }
 
-  /// @dev Counting sorting algorithm for using with arrays greater than 10 elements
-  function countingSorting(uint256[] storage data, uint setSize) internal {
-    uint length = data.length;
-    uint[] memory set = new uint[](setSize);
-    for (uint i = 0; i < length; i++) {
-      set[data[i]]++;
-    }
-    uint n = 0;
-    for (uint i = 0; i < setSize; i++) {
-      while (set[i]-- > 0) {
-        data[n] = i;
-        if (++n >= length) break;
+  /// @dev Insertion sorting algorithm for using with arrays fewer than 10 elements
+  ///      Based on https://medium.com/coinmonks/sorting-in-solidity-without-comparison-4eb47e04ff0d
+  function sortAddressesByUintReverted(address[] storage addressArray, mapping(address => uint) storage uintMap) internal {
+    for (uint i = 1; i < addressArray.length; i++) {
+      address key = addressArray[i];
+      uint j = i - 1;
+      while ((int(j) >= 0) && uintMap[addressArray[j]] < uintMap[key]) {
+        addressArray[j + 1] = addressArray[j];
+      unchecked {j--;}
       }
+    unchecked {
+      addressArray[j + 1] = key;
+    }
     }
   }
+
 }
