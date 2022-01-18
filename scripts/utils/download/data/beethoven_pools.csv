@@ -1,0 +1,2 @@
+idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr, currentRewards, vault 
+0,SPOOKY_WFTM_BOO,0xEc7178F4C41f346b2721907F5cF7628E388A7a58,0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83,WFTM,0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE,BOO,3000,459664,100231442,24,undefined,undefined
