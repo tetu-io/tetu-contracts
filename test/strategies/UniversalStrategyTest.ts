@@ -99,7 +99,7 @@ async function universalStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-    it.skip("doHardWork loop", async function () {
+    it("doHardWork loop", async function () {
       const core = deployInfo.core as CoreContractsWrapper;
       const tools = deployInfo.tools as ToolsContractsWrapper;
       await hardworkInitiator(
