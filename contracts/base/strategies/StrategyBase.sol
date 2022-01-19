@@ -21,6 +21,7 @@ import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../interface/ISmartVault.sol";
+import "hardhat/console.sol";
 
 /// @title Abstract contract for base strategy functionality
 /// @author belbix
@@ -215,6 +216,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     // this check is needed, because most of the SNX reward pools will revert if
     // you try to stake(0).
     if (underlyingBalance() > 0) {
+      console.log('invested',underlyingBalance() );
       depositToPool(underlyingBalance());
     }
   }
