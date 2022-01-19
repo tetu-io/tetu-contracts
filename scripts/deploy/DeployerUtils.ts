@@ -24,7 +24,7 @@ import {
   PriceCalculator,
   RewardCalculator,
   RewardToken,
-  SmartVault,
+  SmartVault, StrategySplitter,
   TetuProxyControlled,
   TetuProxyGov,
   TetuSwapFactory,
@@ -301,6 +301,12 @@ export class DeployerUtils {
     const logic = await DeployerUtils.deployContract(signer, "SmartVault");
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as SmartVault;
+  }
+
+  public static async deployStrategySplitter(signer: SignerWithAddress): Promise<StrategySplitter> {
+    const logic = await DeployerUtils.deployContract(signer, "StrategySplitter");
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
+    return logic.attach(proxy.address) as StrategySplitter;
   }
 
   public static async deployPayrollClerk(signer: SignerWithAddress, controller: string, calculator: string)

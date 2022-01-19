@@ -30,6 +30,8 @@ export class Misc {
   public static readonly SECONDS_OF_YEAR = Misc.SECONDS_OF_DAY * 365;
   public static readonly ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   public static readonly GEIST_BOR_RATIO = 0.95;
+  public static readonly AAVE_BOR_RATIO = 0.99;
+  public static readonly IRON_BOR_RATIO = 0.99;
 
   public static printDuration(text: string, start: number) {
     log.info('>>>' + text, ((Date.now() - start) / 1000).toFixed(1), 'sec');

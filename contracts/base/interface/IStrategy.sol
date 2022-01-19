@@ -39,8 +39,9 @@ interface IStrategy {
     QIDAO, //21
     SUNFLOWER, //22
     NACHO, //23
-    TOMB, //24
-    HECTOR //25
+    STRATEGY_SPLITTER, //24
+    TOMB, //25
+    HECTOR //26
   }
 
   // *************** GOVERNANCE ACTIONS **************
