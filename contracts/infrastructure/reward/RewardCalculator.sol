@@ -17,26 +17,8 @@ import "../../base/interface/ISmartVault.sol";
 import "../../base/interface/IStrategy.sol";
 import "../../base/interface/IBookkeeper.sol";
 import "../../base/interface/IControllableExtended.sol";
-import "../../third_party/wault/IWexPolyMaster.sol";
-import "../../third_party/sushi/IMiniChefV2.sol";
-import "../../third_party/iron/IIronChef.sol";
-import "../../third_party/hermes/IIrisMasterChef.sol";
-import "../../third_party/synthetix/SNXRewardInterface.sol";
-import "../../base/interface/IMasterChefStrategyCafe.sol";
-import "../../base/interface/IMasterChefStrategyV1.sol";
-import "../../base/interface/IMasterChefStrategyV2.sol";
-import "../../base/interface/IMasterChefStrategyV3.sol";
-import "../../base/interface/IIronFoldStrategy.sol";
-import "../../base/interface/ISNXStrategy.sol";
-import "../../base/interface/IStrategyWithPool.sol";
-import "../../third_party/cosmic/ICosmicMasterChef.sol";
-import "../../third_party/dino/IFossilFarms.sol";
 import "../price/IPriceCalculator.sol";
 import "./IRewardCalculator.sol";
-import "../../third_party/quick/IDragonLair.sol";
-import "../../third_party/quick/IStakingDualRewards.sol";
-import "../../third_party/iron/IronControllerInterface.sol";
-import "../../third_party/iron/CompleteRToken.sol";
 
 /// @title Calculate estimated strategy rewards
 /// @author belbix
@@ -45,12 +27,11 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.4.1";
+  string public constant VERSION = "1.5.0";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
-  address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
   uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
   uint256 public constant AVG_REWARDS = 7;
   uint256 public constant LAST_EARNED = 3;
@@ -226,137 +207,6 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       rewardsPerSecond = rewardsPerSecond * multiplier / MULTIPLIER_DENOMINATOR;
     }
     return rewardsPerSecond;
-  }
-
-  // ************* SPECIFIC TO STRATEGY FUNCTIONS *************
-
-  /// @notice Calculate approximately rewards amounts for Wault Swap
-  function wault(address _pool, uint256 _poolID) public view returns (uint256) {
-    IWexPolyMaster pool = IWexPolyMaster(_pool);
-    (, uint256 allocPoint,,) = pool.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      allocPoint,
-      rewardPerBlockToPerSecond(pool.wexPerBlock()),
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately rewards amounts for Cosmic Swap
-  function cosmic(address _pool, uint256 _poolID) public view returns (uint256) {
-    ICosmicMasterChef pool = ICosmicMasterChef(_pool);
-    ICosmicMasterChef.PoolInfo memory info = pool.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      info.allocPoint,
-      rewardPerBlockToPerSecond(pool.cosmicPerBlock()),
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately rewards amounts for Dino Swap
-  function dino(address _pool, uint256 _poolID) public view returns (uint256) {
-    IFossilFarms pool = IFossilFarms(_pool);
-    (, uint256 allocPoint,,) = pool.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      allocPoint,
-      rewardPerBlockToPerSecond(pool.dinoPerBlock()),
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately rewards amounts for SushiSwap
-  function miniChefSushi(address _pool, uint256 _poolID) public view returns (uint256) {
-    IMiniChefV2 pool = IMiniChefV2(_pool);
-    (,, uint256 allocPoint) = pool.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      allocPoint,
-      pool.sushiPerSecond(),
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately rewards amounts for Sushi rewarder
-  function mcRewarder(address _pool, uint256 _poolID) public view returns (uint256) {
-    IMiniChefV2 pool = IMiniChefV2(_pool);
-    IRewarder rewarder = pool.rewarder(_poolID);
-    (,, uint256 allocPoint) = rewarder.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      allocPoint,
-      rewarder.rewardPerSecond(), // totalAllocPoint is not public so assume that it is the same as MC
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately reward amounts for Iron MC
-  function ironMc(address _pool, uint256 _poolID) public view returns (uint256) {
-    IIronChef.PoolInfo memory poolInfo = IIronChef(_pool).poolInfo(_poolID);
-    return mcRewardPerSecond(
-      poolInfo.allocPoint,
-      IIronChef(_pool).rewardPerSecond(),
-      IIronChef(_pool).totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately reward amounts for HERMES
-  function hermes(address _pool, uint256 _poolID) public view returns (uint256) {
-    IIrisMasterChef pool = IIrisMasterChef(_pool);
-    (, uint256 allocPoint,,,,) = pool.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      allocPoint,
-      rewardPerBlockToPerSecond(pool.irisPerBlock()),
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately reward amounts for Cafe swap
-  function cafe(address _pool, uint256 _poolID) public view returns (uint256) {
-    ICafeMasterChef pool = ICafeMasterChef(_pool);
-    ICafeMasterChef.PoolInfo memory info = pool.poolInfo(_poolID);
-    return mcRewardPerSecond(
-      info.allocPoint,
-      rewardPerBlockToPerSecond(pool.brewPerBlock()),
-      pool.totalAllocPoint()
-    );
-  }
-
-  /// @notice Calculate approximately reward amounts for Quick swap
-  function quick(address _pool) public view returns (uint256) {
-    if (SNXRewardInterface(_pool).periodFinish() < block.timestamp) {
-      return 0;
-    }
-    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(PRECISION);
-    return SNXRewardInterface(_pool).rewardRate() * dQuickRatio / PRECISION;
-  }
-
-  /// @notice Calculate approximately reward amounts for Quick swap
-  function quickDualFarm(address _pool) public view returns (uint256) {
-    if (IStakingDualRewards(_pool).periodFinish() < block.timestamp) {
-      return 0;
-    }
-    uint256 dQuickRatio = IDragonLair(D_QUICK).QUICKForDQUICK(PRECISION);
-    return IStakingDualRewards(_pool).rewardRateA() * dQuickRatio / PRECISION;
-  }
-
-  function ironLending(IStrategy strategy) public view returns (uint256) {
-    address iceToken = strategy.rewardTokens()[0];
-    address rToken = IIronFoldStrategy(address(strategy)).rToken();
-    address controller = IIronFoldStrategy(address(strategy)).ironController();
-
-    uint icePrice = getPrice(iceToken);
-    uint undPrice = getPrice(strategy.underlying());
-
-    uint8 undDecimals = CompleteRToken(strategy.underlying()).decimals();
-
-    uint256 rTokenExchangeRate = CompleteRToken(rToken).exchangeRateStored();
-
-    uint256 totalSupply = CompleteRToken(rToken).totalSupply() * rTokenExchangeRate
-    / (10 ** undDecimals);
-
-    uint suppliedRate = CompleteRToken(rToken).supplyRatePerBlock() * undPrice * totalSupply / (PRECISION ** 2);
-    // ICE rewards
-    uint rewardSpeed = IronControllerInterface(controller).rewardSpeeds(rToken) * icePrice / PRECISION;
-    // regarding folding we will earn x2.45
-    rewardSpeed = rewardSpeed * 245 / 100;
-    return rewardPerBlockToPerSecond(rewardSpeed + suppliedRate);
   }
 
   // *********** GOVERNANCE ACTIONS *****************

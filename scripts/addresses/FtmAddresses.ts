@@ -47,7 +47,7 @@ export class FtmAddresses {
 
   // TetuSwap
   public static TETU_SWAP_FACTORY = "0xFB6A440af0bbBAd0cC5f24323c7Df9d400084a12".toLowerCase();
-  public static TETU_SWAP_ROUTER = "0xbd21EC4b56A50aBF3C52ca9977C26291632Ce5A6".toLowerCase();
+  public static TETU_SWAP_ROUTER = "0x1c7F7210a7ACc13d26824A8267cf9CA5D4020Bc1".toLowerCase();
 
   // Geist
   public static GEIST_PROTOCOL_DATA_PROVIDER = "0xf3B0611e2E4D2cd6aB4bb3e01aDe211c3f42A8C3".toLowerCase();

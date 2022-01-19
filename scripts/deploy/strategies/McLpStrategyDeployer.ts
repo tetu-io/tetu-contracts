@@ -46,6 +46,16 @@ export class McLpStrategyDeployer {
     const token1 = await lpCont.token1();
     const token1Name = await TokenUtils.tokenSymbol(token1);
 
+
+    const vaultNameWithoutPrefix = `${platformPrefix}_${token0Name}_${token1Name}`;
+
+    console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
+
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
+      return;
+    }
+
     // *********** DEPLOY VAULT
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
@@ -60,15 +70,6 @@ export class McLpStrategyDeployer {
         token1,
         poolId
     );
-
-    const vaultNameWithoutPrefix = `${platformPrefix}_${token0Name}_${token1Name}`;
-
-    console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
-
-    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
-      return;
-    }
 
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
         `TETU_${vaultNameWithoutPrefix}`,

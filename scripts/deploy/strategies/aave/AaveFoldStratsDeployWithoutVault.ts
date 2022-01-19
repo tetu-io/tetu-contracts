@@ -21,6 +21,10 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
+    const platform = (await cReader.vaultPlatform(vAdr));
+    if(platform !== 9 && platform !== 14) {
+      continue;
+    }
     const underlying = (await cReader.vaultUnderlying(vAdr)).toLowerCase();
     if (vaultsByUnderlying.has(underlying)) {
       throw Error('duplicate und');
@@ -47,7 +51,8 @@ async function main() {
       continue;
     }
 
-    if (alreadyDeployed.has(idx)) {
+    // if (alreadyDeployed.has(idx)) {
+    if (idx !== '2') {
       console.log('Strategy already deployed', idx);
       continue;
     }

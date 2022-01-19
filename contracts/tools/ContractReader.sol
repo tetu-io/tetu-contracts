@@ -21,6 +21,7 @@ import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IVaultController.sol";
 import "../base/interface/IStrategy.sol";
+import "../base/interface/IStrategySplitter.sol";
 import "../infrastructure/price/IPriceCalculator.sol";
 
 /// @title View data reader for using on website UI and other integrations
@@ -531,6 +532,9 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function strategyRewardTokens(address _strategy) public view returns (address[] memory){
+    if(IStrategy(_strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER) {
+      return IStrategySplitter(_strategy).strategyRewardTokens();
+    }
     return IStrategy(_strategy).rewardTokens();
   }
 

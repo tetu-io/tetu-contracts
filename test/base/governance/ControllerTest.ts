@@ -113,6 +113,8 @@ describe("Controller tests", function () {
 
   it("should not salvage", async () => {
     await expect(controller.connect(signer1).controllerTokenMove(signer.address, usdc, 100))
+      .to.be.rejectedWith("C: Not governance");
+    await expect(controller.controllerTokenMove(signer.address, usdc, 100))
       .to.be.rejectedWith("C: Not announced");
   });
   it("created", async () => {
