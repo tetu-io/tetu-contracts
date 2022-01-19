@@ -84,9 +84,9 @@ abstract contract BeethovenACBase is StrategyBase {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
-    //        investAllUnderlying();
-    //        withdrawAndClaimFromPool(0);
-    //        liquidateReward();
+    investAllUnderlying();
+    withdrawAndClaimFromPool(0);
+    liquidateReward();
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
@@ -102,13 +102,13 @@ abstract contract BeethovenACBase is StrategyBase {
   /// @dev Withdraw underlying from MasterChef pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
-//    ISpookyMasterChef(pool).withdraw(poolID, amount);
+     IBeethovenxChef(pool).withdrawAndHarvest(poolId, amount, address(this));
   }
 
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-//    ISpookyMasterChef(pool).emergencyWithdraw(poolID);
+    IBeethovenxChef(pool).emergencyWithdraw(poolId, address(this));
   }
 
   /// @dev Do something useful with farmed rewards
