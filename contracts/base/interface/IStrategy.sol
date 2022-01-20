@@ -40,7 +40,8 @@ interface IStrategy {
     SUNFLOWER, //22
     NACHO, //23
     STRATEGY_SPLITTER, //24
-    TOMB //25
+    TOMB, //25
+    TAROT //26
   }
 
   // *************** GOVERNANCE ACTIONS **************

@@ -1,8 +1,8 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {IStrategy__factory, StrategySplitter__factory} from "../../../../typechain";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
+import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
+import {IStrategy__factory, StrategySplitter__factory} from "../../typechain";
+import {Misc} from "../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);

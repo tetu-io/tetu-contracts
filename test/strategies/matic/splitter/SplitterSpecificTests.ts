@@ -52,7 +52,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
       await announcer.announceStrategyUpgrades([splitter.address], [stratForRemove]);
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 50)
-      await controller.addStrategyToSplitter(splitter.address, stratForRemove);
+      await controller.addStrategiesToSplitter(splitter.address, [stratForRemove]);
 
       expect(await splitter.strategiesLength()).is.eq(2)
       expect(await splitter.strategies(1)).is.eq(stratForRemove);
@@ -61,7 +61,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
       await announcer.announceStrategyUpgrades([splitter.address], [stratForRemove]);
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 50)
-      await expect(controller.addStrategyToSplitter(splitter.address, stratForRemove)).is.rejectedWith("ArrayLib: Not unique item");
+      await expect(controller.addStrategiesToSplitter(splitter.address, [stratForRemove])).is.rejectedWith("ArrayLib: Not unique item");
     });
 
     it("SplitterSpecificTest: Request withdraw", async () => {
@@ -142,7 +142,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
       await announcer.announceStrategyUpgrades([splitter.address], [stratForRemove]);
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 50)
-      await controller.addStrategyToSplitter(splitter.address, stratForRemove);
+      await controller.addStrategiesToSplitter(splitter.address, [stratForRemove]);
 
       expect(await splitter.strategiesLength()).is.eq(2)
       expect(await splitter.strategies(1)).is.eq(stratForRemove);
@@ -151,7 +151,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
       await announcer.announceStrategyUpgrades([splitter.address], [stratForRemove]);
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 50)
-      await expect(controller.addStrategyToSplitter(splitter.address, stratForRemove)).is.rejectedWith("ArrayLib: Not unique item");
+      await expect(controller.addStrategiesToSplitter(splitter.address, [stratForRemove])).is.rejectedWith("ArrayLib: Not unique item");
     });
 
     it("SplitterSpecificTest: Sub: Request withdraw", async () => {

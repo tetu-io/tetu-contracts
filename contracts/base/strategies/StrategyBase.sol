@@ -28,7 +28,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  uint256 internal constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 internal constant _BUY_BACK_DENOMINATOR = 100_00;
   uint256 internal constant _TOLERANCE_DENOMINATOR = 1000;
   uint256 internal constant _TOLERANCE_NOMINATOR = 999;
 
@@ -90,6 +90,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _underlyingToken = _underlying;
     _smartVault = _vault;
     _rewardTokens = __rewardTokens;
+    require(_bbRatio <= _BUY_BACK_DENOMINATOR, "SB: Too high buyback ratio");
     _buyBackRatio = _bbRatio;
 
     // prohibit the movement of tokens that are used in the main logic

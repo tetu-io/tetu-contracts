@@ -162,9 +162,15 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     ISmartVault(_target).setStrategy(_strategy);
   }
 
-  /// @notice Only Governance can do it. Add new strategy to given splitter
-  function addStrategyToSplitter(address _splitter, address _strategy) external {
+  function addStrategiesToSplitter(address _splitter, address[] calldata _strategies) external {
     onlyGovernance();
+    for (uint256 i = 0; i < _strategies.length; i++) {
+      _addStrategyToSplitter(_splitter, _strategies[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Add new strategy to given splitter
+  function _addStrategyToSplitter(address _splitter, address _strategy) internal {
     timeLock(
       keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyUpgrade, _splitter, _strategy)),
       IAnnouncer.TimeLockOpCodes.StrategyUpgrade,
