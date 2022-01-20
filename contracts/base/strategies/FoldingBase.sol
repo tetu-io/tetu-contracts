@@ -436,7 +436,9 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   function _redeemMaxPossible() internal updateSupplyInTheEnd {
     // assume that _maxRedeem() will be called inside _redeemUnderlying()
     _redeemUnderlying(type(uint256).max);
-    _repay(IERC20(_underlyingToken).balanceOf(address(this)));
+    (,uint borrowed) = _getInvestmentData();
+    uint toRepay = Math.min(borrowed, IERC20(_underlyingToken).balanceOf(address(this)));
+    _repay(toRepay);
   }
 
   //////////////////////////////////////////////////////
