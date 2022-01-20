@@ -11,9 +11,7 @@ import {IStrategy, IStrategy__factory, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {SplitterDoHardWork} from "../../SplitterDoHardWork";
-import {SplitterSpecificTests} from "./SplitterSpecificTests";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -24,9 +22,9 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneSplitterAaveIronFoldStrategyTest: {
+    onlyOneSplitterScreamTarotStrategyTest: {
       type: "number",
-      default: 2,
+      default: 3,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -41,52 +39,31 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Splitter with Aave/Iron Fold tests', async () => {
+describe('Splitter with Scream /Tarot tests', async () => {
 
-  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
-  const aaveInfos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
-  const ironInfos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/scream_markets.csv', 'utf8').split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
   });
 
-  aaveInfos.forEach(aaveInfo => {
-    const aaveStart = aaveInfo.split(',');
-    const aaveIdx = aaveStart[0];
-    const tokenName = aaveStart[1];
-    const token = aaveStart[2];
+  infos.forEach(screamInfo => {
+    const screamStart = screamInfo.split(',');
+    const idx = screamStart[0];
+    const tokenName = screamStart[4];
+    const token = screamStart[3];
 
-    if (!aaveIdx || aaveIdx === 'idx') {
+    if (!idx || idx === 'idx') {
       console.log('skip ', tokenName);
       return;
     }
-    console.log('Start test strategy', aaveStart);
+    console.log('Start test strategy', screamStart);
 
-    let ironStrat: string[];
-    let found = false;
-    for (const ironI of ironInfos) {
-      ironStrat = ironI.split(',');
-      const ironToken = ironStrat[3];
-      if (!ironToken) {
-        continue;
-      }
-      console.log('ironToken', ironI)
-      if (ironToken.toLowerCase() === token.toLowerCase()) {
-        found = true;
-        break;
-      }
-    }
-    console.log('found', found)
-    if (!found) {
-      console.log('NOT FOUND IRON!', aaveInfo)
-      return;
-    }
-
-    if (argv.onlyOneSplitterAaveIronFoldStrategyTest !== -1 && parseFloat(aaveIdx) !== argv.onlyOneSplitterAaveIronFoldStrategyTest) {
+    if (argv.onlyOneSplitterScreamTarotStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneSplitterScreamTarotStrategyTest) {
       return;
     }
     // **********************************************
@@ -107,7 +84,7 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    const specificTests: SpecificStrategyTest[] = [new SplitterSpecificTests()];
+    const specificTests: SpecificStrategyTest[] = [];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -124,35 +101,26 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
             vaultAddress,
           );
 
-          const splitter2 = await DeployerUtils.deployStrategySplitter(signer);
-          await splitter2.initialize(
-            core.controller.address,
-            underlying,
-            splitter.address,
-          );
-
           // *** INIT FIRST SPLITTER ***
-          const aave = await deployAave(signer, aaveStart, core.controller.address, splitter.address)
-          const iron = await deployIron(signer, ironStrat, core.controller.address, splitter.address)
-          const strats: string[] = [aave, splitter2.address, iron];
+          const aave = await deployScream(signer, screamStart, core.controller.address, splitter.address);
+          const tarots = await deployTarots(signer, core.controller.address, splitter.address, underlying);
+          if (tarots.length === 0) {
+            throw new Error('NO TAROTS');
+          }
+          const strats: string[] = [aave, ...tarots];
+
+          const tarotsRatios = [];
+          let tarotsRatiosSum = 0;
 
           await core.controller.addStrategiesToSplitter(splitter.address, strats);
+          for (const tarot of tarots) {
+            tarotsRatios.push(1);
+            tarotsRatiosSum++;
+          }
 
           await splitter.setStrategyRatios(
             strats,
-            [30, 50, 20]
-          );
-
-          // *** INIT SECOND SPLITTER ***
-          const aave2 = await deployAave(signer, aaveStart, core.controller.address, splitter2.address)
-          const iron2 = await deployIron(signer, ironStrat, core.controller.address, splitter2.address)
-          const strats2: string[] = [aave2, iron2];
-
-          await core.controller.addStrategiesToSplitter(splitter2.address, strats2);
-
-          await splitter2.setStrategyRatios(
-            strats2,
-            [30, 70]
+            [100 - tarotsRatiosSum, ...tarotsRatios]
           );
 
           return IStrategy__factory.connect(splitter.address, signer);
@@ -184,7 +152,7 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
     };
 
     universalStrategyTest(
-      'SplitterAaveIron_' + tokenName,
+      'SplitterScreamTarot_' + tokenName,
       deployInfo,
       deployer,
       hwInitiator,
@@ -201,55 +169,73 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
 });
 
 
-async function deployAave(
+async function deployScream(
   signer: SignerWithAddress,
   info: string[],
   controller: string,
   vaultAddress: string
 ) {
-  const token = info[2];
-  const ltvNum = Number(info[7]);
-  const collateralFactor = (ltvNum).toFixed(0);
-  const borrowTarget = (ltvNum * Misc.AAVE_BOR_RATIO).toFixed(0);
-
-  const strategyArgs = [
-    controller,
-    vaultAddress,
-    token,
-    borrowTarget,
-    collateralFactor
-  ];
-  const strat = await DeployerUtils.deployContract(
-    signer,
-    'StrategyAaveFold',
-    ...strategyArgs
-  ) as IStrategy;
-  return strat.address;
-}
-
-async function deployIron(
-  signer: SignerWithAddress,
-  info: string[],
-  controller: string,
-  vaultAddress: string
-) {
-  const rTokenAddress = info[2];
-  const underlying = info[3];
+  const scTokenAddress = info[2];
+  const token = info[3];
   const collateralFactor = info[5];
   const borrowTarget = info[6];
 
   const strategyArgs = [
     controller,
     vaultAddress,
-    underlying,
-    rTokenAddress,
+    token,
+    scTokenAddress,
     borrowTarget,
     collateralFactor
   ];
-  const strategy = await DeployerUtils.deployContract(
+  const strat = await DeployerUtils.deployContract(
     signer,
-    'StrategyIronFold',
+    'StrategyScreamFold',
     ...strategyArgs
   ) as IStrategy;
-  return strategy.address;
+  return strat.address;
+}
+
+async function deployTarots(
+  signer: SignerWithAddress,
+  controller: string,
+  vaultAddress: string,
+  underlying: string
+) {
+
+  const infos = readFileSync('scripts/utils/download/data/tarot.csv', 'utf8').split(/\r?\n/);
+
+  const strategies = [];
+
+  for (const i of infos) {
+    const info = i.split(',');
+    const idx = info[0];
+    const tokenName = info[2];
+    const tokenAdr = info[3];
+    const poolAdr = info[4];
+    const tvl = info[5];
+
+    if (+tvl < 2_000_000 || idx === 'idx' || !tokenAdr || underlying.toLowerCase() !== tokenAdr.toLowerCase()) {
+      console.log('skip', idx, underlying, tokenAdr, +tvl);
+      continue;
+    }
+    console.log(' Tarot strat', idx, tokenName);
+
+    const strategyArgs = [
+      controller,
+      vaultAddress,
+      tokenAdr,
+      poolAdr,
+      10_00
+    ];
+
+    const deployedStart = await DeployerUtils.deployContract(
+      signer,
+      'StrategyTarot',
+      ...strategyArgs
+    ) as IStrategy;
+    strategies.push(deployedStart.address);
+  }
+  console.log(' ================ TAROT DEPLOYED', strategies.length);
+  return strategies;
 }
