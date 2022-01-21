@@ -13,8 +13,7 @@
     "test": "npm run build && npx hardhat test",
     "coverage": "npm run build && npx cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" hardhat coverage --temp artifacts --max-memory 4096",
     "slither": "npm run build && slither .",
-    "lint": "tslint -p tsconfig.json",
-    "lint-fix": "tslint --fix -p tsconfig.json"
+    "lint": "eslint -c .eslintrc.js --ext .ts ."
   },
   "repository": {
     "type": "git",
@@ -72,7 +71,6 @@
     "solidity-coverage": "^0.7.17",
     "ts-generator": "^0.1.1",
     "ts-node": "^10.3.0",
-    "tslint": "^6.1.3",
     "tslog": "^3.2.2",
     "typechain": "^5.2.0",
     "typescript": "^4.4.4",
