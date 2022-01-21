@@ -1,22 +1,22 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {IStrategy, SmartVault} from "../../../../typechain";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {ScreamDoHardWork} from "./ScreamDoHardWork";
-import {DeployInfo} from "../../DeployInfo";
-import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
+import { readFileSync } from "fs";
+import { config as dotEnvConfig } from "dotenv";
+import { universalStrategyTest } from "../../UniversalStrategyTest";
+import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
+import { StrategyTestUtils } from "../../StrategyTestUtils";
+import { IStrategy, SmartVault } from "../../../../typechain";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
+import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
+import { ScreamDoHardWork } from "./ScreamDoHardWork";
+import { DeployInfo } from "../../DeployInfo";
+import { FoldingProfitabilityTest } from "../../FoldingProfitabilityTest";
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require('yargs/yargs')()
-  .env('TETU')
+const argv = require("yargs/yargs")()
+  .env("TETU")
   .options({
     disableStrategyTests: {
       type: "boolean",
@@ -32,26 +32,32 @@ const argv = require('yargs/yargs')()
     },
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 137,
     },
   }).argv;
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Scream Fold tests', async () => {
+describe("Universal Scream Fold tests", async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/scream_markets.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    "scripts/utils/download/data/scream_markets.csv",
+    "utf8"
+  ).split(/\r?\n/);
   const deployInfo: DeployInfo = new DeployInfo();
 
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(
+      deployInfo,
+      argv.deployCoreContracts
+    );
   });
 
-  infos.forEach(info => {
-    const strat = info.split(',');
+  infos.forEach((info) => {
+    const strat = info.split(",");
 
     const idx = strat[0];
     const scTokenName = strat[1];
@@ -67,20 +73,30 @@ describe('Universal Scream Fold tests', async () => {
     // skip FRAX token (no price)
     // skip YFI token (no rewards)
     // skip BIFI token (no rewards)
-    if (!idx || idx === 'idx' || collateralFactor === '-1' || supplyCap !== '0' || tvlNum < 50000 || ['YFI', 'BIFI'].some(i => i === tokenName)) {
-      console.log('skip', idx);
+    if (
+      !idx ||
+      idx === "idx" ||
+      collateralFactor === "-1" ||
+      supplyCap !== "0" ||
+      tvlNum < 50000 ||
+      ["YFI", "BIFI"].some((i) => i === tokenName)
+    ) {
+      console.log("skip", idx);
       return;
     }
 
-    if (argv.onlyOneScreamFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneScreamFoldStrategyTest) {
+    if (
+      argv.onlyOneScreamFoldStrategyTest !== -1 &&
+      parseFloat(idx) !== argv.onlyOneScreamFoldStrategyTest
+    ) {
       return;
     }
 
-    console.log('Start test strategy', idx, scTokenName);
+    console.log("Start test strategy", idx, scTokenName);
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyScreamFold';
+    const strategyContractName = "StrategyScreamFold";
     const underlying = token;
     // add custom liquidation path if necessary
     const forwarderConfigurator = null;
@@ -91,7 +107,7 @@ describe('Universal Scream Fold tests', async () => {
     const finalBalanceTolerance = 0.001;
     let deposit = 100_000;
     // not enough money on holder
-    if (tokenName === 'CRV') {
+    if (tokenName === "CRV") {
       deposit = 10_000;
     }
     // at least 3
@@ -103,26 +119,26 @@ describe('Universal Scream Fold tests', async () => {
     const specificTests = [new FoldingProfitabilityTest()];
     // **********************************************
 
-    const deployer = (signer: SignerWithAddress) => {
+    const deployer = async (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
         signer,
         core,
         tokenName,
-        vaultAddress => {
+        (vaultAddress) => {
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
             underlying,
             scTokenAddress,
             borrowTarget,
-            collateralFactor
+            collateralFactor,
           ];
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs
-          ) as Promise<IStrategy>
+          ) as Promise<IStrategy>;
         },
         underlying
       );
@@ -151,7 +167,7 @@ describe('Universal Scream Fold tests', async () => {
     };
 
     universalStrategyTest(
-      'Scream Test_' + tokenName,
+      "Scream Test_" + tokenName,
       deployInfo,
       deployer,
       hwInitiator,
@@ -162,7 +178,7 @@ describe('Universal Scream Fold tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests,
+      specificTests
     );
   });
 });

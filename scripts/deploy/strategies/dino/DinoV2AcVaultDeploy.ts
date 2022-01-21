@@ -1,12 +1,14 @@
-import {McLpStrategyDeployer} from "../McLpStrategyDeployer";
-import {readFileSync} from "fs";
+import { McLpStrategyDeployer } from "../McLpStrategyDeployer";
+import { readFileSync } from "fs";
 
 async function main() {
-
-  const infos = readFileSync('scripts/utils/download/data/dino_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    "scripts/utils/download/data/dino_pools.csv",
+    "utf8"
+  ).split(/\r?\n/);
 
   for (const info of infos) {
-    const strat = info.split(',');
+    const strat = info.split(",");
 
     const idx = strat[0];
     const lpName = strat[1];
@@ -17,26 +19,26 @@ async function main() {
     const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx' || !token1Name) {
-      console.log('skip', idx);
+    if (+alloc <= 0 || idx === "idx" || !token1Name) {
+      console.log("skip", idx);
       continue;
     }
 
-    console.log('strat', idx, lpName);
+    console.log("strat", idx, lpName);
 
     await McLpStrategyDeployer.deploy(
       lpAddress,
       +idx,
-      'DINO_V2',
-      'StrategyDinoSwapV2LpAc',
-      'contracts/strategies/matic/dino/StrategyDinoSwapV2LpAc.sol:StrategyDinoSwapV2LpAc'
+      "DINO_V2",
+      "StrategyDinoSwapV2LpAc",
+      "contracts/strategies/matic/dino/StrategyDinoSwapV2LpAc.sol:StrategyDinoSwapV2LpAc"
     );
   }
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

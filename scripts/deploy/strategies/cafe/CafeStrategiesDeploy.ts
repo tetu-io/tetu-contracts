@@ -1,34 +1,40 @@
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, IStrategy} from "../../../../typechain";
-import {mkdir, readFileSync, writeFileSync} from "fs";
-
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../DeployerUtils";
+import { ContractReader, IStrategy } from "../../../../typechain";
+import { mkdir, readFileSync, writeFileSync } from "fs";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const infos = readFileSync('scripts/utils/download/data/cafe_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    "scripts/utils/download/data/cafe_pools.csv",
+    "utf8"
+  ).split(/\r?\n/);
 
   const deployed = [];
   const vaultNames = new Set<string>();
 
-  const cReader = await DeployerUtils.connectContract(signer, "ContractReader", tools.reader) as ContractReader;
+  const cReader = (await DeployerUtils.connectContract(
+    signer,
+    "ContractReader",
+    tools.reader
+  )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log('all vaults size', deployedVaultAddresses.length);
+  console.log("all vaults size", deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
-  mkdir('./tmp/deployed', {recursive: true}, (err) => {
+  mkdir("./tmp/deployed", { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   for (const info of infos) {
-    const strat = info.split(',');
+    const strat = info.split(",");
 
     const idx = strat[0];
     const lpAame = strat[1];
@@ -39,54 +45,56 @@ async function main() {
     const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === 'idx' || !idx) {
-      console.log('skip', idx);
+    if (+alloc <= 0 || idx === "idx" || !idx) {
+      console.log("skip", idx);
       continue;
     }
 
     const vaultNameWithoutPrefix = `CAFE_${token0Name}_${token1Name}`;
 
-    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
-      console.log('Strategy already exist', vaultNameWithoutPrefix);
+    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
+      console.log("Strategy already exist", vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log('strat', idx, lpAame);
+    console.log("strat", idx, lpAame);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[] = [];
-    data.push(await DeployerUtils.deployVaultAndStrategy(
+    data.push(
+      await DeployerUtils.deployVaultAndStrategy(
         vaultNameWithoutPrefix,
-        async vaultAddress => DeployerUtils.deployContract(
+        async (vaultAddress) =>
+          DeployerUtils.deployContract(
             signer,
-            'StrategyCafeSwapLp',
+            "StrategyCafeSwapLp",
             core.controller,
             vaultAddress,
             lpAddress,
             token0,
             token1,
             idx
-        ) as Promise<IStrategy>,
+          ) as Promise<IStrategy>,
         core.controller,
         core.psVault,
         signer,
         60 * 60 * 24 * 28,
         true
-    ));
+      )
+    );
     data.push([
       core.controller,
       data[1].address,
       lpAddress,
       token0,
       token1,
-      idx
+      idx,
     ]);
     deployed.push(data);
 
     const txt = `vault: ${data[1].address}\nstrategy: ${data[2].address}`;
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
   }
-
 
   await DeployerUtils.wait(5);
 
@@ -99,8 +107,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

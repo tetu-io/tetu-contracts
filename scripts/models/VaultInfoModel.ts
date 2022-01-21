@@ -1,4 +1,4 @@
-import {BigNumber} from "ethers";
+import { BigNumber } from "ethers";
 
 export class VaultInfoModel {
   addr: string;
@@ -23,8 +23,29 @@ export class VaultInfoModel {
   strategyOnPause: boolean;
   earned: BigNumber;
 
-
-  constructor(addr: string, name: string, created: BigNumber, active: boolean, tvl: BigNumber, tvlUsdc: BigNumber, decimals: BigNumber, underlying: string, rewardTokens: string[], rewardTokensBal: BigNumber[], rewardTokensBalUsdc: BigNumber[], duration: BigNumber, rewardsApr: BigNumber[], ppfsApr: BigNumber, strategy: string, strategyCreated: BigNumber, platform: string, assets: string[], strategyRewards: string[], strategyOnPause: boolean, earned: BigNumber) {
+  constructor(
+    addr: string,
+    name: string,
+    created: BigNumber,
+    active: boolean,
+    tvl: BigNumber,
+    tvlUsdc: BigNumber,
+    decimals: BigNumber,
+    underlying: string,
+    rewardTokens: string[],
+    rewardTokensBal: BigNumber[],
+    rewardTokensBalUsdc: BigNumber[],
+    duration: BigNumber,
+    rewardsApr: BigNumber[],
+    ppfsApr: BigNumber,
+    strategy: string,
+    strategyCreated: BigNumber,
+    platform: string,
+    assets: string[],
+    strategyRewards: string[],
+    strategyOnPause: boolean,
+    earned: BigNumber
+  ) {
     this.addr = addr;
     this.name = name;
     this.created = created;

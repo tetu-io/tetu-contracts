@@ -1,22 +1,41 @@
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../DeployerUtils";
-import {Controller, PriceCalculator, TetuProxyGov} from "../../../../typechain";
-
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../DeployerUtils";
+import {
+  Controller,
+  PriceCalculator,
+  TetuProxyGov,
+} from "../../../../typechain";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const net = await ethers.provider.getNetwork();
 
-  const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
-  const controllerProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", controllerLogic.address);
-  const controller = controllerLogic.attach(controllerProxy.address) as Controller;
+  const controllerLogic = await DeployerUtils.deployContract(
+    signer,
+    "Controller"
+  );
+  const controllerProxy = await DeployerUtils.deployContract(
+    signer,
+    "TetuProxyControlled",
+    controllerLogic.address
+  );
+  const controller = controllerLogic.attach(
+    controllerProxy.address
+  ) as Controller;
   await controller.initialize();
 
   let data: [PriceCalculator, TetuProxyGov, PriceCalculator];
   if (net.name === "matic") {
-    data = await DeployerUtils.deployPriceCalculatorMatic(signer, controller.address, true);
+    data = await DeployerUtils.deployPriceCalculatorMatic(
+      signer,
+      controller.address,
+      true
+    );
   } else {
-    data = await DeployerUtils.deployPriceCalculatorTestNet(signer, controller.address);
+    data = await DeployerUtils.deployPriceCalculatorTestNet(
+      signer,
+      controller.address
+    );
   }
 
   await DeployerUtils.wait(5);
@@ -26,8 +45,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

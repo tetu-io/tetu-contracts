@@ -1,8 +1,7 @@
-import {DeployerUtils} from "../DeployerUtils";
-import {ethers} from "hardhat";
-import {PayrollClerk} from "../../../typechain";
-import {RunHelper} from "../../utils/tools/RunHelper";
-
+import { DeployerUtils } from "../DeployerUtils";
+import { ethers } from "hardhat";
+import { PayrollClerk } from "../../../typechain";
+import { RunHelper } from "../../utils/tools/RunHelper";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -10,10 +9,16 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const logic = await DeployerUtils.deployContract(signer, "PayrollClerk");
-  const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address);
+  const proxy = await DeployerUtils.deployContract(
+    signer,
+    "TetuProxyGov",
+    logic.address
+  );
   const contract = logic.attach(proxy.address) as PayrollClerk;
 
-  await RunHelper.runAndWait(() => contract.initialize(core.controller, tools.calculator));
+  await RunHelper.runAndWait(() =>
+    contract.initialize(core.controller, tools.calculator)
+  );
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);
@@ -22,8 +27,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

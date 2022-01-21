@@ -1,55 +1,67 @@
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../deploy/DeployerUtils";
 import {
   IDragonLair,
   IStakingRewards,
   IStakingRewardsFactorySyrups,
-  PriceCalculator
+  PriceCalculator,
 } from "../../../typechain";
-import {mkdir, writeFileSync} from "fs";
-import {MaticAddresses} from "../../addresses/MaticAddresses";
-import {utils} from "ethers";
+import { mkdir, writeFileSync } from "fs";
+import { MaticAddresses } from "../../addresses/MaticAddresses";
+import { utils } from "ethers";
 
 const exclude = new Set<string>([]);
-
 
 async function start() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
-  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactorySyrups', MaticAddresses.QUICK_STAKING_FACTORY_SYRUP) as IStakingRewardsFactorySyrups;
+  const factory = (await DeployerUtils.connectInterface(
+    signer,
+    "IStakingRewardsFactorySyrups",
+    MaticAddresses.QUICK_STAKING_FACTORY_SYRUP
+  )) as IStakingRewardsFactorySyrups;
 
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
-
+  const priceCalculator = (await DeployerUtils.connectInterface(
+    signer,
+    "PriceCalculator",
+    tools.calculator
+  )) as PriceCalculator;
 
   // no info in contract
   const rewardTokensLength = 10000;
-  const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
+  const quickPrice = await priceCalculator.getPriceWithDefaultOutput(
+    MaticAddresses.QUICK_TOKEN
+  );
 
-  const dQuickCtr = await DeployerUtils.connectInterface(signer, 'IDragonLair', MaticAddresses.dQUICK_TOKEN) as IDragonLair;
-  const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
-  const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
-  console.log('dQuickPrice', utils.formatUnits(dQuickPrice));
-  console.log('quickPrice', utils.formatUnits(quickPrice));
+  const dQuickCtr = (await DeployerUtils.connectInterface(
+    signer,
+    "IDragonLair",
+    MaticAddresses.dQUICK_TOKEN
+  )) as IDragonLair;
+  const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits("1"));
+  const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits("1"));
+  console.log("dQuickPrice", utils.formatUnits(dQuickPrice));
+  console.log("quickPrice", utils.formatUnits(quickPrice));
 
   // eslint-disable-next-line
-  let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
+  let infos: string =
+    "idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n";
   for (let i = 0; i < rewardTokensLength; i++) {
-    console.log('id', i);
+    console.log("id", i);
     let rewardToken;
 
     try {
       rewardToken = await factory.rewardTokens(i);
     } catch (e) {
-      console.log('looks like we dont have more rewards', i);
+      console.log("looks like we dont have more rewards", i);
       break;
     }
 
-    console.log('rewardToken', rewardToken);
-
+    console.log("rewardToken", rewardToken);
 
     const info = await factory.stakingRewardsInfoByRewardToken(rewardToken);
-    console.log('info', info);
+    console.log("info", info);
 
     // // factory doesn't hold duration, suppose that it is a week
     // const durationSec = 60 * 60 * 24 * 7;
@@ -105,17 +117,17 @@ async function start() {
     // infos += data + '\n';
   }
 
-  mkdir('./tmp/download', {recursive: true}, (err) => {
+  mkdir("./tmp/download", { recursive: true }, (err) => {
     if (err) throw err;
   });
 
-  writeFileSync('./tmp/download/quick_syrups.csv', infos, 'utf8');
-  console.log('done');
+  writeFileSync("./tmp/download/quick_syrups.csv", infos, "utf8");
+  console.log("done");
 }
 
 start()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

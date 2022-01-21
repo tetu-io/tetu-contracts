@@ -1,12 +1,11 @@
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {IUniswapV2Pair} from "../../../typechain";
-import {TokenUtils} from "../../../test/TokenUtils";
-import {UniswapUtils} from "../../../test/UniswapUtils";
-import {BigNumber, utils} from "ethers";
-import {RunHelper} from "../tools/RunHelper";
-import {RopstenAddresses} from "../../addresses/RopstenAddresses";
-
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { IUniswapV2Pair } from "../../../typechain";
+import { TokenUtils } from "../../../test/TokenUtils";
+import { UniswapUtils } from "../../../test/UniswapUtils";
+import { BigNumber, utils } from "ethers";
+import { RunHelper } from "../tools/RunHelper";
+import { RopstenAddresses } from "../../addresses/RopstenAddresses";
 
 async function main() {
   const BASE_AMOUNT = 1000;
@@ -15,8 +14,12 @@ async function main() {
   const mocks = await DeployerUtils.getTokenAddresses();
   const net = (await ethers.provider.getNetwork()).name;
   const targetToken = core.rewardToken;
-  const targetLpAddress = mocks.get('sushi_lp_token_usdc') as string;
-  const targetLp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', targetLpAddress) as IUniswapV2Pair;
+  const targetLpAddress = mocks.get("sushi_lp_token_usdc") as string;
+  const targetLp = (await DeployerUtils.connectInterface(
+    signer,
+    "IUniswapV2Pair",
+    targetLpAddress
+  )) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
   const token1 = await targetLp.token1();
 
@@ -29,10 +32,10 @@ async function main() {
   const oppositeTokenDecimals = await TokenUtils.decimals(oppositeToken);
 
   let router: string;
-  if (net === 'ropsten' || net === 'rinkeby') {
+  if (net === "ropsten" || net === "rinkeby") {
     router = RopstenAddresses.SUSHI_ROUTER;
   } else {
-    throw Error('Unknown net ' + net);
+    throw Error("Unknown net " + net);
   }
 
   // noinspection InfiniteLoopJS
@@ -55,26 +58,33 @@ async function main() {
     }
 
     console.log(
-        '######################### TRANSACTION ##############################\n' +
-        '# Buy?:        ' + buy + '\n' +
-        '# Amount:      ' + baseAmount + '\n' +
-        '######################################################################'
+      "######################### TRANSACTION ##############################\n" +
+        "# Buy?:        " +
+        buy +
+        "\n" +
+        "# Amount:      " +
+        baseAmount +
+        "\n" +
+        "######################################################################"
     );
 
-    await RunHelper.runAndWait(() => UniswapUtils.swapExactTokensForTokens(
-        signer,
-        route,
-        amount.toString(),
-        signer.address,
-        router
-    ), true);
+    await RunHelper.runAndWait(
+      async () =>
+        UniswapUtils.swapExactTokensForTokens(
+          signer,
+          route,
+          amount.toString(),
+          signer.address,
+          router
+        ),
+      true
+    );
   }
-
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

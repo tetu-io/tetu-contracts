@@ -1,22 +1,22 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {IStrategy, SmartVault} from "../../../../typechain";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
-import {FoldingDoHardWork} from "../../FoldingDoHardWork";
+import { readFileSync } from "fs";
+import { config as dotEnvConfig } from "dotenv";
+import { DeployInfo } from "../../DeployInfo";
+import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { StrategyTestUtils } from "../../StrategyTestUtils";
+import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
+import { IStrategy, SmartVault } from "../../../../typechain";
+import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
+import { universalStrategyTest } from "../../UniversalStrategyTest";
+import { FoldingProfitabilityTest } from "../../FoldingProfitabilityTest";
+import { FoldingDoHardWork } from "../../FoldingDoHardWork";
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require('yargs/yargs')()
-  .env('TETU')
+const argv = require("yargs/yargs")()
+  .env("TETU")
   .options({
     disableStrategyTests: {
       type: "boolean",
@@ -32,27 +32,32 @@ const argv = require('yargs/yargs')()
     },
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 137,
     },
   }).argv;
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal Aave Fold tests', async () => {
-
+describe("Universal Aave Fold tests", async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    "scripts/utils/download/data/aave_markets.csv",
+    "utf8"
+  ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(
+      deployInfo,
+      argv.deployCoreContracts
+    );
   });
 
-  infos.forEach(info => {
-    const start = info.split(',');
+  infos.forEach((info) => {
+    const start = info.split(",");
 
     const idx = start[0];
     const tokenName = start[1];
@@ -63,22 +68,25 @@ describe('Universal Aave Fold tests', async () => {
     const usageAsCollateralEnabled = start[9];
     const borrowingEnabled = start[10];
     const ltvNum = Number(ltv);
-    const collateralFactor = (ltvNum).toFixed(0);
+    const collateralFactor = ltvNum.toFixed(0);
     const borrowTarget = (ltvNum * 0.99).toFixed(0);
 
-    if (!idx || idx === 'idx') {
-      console.log('skip ', tokenName);
+    if (!idx || idx === "idx") {
+      console.log("skip ", tokenName);
       return;
     }
 
-    if (argv.onlyOneAaveFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest) {
+    if (
+      argv.onlyOneAaveFoldStrategyTest !== -1 &&
+      parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest
+    ) {
       return;
     }
-    console.log('Start test strategy', idx, aTokenName);
+    console.log("Start test strategy", idx, aTokenName);
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyAaveFold';
+    const strategyContractName = "StrategyAaveFold";
     const underlying = token;
     // add custom liquidation path if necessary
     const forwarderConfigurator = null;
@@ -97,19 +105,19 @@ describe('Universal Aave Fold tests', async () => {
     const specificTests = [new FoldingProfitabilityTest()];
     // **********************************************
 
-    const deployer = (signer: SignerWithAddress) => {
+    const deployer = async (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
         signer,
         core,
         tokenName,
-        vaultAddress => {
+        (vaultAddress) => {
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
             underlying,
             borrowTarget,
-            collateralFactor
+            collateralFactor,
           ];
           return DeployerUtils.deployContract(
             signer,
@@ -139,12 +147,12 @@ describe('Universal Aave Fold tests', async () => {
         _vault,
         _strategy,
         _balanceTolerance,
-        finalBalanceTolerance,
+        finalBalanceTolerance
       );
     };
 
     universalStrategyTest(
-      'AaveTest_' + aTokenName,
+      "AaveTest_" + aTokenName,
       deployInfo,
       deployer,
       hwInitiator,
@@ -155,7 +163,7 @@ describe('Universal Aave Fold tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests,
+      specificTests
     );
   });
 });

@@ -11,16 +11,16 @@ export class ToolsAddresses {
   public readonly pawnshopReader: string;
 
   constructor(
-      calculator: string,
-      reader: string,
-      utils: string,
-      rebalancer: string,
-      payrollClerk: string,
-      mockFaucet: string,
-      multiSwap: string,
-      zapContract: string,
-      multicall: string,
-      pawnshopReader: string
+    calculator: string,
+    reader: string,
+    utils: string,
+    rebalancer: string,
+    payrollClerk: string,
+    mockFaucet: string,
+    multiSwap: string,
+    zapContract: string,
+    multicall: string,
+    pawnshopReader: string
   ) {
     this.calculator = calculator;
     this.reader = reader;

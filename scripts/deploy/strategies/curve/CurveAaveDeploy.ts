@@ -1,8 +1,8 @@
-import {ethers} from "hardhat";
-import {ContractReader, IStrategy} from "../../../../typechain";
-import {writeFileSync} from "fs";
-import {DeployerUtils} from "../../DeployerUtils";
-import {MaticAddresses} from "../../../addresses/MaticAddresses";
+import { ethers } from "hardhat";
+import { ContractReader, IStrategy } from "../../../../typechain";
+import { writeFileSync } from "fs";
+import { DeployerUtils } from "../../DeployerUtils";
+import { MaticAddresses } from "../../../addresses/MaticAddresses";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -11,11 +11,14 @@ async function main() {
 
   const vaultNames = new Set<string>();
 
-  const cReader = await DeployerUtils.connectContract(
-    signer, "ContractReader", tools.reader) as ContractReader;
+  const cReader = (await DeployerUtils.connectContract(
+    signer,
+    "ContractReader",
+    tools.reader
+  )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log('all vaults size', deployedVaultAddresses.length);
+  console.log("all vaults size", deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -23,44 +26,45 @@ async function main() {
 
   const vaultNameWithoutPrefix = `CRV_AAVE`;
 
-  if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
-    console.log('Strategy already exist', vaultNameWithoutPrefix);
+  if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
+    console.log("Strategy already exist", vaultNameWithoutPrefix);
   }
 
-  const [vaultLogic, vault, strategy] = await DeployerUtils.deployVaultAndStrategy(
-    vaultNameWithoutPrefix,
-    async vaultAddress => DeployerUtils.deployContract(
-      signer,
-      'CurveAaveStrategy',
+  const [vaultLogic, vault, strategy] =
+    await DeployerUtils.deployVaultAndStrategy(
+      vaultNameWithoutPrefix,
+      async (vaultAddress) =>
+        DeployerUtils.deployContract(
+          signer,
+          "CurveAaveStrategy",
+          core.controller,
+          MaticAddresses.AM3CRV_TOKEN,
+          vaultAddress
+        ) as Promise<IStrategy>,
       core.controller,
-      MaticAddresses.AM3CRV_TOKEN,
-      vaultAddress
-    ) as Promise<IStrategy>,
-    core.controller,
-    core.psVault,
-    signer,
-    60 * 60 * 24 * 28,
-    true
-  );
+      core.psVault,
+      signer,
+      60 * 60 * 24 * 28,
+      true
+    );
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(vaultLogic.address);
   await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
   await DeployerUtils.verifyProxy(vault.address);
-  await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/curve/CurveAaveStrategy.sol:CurveAaveStrategy', [
-    core.controller,
-    MaticAddresses.AM3CRV_TOKEN,
-    vault.address
-  ]);
+  await DeployerUtils.verifyWithContractName(
+    strategy.address,
+    "contracts/strategies/matic/curve/CurveAaveStrategy.sol:CurveAaveStrategy",
+    [core.controller, MaticAddresses.AM3CRV_TOKEN, vault.address]
+  );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
-
+  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

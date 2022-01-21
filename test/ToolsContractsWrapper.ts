@@ -8,7 +8,7 @@ import {
   PawnShopReader,
   PayrollClerk,
   PriceCalculator,
-  ZapContract
+  ZapContract,
 } from "../typechain";
 
 export class ToolsContractsWrapper {
@@ -22,7 +22,6 @@ export class ToolsContractsWrapper {
   public readonly zapContract: ZapContract;
   public readonly multicall: Multicall;
   public readonly pawnshopReader: PawnShopReader;
-
 
   constructor(
     calculator: PriceCalculator,

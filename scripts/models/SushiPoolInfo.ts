@@ -1,5 +1,4 @@
 export class SushiPoolInfo {
-
   address: string;
   name: string;
   token0: string;
@@ -7,8 +6,14 @@ export class SushiPoolInfo {
   token1: string;
   token1Name: string;
 
-
-  constructor(address: string, name: string, token0: string, token0Name: string, token1: string, token1Name: string) {
+  constructor(
+    address: string,
+    name: string,
+    token0: string,
+    token0Name: string,
+    token1: string,
+    token1Name: string
+  ) {
     this.address = address;
     this.name = name;
     this.token0 = token0;

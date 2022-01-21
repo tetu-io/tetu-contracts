@@ -1,24 +1,32 @@
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, IStrategy, StrategyIronFold} from "../../../../typechain";
-import {readFileSync} from "fs";
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../DeployerUtils";
+import {
+  ContractReader,
+  IStrategy,
+  StrategyIronFold,
+} from "../../../../typechain";
+import { readFileSync } from "fs";
 
-const needToDeploy = new Set<string>([
-  '2'
-]);
+const needToDeploy = new Set<string>(["2"]);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const infos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    "scripts/utils/download/data/iron_markets.csv",
+    "utf8"
+  ).split(/\r?\n/);
 
-  const cReader = await DeployerUtils.connectContract(
-    signer, "ContractReader", tools.reader) as ContractReader;
+  const cReader = (await DeployerUtils.connectContract(
+    signer,
+    "ContractReader",
+    tools.reader
+  )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log('all vaults size', deployedVaultAddresses.length);
+  console.log("all vaults size", deployedVaultAddresses.length);
 
   const vaultsMap = new Map<string, string>();
   for (const vAdr of deployedVaultAddresses) {
@@ -27,7 +35,7 @@ async function main() {
 
   // *********** DEPLOY
   for (const info of infos) {
-    const strat = info.split(',');
+    const strat = info.split(",");
 
     const idx = strat[0];
     const rTokenName = strat[1];
@@ -37,56 +45,59 @@ async function main() {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (idx === 'idx' || !token) {
-      console.log('skip', idx);
+    if (idx === "idx" || !token) {
+      console.log("skip", idx);
       continue;
     }
 
     if (!needToDeploy.has(idx)) {
-      console.log('skip', idx);
+      console.log("skip", idx);
       continue;
     }
 
     const vaultNameWithoutPrefix = `IRON_LOAN_${tokenName}`;
 
-    const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix);
+    const vAdr = vaultsMap.get("TETU_" + vaultNameWithoutPrefix);
 
     if (!vAdr) {
-      console.log('Vault not found!', vaultNameWithoutPrefix);
+      console.log("Vault not found!", vaultNameWithoutPrefix);
       return;
     }
 
-    console.log('strat', idx, rTokenName, vaultNameWithoutPrefix, vAdr);
+    console.log("strat", idx, rTokenName, vaultNameWithoutPrefix, vAdr);
 
-    const strategy = await DeployerUtils.deployContract(
+    const strategy = (await DeployerUtils.deployContract(
       signer,
-      'StrategyIronFold',
+      "StrategyIronFold",
       core.controller,
       vAdr,
       token,
       rTokenAddress,
       borrowTarget,
       collateralFactor
-    ) as IStrategy;
+    )) as IStrategy;
 
     if ((await ethers.provider.getNetwork()).name !== "hardhat") {
       await DeployerUtils.wait(5);
-      await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold', [
-        core.controller,
-        vAdr,
-        token,
-        rTokenAddress,
-        borrowTarget,
-        collateralFactor
-      ]);
+      await DeployerUtils.verifyWithContractName(
+        strategy.address,
+        "contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold",
+        [
+          core.controller,
+          vAdr,
+          token,
+          rTokenAddress,
+          borrowTarget,
+          collateralFactor,
+        ]
+      );
     }
   }
-
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

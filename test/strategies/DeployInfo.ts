@@ -1,7 +1,7 @@
-import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {IStrategy, SmartVault} from "../../typechain";
+import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import { ToolsContractsWrapper } from "../ToolsContractsWrapper";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { IStrategy, SmartVault } from "../../typechain";
 
 export class DeployInfo {
   public core: CoreContractsWrapper | null = null;

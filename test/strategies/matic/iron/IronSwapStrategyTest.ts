@@ -1,18 +1,17 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {IStrategy, SmartVault} from "../../../../typechain";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {DeployInfo} from "../../DeployInfo";
+import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
+import { StrategyTestUtils } from "../../StrategyTestUtils";
+import { IStrategy, SmartVault } from "../../../../typechain";
+import { SpecificStrategyTest } from "../../SpecificStrategyTest";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
+import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
+import { DoHardWorkLoopBase } from "../../DoHardWorkLoopBase";
+import { universalStrategyTest } from "../../UniversalStrategyTest";
+import { DeployInfo } from "../../DeployInfo";
 
-
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 async function startIronSwapStrategyTest(
@@ -24,8 +23,6 @@ async function startIronSwapStrategyTest(
   platformPoolIdentifier: string,
   deployInfo: DeployInfo
 ) {
-
-
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
@@ -49,19 +46,19 @@ async function startIronSwapStrategyTest(
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
-  const deployer = (signer: SignerWithAddress) => {
+  const deployer = async (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
     return StrategyTestUtils.deploy(
       signer,
       core,
       vaultName,
-      vaultAddress => {
+      (vaultAddress) => {
         const strategyArgs = [
           core.controller.address,
           vaultAddress,
           underlying,
           tokens,
-          platformPoolIdentifier
+          platformPoolIdentifier,
         ];
         return DeployerUtils.deployContract(
           signer,
@@ -91,7 +88,7 @@ async function startIronSwapStrategyTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance,
+      finalBalanceTolerance
     );
   };
 
@@ -107,8 +104,8 @@ async function startIronSwapStrategyTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests,
+    specificTests
   );
 }
 
-export {startIronSwapStrategyTest};
+export { startIronSwapStrategyTest };

@@ -1,18 +1,17 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {DeployInfo} from "../../../DeployInfo";
-import {SpecificStrategyTest} from "../../../SpecificStrategyTest";
-import {CoreContractsWrapper} from "../../../../CoreContractsWrapper";
-import {StrategyTestUtils} from "../../../StrategyTestUtils";
-import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
-import {IStrategy, SmartVault} from "../../../../../typechain";
-import {ToolsContractsWrapper} from "../../../../ToolsContractsWrapper";
-import {universalStrategyTest} from "../../../UniversalStrategyTest";
-import {CurveDoHardWork} from "./CurveDoHardWork";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { DeployInfo } from "../../../DeployInfo";
+import { SpecificStrategyTest } from "../../../SpecificStrategyTest";
+import { CoreContractsWrapper } from "../../../../CoreContractsWrapper";
+import { StrategyTestUtils } from "../../../StrategyTestUtils";
+import { DeployerUtils } from "../../../../../scripts/deploy/DeployerUtils";
+import { IStrategy, SmartVault } from "../../../../../typechain";
+import { ToolsContractsWrapper } from "../../../../ToolsContractsWrapper";
+import { universalStrategyTest } from "../../../UniversalStrategyTest";
+import { CurveDoHardWork } from "./CurveDoHardWork";
 
-
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 async function startCurveStratTest(
@@ -21,7 +20,7 @@ async function startCurveStratTest(
   tokenName: string,
   deployInfo: DeployInfo,
   deposit = 100_000,
-  loopValue = 3000,
+  loopValue = 3000
 ) {
   // **********************************************
   // ************** CONFIG*************************
@@ -43,13 +42,13 @@ async function startCurveStratTest(
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
-  const deployer = (signer: SignerWithAddress) => {
+  const deployer = async (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
     return StrategyTestUtils.deploy(
       signer,
       core,
       vaultName,
-      vaultAddress => {
+      (vaultAddress) => {
         const strategyArgs = [
           core.controller.address,
           underlying,
@@ -83,7 +82,7 @@ async function startCurveStratTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance,
+      finalBalanceTolerance
     );
   };
 
@@ -99,8 +98,8 @@ async function startCurveStratTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests,
+    specificTests
   );
 }
 
-export {startCurveStratTest};
+export { startCurveStratTest };

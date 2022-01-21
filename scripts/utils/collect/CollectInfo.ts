@@ -1,10 +1,15 @@
-import {ethers, web3} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {Bookkeeper, ContractReader, ContractUtils, SmartVault} from "../../../typechain";
-import {mkdir, writeFileSync} from "fs";
-import {utils} from "ethers";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Web3Utils} from "../tools/Web3Utils";
+import { ethers, web3 } from "hardhat";
+import { DeployerUtils } from "../../deploy/DeployerUtils";
+import {
+  Bookkeeper,
+  ContractReader,
+  ContractUtils,
+  SmartVault,
+} from "../../../typechain";
+import { mkdir, writeFileSync } from "fs";
+import { utils } from "ethers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Web3Utils } from "../tools/Web3Utils";
 
 const vaultsForParsing = new Set<string>([
   "0x6C3246e749472879D1088C24Dacd2A37CAaEe9B1".toLowerCase(),
@@ -27,7 +32,8 @@ const vaultsForParsing = new Set<string>([
   "0xF99F5B28093BfA3B04c8c6a0225580236BeBbFfd".toLowerCase(),
 ]);
 
-const EVENT_DEPOSIT = '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c';
+const EVENT_DEPOSIT =
+  "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c";
 const START_BLOCK = 17462342;
 const STEP = 2000;
 
@@ -36,23 +42,30 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
-  const cReader = await DeployerUtils.connectContract(
-    signer, "ContractReader", tools.reader) as ContractReader;
+  const bookkeeper = (await DeployerUtils.connectInterface(
+    signer,
+    "Bookkeeper",
+    core.bookkeeper
+  )) as Bookkeeper;
+  const cReader = (await DeployerUtils.connectContract(
+    signer,
+    "ContractReader",
+    tools.reader
+  )) as ContractReader;
 
-  mkdir('./tmp/stats', {recursive: true}, (err) => {
+  mkdir("./tmp/stats", { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   const vaultsPure = await bookkeeper.vaults();
 
-  writeFileSync(`./tmp/stats/vaults.txt`, JSON.stringify(vaultsPure), 'utf8');
-  console.log('vaults', vaultsPure.length);
+  writeFileSync(`./tmp/stats/vaults.txt`, JSON.stringify(vaultsPure), "utf8");
+  console.log("vaults", vaultsPure.length);
 
   const currentBlock = await web3.eth.getBlockNumber();
-  console.log('current block', currentBlock);
+  console.log("current block", currentBlock);
 
-  let data = '';
+  let data = "";
   const vaults: string[] = [];
   const usersTotal = new Map<string, Set<string>>();
   const users = new Map<string, Map<string, string>>();
@@ -61,7 +74,8 @@ async function main() {
 
   for (const vault of vaultsPure) {
     const v = vault.toLowerCase();
-    if (v === core.psVault.toLowerCase()
+    if (
+      v === core.psVault.toLowerCase()
       // || !vaultsForParsing.has(v)
     ) {
       continue;
@@ -78,41 +92,44 @@ async function main() {
     currentBlock
   );
 
-  console.log('logs', logs.length);
-
+  console.log("logs", logs.length);
 
   for (const log of logs) {
-    const logDecoded = web3.eth.abi.decodeLog([
+    const logDecoded = web3.eth.abi.decodeLog(
+      [
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "beneficiary",
-          "type": "address"
+          indexed: true,
+          internalType: "address",
+          name: "beneficiary",
+          type: "address",
         },
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }],
+          indexed: false,
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
+      ],
       log.data,
-      log.topics.slice(1));
+      log.topics.slice(1)
+    );
     uniqueUsers.add(logDecoded.beneficiary.toLowerCase());
     usersTotal.get(log.address)?.add(logDecoded.beneficiary.toLowerCase());
-    users.get(log.address)?.set(logDecoded.beneficiary.toLowerCase(), '0');
+    users.get(log.address)?.set(logDecoded.beneficiary.toLowerCase(), "0");
   }
-  console.log('users', users.size);
-  console.log('uniqueUsers', uniqueUsers.size);
+  console.log("users", users.size);
+  console.log("uniqueUsers", uniqueUsers.size);
 
   for (const vaultAddress of Array.from(users.keys())) {
     try {
-
       let totalToClaim = 0;
       const vaultName = await cReader.vaultName(vaultAddress);
-      console.log('vault name', vaultName);
+      console.log("vault name", vaultName);
       const u = users.get(vaultAddress) as Map<string, string>;
       for (const userAddress of Array.from(u.keys())) {
-        const userToClaim = utils.formatUnits((await cReader.userRewards(userAddress, vaultAddress))[0]);
+        const userToClaim = utils.formatUnits(
+          (await cReader.userRewards(userAddress, vaultAddress))[0]
+        );
         if (+userToClaim === 0) {
           continue;
         }
@@ -120,27 +137,35 @@ async function main() {
         data += `${vaultName},${vaultAddress},${userAddress},${userToClaim}\n`;
       }
       vaultUnclaimed += `${vaultName},${vaultAddress},${totalToClaim}\n`;
-      writeFileSync(`./tmp/stats/to_claim_partially.txt`, data, 'utf8');
-      writeFileSync(`./tmp/stats/unclaimed_partially.txt`, vaultUnclaimed, 'utf8');
+      writeFileSync(`./tmp/stats/to_claim_partially.txt`, data, "utf8");
+      writeFileSync(
+        `./tmp/stats/unclaimed_partially.txt`,
+        vaultUnclaimed,
+        "utf8"
+      );
     } catch (e) {
-      console.error('error with vault ', vaultAddress, e);
+      console.error("error with vault ", vaultAddress, e);
     }
   }
 
-  data += await collectPs(usersTotal, core.psVault, vaults, signer, tools.utils);
+  data += await collectPs(
+    usersTotal,
+    core.psVault,
+    vaults,
+    signer,
+    tools.utils
+  );
 
-  writeFileSync(`./tmp/stats/to_claim.txt`, data, 'utf8');
-  writeFileSync(`./tmp/stats/unclaimed.txt`, vaultUnclaimed, 'utf8');
+  writeFileSync(`./tmp/stats/to_claim.txt`, data, "utf8");
+  writeFileSync(`./tmp/stats/unclaimed.txt`, vaultUnclaimed, "utf8");
 }
-
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
-
 
 async function collectPs(
   usersTotalAll: Map<string, Set<string>>,
@@ -149,12 +174,19 @@ async function collectPs(
   signer: SignerWithAddress,
   utilsAdr: string
 ): Promise<string> {
-
-  let data = '';
+  let data = "";
   const exclude = new Set<string>(vaults);
 
-  const contractUtils = await DeployerUtils.connectInterface(signer, 'ContractUtils', utilsAdr) as ContractUtils;
-  const psContr = await DeployerUtils.connectInterface(signer, 'SmartVault', psAdr) as SmartVault;
+  const contractUtils = (await DeployerUtils.connectInterface(
+    signer,
+    "ContractUtils",
+    utilsAdr
+  )) as ContractUtils;
+  const psContr = (await DeployerUtils.connectInterface(
+    signer,
+    "SmartVault",
+    psAdr
+  )) as SmartVault;
 
   const ppfs = +utils.formatUnits(await psContr.getPricePerFullShare());
 
@@ -179,21 +211,20 @@ async function collectPs(
   }
 
   for (const _batch of usersBatches) {
-
-    const balances = await contractUtils.erc20BalancesForAddresses(psAdr, _batch);
+    const balances = await contractUtils.erc20BalancesForAddresses(
+      psAdr,
+      _batch
+    );
 
     for (let j = 0; j < balances.length; j++) {
-
       const toClaim = +utils.formatUnits(balances[j]);
       if (toClaim > 0) {
         data += `TETU_PS,${psAdr},${_batch[j]},${toClaim * ppfs}\n`;
       }
     }
-
   }
 
-
-  writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, 'utf8');
+  writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, "utf8");
 
   return data;
 }

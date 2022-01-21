@@ -1,24 +1,22 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {TimeUtils} from "../TimeUtils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { TimeUtils } from "../TimeUtils";
 import {
   Bookkeeper,
   IStrategy,
   PriceCalculator,
   RewardCalculator,
-  SmartVault
+  SmartVault,
 } from "../../typechain";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {utils} from "ethers";
+import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import { utils } from "ethers";
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
-const exclude = new Set<string>([
-  'NoopStrategy'
-]);
+const exclude = new Set<string>(["NoopStrategy"]);
 
 describe("Reward calculator tests", function () {
   let snapshot: string;
@@ -34,8 +32,16 @@ describe("Reward calculator tests", function () {
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
     // core = await DeployerUtils.deployAllCoreContracts(signer);
 
-    priceCalculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
-    rewardCalculator = (await DeployerUtils.deployRewardCalculator(signer, core.controller.address, priceCalculator.address))[0] as RewardCalculator;
+    priceCalculator = (
+      await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
+    )[0] as PriceCalculator;
+    rewardCalculator = (
+      await DeployerUtils.deployRewardCalculator(
+        signer,
+        core.controller.address,
+        priceCalculator.address
+      )
+    )[0] as RewardCalculator;
   });
 
   after(async function () {
@@ -50,13 +56,18 @@ describe("Reward calculator tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-
   it("strategy reward", async () => {
     const vault = await core.bookkeeper._vaults(1);
-    const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+    const vCtr = (await DeployerUtils.connectInterface(
+      signer,
+      "SmartVault",
+      vault
+    )) as SmartVault;
     const strategy = await vCtr.strategy();
-    const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
-    console.log('rewardUsd', rewardUsd)
+    const rewardUsd = +utils.formatUnits(
+      await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24)
+    );
+    console.log("rewardUsd", rewardUsd);
     // todo activate after launch
     // expect(rewardUsd).is.not.eq(0);
   });
@@ -79,27 +90,39 @@ describe("Reward calculator tests", function () {
 
   it.skip("strategy reward usd for all", async () => {
     const bkAdr = (await DeployerUtils.getCoreAddresses()).bookkeeper;
-    const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', bkAdr) as Bookkeeper;
+    const bookkeeper = (await DeployerUtils.connectInterface(
+      signer,
+      "Bookkeeper",
+      bkAdr
+    )) as Bookkeeper;
     const vaults = await bookkeeper.vaults();
     let sum = 0;
     for (const vault of vaults) {
-      const vaultCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vault) as SmartVault;
+      const vaultCtr = (await DeployerUtils.connectInterface(
+        signer,
+        "SmartVault",
+        vault
+      )) as SmartVault;
       if (!(await vaultCtr.active())) {
         continue;
       }
       const strategy = await vaultCtr.strategy();
-      const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', strategy) as IStrategy;
+      const strCtr = (await DeployerUtils.connectInterface(
+        signer,
+        "IStrategy",
+        strategy
+      )) as IStrategy;
       const name = await strCtr.STRATEGY_NAME();
       if (exclude.has(name)) {
         continue;
       }
-      const rewardUsd = +utils.formatUnits(await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24));
+      const rewardUsd = +utils.formatUnits(
+        await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24)
+      );
       sum += rewardUsd;
       // console.log('strategy', strategy, name, await vaultCtr.name(), '===>', rewardUsd, ' sum: ', sum);
       console.log(await strCtr.platform(), rewardUsd);
       // expect(rewardUsd).is.not.eq(0);
     }
   });
-
-
 });

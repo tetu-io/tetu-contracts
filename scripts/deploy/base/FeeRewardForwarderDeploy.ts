@@ -1,8 +1,7 @@
-import {DeployerUtils} from "../DeployerUtils";
-import {ethers} from "hardhat";
-import {Controller} from "../../../typechain";
-import {RunHelper} from "../../utils/tools/RunHelper";
-
+import { DeployerUtils } from "../DeployerUtils";
+import { ethers } from "hardhat";
+import { Controller } from "../../../typechain";
+import { RunHelper } from "../../utils/tools/RunHelper";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -24,7 +23,7 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

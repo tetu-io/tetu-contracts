@@ -1,34 +1,34 @@
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../DeployerUtils";
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../DeployerUtils";
 import {
   Controller,
   ERC20PresetMinterPauser,
   IStrategy,
   IUniswapV2Factory,
   SmartVault,
-  VaultController
+  VaultController,
 } from "../../../../typechain";
-import {utils} from "ethers";
-import {TokenUtils} from "../../../../test/TokenUtils";
-import {RunHelper} from "../../../utils/tools/RunHelper";
-import {config as dotEnvConfig} from "dotenv";
-import {RopstenAddresses} from "../../../addresses/RopstenAddresses";
-import {Misc} from "../../../utils/tools/Misc";
+import { utils } from "ethers";
+import { TokenUtils } from "../../../../test/TokenUtils";
+import { RunHelper } from "../../../utils/tools/RunHelper";
+import { config as dotEnvConfig } from "dotenv";
+import { RopstenAddresses } from "../../../addresses/RopstenAddresses";
+import { Misc } from "../../../utils/tools/Misc";
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require('yargs/yargs')()
-.env('TETU')
-.options({
-  mockBatchDeployVersion: {
-    type: "string",
-    default: "1",
-  },
-  mockBatchDeployCount: {
-    type: "number",
-    default: 1,
-  }
-}).argv;
+const argv = require("yargs/yargs")()
+  .env("TETU")
+  .options({
+    mockBatchDeployVersion: {
+      type: "string",
+      default: "1",
+    },
+    mockBatchDeployCount: {
+      type: "number",
+      default: 1,
+    },
+  }).argv;
 
 async function main() {
   const VERSION = argv.mockBatchDeployVersion;
@@ -38,32 +38,43 @@ async function main() {
   const mocks = await DeployerUtils.getTokenAddresses();
   const platform = 3; // sushi
 
-  const poolReward = mocks.get('quick') as string;
-  const poolRewardAmountN = '10000';
-  const vaultSecondReward = mocks.get('weth') as string
-  const vaultSecondRewardAmountN = '35000';
-  const vaultThirdReward = mocks.get('usdc') as string
-  const vaultThirdRewardAmountN = '99123';
+  const poolReward = mocks.get("quick") as string;
+  const poolRewardAmountN = "10000";
+  const vaultSecondReward = mocks.get("weth") as string;
+  const vaultSecondRewardAmountN = "35000";
+  const vaultThirdReward = mocks.get("usdc") as string;
+  const vaultThirdRewardAmountN = "99123";
 
   const datas = [];
   const datasPools = [];
-  const controller = await DeployerUtils.connectContract(
-      signer, 'Controller', core.controller) as Controller;
-  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
+  const controller = (await DeployerUtils.connectContract(
+    signer,
+    "Controller",
+    core.controller
+  )) as Controller;
+  const vaultController = (await DeployerUtils.connectContract(
+    signer,
+    "VaultController",
+    core.vaultController
+  )) as VaultController;
 
   const possibleTokens = [
-    mocks.get('quick') as string,
-    mocks.get('sushi') as string,
-    mocks.get('usdc') as string,
-    mocks.get('weth') as string,
-    core.rewardToken
+    mocks.get("quick") as string,
+    mocks.get("sushi") as string,
+    mocks.get("usdc") as string,
+    mocks.get("weth") as string,
+    core.rewardToken,
   ];
 
-  const strategyName = 'MockStrategySelfFarm';
+  const strategyName = "MockStrategySelfFarm";
 
   const underlyingByIdx = new Map<number, string[]>();
 
-  const sushiFactory = await DeployerUtils.connectInterface(signer, 'IUniswapV2Factory', RopstenAddresses.SUSHI_FACTORY) as IUniswapV2Factory;
+  const sushiFactory = (await DeployerUtils.connectInterface(
+    signer,
+    "IUniswapV2Factory",
+    RopstenAddresses.SUSHI_FACTORY
+  )) as IUniswapV2Factory;
 
   for (let i = 0; i < argv.mockBatchDeployCount; i++) {
     const t1Rand = Math.floor(Math.random() * (possibleTokens.length - 1));
@@ -74,12 +85,12 @@ async function main() {
 
     const underlying0 = possibleTokens[t1Rand];
     const underlying1 = possibleTokens[t2Rand];
-    console.log('underlying0', underlying0, t1Rand);
-    console.log('underlying1', underlying1, t2Rand);
+    console.log("underlying0", underlying0, t1Rand);
+    console.log("underlying1", underlying1, t2Rand);
 
     const underlying = await sushiFactory.getPair(underlying0, underlying1);
     if (!underlying) {
-      throw Error('not found pair');
+      throw Error("not found pair");
     }
 
     underlyingByIdx.set(i, [underlying0, underlying1, underlying]);
@@ -92,15 +103,28 @@ async function main() {
     const rewardDuration: number = 60 * 60 * 24 * 28; // 1 week
     // *********** DEPLOY MOCK POOL FOR STRATEGY
     const poolLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const poolProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", poolLogic.address);
+    const poolProxy = await DeployerUtils.deployContract(
+      signer,
+      "TetuProxyControlled",
+      poolLogic.address
+    );
     const pool = poolLogic.attach(poolProxy.address) as SmartVault;
 
-    const noopStrategy = await DeployerUtils.deployContract(signer, 'NoopStrategy',
-        controller.address, underlying, pool.address, [], [underlying0, underlying1], 1) as IStrategy;
+    const noopStrategy = (await DeployerUtils.deployContract(
+      signer,
+      "NoopStrategy",
+      controller.address,
+      underlying,
+      pool.address,
+      [],
+      [underlying0, underlying1],
+      1
+    )) as IStrategy;
 
     const noopStrategyUnderlying = await noopStrategy.underlying();
 
-    await RunHelper.runAndWait(() => pool.initializeSmartVault(
+    await RunHelper.runAndWait(() =>
+      pool.initializeSmartVault(
         "V_" + poolName,
         "x" + poolName,
         controller.address,
@@ -108,31 +132,69 @@ async function main() {
         rewardDuration,
         false,
         poolReward,
-      0
-    ));
+        0
+      )
+    );
 
     const poolRewardDecimals = await TokenUtils.decimals(poolReward);
 
-    const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", poolReward) as ERC20PresetMinterPauser;
-    await RunHelper.runAndWait(() => mockContract.mint(signer.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals)));
-    await RunHelper.runAndWait(() => TokenUtils.approve(poolReward, signer, pool.address, utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()));
-    await RunHelper.runAndWait(() => pool.notifyTargetRewardAmount(poolReward, utils.parseUnits(poolRewardAmountN, poolRewardDecimals)));
+    const mockContract = (await DeployerUtils.connectContract(
+      signer,
+      "ERC20PresetMinterPauser",
+      poolReward
+    )) as ERC20PresetMinterPauser;
+    await RunHelper.runAndWait(() =>
+      mockContract.mint(
+        signer.address,
+        utils.parseUnits(poolRewardAmountN, poolRewardDecimals)
+      )
+    );
+    await RunHelper.runAndWait(async () =>
+      TokenUtils.approve(
+        poolReward,
+        signer,
+        pool.address,
+        utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()
+      )
+    );
+    await RunHelper.runAndWait(() =>
+      pool.notifyTargetRewardAmount(
+        poolReward,
+        utils.parseUnits(poolRewardAmountN, poolRewardDecimals)
+      )
+    );
 
-    await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([pool.address], [noopStrategy.address]));
+    await RunHelper.runAndWait(() =>
+      controller.addVaultsAndStrategies([pool.address], [noopStrategy.address])
+    );
 
     datasPools.push([poolLogic, pool, noopStrategy]);
 
     // *********** DEPLOY VAULT
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(
+      signer,
+      "TetuProxyControlled",
+      vaultLogic.address
+    );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
-    const strategy = await DeployerUtils.deployContract(signer, strategyName,
-        controller.address, vault.address, pool.address, underlying, [underlying0, underlying1], platform, [poolReward]) as IStrategy;
+    const strategy = (await DeployerUtils.deployContract(
+      signer,
+      strategyName,
+      controller.address,
+      vault.address,
+      pool.address,
+      underlying,
+      [underlying0, underlying1],
+      platform,
+      [poolReward]
+    )) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
 
-    await RunHelper.runAndWait(() => vault.initializeSmartVault(
+    await RunHelper.runAndWait(() =>
+      vault.initializeSmartVault(
         "V_" + vaultName,
         "x" + vaultName,
         controller.address,
@@ -140,26 +202,80 @@ async function main() {
         rewardDuration,
         false,
         Misc.ZERO_ADDRESS,
-      0
-    ));
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultRewardToken));
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultSecondReward));
-    await RunHelper.runAndWait(() => vaultController.addRewardTokens([vault.address], vaultThirdReward));
+        0
+      )
+    );
+    await RunHelper.runAndWait(() =>
+      vaultController.addRewardTokens([vault.address], vaultRewardToken)
+    );
+    await RunHelper.runAndWait(() =>
+      vaultController.addRewardTokens([vault.address], vaultSecondReward)
+    );
+    await RunHelper.runAndWait(() =>
+      vaultController.addRewardTokens([vault.address], vaultThirdReward)
+    );
 
     await RunHelper.runAndWait(() =>
-        controller.addVaultsAndStrategies([vault.address], [strategy.address]));
+      controller.addVaultsAndStrategies([vault.address], [strategy.address])
+    );
 
     const vaultSecondRewardDec = await TokenUtils.decimals(vaultSecondReward);
-    const mockContract2 = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", vaultSecondReward) as ERC20PresetMinterPauser;
-    await RunHelper.runAndWait(() => mockContract2.mint(signer.address, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)));
-    await RunHelper.runAndWait(() => TokenUtils.approve(vaultSecondReward, signer, vault.address, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec).toString()));
-    await RunHelper.runAndWait(() => vault.notifyTargetRewardAmount(vaultSecondReward, utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)));
+    const mockContract2 = (await DeployerUtils.connectContract(
+      signer,
+      "ERC20PresetMinterPauser",
+      vaultSecondReward
+    )) as ERC20PresetMinterPauser;
+    await RunHelper.runAndWait(() =>
+      mockContract2.mint(
+        signer.address,
+        utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)
+      )
+    );
+    await RunHelper.runAndWait(async () =>
+      TokenUtils.approve(
+        vaultSecondReward,
+        signer,
+        vault.address,
+        utils
+          .parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)
+          .toString()
+      )
+    );
+    await RunHelper.runAndWait(() =>
+      vault.notifyTargetRewardAmount(
+        vaultSecondReward,
+        utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)
+      )
+    );
 
     const vaultThirdRewardDec = await TokenUtils.decimals(vaultThirdReward);
-    const mockContract3 = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", vaultThirdReward) as ERC20PresetMinterPauser;
-    await RunHelper.runAndWait(() => mockContract3.mint(signer.address, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)));
-    await RunHelper.runAndWait(() => TokenUtils.approve(vaultThirdReward, signer, vault.address, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec).toString()));
-    await RunHelper.runAndWait(() => vault.notifyTargetRewardAmount(vaultThirdReward, utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)));
+    const mockContract3 = (await DeployerUtils.connectContract(
+      signer,
+      "ERC20PresetMinterPauser",
+      vaultThirdReward
+    )) as ERC20PresetMinterPauser;
+    await RunHelper.runAndWait(() =>
+      mockContract3.mint(
+        signer.address,
+        utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)
+      )
+    );
+    await RunHelper.runAndWait(async () =>
+      TokenUtils.approve(
+        vaultThirdReward,
+        signer,
+        vault.address,
+        utils
+          .parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)
+          .toString()
+      )
+    );
+    await RunHelper.runAndWait(() =>
+      vault.notifyTargetRewardAmount(
+        vaultThirdReward,
+        utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)
+      )
+    );
 
     datas.push([vaultLogic, vault, strategy, pool]);
   }
@@ -175,12 +291,19 @@ async function main() {
     const pool = data[3];
 
     await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
+    await DeployerUtils.verifyWithArgs(vaultProxy.address, [
+      vaultLogic.address,
+    ]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
-    await DeployerUtils.verifyWithArgs(strategy.address,
-        [controller.address, vaultProxy.address, pool.address, undrData[2],
-          [undrData[0], undrData[1]],
-          platform, [poolReward]]);
+    await DeployerUtils.verifyWithArgs(strategy.address, [
+      controller.address,
+      vaultProxy.address,
+      pool.address,
+      undrData[2],
+      [undrData[0], undrData[1]],
+      platform,
+      [poolReward],
+    ]);
   }
 
   for (let i = 0; i < argv.mockBatchDeployCount; i++) {
@@ -191,20 +314,23 @@ async function main() {
     const strategy = data[2];
 
     await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
+    await DeployerUtils.verifyWithArgs(vaultProxy.address, [
+      vaultLogic.address,
+    ]);
     await DeployerUtils.verifyProxy(vaultProxy.address);
-    await DeployerUtils.verifyWithArgs(strategy.address,
-        [controller.address, undrData[2], vaultProxy.address, [],
-          [undrData[0], undrData[1]]
-        ]);
+    await DeployerUtils.verifyWithArgs(strategy.address, [
+      controller.address,
+      undrData[2],
+      vaultProxy.address,
+      [],
+      [undrData[0], undrData[1]],
+    ]);
   }
-
-
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

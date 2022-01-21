@@ -1,27 +1,27 @@
-import {config as dotEnvConfig} from "dotenv";
+import { config as dotEnvConfig } from "dotenv";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-solhint";
-import '@openzeppelin/hardhat-upgrades';
+import "@openzeppelin/hardhat-upgrades";
 import "@typechain/hardhat";
 import "hardhat-docgen";
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "hardhat-tracer";
 import "hardhat-etherscan-abi";
-import "solidity-coverage"
-import "@tenderly/hardhat-tenderly"
+import "solidity-coverage";
+import "@tenderly/hardhat-tenderly";
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require('yargs/yargs')()
-  .env('TETU')
+const argv = require("yargs/yargs")()
+  .env("TETU")
   .options({
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 137,
     },
     maticRpcUrl: {
       type: "string",
@@ -31,7 +31,7 @@ const argv = require('yargs/yargs')()
     },
     ethRpcUrl: {
       type: "string",
-      default: ''
+      default: "",
     },
     infuraKey: {
       type: "string",
@@ -41,18 +41,18 @@ const argv = require('yargs/yargs')()
     },
     privateKey: {
       type: "string",
-      default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
+      default:
+        "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e", // random account
     },
     maticForkBlock: {
       type: "number",
-      default: 23238072
+      default: 23238072,
     },
     ftmForkBlock: {
       type: "number",
-      default: 27468274
+      default: 27468274,
     },
   }).argv;
-
 
 export default {
   defaultNetwork: "hardhat",
@@ -61,27 +61,38 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
       timeout: 99999 * 2,
-      gas: argv.hardhatChainId === 137 ? 19_000_000 :
-        argv.hardhatChainId === 250 ? 11_000_000 :
-          9_000_000,
+      gas:
+        argv.hardhatChainId === 137
+          ? 19_000_000
+          : argv.hardhatChainId === 250
+          ? 11_000_000
+          : 9_000_000,
       forking: {
         url:
-          argv.hardhatChainId === 137 ? argv.maticRpcUrl :
-            argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
-              undefined,
+          argv.hardhatChainId === 137
+            ? argv.maticRpcUrl
+            : argv.hardhatChainId === 250
+            ? argv.ftmRpcUrl
+            : undefined,
         blockNumber:
-          argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
-            argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
-              undefined
+          argv.hardhatChainId === 137
+            ? argv.maticForkBlock !== 0
+              ? argv.maticForkBlock
+              : undefined
+            : argv.hardhatChainId === 250
+            ? argv.ftmForkBlock !== 0
+              ? argv.ftmForkBlock
+              : undefined
+            : undefined,
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
         path: "m/44'/60'/0'/0",
-        accountsBalance: "100000000000000000000000000000"
+        accountsBalance: "100000000000000000000000000000",
       },
     },
     ftm: {
-      url: argv.ftmRpcUrl || '',
+      url: argv.ftmRpcUrl || "",
       timeout: 99999,
       chainId: 250,
       gas: 10_000_000,
@@ -124,7 +135,7 @@ export default {
     },
   },
   etherscan: {
-    apiKey: argv.networkScanKey
+    apiKey: argv.networkScanKey,
   },
   solidity: {
     compilers: [
@@ -134,25 +145,25 @@ export default {
           optimizer: {
             enabled: true,
             runs: 150,
-          }
-        }
+          },
+        },
       },
-    ]
+    ],
   },
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts"
+    artifacts: "./artifacts",
   },
   mocha: {
-    timeout: 9999999999
+    timeout: 9999999999,
   },
   docgen: {
-    path: './docs',
+    path: "./docs",
     clear: true,
     runOnCompile: true,
-    except: ['contracts/third_party', 'contracts/test']
+    except: ["contracts/third_party", "contracts/test"],
   },
   contractSizer: {
     alphaSort: false,
@@ -161,8 +172,8 @@ export default {
   },
   gasReporter: {
     enabled: false,
-    currency: 'USD',
-    gasPrice: 21
+    currency: "USD",
+    gasPrice: 21,
   },
   tenderly: {
     project: "https://dashboard.tenderly.co/tetu/tetu-contracts",

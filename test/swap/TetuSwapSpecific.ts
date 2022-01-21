@@ -1,15 +1,19 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {TimeUtils} from "../TimeUtils";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {IUniswapV2Pair, TetuSwapFactory, TetuSwapRouter} from "../../typechain";
-import {utils} from "ethers";
-import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {ethers} from "hardhat";
-import {UniswapUtils} from "../UniswapUtils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { TimeUtils } from "../TimeUtils";
+import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import {
+  IUniswapV2Pair,
+  TetuSwapFactory,
+  TetuSwapRouter,
+} from "../../typechain";
+import { utils } from "ethers";
+import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import { ethers } from "hardhat";
+import { UniswapUtils } from "../UniswapUtils";
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 describe("Tetu Swap specific tests", function () {
@@ -30,16 +34,21 @@ describe("Tetu Swap specific tests", function () {
     const net = await ethers.provider.getNetwork();
     const coreAddresses = await DeployerUtils.getCoreAddresses();
 
-    factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', coreAddresses.swapFactory) as TetuSwapFactory;
-    router = await DeployerUtils.connectInterface(signer, 'TetuSwapRouter', coreAddresses.swapRouter) as TetuSwapRouter;
-
-
+    factory = (await DeployerUtils.connectInterface(
+      signer,
+      "TetuSwapFactory",
+      coreAddresses.swapFactory
+    )) as TetuSwapFactory;
+    router = (await DeployerUtils.connectInterface(
+      signer,
+      "TetuSwapRouter",
+      coreAddresses.swapRouter
+    )) as TetuSwapRouter;
   });
 
   after(async function () {
     await TimeUtils.rollback(snapshotBefore);
   });
-
 
   beforeEach(async function () {
     snapshot = await TimeUtils.snapshot();
@@ -65,6 +74,4 @@ describe("Tetu Swap specific tests", function () {
   //     router.address
   //   );
   // });
-
-
 });

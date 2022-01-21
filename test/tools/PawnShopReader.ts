@@ -1,17 +1,22 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {TimeUtils} from "../TimeUtils";
-import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {PawnShopReader, PriceCalculator, TetuPawnShop, TetuProxyGov} from "../../typechain";
-import {utils} from "ethers";
-import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
-import {Misc} from "../../scripts/utils/tools/Misc";
-import {TokenUtils} from "../TokenUtils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers } from "hardhat";
+import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import { TimeUtils } from "../TimeUtils";
+import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import {
+  PawnShopReader,
+  PriceCalculator,
+  TetuPawnShop,
+  TetuProxyGov,
+} from "../../typechain";
+import { utils } from "ethers";
+import { PawnShopTestUtils } from "../loan/PawnShopTestUtils";
+import { Misc } from "../../scripts/utils/tools/Misc";
+import { TokenUtils } from "../TokenUtils";
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 const OPEN_POSITION_COUNT = 3;
@@ -31,65 +36,105 @@ describe("pawnshop reader tests", function () {
   let usdc: string;
   let networkToken: string;
 
-
   before(async function () {
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     user1 = (await ethers.getSigners())[1];
     user2 = (await ethers.getSigners())[2];
     core = await DeployerUtils.deployAllCoreContracts(signer);
-    const logic = await DeployerUtils.deployContract(signer, "PawnShopReader") as PawnShopReader;
-    const proxy = await DeployerUtils.deployContract(
-      signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const logic = (await DeployerUtils.deployContract(
+      signer,
+      "PawnShopReader"
+    )) as PawnShopReader;
+    const proxy = (await DeployerUtils.deployContract(
+      signer,
+      "TetuProxyGov",
+      logic.address
+    )) as TetuProxyGov;
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS, core.controller.address) as TetuPawnShop;
-    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    shop = (await DeployerUtils.deployContract(
+      signer,
+      "TetuPawnShop",
+      signer.address,
+      Misc.ZERO_ADDRESS,
+      core.controller.address
+    )) as TetuPawnShop;
+    calculator = (
+      await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
+    )[0];
 
-    await reader.initialize(core.controller.address, calculator.address, shop.address);
+    await reader.initialize(
+      core.controller.address,
+      calculator.address,
+      shop.address
+    );
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(usdc, user1.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(usdc, user2.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
-    await TokenUtils.getToken(networkToken, user1.address, utils.parseUnits('10000'));
-    await TokenUtils.getToken(networkToken, user2.address, utils.parseUnits('10000'));
+    await TokenUtils.getToken(
+      usdc,
+      signer.address,
+      utils.parseUnits("100000", 6)
+    );
+    await TokenUtils.getToken(
+      usdc,
+      user1.address,
+      utils.parseUnits("100000", 6)
+    );
+    await TokenUtils.getToken(
+      usdc,
+      user2.address,
+      utils.parseUnits("100000", 6)
+    );
+    await TokenUtils.getToken(
+      networkToken,
+      signer.address,
+      utils.parseUnits("10000")
+    );
+    await TokenUtils.getToken(
+      networkToken,
+      user1.address,
+      utils.parseUnits("10000")
+    );
+    await TokenUtils.getToken(
+      networkToken,
+      user2.address,
+      utils.parseUnits("10000")
+    );
 
     for (let i = 0; i < EXECUTED_POSITION_COUNT; i++) {
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
         shop,
         networkToken,
-        '10' + i,
-        '555' + i,
+        "10" + i,
+        "555" + i,
         99 + i,
         10 + i
       );
-      await PawnShopTestUtils.bidAndCheck(posId, '555' + i, user2, shop);
+      await PawnShopTestUtils.bidAndCheck(posId, "555" + i, user2, shop);
     }
 
     for (let i = 0; i < OPEN_POSITION_COUNT; i++) {
-      let aAmount = '55' + i;
+      let aAmount = "55" + i;
       if (i % 2 === 0) {
-        aAmount = '0';
+        aAmount = "0";
       }
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
         user1,
         shop,
         networkToken,
-        '10' + i,
+        "10" + i,
         aAmount,
         99 + i,
         10 + i
       );
-      if (aAmount === '0') {
-        await PawnShopTestUtils.bidAndCheck(posId, '555' + i, user2, shop);
+      if (aAmount === "0") {
+        await PawnShopTestUtils.bidAndCheck(posId, "555" + i, user2, shop);
         lastLenderBid = posId;
       }
     }
-
   });
 
   after(async function () {
@@ -104,7 +149,6 @@ describe("pawnshop reader tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-
   it("read all positions", async () => {
     const positions = await reader.positions(0, 1000);
     const allPosSize = await shop.positionCounter();
@@ -115,7 +159,9 @@ describe("pawnshop reader tests", function () {
       expect(pos.id).is.eq(i);
     }
     expect(positions.length).is.eq(allPosSize.sub(1));
-    expect(positions.length).is.eq(OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT);
+    expect(positions.length).is.eq(
+      OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT
+    );
   });
 
   it("read exact position", async () => {
@@ -191,7 +237,9 @@ describe("pawnshop reader tests", function () {
       expect(pos.id).is.eq(i);
     }
     expect(positions.length).is.eq(allPosSize);
-    expect(positions.length).is.eq(OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT);
+    expect(positions.length).is.eq(
+      OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT
+    );
   });
 
   it("read exact position by borrower", async () => {
@@ -222,8 +270,8 @@ describe("pawnshop reader tests", function () {
   it("read all auction bids", async () => {
     const positions = await reader.auctionBids(0, 1000);
     const allPosSize = await shop.auctionBidCounter();
-    console.log('positions', positions)
-    console.log('allPosSize', allPosSize)
+    console.log("positions", positions);
+    console.log("allPosSize", allPosSize);
     let i = 0;
     for (const pos of positions) {
       i++;
@@ -249,5 +297,4 @@ describe("pawnshop reader tests", function () {
     expect(bids.length).is.eq(1);
     expect(bids[0].posId).is.eq(lastLenderBid);
   });
-
 });

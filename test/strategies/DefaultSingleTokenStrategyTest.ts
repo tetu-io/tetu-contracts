@@ -1,18 +1,17 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {StrategyTestUtils} from "./StrategyTestUtils";
-import {IStrategy, SmartVault} from "../../typechain";
-import {SpecificStrategyTest} from "./SpecificStrategyTest";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
-import {universalStrategyTest} from "./UniversalStrategyTest";
-import {DeployInfo} from "./DeployInfo";
-import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
+import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import { StrategyTestUtils } from "./StrategyTestUtils";
+import { IStrategy, SmartVault } from "../../typechain";
+import { SpecificStrategyTest } from "./SpecificStrategyTest";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import { ToolsContractsWrapper } from "../ToolsContractsWrapper";
+import { universalStrategyTest } from "./UniversalStrategyTest";
+import { DeployInfo } from "./DeployInfo";
+import { DoHardWorkLoopBase } from "./DoHardWorkLoopBase";
 
-
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 async function startDefaultSingleTokenStrategyTest(
@@ -44,13 +43,13 @@ async function startDefaultSingleTokenStrategyTest(
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
-  const deployer = (signer: SignerWithAddress) => {
+  const deployer = async (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
     return StrategyTestUtils.deploy(
       signer,
       core,
       vaultName,
-      vaultAddress => {
+      (vaultAddress) => {
         const strategyArgs = [
           core.controller.address,
           vaultAddress,
@@ -84,7 +83,7 @@ async function startDefaultSingleTokenStrategyTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance,
+      finalBalanceTolerance
     );
   };
 
@@ -100,8 +99,8 @@ async function startDefaultSingleTokenStrategyTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests,
+    specificTests
   );
 }
 
-export {startDefaultSingleTokenStrategyTest};
+export { startDefaultSingleTokenStrategyTest };

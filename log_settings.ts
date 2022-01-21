@@ -1,4 +1,4 @@
-import {ISettingsParam} from "tslog";
+import { ISettingsParam } from "tslog";
 
 const logSettings: ISettingsParam = {
   colorizePrettyLogs: false,
@@ -6,7 +6,7 @@ const logSettings: ISettingsParam = {
   displayLogLevel: false,
   displayLoggerName: false,
   displayFunctionName: false,
-  displayFilePath: 'hidden',
-}
+  displayFilePath: "hidden",
+};
 
-export default (logSettings);
+export default logSettings;

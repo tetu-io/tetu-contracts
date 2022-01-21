@@ -2,10 +2,7 @@
   "extends": "solhint:recommended",
   "plugins": [],
   "rules": {
-    "compiler-version": [
-      "error",
-      "^0.8.4"
-    ],
+    "compiler-version": ["error", "^0.8.4"],
     "func-visibility": [
       "off",
       {
@@ -18,18 +15,9 @@
     "no-inline-assembly": "off",
     "avoid-low-level-calls": "off",
     "avoid-suicide": "error",
-    "code-complexity": [
-      "warn",
-      9
-    ],
-    "function-max-lines": [
-      "warn",
-      50
-    ],
-    "max-line-length": [
-      "error",
-      120
-    ],
+    "code-complexity": ["warn", 9],
+    "function-max-lines": ["warn", 50],
+    "max-line-length": ["error", 120],
     "constructor-syntax": "warn",
     "avoid-sha3": "warn",
     "indent": "off",

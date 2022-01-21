@@ -15,7 +15,6 @@ export class CoreAddresses {
   public readonly rewardCalculator: string;
   public readonly autoRewarder: string;
 
-
   constructor(
     controller: string,
     announcer: string,

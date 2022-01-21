@@ -1,18 +1,17 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {StrategyTestUtils} from "./StrategyTestUtils";
-import {IStrategy, SmartVault} from "../../typechain";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
-import {universalStrategyTest} from "./UniversalStrategyTest";
-import {SpecificStrategyTest} from "./SpecificStrategyTest";
-import {DeployInfo} from "./DeployInfo";
-import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
+import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import { StrategyTestUtils } from "./StrategyTestUtils";
+import { IStrategy, SmartVault } from "../../typechain";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import { ToolsContractsWrapper } from "../ToolsContractsWrapper";
+import { universalStrategyTest } from "./UniversalStrategyTest";
+import { SpecificStrategyTest } from "./SpecificStrategyTest";
+import { DeployInfo } from "./DeployInfo";
+import { DoHardWorkLoopBase } from "./DoHardWorkLoopBase";
 
-
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 async function startDefaultLpStrategyTest(
@@ -27,10 +26,8 @@ async function startDefaultLpStrategyTest(
   deployInfo: DeployInfo,
   deposit = 100_000,
   loopValue = 300,
-  advanceBlocks = true,
+  advanceBlocks = true
 ) {
-
-
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
@@ -49,20 +46,20 @@ async function startDefaultLpStrategyTest(
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
-  const deployer = (signer: SignerWithAddress) => {
+  const deployer = async (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
     return StrategyTestUtils.deploy(
       signer,
       core,
       vaultName,
-      vaultAddress => {
+      (vaultAddress) => {
         const strategyArgs = [
           core.controller.address,
           vaultAddress,
           underlying,
           token0,
           token1,
-          platformPoolIdentifier
+          platformPoolIdentifier,
         ];
         return DeployerUtils.deployContract(
           signer,
@@ -92,7 +89,7 @@ async function startDefaultLpStrategyTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance,
+      finalBalanceTolerance
     );
   };
 
@@ -108,8 +105,8 @@ async function startDefaultLpStrategyTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests,
+    specificTests
   );
 }
 
-export {startDefaultLpStrategyTest};
+export { startDefaultLpStrategyTest };

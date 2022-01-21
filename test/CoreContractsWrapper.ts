@@ -9,9 +9,9 @@ import {
   NotifyHelper,
   RewardToken,
   SmartVault,
-  VaultController
+  VaultController,
 } from "../typechain";
-import {tracer} from "hardhat";
+import { tracer } from "hardhat";
 
 export class CoreContractsWrapper {
   public controller: Controller;
@@ -20,7 +20,7 @@ export class CoreContractsWrapper {
   public feeRewardForwarderLogic: string;
   public bookkeeper: Bookkeeper;
   public bookkeeperLogic: string;
-  public notifyHelper: NotifyHelper
+  public notifyHelper: NotifyHelper;
   public mintHelper: MintHelper;
   public mintHelperLogic: string;
   public rewardToken: RewardToken;
@@ -34,25 +34,26 @@ export class CoreContractsWrapper {
   public vaultController: VaultController;
   public vaultControllerLogic: string;
 
-  constructor(controller: Controller,
-              controllerLogic: string,
-              feeRewardForwarder: ForwarderV2,
-              feeRewardForwarderLogic: string,
-              bookkeeper: Bookkeeper,
-              bookkeeperLogic: string,
-              notifyHelper: NotifyHelper,
-              mintHelper: MintHelper,
-              mintHelperLogic: string,
-              rewardToken: RewardToken,
-              psVault: SmartVault,
-              psVaultLogic: string,
-              psEmptyStrategy: NoopStrategy,
-              fundKeeper: FundKeeper,
-              fundKeeperLogic: string,
-              announcer: Announcer,
-              announcerLogic: string,
-              vaultController: VaultController,
-              vaultControllerLogic: string
+  constructor(
+    controller: Controller,
+    controllerLogic: string,
+    feeRewardForwarder: ForwarderV2,
+    feeRewardForwarderLogic: string,
+    bookkeeper: Bookkeeper,
+    bookkeeperLogic: string,
+    notifyHelper: NotifyHelper,
+    mintHelper: MintHelper,
+    mintHelperLogic: string,
+    rewardToken: RewardToken,
+    psVault: SmartVault,
+    psVaultLogic: string,
+    psEmptyStrategy: NoopStrategy,
+    fundKeeper: FundKeeper,
+    fundKeeperLogic: string,
+    announcer: Announcer,
+    announcerLogic: string,
+    vaultController: VaultController,
+    vaultControllerLogic: string
   ) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;
@@ -79,15 +80,15 @@ export class CoreContractsWrapper {
     if (!tracer) {
       return;
     }
-    tracer.nameTags[this.controller.address] = 'controller';
-    tracer.nameTags[this.feeRewardForwarder.address] = 'feeRewardForwarder';
-    tracer.nameTags[this.bookkeeper.address] = 'bookkeeper';
-    tracer.nameTags[this.bookkeeperLogic] = 'bookkeeperLogic';
-    tracer.nameTags[this.notifyHelper.address] = 'notifyHelper';
-    tracer.nameTags[this.mintHelper.address] = 'mintHelper';
-    tracer.nameTags[this.rewardToken.address] = 'rewardToken';
-    tracer.nameTags[this.psVault.address] = 'psVault';
-    tracer.nameTags[this.psVaultLogic] = 'psVaultLogic';
-    tracer.nameTags[this.psEmptyStrategy.address] = 'psEmptyStrategy';
+    tracer.nameTags[this.controller.address] = "controller";
+    tracer.nameTags[this.feeRewardForwarder.address] = "feeRewardForwarder";
+    tracer.nameTags[this.bookkeeper.address] = "bookkeeper";
+    tracer.nameTags[this.bookkeeperLogic] = "bookkeeperLogic";
+    tracer.nameTags[this.notifyHelper.address] = "notifyHelper";
+    tracer.nameTags[this.mintHelper.address] = "mintHelper";
+    tracer.nameTags[this.rewardToken.address] = "rewardToken";
+    tracer.nameTags[this.psVault.address] = "psVault";
+    tracer.nameTags[this.psVaultLogic] = "psVaultLogic";
+    tracer.nameTags[this.psEmptyStrategy.address] = "psEmptyStrategy";
   }
 }
