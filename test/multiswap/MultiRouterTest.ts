@@ -13,7 +13,8 @@ import {
   Pair,
   saveObjectToJsonFile,
   indexAllPairs,
-  findAllRoutes
+  findAllRoutes,
+  extractPairsFromRoutes
 } from "../../scripts/multiswap/MultiRouterLib";
 import pairsJson from '../../scripts/multiswap/json/MultiRouterPairs.json'
 
@@ -44,6 +45,11 @@ describe("MultiRouter base tests", function () {
         MaticAddresses.USDC_TOKEN,
         2)
     console.log('allRoutes', allRoutes);
+    console.log('allRoutes.length', allRoutes.length);
+    console.time()
+    const usedPairs = extractPairsFromRoutes(allRoutes)
+    console.timeEnd()
+    console.log('usedPairs.length', usedPairs.length);
   })
 
 
