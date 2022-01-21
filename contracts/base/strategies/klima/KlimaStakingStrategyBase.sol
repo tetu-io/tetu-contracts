@@ -15,7 +15,6 @@ pragma solidity 0.8.4;
 import "../StrategyBase.sol";
 import "../../../third_party/klima/IKlimaStaking.sol";
 import "../../../third_party/IERC20Extended.sol";
-import "hardhat/console.sol";
 
 /// @title Base contract for Klima stake pool farming
 /// @author belbix
@@ -61,7 +60,6 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
 
   /// @dev Returns KLIMA amount under control
   function rewardPoolBalance() public override view returns (uint256 bal) {
-    console.log('address in strategy',address(this));
     bal = _balanceSnapshot;
   }
 

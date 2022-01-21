@@ -66,7 +66,6 @@ export class FtmAddresses {
   public static _2poolCrv_TOKEN = "0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40".toLowerCase();
   public static renCRV_TOKEN = "0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858".toLowerCase();
 
-
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
     FtmAddresses.fUSDT_TOKEN,

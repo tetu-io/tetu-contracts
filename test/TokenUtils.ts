@@ -76,7 +76,6 @@ export class TokenUtils {
     [MaticAddresses.NACHO_TOKEN, '0xfb6935ef307e08cb9e9d4bfdbdc57e671d3b19a6'.toLowerCase()], // nacho treasury Fund
     [FtmAddresses.TOMB_TOKEN, '0xF50c6dAAAEC271B56FCddFBC38F0b56cA45E6f0d'.toLowerCase()], // tomb treasury Fund
     [FtmAddresses.TSHARE_TOKEN, '0x8764DE60236C5843D9faEB1B638fbCE962773B67'.toLowerCase()], // tomb masonry
-    [FtmAddresses.HEC_TOKEN, '0xd661952749f05acc40503404938a91af9ac1473b'.toLowerCase()], // spirit LP
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

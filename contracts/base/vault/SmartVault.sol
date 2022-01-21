@@ -287,6 +287,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function depositAndInvest(uint256 amount) external override {
     _isActive();
     _onlyAllowedUsers(msg.sender);
+
     _deposit(amount, msg.sender, msg.sender);
     invest();
   }
@@ -414,7 +415,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
       // initial state, when not set
       return underlyingBalanceInVault();
     }
-    return underlyingBalanceInVault().add(IStrategy(strategy()).investedUnderlyingBalance());
+    return underlyingBalanceInVault()
+    .add(IStrategy(strategy()).investedUnderlyingBalance());
   }
 
   /// @notice Get the user's share (in underlying)
@@ -552,6 +554,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _updateRewards(beneficiary);
     require(amount > 0, "SV: Zero amount");
     require(beneficiary != address(0), "SV: Zero beneficiary for deposit");
+
     uint256 toMint = totalSupply() == 0
     ? amount
     : amount.mul(totalSupply()).div(underlyingBalanceWithInvestment());
