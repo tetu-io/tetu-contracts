@@ -9,7 +9,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
@@ -69,7 +69,7 @@ describe.skip('Universal Wault tests', async () => {
 
 
     if (strat[6]) {
-      /* tslint:disable:no-floating-promises */
+      /* eslint-disable @typescript-eslint/no-floating-promises */
       startDefaultLpStrategyTest(
         'StrategyWaultLpWithAc',
         MaticAddresses.WAULT_FACTORY,
@@ -82,7 +82,7 @@ describe.skip('Universal Wault tests', async () => {
         deployInfo
       );
     } else {
-      /* tslint:disable:no-floating-promises */
+      /* eslint-disable @typescript-eslint/no-floating-promises */
       startDefaultSingleTokenStrategyTest(
         'StrategyWaultSingle',
         lpAddress.toLowerCase(),

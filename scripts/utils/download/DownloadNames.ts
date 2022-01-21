@@ -29,12 +29,12 @@ async function main() {
     const vInfo = await cReader.vaultInfo(vault);
 
     console.info('vInfo.name', vInfo.name);
-    // tslint:disable-next-line:ban-ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     vaultsNames[vault.toLowerCase()] = vInfo.name;
 
     for (const asset of vInfo.assets) {
-      // tslint:disable-next-line:ban-ts-ignore
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       assetsNames[asset.toLowerCase()] = await TokenUtils.tokenSymbol(asset);
     }

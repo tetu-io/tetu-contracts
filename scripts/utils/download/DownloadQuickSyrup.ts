@@ -32,7 +32,7 @@ async function start() {
   console.log('dQuickPrice', utils.formatUnits(dQuickPrice));
   console.log('quickPrice', utils.formatUnits(quickPrice));
 
-  // tslint:disable-next-line
+  // eslint-disable-next-line
   let infos: string = 'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
   for (let i = 0; i < rewardTokensLength; i++) {
     console.log('id', i);

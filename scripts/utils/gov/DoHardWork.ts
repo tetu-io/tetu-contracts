@@ -21,7 +21,7 @@ async function main() {
 
   // noinspection InfiniteLoopJS
   while (true) {
-    // tslint:disable-next-line:prefer-for-of
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < vaults.length; i++) {
       const vault = vaults[i];
       const vaultContract = await DeployerUtils.connectVault(vault, signer);

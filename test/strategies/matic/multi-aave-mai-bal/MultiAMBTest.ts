@@ -29,7 +29,7 @@ import {MaxDepositTest} from "./MaxDepositTest";
 
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
@@ -113,7 +113,7 @@ describe('Universal AMB tests', async () => {
     // **********************************************
 
     const pipes: string[] = [];
-    // tslint:disable-next-line
+    // eslint-disable-next-line
     const pipesArgs: any[][] = [];
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;

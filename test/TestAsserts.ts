@@ -10,7 +10,7 @@ export class TestAsserts {
   public static async assertEvent(
     tx: ContractTransaction,
     eventName: string,
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any[],
     eIdx = 0
   ) {

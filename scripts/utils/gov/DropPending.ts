@@ -4,7 +4,7 @@ import Common from "ethereumjs-common";
 import {config as dotEnvConfig} from "dotenv";
 import {Misc} from "../tools/Misc";
 
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const EthereumTx = require('ethereumjs-tx').Transaction
 
 const MATIC_CHAIN = Common.forCustomChain(
@@ -17,7 +17,7 @@ const MATIC_CHAIN = Common.forCustomChain(
 );
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({

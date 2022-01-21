@@ -8,7 +8,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
@@ -70,7 +70,7 @@ describe('Universal Quick tests', async () => {
     }
     console.log('strat', ids, lpName);
 
-    /* tslint:disable:no-floating-promises */
+    /* eslint-disable @typescript-eslint/no-floating-promises */
     startDefaultLpStrategyTest(
       strategyName,
       MaticAddresses.QUICK_FACTORY,

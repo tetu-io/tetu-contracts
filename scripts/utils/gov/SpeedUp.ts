@@ -4,11 +4,11 @@ import Common from "ethereumjs-common";
 import {config as dotEnvConfig} from "dotenv";
 import {utils} from "ethers";
 
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const EthereumTx = require('ethereumjs-tx').Transaction
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({

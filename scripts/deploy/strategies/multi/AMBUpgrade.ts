@@ -45,7 +45,7 @@ async function main() {
     console.log('strat', info.underlyingName);
 
     const pipes: string[] = [];
-    // tslint:disable-next-line
+    // eslint-disable-next-line
     const pipesArgs: any[][] = [];
 
     const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(

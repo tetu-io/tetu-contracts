@@ -9,7 +9,7 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {RunHelper} from "../../../../scripts/utils/tools/RunHelper";
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
@@ -68,7 +68,7 @@ describe('Universal Dino tests', async () => {
 
     console.log('strat', idx, lpName);
 
-    /* tslint:disable:no-floating-promises */
+    /* eslint-disable @typescript-eslint/no-floating-promises */
     startDefaultLpStrategyTest(
       'StrategyDinoSwapV2LpAc',
       MaticAddresses.SUSHI_FACTORY,

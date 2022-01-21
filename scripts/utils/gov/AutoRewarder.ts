@@ -16,7 +16,7 @@ import {config as dotEnvConfig} from "dotenv";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU_AR')
   .options({

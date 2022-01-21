@@ -47,13 +47,13 @@ import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
 import {TimeUtils} from "../../test/TimeUtils";
 
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const hre = require("hardhat");
 const log: Logger = new Logger(logSettings);
 
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
@@ -106,7 +106,7 @@ export class DeployerUtils {
   public static async deployContract<T extends ContractFactory>(
     signer: SignerWithAddress,
     name: string,
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...args: any[]
   ) {
     const start = Date.now();
@@ -642,7 +642,7 @@ export class DeployerUtils {
     }
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async verifyWithArgs(address: string, args: any[]) {
     try {
       await hre.run("verify:verify", {
@@ -653,7 +653,7 @@ export class DeployerUtils {
     }
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async verifyWithContractName(address: string, contractPath: string, args?: any[]) {
     try {
       await hre.run("verify:verify", {
@@ -664,7 +664,7 @@ export class DeployerUtils {
     }
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async verifyWithArgsAndContractName(address: string, args: any[], contractPath: string) {
     try {
       await hre.run("verify:verify", {

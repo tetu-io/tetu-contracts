@@ -55,7 +55,7 @@ async function main() {
     }
 
     console.log('strat', idx, lpName);
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[] = [];
     data.push(...await DeployerUtils.deployVaultAndStrategy(
       vaultNameWithoutPrefix,

@@ -14,7 +14,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 
 dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
