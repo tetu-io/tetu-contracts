@@ -13,7 +13,9 @@
     "test": "npm run build && npx hardhat test",
     "coverage": "npm run build && npx cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" hardhat coverage --temp artifacts --max-memory 4096",
     "slither": "npm run build && slither .",
-    "lint": "eslint -c .eslintrc.js --ext .ts ."
+    "lint": "eslint -c .eslintrc.js --ext .ts .",
+    "lint-fix": "npm run lint -- --fix",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\""
   },
   "repository": {
     "type": "git",
@@ -87,6 +89,7 @@
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-jsdoc": "^37.6.3",
     "eslint-plugin-prefer-arrow": "^1.2.3",
-    "eslint-plugin-unicorn": "^40.1.0"
+    "eslint-plugin-unicorn": "^40.1.0",
+    "prettier": "^2.5.1"
   }
 }
