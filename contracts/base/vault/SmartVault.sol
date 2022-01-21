@@ -24,7 +24,6 @@ import "../interface/IVaultController.sol";
 import "./VaultStorage.sol";
 import "../governance/Controllable.sol";
 import "../interface/IBookkeeper.sol";
-import "hardhat/console.sol";
 
 /// @title Smart Vault is a combination of implementations drawn from Synthetix pool
 ///        for their innovative reward vesting and Yearn vault for their share price model
@@ -290,7 +289,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _onlyAllowedUsers(msg.sender);
     _deposit(amount, msg.sender, msg.sender);
     invest();
-    console.log('underlyingAfterInvestment', underlyingBalanceWithInvestment());
   }
 
   /// @notice Allows for depositing the underlying asset in exchange for shares assigned to the holder.
@@ -412,7 +410,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Returns the current underlying (e.g., DAI's) balance together with
   ///         the invested amount (if DAI is invested elsewhere by the strategy).
   function underlyingBalanceWithInvestment() public view override returns (uint256) {
-    console.log('right number',underlyingBalanceInVault().add(IStrategy(strategy()).investedUnderlyingBalance()));
     if (address(strategy()) == address(0)) {
       // initial state, when not set
       return underlyingBalanceInVault();
@@ -584,7 +581,6 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     if (availableAmount > 0) {
       IERC20Upgradeable(underlying()).safeTransfer(address(strategy()), availableAmount);
       IStrategy(strategy()).investAllUnderlying();
-      console.log('rewardpoolbalance',IStrategy(strategy()).rewardPoolBalance());
       emit Invest(availableAmount);
     }
   }

@@ -33,7 +33,6 @@ export class FtmAddresses {
   public static TOMB_TOKEN = "0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7".toLowerCase();
   public static TSHARE_TOKEN = "0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37".toLowerCase();
   public static TBOND_TOKEN = "0x24248CD1747348bDC971a5395f4b3cd7feE94ea0".toLowerCase();
-  public static HEC_TOKEN = "0x5C4FDfc5233f935f20D2aDbA572F770c2E377Ab0".toLowerCase()
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
@@ -67,11 +66,6 @@ export class FtmAddresses {
   public static _2poolCrv_TOKEN = "0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40".toLowerCase();
   public static renCRV_TOKEN = "0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858".toLowerCase();
 
-  // HECTOR
-  public static HECTOR_STAKING = '0xD12930C8deeDafD788F437879cbA1Ad1E3908Cc5'.toLowerCase();
-  public static sHEC = '0x75bdeF24285013387A47775828bEC90b91Ca9a5F'.toLowerCase();
-  public static HECTOR_DISTRIBUTOR = '0x8Ed4c6dF48b4Ce7f620700998b694C460A78123F'.toLowerCase();
-  public static HECTOR_TREASURY = '0xCB54EA94191B280C296E6ff0E37c7e76Ad42dC6A'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

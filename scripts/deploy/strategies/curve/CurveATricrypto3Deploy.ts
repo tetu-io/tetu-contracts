@@ -40,7 +40,7 @@ async function main() {
     core.psVault,
     signer,
     60 * 60 * 24 * 28,
-    true
+    0
   );
 
   await DeployerUtils.wait(5);
