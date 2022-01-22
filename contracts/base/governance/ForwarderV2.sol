@@ -35,7 +35,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.2.1";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NOMINATOR = 997;
@@ -268,8 +268,10 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuLiqAmount = _sendToLiquidity(toLiqTetuTokenPart, toLiqFundTokenPart);
 
     uint toPs = tetuTokenAmount * baseToPs / baseSum;
-    IERC20(tetu()).safeTransfer(psVault(), toPs);
-    emit FeeMovedToPs(psVault(), tetu(), toPs);
+    if (toPs != 0) {
+      IERC20(tetu()).safeTransfer(psVault(), toPs);
+      emit FeeMovedToPs(psVault(), tetu(), toPs);
+    }
     return toPs + tetuLiqAmount;
   }
 

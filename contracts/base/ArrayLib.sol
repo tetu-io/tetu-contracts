@@ -162,4 +162,39 @@ library ArrayLib {
     array[index] = lastId;
     array.pop();
   }
+
+  // ************* SORTING *******************
+
+  /// @dev Insertion sorting algorithm for using with arrays fewer than 10 elements
+  ///      Based on https://medium.com/coinmonks/sorting-in-solidity-without-comparison-4eb47e04ff0d
+  function sortAddressesByUint(address[] storage addressArray, mapping(address => uint) storage uintMap) internal {
+    for (uint i = 1; i < addressArray.length; i++) {
+      address key = addressArray[i];
+      uint j = i - 1;
+      while ((int(j) >= 0) && uintMap[addressArray[j]] > uintMap[key]) {
+        addressArray[j + 1] = addressArray[j];
+      unchecked {j--;}
+      }
+    unchecked {
+      addressArray[j + 1] = key;
+    }
+    }
+  }
+
+  /// @dev Insertion sorting algorithm for using with arrays fewer than 10 elements
+  ///      Based on https://medium.com/coinmonks/sorting-in-solidity-without-comparison-4eb47e04ff0d
+  function sortAddressesByUintReverted(address[] storage addressArray, mapping(address => uint) storage uintMap) internal {
+    for (uint i = 1; i < addressArray.length; i++) {
+      address key = addressArray[i];
+      uint j = i - 1;
+      while ((int(j) >= 0) && uintMap[addressArray[j]] < uintMap[key]) {
+        addressArray[j + 1] = addressArray[j];
+      unchecked {j--;}
+      }
+    unchecked {
+      addressArray[j + 1] = key;
+    }
+    }
+  }
+
 }

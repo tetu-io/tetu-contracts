@@ -37,7 +37,11 @@ interface IStrategy {
     KLIMA, //19
     VESQ, //20
     QIDAO, //21
-    SUNFLOWER //22
+    SUNFLOWER, //22
+    NACHO, //23
+    STRATEGY_SPLITTER, //24
+    TOMB, //25
+    TAROT //26
   }
 
   // *************** GOVERNANCE ACTIONS **************

@@ -15,7 +15,7 @@ export class MaticCoreAddresses {
     '0xC5b3aF6FB4b2ff14642e337F41B86C9494f70b43', // vault controller
     '0x3CA8A3f92410e0AcCeDA9d587055d908375D4930', // pawnshop
     '0x684d8c187be836171a1Af8D533e4724893031828', // swapFactory
-    '0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c', // swapRouter
+    '0x736FD9EabB15776A3adfea1B975c868F72A29d14', // swapRouter
     '0x690a41ab256046dF39faDd3f32F6d26cB4490bed', // rewardCalculator
     '0x5Cc44D1787aFB510F563Fe55Fd082D3d4d720671', // autoRewarder
   );

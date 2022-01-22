@@ -46,7 +46,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant override STRATEGY_NAME = "GeistFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.3.0";
   /// @dev How much rewards will be used for distribution process
   uint256 private constant _BUY_BACK_RATIO = _BUY_BACK_DENOMINATOR / 10;
   /// @dev 2 is Variable
@@ -167,7 +167,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     multiFeeDistributor.exit();
   }
 
-  function _supply(uint256 amount) internal override updateSupplyInTheEnd {
+  function _supply(uint256 amount) internal override {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
     if (amount > 0) {
       IERC20(_underlyingToken).safeApprove(address(lPool), 0);
@@ -177,12 +177,12 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   }
 
   /// @dev Borrows against the collateral
-  function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _borrow(uint256 amountUnderlying) internal override {
     lPool.borrow(_underlyingToken, amountUnderlying, INTEREST_RATE_MODE, 0, address(this));
   }
 
   /// @dev Redeem liquidity in underlying
-  function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _redeemUnderlying(uint256 amountUnderlying) internal override {
     amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
     if (amountUnderlying > 0) {
       lPool.withdraw(_underlyingToken, amountUnderlying, address(this));
@@ -190,7 +190,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   }
 
   /// @dev Repay a loan
-  function _repay(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _repay(uint256 amountUnderlying) internal override {
     if (amountUnderlying != 0) {
       IERC20(_underlyingToken).safeApprove(address(lPool), 0);
       IERC20(_underlyingToken).safeApprove(address(lPool), amountUnderlying);
@@ -200,7 +200,7 @@ abstract contract GeistFoldStrategyBase is FoldingBase, IAveFoldStrategy {
 
   /// @dev Redeems the maximum amount of underlying.
   ///      Either all of the balance or all of the available liquidity.
-  function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
+  function _redeemMaximumWithLoan() internal override {
     (uint256 supplied, uint256 borrowed) = _getInvestmentData();
     uint256 balance = supplied - borrowed;
     _redeemPartialWithLoan(balance);
