@@ -1,13 +1,13 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { ContractUtils } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { ContractUtils } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const contract = (await DeployerUtils.deployContract(
     signer,
-    "ContractUtils"
+    'ContractUtils'
   )) as ContractUtils;
 
   await DeployerUtils.wait(5);

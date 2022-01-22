@@ -1,6 +1,6 @@
-import chai from "chai";
-import { BigNumber, ContractTransaction, Event, utils } from "ethers";
-import chaiAsPromised from "chai-as-promised";
+import chai from 'chai';
+import { BigNumber, ContractTransaction, Event, utils } from 'ethers';
+import chaiAsPromised from 'chai-as-promised';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -24,8 +24,8 @@ export class TestAsserts {
       if (i + 1 > args.length) {
         return;
       }
-      if (typeof value === "string") {
-        expect(typeof args[i]).is.eq("string", `Arg ${i} is not string`);
+      if (typeof value === 'string') {
+        expect(typeof args[i]).is.eq('string', `Arg ${i} is not string`);
         expect(value.toLowerCase()).is.eq(
           args[i].toLowerCase(),
           `Arg ${i} is not equal`

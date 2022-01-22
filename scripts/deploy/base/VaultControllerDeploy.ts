@@ -1,6 +1,6 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { Controller, VaultController } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { Controller, VaultController } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -8,20 +8,20 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    "VaultController"
+    'VaultController'
   )) as VaultController;
   const proxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     logic.address
   );
   const vaultController = logic.attach(proxy.address) as VaultController;
   await vaultController.initialize(core.controller);
 
-  if ((await ethers.provider.getNetwork()).name !== "matic") {
+  if ((await ethers.provider.getNetwork()).name !== 'matic') {
     const controller = (await DeployerUtils.connectContract(
       signer,
-      "Controller",
+      'Controller',
       core.controller
     )) as Controller;
     await controller.setVaultController(vaultController.address);

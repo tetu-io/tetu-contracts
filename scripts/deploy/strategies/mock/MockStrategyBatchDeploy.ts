@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
 import {
   Controller,
   ERC20PresetMinterPauser,
@@ -7,25 +7,25 @@ import {
   IUniswapV2Factory,
   SmartVault,
   VaultController,
-} from "../../../../typechain";
-import { utils } from "ethers";
-import { TokenUtils } from "../../../../test/TokenUtils";
-import { RunHelper } from "../../../utils/tools/RunHelper";
-import { config as dotEnvConfig } from "dotenv";
-import { RopstenAddresses } from "../../../addresses/RopstenAddresses";
-import { Misc } from "../../../utils/tools/Misc";
+} from '../../../../typechain';
+import { utils } from 'ethers';
+import { TokenUtils } from '../../../../test/TokenUtils';
+import { RunHelper } from '../../../utils/tools/RunHelper';
+import { config as dotEnvConfig } from 'dotenv';
+import { RopstenAddresses } from '../../../addresses/RopstenAddresses';
+import { Misc } from '../../../utils/tools/Misc';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     mockBatchDeployVersion: {
-      type: "string",
-      default: "1",
+      type: 'string',
+      default: '1',
     },
     mockBatchDeployCount: {
-      type: "number",
+      type: 'number',
       default: 1,
     },
   }).argv;
@@ -38,41 +38,41 @@ async function main() {
   const mocks = await DeployerUtils.getTokenAddresses();
   const platform = 3; // sushi
 
-  const poolReward = mocks.get("quick") as string;
-  const poolRewardAmountN = "10000";
-  const vaultSecondReward = mocks.get("weth") as string;
-  const vaultSecondRewardAmountN = "35000";
-  const vaultThirdReward = mocks.get("usdc") as string;
-  const vaultThirdRewardAmountN = "99123";
+  const poolReward = mocks.get('quick') as string;
+  const poolRewardAmountN = '10000';
+  const vaultSecondReward = mocks.get('weth') as string;
+  const vaultSecondRewardAmountN = '35000';
+  const vaultThirdReward = mocks.get('usdc') as string;
+  const vaultThirdRewardAmountN = '99123';
 
   const datas = [];
   const datasPools = [];
   const controller = (await DeployerUtils.connectContract(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
-    "VaultController",
+    'VaultController',
     core.vaultController
   )) as VaultController;
 
   const possibleTokens = [
-    mocks.get("quick") as string,
-    mocks.get("sushi") as string,
-    mocks.get("usdc") as string,
-    mocks.get("weth") as string,
+    mocks.get('quick') as string,
+    mocks.get('sushi') as string,
+    mocks.get('usdc') as string,
+    mocks.get('weth') as string,
     core.rewardToken,
   ];
 
-  const strategyName = "MockStrategySelfFarm";
+  const strategyName = 'MockStrategySelfFarm';
 
   const underlyingByIdx = new Map<number, string[]>();
 
   const sushiFactory = (await DeployerUtils.connectInterface(
     signer,
-    "IUniswapV2Factory",
+    'IUniswapV2Factory',
     RopstenAddresses.SUSHI_FACTORY
   )) as IUniswapV2Factory;
 
@@ -85,34 +85,34 @@ async function main() {
 
     const underlying0 = possibleTokens[t1Rand];
     const underlying1 = possibleTokens[t2Rand];
-    console.log("underlying0", underlying0, t1Rand);
-    console.log("underlying1", underlying1, t2Rand);
+    console.log('underlying0', underlying0, t1Rand);
+    console.log('underlying1', underlying1, t2Rand);
 
     const underlying = await sushiFactory.getPair(underlying0, underlying1);
     if (!underlying) {
-      throw Error("not found pair");
+      throw Error('not found pair');
     }
 
     underlyingByIdx.set(i, [underlying0, underlying1, underlying]);
 
     const undName0 = await TokenUtils.tokenSymbol(underlying0);
     const undName1 = await TokenUtils.tokenSymbol(underlying1);
-    const vaultName: string = `MOCK_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
-    const poolName: string = `NOOP_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
+    const vaultName = `MOCK_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
+    const poolName = `NOOP_SUSHI_${undName0}_${undName1}_V${VERSION}_${i}`;
     const vaultRewardToken: string = core.psVault;
     const rewardDuration: number = 60 * 60 * 24 * 28; // 1 week
     // *********** DEPLOY MOCK POOL FOR STRATEGY
-    const poolLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+    const poolLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
     const poolProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       poolLogic.address
     );
     const pool = poolLogic.attach(poolProxy.address) as SmartVault;
 
     const noopStrategy = (await DeployerUtils.deployContract(
       signer,
-      "NoopStrategy",
+      'NoopStrategy',
       controller.address,
       underlying,
       pool.address,
@@ -125,8 +125,8 @@ async function main() {
 
     await RunHelper.runAndWait(() =>
       pool.initializeSmartVault(
-        "V_" + poolName,
-        "x" + poolName,
+        'V_' + poolName,
+        'x' + poolName,
         controller.address,
         noopStrategyUnderlying,
         rewardDuration,
@@ -140,7 +140,7 @@ async function main() {
 
     const mockContract = (await DeployerUtils.connectContract(
       signer,
-      "ERC20PresetMinterPauser",
+      'ERC20PresetMinterPauser',
       poolReward
     )) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() =>
@@ -171,10 +171,10 @@ async function main() {
     datasPools.push([poolLogic, pool, noopStrategy]);
 
     // *********** DEPLOY VAULT
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+    const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       vaultLogic.address
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
@@ -195,8 +195,8 @@ async function main() {
 
     await RunHelper.runAndWait(() =>
       vault.initializeSmartVault(
-        "V_" + vaultName,
-        "x" + vaultName,
+        'V_' + vaultName,
+        'x' + vaultName,
         controller.address,
         strategyUnderlying,
         rewardDuration,
@@ -222,7 +222,7 @@ async function main() {
     const vaultSecondRewardDec = await TokenUtils.decimals(vaultSecondReward);
     const mockContract2 = (await DeployerUtils.connectContract(
       signer,
-      "ERC20PresetMinterPauser",
+      'ERC20PresetMinterPauser',
       vaultSecondReward
     )) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() =>
@@ -251,7 +251,7 @@ async function main() {
     const vaultThirdRewardDec = await TokenUtils.decimals(vaultThirdReward);
     const mockContract3 = (await DeployerUtils.connectContract(
       signer,
-      "ERC20PresetMinterPauser",
+      'ERC20PresetMinterPauser',
       vaultThirdReward
     )) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() =>

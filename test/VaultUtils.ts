@@ -3,18 +3,18 @@ import {
   Controller,
   IStrategy,
   SmartVault,
-} from "../typechain";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TokenUtils } from "./TokenUtils";
-import { BigNumber, ContractTransaction, utils } from "ethers";
-import axios from "axios";
-import { CoreContractsWrapper } from "./CoreContractsWrapper";
-import { DeployerUtils } from "../scripts/deploy/DeployerUtils";
-import { MaticAddresses } from "../scripts/addresses/MaticAddresses";
-import { MintHelperUtils } from "./MintHelperUtils";
-import { Misc } from "../scripts/utils/tools/Misc";
-import { ethers } from "hardhat";
+} from '../typechain';
+import { expect } from 'chai';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { TokenUtils } from './TokenUtils';
+import { BigNumber, ContractTransaction, utils } from 'ethers';
+import axios from 'axios';
+import { CoreContractsWrapper } from './CoreContractsWrapper';
+import { DeployerUtils } from '../scripts/deploy/DeployerUtils';
+import { MaticAddresses } from '../scripts/addresses/MaticAddresses';
+import { MintHelperUtils } from './MintHelperUtils';
+import { Misc } from '../scripts/utils/tools/Misc';
+import { ethers } from 'hardhat';
 
 export class VaultUtils {
   constructor(public vault: SmartVault) {}
@@ -78,10 +78,10 @@ export class VaultUtils {
     const underlying = await vaultForUser.underlying();
     const dec = await TokenUtils.decimals(underlying);
     const bal = await TokenUtils.balanceOf(underlying, user.address);
-    console.log("balance", utils.formatUnits(bal, dec), bal.toString());
+    console.log('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec)).is.greaterThanOrEqual(
       +utils.formatUnits(amount, dec),
-      "not enough balance"
+      'not enough balance'
     );
 
     await TokenUtils.approve(
@@ -90,7 +90,7 @@ export class VaultUtils {
       vault.address,
       amount.toString()
     );
-    console.log("deposit", BigNumber.from(amount).toString());
+    console.log('deposit', BigNumber.from(amount).toString());
     if (invest) {
       return vaultForUser.depositAndInvest(BigNumber.from(amount));
     } else {
@@ -123,22 +123,22 @@ export class VaultUtils {
     const rewardsForFullPeriodUsd = rewardRateForToken * duration * rtPrice;
     const currentRewardsAmountUsd = rewardsForFullPeriodUsd * periodRate;
 
-    console.log("----------- APR CALCULATION -----------");
-    console.log("rewardRateForToken", rewardRateForToken);
-    console.log("totalSupply", totalSupply);
-    console.log("finish", finish);
-    console.log("duration", duration);
-    console.log("tvlUsd", tvlUsd);
-    console.log("rtPrice", rtPrice);
-    console.log("currentPeriod", currentPeriod);
-    console.log("periodRate", periodRate);
+    console.log('----------- APR CALCULATION -----------');
+    console.log('rewardRateForToken', rewardRateForToken);
+    console.log('totalSupply', totalSupply);
+    console.log('finish', finish);
+    console.log('duration', duration);
+    console.log('tvlUsd', tvlUsd);
+    console.log('rtPrice', rtPrice);
+    console.log('currentPeriod', currentPeriod);
+    console.log('periodRate', periodRate);
     console.log(
-      "rewardsForFullPeriodUsd",
+      'rewardsForFullPeriodUsd',
       rewardsForFullPeriodUsd,
       rewardRateForToken * duration
     );
-    console.log("currentRewardsAmountUsd", currentRewardsAmountUsd);
-    console.log("---------------------------------------");
+    console.log('currentRewardsAmountUsd', currentRewardsAmountUsd);
+    console.log('---------------------------------------');
 
     return (
       (currentRewardsAmountUsd / tvlUsd / (duration / (60 * 60 * 24))) *
@@ -183,11 +183,11 @@ export class VaultUtils {
     const net = await ethers.provider.getNetwork();
     let network;
     if (net.chainId === 137) {
-      network = "MATIC";
+      network = 'MATIC';
     } else if (net.chainId === 250) {
-      network = "FANTOM";
+      network = 'FANTOM';
     } else {
-      throw Error("unknown net " + net.chainId);
+      throw Error('unknown net ' + net.chainId);
     }
     return (
       await axios.get(
@@ -204,19 +204,19 @@ export class VaultUtils {
     period = 60 * 60 * 24 * 7 + 1
   ) {
     const start = Date.now();
-    console.log("Add xTETU as reward to vault: ", amount.toString());
+    console.log('Add xTETU as reward to vault: ', amount.toString());
     const rtAdr = core.psVault.address;
     if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
       await TokenUtils.getToken(
         core.rewardToken.address,
         signer.address,
-        utils.parseUnits(amount + "")
+        utils.parseUnits(amount + '')
       );
     } else {
       await MintHelperUtils.mint(
         core.controller,
         core.announcer,
-        amount * 2 + "",
+        amount * 2 + '',
         signer.address,
         false,
         period
@@ -226,16 +226,16 @@ export class VaultUtils {
       core.rewardToken.address,
       signer,
       core.psVault.address,
-      utils.parseUnits(amount + "").toString()
+      utils.parseUnits(amount + '').toString()
     );
-    await core.psVault.deposit(utils.parseUnits(amount + ""));
+    await core.psVault.deposit(utils.parseUnits(amount + ''));
     const xTetuBal = await TokenUtils.balanceOf(
       core.psVault.address,
       signer.address
     );
     await TokenUtils.approve(rtAdr, signer, vault.address, xTetuBal.toString());
     await vault.notifyTargetRewardAmount(rtAdr, xTetuBal);
-    Misc.printDuration("xTetu reward token added to vault", start);
+    Misc.printDuration('xTetu reward token added to vault', start);
   }
 
   public static async doHardWorkAndCheck(
@@ -246,13 +246,13 @@ export class VaultUtils {
     const controller = await vault.controller();
     const controllerCtr = (await DeployerUtils.connectInterface(
       vault.signer as SignerWithAddress,
-      "Controller",
+      'Controller',
       controller
     )) as Controller;
     const psVault = await controllerCtr.psVault();
     const psVaultCtr = (await DeployerUtils.connectInterface(
       vault.signer as SignerWithAddress,
-      "SmartVault",
+      'SmartVault',
       psVault
     )) as SmartVault;
     const und = await vault.underlying();
@@ -264,7 +264,7 @@ export class VaultUtils {
     const strategy = await vault.strategy();
     const strategyCtr = (await DeployerUtils.connectInterface(
       vault.signer as SignerWithAddress,
-      "IStrategy",
+      'IStrategy',
       strategy
     )) as IStrategy;
 
@@ -296,37 +296,37 @@ export class VaultUtils {
     );
     const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
 
-    console.log("-------- HARDWORK --------");
-    console.log("- BB ratio:", bbRatio);
-    console.log("- PPFS:", ppfsAfter);
-    console.log("- PPFS change:", ppfsAfter - ppfs);
-    console.log("- BALANCE change:", undBalAfter - undBal);
-    console.log("- RT change:", rtBalAfter - rtBal);
-    console.log("- PS change:", psPpfsAfter - psPpfs);
-    console.log("- PS ratio:", psRatio);
-    console.log("--------------------------");
+    console.log('-------- HARDWORK --------');
+    console.log('- BB ratio:', bbRatio);
+    console.log('- PPFS:', ppfsAfter);
+    console.log('- PPFS change:', ppfsAfter - ppfs);
+    console.log('- BALANCE change:', undBalAfter - undBal);
+    console.log('- RT change:', rtBalAfter - rtBal);
+    console.log('- PS change:', psPpfsAfter - psPpfs);
+    console.log('- PS ratio:', psRatio);
+    console.log('--------------------------');
 
     if (positiveCheck) {
       if (bbRatio > 1000) {
         expect(psPpfsAfter).is.greaterThan(
           psPpfs,
-          "PS didnt have any income, it means that rewards was not liquidated and properly sent to PS." +
-            " Check reward tokens list and liquidation paths"
+          'PS didnt have any income, it means that rewards was not liquidated and properly sent to PS.' +
+            ' Check reward tokens list and liquidation paths'
         );
         if (psRatio !== 1) {
           expect(rtBalAfter).is.greaterThan(
             rtBal,
-            "With ps ratio less than 1 we should send a part of buybacks to vaults as rewards."
+            'With ps ratio less than 1 we should send a part of buybacks to vaults as rewards.'
           );
         }
       }
       if (bbRatio !== 10000) {
         expect(ppfsAfter).is.greaterThan(
           ppfs,
-          "With not 100% buybacks we should autocompound underlying asset"
+          'With not 100% buybacks we should autocompound underlying asset'
         );
       }
     }
-    Misc.printDuration("doHardWorkAndCheck completed", start);
+    Misc.printDuration('doHardWorkAndCheck completed', start);
   }
 }

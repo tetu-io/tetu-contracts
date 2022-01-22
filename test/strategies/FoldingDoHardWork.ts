@@ -1,9 +1,9 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { DoHardWorkLoopBase } from "./DoHardWorkLoopBase";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { FoldingBase } from "../../typechain";
-import { Misc } from "../../scripts/utils/tools/Misc";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { DoHardWorkLoopBase } from './DoHardWorkLoopBase';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { FoldingBase } from '../../typechain';
+import { Misc } from '../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -14,7 +14,7 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
     const start = Date.now();
     const foldContract = (await DeployerUtils.connectInterface(
       this.signer,
-      "FoldingBase",
+      'FoldingBase',
       this.strategy.address
     )) as FoldingBase;
     let foldingState = (await foldContract.foldState()).toNumber();
@@ -32,11 +32,11 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
       await foldContract.setFold(0);
     }
     console.log(
-      "------ FOLDING",
-      "cycle:" + i,
-      "enabled:" + foldingState,
-      "profitable:" + (await foldContract.isFoldingProfitable())
+      '------ FOLDING',
+      'cycle:' + i,
+      'enabled:' + foldingState,
+      'profitable:' + (await foldContract.isFoldingProfitable())
     );
-    Misc.printDuration("Loop preparation for folding completed", start);
+    Misc.printDuration('Loop preparation for folding completed', start);
   }
 }

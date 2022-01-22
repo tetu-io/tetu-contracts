@@ -1,8 +1,8 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TimeUtils } from "../TimeUtils";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { TimeUtils } from '../TimeUtils';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
 import {
   IStrategy,
   SmartVault,
@@ -10,23 +10,23 @@ import {
   TetuSwapPair,
   TetuSwapPair__factory,
   TetuSwapRouter,
-} from "../../typechain";
-import { UniswapUtils } from "../UniswapUtils";
-import { BigNumber, utils } from "ethers";
-import { TokenUtils } from "../TokenUtils";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { ethers, web3 } from "hardhat";
-import { TestAsserts } from "../TestAsserts";
-import { VaultUtils } from "../VaultUtils";
-import { StrategyTestUtils } from "../strategies/StrategyTestUtils";
-import { Misc } from "../../scripts/utils/tools/Misc";
+} from '../../typechain';
+import { UniswapUtils } from '../UniswapUtils';
+import { BigNumber, utils } from 'ethers';
+import { TokenUtils } from '../TokenUtils';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { ethers, web3 } from 'hardhat';
+import { TestAsserts } from '../TestAsserts';
+import { VaultUtils } from '../VaultUtils';
+import { StrategyTestUtils } from '../strategies/StrategyTestUtils';
+import { Misc } from '../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
 const TEST_AMOUNT = BigNumber.from(100);
 
-describe("Tetu Swap base tests", function () {
+describe('Tetu Swap base tests', function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -57,7 +57,7 @@ describe("Tetu Swap base tests", function () {
         web3.utils.encodePacked(
           (
             (await ethers.getContractFactory(
-              "TetuSwapPair",
+              'TetuSwapPair',
               signer
             )) as TetuSwapPair__factory
           ).bytecode
@@ -75,12 +75,12 @@ describe("Tetu Swap base tests", function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits("100000", 6)
+      utils.parseUnits('100000', 6)
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits("10000")
+      utils.parseUnits('10000')
     );
     tokenA = usdc;
     tokenB = networkToken;
@@ -107,12 +107,12 @@ describe("Tetu Swap base tests", function () {
 
     vaultUsdcCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault0
     )) as SmartVault;
     vaultUsdtCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault1
     )) as SmartVault;
 
@@ -121,19 +121,19 @@ describe("Tetu Swap base tests", function () {
     )[0] as TetuSwapFactory;
     router = (await DeployerUtils.deployContract(
       signer,
-      "TetuSwapRouter",
+      'TetuSwapRouter',
       factory.address,
       networkToken
     )) as TetuSwapRouter;
 
     vault0Ctr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault0
     )) as SmartVault;
     vault1Ctr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault1
     )) as SmartVault;
 
@@ -143,7 +143,7 @@ describe("Tetu Swap base tests", function () {
     tokenBDec = await TokenUtils.decimals(tokenB);
 
     await factory.createPair(vault0, vault1);
-    console.log("pair created");
+    console.log('pair created');
 
     lp = await factory.getPair(tokenA, tokenB);
     expect(lp.toLowerCase()).is.not.eq(Misc.ZERO_ADDRESS);
@@ -153,14 +153,15 @@ describe("Tetu Swap base tests", function () {
 
     lpCtr = (await DeployerUtils.connectInterface(
       signer,
-      "TetuSwapPair",
+      'TetuSwapPair',
       lp
     )) as TetuSwapPair;
 
     if ((await ethers.provider.getNetwork()).chainId === 250) {
-      expect(await lpCtr.symbol()).is.eq("TLP_USDC_WFTM");
-    } else if ((await ethers.provider.getNetwork()).chainId === 250) {
-      expect(await lpCtr.symbol()).is.eq("TLP_WMATIC_USDC");
+      expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
+      // same as lines 160-161
+      // } else if ((await ethers.provider.getNetwork()).chainId === 250) {
+      //   expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
     }
     const lpV0 = (await lpCtr.vault0()).toLowerCase();
     const lpV1 = (await lpCtr.vault1()).toLowerCase();
@@ -175,8 +176,8 @@ describe("Tetu Swap base tests", function () {
       signer,
       tokenA,
       tokenB,
-      utils.parseUnits("100", tokenADec).toString(),
-      utils.parseUnits("200", tokenBDec).toString(),
+      utils.parseUnits('100', tokenADec).toString(),
+      utils.parseUnits('200', tokenBDec).toString(),
       factory.address,
       router.address
     );
@@ -184,11 +185,11 @@ describe("Tetu Swap base tests", function () {
     const data = await StrategyTestUtils.deploy(
       signer,
       core,
-      "TETU_LP_VAULT",
+      'TETU_LP_VAULT',
       (vaultAddress) =>
         DeployerUtils.deployContract(
           signer,
-          "StrategyTetuSwapFantom",
+          'StrategyTetuSwapFantom',
           core.controller.address,
           vaultAddress,
           lp
@@ -215,13 +216,13 @@ describe("Tetu Swap base tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("add-trade-remove", async () => {
+  it('add-trade-remove', async () => {
     await UniswapUtils.addLiquidity(
       signer,
       tokenA,
       tokenB,
-      utils.parseUnits("100", tokenADec).toString(),
-      utils.parseUnits("200", tokenBDec).toString(),
+      utils.parseUnits('100', tokenADec).toString(),
+      utils.parseUnits('200', tokenBDec).toString(),
       factory.address,
       router.address
     );
@@ -258,7 +259,7 @@ describe("Tetu Swap base tests", function () {
     await UniswapUtils.swapExactTokensForTokens(
       signer,
       [tokenA, tokenB],
-      utils.parseUnits("10", tokenADec).toString(),
+      utils.parseUnits('10', tokenADec).toString(),
       signer.address,
       router.address
     );
@@ -272,8 +273,8 @@ describe("Tetu Swap base tests", function () {
       tokenBDec
     );
 
-    console.log("bal A", userTokenABalAfter - userTokenABal);
-    console.log("bal B", userTokenBBalAfter - userTokenBBal);
+    console.log('bal A', userTokenABalAfter - userTokenABal);
+    console.log('bal B', userTokenBBalAfter - userTokenBBal);
 
     expect(userTokenABalAfter - userTokenABal).is.eq(-10);
     expect(userTokenBBalAfter - userTokenBBal).is.approximately(
@@ -331,14 +332,14 @@ describe("Tetu Swap base tests", function () {
     ).is.eq(0);
   });
 
-  it("add-trade-remove loop", async () => {
+  it('add-trade-remove loop', async () => {
     // transfer excess
     await TokenUtils.transfer(
       tokenA,
       signer,
       core.bookkeeper.address,
       (await TokenUtils.balanceOf(tokenA, signer.address))
-        .sub(utils.parseUnits("1100", tokenADec))
+        .sub(utils.parseUnits('1100', tokenADec))
         .toString()
     );
     await TokenUtils.transfer(
@@ -346,14 +347,14 @@ describe("Tetu Swap base tests", function () {
       signer,
       core.bookkeeper.address,
       (await TokenUtils.balanceOf(tokenB, signer.address))
-        .sub(utils.parseUnits("2000", tokenBDec))
+        .sub(utils.parseUnits('2000', tokenBDec))
         .toString()
     );
     let count = 0;
     while (count < 5) {
       count++;
 
-      console.log("-------- LOOP START", count);
+      console.log('-------- LOOP START', count);
       const balA = +utils.formatUnits(
         await TokenUtils.balanceOf(tokenA, signer.address),
         tokenADec
@@ -362,8 +363,8 @@ describe("Tetu Swap base tests", function () {
         await TokenUtils.balanceOf(tokenB, signer.address),
         tokenBDec
       );
-      console.log("bal A", balA);
-      console.log("bal B", balB);
+      console.log('bal A', balA);
+      console.log('bal B', balB);
       expect(balA).is.greaterThan(1099.99);
       expect(balB).is.greaterThan(1999.99);
 
@@ -371,8 +372,8 @@ describe("Tetu Swap base tests", function () {
         signer,
         tokenA,
         tokenB,
-        utils.parseUnits("100", tokenADec).toString(),
-        utils.parseUnits("200", tokenBDec).toString(),
+        utils.parseUnits('100', tokenADec).toString(),
+        utils.parseUnits('200', tokenBDec).toString(),
         factory.address,
         router.address
       );
@@ -396,7 +397,7 @@ describe("Tetu Swap base tests", function () {
       await UniswapUtils.swapExactTokensForTokens(
         signer,
         [tokenA, tokenB],
-        utils.parseUnits("10", tokenADec).toString(),
+        utils.parseUnits('10', tokenADec).toString(),
         signer.address,
         router.address
       );
@@ -414,8 +415,8 @@ describe("Tetu Swap base tests", function () {
         tokenBDec
       );
 
-      console.log("bal A", userTokenABalAfter - userTokenABal);
-      console.log("bal B", userTokenBBalAfter - userTokenBBal);
+      console.log('bal A', userTokenABalAfter - userTokenABal);
+      console.log('bal B', userTokenBBalAfter - userTokenBBal);
 
       expect(userTokenABalAfter - userTokenABal).is.eq(-10);
 
@@ -440,7 +441,7 @@ describe("Tetu Swap base tests", function () {
       );
 
       const receiptSwap1 = await txSwap1.wait();
-      console.log("receiptSwap1 gas", receiptSwap1.gasUsed.toString());
+      console.log('receiptSwap1 gas', receiptSwap1.gasUsed.toString());
 
       await UniswapUtils.removeLiquidity(
         signer,
@@ -473,9 +474,9 @@ describe("Tetu Swap base tests", function () {
     }
   });
 
-  it("base parameters", async () => {
+  it('base parameters', async () => {
     const name = await lpCtr.name();
-    expect(name).to.eq("TetuSwap LP");
+    expect(name).to.eq('TetuSwap LP');
     expect(await lpCtr.decimals()).to.eq(18);
     expect((await lpCtr.totalSupply()).toNumber()).to.approximately(
       141421356237309,
@@ -489,15 +490,15 @@ describe("Tetu Swap base tests", function () {
     expect(await lpCtr.DOMAIN_SEPARATOR()).to.eq(
       utils.keccak256(
         utils.defaultAbiCoder.encode(
-          ["bytes32", "bytes32", "bytes32", "uint256", "address"],
+          ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
           [
             utils.keccak256(
               utils.toUtf8Bytes(
-                "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
               )
             ),
             utils.keccak256(utils.toUtf8Bytes(name)),
-            utils.keccak256(utils.toUtf8Bytes("1")),
+            utils.keccak256(utils.toUtf8Bytes('1')),
             net.chainId,
             lp,
           ]
@@ -507,26 +508,26 @@ describe("Tetu Swap base tests", function () {
     expect(await lpCtr.PERMIT_TYPEHASH()).to.eq(
       utils.keccak256(
         utils.toUtf8Bytes(
-          "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+          'Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'
         )
       )
     );
   });
 
-  it("approve", async () => {
+  it('approve', async () => {
     await TestAsserts.assertEvent(
       await lpCtr.approve(user.address, 1),
-      "Approval",
+      'Approval',
       [signer.address, user.address, 1]
     );
     expect(await lpCtr.allowance(signer.address, user.address)).to.eq(1);
   });
 
-  it("transfer", async () => {
+  it('transfer', async () => {
     const balance = await lpCtr.balanceOf(signer.address);
     await TestAsserts.assertEvent(
       await lpCtr.transfer(user.address, TEST_AMOUNT),
-      "Transfer",
+      'Transfer',
       [signer.address, user.address, TEST_AMOUNT]
     );
     expect(await lpCtr.balanceOf(signer.address)).to.eq(
@@ -535,16 +536,16 @@ describe("Tetu Swap base tests", function () {
     expect(await lpCtr.balanceOf(user.address)).to.eq(TEST_AMOUNT);
   });
 
-  it("transfer:fail", async () => {
+  it('transfer:fail', async () => {
     await expect(
       lpCtr.transfer(user.address, (await lpCtr.totalSupply()).add(1))
-    ).to.be.revertedWith("0x11");
+    ).to.be.revertedWith('0x11');
     await expect(
       lpCtr.connect(user).transfer(signer.address, 1)
-    ).to.be.revertedWith("0x11");
+    ).to.be.revertedWith('0x11');
   });
 
-  it("transferFrom", async () => {
+  it('transferFrom', async () => {
     const balance = await lpCtr.balanceOf(signer.address);
     await lpCtr.approve(user.address, TEST_AMOUNT);
 
@@ -552,7 +553,7 @@ describe("Tetu Swap base tests", function () {
       await lpCtr
         .connect(user)
         .transferFrom(signer.address, user.address, TEST_AMOUNT),
-      "Transfer",
+      'Transfer',
       [signer.address, user.address, TEST_AMOUNT]
     );
     expect(await lpCtr.allowance(signer.address, user.address)).to.eq(0);
@@ -562,14 +563,14 @@ describe("Tetu Swap base tests", function () {
     expect(await lpCtr.balanceOf(user.address)).to.eq(TEST_AMOUNT);
   });
 
-  it("transferFrom:max", async () => {
+  it('transferFrom:max', async () => {
     const balance = await lpCtr.balanceOf(signer.address);
     await lpCtr.approve(user.address, ethers.constants.MaxUint256);
     await TestAsserts.assertEvent(
       await lpCtr
         .connect(user)
         .transferFrom(signer.address, user.address, TEST_AMOUNT),
-      "Transfer",
+      'Transfer',
       [signer.address, user.address, TEST_AMOUNT]
     );
     expect(await lpCtr.allowance(signer.address, user.address)).to.eq(
@@ -581,36 +582,36 @@ describe("Tetu Swap base tests", function () {
     expect(await lpCtr.balanceOf(user.address)).to.eq(TEST_AMOUNT);
   });
 
-  it("set fee directly forbidden", async () => {
-    await expect(lpCtr.setFee(0)).rejectedWith("TSP: Not factory");
+  it('set fee directly forbidden', async () => {
+    await expect(lpCtr.setFee(0)).rejectedWith('TSP: Not factory');
   });
 
-  it("set fee negative cases", async () => {
-    await expect(factory.setPairsFee([lp], 100)).rejectedWith("TSF: Too early");
+  it('set fee negative cases', async () => {
+    await expect(factory.setPairsFee([lp], 100)).rejectedWith('TSF: Too early');
     await factory.announcePairsFeeChange([lp]);
     await expect(factory.announcePairsFeeChange([lp])).rejectedWith(
-      "TSF: Time-lock already defined"
+      'TSF: Time-lock already defined'
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(factory.setPairsFee([lp], 100)).rejectedWith(
-      "TSP: Too high fee"
+      'TSP: Too high fee'
     );
   });
 
-  it("set fee", async () => {
+  it('set fee', async () => {
     await factory.announcePairsFeeChange([lp]);
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await factory.setPairsFee([lp], 0);
     expect(await lpCtr.fee()).is.eq(0);
   });
 
-  it("claim + hardwork", async () => {
+  it('claim + hardwork', async () => {
     await UniswapUtils.addLiquidity(
       signer,
       tokenA,
       tokenB,
-      utils.parseUnits("1000", tokenADec).toString(),
-      utils.parseUnits("2000", tokenBDec).toString(),
+      utils.parseUnits('1000', tokenADec).toString(),
+      utils.parseUnits('2000', tokenBDec).toString(),
       factory.address,
       router.address
     );
@@ -622,7 +623,7 @@ describe("Tetu Swap base tests", function () {
     await UniswapUtils.swapExactTokensForTokens(
       signer,
       [tokenA, tokenB],
-      utils.parseUnits("100", tokenADec).toString(),
+      utils.parseUnits('100', tokenADec).toString(),
       signer.address,
       router.address
     );
@@ -653,9 +654,9 @@ describe("Tetu Swap base tests", function () {
   });
 
   // todo fix
-  it.skip("price{0,1}CumulativeLast", async () => {
-    const token0Amount = utils.parseUnits("100", tokenADec);
-    const token1Amount = utils.parseUnits("200", tokenBDec);
+  it.skip('price{0,1}CumulativeLast', async () => {
+    const token0Amount = utils.parseUnits('100', tokenADec);
+    const token1Amount = utils.parseUnits('200', tokenBDec);
 
     const blockTimestamp = (await lpCtr.getReserves())[2];
     await TimeUtils.advanceBlocksOnTs(1);
@@ -670,15 +671,15 @@ describe("Tetu Swap base tests", function () {
     const cumPrice1 = await lpCtr.price1CumulativeLast();
 
     const elapsedTime = blockTimestamp2 - blockTimestamp;
-    console.log("time elapsed", elapsedTime);
+    console.log('time elapsed', elapsedTime);
 
     expect(cumPrice0).to.eq(initialPrice[0].mul(elapsedTime));
     expect(cumPrice1).to.eq(initialPrice[1].mul(elapsedTime));
 
-    const swapAmount = utils.parseUnits("3", tokenADec);
+    const swapAmount = utils.parseUnits('3', tokenADec);
     await TokenUtils.transfer(tokenA, signer, lp, swapAmount.toString());
     // swap to a new price eagerly instead of syncing
-    await lpCtr.swap(0, utils.parseUnits("1", tokenBDec), signer.address, "0x");
+    await lpCtr.swap(0, utils.parseUnits('1', tokenBDec), signer.address, '0x');
 
     const blockTimestamp3 = (await lpCtr.getReserves())[2];
     const elapsedTime2 = blockTimestamp3 - blockTimestamp;
@@ -691,19 +692,19 @@ describe("Tetu Swap base tests", function () {
     );
   });
 
-  it("fail on zero output amount", async () => {
-    await expect(lpCtr.swap(0, 0, signer.address, "0x")).rejectedWith(
-      "TSP: Insufficient output amount"
+  it('fail on zero output amount', async () => {
+    await expect(lpCtr.swap(0, 0, signer.address, '0x')).rejectedWith(
+      'TSP: Insufficient output amount'
     );
   });
 
-  it("fail on zero input amount", async () => {
-    await expect(lpCtr.swap(0, 100, signer.address, "0x")).rejectedWith(
-      "TSP: Insufficient input amount"
+  it('fail on zero input amount', async () => {
+    await expect(lpCtr.swap(0, 100, signer.address, '0x')).rejectedWith(
+      'TSP: Insufficient input amount'
     );
   });
 
-  it("healthy K", async () => {
+  it('healthy K', async () => {
     const amountOut = 10000;
     const reserves = await lpCtr.getReserves();
     const inputIn = await lpCtr.getAmountIn(
@@ -711,20 +712,20 @@ describe("Tetu Swap base tests", function () {
       reserves[0],
       reserves[1]
     );
-    console.log("inputIn", inputIn.toString());
+    console.log('inputIn', inputIn.toString());
     await TokenUtils.transfer(tokenA, signer, lp, inputIn.sub(1).toString());
-    await expect(lpCtr.swap(0, amountOut, signer.address, "0x")).rejectedWith(
-      "TSP: Insufficient input amount"
+    await expect(lpCtr.swap(0, amountOut, signer.address, '0x')).rejectedWith(
+      'TSP: Insufficient input amount'
     );
   });
 
-  it("healthy K after vault manipulations", async () => {
+  it('healthy K after vault manipulations', async () => {
     await factory.setPairRewardRecipients([lp], [core.controller.address]);
 
     await VaultUtils.deposit(
       signer,
       vaultUsdcCtr,
-      utils.parseUnits("800", tokenADec)
+      utils.parseUnits('800', tokenADec)
     );
 
     await TimeUtils.advanceNBlocks(5);
@@ -738,10 +739,10 @@ describe("Tetu Swap base tests", function () {
       reserves[0],
       reserves[1]
     );
-    console.log("inputIn", inputIn.toString());
+    console.log('inputIn', inputIn.toString());
     await TokenUtils.transfer(tokenA, signer, lp, inputIn.toString());
     await lpCtr.sync();
-    await lpCtr.swap(0, amountOut, signer.address, "0x");
+    await lpCtr.swap(0, amountOut, signer.address, '0x');
   });
 
   // it('swap btc-eth', async () => {

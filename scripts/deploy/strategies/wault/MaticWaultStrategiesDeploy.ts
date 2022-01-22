@@ -1,12 +1,12 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
 import {
   ContractReader,
   Controller,
   IStrategy,
   VaultController,
-} from "../../../../typechain";
-import { readFileSync } from "fs";
+} from '../../../../typechain';
+import { readFileSync } from 'fs';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -15,18 +15,18 @@ async function main() {
 
   const controller = (await DeployerUtils.connectContract(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
-    "VaultController",
+    'VaultController',
     core.vaultController
   )) as VaultController;
 
   const infos = readFileSync(
-    "scripts/utils/download/data/wault_pools.csv",
-    "utf8"
+    'scripts/utils/download/data/wault_pools.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -34,19 +34,19 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const lpName = strat[1];
@@ -57,8 +57,8 @@ async function main() {
     const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === "idx" || idx === "0" || !lpName) {
-      console.log("skip", idx);
+    if (+alloc <= 0 || idx === 'idx' || idx === '0' || !lpName) {
+      console.log('skip', idx);
       continue;
     }
 
@@ -69,12 +69,12 @@ async function main() {
       vaultNameWithoutPrefix = `WAULT_${token0Name}`;
     }
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log("strat", idx, lpName);
+    console.log('strat', idx, lpName);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any[];
@@ -84,7 +84,7 @@ async function main() {
         async (vaultAddress) =>
           DeployerUtils.deployContract(
             signer,
-            "StrategyWaultLp",
+            'StrategyWaultLp',
             core.controller,
             vaultAddress,
             lpAddress,
@@ -113,7 +113,7 @@ async function main() {
         async (vaultAddress) =>
           DeployerUtils.deployContract(
             signer,
-            "StrategyWaultSingle",
+            'StrategyWaultSingle',
             core.controller,
             vaultAddress,
             lpAddress,

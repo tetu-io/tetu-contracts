@@ -1,15 +1,15 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { Bookkeeper, Controller } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { Bookkeeper, Controller } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
-  const logic = await DeployerUtils.deployContract(signer, "Bookkeeper");
+  const logic = await DeployerUtils.deployContract(signer, 'Bookkeeper');
   const proxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     logic.address
   );
   const bookkeeper = logic.attach(proxy.address) as Bookkeeper;
@@ -17,7 +17,7 @@ async function main() {
 
   const controller = (await DeployerUtils.connectContract(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   await controller.setBookkeeper(bookkeeper.address);

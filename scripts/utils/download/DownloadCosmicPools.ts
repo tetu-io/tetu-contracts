@@ -1,21 +1,21 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
-import { ICosmicMasterChef } from "../../../typechain";
-import { BigNumber } from "ethers";
-import { McLpDownloader } from "./McLpDownloader";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
+import { ICosmicMasterChef } from '../../../typechain';
+import { BigNumber } from 'ethers';
+import { McLpDownloader } from './McLpDownloader';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const chef = (await DeployerUtils.connectInterface(
     signer,
-    "ICosmicMasterChef",
+    'ICosmicMasterChef',
     MaticAddresses.COSMIC_MASTERCHEF
   )) as ICosmicMasterChef;
 
   await McLpDownloader.download(
-    "6",
-    "COSMIC",
+    '6',
+    'COSMIC',
     MaticAddresses.COSMIC_MASTERCHEF,
     MaticAddresses.COSMIC_TOKEN,
     chef.poolLength,

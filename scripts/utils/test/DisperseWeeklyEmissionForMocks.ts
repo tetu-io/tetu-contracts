@@ -1,21 +1,21 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Bookkeeper, NotifyHelper } from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { BigNumber, utils } from "ethers";
-import { RunHelper } from "../tools/RunHelper";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Bookkeeper, NotifyHelper } from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { BigNumber, utils } from 'ethers';
+import { RunHelper } from '../tools/RunHelper';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const signer = (await ethers.getSigners())[0];
   const notifyHelper = (await DeployerUtils.connectContract(
     signer,
-    "NotifyHelper",
+    'NotifyHelper',
     core.notifyHelper
   )) as NotifyHelper;
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
 
@@ -24,9 +24,9 @@ async function main() {
     await TokenUtils.balanceOf(core.rewardToken, core.notifyHelper),
     18
   )).toFixed();
-  console.log("availableAmount", availableAmount);
+  console.log('availableAmount', availableAmount);
   const basePerVault = availableAmount / vaults.length;
-  console.log("basePerVault", basePerVault);
+  console.log('basePerVault', basePerVault);
 
   const vaultsFiltered: string[] = [];
   const amounts: BigNumber[] = [];
@@ -41,7 +41,7 @@ async function main() {
     }
     vaultsFiltered.push(item);
     const amount = utils.parseUnits(basePerVault.toFixed(), 18);
-    console.log("amount", amount.toString());
+    console.log('amount', amount.toString());
     amounts.push(amount);
     sum = sum.add(amount);
     // const earned = await bookkeeper.targetTokenEarned(vaults[i]);

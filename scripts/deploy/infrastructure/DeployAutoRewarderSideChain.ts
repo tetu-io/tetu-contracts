@@ -1,12 +1,12 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { RunHelper } from "../../utils/tools/RunHelper";
-import { utils } from "ethers";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { RunHelper } from '../../utils/tools/RunHelper';
+import { utils } from 'ethers';
 import {
   AutoRewarder,
   AutoRewarderSideChain,
   TetuProxyGov,
-} from "../../../typechain";
+} from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -15,19 +15,19 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    "AutoRewarderSideChain"
+    'AutoRewarderSideChain'
   )) as AutoRewarderSideChain;
   const proxy = (await DeployerUtils.deployContract(
     signer,
-    "TetuProxyGov",
+    'TetuProxyGov',
     logic.address
   )) as TetuProxyGov;
   const contract = logic.attach(proxy.address) as AutoRewarder;
   await contract.initialize(
     core.controller,
     core.rewardCalculator,
-    utils.parseUnits("0"),
-    utils.parseUnits("50000")
+    utils.parseUnits('0'),
+    utils.parseUnits('50000')
   );
   const data = [contract, proxy, logic];
 

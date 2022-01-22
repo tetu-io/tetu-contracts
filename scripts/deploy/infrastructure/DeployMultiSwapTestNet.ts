@@ -1,7 +1,7 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { MultiSwap } from "../../../typechain";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { MultiSwap } from '../../../typechain';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -10,7 +10,7 @@ async function main() {
 
   const multiSwap = (await DeployerUtils.deployContract(
     signer,
-    "MultiSwap",
+    'MultiSwap',
     core.controller,
     tools.calculator,
     [MaticAddresses.SUSHI_FACTORY],

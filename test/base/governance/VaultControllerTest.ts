@@ -1,18 +1,18 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { VaultController } from "../../../typechain";
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../../scripts/deploy/DeployerUtils";
-import { TimeUtils } from "../../TimeUtils";
-import { CoreContractsWrapper } from "../../CoreContractsWrapper";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { VaultController } from '../../../typechain';
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../../scripts/deploy/DeployerUtils';
+import { TimeUtils } from '../../TimeUtils';
+import { CoreContractsWrapper } from '../../CoreContractsWrapper';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
 const REWARD_DURATION = 60 * 60;
 
-describe("Controller tests", function () {
+describe('Controller tests', function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -46,12 +46,12 @@ describe("Controller tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("should change vault statuses", async () => {
+  it('should change vault statuses', async () => {
     await vaultController.changeVaultsStatuses([core.psVault.address], [false]);
     expect(await core.psVault.active()).is.eq(false);
   });
 
-  it("should change reward tokens", async () => {
+  it('should change reward tokens', async () => {
     expect((await core.psVault.rewardTokens()).length).is.eq(0);
     await vaultController.addRewardTokens([core.psVault.address], networkToken);
     await vaultController.addRewardTokens([core.psVault.address], usdc);

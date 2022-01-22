@@ -1,15 +1,15 @@
-import { TokenUtils } from "./TokenUtils";
-import { utils } from "ethers";
-import { DeployerUtils } from "../scripts/deploy/DeployerUtils";
+import { TokenUtils } from './TokenUtils';
+import { utils } from 'ethers';
+import { DeployerUtils } from '../scripts/deploy/DeployerUtils';
 import {
   ContractReader,
   IUniswapV2Pair,
   MultiSwap,
   SmartVault,
   ZapContract,
-} from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect } from "chai";
+} from '../typechain';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { expect } from 'chai';
 
 export class ZapUtils {
   public static async zapLpIn(
@@ -22,7 +22,7 @@ export class ZapUtils {
     amountN = 1000,
     slippage: number
   ) {
-    console.log("zap lp in", amountN, slippage);
+    console.log('zap lp in', amountN, slippage);
     const tokenInDec = await TokenUtils.decimals(tokenIn);
     const amount = utils.parseUnits(amountN.toString(), tokenInDec);
     expect(
@@ -34,13 +34,13 @@ export class ZapUtils {
 
     const smartVault = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const strategy = await smartVault.strategy();
     const assets = await cReader.strategyAssets(strategy);
     if (assets.length !== 2) {
-      throw Error("wrong vault assets");
+      throw Error('wrong vault assets');
     }
 
     const tokensOut = [];
@@ -52,26 +52,26 @@ export class ZapUtils {
       }
 
       console.log(
-        "zapLpIn ============",
+        'zapLpIn ============',
         await TokenUtils.tokenSymbol(tokenIn),
-        "=>",
+        '=>',
         await TokenUtils.tokenSymbol(asset)
       );
       for (const lp of lps) {
         const lpCtr = (await DeployerUtils.connectInterface(
           signer,
-          "IUniswapV2Pair",
+          'IUniswapV2Pair',
           lp
         )) as IUniswapV2Pair;
         const t0 = await lpCtr.token0();
         const t1 = await lpCtr.token1();
         console.log(
-          "lp",
+          'lp',
           await TokenUtils.tokenSymbol(t0),
           await TokenUtils.tokenSymbol(t1)
         );
       }
-      console.log("============");
+      console.log('============');
 
       tokensOut.push(asset);
       tokensOutLps.push(lps);
@@ -107,7 +107,7 @@ export class ZapUtils {
     amountShare: string,
     slippage: number
   ) {
-    console.log("zap lp out", amountShare, slippage);
+    console.log('zap lp out', amountShare, slippage);
 
     expect(
       +utils.formatUnits(await TokenUtils.balanceOf(vault, signer.address))
@@ -115,7 +115,7 @@ export class ZapUtils {
 
     const smartVault = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const strategy = await smartVault.strategy();
@@ -129,26 +129,26 @@ export class ZapUtils {
       }
 
       console.log(
-        "zapLpOut ============",
+        'zapLpOut ============',
         await TokenUtils.tokenSymbol(asset),
-        "=>",
+        '=>',
         await TokenUtils.tokenSymbol(tokenOut)
       );
       for (const lp of lps) {
         const lpCtr = (await DeployerUtils.connectInterface(
           signer,
-          "IUniswapV2Pair",
+          'IUniswapV2Pair',
           lp
         )) as IUniswapV2Pair;
         const t0 = await lpCtr.token0();
         const t1 = await lpCtr.token1();
         console.log(
-          "lp",
+          'lp',
           await TokenUtils.tokenSymbol(t0),
           await TokenUtils.tokenSymbol(t1)
         );
       }
-      console.log("============");
+      console.log('============');
 
       assetsLpRoute.push(lps);
     }

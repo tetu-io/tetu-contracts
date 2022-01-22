@@ -1,15 +1,15 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { StrategyTestUtils } from "./StrategyTestUtils";
-import { IStrategy, SmartVault } from "../../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { ToolsContractsWrapper } from "../ToolsContractsWrapper";
-import { universalStrategyTest } from "./UniversalStrategyTest";
-import { SpecificStrategyTest } from "./SpecificStrategyTest";
-import { DeployInfo } from "./DeployInfo";
-import { DoHardWorkLoopBase } from "./DoHardWorkLoopBase";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { StrategyTestUtils } from './StrategyTestUtils';
+import { IStrategy, SmartVault } from '../../typechain';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { ToolsContractsWrapper } from '../ToolsContractsWrapper';
+import { universalStrategyTest } from './UniversalStrategyTest';
+import { SpecificStrategyTest } from './SpecificStrategyTest';
+import { DeployInfo } from './DeployInfo';
+import { DoHardWorkLoopBase } from './DoHardWorkLoopBase';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -32,7 +32,7 @@ async function startDefaultLpStrategyTest(
   // ************** CONFIG*************************
   // **********************************************
   const strategyContractName = strategyName;
-  const vaultName = token0Name + "_" + token1Name;
+  const vaultName = token0Name + '_' + token1Name;
   // const underlying = token;
   // add custom liquidation path if necessary
   const forwarderConfigurator = null;

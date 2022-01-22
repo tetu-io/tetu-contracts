@@ -1,10 +1,10 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
 import {
   Controller,
   PriceCalculator,
   TetuProxyGov,
-} from "../../../../typechain";
+} from '../../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -12,11 +12,11 @@ async function main() {
 
   const controllerLogic = await DeployerUtils.deployContract(
     signer,
-    "Controller"
+    'Controller'
   );
   const controllerProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     controllerLogic.address
   );
   const controller = controllerLogic.attach(
@@ -25,7 +25,7 @@ async function main() {
   await controller.initialize();
 
   let data: [PriceCalculator, TetuProxyGov, PriceCalculator];
-  if (net.name === "matic") {
+  if (net.name === 'matic') {
     data = await DeployerUtils.deployPriceCalculatorMatic(
       signer,
       controller.address,

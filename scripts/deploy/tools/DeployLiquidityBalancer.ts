@@ -1,5 +1,5 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -7,7 +7,7 @@ async function main() {
 
   const contract = await DeployerUtils.deployContract(
     signer,
-    "LiquidityBalancer",
+    'LiquidityBalancer',
     core.controller
   );
 

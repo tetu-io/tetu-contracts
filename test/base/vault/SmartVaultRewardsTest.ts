@@ -1,28 +1,28 @@
-import { ethers } from "hardhat";
-import chai from "chai";
+import { ethers } from 'hardhat';
+import chai from 'chai';
 import {
   ContractReader,
   Multicall,
   MultiSwap,
   NoopStrategy,
   ZapContract,
-} from "../../../typechain";
-import { DeployerUtils } from "../../../scripts/deploy/DeployerUtils";
-import { VaultUtils } from "../../VaultUtils";
-import { utils } from "ethers";
-import { TokenUtils } from "../../TokenUtils";
-import { TimeUtils } from "../../TimeUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import chaiAsPromised from "chai-as-promised";
-import { CoreContractsWrapper } from "../../CoreContractsWrapper";
-import { UniswapUtils } from "../../UniswapUtils";
-import { ZapUtils } from "../../ZapUtils";
-import { Misc } from "../../../scripts/utils/tools/Misc";
+} from '../../../typechain';
+import { DeployerUtils } from '../../../scripts/deploy/DeployerUtils';
+import { VaultUtils } from '../../VaultUtils';
+import { utils } from 'ethers';
+import { TokenUtils } from '../../TokenUtils';
+import { TimeUtils } from '../../TimeUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import chaiAsPromised from 'chai-as-promised';
+import { CoreContractsWrapper } from '../../CoreContractsWrapper';
+import { UniswapUtils } from '../../UniswapUtils';
+import { ZapUtils } from '../../ZapUtils';
+import { Misc } from '../../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Smart vault rewards test", () => {
+describe('Smart vault rewards test', () => {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -45,15 +45,15 @@ describe("Smart vault rewards test", () => {
 
     multicall = (await DeployerUtils.deployContract(
       signer,
-      "Multicall"
+      'Multicall'
     )) as Multicall;
     const crLogic = await DeployerUtils.deployContract(
       signer,
-      "ContractReader"
+      'ContractReader'
     );
     const crProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       crLogic.address
     );
     contractReader = crLogic.attach(crProxy.address) as ContractReader;
@@ -80,9 +80,9 @@ describe("Smart vault rewards test", () => {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits("1000000", 6)
+      utils.parseUnits('1000000', 6)
     );
-    await TokenUtils.wrapNetworkToken(signer, "10000000");
+    await TokenUtils.wrapNetworkToken(signer, '10000000');
   });
 
   after(async function () {
@@ -97,13 +97,13 @@ describe("Smart vault rewards test", () => {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("check reward vesting for multiple accounts with MATIC rewards and LP underlying", async () => {
+  it('check reward vesting for multiple accounts with MATIC rewards and LP underlying', async () => {
     const underlying = await UniswapUtils.addLiquidity(
       signer,
       networkToken,
       usdc,
-      utils.parseUnits("10000").toString(),
-      utils.parseUnits("10000", 6).toString(),
+      utils.parseUnits('10000').toString(),
+      utils.parseUnits('10000', 6).toString(),
       await DeployerUtils.getDefaultNetworkFactory(),
       await DeployerUtils.getRouterByFactory(
         await DeployerUtils.getDefaultNetworkFactory()
@@ -116,7 +116,7 @@ describe("Smart vault rewards test", () => {
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = (await DeployerUtils.deployContract(
       signer,
-      "NoopStrategy",
+      'NoopStrategy',
       core.controller.address,
       underlying,
       vault.address,
@@ -125,8 +125,8 @@ describe("Smart vault rewards test", () => {
       1
     )) as NoopStrategy;
     await vault.initializeSmartVault(
-      "NOOP",
-      "tNOOP",
+      'NOOP',
+      'tNOOP',
       core.controller.address,
       underlying,
       60 * 60 * 24 * 28,
@@ -150,17 +150,17 @@ describe("Smart vault rewards test", () => {
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
     const time = 60 * 60 * 24 * 7;
-    let rewardsTotalAmount = utils.parseUnits("10", rtDecimals);
+    let rewardsTotalAmount = utils.parseUnits('10', rtDecimals);
 
     console.log(
-      "underlying amount",
+      'underlying amount',
       utils.formatUnits(
         await TokenUtils.balanceOf(underlying, signer.address),
         underlyingDec
       )
     );
 
-    await TokenUtils.getToken(rt, signer.address, utils.parseUnits("300"));
+    await TokenUtils.getToken(rt, signer.address, utils.parseUnits('300'));
     await TokenUtils.approve(
       rt,
       signer,
@@ -190,7 +190,7 @@ describe("Smart vault rewards test", () => {
       networkToken,
       signer,
       user2.address,
-      utils.parseUnits("10000").toString()
+      utils.parseUnits('10000').toString()
     );
     // await Erc20Utils.transfer(underlying, signer, user2.address, utils.parseUnits(user2Deposit, underlyingDec).toString());
     await TokenUtils.transfer(
@@ -241,21 +241,21 @@ describe("Smart vault rewards test", () => {
     const undSendPart = ((signerUndBal2 / cycles) * 0.99).toFixed(
       underlyingDec
     );
-    console.log("cycles", cycles);
+    console.log('cycles', cycles);
     let user1Deposited = false;
     let user2Deposited = false;
 
     let finish = (await vault.periodFinishForToken(rt)).toNumber();
 
     for (let i = 0; i < cycles; i++) {
-      console.log("cycle", i, cycles);
+      console.log('cycle', i, cycles);
       const ppfs = +utils.formatUnits(
         await vault.getPricePerFullShare(),
         underlyingDec
       );
 
       if (i === 50) {
-        console.log("!!!!!!!!!!add rewards", finish);
+        console.log('!!!!!!!!!!add rewards', finish);
         await TokenUtils.approve(
           rt,
           signer,
@@ -265,7 +265,7 @@ describe("Smart vault rewards test", () => {
         await vault.notifyTargetRewardAmount(rt, rewardsTotalAmount);
         rewardsTotalAmount = rewardsTotalAmount.mul(2);
         finish = (await vault.periodFinishForToken(rt)).toNumber();
-        console.log("!!!!!!!!!!end add rewards", finish);
+        console.log('!!!!!!!!!!end add rewards', finish);
       }
 
       if (i % 3 === 0) {
@@ -320,14 +320,14 @@ describe("Smart vault rewards test", () => {
       await TimeUtils.advanceBlocksOnTs(time);
 
       console.log(
-        "vaultApr",
+        'vaultApr',
         await VaultUtils.vaultApr(vault, rt, contractReader),
         utils.formatUnits(
           (await contractReader.vaultRewardsApr(vault.address))[0]
         )
       );
       console.log(
-        "rewardPerToken",
+        'rewardPerToken',
         utils.formatUnits(await vault.rewardPerToken(rt))
       );
 
@@ -385,48 +385,48 @@ describe("Smart vault rewards test", () => {
       );
 
       console.log(
-        "User5 toClaim",
+        'User5 toClaim',
         toClaimUser5,
-        "all rewards in vault",
+        'all rewards in vault',
         _vaultRtBalance,
-        "rt balance",
+        'rt balance',
         rtBalanceUser5,
-        "full boost",
+        'full boost',
         toClaimUser5FullBoost
       );
       console.log(
-        "User1 toClaim",
+        'User1 toClaim',
         toClaimUser1,
-        "all rewards in vault",
+        'all rewards in vault',
         _vaultRtBalance,
-        "rt balance",
+        'rt balance',
         rtBalanceUser1,
-        "full boost",
+        'full boost',
         toClaimUser1FullBoost
       );
       console.log(
-        "User2 toClaim",
+        'User2 toClaim',
         toClaimUser2,
-        "all rewards in vault",
+        'all rewards in vault',
         _vaultRtBalance,
-        "rt balance",
+        'rt balance',
         rtBalanceUser2,
-        "full boost",
+        'full boost',
         toClaimUser2FullBoost
       );
       console.log(
-        "User3 toClaim",
+        'User3 toClaim',
         _toClaimUser3,
-        "100% boost",
+        '100% boost',
         _toClaimUser3FullBoost
       );
 
-      expect(toClaimUser5).is.greaterThan(0, "to claim is zero " + i);
+      expect(toClaimUser5).is.greaterThan(0, 'to claim is zero ' + i);
       if (user1Deposited) {
-        expect(toClaimUser1).is.greaterThan(0, "to claim is zero " + i);
+        expect(toClaimUser1).is.greaterThan(0, 'to claim is zero ' + i);
       }
       if (user2Deposited) {
-        expect(toClaimUser2).is.greaterThan(0, "to claim is zero " + i);
+        expect(toClaimUser2).is.greaterThan(0, 'to claim is zero ' + i);
       }
 
       await vault.connect(user5).getAllRewards();
@@ -440,7 +440,7 @@ describe("Smart vault rewards test", () => {
       expect(toClaimUser5).is.approximately(
         claimedUser5,
         claimedUser5 * 0.01,
-        "user5 claimed not enough " + i
+        'user5 claimed not enough ' + i
       );
 
       if (user1Deposited) {
@@ -461,7 +461,7 @@ describe("Smart vault rewards test", () => {
         expect(toClaimUser1).is.approximately(
           claimedUser1,
           claimedUser1 * 0.01,
-          "user1 claimed not enough " + i
+          'user1 claimed not enough ' + i
         );
       }
 
@@ -477,7 +477,7 @@ describe("Smart vault rewards test", () => {
         expect(toClaimUser2).is.approximately(
           claimedUser2,
           claimedUser2 * 0.01,
-          "user2 claimed not enough " + i
+          'user2 claimed not enough ' + i
         );
       }
 
@@ -493,12 +493,12 @@ describe("Smart vault rewards test", () => {
             rtDecimals
           ) - _rtBalanceUser3;
         claimedTotal += _claimedUser3;
-        console.log("claimedUser3", _claimedUser3);
+        console.log('claimedUser3', _claimedUser3);
         expect(_claimedUser3).is.greaterThan(0);
         expect(_toClaimUser3).is.approximately(
           _claimedUser3,
           _claimedUser3 * 0.01,
-          "user3 claimed not enough " + i
+          'user3 claimed not enough ' + i
         );
       }
 
@@ -513,15 +513,15 @@ describe("Smart vault rewards test", () => {
         await vault.getPricePerFullShare(),
         underlyingDec
       );
-      console.log("ppfs change", ppfsAfter - ppfs);
+      console.log('ppfs change', ppfsAfter - ppfs);
       console.log(
-        "claimedTotal",
+        'claimedTotal',
         claimedTotal,
         +utils.formatUnits(rewardsTotalAmount, rtDecimals)
       );
 
       if ((await multicall.getCurrentBlockTimestamp()).toNumber() > finish) {
-        console.log("cycles ended", i);
+        console.log('cycles ended', i);
         break;
       }
     }
@@ -534,9 +534,9 @@ describe("Smart vault rewards test", () => {
       rtDecimals
     );
     console.log(
-      "User3 toClaim",
+      'User3 toClaim',
       toClaimUser3,
-      "100% boost",
+      '100% boost',
       toClaimUser3FullBoost
     );
     const rtBalanceUser3 = +utils.formatUnits(
@@ -550,12 +550,12 @@ describe("Smart vault rewards test", () => {
         rtDecimals
       ) - rtBalanceUser3;
     claimedTotal += claimedUser3;
-    console.log("claimedUser3", claimedUser3);
+    console.log('claimedUser3', claimedUser3);
     expect(claimedUser3).is.greaterThan(0);
     expect(toClaimUser3).is.approximately(
       claimedUser3,
       claimedUser3 * 0.01,
-      "user3 claimed not enough"
+      'user3 claimed not enough'
     );
 
     const toClaimUser4FullBoost = +utils.formatUnits(
@@ -567,9 +567,9 @@ describe("Smart vault rewards test", () => {
       rtDecimals
     );
     console.log(
-      "User4 toClaim",
+      'User4 toClaim',
       toClaimUser4,
-      "100% boost",
+      '100% boost',
       toClaimUser4FullBoost
     );
     const rtBalanceUser4 = +utils.formatUnits(
@@ -583,27 +583,27 @@ describe("Smart vault rewards test", () => {
         rtDecimals
       ) - rtBalanceUser4;
     claimedTotal += claimedUser4;
-    console.log("claimedUser4", claimedUser4);
+    console.log('claimedUser4', claimedUser4);
     expect(claimedUser4).is.greaterThan(0);
     expect(toClaimUser4).is.approximately(
       claimedUser4,
       claimedUser4 * 0.01,
-      "user4 claimed not enough"
+      'user4 claimed not enough'
     );
 
     const vaultRtBalance = +utils.formatUnits(
       await TokenUtils.balanceOf(rt, vault.address),
       rtDecimals
     );
-    console.log("vaultRtBalance", vaultRtBalance);
+    console.log('vaultRtBalance', vaultRtBalance);
     const controllerBal = +utils.formatUnits(
       await TokenUtils.balanceOf(rt, core.controller.address),
       rtDecimals
     );
-    console.log("controller bal", controllerBal);
+    console.log('controller bal', controllerBal);
 
     console.log(
-      "claimedTotal with contr",
+      'claimedTotal with contr',
       claimedTotal + controllerBal,
       +utils.formatUnits(rewardsTotalAmount, rtDecimals)
     );
@@ -611,17 +611,17 @@ describe("Smart vault rewards test", () => {
     expect(claimedTotal + controllerBal).is.approximately(
       +utils.formatUnits(rewardsTotalAmount, rtDecimals),
       +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01,
-      "total claimed not enough"
+      'total claimed not enough'
     );
   });
 
-  it("check reward with transfers", async () => {
+  it('check reward with transfers', async () => {
     const underlying = await UniswapUtils.addLiquidity(
       signer,
       networkToken,
       usdc,
-      utils.parseUnits("10000").toString(),
-      utils.parseUnits("10000", 6).toString(),
+      utils.parseUnits('10000').toString(),
+      utils.parseUnits('10000', 6).toString(),
       await DeployerUtils.getDefaultNetworkFactory(),
       await DeployerUtils.getRouterByFactory(
         await DeployerUtils.getDefaultNetworkFactory()
@@ -633,7 +633,7 @@ describe("Smart vault rewards test", () => {
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = (await DeployerUtils.deployContract(
       signer,
-      "NoopStrategy",
+      'NoopStrategy',
       core.controller.address,
       underlying,
       vault.address,
@@ -642,8 +642,8 @@ describe("Smart vault rewards test", () => {
       1
     )) as NoopStrategy;
     await vault.initializeSmartVault(
-      "NOOP",
-      "tNOOP",
+      'NOOP',
+      'tNOOP',
       core.controller.address,
       underlying,
       60 * 60 * 24 * 28,
@@ -663,17 +663,17 @@ describe("Smart vault rewards test", () => {
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
     const time = 60 * 60 * 24 * 7;
-    const rewardsTotalAmount = utils.parseUnits("10", rtDecimals);
+    const rewardsTotalAmount = utils.parseUnits('10', rtDecimals);
 
     console.log(
-      "underlying amount",
+      'underlying amount',
       utils.formatUnits(
         await TokenUtils.balanceOf(underlying, signer.address),
         underlyingDec
       )
     );
 
-    await TokenUtils.getToken(rt, signer.address, utils.parseUnits("300"));
+    await TokenUtils.getToken(rt, signer.address, utils.parseUnits('300'));
     await TokenUtils.approve(
       rt,
       signer,
@@ -693,7 +693,7 @@ describe("Smart vault rewards test", () => {
       vault,
       utils.parseUnits(signerDeposit, underlyingDec)
     );
-    console.log("signer deposited");
+    console.log('signer deposited');
 
     const signerShareBal = await TokenUtils.balanceOf(
       vault.address,
@@ -711,9 +711,9 @@ describe("Smart vault rewards test", () => {
     // *************** CYCLES *************
     let claimedTotal = 0;
     const cycles = +(duration / (time + 3)).toFixed(0);
-    console.log("cycles", cycles);
+    console.log('cycles', cycles);
     for (let i = 0; i < cycles; i++) {
-      console.log("cycle", i, cycles);
+      console.log('cycle', i, cycles);
       await TimeUtils.advanceBlocksOnTs(time / 2);
 
       // send a part of share to user1
@@ -748,16 +748,16 @@ describe("Smart vault rewards test", () => {
         rtDecimals
       );
       console.log(
-        "Signer toClaim",
+        'Signer toClaim',
         _toClaimSigner,
-        "all rewards in vault",
+        'all rewards in vault',
         vaultRtBalance,
-        "rt balance",
+        'rt balance',
         _rtBalanceSigner,
-        "100%",
+        '100%',
         _toClaimSignerFullBoost
       );
-      expect(_toClaimSigner).is.greaterThan(0, "to claim signer is zero " + i);
+      expect(_toClaimSigner).is.greaterThan(0, 'to claim signer is zero ' + i);
       await vault.getAllRewards();
 
       await TimeUtils.advanceBlocksOnTs(time / 2);
@@ -772,16 +772,16 @@ describe("Smart vault rewards test", () => {
         rtDecimals
       );
       console.log(
-        "User1 toClaim",
+        'User1 toClaim',
         toClaimUser1,
-        "all rewards in vault",
+        'all rewards in vault',
         vaultRtBalance,
-        "rt balance",
+        'rt balance',
         rtBalanceUser1,
-        "100%",
+        '100%',
         toClaimUser1FullBoost
       );
-      expect(toClaimUser1).is.greaterThan(0, "to claim user1 is zero " + i);
+      expect(toClaimUser1).is.greaterThan(0, 'to claim user1 is zero ' + i);
       await vault.connect(user1).getAllRewards();
 
       const _claimedSigner =
@@ -789,7 +789,7 @@ describe("Smart vault rewards test", () => {
           await TokenUtils.balanceOf(rt, signer.address),
           rtDecimals
         ) - _rtBalanceSigner;
-      console.log("claimedSigner", _claimedSigner);
+      console.log('claimedSigner', _claimedSigner);
       claimedTotal += _claimedSigner;
 
       const claimedUser1 =
@@ -797,7 +797,7 @@ describe("Smart vault rewards test", () => {
           await TokenUtils.balanceOf(rt, user1.address),
           rtDecimals
         ) - rtBalanceUser1;
-      console.log("claimedUser1", claimedUser1);
+      console.log('claimedUser1', claimedUser1);
       claimedTotal += claimedUser1;
 
       expect(_claimedSigner).is.greaterThan(0);
@@ -805,12 +805,12 @@ describe("Smart vault rewards test", () => {
       expect(_toClaimSigner).is.approximately(
         _claimedSigner,
         _claimedSigner * 0.01,
-        "signer claimed not enough " + i
+        'signer claimed not enough ' + i
       );
       expect(toClaimUser1).is.approximately(
         claimedUser1,
         claimedUser1 * 0.01,
-        "user1 claimed not enough " + i
+        'user1 claimed not enough ' + i
       );
     }
 
@@ -831,12 +831,12 @@ describe("Smart vault rewards test", () => {
       rtDecimals
     );
     console.log(
-      "Signer toClaim",
+      'Signer toClaim',
       toClaimSigner,
-      "100%",
+      '100%',
       toClaimSignerFullBoost
     );
-    expect(toClaimSigner).is.greaterThan(0, "to claim signer is zero ");
+    expect(toClaimSigner).is.greaterThan(0, 'to claim signer is zero ');
     await vault.getAllRewards();
 
     const claimedSigner =
@@ -844,23 +844,23 @@ describe("Smart vault rewards test", () => {
         await TokenUtils.balanceOf(rt, signer.address),
         rtDecimals
       ) - rtBalanceSigner;
-    console.log("claimedSigner", claimedSigner);
+    console.log('claimedSigner', claimedSigner);
     claimedTotal += claimedSigner;
 
     const controllerBal = +utils.formatUnits(
       await TokenUtils.balanceOf(rt, core.controller.address),
       rtDecimals
     );
-    console.log("controller bal", controllerBal);
+    console.log('controller bal', controllerBal);
     console.log(
-      "claimedTotal",
+      'claimedTotal',
       claimedTotal,
       +utils.formatUnits(rewardsTotalAmount, rtDecimals)
     );
     expect(claimedTotal + controllerBal).is.approximately(
       +utils.formatUnits(rewardsTotalAmount, rtDecimals),
       +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01,
-      "total claimed not enough"
+      'total claimed not enough'
     );
 
     await vault.exit();

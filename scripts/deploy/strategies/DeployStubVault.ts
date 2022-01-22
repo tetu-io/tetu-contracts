@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../DeployerUtils";
-import { ContractReader, IStrategy } from "../../../typechain";
-import { writeFileSync } from "fs";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../DeployerUtils';
+import { ContractReader, IStrategy } from '../../../typechain';
+import { writeFileSync } from 'fs';
 
 export class DeployStubVault {
   public static async deploy(
@@ -17,19 +17,19 @@ export class DeployStubVault {
 
     const cReader = (await DeployerUtils.connectContract(
       signer,
-      "ContractReader",
+      'ContractReader',
       tools.reader
     )) as ContractReader;
 
     const deployedVaultAddresses = await cReader.vaults();
-    console.log("all vaults size", deployedVaultAddresses.length);
+    console.log('all vaults size', deployedVaultAddresses.length);
 
     for (const vAdr of deployedVaultAddresses) {
       vaultNames.add(await cReader.vaultName(vAdr));
     }
 
-    if (vaultNames.has("TETU_" + tokenName)) {
-      console.log("Strategy already exist", tokenName);
+    if (vaultNames.has('TETU_' + tokenName)) {
+      console.log('Strategy already exist', tokenName);
     }
 
     const UNDERLYING = tokenAddress;
@@ -48,7 +48,7 @@ export class DeployStubVault {
           ];
           return DeployerUtils.deployContract(
             signer,
-            "NoopStrategy",
+            'NoopStrategy',
             ...args
           ) as Promise<IStrategy>;
         },
@@ -74,6 +74,6 @@ export class DeployStubVault {
     ]);
 
     const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-    writeFileSync(`./tmp/deployed/${tokenName}.txt`, txt, "utf8");
+    writeFileSync(`./tmp/deployed/${tokenName}.txt`, txt, 'utf8');
   }
 }

@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
 import {
   IIronLpToken,
   IIronSwap,
@@ -10,12 +10,12 @@ import {
   RErc20Storage,
   RTokenInterface,
   SmartVault,
-} from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { mkdir, writeFileSync } from "fs";
-import { BigNumber, utils } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { VaultUtils } from "../../../test/VaultUtils";
+} from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { mkdir, writeFileSync } from 'fs';
+import { BigNumber, utils } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { VaultUtils } from '../../../test/VaultUtils';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -24,24 +24,24 @@ async function main() {
 
   const controller = (await DeployerUtils.connectInterface(
     signer,
-    "IronControllerInterface",
+    'IronControllerInterface',
     MaticAddresses.IRON_CONTROLLER
   )) as IronControllerInterface;
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
-    "PriceCalculator",
+    'PriceCalculator',
     tools.calculator
   )) as PriceCalculator;
 
   const markets = await controller.getAllMarkets();
-  console.log("markets", markets.length);
+  console.log('markets', markets.length);
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (const vInfo of vaultInfos) {
-    if (vInfo.platform !== "9") {
+    if (vInfo.platform !== '9') {
       continue;
     }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -49,7 +49,7 @@ async function main() {
     if (vInfo.active) {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         vInfo.addr
       )) as SmartVault;
       currentRewards.set(
@@ -59,17 +59,17 @@ async function main() {
     }
   }
 
-  console.log("loaded vault", underlyingStatuses.size);
+  console.log('loaded vault', underlyingStatuses.size);
 
   const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(
     MaticAddresses.ICE_TOKEN
   );
-  console.log("reward price", utils.formatUnits(rewardPrice));
+  console.log('reward price', utils.formatUnits(rewardPrice));
 
-  let infos: string =
-    "idx, rToken_name, rToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, apr, vault, current rewards \n";
+  let infos =
+    'idx, rToken_name, rToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, apr, vault, current rewards \n';
   for (let i = 0; i < markets.length; i++) {
-    console.log("id", i);
+    console.log('id', i);
 
     // if (i === 5 || i === 6) {
     //   console.log('skip volatile assets')
@@ -78,15 +78,15 @@ async function main() {
 
     const rTokenAdr = markets[i];
     const rTokenName = await TokenUtils.tokenSymbol(rTokenAdr);
-    console.log("rTokenName", rTokenName, rTokenAdr);
+    console.log('rTokenName', rTokenName, rTokenAdr);
     const rTokenCtr = (await DeployerUtils.connectInterface(
       signer,
-      "RTokenInterface",
+      'RTokenInterface',
       rTokenAdr
     )) as RTokenInterface;
     const rTokenCtr2 = (await DeployerUtils.connectInterface(
       signer,
-      "RErc20Storage",
+      'RErc20Storage',
       rTokenAdr
     )) as RErc20Storage;
     let token: string;
@@ -106,7 +106,7 @@ async function main() {
 
     const status = underlyingStatuses.get(token.toLowerCase());
     if (status != null && !status) {
-      console.log("deactivated");
+      console.log('deactivated');
       continue;
     }
     const undPrice = +utils.formatUnits(
@@ -128,38 +128,38 @@ async function main() {
 
     const data =
       i +
-      "," +
+      ',' +
       rTokenName +
-      "," +
+      ',' +
       rTokenAdr +
-      "," +
+      ',' +
       token +
-      "," +
+      ',' +
       tokenName +
-      "," +
+      ',' +
       (collateralFactor - 1) +
-      "," +
+      ',' +
       borrowTarget +
-      "," +
+      ',' +
       tvl.toFixed(2) +
-      "," +
+      ',' +
       apr +
-      "," +
+      ',' +
       vault +
-      "," +
+      ',' +
       curRewards;
 
     console.log(data);
-    infos += data + "\n";
+    infos += data + '\n';
   }
 
-  mkdir("./tmp/download", { recursive: true }, (err) => {
+  mkdir('./tmp/download', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  writeFileSync("./tmp/download/iron_markets.csv", infos, "utf8");
-  console.log("done");
+  writeFileSync('./tmp/download/iron_markets.csv', infos, 'utf8');
+  console.log('done');
 }
 
 main()
@@ -187,13 +187,13 @@ async function collectTokensInfoIronSwap(
 ): Promise<string[]> {
   const lpContract = (await DeployerUtils.connectInterface(
     signer,
-    "IIronLpToken",
+    'IIronLpToken',
     lp
   )) as IIronLpToken;
   const swapAddress = await lpContract.swap();
   const swapContract = (await DeployerUtils.connectInterface(
     signer,
-    "IIronSwap",
+    'IIronSwap',
     swapAddress
   )) as IIronSwap;
   return swapContract.getTokens();
@@ -206,7 +206,7 @@ async function collectTokensInfoUniswap(
   try {
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
-      "IUniswapV2Pair",
+      'IUniswapV2Pair',
       lp
     )) as IUniswapV2Pair;
     const tokens = [];
@@ -216,7 +216,7 @@ async function collectTokensInfoUniswap(
 
     return tokens;
   } catch (e) {
-    console.error("error collect tokens from ", lp);
+    console.error('error collect tokens from ', lp);
   }
   return [];
 }

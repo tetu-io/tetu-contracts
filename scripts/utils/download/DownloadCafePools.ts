@@ -1,20 +1,20 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
-import { ICafeMasterChef } from "../../../typechain";
-import { McLpDownloader } from "./McLpDownloader";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
+import { ICafeMasterChef } from '../../../typechain';
+import { McLpDownloader } from './McLpDownloader';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const chef = (await DeployerUtils.connectInterface(
     signer,
-    "ICafeMasterChef",
+    'ICafeMasterChef',
     MaticAddresses.CAFE_MASTERCHEF
   )) as ICafeMasterChef;
 
   await McLpDownloader.download(
-    "11",
-    "CAFE",
+    '11',
+    'CAFE',
     MaticAddresses.CAFE_MASTERCHEF,
     MaticAddresses.pBREW_TOKEN,
     chef.poolLength,

@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
 import {
   ContractReader,
   Controller,
@@ -7,9 +7,9 @@ import {
   NoopStrategy,
   SmartVault,
   VaultController,
-} from "../../../../typechain";
-import { TokenUtils } from "../../../../test/TokenUtils";
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+} from '../../../../typechain';
+import { TokenUtils } from '../../../../test/TokenUtils';
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -18,12 +18,12 @@ async function main() {
 
   const controller = (await DeployerUtils.connectContract(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
-    "VaultController",
+    'VaultController',
     core.vaultController
   )) as VaultController;
 
@@ -31,24 +31,24 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
   const tetuLp = (await DeployerUtils.getTokenAddresses()).get(
-    "sushi_lp_token_usdc"
+    'sushi_lp_token_usdc'
   ) as string;
 
   const lpCont = (await DeployerUtils.connectInterface(
     signer,
-    "IUniswapV2Pair",
+    'IUniswapV2Pair',
     tetuLp
   )) as IUniswapV2Pair;
   const token0 = await lpCont.token0();
@@ -57,16 +57,16 @@ async function main() {
   const token1Name = await TokenUtils.tokenSymbol(token1);
 
   // *********** DEPLOY VAULT
-  const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+  const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
   const vaultProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     vaultLogic.address
   );
   const tetuLpVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
   const tetuLpEmptyStrategy = (await DeployerUtils.deployContract(
     signer,
-    "NoopStrategy",
+    'NoopStrategy',
     core.controller,
     tetuLp,
     tetuLpVault.address,
@@ -77,10 +77,10 @@ async function main() {
 
   const vaultNameWithoutPrefix = `SUSHI_${token0Name}_${token1Name}`;
 
-  console.log("vaultNameWithoutPrefix", vaultNameWithoutPrefix);
+  console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
 
-  if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-    console.log("Strategy already exist", vaultNameWithoutPrefix);
+  if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+    console.log('Strategy already exist', vaultNameWithoutPrefix);
     return;
   }
 

@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../deploy/DeployerUtils";
-import { AutoRewarder } from "../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../deploy/DeployerUtils';
+import { AutoRewarder } from '../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -9,15 +9,15 @@ async function main() {
   if (chainId === 137) {
     logic = (await DeployerUtils.deployContract(
       signer,
-      "AutoRewarder"
+      'AutoRewarder'
     )) as AutoRewarder;
   } else if (chainId === 250) {
     logic = (await DeployerUtils.deployContract(
       signer,
-      "AutoRewarderSideChain"
+      'AutoRewarderSideChain'
     )) as AutoRewarder;
   } else {
-    throw new Error("unknown chain " + chainId);
+    throw new Error('unknown chain ' + chainId);
   }
 
   await DeployerUtils.wait(5);

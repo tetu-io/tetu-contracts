@@ -1,12 +1,12 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
 import {
   ContractReader,
   ContractUtils,
   PriceCalculator,
   TetuProxyGov,
-} from "../../../typechain";
-import { writeFileSync } from "fs";
+} from '../../../typechain';
+import { writeFileSync } from 'fs';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -14,7 +14,7 @@ async function main() {
   const net = await ethers.provider.getNetwork();
 
   let calculatorData: [PriceCalculator, TetuProxyGov, PriceCalculator];
-  if (net.name === "matic") {
+  if (net.name === 'matic') {
     calculatorData = await DeployerUtils.deployPriceCalculatorMatic(
       signer,
       core.controller,
@@ -29,11 +29,11 @@ async function main() {
 
   const readerLogic = await DeployerUtils.deployContract(
     signer,
-    "ContractReader"
+    'ContractReader'
   );
   const readerProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyGov",
+    'TetuProxyGov',
     readerLogic.address
   );
   const contractReader = readerLogic.attach(
@@ -44,26 +44,26 @@ async function main() {
 
   const balancer = await DeployerUtils.deployContract(
     signer,
-    "LiquidityBalancer",
+    'LiquidityBalancer',
     core.controller
   );
 
   const utils = (await DeployerUtils.deployContract(
     signer,
-    "ContractUtils"
+    'ContractUtils'
   )) as ContractUtils;
 
   writeFileSync(
-    "./tool_addresses.txt",
+    './tool_addresses.txt',
     calculatorData[0].address +
-      ", // calculator\n" +
+      ', // calculator\n' +
       contractReader.address +
-      ", // contractReader\n" +
+      ', // contractReader\n' +
       utils.address +
-      ", // utils\n" +
+      ', // utils\n' +
       balancer.address +
-      ", // balancer\n",
-    "utf8"
+      ', // balancer\n',
+    'utf8'
   );
 
   await DeployerUtils.wait(5);

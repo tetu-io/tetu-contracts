@@ -1,15 +1,15 @@
 // noinspection DuplicatedCode
 
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { writeFileSync } from "fs";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { writeFileSync } from 'fs';
 
 export default async function main() {
   const signer = (await ethers.getSigners())[0];
   const net = (await ethers.provider.getNetwork()).name;
 
   let timeLock = 60 * 60 * 48;
-  if (net === "rinkeby" || net === "ropsten" || net === "mumbai") {
+  if (net === 'rinkeby' || net === 'ropsten' || net === 'mumbai') {
     timeLock = 1;
   }
 
@@ -21,26 +21,26 @@ export default async function main() {
   );
 
   writeFileSync(
-    "./core_addresses.txt",
+    './core_addresses.txt',
     core.controller.address +
-      ", // controller\n" +
+      ', // controller\n' +
       core.announcer.address +
-      ", // announcer\n" +
+      ', // announcer\n' +
       core.feeRewardForwarder.address +
-      ", // feeRewardForwarder\n" +
+      ', // feeRewardForwarder\n' +
       core.bookkeeper.address +
-      ", // bookkeeper\n" +
+      ', // bookkeeper\n' +
       core.notifyHelper.address +
-      ", // notifyHelper\n" +
+      ', // notifyHelper\n' +
       core.mintHelper.address +
-      ", // mintHelper\n" +
+      ', // mintHelper\n' +
       core.rewardToken.address +
-      ", // rewardToken\n" +
+      ', // rewardToken\n' +
       core.psVault.address +
-      ", // psVault\n" +
+      ', // psVault\n' +
       core.fundKeeper.address +
-      ", // fundKeeper\n",
-    "utf8"
+      ', // fundKeeper\n',
+    'utf8'
   );
 
   await DeployerUtils.wait(5);

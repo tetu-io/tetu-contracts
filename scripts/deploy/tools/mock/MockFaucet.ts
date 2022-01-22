@@ -1,15 +1,15 @@
-import { DeployerUtils } from "../../DeployerUtils";
-import { ethers } from "hardhat";
-import { RunHelper } from "../../../utils/tools/RunHelper";
-import { TokenUtils } from "../../../../test/TokenUtils";
-import { MockFaucet } from "../../../../typechain";
+import { DeployerUtils } from '../../DeployerUtils';
+import { ethers } from 'hardhat';
+import { RunHelper } from '../../../utils/tools/RunHelper';
+import { TokenUtils } from '../../../../test/TokenUtils';
+import { MockFaucet } from '../../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const mocks = await DeployerUtils.getTokenAddresses();
   const contract = (await DeployerUtils.deployContract(
     signer,
-    "MockFaucet"
+    'MockFaucet'
   )) as MockFaucet;
 
   for (const mockName of Array.from(mocks.keys())) {

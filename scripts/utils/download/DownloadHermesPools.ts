@@ -1,21 +1,21 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
-import { IIrisMasterChef } from "../../../typechain";
-import { BigNumber } from "ethers";
-import { McLpDownloader } from "./McLpDownloader";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
+import { IIrisMasterChef } from '../../../typechain';
+import { BigNumber } from 'ethers';
+import { McLpDownloader } from './McLpDownloader';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const chef = (await DeployerUtils.connectInterface(
     signer,
-    "IIrisMasterChef",
+    'IIrisMasterChef',
     MaticAddresses.HERMES_MASTERCHEF
   )) as IIrisMasterChef;
 
   await McLpDownloader.download(
-    "10",
-    "HERMES",
+    '10',
+    'HERMES',
     MaticAddresses.HERMES_MASTERCHEF,
     MaticAddresses.IRIS_TOKEN,
     chef.poolLength,

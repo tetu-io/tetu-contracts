@@ -1,27 +1,27 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Bookkeeper } from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { utils } from "ethers";
-import { RunHelper } from "../tools/RunHelper";
-import { VaultUtils } from "../../../test/VaultUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Bookkeeper } from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { utils } from 'ethers';
+import { RunHelper } from '../tools/RunHelper';
+import { VaultUtils } from '../../../test/VaultUtils';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const signer = (await ethers.getSigners())[0];
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const percentOfBalance = 0.001;
   const vaults = await bookkeeper.vaults();
-  console.log("vaults ", vaults.length);
+  console.log('vaults ', vaults.length);
 
   for (const vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
     if (!(await vaultContract.active())) {
-      console.log("inactive ", await vaultContract.name());
+      console.log('inactive ', await vaultContract.name());
       continue;
     }
 
@@ -34,7 +34,7 @@ async function main() {
       );
     if (!vaultBalance.isZero()) {
       console.log(
-        "already deposited",
+        'already deposited',
         utils.formatUnits(vaultBalance, decimals)
       );
       continue;
@@ -46,17 +46,17 @@ async function main() {
     );
     if (availableAmount === 0) {
       console.error(
-        "zero balance",
+        'zero balance',
         await TokenUtils.tokenSymbol(underlying),
         underlying
       );
       continue;
     }
-    console.log("availableAmount", availableAmount);
+    console.log('availableAmount', availableAmount);
     const depositN =
       availableAmount * percentOfBalance * Math.random() +
       availableAmount * percentOfBalance;
-    console.log("depositN", depositN);
+    console.log('depositN', depositN);
 
     const deposit = utils.parseUnits(depositN.toFixed(decimals), decimals);
     await RunHelper.runAndWait(async () =>
@@ -64,10 +64,10 @@ async function main() {
     );
 
     console.log(
-      "deposited ",
+      'deposited ',
       await vaultContract.name(),
       depositN,
-      "availableAmount",
+      'availableAmount',
       availableAmount
     );
   }

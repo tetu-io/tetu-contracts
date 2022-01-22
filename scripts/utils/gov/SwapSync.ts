@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Bookkeeper, TetuSwapFactory, TetuSwapPair } from "../../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Bookkeeper, TetuSwapFactory, TetuSwapPair } from '../../../typechain';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
@@ -8,12 +8,12 @@ async function main() {
 
   const factory = (await DeployerUtils.connectInterface(
     signer,
-    "TetuSwapFactory",
+    'TetuSwapFactory',
     core.swapFactory
   )) as TetuSwapFactory;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
 
@@ -25,7 +25,7 @@ async function main() {
       const lp = await factory.allPairs(i);
       const lpCtr = (await DeployerUtils.connectInterface(
         signer,
-        "TetuSwapPair",
+        'TetuSwapPair',
         lp
       )) as TetuSwapPair;
 
@@ -43,10 +43,10 @@ async function main() {
 
       await lpCtr.sync();
     } catch (e) {
-      console.log("Loop Error", e);
+      console.log('Loop Error', e);
     }
   }
-  console.log("all pairs synced", pairMap.size);
+  console.log('all pairs synced', pairMap.size);
 
   const actionEvent = bookkeeper.filters.RegisterUserAction(null, null, null);
   bookkeeper.on(actionEvent, async (user, amount, deposit, event) => {
@@ -62,17 +62,18 @@ async function main() {
     for (const lp of Array.from(pairs.keys())) {
       const lpCtr = (await DeployerUtils.connectInterface(
         signer,
-        "TetuSwapPair",
+        'TetuSwapPair',
         lp
       )) as TetuSwapPair;
-      console.log("sync ", lp);
+      console.log('sync ', lp);
       await lpCtr.sync();
     }
   });
 
   // noinspection InfiniteLoopJS
+  // eslint-disable-next-line no-constant-condition
   while (true) {
-    console.log("Waiting for events....");
+    console.log('Waiting for events....');
     await DeployerUtils.delay(1000 * 60);
   }
 }

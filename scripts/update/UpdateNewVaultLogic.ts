@@ -1,39 +1,39 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../deploy/DeployerUtils';
 import {
   Announcer,
   Bookkeeper,
   ContractReader,
   Controller,
-} from "../../typechain";
-import { RunHelper } from "../utils/tools/RunHelper";
+} from '../../typechain';
+import { RunHelper } from '../utils/tools/RunHelper';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const vaultLogicAdr = "";
+  const vaultLogicAdr = '';
   const batch = 30;
 
   const controller = (await DeployerUtils.connectInterface(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   const announcer = (await DeployerUtils.connectInterface(
     signer,
-    "Announcer",
+    'Announcer',
     core.announcer
   )) as Announcer;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectInterface(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
@@ -51,7 +51,7 @@ async function main() {
     //   continue;
     // }
     vaults.push(vault);
-    console.log("vault", vault);
+    console.log('vault', vault);
   }
 
   let vaultBatch: string[] = [];

@@ -1,18 +1,18 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
 import {
   IMiniChefV2,
   IOracleMatic,
   IRewarder,
   IUniswapV2Pair,
   SmartVault,
-} from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { mkdir, writeFileSync } from "fs";
-import { BigNumber, utils } from "ethers";
-import { Addresses } from "../../../addresses";
-import { VaultUtils } from "../../../test/VaultUtils";
+} from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { mkdir, writeFileSync } from 'fs';
+import { BigNumber, utils } from 'ethers';
+import { Addresses } from '../../../addresses';
+import { VaultUtils } from '../../../test/VaultUtils';
 
 async function downloadSushi() {
   const signer = (await ethers.getSigners())[0];
@@ -20,25 +20,25 @@ async function downloadSushi() {
 
   const chef = (await DeployerUtils.connectInterface(
     signer,
-    "IMiniChefV2",
+    'IMiniChefV2',
     MaticAddresses.SUSHI_MINISHEFV2
   )) as IMiniChefV2;
 
   const oracle = (await DeployerUtils.connectInterface(
     signer,
-    "IOracleMatic",
+    'IOracleMatic',
     Addresses.ORACLE
   )) as IOracleMatic;
 
   const poolLength = (await chef.poolLength()).toNumber();
-  console.log("length", poolLength);
+  console.log('length', poolLength);
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (const vInfo of vaultInfos) {
-    if (vInfo.platform !== "3") {
+    if (vInfo.platform !== '3') {
       continue;
     }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -46,7 +46,7 @@ async function downloadSushi() {
     if (vInfo.active) {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         vInfo.addr
       )) as SmartVault;
       currentRewards.set(
@@ -59,12 +59,12 @@ async function downloadSushi() {
   const sushiPerSecond = await chef.sushiPerSecond();
   const totalAllocPoint = await chef.totalAllocPoint();
   const sushiPrice = await oracle.getPrice(MaticAddresses.SUSHI_TOKEN);
-  console.log("sushi price", utils.formatUnits(sushiPrice));
+  console.log('sushi price', utils.formatUnits(sushiPrice));
   const maticPrice = await oracle.getPrice(MaticAddresses.WMATIC_TOKEN);
-  console.log("maticPrice", utils.formatUnits(maticPrice));
+  console.log('maticPrice', utils.formatUnits(maticPrice));
 
-  let infos: string =
-    "idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, sushiWeekRewardUsd, maticWeekRewardUsd, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n";
+  let infos =
+    'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, sushiWeekRewardUsd, maticWeekRewardUsd, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n';
   for (let i = 0; i < poolLength; i++) {
     if (i === 26) {
       continue;
@@ -75,11 +75,11 @@ async function downloadSushi() {
     // if (!status) {
     //   continue;
     // }
-    console.log("id", i);
+    console.log('id', i);
     const poolInfo = await chef.poolInfo(i);
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
-      "IUniswapV2Pair",
+      'IUniswapV2Pair',
       lp
     )) as IUniswapV2Pair;
     const token0 = await lpContract.token0();
@@ -100,12 +100,12 @@ async function downloadSushi() {
       totalAllocPoint,
       sushiPrice
     );
-    console.log("sushiWeekRewardUsd", sushiWeekRewardUsd);
+    console.log('sushiWeekRewardUsd', sushiWeekRewardUsd);
 
     const rewarder = await chef.rewarder(i);
     const rewarderContract = (await DeployerUtils.connectInterface(
       signer,
-      "IRewarder",
+      'IRewarder',
       rewarder
     )) as IRewarder;
 
@@ -126,7 +126,7 @@ async function downloadSushi() {
       maticTotalAllocPoint,
       maticPrice
     );
-    console.log("maticWeekRewardUsd", maticWeekRewardUsd);
+    console.log('maticWeekRewardUsd', maticWeekRewardUsd);
 
     const allRewards = maticWeekRewardUsd + sushiWeekRewardUsd;
     const lpPrice = await oracle.getPrice(lp);
@@ -139,48 +139,48 @@ async function downloadSushi() {
     const token1Name = await TokenUtils.tokenSymbol(token1);
     const data =
       i +
-      "," +
-      "SUSHI_" +
+      ',' +
+      'SUSHI_' +
       token0Name +
-      "_" +
+      '_' +
       token1Name +
-      "," +
+      ',' +
       lp +
-      "," +
+      ',' +
       token0 +
-      "," +
+      ',' +
       token0Name +
-      "," +
+      ',' +
       token1 +
-      "," +
+      ',' +
       token1Name +
-      "," +
+      ',' +
       sushiAllocPoint.toNumber() +
-      "," +
+      ',' +
       sushiWeekRewardUsd.toFixed(0) +
-      "," +
+      ',' +
       maticWeekRewardUsd.toFixed(0) +
-      "," +
+      ',' +
       allRewards.toFixed(0) +
-      "," +
+      ',' +
       (+tvlUsd).toFixed(0) +
-      "," +
+      ',' +
       apr.toFixed(0) +
-      "," +
+      ',' +
       currentRewards.get(lp.toLowerCase()) +
-      "," +
+      ',' +
       underlyingToVault.get(lp.toLowerCase());
     console.log(data);
-    infos += data + "\n";
+    infos += data + '\n';
   }
 
-  mkdir("./tmp/download", { recursive: true }, (err) => {
+  mkdir('./tmp/download', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  writeFileSync("./tmp/download/sushi_pools.csv", infos, "utf8");
-  console.log("done");
+  writeFileSync('./tmp/download/sushi_pools.csv', infos, 'utf8');
+  console.log('done');
 }
 
 downloadSushi()

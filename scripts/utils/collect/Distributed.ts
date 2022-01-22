@@ -1,21 +1,21 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   AutoRewarder,
   Bookkeeper,
   ContractReader,
   SmartVault,
-} from "../../../typechain";
-import { utils } from "ethers";
+} from '../../../typechain';
+import { utils } from 'ethers';
 
 const EXCLUDED_PLATFORM = new Set<string>([
-  "0",
-  "1",
-  "4",
-  "6",
-  "7",
-  "10",
-  "12",
+  '0',
+  '1',
+  '4',
+  '6',
+  '7',
+  '10',
+  '12',
 ]);
 
 async function main() {
@@ -23,27 +23,27 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const signer = (await ethers.getSigners())[0];
 
-  console.log("signer", signer.address);
+  console.log('signer', signer.address);
 
   const reader = (await DeployerUtils.connectInterface(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const rewarder = (await DeployerUtils.connectInterface(
     signer,
-    "AutoRewarder",
+    'AutoRewarder',
     core.autoRewarder
   )) as AutoRewarder;
 
   const allVaults = await bookkeeper.vaults();
   // const vaultsLength = (await bookkeeper.vaultsLength()).toNumber();
-  console.log("vaults size", allVaults.length);
+  console.log('vaults size', allVaults.length);
 
   const vaults: string[] = [];
   const vaultNames = new Map<string, string>();
@@ -61,7 +61,7 @@ async function main() {
     }
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const platform = (
@@ -74,12 +74,12 @@ async function main() {
     vaults.push(vault);
   }
 
-  console.log("sorted vaults", vaults.length);
+  console.log('sorted vaults', vaults.length);
 
   for (const item of vaults) {
     const amount = await rewarder.lastDistributedAmount(item);
     console.log(
-      "distributed",
+      'distributed',
       vaultNames.get(item.toLowerCase()),
       utils.formatUnits(amount)
     );

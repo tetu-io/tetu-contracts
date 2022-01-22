@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../DeployerUtils";
-import { ContractReader, IStrategy } from "../../../typechain";
-import { writeFileSync } from "fs";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../DeployerUtils';
+import { ContractReader, IStrategy } from '../../../typechain';
+import { writeFileSync } from 'fs';
 
 export class SingleTokenVaultStrategyDeploy {
   public static async deploy(
@@ -17,12 +17,12 @@ export class SingleTokenVaultStrategyDeploy {
 
     const cReader = (await DeployerUtils.connectContract(
       signer,
-      "ContractReader",
+      'ContractReader',
       tools.reader
     )) as ContractReader;
 
     const deployedVaultAddresses = await cReader.vaults();
-    console.log("all vaults size", deployedVaultAddresses.length);
+    console.log('all vaults size', deployedVaultAddresses.length);
 
     for (const vAdr of deployedVaultAddresses) {
       vaultNames.add(await cReader.vaultName(vAdr));
@@ -30,8 +30,8 @@ export class SingleTokenVaultStrategyDeploy {
 
     const vaultNameWithoutPrefix = tokenName;
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
     }
 
     const [vaultLogic, vault, strategy] =
@@ -64,6 +64,6 @@ export class SingleTokenVaultStrategyDeploy {
     ]);
 
     const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
   }
 }

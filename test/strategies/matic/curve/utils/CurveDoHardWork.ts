@@ -1,8 +1,8 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { DoHardWorkLoopBase } from "../../../DoHardWorkLoopBase";
-import { CurveUtils } from "./CurveUtils";
-import { ethers } from "hardhat";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { DoHardWorkLoopBase } from '../../../DoHardWorkLoopBase';
+import { CurveUtils } from './CurveUtils';
+import { ethers } from 'hardhat';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);

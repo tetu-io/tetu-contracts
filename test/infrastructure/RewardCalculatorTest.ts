@@ -1,24 +1,24 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TimeUtils } from "../TimeUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { TimeUtils } from '../TimeUtils';
 import {
   Bookkeeper,
   IStrategy,
   PriceCalculator,
   RewardCalculator,
   SmartVault,
-} from "../../typechain";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { utils } from "ethers";
+} from '../../typechain';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { utils } from 'ethers';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-const exclude = new Set<string>(["NoopStrategy"]);
+const exclude = new Set<string>(['NoopStrategy']);
 
-describe("Reward calculator tests", function () {
+describe('Reward calculator tests', function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -56,18 +56,18 @@ describe("Reward calculator tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("strategy reward", async () => {
+  it('strategy reward', async () => {
     const vault = await core.bookkeeper._vaults(1);
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const strategy = await vCtr.strategy();
     const rewardUsd = +utils.formatUnits(
       await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24)
     );
-    console.log("rewardUsd", rewardUsd);
+    console.log('rewardUsd', rewardUsd);
     // todo activate after launch
     // expect(rewardUsd).is.not.eq(0);
   });
@@ -88,11 +88,11 @@ describe("Reward calculator tests", function () {
   //   expect(kpi).is.not.eq(0);
   // });
 
-  it.skip("strategy reward usd for all", async () => {
+  it.skip('strategy reward usd for all', async () => {
     const bkAdr = (await DeployerUtils.getCoreAddresses()).bookkeeper;
     const bookkeeper = (await DeployerUtils.connectInterface(
       signer,
-      "Bookkeeper",
+      'Bookkeeper',
       bkAdr
     )) as Bookkeeper;
     const vaults = await bookkeeper.vaults();
@@ -100,7 +100,7 @@ describe("Reward calculator tests", function () {
     for (const vault of vaults) {
       const vaultCtr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         vault
       )) as SmartVault;
       if (!(await vaultCtr.active())) {
@@ -109,7 +109,7 @@ describe("Reward calculator tests", function () {
       const strategy = await vaultCtr.strategy();
       const strCtr = (await DeployerUtils.connectInterface(
         signer,
-        "IStrategy",
+        'IStrategy',
         strategy
       )) as IStrategy;
       const name = await strCtr.STRATEGY_NAME();

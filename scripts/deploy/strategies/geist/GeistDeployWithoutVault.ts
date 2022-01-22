@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
-import { ContractReader, IStrategy } from "../../../../typechain";
-import { appendFileSync, mkdir, readFileSync } from "fs";
-import { Misc } from "../../../utils/tools/Misc";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
+import { ContractReader, IStrategy } from '../../../../typechain';
+import { appendFileSync, mkdir, readFileSync } from 'fs';
+import { Misc } from '../../../utils/tools/Misc';
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -12,36 +12,36 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const infos = readFileSync(
-    "scripts/utils/download/data/geist_markets.csv",
-    "utf8"
+    'scripts/utils/download/data/geist_markets.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const vaultsByUnderlying = new Map<string, string>();
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     const underlying = (await cReader.vaultUnderlying(vAdr)).toLowerCase();
     if (vaultsByUnderlying.has(underlying)) {
-      throw Error("duplicate und");
+      throw Error('duplicate und');
     }
     vaultsByUnderlying.set(underlying, vAdr);
   }
 
   appendFileSync(
     `./tmp/deployed/GEIST_STRATS_UPD.txt`,
-    "-------------------\n",
-    "utf8"
+    '-------------------\n',
+    'utf8'
   );
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const tokenName = strat[1];
@@ -53,20 +53,20 @@ async function main() {
     const ltv = +strat[7];
     const liquidationThreshold = strat[8];
 
-    if (idx === "idx" || !tokenAddress) {
-      console.log("skip", idx);
+    if (idx === 'idx' || !tokenAddress) {
+      console.log('skip', idx);
       continue;
     }
 
     if (alreadyDeployed.has(idx)) {
-      console.log("Strategy already deployed", idx);
+      console.log('Strategy already deployed', idx);
       continue;
     }
 
     const vault = vaultsByUnderlying.get(tokenAddress.toLowerCase()) as string;
     const vaultName = await cReader.vaultUnderlying(vault);
 
-    console.log("strat", idx, aTokenName, vaultName);
+    console.log('strat', idx, aTokenName, vaultName);
 
     const collateralFactor = ltv.toFixed(0);
     const borrowTarget = (ltv * Misc.GEIST_BOR_RATIO).toFixed(0);
@@ -80,7 +80,7 @@ async function main() {
     ];
     const strategy = (await DeployerUtils.deployContract(
       signer,
-      "StrategyGeistFold",
+      'StrategyGeistFold',
       ...strategyArgs
     )) as IStrategy;
 
@@ -88,15 +88,15 @@ async function main() {
 
     await DeployerUtils.verifyWithContractName(
       strategy.address,
-      "contracts/strategies/fantom/geist/StrategyGeistFold.sol:StrategyGeistFold",
+      'contracts/strategies/fantom/geist/StrategyGeistFold.sol:StrategyGeistFold',
       strategyArgs
     );
 
-    mkdir("./tmp/deployed", { recursive: true }, (err) => {
+    mkdir('./tmp/deployed', { recursive: true }, (err) => {
       if (err) throw err;
     });
     const txt = `${tokenName} vault: ${vault} strategy: ${strategy.address}\n`;
-    appendFileSync(`./tmp/deployed/GEIST_STRATS_UPD.txt`, txt, "utf8");
+    appendFileSync(`./tmp/deployed/GEIST_STRATS_UPD.txt`, txt, 'utf8');
   }
 }
 

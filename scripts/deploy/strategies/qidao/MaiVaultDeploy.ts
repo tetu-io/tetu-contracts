@@ -1,8 +1,8 @@
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
-import { DeployStubVault } from "../DeployStubVault";
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
+import { DeployStubVault } from '../DeployStubVault';
 
 async function main() {
-  await DeployStubVault.deploy("MAI", MaticAddresses.miMATIC_TOKEN, 21);
+  await DeployStubVault.deploy('MAI', MaticAddresses.miMATIC_TOKEN, 21);
 }
 
 main()

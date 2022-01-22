@@ -1,15 +1,15 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
 import {
   ContractReader,
   Controller,
   IStrategy,
   SmartVault,
   VaultController,
-} from "../../../../typechain";
-import { readFileSync, writeFileSync } from "fs";
+} from '../../../../typechain';
+import { readFileSync, writeFileSync } from 'fs';
 
-const ironSwapIds = new Set<string>(["0", "3"]);
+const ironSwapIds = new Set<string>(['0', '3']);
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -20,30 +20,30 @@ async function main() {
 
   const controller = (await DeployerUtils.connectContract(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
-    "VaultController",
+    'VaultController',
     core.vaultController
   )) as VaultController;
 
   const infos = readFileSync(
-    "scripts/utils/download/data/iron_pools.csv",
-    "utf8"
+    'scripts/utils/download/data/iron_pools.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const vaultNames = new Set<string>();
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -51,33 +51,33 @@ async function main() {
 
   // *********** DEPLOY VAULT
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const lpName = strat[1];
     const lpAddress = strat[2];
-    const tokens = strat[4]?.split(" | ");
-    const tokenNames = strat[5]?.split(" | ");
+    const tokens = strat[4]?.split(' | ');
+    const tokenNames = strat[5]?.split(' | ');
     const alloc = strat[6];
 
-    if (+alloc <= 0 || idx === "idx" || !tokens) {
-      console.log("skip", idx);
+    if (+alloc <= 0 || idx === 'idx' || !tokens) {
+      console.log('skip', idx);
       continue;
     }
 
     if (alreadyDeployed.has(idx)) {
-      console.log("Strategy already deployed", idx);
+      console.log('Strategy already deployed', idx);
       continue;
     }
 
-    const vaultNameWithoutPrefix = `IRON_${tokenNames.join("_")}`;
+    const vaultNameWithoutPrefix = `IRON_${tokenNames.join('_')}`;
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log("strat", idx, lpName, vaultNameWithoutPrefix);
+    console.log('strat', idx, lpName, vaultNameWithoutPrefix);
     let data: [SmartVault, SmartVault, IStrategy];
 
     if (ironSwapIds.has(idx)) {
@@ -86,7 +86,7 @@ async function main() {
         async (vaultAddress) =>
           DeployerUtils.deployContract(
             signer,
-            "StrategyIronSwap",
+            'StrategyIronSwap',
             core.controller,
             vaultAddress,
             lpAddress,
@@ -100,11 +100,11 @@ async function main() {
         true
       );
 
-      if ((await ethers.provider.getNetwork()).name !== "hardhat") {
+      if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
         await DeployerUtils.wait(5);
         await DeployerUtils.verifyWithContractName(
           data[2].address,
-          "contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap",
+          'contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap',
           [core.controller, data[1].address, lpAddress, tokens, idx]
         );
       }
@@ -114,7 +114,7 @@ async function main() {
         async (vaultAddress) =>
           DeployerUtils.deployContract(
             signer,
-            "StrategyIronUniPair",
+            'StrategyIronUniPair',
             core.controller,
             vaultAddress,
             lpAddress,
@@ -129,11 +129,11 @@ async function main() {
         true
       );
 
-      if ((await ethers.provider.getNetwork()).name !== "hardhat") {
+      if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
         await DeployerUtils.wait(5);
         await DeployerUtils.verifyWithContractName(
           data[2].address,
-          "contracts/strategies/matic/iron/StrategyIronUniPair.sol:StrategyIronUniPair",
+          'contracts/strategies/matic/iron/StrategyIronUniPair.sol:StrategyIronUniPair',
           [
             core.controller,
             data[1].address,
@@ -153,7 +153,7 @@ async function main() {
     writeFileSync(
       `./tmp/${vaultNameWithoutPrefix}.txt`,
       JSON.stringify(data),
-      "utf8"
+      'utf8'
     );
   }
 }

@@ -1,11 +1,11 @@
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
-import { SingleTokenVaultStrategyDeploy } from "../SingleTokenVaultStrategyDeploy";
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
+import { SingleTokenVaultStrategyDeploy } from '../SingleTokenVaultStrategyDeploy';
 
 async function main() {
   await SingleTokenVaultStrategyDeploy.deploy(
     MaticAddresses.VSQ_TOKEN,
-    "VSQ",
-    "StrategyVesqStaking"
+    'VSQ',
+    'StrategyVesqStaking'
   );
 }
 

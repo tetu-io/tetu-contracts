@@ -1,27 +1,27 @@
-import { BigNumber, utils } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
+import { BigNumber, utils } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import {
   Bookkeeper,
   FoldingBase,
   IERC20,
   PriceCalculator,
   SmartVault,
-} from "../../typechain";
-import { SpecificStrategyTest } from "./SpecificStrategyTest";
-import { DeployInfo } from "./DeployInfo";
-import { TokenUtils } from "../TokenUtils";
-import { PriceCalculatorUtils } from "../PriceCalculatorUtils";
-import { TimeUtils } from "../TimeUtils";
-import { VaultUtils } from "../VaultUtils";
+} from '../../typechain';
+import { SpecificStrategyTest } from './SpecificStrategyTest';
+import { DeployInfo } from './DeployInfo';
+import { TokenUtils } from '../TokenUtils';
+import { PriceCalculatorUtils } from '../PriceCalculatorUtils';
+import { TimeUtils } from '../TimeUtils';
+import { VaultUtils } from '../VaultUtils';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
 export class FoldingProfitabilityTest extends SpecificStrategyTest {
   public async do(deployInfo: DeployInfo): Promise<void> {
-    it("Folding profitability test", async function () {
+    it('Folding profitability test', async function () {
       // * INIT VARIABLES
       const investingPeriod = 60 * 60;
       const bookkeeper = deployInfo?.core?.bookkeeper as Bookkeeper;
@@ -44,16 +44,16 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
           await calculator.getPriceWithDefaultOutput(tetu.address)
         );
       }
-      console.log("Underlying USD price: ", underlyingUSDPrice);
-      console.log("TETU USD price:  ", tetuUSDCPrice);
+      console.log('Underlying USD price: ', underlyingUSDPrice);
+      console.log('TETU USD price:  ', tetuUSDCPrice);
 
       const deposit = await TokenUtils.balanceOf(underlying, user.address);
-      console.log("deposit", deposit.toString());
+      console.log('deposit', deposit.toString());
       const und = await vault.underlying();
       const undDec = await TokenUtils.decimals(und);
       const isFoldingProfitable = await strategy.isFoldingProfitable();
 
-      console.log("Is Folding profitable: ", isFoldingProfitable);
+      console.log('Is Folding profitable: ', isFoldingProfitable);
       const snapshotFolding = await TimeUtils.snapshot();
 
       const {
@@ -103,28 +103,28 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
         (totalFoldingProfitUSD / totalLendingProfitUSD) * 100 - 100;
       const isFoldingProfitableReal = difference > -0.1;
 
-      console.log("===========================");
-      console.log("=========Lending===========");
+      console.log('===========================');
+      console.log('=========Lending===========');
       console.log(
-        "Underlying: ",
+        'Underlying: ',
         underlyingProfitLending,
-        "Tetu: ",
+        'Tetu: ',
         tetuProfitLending
       );
-      console.log("=========Folding===========");
+      console.log('=========Folding===========');
       console.log(
-        "Underlying: ",
+        'Underlying: ',
         underlyingProfitFolding,
-        "Tetu: ",
+        'Tetu: ',
         tetuProfitFolding
       );
-      console.log("===========================");
-      console.log("Total lending profit: ", totalLendingProfitUSD);
-      console.log("Total folding profit: ", totalFoldingProfitUSD);
-      console.log("Difference: ", difference, "%");
+      console.log('===========================');
+      console.log('Total lending profit: ', totalLendingProfitUSD);
+      console.log('Total folding profit: ', totalFoldingProfitUSD);
+      console.log('Difference: ', difference, '%');
       expect(isFoldingProfitable).is.eq(
         isFoldingProfitableReal,
-        "Folding prediction is not fit real result"
+        'Folding prediction is not fit real result'
       );
     });
   }

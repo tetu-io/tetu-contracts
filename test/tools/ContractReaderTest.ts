@@ -1,29 +1,29 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { TimeUtils } from "../TimeUtils";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { TimeUtils } from '../TimeUtils';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
 import {
   ContractReader,
   NoopStrategy,
   PriceCalculator,
   SmartVault,
   TetuProxyGov,
-} from "../../typechain";
-import { MintHelperUtils } from "../MintHelperUtils";
-import { TokenUtils } from "../TokenUtils";
-import { utils } from "ethers";
-import { UniswapUtils } from "../UniswapUtils";
-import { VaultUtils } from "../VaultUtils";
-import { StrategyTestUtils } from "../strategies/StrategyTestUtils";
-import { Misc } from "../../scripts/utils/tools/Misc";
+} from '../../typechain';
+import { MintHelperUtils } from '../MintHelperUtils';
+import { TokenUtils } from '../TokenUtils';
+import { utils } from 'ethers';
+import { UniswapUtils } from '../UniswapUtils';
+import { VaultUtils } from '../VaultUtils';
+import { StrategyTestUtils } from '../strategies/StrategyTestUtils';
+import { Misc } from '../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("contract reader tests", function () {
+describe('contract reader tests', function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -43,11 +43,11 @@ describe("contract reader tests", function () {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "ContractReader"
+      'ContractReader'
     )) as ContractReader;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     contractReader = logic.attach(proxy.address) as ContractReader;
@@ -58,12 +58,12 @@ describe("contract reader tests", function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits("100000", 6)
+      utils.parseUnits('100000', 6)
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits("10000")
+      utils.parseUnits('10000')
     );
 
     calculator = (
@@ -106,72 +106,72 @@ describe("contract reader tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("vault rewards apr", async () => {
+  it('vault rewards apr', async () => {
     // create lp for price feed
-    await UniswapUtils.createPairForRewardToken(signer, core, "987000");
+    await UniswapUtils.createPairForRewardToken(signer, core, '987000');
 
     const rewardTokenPrice = await calculator.getPriceWithDefaultOutput(
       core.rewardToken.address
     );
     console.log(
-      "rewardTokenPrice",
+      'rewardTokenPrice',
       utils.formatUnits(rewardTokenPrice, 18),
       core.rewardToken.address
     );
-    expect(rewardTokenPrice.toString()).is.not.eq("0");
+    expect(rewardTokenPrice.toString()).is.not.eq('0');
 
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "100000",
+      '100000',
       signer.address
     );
     const rt = usdc;
     const rtDecimals = await TokenUtils.decimals(rt);
 
     // add rewards to PS
-    const rewardAmount = utils.parseUnits("1000", rtDecimals).toString();
-    console.log("rewardAmount", rewardAmount.toString());
+    const rewardAmount = utils.parseUnits('1000', rtDecimals).toString();
+    console.log('rewardAmount', rewardAmount.toString());
     await core.vaultController.addRewardTokens([core.psVault.address], rt);
     await TokenUtils.approve(rt, signer, core.psVault.address, rewardAmount);
     await core.psVault.notifyTargetRewardAmount(rt, rewardAmount);
 
-    await deposit("30123", core.rewardToken.address, core.psVault, signer);
+    await deposit('30123', core.rewardToken.address, core.psVault, signer);
 
     const tvl = await contractReader.vaultTvl(core.psVault.address);
-    console.log("tvl", tvl.toString(), utils.formatUnits(tvl));
+    console.log('tvl', tvl.toString(), utils.formatUnits(tvl));
 
     const vaultPrice = await contractReader.getPrice(core.psVault.address);
-    console.log("vault price", utils.formatUnits(vaultPrice));
+    console.log('vault price', utils.formatUnits(vaultPrice));
 
     const undrPrice = await contractReader.getPrice(core.rewardToken.address);
-    console.log("undrPrice", utils.formatUnits(undrPrice));
+    console.log('undrPrice', utils.formatUnits(undrPrice));
 
     const ppfs = await core.psVault.getPricePerFullShare();
-    console.log("ppfs", utils.formatUnits(ppfs));
+    console.log('ppfs', utils.formatUnits(ppfs));
 
     const tvlUsd = await contractReader.vaultTvlUsdc(core.psVault.address);
     const tvlUsdFormatted = +utils.formatUnits(tvlUsd);
-    console.log("tvlUsd", tvlUsd.toString(), tvlUsdFormatted);
+    console.log('tvlUsd', tvlUsd.toString(), tvlUsdFormatted);
     const rtBalanceUsd = await TokenUtils.balanceOf(rt, core.psVault.address);
     const rtBalanceUsdFormatted = +utils.formatUnits(rtBalanceUsd, rtDecimals);
-    console.log("rtBalanceUsd", rtBalanceUsd.toString(), rtBalanceUsdFormatted);
+    console.log('rtBalanceUsd', rtBalanceUsd.toString(), rtBalanceUsdFormatted);
     const periodFinish = await core.psVault.periodFinishForToken(rt);
     const time = await TimeUtils.getBlockTime();
     const days = (periodFinish.toNumber() - time) / (60 * 60 * 24);
-    console.log("days", days);
+    console.log('days', days);
 
     const rewardsPerTvlRatio = rtBalanceUsdFormatted / tvlUsdFormatted;
 
-    console.log("rewardsPerTvlRatio", rewardsPerTvlRatio);
+    console.log('rewardsPerTvlRatio', rewardsPerTvlRatio);
 
     const expectedApr = (rewardsPerTvlRatio / days) * 365 * 100;
 
-    console.log("expectedApr", expectedApr);
+    console.log('expectedApr', expectedApr);
 
     const apr = (await contractReader.vaultRewardsApr(core.psVault.address))[0];
     const aprFormatted = +utils.formatUnits(apr, 18);
-    console.log("apr", apr.toString(), aprFormatted);
+    console.log('apr', apr.toString(), aprFormatted);
 
     expect(aprFormatted).is.not.eq(0);
     // todo fix
@@ -179,28 +179,28 @@ describe("contract reader tests", function () {
     //   .is.approximately(expectedApr, expectedApr * 0.2);
   });
 
-  it("vault rewards apr should be zero without price", async () => {
+  it('vault rewards apr should be zero without price', async () => {
     await core.vaultController.addRewardTokens([core.psVault.address], usdc);
     expect(
       (await contractReader.vaultRewardsApr(core.psVault.address))[0]
-    ).is.eq("0");
+    ).is.eq('0');
   });
 
   // we don't use this functionality
-  it.skip("ps ppfs apr", async () => {
-    await UniswapUtils.createPairForRewardToken(signer, core, "10000");
+  it.skip('ps ppfs apr', async () => {
+    await UniswapUtils.createPairForRewardToken(signer, core, '10000');
     await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
     await TokenUtils.getToken(
       core.rewardToken.address,
       signer.address,
-      utils.parseUnits("10000000")
+      utils.parseUnits('10000000')
     );
 
-    await deposit("25863", core.rewardToken.address, core.psVault, signer);
+    await deposit('25863', core.rewardToken.address, core.psVault, signer);
 
     await notifyPsPool(
-      "1000000",
+      '1000000',
       core.rewardToken.address,
       core.psVault,
       signer
@@ -214,7 +214,7 @@ describe("contract reader tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(60 * 60);
 
-    await notifyPsPool("345", core.rewardToken.address, core.psVault, signer);
+    await notifyPsPool('345', core.rewardToken.address, core.psVault, signer);
     expect(await lastPpfs(core.psVault.address, contractReader))
       .is.greaterThan(0.1)
       .and.is.lessThan(10);
@@ -224,7 +224,7 @@ describe("contract reader tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 30);
 
-    await notifyPsPool("345", core.rewardToken.address, core.psVault, signer);
+    await notifyPsPool('345', core.rewardToken.address, core.psVault, signer);
     expect(await lastPpfs(core.psVault.address, contractReader))
       .is.greaterThan(0.01)
       .and.is.lessThan(10);
@@ -233,80 +233,80 @@ describe("contract reader tests", function () {
       .and.is.lessThan(500);
   });
 
-  it("proxy update", async () => {
+  it('proxy update', async () => {
     const proxy = (await DeployerUtils.connectContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       contractReader.address
     )) as TetuProxyGov;
     const newLogic = (await DeployerUtils.deployContract(
       signer,
-      "ContractReader"
+      'ContractReader'
     )) as ContractReader;
     await proxy.upgrade(newLogic.address);
 
     expect((await contractReader.vaults())[0]).is.eq(core.psVault.address);
   });
-  it("proxy should not update for non gov", async () => {
+  it('proxy should not update for non gov', async () => {
     const proxy = (await DeployerUtils.connectContract(
       signer1,
-      "TetuProxyGov",
+      'TetuProxyGov',
       contractReader.address
     )) as TetuProxyGov;
     const newLogic = (await DeployerUtils.deployContract(
       signer1,
-      "ContractReader"
+      'ContractReader'
     )) as ContractReader;
-    await expect(proxy.upgrade(newLogic.address)).is.rejectedWith("forbidden");
+    await expect(proxy.upgrade(newLogic.address)).is.rejectedWith('forbidden');
   });
-  it("should not update proxy with wrong contract", async () => {
+  it('should not update proxy with wrong contract', async () => {
     const proxy = (await DeployerUtils.connectContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       contractReader.address
     )) as TetuProxyGov;
     await expect(proxy.upgrade(core.mintHelper.address)).rejectedWith(
-      "Transaction reverted"
+      'Transaction reverted'
     );
   });
-  it("should not update proxy with wrong contract2", async () => {
+  it('should not update proxy with wrong contract2', async () => {
     const proxy = (await DeployerUtils.connectContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       contractReader.address
     )) as TetuProxyGov;
     await expect(proxy.upgrade(core.bookkeeper.address)).rejectedWith(
-      "Transaction reverted"
+      'Transaction reverted'
     );
   });
 
-  it("vault + user infos", async () => {
+  it('vault + user infos', async () => {
     const infos = await contractReader.vaultWithUserInfos(signer.address, [
       core.psVault.address,
     ]);
     const info = infos[0];
-    expect(info.vault.name).is.eq("TETU_PS");
+    expect(info.vault.name).is.eq('TETU_PS');
   });
 
-  it("vault + user infos pages for other user", async () => {
+  it('vault + user infos pages for other user', async () => {
     const infos = await contractReader
       .connect(signer1)
       .vaultWithUserInfoPages(signer1.address, 0, 1);
     expect(infos.length).is.eq(1);
     const info = infos[0];
-    expect(info.vault.name).is.eq("TETU_PS");
+    expect(info.vault.name).is.eq('TETU_PS');
   });
 
   // too heavy for alchemy
-  it.skip("vault + user infos pages", async () => {
+  it.skip('vault + user infos pages', async () => {
     const infos = await contractReader.vaultWithUserInfoPages(
       signer.address,
       1,
       2
     );
     expect(infos.length).is.eq(2);
-    expect(infos[0].vault.name).is.eq("TETU_WAULT_WEX_1");
-    expect(infos[1].vault.name).is.eq("TETU_WAULT_WEX_2");
+    expect(infos[0].vault.name).is.eq('TETU_WAULT_WEX_1');
+    expect(infos[1].vault.name).is.eq('TETU_WAULT_WEX_2');
   });
 
   // unstable test
@@ -330,7 +330,7 @@ describe("contract reader tests", function () {
   // });
 
   // unstable test
-  it.skip("vault + user infos all pages", async () => {
+  it.skip('vault + user infos all pages', async () => {
     const vaults = await contractReader.vaults();
     const infos = await contractReader.vaultWithUserInfoPages(
       signer.address,
@@ -345,7 +345,7 @@ describe("contract reader tests", function () {
   });
 
   // todo fix
-  it.skip("apr test", async () => {
+  it.skip('apr test', async () => {
     const underlying = usdc;
 
     const rt = networkToken;
@@ -354,7 +354,7 @@ describe("contract reader tests", function () {
     const vault = await DeployerUtils.deploySmartVault(signer);
     const strategy = (await DeployerUtils.deployContract(
       signer,
-      "NoopStrategy",
+      'NoopStrategy',
       core.controller.address,
       underlying,
       vault.address,
@@ -363,8 +363,8 @@ describe("contract reader tests", function () {
       1
     )) as NoopStrategy;
     await vault.initializeSmartVault(
-      "NOOP",
-      "tNOOP",
+      'NOOP',
+      'tNOOP',
       core.controller.address,
       underlying,
       60 * 60 * 24 * 28,
@@ -382,8 +382,8 @@ describe("contract reader tests", function () {
     const rtDecimals = await TokenUtils.decimals(rt);
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
-    const rewardsTotalAmount = utils.parseUnits("100", rtDecimals).toString();
-    const user1Deposit = utils.parseUnits("10000", underlyingDec);
+    const rewardsTotalAmount = utils.parseUnits('100', rtDecimals).toString();
+    const user1Deposit = utils.parseUnits('10000', underlyingDec);
     const user1 = (await ethers.getSigners())[1];
     const daySeconds = 60 * 60 * 24;
 
@@ -406,7 +406,7 @@ describe("contract reader tests", function () {
     const vaultAprReader = +utils.formatUnits(
       (await contractReader.vaultRewardsApr(vault.address))[0]
     );
-    console.log("vaultApr", vaultAprLocal, vaultAprReader);
+    console.log('vaultApr', vaultAprLocal, vaultAprReader);
     expect(vaultAprLocal).is.approximately(
       vaultAprReader,
       vaultAprReader * approx
@@ -429,7 +429,7 @@ describe("contract reader tests", function () {
       await TokenUtils.balanceOf(rt, user1.address),
       rtDecimals
     );
-    console.log("rewardClaimed", rewardClaimed);
+    console.log('rewardClaimed', rewardClaimed);
     expect(rewardClaimed).is.greaterThan(0);
 
     const expectedRewardsForYear = (rewardClaimed / 0.325) * 365;
@@ -438,7 +438,7 @@ describe("contract reader tests", function () {
       (expectedRewardsForYear /
         +utils.formatUnits(user1Deposit, underlyingDec)) *
       100;
-    console.log("realApr", realApr);
+    console.log('realApr', realApr);
 
     expect(realApr).approximately(vaultAprLocal, vaultAprLocal * approx);
 

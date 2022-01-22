@@ -1,39 +1,39 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { readFileSync } from "fs";
-import { config as dotEnvConfig } from "dotenv";
-import { DeployInfo } from "../../DeployInfo";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
-import { ForwarderV2, IStrategy, SmartVault } from "../../../../typechain";
-import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
-import { universalStrategyTest } from "../../UniversalStrategyTest";
-import { FoldingDoHardWork } from "../../FoldingDoHardWork";
-import { FtmAddresses } from "../../../../scripts/addresses/FtmAddresses";
-import { FoldingProfitabilityTest } from "../../FoldingProfitabilityTest";
-import { Misc } from "../../../../scripts/utils/tools/Misc";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { ForwarderV2, IStrategy, SmartVault } from '../../../../typechain';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { FoldingDoHardWork } from '../../FoldingDoHardWork';
+import { FtmAddresses } from '../../../../scripts/addresses/FtmAddresses';
+import { FoldingProfitabilityTest } from '../../FoldingProfitabilityTest';
+import { Misc } from '../../../../scripts/utils/tools/Misc';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneGeistFoldStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 1,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
@@ -41,13 +41,13 @@ const argv = require("yargs/yargs")()
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Universal Geist Fold tests", async () => {
+describe('Universal Geist Fold tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
   const infos = readFileSync(
-    "scripts/utils/download/data/geist_markets.csv",
-    "utf8"
+    'scripts/utils/download/data/geist_markets.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
@@ -59,7 +59,7 @@ describe("Universal Geist Fold tests", async () => {
   });
 
   infos.forEach((info) => {
-    const start = info.split(",");
+    const start = info.split(',');
 
     const idx = start[0];
     const tokenName = start[1];
@@ -73,8 +73,8 @@ describe("Universal Geist Fold tests", async () => {
     const collateralFactor = ltvNum.toFixed(0);
     const borrowTarget = (ltvNum * Misc.GEIST_BOR_RATIO).toFixed(0);
 
-    if (!idx || idx === "idx") {
-      console.log("skip ", tokenName);
+    if (!idx || idx === 'idx') {
+      console.log('skip ', tokenName);
       return;
     }
 
@@ -84,17 +84,17 @@ describe("Universal Geist Fold tests", async () => {
     ) {
       return;
     }
-    console.log("Start test strategy", idx, aTokenName);
+    console.log('Start test strategy', idx, aTokenName);
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = "StrategyGeistFold";
+    const strategyContractName = 'StrategyGeistFold';
     const underlying = token;
     // add custom liquidation path if necessary
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
         [FtmAddresses.GEIST_TOKEN],
-        ["0x668AE94D0870230AC007a01B471D02b2c94DDcB9"]
+        ['0x668AE94D0870230AC007a01B471D02b2c94DDcB9']
       );
     };
     // only for strategies where we expect PPFS fluctuations
@@ -161,7 +161,7 @@ describe("Universal Geist Fold tests", async () => {
     };
 
     universalStrategyTest(
-      "GeistTest_" + aTokenName,
+      'GeistTest_' + aTokenName,
       deployInfo,
       deployer,
       hwInitiator,

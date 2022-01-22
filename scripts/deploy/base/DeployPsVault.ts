@@ -1,10 +1,10 @@
 // noinspection DuplicatedCode
 
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { Controller, NoopStrategy, SmartVault } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
-import { Misc } from "../../utils/tools/Misc";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { Controller, NoopStrategy, SmartVault } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
+import { Misc } from '../../utils/tools/Misc';
 
 export default async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -14,7 +14,7 @@ export default async function main() {
 
   const controller = (await DeployerUtils.connectInterface(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
 
@@ -23,16 +23,16 @@ export default async function main() {
   const psRewardDuration = 60 * 60 * 24 * 28;
 
   // ****** PS ********
-  const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+  const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
   const vaultProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     vaultLogic.address
   );
   const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
   const psEmptyStrategy = (await DeployerUtils.deployContract(
     signer,
-    "NoopStrategy",
+    'NoopStrategy',
     core.controller,
     core.rewardToken,
     psVault.address,
@@ -44,8 +44,8 @@ export default async function main() {
   await RunHelper.runAndWait(
     () =>
       psVault.initializeSmartVault(
-        "TETU_PS",
-        "xTETU",
+        'TETU_PS',
+        'xTETU',
         core.controller,
         core.rewardToken,
         psRewardDuration,

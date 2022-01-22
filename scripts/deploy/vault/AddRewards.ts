@@ -1,7 +1,7 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { SmartVault } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { SmartVault } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -17,12 +17,12 @@ async function main() {
     }
     const vaultCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const vaultName = await vaultCtr.name();
     const rewards = await vaultCtr.rewardTokens();
-    console.log("vaultName", vault, vaultName, rewards);
+    console.log('vaultName', vault, vaultName, rewards);
     if (rewards[0] === core.psVault.address) {
       await RunHelper.runAndWait(() =>
         core.vaultController.removeRewardTokens([vault], core.psVault.address)

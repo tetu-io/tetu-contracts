@@ -1,10 +1,10 @@
 // noinspection DuplicatedCode
 
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { writeFileSync } from "fs";
-import { Bookkeeper, Controller } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { writeFileSync } from 'fs';
+import { Bookkeeper, Controller } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
 
 const TIME_LOCK = 60 * 60 * 48;
 
@@ -14,11 +14,11 @@ export default async function main() {
   // ************** CONTROLLER **********
   const controllerLogic = await DeployerUtils.deployContract(
     signer,
-    "Controller"
+    'Controller'
   );
   const controllerProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     controllerLogic.address
   );
   const controller = controllerLogic.attach(
@@ -48,11 +48,11 @@ export default async function main() {
   // ********** BOOKKEEPER **********
   const bookkeeperLogic = await DeployerUtils.deployContract(
     signer,
-    "Bookkeeper"
+    'Bookkeeper'
   );
   const bookkeeperProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     bookkeeperLogic.address
   );
   const bookkeeper = bookkeeperLogic.attach(
@@ -86,11 +86,11 @@ export default async function main() {
   try {
     const tokens = await DeployerUtils.getTokenAddresses();
     await RunHelper.runAndWait(() =>
-      controller.setFundToken(tokens.get("usdc") as string)
+      controller.setFundToken(tokens.get('usdc') as string)
     );
   } catch (e) {
     console.error(
-      "USDC token not defined for network, need to setup Fund token later"
+      'USDC token not defined for network, need to setup Fund token later'
     );
   }
   await RunHelper.runAndWait(() =>
@@ -98,20 +98,20 @@ export default async function main() {
   );
 
   writeFileSync(
-    "./core_addresses.txt",
+    './core_addresses.txt',
     controller.address +
-      ", // controller\n" +
+      ', // controller\n' +
       announcerData[0].address +
-      ", // announcer\n" +
+      ', // announcer\n' +
       feeRewardForwarderData[0].address +
-      ", // feeRewardForwarder\n" +
+      ', // feeRewardForwarder\n' +
       bookkeeper.address +
-      ", // bookkeeper\n" +
-      ", // rewardToken\n" +
-      ", // psVault\n" +
+      ', // bookkeeper\n' +
+      ', // rewardToken\n' +
+      ', // psVault\n' +
       fundKeeperData[0].address +
-      ", // fundKeeper\n",
-    "utf8"
+      ', // fundKeeper\n',
+    'utf8'
   );
 
   await DeployerUtils.wait(5);

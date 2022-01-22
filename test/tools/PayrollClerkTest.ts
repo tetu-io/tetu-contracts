@@ -1,20 +1,20 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ethers } from "hardhat";
-import { TimeUtils } from "../TimeUtils";
-import { PayrollClerk, PriceCalculator } from "../../typechain";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { MintHelperUtils } from "../MintHelperUtils";
-import { TokenUtils } from "../TokenUtils";
-import { utils } from "ethers";
-import { UniswapUtils } from "../UniswapUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers } from 'hardhat';
+import { TimeUtils } from '../TimeUtils';
+import { PayrollClerk, PriceCalculator } from '../../typechain';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { MintHelperUtils } from '../MintHelperUtils';
+import { TokenUtils } from '../TokenUtils';
+import { utils } from 'ethers';
+import { UniswapUtils } from '../UniswapUtils';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Payroll Clerk tests", function () {
+describe('Payroll Clerk tests', function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -47,15 +47,15 @@ describe("Payroll Clerk tests", function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits("100000", 6)
+      utils.parseUnits('100000', 6)
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits("10000")
+      utils.parseUnits('10000')
     );
 
-    await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "10000");
+    await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, '10000');
   });
 
   after(async function () {
@@ -70,12 +70,12 @@ describe("Payroll Clerk tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("should pay salary + change wallet", async () => {
+  it('should pay salary + change wallet', async () => {
     await clerk.addWorkers(
       [signer.address],
       [100],
-      ["Signer0"],
-      ["TEST"],
+      ['Signer0'],
+      ['TEST'],
       [true]
     );
     expect(await clerk.workerIndex(signer.address)).is.eq(0);
@@ -84,14 +84,14 @@ describe("Payroll Clerk tests", function () {
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "10000",
+      '10000',
       signer.address
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits("1000").toString()
+      utils.parseUnits('1000').toString()
     );
 
     const balance = await TokenUtils.balanceOf(
@@ -103,7 +103,7 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(balance.add(utils.parseUnits("100")));
+    ).eq(balance.add(utils.parseUnits('100')));
 
     const newWallet = (await ethers.getSigners())[1];
     await clerk.changeWorkerAddress(signer.address, newWallet.address);
@@ -112,15 +112,15 @@ describe("Payroll Clerk tests", function () {
     expect(await clerk.baseHourlyRates(newWallet.address)).is.eq(100);
     expect(await clerk.workedHours(newWallet.address)).is.eq(1);
     expect(await clerk.earned(newWallet.address)).is.eq(
-      "100000000000000000000"
+      '100000000000000000000'
     );
-    expect(await clerk.workerNames(newWallet.address)).is.eq("Signer0");
-    expect(await clerk.workerRoles(newWallet.address)).is.eq("TEST");
+    expect(await clerk.workerNames(newWallet.address)).is.eq('Signer0');
+    expect(await clerk.workerRoles(newWallet.address)).is.eq('TEST');
     expect(await clerk.boostActivated(newWallet.address)).is.eq(true);
   });
 
-  it("should pay salary with multiple tokens", async () => {
-    await clerk.addWorker(signer.address, 100, "Signer0", "TEST", true);
+  it('should pay salary with multiple tokens', async () => {
+    await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     expect(await clerk.workersLength()).is.eq(1);
     expect((await clerk.allWorkers())[0]).is.eq(signer.address);
     expect(await clerk.isGovernance(signer.address)).is.eq(true);
@@ -132,14 +132,14 @@ describe("Payroll Clerk tests", function () {
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "10000",
+      '10000',
       signer.address
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits("1000").toString()
+      utils.parseUnits('1000').toString()
     );
 
     // await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, networkToken, utils.parseUnits('10000'));
@@ -147,7 +147,7 @@ describe("Payroll Clerk tests", function () {
       networkToken,
       signer,
       clerk.address,
-      utils.parseUnits("1000").toString()
+      utils.parseUnits('1000').toString()
     );
 
     const balance1 = await TokenUtils.balanceOf(
@@ -160,30 +160,30 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(balance1.add(utils.parseUnits("100")));
+    ).eq(balance1.add(utils.parseUnits('100')));
 
     const p2 = await calculator.getPriceWithDefaultOutput(networkToken);
 
     expect(await TokenUtils.balanceOf(networkToken, signer.address)).eq(
-      balance2.add(utils.parseUnits("100").mul(1e9).mul(1e9).div(p2))
+      balance2.add(utils.parseUnits('100').mul(1e9).mul(1e9).div(p2))
     );
   });
 
-  it("should pay salary with boost", async () => {
-    await clerk.addWorker(signer.address, 100, "Signer0", "TEST", true);
+  it('should pay salary with boost', async () => {
+    await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "1000000",
+      '1000000',
       signer.address
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits("1000000").toString()
+      utils.parseUnits('1000000').toString()
     );
 
     const balance = await TokenUtils.balanceOf(
@@ -195,7 +195,7 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(balance.add(utils.parseUnits("100000")));
+    ).eq(balance.add(utils.parseUnits('100000')));
 
     // second pay with boost
 
@@ -213,7 +213,7 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(utils.parseUnits("200"));
+    ).eq(utils.parseUnits('200'));
 
     // third pay after downgrade
 
@@ -231,25 +231,25 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(utils.parseUnits("150"));
+    ).eq(utils.parseUnits('150'));
   });
 
-  it("should pay salary without boost", async () => {
-    await clerk.addWorker(signer.address, 100, "Signer0", "TEST", true);
+  it('should pay salary without boost', async () => {
+    await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.switchBoost(signer.address, false);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "1000000",
+      '1000000',
       signer.address
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits("1000000").toString()
+      utils.parseUnits('1000000').toString()
     );
 
     const balance = await TokenUtils.balanceOf(
@@ -261,7 +261,7 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(balance.add(utils.parseUnits("100000")));
+    ).eq(balance.add(utils.parseUnits('100000')));
 
     // second pay without boost
 
@@ -279,33 +279,33 @@ describe("Payroll Clerk tests", function () {
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-    ).eq(utils.parseUnits("100"));
+    ).eq(utils.parseUnits('100'));
   });
 
-  it("should not pay salary for unknown worker", async () => {
+  it('should not pay salary for unknown worker', async () => {
     await expect(clerk.pay(signer.address, 1)).rejectedWith(
-      "worker not registered"
+      'worker not registered'
     );
   });
 
-  it("should not pay salary without funds", async () => {
-    await clerk.addWorker(signer.address, 100, "Signer0", "TEST", true);
+  it('should not pay salary without funds', async () => {
+    await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.changeTokens([core.rewardToken.address], [100]);
-    await expect(clerk.pay(signer.address, 1)).rejectedWith("not enough fund");
+    await expect(clerk.pay(signer.address, 1)).rejectedWith('not enough fund');
   });
 
-  it("should salvage token", async () => {
+  it('should salvage token', async () => {
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "1000000",
+      '1000000',
       signer.address
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits("1000000").toString()
+      utils.parseUnits('1000000').toString()
     );
     const govBal = await TokenUtils.balanceOf(
       core.rewardToken.address,

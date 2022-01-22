@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   IDragonLair,
   IStakingRewards,
@@ -7,12 +7,12 @@ import {
   IUniswapV2Pair,
   PriceCalculator,
   SmartVault,
-} from "../../../typechain";
-import { mkdir, writeFileSync } from "fs";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
-import { utils } from "ethers";
-import { VaultUtils } from "../../../test/VaultUtils";
-import { TokenUtils } from "../../../test/TokenUtils";
+} from '../../../typechain';
+import { mkdir, writeFileSync } from 'fs';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
+import { utils } from 'ethers';
+import { VaultUtils } from '../../../test/VaultUtils';
+import { TokenUtils } from '../../../test/TokenUtils';
 
 const exclude = new Set<string>([]);
 
@@ -22,14 +22,14 @@ async function downloadQuick() {
   const tools = await DeployerUtils.getToolsAddresses();
   const factory = (await DeployerUtils.connectInterface(
     signer,
-    "IStakingRewardsFactory",
+    'IStakingRewardsFactory',
     MaticAddresses.QUICK_STAKING_FACTORY_V2
   )) as IStakingRewardsFactory;
-  console.log("rewardsToken", await factory.rewardsToken());
+  console.log('rewardsToken', await factory.rewardsToken());
 
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
-    "PriceCalculator",
+    'PriceCalculator',
     tools.calculator
   )) as PriceCalculator;
 
@@ -38,7 +38,7 @@ async function downloadQuick() {
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (const vInfo of vaultInfos) {
-    if (vInfo.platform !== "2") {
+    if (vInfo.platform !== '2') {
       continue;
     }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -46,7 +46,7 @@ async function downloadQuick() {
     if (vInfo.active) {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         vInfo.addr
       )) as SmartVault;
       currentRewards.set(
@@ -55,7 +55,7 @@ async function downloadQuick() {
       );
     }
   }
-  console.log("loaded vaults", underlyingStatuses.size);
+  console.log('loaded vaults', underlyingStatuses.size);
   const poolLength = 10000;
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(
     MaticAddresses.QUICK_TOKEN
@@ -63,43 +63,43 @@ async function downloadQuick() {
 
   const dQuickCtr = (await DeployerUtils.connectInterface(
     signer,
-    "IDragonLair",
+    'IDragonLair',
     MaticAddresses.dQUICK_TOKEN
   )) as IDragonLair;
-  const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits("1"));
-  const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits("1"));
-  console.log("dQuickPrice", utils.formatUnits(dQuickPrice));
-  console.log("quickPrice", utils.formatUnits(quickPrice));
+  const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
+  const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
+  console.log('dQuickPrice', utils.formatUnits(dQuickPrice));
+  console.log('quickPrice', utils.formatUnits(quickPrice));
 
-  let infos: string =
-    "idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n";
+  let infos =
+    'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, pool, rewardAmount, vault, weekRewardUsd, tvlUsd, apr, currentRewards \n';
   for (let i = 0; i < poolLength; i++) {
-    console.log("id", i);
+    console.log('id', i);
     let lp;
-    let token0: string = "";
-    let token1: string = "";
-    let token0Name: string = "";
-    let token1Name: string = "";
+    let token0 = '';
+    let token1 = '';
+    let token0Name = '';
+    let token1Name = '';
 
     try {
       lp = await factory.stakingTokens(i);
     } catch (e) {
-      console.log("looks like we dont have more lps", i);
+      console.log('looks like we dont have more lps', i);
       break;
     }
 
-    console.log("lp", lp);
+    console.log('lp', lp);
 
     const status = underlyingStatuses.get(lp.toLowerCase());
     if (!status) {
-      console.log("not active", i);
+      console.log('not active', i);
       // continue;
     }
 
     try {
       const lpContract = (await DeployerUtils.connectInterface(
         signer,
-        "IUniswapV2Pair",
+        'IUniswapV2Pair',
         lp
       )) as IUniswapV2Pair;
       token0 = await lpContract.token0();
@@ -107,7 +107,7 @@ async function downloadQuick() {
       token0Name = await TokenUtils.tokenSymbol(token0);
       token1Name = await TokenUtils.tokenSymbol(token1);
     } catch (e) {
-      console.error("cant fetch token names for ", lp);
+      console.error('cant fetch token names for ', lp);
       continue;
     }
 
@@ -117,7 +117,7 @@ async function downloadQuick() {
 
     const poolContract = (await DeployerUtils.connectInterface(
       signer,
-      "IStakingRewards",
+      'IStakingRewards',
       info[0]
     )) as IStakingRewards;
 
@@ -133,14 +133,14 @@ async function downloadQuick() {
     const currentTime = Math.floor(Date.now() / 1000);
 
     if (finish < currentTime) {
-      console.log("reward finished", token0Name, token1Name);
+      console.log('reward finished', token0Name, token1Name);
       durationDays = 0;
       notifiedAmountUsd = 0;
     }
 
-    console.log("duration", durationDays);
-    console.log("weekDurationRatio", weekDurationRatio);
-    console.log("notifiedAmount", notifiedAmountN);
+    console.log('duration', durationDays);
+    console.log('weekDurationRatio', weekDurationRatio);
+    console.log('notifiedAmount', notifiedAmountN);
     let tvlUsd = 0;
     try {
       const tvl = await poolContract.totalSupply();
@@ -149,51 +149,51 @@ async function downloadQuick() {
       );
       tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
     } catch (e) {
-      console.log("error fetch tvl", lp);
+      console.log('error fetch tvl', lp);
     }
     const apr = (notifiedAmountUsd / tvlUsd / durationDays) * 365 * 100;
 
     const data =
       i +
-      "," +
-      "QUICK_" +
+      ',' +
+      'QUICK_' +
       token0Name +
-      "_" +
+      '_' +
       token1Name +
-      "," +
+      ',' +
       lp +
-      "," +
+      ',' +
       token0 +
-      "," +
+      ',' +
       token0Name +
-      "," +
+      ',' +
       token1 +
-      "," +
+      ',' +
       token1Name +
-      "," +
+      ',' +
       info[0] +
-      "," +
+      ',' +
       notifiedAmountUsd.toFixed(2) +
-      "," +
+      ',' +
       underlyingToVault.get(lp.toLowerCase()) +
-      "," +
+      ',' +
       (notifiedAmountUsd * weekDurationRatio).toFixed(2) +
-      "," +
+      ',' +
       tvlUsd.toFixed(2) +
-      "," +
+      ',' +
       apr.toFixed(2) +
-      "," +
+      ',' +
       currentRewards.get(lp.toLowerCase());
     console.log(data);
-    infos += data + "\n";
+    infos += data + '\n';
   }
 
-  mkdir("./tmp/download", { recursive: true }, (err) => {
+  mkdir('./tmp/download', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
-  writeFileSync("./tmp/download/quick_pools.csv", infos, "utf8");
-  console.log("done");
+  writeFileSync('./tmp/download/quick_pools.csv', infos, 'utf8');
+  console.log('done');
 }
 
 downloadQuick()

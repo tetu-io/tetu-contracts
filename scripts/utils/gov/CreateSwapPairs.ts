@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { SmartVault__factory, TetuSwapFactory } from "../../../typechain";
-import { Misc } from "../tools/Misc";
-import { RunHelper } from "../tools/RunHelper";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { SmartVault__factory, TetuSwapFactory } from '../../../typechain';
+import { Misc } from '../tools/Misc';
+import { RunHelper } from '../tools/RunHelper';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -12,7 +12,7 @@ async function main() {
 
   const factory = (await DeployerUtils.connectInterface(
     signer,
-    "TetuSwapFactory",
+    'TetuSwapFactory',
     coreAdrs.swapFactory
   )) as TetuSwapFactory;
 
@@ -28,7 +28,7 @@ async function main() {
       singleVaults.push(vault);
     }
   }
-  console.log("found", singleVaults.length);
+  console.log('found', singleVaults.length);
   for (const vault0 of singleVaults) {
     const token0 = await tools.reader.vaultUnderlying(vault0);
     const vault0Name = await tools.reader.vaultName(vault0);
@@ -43,7 +43,7 @@ async function main() {
         continue;
       }
       await RunHelper.runAndWait(() => factory.createPair(vault0, vault1));
-      console.log("CREATED", vault0Name, vault1Name);
+      console.log('CREATED', vault0Name, vault1Name);
     }
   }
 }

@@ -9,7 +9,7 @@ import {
   PayrollClerk,
   PriceCalculator,
   ZapContract,
-} from "../typechain";
+} from '../typechain';
 
 export class ToolsContractsWrapper {
   public readonly calculator: PriceCalculator;

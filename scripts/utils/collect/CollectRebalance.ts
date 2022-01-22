@@ -1,23 +1,23 @@
-import { ethers, web3 } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers, web3 } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   AaveMaiBalStrategyBase__factory,
   ContractUtils,
   MaiStablecoinPipe__factory,
   SmartVault,
   SmartVault__factory,
-} from "../../../typechain";
-import { writeFileSync } from "fs";
-import { utils } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Web3Utils } from "../tools/Web3Utils";
+} from '../../../typechain';
+import { writeFileSync } from 'fs';
+import { utils } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { Web3Utils } from '../tools/Web3Utils';
 
-const forParsing = ["0xf203b855b4303985b3dd3f35a9227828cc8cb009".toLowerCase()];
+const forParsing = ['0xf203b855b4303985b3dd3f35a9227828cc8cb009'.toLowerCase()];
 
 const EVENT_REBALANCE =
-  "0xc257294ad49c215e1a248c91a86bc2612b4781d9677285cc9c14498f485ef122";
+  '0xc257294ad49c215e1a248c91a86bc2612b4781d9677285cc9c14498f485ef122';
 const EVENT_DEPOSIT =
-  "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c";
+  '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c';
 const START_BLOCK = 22553264;
 const STEP = 2000;
 
@@ -27,18 +27,18 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const currentBlock = await web3.eth.getBlockNumber();
-  console.log("current block", currentBlock);
+  console.log('current block', currentBlock);
 
   const strategy = await SmartVault__factory.connect(
-    "0xf203b855b4303985b3dd3f35a9227828cc8cb009",
+    '0xf203b855b4303985b3dd3f35a9227828cc8cb009',
     signer
   ).strategy();
-  console.log("strategy", strategy);
+  console.log('strategy', strategy);
   const pipe = await AaveMaiBalStrategyBase__factory.connect(
     strategy,
     signer
   ).pipes(2);
-  console.log("pipe", pipe);
+  console.log('pipe', pipe);
   // MaiStablecoinPipe__factory.connect(pipe, signer);
 
   const logs = await Web3Utils.parseLogs(
@@ -48,7 +48,7 @@ async function main() {
     currentBlock
   );
 
-  console.log("logs", logs.length);
+  console.log('logs', logs.length);
 
   for (const log of logs) {
     const logParsed =
@@ -71,17 +71,17 @@ async function collectPs(
   signer: SignerWithAddress,
   utilsAdr: string
 ): Promise<string> {
-  let data = "";
+  let data = '';
   const exclude = new Set<string>(vaults);
 
   const contractUtils = (await DeployerUtils.connectInterface(
     signer,
-    "ContractUtils",
+    'ContractUtils',
     utilsAdr
   )) as ContractUtils;
   const psContr = (await DeployerUtils.connectInterface(
     signer,
-    "SmartVault",
+    'SmartVault',
     psAdr
   )) as SmartVault;
 
@@ -121,7 +121,7 @@ async function collectPs(
     }
   }
 
-  writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, "utf8");
+  writeFileSync(`./tmp/stats/to_claim_ps.txt`, data, 'utf8');
 
   return data;
 }

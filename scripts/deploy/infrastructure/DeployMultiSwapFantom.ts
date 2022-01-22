@@ -1,7 +1,7 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { MultiSwap } from "../../../typechain";
-import { FtmAddresses } from "../../addresses/FtmAddresses";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { MultiSwap } from '../../../typechain';
+import { FtmAddresses } from '../../addresses/FtmAddresses';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];

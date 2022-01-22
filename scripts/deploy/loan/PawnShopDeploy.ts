@@ -1,6 +1,6 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { TetuPawnShop } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { TetuPawnShop } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -9,7 +9,7 @@ async function main() {
 
   const contract = (await DeployerUtils.deployContract(
     signer,
-    "TetuPawnShop",
+    'TetuPawnShop',
     core.controller,
     core.rewardToken
   )) as TetuPawnShop;

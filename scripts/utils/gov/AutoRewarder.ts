@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   AutoRewarder,
   Bookkeeper,
@@ -7,57 +7,57 @@ import {
   Controller,
   RewardCalculator,
   SmartVault,
-} from "../../../typechain";
-import { UniswapUtils } from "../../../test/UniswapUtils";
-import { BigNumber, utils } from "ethers";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { RunHelper } from "../tools/RunHelper";
-import { config as dotEnvConfig } from "dotenv";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
+} from '../../../typechain';
+import { UniswapUtils } from '../../../test/UniswapUtils';
+import { BigNumber, utils } from 'ethers';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { RunHelper } from '../tools/RunHelper';
+import { config as dotEnvConfig } from 'dotenv';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU_AR")
+const argv = require('yargs/yargs')()
+  .env('TETU_AR')
   .options({
     excludePlatform: {
-      type: "array",
-      default: ["0", "1", "4", "6", "10"],
+      type: 'array',
+      default: ['0', '1', '4', '6', '10'],
     },
     startDistributeFrom: {
-      type: "number",
+      type: 'number',
       default: 0,
     },
     startInfoFrom: {
-      type: "number",
+      type: 'number',
       default: 0,
     },
     infoBatch: {
-      type: "number",
+      type: 'number',
       default: 30,
     },
     distributeBatch: {
-      type: "number",
+      type: 'number',
       default: 30,
     },
     fork: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
   }).argv;
 
 async function main() {
-  console.log("argv.fork", argv.fork);
+  console.log('argv.fork', argv.fork);
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
   let signer;
   if (argv.fork) {
     signer = await DeployerUtils.impersonate(
-      "0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94"
+      '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94'
     );
     const controllerCtr = (await DeployerUtils.connectInterface(
       await DeployerUtils.impersonate(),
-      "Controller",
+      'Controller',
       core.controller
     )) as Controller;
     await controllerCtr.setRewardDistribution([core.autoRewarder], true);
@@ -65,32 +65,32 @@ async function main() {
     signer = (await ethers.getSigners())[0];
   }
 
-  console.log("signer", signer.address);
+  console.log('signer', signer.address);
 
   const reader = (await DeployerUtils.connectInterface(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const rewarder = (await DeployerUtils.connectInterface(
     signer,
-    "AutoRewarder",
+    'AutoRewarder',
     core.autoRewarder
   )) as AutoRewarder;
   const rewardCalculator = (await DeployerUtils.connectInterface(
     signer,
-    "RewardCalculator",
+    'RewardCalculator',
     core.rewardCalculator
   )) as RewardCalculator;
 
   const allVaults = await bookkeeper.vaults();
   // const vaultsLength = (await bookkeeper.vaultsLength()).toNumber();
-  console.log("vaults size", allVaults.length);
+  console.log('vaults size', allVaults.length);
 
   const vaults: string[] = [];
   const vaultNames = new Map<string, string>();
@@ -104,7 +104,7 @@ async function main() {
     }
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const platform = (
@@ -118,19 +118,19 @@ async function main() {
     vaults.push(vault);
   }
 
-  console.log("sorted vaults", vaults.length);
+  console.log('sorted vaults', vaults.length);
 
   for (let i = argv.startInfoFrom; i < vaults.length / argv.infoBatch; i++) {
     const vaultBatch = vaults.slice(
       i * argv.infoBatch,
       i * argv.infoBatch + argv.infoBatch
     );
-    console.log("collect", i, vaultBatch);
+    console.log('collect', i, vaultBatch);
     const rewardInfo: BigNumber[] = [];
     for (const v of vaultBatch) {
       const vCtr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         v
       )) as SmartVault;
       const info = await rewardCalculator.strategyRewardsUsd(
@@ -138,7 +138,7 @@ async function main() {
         60 * 60 * 24
       );
       console.log(
-        "reward",
+        'reward',
         vaultNames.get(v.toLowerCase()),
         utils.formatUnits(info)
       );
@@ -154,17 +154,17 @@ async function main() {
     await TokenUtils.getToken(
       MaticAddresses.WMATIC_TOKEN,
       signer.address,
-      utils.parseUnits("1000000")
+      utils.parseUnits('1000000')
     );
     await TokenUtils.getToken(
       MaticAddresses.USDC_TOKEN,
       signer.address,
-      utils.parseUnits("1000000", 6)
+      utils.parseUnits('1000000', 6)
     );
     await TokenUtils.getToken(
       MaticAddresses.TETU_TOKEN,
       signer.address,
-      utils.parseUnits("1000000")
+      utils.parseUnits('1000000')
     );
     await TokenUtils.transfer(
       MaticAddresses.TETU_TOKEN,
@@ -182,7 +182,7 @@ async function main() {
     i < vaults.length / argv.distributeBatch;
     i++
   ) {
-    console.log("distribute", i);
+    console.log('distribute', i);
     const lastDistributedId = (await rewarder.lastDistributedId()).toNumber();
     const lastId = Math.min(
       lastDistributedId + argv.distributeBatch,
@@ -209,13 +209,13 @@ async function main() {
         balanceBefore.get(vaultForDistr.toLowerCase()) as BigNumber
       );
       console.log(
-        "distributed",
+        'distributed',
         vaultNames.get(vaultForDistr.toLowerCase()),
         utils.formatUnits(distributed)
       );
     }
   }
-  console.log("---------DISTRIBUTED-------------");
+  console.log('---------DISTRIBUTED-------------');
   await DeployerUtils.delay(1000 * 60 * 60 * 23);
 }
 

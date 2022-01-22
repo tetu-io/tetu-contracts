@@ -1,15 +1,15 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { IStrategy, SmartVault } from "../../typechain";
-import { ToolsContractsWrapper } from "../ToolsContractsWrapper";
-import { TokenUtils } from "../TokenUtils";
-import { BigNumber, utils } from "ethers";
-import { Misc } from "../../scripts/utils/tools/Misc";
-import { VaultUtils } from "../VaultUtils";
-import { StrategyTestUtils } from "./StrategyTestUtils";
-import { TimeUtils } from "../TimeUtils";
-import { expect } from "chai";
-import { PriceCalculatorUtils } from "../PriceCalculatorUtils";
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { IStrategy, SmartVault } from '../../typechain';
+import { ToolsContractsWrapper } from '../ToolsContractsWrapper';
+import { TokenUtils } from '../TokenUtils';
+import { BigNumber, utils } from 'ethers';
+import { Misc } from '../../scripts/utils/tools/Misc';
+import { VaultUtils } from '../VaultUtils';
+import { StrategyTestUtils } from './StrategyTestUtils';
+import { TimeUtils } from '../TimeUtils';
+import { expect } from 'chai';
+import { PriceCalculatorUtils } from '../PriceCalculatorUtils';
 
 export class DoHardWorkLoopBase {
   public readonly signer: SignerWithAddress;
@@ -84,7 +84,7 @@ export class DoHardWorkLoopBase {
     await this.initialSnapshot();
     await this.loop(loops, loopValue, advanceBlocks);
     await this.postLoopCheck();
-    Misc.printDuration("HardWork test finished", start);
+    Misc.printDuration('HardWork test finished', start);
   }
 
   protected async init() {
@@ -156,12 +156,12 @@ export class DoHardWorkLoopBase {
     if (i > 1) {
       const den = (await this.core.controller.psDenominator()).toNumber();
       const newNum = +(den / i).toFixed();
-      console.log("new ps ratio", newNum, den);
+      console.log('new ps ratio', newNum, den);
       await this.core.announcer.announceRatioChange(9, newNum, den);
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
       await this.core.controller.setPSNumeratorDenominator(newNum, den);
     }
-    Misc.printDuration("fLoopStartActionsDefault completed", start);
+    Misc.printDuration('fLoopStartActionsDefault completed', start);
   }
 
   protected async loopStartSnapshot() {
@@ -197,15 +197,15 @@ export class DoHardWorkLoopBase {
     );
 
     console.log(
-      "User balance +-:",
+      'User balance +-:',
       DoHardWorkLoopBase.toPercent(userBalanceN, userBalanceExpectedN)
     );
     expect(userBalanceN).is.greaterThanOrEqual(
       userBalanceExpectedN - userBalanceExpectedN * this.balanceTolerance,
-      "User has wrong balance inside the vault.\n" +
-        "If you expect not zero balance it means the vault has a nature of PPFS decreasing.\n" +
-        "It is not always wrong but you should triple check behavior and reasonable tolerance value.\n" +
-        "If you expect zero balance and it has something inside IT IS NOT GOOD!\n"
+      'User has wrong balance inside the vault.\n' +
+        'If you expect not zero balance it means the vault has a nature of PPFS decreasing.\n' +
+        'It is not always wrong but you should triple check behavior and reasonable tolerance value.\n' +
+        'If you expect zero balance and it has something inside IT IS NOT GOOD!\n'
     );
   }
 
@@ -220,12 +220,12 @@ export class DoHardWorkLoopBase {
       this.undDec
     );
     console.log(
-      "User balance +-:",
+      'User balance +-:',
       DoHardWorkLoopBase.toPercent(userUndBalN, userBalanceExpectedN)
     );
     expect(userUndBalN).is.greaterThanOrEqual(
       userBalanceExpectedN - userBalanceExpectedN * this.balanceTolerance,
-      "User has not enough balance"
+      'User has not enough balance'
     );
   }
 
@@ -239,12 +239,12 @@ export class DoHardWorkLoopBase {
       return;
     }
     console.log(
-      "PPFS before withdraw",
+      'PPFS before withdraw',
       (await this.vault.getPricePerFullShare()).toString()
     );
     await this.userCheckBalanceInVault();
     if (exit) {
-      console.log("exit");
+      console.log('exit');
       await this.vaultForUser.exit();
       await this.userCheckBalance(this.userDeposited);
       this.userWithdrew = this.userDeposited;
@@ -253,7 +253,7 @@ export class DoHardWorkLoopBase {
         this.underlying,
         this.user.address
       );
-      console.log("withdraw", amount.toString());
+      console.log('withdraw', amount.toString());
       await this.vaultForUser.withdraw(amount);
       await this.userCheckBalance(this.userWithdrew.add(amount));
       const userUndBalAfter = await TokenUtils.balanceOf(
@@ -264,9 +264,9 @@ export class DoHardWorkLoopBase {
         userUndBalAfter.sub(userUndBal)
       );
     }
-    console.log("userWithdrew", this.userWithdrew.toString());
+    console.log('userWithdrew', this.userWithdrew.toString());
     console.log(
-      "PPFS after withdraw",
+      'PPFS after withdraw',
       (await this.vault.getPricePerFullShare()).toString()
     );
   }
@@ -274,15 +274,15 @@ export class DoHardWorkLoopBase {
   // don't use for initial deposit
   protected async deposit(amount: BigNumber, invest: boolean) {
     console.log(
-      "PPFS before deposit",
+      'PPFS before deposit',
       (await this.vault.getPricePerFullShare()).toString()
     );
     await VaultUtils.deposit(this.user, this.vault, amount, invest);
     this.userWithdrew = this.userWithdrew.sub(amount);
-    console.log("userWithdrew", this.userWithdrew.toString());
+    console.log('userWithdrew', this.userWithdrew.toString());
     await this.userCheckBalanceInVault();
     console.log(
-      "PPFS after deposit",
+      'PPFS after deposit',
       (await this.vault.getPricePerFullShare()).toString()
     );
   }
@@ -311,7 +311,7 @@ export class DoHardWorkLoopBase {
       await this.deposit(BigNumber.from(uBal).div(3), false);
       await this.deposit(BigNumber.from(uBal).div(3), true);
     }
-    Misc.printDuration("fLoopEndActions completed", start);
+    Misc.printDuration('fLoopEndActions completed', start);
   }
 
   protected async loopPrintROIAndSaveEarned(i: number) {
@@ -344,14 +344,14 @@ export class DoHardWorkLoopBase {
     const roiThisCycle =
       (earnedUsdcThisCycle / tvlUsdc / loopTime) * 100 * Misc.SECONDS_OF_YEAR;
 
-    console.log("++++++++++++++++ ROI " + i + " ++++++++++++++++++++++++++");
-    console.log("Loop time", (loopTime / 60 / 60).toFixed(1), "hours");
-    console.log("TETU earned total", stratEarnedTotalN);
-    console.log("TETU earned for this loop", stratEarnedN);
-    console.log("ROI total", roi);
-    console.log("ROI current", roiThisCycle);
-    console.log("+++++++++++++++++++++++++++++++++++++++++++++++");
-    Misc.printDuration("fLoopPrintROIAndSaveEarned completed", start);
+    console.log('++++++++++++++++ ROI ' + i + ' ++++++++++++++++++++++++++');
+    console.log('Loop time', (loopTime / 60 / 60).toFixed(1), 'hours');
+    console.log('TETU earned total', stratEarnedTotalN);
+    console.log('TETU earned for this loop', stratEarnedN);
+    console.log('ROI total', roi);
+    console.log('ROI current', roiThisCycle);
+    console.log('+++++++++++++++++++++++++++++++++++++++++++++++');
+    Misc.printDuration('fLoopPrintROIAndSaveEarned completed', start);
   }
 
   protected async afterBlocAdvance() {
@@ -370,11 +370,11 @@ export class DoHardWorkLoopBase {
         const rtPriceN = +utils.formatUnits(await this.getPrice(rt));
         const toClaimInTetuN =
           (+utils.formatUnits(toClaim[i], rtDec) * rtPriceN) / tetuPriceN;
-        console.log("toClaim", i, toClaimInTetuN);
+        console.log('toClaim', i, toClaimInTetuN);
         this.totalToClaimInTetuN += toClaimInTetuN;
       }
     }
-    Misc.printDuration("fAfterBlocAdvance completed", start);
+    Misc.printDuration('fAfterBlocAdvance completed', start);
   }
 
   protected async loop(
@@ -398,7 +398,7 @@ export class DoHardWorkLoopBase {
       await this.loopPrintROIAndSaveEarned(i);
       await this.loopEndCheck();
       await this.loopEndActions(i);
-      Misc.printDuration(i + " Loop ended", start);
+      Misc.printDuration(i + ' Loop ended', start);
     }
   }
 
@@ -417,7 +417,7 @@ export class DoHardWorkLoopBase {
       this.strategy
     );
     for (const rtBal of stratRtBalances) {
-      expect(rtBal).is.eq(0, "Strategy contains not liquidated rewards");
+      expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
 
     // check vault balance
@@ -426,8 +426,8 @@ export class DoHardWorkLoopBase {
       this.vault.address
     );
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq(
-      "0",
-      "vault reward should increase"
+      '0',
+      'vault reward should increase'
     );
 
     // check ps balance
@@ -436,15 +436,15 @@ export class DoHardWorkLoopBase {
       this.core.psVault.address
     );
     expect(psBalanceAfter.sub(this.psBal)).is.not.eq(
-      "0",
-      "ps balance should increase"
+      '0',
+      'ps balance should increase'
     );
 
     // check ps PPFS
     const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
     expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq(
-      "0",
-      "ps share price should increase"
+      '0',
+      'ps share price should increase'
     );
 
     // check reward for user
@@ -453,8 +453,8 @@ export class DoHardWorkLoopBase {
       this.user.address
     );
     expect(rewardBalanceAfter.sub(this.userRTBal).toString()).is.not.eq(
-      "0",
-      "should have earned xTETU rewards"
+      '0',
+      'should have earned xTETU rewards'
     );
 
     const userDepositedN = +utils.formatUnits(this.userDeposited, this.undDec);
@@ -470,12 +470,12 @@ export class DoHardWorkLoopBase {
     const userBalanceExpected =
       userDepositedN - userDepositedN * this.finalBalanceTolerance;
     console.log(
-      "User final balance +-: ",
+      'User final balance +-: ',
       DoHardWorkLoopBase.toPercent(userUnderlyingBalanceAfterN, userDepositedN)
     );
     expect(userUnderlyingBalanceAfterN).is.greaterThanOrEqual(
       userBalanceExpected,
-      "user should have more underlying"
+      'user should have more underlying'
     );
 
     const signerDepositedN = +utils.formatUnits(
@@ -493,7 +493,7 @@ export class DoHardWorkLoopBase {
     const signerBalanceExpected =
       signerDepositedN - signerDepositedN * this.finalBalanceTolerance;
     console.log(
-      "Signer final balance +-: ",
+      'Signer final balance +-: ',
       DoHardWorkLoopBase.toPercent(
         signerUnderlyingBalanceAfterN,
         signerDepositedN
@@ -501,7 +501,7 @@ export class DoHardWorkLoopBase {
     );
     expect(signerUnderlyingBalanceAfterN).is.greaterThanOrEqual(
       signerBalanceExpected,
-      "signer should have more underlying"
+      'signer should have more underlying'
     );
   }
 
@@ -522,6 +522,6 @@ export class DoHardWorkLoopBase {
 
   private static toPercent(actual: number, expected: number): string {
     const percent = (actual / expected) * 100 - 100;
-    return percent.toFixed(6) + "%";
+    return percent.toFixed(6) + '%';
   }
 }

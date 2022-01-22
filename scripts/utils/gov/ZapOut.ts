@@ -1,18 +1,18 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   ContractReader,
   MultiSwap,
   SmartVault,
   ZapContract,
-} from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { RunHelper } from "../tools/RunHelper";
+} from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { RunHelper } from '../tools/RunHelper';
 
 const exclude = new Set<string>([
-  "0x21d97B1adcD2A36756a6E0Aa1BAC3Cf6c0943c0E".toLowerCase(), // wex pear - has transfer fee
-  "0xa281C7B40A9634BCD16B4aAbFcCE84c8F63Aedd0".toLowerCase(), // frax fxs - too high slippage
+  '0x21d97B1adcD2A36756a6E0Aa1BAC3Cf6c0943c0E'.toLowerCase(), // wex pear - has transfer fee
+  '0xa281C7B40A9634BCD16B4aAbFcCE84c8F63Aedd0'.toLowerCase(), // frax fxs - too high slippage
 ]);
 
 async function main() {
@@ -23,23 +23,23 @@ async function main() {
 
   const zap = (await DeployerUtils.connectInterface(
     signer,
-    "ZapContract",
+    'ZapContract',
     tools.zapContract as string
   )) as ZapContract;
   const mSwap = (await DeployerUtils.connectInterface(
     signer,
-    "MultiSwap",
+    'MultiSwap',
     tools.multiSwap as string
   )) as MultiSwap;
 
   const contractReader = (await DeployerUtils.connectInterface(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader as string
   )) as ContractReader;
 
   const vaults = await contractReader.vaults();
-  console.log("vaults", vaults.length);
+  console.log('vaults', vaults.length);
 
   // let num = 0;
   // for (let v of vaults) {
@@ -52,7 +52,7 @@ async function main() {
     console.log(i, await contractReader.vaultName(vault));
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     if (
@@ -65,7 +65,7 @@ async function main() {
 
     const amountShare = await TokenUtils.balanceOf(vault, signer.address);
     if (amountShare.isZero()) {
-      console.log("zero balance");
+      console.log('zero balance');
       continue;
     }
 
@@ -75,7 +75,7 @@ async function main() {
       zap,
       contractReader,
       vault,
-      tokens.get("usdc") as string,
+      tokens.get('usdc') as string,
       amountShare.toString()
     );
   }
@@ -99,7 +99,7 @@ async function zapOutVaultWithLp(
 ) {
   const smartVault = (await DeployerUtils.connectInterface(
     signer,
-    "SmartVault",
+    'SmartVault',
     vault
   )) as SmartVault;
   const strategy = await smartVault.strategy();

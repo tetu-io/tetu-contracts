@@ -1,14 +1,14 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   Bookkeeper,
   Controller,
   IStrategy,
   PriceCalculator,
-} from "../../../typechain";
-import { utils } from "ethers";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { RunHelper } from "../tools/RunHelper";
+} from '../../../typechain';
+import { utils } from 'ethers';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { RunHelper } from '../tools/RunHelper';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
@@ -19,23 +19,24 @@ async function main() {
   const controller = (await DeployerUtils.connectProxy(
     core.controller,
     signer,
-    "Controller"
+    'Controller'
   )) as Controller;
   const bookkeeper = (await DeployerUtils.connectProxy(
     core.bookkeeper,
     signer,
-    "Bookkeeper"
+    'Bookkeeper'
   )) as Bookkeeper;
   const calculator = (await DeployerUtils.connectProxy(
     tools.calculator,
     signer,
-    "PriceCalculator"
+    'PriceCalculator'
   )) as PriceCalculator;
   const ps = await DeployerUtils.connectVault(core.psVault, signer);
 
   const vaults = await bookkeeper.vaults();
 
   // noinspection InfiniteLoopJS
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < vaults.length; i++) {
@@ -44,7 +45,7 @@ async function main() {
       const strategy = await vaultContract.strategy();
       const stratContr = (await DeployerUtils.connectInterface(
         signer,
-        "IStrategy",
+        'IStrategy',
         strategy
       )) as IStrategy;
       const platform = await stratContr.platform();
@@ -73,7 +74,7 @@ async function main() {
         platform <= 1
         // || toClaimUsd <= 10
       ) {
-        console.log("no rewards", vaultName, platform, toClaimUsd);
+        console.log('no rewards', vaultName, platform, toClaimUsd);
         continue;
       }
 
@@ -86,9 +87,9 @@ async function main() {
         await TokenUtils.balanceOf(core.rewardToken, vault)
       );
 
-      console.log(i, "DoHardWork for", await vaultContract.name(), iTokenBal);
+      console.log(i, 'DoHardWork for', await vaultContract.name(), iTokenBal);
       // console.log('ps share price', psPpfs);
-      console.log("toClaimUsd", toClaimUsd);
+      console.log('toClaimUsd', toClaimUsd);
 
       await RunHelper.runAndWait(() => controller.doHardWork(vault));
 
@@ -101,10 +102,10 @@ async function main() {
         await TokenUtils.balanceOf(core.rewardToken, vault)
       );
 
-      console.log("reward change", iTokenBalAfter - iTokenBal);
-      console.log("PPFS change", ppfsAfter - ppfs, ppfs, ppfsAfter);
-      console.log("PS ppfs change", psPpfsAfter - psPpfs);
-      console.log("---------------------------------------");
+      console.log('reward change', iTokenBalAfter - iTokenBal);
+      console.log('PPFS change', ppfsAfter - ppfs, ppfs, ppfsAfter);
+      console.log('PS ppfs change', psPpfsAfter - psPpfs);
+      console.log('---------------------------------------');
     }
 
     await DeployerUtils.delay(100000 + Math.random() * 100000);

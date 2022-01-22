@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../deploy/DeployerUtils";
-import { Bookkeeper } from "../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../deploy/DeployerUtils';
+import { Bookkeeper } from '../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -9,7 +9,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    "Bookkeeper"
+    'Bookkeeper'
   )) as Bookkeeper;
 
   await DeployerUtils.wait(5);

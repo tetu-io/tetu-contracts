@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
-import { ContractReader, IStrategy, SmartVault } from "../../../../typechain";
-import { appendFileSync, mkdir, readFileSync } from "fs";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
+import { ContractReader, IStrategy, SmartVault } from '../../../../typechain';
+import { appendFileSync, mkdir, readFileSync } from 'fs';
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -10,25 +10,25 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  mkdir("./tmp/update", { recursive: true }, (err) => {
+  mkdir('./tmp/update', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
-  appendFileSync(`./tmp/update/strategies.txt`, "\n-----------\n", "utf8");
+  appendFileSync(`./tmp/update/strategies.txt`, '\n-----------\n', 'utf8');
 
   const infos = readFileSync(
-    "scripts/utils/download/data/quick_pools.csv",
-    "utf8"
+    'scripts/utils/download/data/quick_pools.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   const vaultsMap = new Map<string, string>();
   for (const vAdr of deployedVaultAddresses) {
@@ -36,7 +36,7 @@ async function main() {
   }
 
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const ids = strat[0];
     const lpName = strat[1];
@@ -48,51 +48,51 @@ async function main() {
     const pool = strat[7];
     const duration = strat[9];
 
-    if (+duration <= 0 || !token0 || ids === "idx") {
-      console.log("skip", ids);
+    if (+duration <= 0 || !token0 || ids === 'idx') {
+      console.log('skip', ids);
       continue;
     }
 
     const vaultNameWithoutPrefix = `QUICK_${token0Name}_${token1Name}`;
 
-    const vAdr = vaultsMap.get("TETU_" + vaultNameWithoutPrefix) as string;
+    const vAdr = vaultsMap.get('TETU_' + vaultNameWithoutPrefix) as string;
 
     if (!vAdr) {
-      console.log("Vault not found!", vaultNameWithoutPrefix);
+      console.log('Vault not found!', vaultNameWithoutPrefix);
       continue;
       // return;
     }
 
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vAdr
     )) as SmartVault;
 
     if (!(await vCtr.active())) {
-      console.log("vault not active", vAdr);
+      console.log('vault not active', vAdr);
       continue;
     }
 
     const strCtr = (await DeployerUtils.connectInterface(
       signer,
-      "IStrategy",
+      'IStrategy',
       await vCtr.strategy()
     )) as IStrategy;
     const strName = await strCtr.STRATEGY_NAME();
     if (
-      strName === "QuickStrategyDualBaseAC" ||
-      strName === "QuickStrategyDualBase"
+      strName === 'QuickStrategyDualBaseAC' ||
+      strName === 'QuickStrategyDualBase'
     ) {
-      console.log("dual strategy!");
+      console.log('dual strategy!');
       continue;
     }
 
-    console.log("strat", pool, lpName, vAdr, lpAddress, token0, token1);
+    console.log('strat', pool, lpName, vAdr, lpAddress, token0, token1);
 
     const strategy = (await DeployerUtils.deployContract(
       signer,
-      "StrategyQuickSwapLpAc",
+      'StrategyQuickSwapLpAc',
       core.controller,
       vAdr,
       lpAddress,
@@ -102,13 +102,13 @@ async function main() {
     )) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
-    appendFileSync(`./tmp/update/strategies.txt`, txt, "utf8");
+    appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
-    if ((await ethers.provider.getNetwork()).name !== "hardhat") {
+    if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
       await DeployerUtils.wait(5);
       await DeployerUtils.verifyWithContractName(
         strategy.address,
-        "contracts/strategies/matic/quick/StrategyQuickSwapLpAc.sol:StrategyQuickSwapLpAc",
+        'contracts/strategies/matic/quick/StrategyQuickSwapLpAc.sol:StrategyQuickSwapLpAc',
         [core.controller, vAdr, lpAddress, token0, token1, pool]
       );
     }

@@ -1,12 +1,12 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TetuPawnShop } from "../../typechain";
-import { PawnShopUtils } from "./PawnShopUtils";
-import { TokenUtils } from "../TokenUtils";
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { BigNumber } from "ethers";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { Misc } from "../../scripts/utils/tools/Misc";
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { TetuPawnShop } from '../../typechain';
+import { PawnShopUtils } from './PawnShopUtils';
+import { TokenUtils } from '../TokenUtils';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { BigNumber } from 'ethers';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { Misc } from '../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -37,7 +37,7 @@ export class PawnShopTestUtils {
       shop,
       collateralToken,
       collateralAmount,
-      "0",
+      '0',
       0,
       acquiredAmount,
       posDurationBlocks,
@@ -70,7 +70,7 @@ export class PawnShopTestUtils {
       signer,
       shop,
       collateralToken,
-      "0",
+      '0',
       collateralId,
       1,
       acquiredAmount,
@@ -281,7 +281,7 @@ export class PawnShopTestUtils {
 
     await PawnShopUtils.claim(id, signer, shop);
     await expect(PawnShopUtils.claim(id, signer, shop)).revertedWith(
-      "TPS: Position closed"
+      'TPS: Position closed'
     );
 
     const lAfter = await shop.positions(id);
@@ -318,7 +318,7 @@ export class PawnShopTestUtils {
 
     await PawnShopUtils.redeem(id, signer, shop);
     await expect(PawnShopUtils.redeem(id, signer, shop)).rejectedWith(
-      "TPS: Position closed"
+      'TPS: Position closed'
     );
 
     const lAfter = await shop.positions(id);

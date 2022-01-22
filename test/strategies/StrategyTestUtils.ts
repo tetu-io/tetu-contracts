@@ -1,25 +1,25 @@
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { UniswapUtils } from "../UniswapUtils";
-import { MaticAddresses } from "../../scripts/addresses/MaticAddresses";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { UniswapUtils } from '../UniswapUtils';
+import { MaticAddresses } from '../../scripts/addresses/MaticAddresses';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   ForwarderV2,
   IStrategy,
   IUniswapV2Pair,
   PriceCalculator,
   SmartVault,
-} from "../../typechain";
-import { TokenUtils } from "../TokenUtils";
-import { BigNumber, utils } from "ethers";
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { readFileSync } from "fs";
-import { Misc } from "../../scripts/utils/tools/Misc";
-import { DeployInfo } from "./DeployInfo";
-import logSettings from "../../log_settings";
-import { Logger } from "tslog";
-import { PriceCalculatorUtils } from "../PriceCalculatorUtils";
+} from '../../typechain';
+import { TokenUtils } from '../TokenUtils';
+import { BigNumber, utils } from 'ethers';
+import { expect } from 'chai';
+import { ethers } from 'hardhat';
+import { readFileSync } from 'fs';
+import { Misc } from '../../scripts/utils/tools/Misc';
+import { DeployInfo } from './DeployInfo';
+import logSettings from '../../log_settings';
+import { Logger } from 'tslog';
+import { PriceCalculatorUtils } from '../PriceCalculatorUtils';
 
 const log: Logger = new Logger(logSettings);
 
@@ -33,7 +33,7 @@ export class StrategyTestUtils {
     depositFee = 0
   ): Promise<[SmartVault, IStrategy, string]> {
     const start = Date.now();
-    log.info("Starting deploy");
+    log.info('Starting deploy');
     const data = await DeployerUtils.deployAndInitVaultAndStrategy(
       vaultName,
       strategyDeployer,
@@ -44,22 +44,22 @@ export class StrategyTestUtils {
       60 * 60 * 24 * 28,
       depositFee
     );
-    log.info("Vault deployed");
+    log.info('Vault deployed');
     const vault = data[1] as SmartVault;
     const strategy = data[2] as IStrategy;
 
     const rewardTokenLp = await UniswapUtils.createTetuUsdc(
       signer,
       core,
-      "1000000"
+      '1000000'
     );
-    log.info("LP created");
+    log.info('LP created');
 
     await core.feeRewardForwarder.addLargestLps(
       [core.rewardToken.address],
       [rewardTokenLp]
     );
-    log.info("Path setup completed");
+    log.info('Path setup completed');
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(
       underlying.toLowerCase()
@@ -68,7 +68,7 @@ export class StrategyTestUtils {
       underlying.toLowerCase()
     );
 
-    Misc.printDuration("Vault and strategy deployed and initialized", start);
+    Misc.printDuration('Vault and strategy deployed and initialized', start);
     return [vault, strategy, rewardTokenLp];
   }
 
@@ -92,7 +92,7 @@ export class StrategyTestUtils {
       ).is.approximately(
         +expected,
         0.0000000001,
-        "strategy has wrong reward balance for " + i
+        'strategy has wrong reward balance for ' + i
       );
     }
   }
@@ -105,14 +105,14 @@ export class StrategyTestUtils {
   ) {
     const dec = await TokenUtils.decimals(underlying);
     const bal = await TokenUtils.balanceOf(underlying, user.address);
-    log.info("balance", utils.formatUnits(bal, dec), bal.toString());
+    log.info('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec)).is.greaterThanOrEqual(
       +utils.formatUnits(deposit, dec),
-      "not enough balance"
+      'not enough balance'
     );
     const vaultForUser = vault.connect(user);
     await TokenUtils.approve(underlying, user, vault.address, deposit);
-    log.info("deposit", BigNumber.from(deposit).toString());
+    log.info('deposit', BigNumber.from(deposit).toString());
     await vaultForUser.depositAndInvest(BigNumber.from(deposit));
   }
 
@@ -132,10 +132,10 @@ export class StrategyTestUtils {
     expect(
       await strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)
     ).is.eq(false);
-    expect(await strategy.buyBackRatio()).is.not.eq("0");
+    expect(await strategy.buyBackRatio()).is.not.eq('0');
     expect(await strategy.platform()).is.not.eq(0);
     expect((await strategy.assets()).length).is.not.eq(0);
-    expect(await strategy.poolTotalAmount()).is.not.eq("0");
+    expect(await strategy.poolTotalAmount()).is.not.eq('0');
     await strategy.emergencyExit();
     expect(await strategy.pausedInvesting()).is.eq(true);
     await strategy.continueInvesting();
@@ -151,34 +151,34 @@ export class StrategyTestUtils {
       )
     );
     await StrategyTestUtils.setConversionPaths(forwarder);
-    Misc.printDuration("Forwarder initialized", start);
+    Misc.printDuration('Forwarder initialized', start);
   }
 
   public static async setConversionPaths(forwarder: ForwarderV2) {
     const net = (await ethers.provider.getNetwork()).chainId;
     const bc: string[] = JSON.parse(
-      readFileSync(`./test/strategies/data/${net}/bc.json`, "utf8")
+      readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8')
     );
 
     const batch = 20;
     for (let i = 0; i < bc.length / batch; i++) {
       const l = bc.slice(i * batch, i * batch + batch);
-      log.info("addBlueChipsLps", l.length);
+      log.info('addBlueChipsLps', l.length);
       await forwarder.addBlueChipsLps(l);
     }
 
     const tokens: string[] = JSON.parse(
-      readFileSync(`./test/strategies/data/${net}/tokens.json`, "utf8")
+      readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8')
     );
     const lps: string[] = JSON.parse(
-      readFileSync(`./test/strategies/data/${net}/lps.json`, "utf8")
+      readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8')
     );
     for (let i = 0; i < tokens.length / batch; i++) {
       const t = tokens.slice(i * batch, i * batch + batch);
       const l = lps.slice(i * batch, i * batch + batch);
       // log.info('t', t)
       // log.info('l', l)
-      log.info("addLargestLps", t.length);
+      log.info('addLargestLps', t.length);
       await forwarder.addLargestLps(t, l);
     }
   }
@@ -196,7 +196,7 @@ export class StrategyTestUtils {
       deployInfo.core = await DeployerUtils.getCoreAddressesWrapper(signer);
     }
     deployInfo.tools = await DeployerUtils.getToolsAddressesWrapper(signer);
-    Misc.printDuration("Deploy core contracts completed", start);
+    Misc.printDuration('Deploy core contracts completed', start);
   }
 
   public static async getUnderlying(
@@ -206,20 +206,20 @@ export class StrategyTestUtils {
     calculator: PriceCalculator,
     recipients: string[]
   ) {
-    log.info("get underlying", amountN, recipients.length, underlying);
+    log.info('get underlying', amountN, recipients.length, underlying);
     const start = Date.now();
     const uName = await TokenUtils.tokenSymbol(underlying);
     const uDec = await TokenUtils.decimals(underlying);
     const uPrice = await PriceCalculatorUtils.getPriceCached(underlying);
     const uPriceN = +utils.formatUnits(uPrice);
-    log.info("Underlying price: ", uPriceN);
+    log.info('Underlying price: ', uPriceN);
 
     const amountAdjustedN = amountN / uPriceN;
     const amountAdjusted = utils.parseUnits(
       amountAdjustedN.toFixed(uDec),
       uDec
     );
-    log.info("Get underlying: ", uName, amountAdjustedN);
+    log.info('Get underlying: ', uName, amountAdjustedN);
 
     // const amountAdjustedN2 = amountAdjustedN * (recipients.length + 1);
     const amountAdjusted2 = amountAdjusted.mul(recipients.length + 1);
@@ -229,11 +229,12 @@ export class StrategyTestUtils {
       await (
         (await DeployerUtils.connectInterface(
           signer,
-          "IUniswapV2Pair",
+          'IUniswapV2Pair',
           underlying
         )) as IUniswapV2Pair
       ).getReserves();
       isLp = true;
+      // eslint-disable-next-line no-empty
     } catch (e) {}
 
     let balance = amountAdjusted2;
@@ -258,7 +259,7 @@ export class StrategyTestUtils {
       );
     }
     const finalBal = await TokenUtils.balanceOf(underlying, signer.address);
-    Misc.printDuration("Get underlying finished for", start);
+    Misc.printDuration('Get underlying finished for', start);
     return finalBal;
   }
 }

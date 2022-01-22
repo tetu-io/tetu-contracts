@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
-import { Bookkeeper, ContractReader, IStrategy } from "../../../../typechain";
-import { appendFileSync, readFileSync } from "fs";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
+import { Bookkeeper, ContractReader, IStrategy } from '../../../../typechain';
+import { appendFileSync, readFileSync } from 'fs';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -9,8 +9,8 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const infos = readFileSync(
-    "scripts/utils/download/data/sushi_pools.csv",
-    "utf8"
+    'scripts/utils/download/data/sushi_pools.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -18,17 +18,17 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
 
   const vSize = (await bookkeeper.vaultsLength()).toNumber();
-  console.log("all vaults size", vSize);
+  console.log('all vaults size', vSize);
 
   for (let i = 0; i < vSize; i++) {
     const vAdr = await bookkeeper._vaults(i);
@@ -36,7 +36,7 @@ async function main() {
   }
 
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const lpName = strat[1];
@@ -47,24 +47,24 @@ async function main() {
     const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === "idx" || !idx) {
-      console.log("skip", idx);
+    if (+alloc <= 0 || idx === 'idx' || !idx) {
+      console.log('skip', idx);
       continue;
     }
 
     if (+alloc === 0) {
-      console.log("no rewards", idx);
+      console.log('no rewards', idx);
       continue;
     }
 
     const vaultNameWithoutPrefix = `SUSHI_${token0Name}_${token1Name}`;
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log("strat", idx, lpName);
+    console.log('strat', idx, lpName);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[] = [];
     data.push(
@@ -73,7 +73,7 @@ async function main() {
         async (vaultAddress) =>
           DeployerUtils.deployContract(
             signer,
-            "StrategySushiSwapLpWithAc",
+            'StrategySushiSwapLpWithAc',
             core.controller,
             vaultAddress,
             lpAddress,
@@ -99,7 +99,7 @@ async function main() {
     deployed.push(data);
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${data[1].address}     strategy: ${data[2].address}\n`;
-    appendFileSync(`./tmp/deployed/vaults.txt`, txt, "utf8");
+    appendFileSync(`./tmp/deployed/vaults.txt`, txt, 'utf8');
   }
 
   await DeployerUtils.wait(5);
@@ -110,7 +110,7 @@ async function main() {
     await DeployerUtils.verifyProxy(data[1].address);
     await DeployerUtils.verifyWithContractName(
       data[2].address,
-      "contracts/strategies/matic/sushiswap/StrategySushiSwapLpWithAc.sol:StrategySushiSwapLpWithAc",
+      'contracts/strategies/matic/sushiswap/StrategySushiSwapLpWithAc.sol:StrategySushiSwapLpWithAc',
       data[3]
     );
   }

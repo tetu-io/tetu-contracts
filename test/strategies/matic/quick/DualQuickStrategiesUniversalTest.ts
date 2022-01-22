@@ -1,38 +1,38 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { readFileSync } from "fs";
-import { config as dotEnvConfig } from "dotenv";
-import { DeployInfo } from "../../DeployInfo";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { SpecificStrategyTest } from "../../SpecificStrategyTest";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
-import { IStrategy, SmartVault } from "../../../../typechain";
-import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
-import { DoHardWorkLoopBase } from "../../DoHardWorkLoopBase";
-import { universalStrategyTest } from "../../UniversalStrategyTest";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { IStrategy, SmartVault } from '../../../../typechain';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { DoHardWorkLoopBase } from '../../DoHardWorkLoopBase';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneQuickDualStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 1,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
@@ -40,13 +40,13 @@ const argv = require("yargs/yargs")()
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Universal Quick Dual tests", async () => {
+describe('Universal Quick Dual tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync(
-    "scripts/utils/download/data/quick_pools_dual.csv",
-    "utf8"
+    'scripts/utils/download/data/quick_pools_dual.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
@@ -57,10 +57,10 @@ describe("Universal Quick Dual tests", async () => {
     );
   });
 
-  const strategyName = "StrategyQuickSwapLpDualAC";
+  const strategyName = 'StrategyQuickSwapLpDualAC';
 
   infos.forEach((info) => {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const ids = strat[0];
     const lpName = strat[1];
@@ -74,18 +74,18 @@ describe("Universal Quick Dual tests", async () => {
     const r0 = strat[14];
     const r1 = strat[15];
 
-    if (+rewardAmount <= 0 || !token0 || ids === "idx") {
-      console.log("skip", ids, rewardAmount);
+    if (+rewardAmount <= 0 || !token0 || ids === 'idx') {
+      console.log('skip', ids, rewardAmount);
       return;
     }
     if (
       argv.onlyOneQuickDualStrategyTest !== -1 &&
       +ids !== argv.onlyOneQuickDualStrategyTest
     ) {
-      console.log("only one strat", ids, argv.onlyOneQuickDualStrategyTest);
+      console.log('only one strat', ids, argv.onlyOneQuickDualStrategyTest);
       return;
     }
-    console.log("strat", ids, lpName);
+    console.log('strat', ids, lpName);
 
     const rewards = [MaticAddresses.QUICK_TOKEN, r1];
     const underlying = lpAddress.toLowerCase();
@@ -95,7 +95,7 @@ describe("Universal Quick Dual tests", async () => {
     // ************** CONFIG*************************
     // **********************************************
     const strategyContractName = strategyName;
-    const vaultName = token0Name + "_" + token1Name;
+    const vaultName = token0Name + '_' + token1Name;
     // const underlying = token;
     // add custom liquidation path if necessary
     const forwarderConfigurator = null;

@@ -1,26 +1,26 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { config as dotEnvConfig } from "dotenv";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { startDefaultSingleTokenStrategyTest } from "../../DefaultSingleTokenStrategyTest";
-import { DeployInfo } from "../../DeployInfo";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { config as dotEnvConfig } from 'dotenv';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { startDefaultSingleTokenStrategyTest } from '../../DefaultSingleTokenStrategyTest';
+import { DeployInfo } from '../../DeployInfo';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
@@ -28,13 +28,13 @@ const argv = require("yargs/yargs")()
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Dino pool tests", async () => {
+describe('Dino pool tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const underlying = MaticAddresses.DINO_TOKEN;
-  const strategyName = "StrategyDinoPool";
-  const tokenName = "DINO";
+  const strategyName = 'StrategyDinoPool';
+  const tokenName = 'DINO';
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {

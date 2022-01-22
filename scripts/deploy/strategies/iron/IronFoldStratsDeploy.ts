@@ -1,15 +1,15 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
 import {
   ContractReader,
   Controller,
   IStrategy,
   StrategyIronFold,
   VaultController,
-} from "../../../../typechain";
-import { mkdir, readFileSync, writeFileSync } from "fs";
+} from '../../../../typechain';
+import { mkdir, readFileSync, writeFileSync } from 'fs';
 
-const alreadyDeployed = new Set<string>(["0", "1", "2", "3", "4"]);
+const alreadyDeployed = new Set<string>(['0', '1', '2', '3', '4']);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -17,20 +17,20 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const infos = readFileSync(
-    "scripts/utils/download/data/iron_markets.csv",
-    "utf8"
+    'scripts/utils/download/data/iron_markets.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const vaultNames = new Set<string>();
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -38,7 +38,7 @@ async function main() {
 
   // *********** DEPLOY VAULT
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const rTokenName = strat[1];
@@ -48,31 +48,31 @@ async function main() {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (idx === "idx" || !token) {
-      console.log("skip", idx);
+    if (idx === 'idx' || !token) {
+      console.log('skip', idx);
       continue;
     }
 
     if (alreadyDeployed.has(idx)) {
-      console.log("Strategy already deployed", idx);
+      console.log('Strategy already deployed', idx);
       continue;
     }
 
     const vaultNameWithoutPrefix = `${tokenName}`;
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log("strat", idx, rTokenName, vaultNameWithoutPrefix);
+    console.log('strat', idx, rTokenName, vaultNameWithoutPrefix);
 
     const data = await DeployerUtils.deployVaultAndStrategy(
       vaultNameWithoutPrefix,
       async (vaultAddress) =>
         DeployerUtils.deployContract(
           signer,
-          "StrategyIronFold",
+          'StrategyIronFold',
           core.controller,
           vaultAddress,
           token,
@@ -87,11 +87,11 @@ async function main() {
       true
     );
 
-    if ((await ethers.provider.getNetwork()).name !== "hardhat") {
+    if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
       await DeployerUtils.wait(5);
       await DeployerUtils.verifyWithContractName(
         data[2].address,
-        "contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold",
+        'contracts/strategies/matic/iron/StrategyIronFold.sol:StrategyIronFold',
         [
           core.controller,
           data[1].address,
@@ -107,11 +107,11 @@ async function main() {
     await DeployerUtils.verifyWithArgs(data[1].address, [data[0].address]);
     await DeployerUtils.verifyProxy(data[1].address);
 
-    mkdir("./tmp/deployed", { recursive: true }, (err) => {
+    mkdir('./tmp/deployed', { recursive: true }, (err) => {
       if (err) throw err;
     });
     const txt = `vault: ${data[1].address}\nstrategy: ${data[2].address}`;
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
   }
 }
 

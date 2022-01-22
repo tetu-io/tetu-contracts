@@ -1,22 +1,22 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TimeUtils } from "../TimeUtils";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { TimeUtils } from '../TimeUtils';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
 import {
   IUniswapV2Pair,
   TetuSwapFactory,
   TetuSwapRouter,
-} from "../../typechain";
-import { utils } from "ethers";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { ethers } from "hardhat";
-import { UniswapUtils } from "../UniswapUtils";
+} from '../../typechain';
+import { utils } from 'ethers';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { ethers } from 'hardhat';
+import { UniswapUtils } from '../UniswapUtils';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Tetu Swap specific tests", function () {
+describe('Tetu Swap specific tests', function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -36,12 +36,12 @@ describe("Tetu Swap specific tests", function () {
 
     factory = (await DeployerUtils.connectInterface(
       signer,
-      "TetuSwapFactory",
+      'TetuSwapFactory',
       coreAddresses.swapFactory
     )) as TetuSwapFactory;
     router = (await DeployerUtils.connectInterface(
       signer,
-      "TetuSwapRouter",
+      'TetuSwapRouter',
       coreAddresses.swapRouter
     )) as TetuSwapRouter;
   });

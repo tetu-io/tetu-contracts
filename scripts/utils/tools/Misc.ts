@@ -1,41 +1,41 @@
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Multicall } from "../../../typechain";
-import { ethers } from "hardhat";
-import { Logger } from "tslog";
-import Common from "ethereumjs-common";
-import logSettings from "../../../log_settings";
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Multicall } from '../../../typechain';
+import { ethers } from 'hardhat';
+import { Logger } from 'tslog';
+import Common from 'ethereumjs-common';
+import logSettings from '../../../log_settings';
 
 const log: Logger = new Logger(logSettings);
 
 const MATIC_CHAIN = Common.forCustomChain(
-  "mainnet",
+  'mainnet',
   {
-    name: "matic",
+    name: 'matic',
     networkId: 137,
     chainId: 137,
   },
-  "petersburg"
+  'petersburg'
 );
 
 const FANTOM_CHAIN = Common.forCustomChain(
-  "mainnet",
+  'mainnet',
   {
-    name: "fantom",
+    name: 'fantom',
     networkId: 250,
     chainId: 250,
   },
-  "petersburg"
+  'petersburg'
 );
 
 export class Misc {
   public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
   public static readonly SECONDS_OF_YEAR = Misc.SECONDS_OF_DAY * 365;
   public static readonly ZERO_ADDRESS =
-    "0x0000000000000000000000000000000000000000";
+    '0x0000000000000000000000000000000000000000';
   public static readonly GEIST_BOR_RATIO = 0.95;
 
   public static printDuration(text: string, start: number) {
-    log.info(">>>" + text, ((Date.now() - start) / 1000).toFixed(1), "sec");
+    log.info('>>>' + text, ((Date.now() - start) / 1000).toFixed(1), 'sec');
   }
 
   public static async getBlockTsFromChain(): Promise<number> {
@@ -43,7 +43,7 @@ export class Misc {
     const tools = await DeployerUtils.getToolsAddresses();
     const ctr = (await DeployerUtils.connectInterface(
       signer,
-      "Multicall",
+      'Multicall',
       tools.multicall
     )) as Multicall;
     const ts = await ctr.getCurrentBlockTimestamp();
@@ -58,59 +58,59 @@ export class Misc {
       case 250:
         return FANTOM_CHAIN;
       default:
-        throw new Error("Unknown net " + net.chainId);
+        throw new Error('Unknown net ' + net.chainId);
     }
   }
 
   public static platformName(n: number): string {
     switch (n) {
       case 0:
-        return "UNKNOWN";
+        return 'UNKNOWN';
       case 1:
-        return "TETU";
+        return 'TETU';
       case 2:
-        return "QUICK";
+        return 'QUICK';
       case 3:
-        return "SUSHI";
+        return 'SUSHI';
       case 4:
-        return "WAULT";
+        return 'WAULT';
       case 5:
-        return "IRON";
+        return 'IRON';
       case 6:
-        return "COSMIC";
+        return 'COSMIC';
       case 7:
-        return "CURVE";
+        return 'CURVE';
       case 8:
-        return "DINO";
+        return 'DINO';
       case 9:
-        return "IRON_LEND";
+        return 'IRON_LEND';
       case 10:
-        return "HERMES";
+        return 'HERMES';
       case 11:
-        return "CAFE";
+        return 'CAFE';
       case 12:
-        return "TETU_SWAP";
+        return 'TETU_SWAP';
       case 13:
-        return "SPOOKY";
+        return 'SPOOKY';
       case 14:
-        return "AAVE_LEND";
+        return 'AAVE_LEND';
       case 15:
-        return "AAVE_MAI_BAL";
+        return 'AAVE_MAI_BAL';
       case 16:
-        return "GEIST";
+        return 'GEIST';
       case 17:
-        return "HARVEST";
+        return 'HARVEST';
       case 18:
-        return "SCREAM_LEND";
+        return 'SCREAM_LEND';
       case 19:
-        return "KLIMA";
+        return 'KLIMA';
       case 20:
-        return "VESQ";
+        return 'VESQ';
       case 21:
-        return "QIDAO";
+        return 'QIDAO';
       case 22:
-        return "SUNFLOWER";
+        return 'SUNFLOWER';
     }
-    return n + "";
+    return n + '';
   }
 }

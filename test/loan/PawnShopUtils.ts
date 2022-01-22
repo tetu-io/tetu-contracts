@@ -1,17 +1,17 @@
-import { TokenUtils } from "../TokenUtils";
-import { TetuPawnShop } from "../../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { utils } from "ethers";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
+import { TokenUtils } from '../TokenUtils';
+import { TetuPawnShop } from '../../typechain';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { utils } from 'ethers';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
 export class PawnShopUtils {
   public static MAX_UINT =
-    "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+    '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
   public static async openErc20ForUsdc(
     signer: SignerWithAddress,
@@ -22,12 +22,12 @@ export class PawnShopUtils {
     posDurationBlocks = 99,
     posFee = 100
   ): Promise<number> {
-    console.log("Try to open erc20 position for usdc");
+    console.log('Try to open erc20 position for usdc');
     const bal = await TokenUtils.balanceOf(collateralToken, signer.address);
     const dec = await TokenUtils.decimals(collateralToken);
     expect(+utils.formatUnits(bal, dec)).is.greaterThanOrEqual(
       +utils.formatUnits(collateralAmount, dec),
-      "not enough balance for open position"
+      'not enough balance for open position'
     );
 
     await TokenUtils.approve(
@@ -48,7 +48,7 @@ export class PawnShopUtils {
         posFee
       );
     const id = (await shop.positionCounter()).toNumber() - 1;
-    console.log("Position opened", id);
+    console.log('Position opened', id);
     return id;
   }
 
@@ -61,7 +61,7 @@ export class PawnShopUtils {
     posDurationBlocks = 99,
     posFee = 100
   ): Promise<number> {
-    console.log("Try to open NFT position for usdc", collateralId);
+    console.log('Try to open NFT position for usdc', collateralId);
 
     await TokenUtils.approveNFT(
       collateralToken,
@@ -81,7 +81,7 @@ export class PawnShopUtils {
         posFee
       );
     const id = (await shop.positionCounter()).toNumber() - 1;
-    console.log("NFT Position opened", id);
+    console.log('NFT Position opened', id);
     return id;
   }
 
@@ -90,7 +90,7 @@ export class PawnShopUtils {
     signer: SignerWithAddress,
     shop: TetuPawnShop
   ): Promise<void> {
-    console.log("Try to close position", id);
+    console.log('Try to close position', id);
     await shop.connect(signer).closePosition(id);
   }
 
@@ -100,7 +100,7 @@ export class PawnShopUtils {
     signer: SignerWithAddress,
     shop: TetuPawnShop
   ) {
-    console.log("Try to bid on position", id, amount);
+    console.log('Try to bid on position', id, amount);
     const l = await shop.positions(id);
     const aToken = l.acquired.acquiredToken;
     await TokenUtils.approve(aToken, signer, shop.address, amount);
@@ -112,7 +112,7 @@ export class PawnShopUtils {
     signer: SignerWithAddress,
     shop: TetuPawnShop
   ) {
-    console.log("Try to claim on position", id);
+    console.log('Try to claim on position', id);
     await shop.connect(signer).claim(id);
   }
 
@@ -121,7 +121,7 @@ export class PawnShopUtils {
     signer: SignerWithAddress,
     shop: TetuPawnShop
   ) {
-    console.log("Try to redeem on position", id);
+    console.log('Try to redeem on position', id);
     const l = await shop.positions(id);
     const aToken = l.acquired.acquiredToken;
     const toRedeem = await shop.toRedeem(id);
@@ -134,7 +134,7 @@ export class PawnShopUtils {
     signer: SignerWithAddress,
     shop: TetuPawnShop
   ) {
-    console.log("Try to close auction bid", bidId);
+    console.log('Try to close auction bid', bidId);
     await shop.connect(signer).closeAuctionBid(bidId);
   }
 
@@ -143,14 +143,14 @@ export class PawnShopUtils {
     signer: SignerWithAddress,
     shop: TetuPawnShop
   ) {
-    console.log("Try to accept auction bid for loanId", posId);
+    console.log('Try to accept auction bid for loanId', posId);
     await shop.connect(signer).acceptAuctionBid(posId);
   }
 
   public static async lastAuctionBidId(posId: number, shop: TetuPawnShop) {
     const size = (await shop.auctionBidSize(posId)).toNumber();
-    console.log("auction bids size", size);
-    expect(size).is.not.eq(0, "no bids for " + posId);
+    console.log('auction bids size', size);
+    expect(size).is.not.eq(0, 'no bids for ' + posId);
     return (await shop.positionToBidIds(posId, size - 1)).toNumber();
   }
 }

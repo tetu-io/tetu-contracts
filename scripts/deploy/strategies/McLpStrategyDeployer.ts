@@ -1,15 +1,15 @@
-import { ethers } from "hardhat";
-import { RunHelper } from "../../utils/tools/RunHelper";
-import { DeployerUtils } from "../DeployerUtils";
+import { ethers } from 'hardhat';
+import { RunHelper } from '../../utils/tools/RunHelper';
+import { DeployerUtils } from '../DeployerUtils';
 import {
   ContractReader,
   Controller,
   IUniswapV2Pair,
   SmartVault,
   VaultController,
-} from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { mkdir, writeFileSync } from "fs";
+} from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { mkdir, writeFileSync } from 'fs';
 
 export class McLpStrategyDeployer {
   public static async deploy(
@@ -25,12 +25,12 @@ export class McLpStrategyDeployer {
 
     const controller = (await DeployerUtils.connectContract(
       signer,
-      "Controller",
+      'Controller',
       core.controller
     )) as Controller;
     const vaultController = (await DeployerUtils.connectContract(
       signer,
-      "VaultController",
+      'VaultController',
       core.vaultController
     )) as VaultController;
 
@@ -38,12 +38,12 @@ export class McLpStrategyDeployer {
 
     const cReader = (await DeployerUtils.connectContract(
       signer,
-      "ContractReader",
+      'ContractReader',
       tools.reader
     )) as ContractReader;
 
     const deployedVaultAddresses = await cReader.vaults();
-    console.log("all vaults size", deployedVaultAddresses.length);
+    console.log('all vaults size', deployedVaultAddresses.length);
 
     for (const vAdr of deployedVaultAddresses) {
       vaultNames.add(await cReader.vaultName(vAdr));
@@ -51,7 +51,7 @@ export class McLpStrategyDeployer {
 
     const lpCont = (await DeployerUtils.connectInterface(
       signer,
-      "IUniswapV2Pair",
+      'IUniswapV2Pair',
       underlying
     )) as IUniswapV2Pair;
     const token0 = await lpCont.token0();
@@ -60,10 +60,10 @@ export class McLpStrategyDeployer {
     const token1Name = await TokenUtils.tokenSymbol(token1);
 
     // *********** DEPLOY VAULT
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+    const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       vaultLogic.address
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
@@ -80,10 +80,10 @@ export class McLpStrategyDeployer {
 
     const vaultNameWithoutPrefix = `${platformPrefix}_${token0Name}_${token1Name}`;
 
-    console.log("vaultNameWithoutPrefix", vaultNameWithoutPrefix);
+    console.log('vaultNameWithoutPrefix', vaultNameWithoutPrefix);
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       return;
     }
 
@@ -100,7 +100,7 @@ export class McLpStrategyDeployer {
       )
     );
 
-    if ((await ethers.provider.getNetwork()).name !== "hardhat") {
+    if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
       await DeployerUtils.wait(5);
       await DeployerUtils.verify(vaultLogic.address);
       await DeployerUtils.verifyWithArgs(vaultProxy.address, [
@@ -114,11 +114,11 @@ export class McLpStrategyDeployer {
       );
     }
 
-    mkdir("./tmp/deployed", { recursive: true }, (err) => {
+    mkdir('./tmp/deployed', { recursive: true }, (err) => {
       if (err) throw err;
     });
 
     const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
+    writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
   }
 }

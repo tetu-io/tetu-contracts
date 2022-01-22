@@ -1,17 +1,17 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { PayrollClerk } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { PayrollClerk } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const logic = await DeployerUtils.deployContract(signer, "PayrollClerk");
+  const logic = await DeployerUtils.deployContract(signer, 'PayrollClerk');
   const proxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyGov",
+    'TetuProxyGov',
     logic.address
   );
   const contract = logic.attach(proxy.address) as PayrollClerk;

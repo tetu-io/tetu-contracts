@@ -1,4 +1,4 @@
-import CoreContractsDeploy from "../../deploy/base/CoreContractsDeploy";
+import CoreContractsDeploy from '../../deploy/base/CoreContractsDeploy';
 
 async function main() {
   const core = await CoreContractsDeploy();

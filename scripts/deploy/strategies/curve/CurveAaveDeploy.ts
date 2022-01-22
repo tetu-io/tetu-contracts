@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
-import { ContractReader, IStrategy } from "../../../../typechain";
-import { writeFileSync } from "fs";
-import { DeployerUtils } from "../../DeployerUtils";
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+import { ethers } from 'hardhat';
+import { ContractReader, IStrategy } from '../../../../typechain';
+import { writeFileSync } from 'fs';
+import { DeployerUtils } from '../../DeployerUtils';
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -13,12 +13,12 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -26,8 +26,8 @@ async function main() {
 
   const vaultNameWithoutPrefix = `CRV_AAVE`;
 
-  if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-    console.log("Strategy already exist", vaultNameWithoutPrefix);
+  if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+    console.log('Strategy already exist', vaultNameWithoutPrefix);
   }
 
   const [vaultLogic, vault, strategy] =
@@ -36,7 +36,7 @@ async function main() {
       async (vaultAddress) =>
         DeployerUtils.deployContract(
           signer,
-          "CurveAaveStrategy",
+          'CurveAaveStrategy',
           core.controller,
           MaticAddresses.AM3CRV_TOKEN,
           vaultAddress
@@ -54,12 +54,12 @@ async function main() {
   await DeployerUtils.verifyProxy(vault.address);
   await DeployerUtils.verifyWithContractName(
     strategy.address,
-    "contracts/strategies/matic/curve/CurveAaveStrategy.sol:CurveAaveStrategy",
+    'contracts/strategies/matic/curve/CurveAaveStrategy.sol:CurveAaveStrategy',
     [core.controller, MaticAddresses.AM3CRV_TOKEN, vault.address]
   );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
+  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
 }
 
 main()

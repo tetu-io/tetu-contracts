@@ -1,16 +1,16 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
-import { appendFileSync, mkdir, readFileSync } from "fs";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
+import { appendFileSync, mkdir, readFileSync } from 'fs';
 import {
   ContractReader,
   Controller,
   IStrategy,
   VaultController,
-} from "../../../../typechain";
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+} from '../../../../typechain';
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 async function main() {
-  mkdir("./tmp/deployed", { recursive: true }, (err) => {
+  mkdir('./tmp/deployed', { recursive: true }, (err) => {
     if (err) throw err;
   });
   const signer = (await ethers.getSigners())[0];
@@ -18,8 +18,8 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
 
   const infos = readFileSync(
-    "scripts/utils/download/data/quick_pools_dual.csv",
-    "utf8"
+    'scripts/utils/download/data/quick_pools_dual.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -27,19 +27,19 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
   }
 
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const ids = strat[0];
     const lpName = strat[1];
@@ -54,20 +54,20 @@ async function main() {
     const r1 = strat[15];
     const rewards = [MaticAddresses.QUICK_TOKEN, r1];
 
-    if (+rewardAmount <= 0 || !token0 || ids === "idx") {
-      console.log("skip", ids);
+    if (+rewardAmount <= 0 || !token0 || ids === 'idx') {
+      console.log('skip', ids);
       continue;
     }
 
     const vaultNameWithoutPrefix = `QUICK_${token0Name}_${token1Name}`;
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
     let strategyArgs;
-    console.log("strat", ids, lpName);
+    console.log('strat', ids, lpName);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[] = [];
     data.push(
@@ -85,7 +85,7 @@ async function main() {
           ];
           return DeployerUtils.deployContract(
             signer,
-            "StrategyQuickSwapLpDualAC",
+            'StrategyQuickSwapLpDualAC',
             ...strategyArgs
           ) as Promise<IStrategy>;
         },
@@ -101,7 +101,7 @@ async function main() {
     deployed.push(data);
 
     const txt = `vault: ${data[0][1].address} strategy: ${data[0][2].address}`;
-    appendFileSync(`./tmp/deployed/QUICK_DUAL.txt`, txt, "utf8");
+    appendFileSync(`./tmp/deployed/QUICK_DUAL.txt`, txt, 'utf8');
   }
 
   await DeployerUtils.wait(5);

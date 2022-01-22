@@ -1,40 +1,40 @@
-import { web3 } from "hardhat";
-import axios, { AxiosResponse } from "axios";
-import Common from "ethereumjs-common";
-import { config as dotEnvConfig } from "dotenv";
-import { utils } from "ethers";
+import { web3 } from 'hardhat';
+import axios, { AxiosResponse } from 'axios';
+import Common from 'ethereumjs-common';
+import { config as dotEnvConfig } from 'dotenv';
+import { utils } from 'ethers';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const EthereumTx = require("ethereumjs-tx").Transaction;
+const EthereumTx = require('ethereumjs-tx').Transaction;
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     maticRpcUrl: {
-      type: "string",
+      type: 'string',
     },
     speedUpPrivateKey: {
-      type: "string",
+      type: 'string',
     },
     speedUpTx: {
-      type: "string",
+      type: 'string',
     },
     speedUpGasPrice: {
-      type: "string",
-      default: utils.parseUnits(333 + "", 9).toString(),
+      type: 'string',
+      default: utils.parseUnits(333 + '', 9).toString(),
     },
   }).argv;
 
 const MATIC_CHAIN = Common.forCustomChain(
-  "mainnet",
+  'mainnet',
   {
-    name: "matic",
+    name: 'matic',
     networkId: 137,
     chainId: 137,
   },
-  "petersburg"
+  'petersburg'
 );
 
 async function main() {
@@ -46,19 +46,19 @@ async function main() {
       `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["${txHash}"],"id":1}`,
       {
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       }
     );
   } catch (e) {
-    console.error("error request", e);
+    console.error('error request', e);
     return;
   }
   const result = response.data.result;
-  console.log("response", txHash, result);
+  console.log('response', txHash, result);
 
   const nonce = web3.utils.hexToNumber(result.nonce);
-  console.log("nonce", nonce);
+  console.log('nonce', nonce);
 
   const gasPrice = await web3.eth.getGasPrice();
   const gasPriceAdjusted = web3.utils
@@ -66,7 +66,7 @@ async function main() {
     .mul(web3.utils.toBN(3))
     .toString();
 
-  console.log("gas", gasPrice, gasPriceAdjusted);
+  console.log('gas', gasPrice, gasPriceAdjusted);
 
   const tx = new EthereumTx(
     {
@@ -79,12 +79,12 @@ async function main() {
     { common: MATIC_CHAIN }
   );
 
-  tx.sign(Buffer.from(argv.speedUpPrivateKey, "hex"));
+  tx.sign(Buffer.from(argv.speedUpPrivateKey, 'hex'));
 
-  const txRaw = "0x" + tx.serialize().toString("hex");
+  const txRaw = '0x' + tx.serialize().toString('hex');
 
   await web3.eth.sendSignedTransaction(txRaw, (err, res) => {
-    console.log("result", err, res);
+    console.log('result', err, res);
   });
 }
 

@@ -1,17 +1,17 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { Controller, FundKeeper } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { Controller, FundKeeper } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tokens = await DeployerUtils.getTokenAddresses();
 
-  const logic = await DeployerUtils.deployContract(signer, "FundKeeper");
+  const logic = await DeployerUtils.deployContract(signer, 'FundKeeper');
   const proxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     logic.address
   );
   const fundKeeper = logic.attach(proxy.address) as FundKeeper;
@@ -19,12 +19,12 @@ async function main() {
 
   const controller = (await DeployerUtils.connectContract(
     signer,
-    "Controller",
+    'Controller',
     core.controller
   )) as Controller;
   await RunHelper.runAndWait(() => controller.setFund(fundKeeper.address));
   await RunHelper.runAndWait(() =>
-    controller.setFundToken(tokens.get("usdc") as string)
+    controller.setFundToken(tokens.get('usdc') as string)
   );
 
   await DeployerUtils.wait(5);

@@ -1,17 +1,17 @@
-import { ethers, web3 } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
+import { ethers, web3 } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
 import {
   ERC20,
   IWaultSwapPair,
   IWexPolyMaster,
   PriceCalculator,
   SmartVault,
-} from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { mkdir, writeFileSync } from "fs";
-import { BigNumber, utils } from "ethers";
-import { VaultUtils } from "../../../test/VaultUtils";
+} from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { mkdir, writeFileSync } from 'fs';
+import { BigNumber, utils } from 'ethers';
+import { VaultUtils } from '../../../test/VaultUtils';
 
 async function downloadWault() {
   const signer = (await ethers.getSigners())[0];
@@ -20,13 +20,13 @@ async function downloadWault() {
 
   const chef = (await DeployerUtils.connectInterface(
     signer,
-    "IWexPolyMaster",
+    'IWexPolyMaster',
     MaticAddresses.WAULT_POLYMASTER
   )) as IWexPolyMaster;
 
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
-    "PriceCalculator",
+    'PriceCalculator',
     tools.calculator
   )) as PriceCalculator;
 
@@ -35,7 +35,7 @@ async function downloadWault() {
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (const vInfo of vaultInfos) {
-    if (vInfo.platform !== "4") {
+    if (vInfo.platform !== '4') {
       continue;
     }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -44,27 +44,27 @@ async function downloadWault() {
       console.log(vInfo.addr);
       const vctr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         vInfo.addr
       )) as SmartVault;
       const rewards = await VaultUtils.vaultRewardsAmount(vctr, core.psVault);
-      console.log("rewards", rewards);
+      console.log('rewards', rewards);
       currentRewards.set(vInfo.underlying.toLowerCase(), rewards);
     }
   }
 
   const poolLength = (await chef.poolLength()).toNumber();
-  console.log("length", poolLength);
+  console.log('length', poolLength);
 
   const wexPerBlock = await chef.wexPerBlock();
   const totalAllocPoint = await chef.totalAllocPoint();
   const wexPrice = await priceCalculator.getPriceWithDefaultOutput(
     MaticAddresses.WEXpoly_TOKEN
   );
-  console.log("wex price", utils.formatUnits(wexPrice));
+  console.log('wex price', utils.formatUnits(wexPrice));
 
-  let infos: string =
-    "idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n";
+  let infos =
+    'idx, lp_name, lp_address, token0, token0_name, token1, token1_name, alloc, weekRewardUsd, tvlUsd, apr, currentRewards, vault \n';
   for (let i = 0; i < poolLength; i++) {
     const poolInfo = await chef.poolInfo(i);
     const lp = poolInfo[0];
@@ -74,14 +74,14 @@ async function downloadWault() {
     }
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
-      "IWaultSwapPair",
+      'IWaultSwapPair',
       lp
     )) as IWaultSwapPair;
 
     const waultAllocPoint = poolInfo[1];
     const currentBlock = await web3.eth.getBlockNumber();
     const duration = currentBlock - poolInfo[2].toNumber();
-    console.log("duration", duration, currentBlock, poolInfo[2].toNumber());
+    console.log('duration', duration, currentBlock, poolInfo[2].toNumber());
     const weekRewardUsd = computeWeekReward(
       duration,
       wexPerBlock,
@@ -89,7 +89,7 @@ async function downloadWault() {
       totalAllocPoint,
       wexPrice
     );
-    console.log("weekRewardUsd", weekRewardUsd);
+    console.log('weekRewardUsd', weekRewardUsd);
 
     const lpPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
     const tvl = await lpContract.balanceOf(chef.address);
@@ -97,27 +97,28 @@ async function downloadWault() {
 
     const apr = (weekRewardUsd / +tvlUsd / 7) * 365 * 100;
 
-    let token0: string = "";
-    let token1: string = "";
-    let token0Name: string = "";
-    let token1Name: string = "";
+    let token0 = '';
+    let token1 = '';
+    let token0Name = '';
+    let token1Name = '';
 
     try {
       const _lpContract = (await DeployerUtils.connectInterface(
         signer,
-        "IWaultSwapPair",
+        'IWaultSwapPair',
         lp
       )) as IWaultSwapPair;
       token0 = await _lpContract.token0();
       token1 = await _lpContract.token1();
       token0Name = await TokenUtils.tokenSymbol(token0);
       token1Name = await TokenUtils.tokenSymbol(token1);
+      // eslint-disable-next-line no-empty
     } catch (e) {}
 
-    if (token0 === "") {
+    if (token0 === '') {
       const token = (await DeployerUtils.connectInterface(
         signer,
-        "ERC20",
+        'ERC20',
         lp
       )) as ERC20;
       token0Name = await token.symbol();
@@ -125,43 +126,43 @@ async function downloadWault() {
 
     const data =
       i +
-      "," +
-      "WAULT_" +
+      ',' +
+      'WAULT_' +
       token0Name +
-      (token1Name ? "_" + token1Name : "") +
-      "," +
+      (token1Name ? '_' + token1Name : '') +
+      ',' +
       lp +
-      "," +
+      ',' +
       token0 +
-      "," +
+      ',' +
       token0Name +
-      "," +
+      ',' +
       token1 +
-      "," +
+      ',' +
       token1Name +
-      "," +
+      ',' +
       poolInfo[1] +
-      "," +
+      ',' +
       weekRewardUsd.toFixed() +
-      "," +
+      ',' +
       (+tvlUsd).toFixed() +
-      "," +
+      ',' +
       apr.toFixed(0) +
-      "," +
+      ',' +
       currentRewards.get(lp.toLowerCase()) +
-      "," +
+      ',' +
       underlyingToVault.get(lp.toLowerCase());
     console.log(data);
-    infos += data + "\n";
+    infos += data + '\n';
   }
 
-  mkdir("./tmp/download", { recursive: true }, (err) => {
+  mkdir('./tmp/download', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  writeFileSync("./tmp/download/wault_pools.csv", infos, "utf8");
-  console.log("done");
+  writeFileSync('./tmp/download/wault_pools.csv', infos, 'utf8');
+  console.log('done');
 }
 
 downloadWault()

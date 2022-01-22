@@ -1,39 +1,39 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { config as dotEnvConfig } from "dotenv";
-import { DeployInfo } from "../../DeployInfo";
-import { startCurveStratTest } from "./utils/UniversalCurveStrategyTest";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { startCurveStratTest } from './utils/UniversalCurveStrategyTest';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
 
 chai.use(chaiAsPromised);
 
-describe("Curve aave tests", async () => {
+describe('Curve aave tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const underlying = MaticAddresses.AM3CRV_TOKEN;
-  const strategyName = "CurveAaveStrategy";
-  const tokenName = "AM3CRV";
+  const strategyName = 'CurveAaveStrategy';
+  const tokenName = 'AM3CRV';
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {

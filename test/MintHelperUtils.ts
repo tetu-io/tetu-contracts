@@ -1,8 +1,8 @@
-import { utils } from "ethers";
-import { Announcer, Controller } from "../typechain";
-import { TimeUtils } from "./TimeUtils";
-import { TokenUtils } from "./TokenUtils";
-import { DeployerUtils } from "../scripts/deploy/DeployerUtils";
+import { utils } from 'ethers';
+import { Announcer, Controller } from '../typechain';
+import { TimeUtils } from './TimeUtils';
+import { TokenUtils } from './TokenUtils';
+import { DeployerUtils } from '../scripts/deploy/DeployerUtils';
 
 export class MintHelperUtils {
   public static async mint(
@@ -15,7 +15,7 @@ export class MintHelperUtils {
   ) {
     const fund = await controller.fund();
     const distributor = await controller.distributor();
-    console.log("mint reward tokens", amount);
+    console.log('mint reward tokens', amount);
     await announcer.announceMint(
       utils.parseUnits(amount),
       distributor,

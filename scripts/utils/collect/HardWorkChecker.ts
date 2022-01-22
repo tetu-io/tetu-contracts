@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Bookkeeper, ContractReader, SmartVault } from "../../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Bookkeeper, ContractReader, SmartVault } from '../../../typechain';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
@@ -9,13 +9,13 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectInterface(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectProxy(
     core.bookkeeper,
     signer,
-    "Bookkeeper"
+    'Bookkeeper'
   )) as Bookkeeper;
 
   const vaults = await bookkeeper.vaults();
@@ -24,7 +24,7 @@ async function main() {
     console.log(await cReader.vaultName(vault));
     const vaultCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const strategy = await vaultCtr.strategy();

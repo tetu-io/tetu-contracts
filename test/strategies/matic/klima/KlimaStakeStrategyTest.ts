@@ -1,38 +1,38 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { config as dotEnvConfig } from "dotenv";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { DeployInfo } from "../../DeployInfo";
-import { SpecificStrategyTest } from "../../SpecificStrategyTest";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { config as dotEnvConfig } from 'dotenv';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { DeployInfo } from '../../DeployInfo';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
 import {
   ForwarderV2,
   IStrategy,
   SmartVault,
   SmartVault__factory,
-} from "../../../../typechain";
-import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
-import { universalStrategyTest } from "../../UniversalStrategyTest";
-import { KlimaStakingDoHardWork } from "./KlimaStakingDoHardWork";
+} from '../../../../typechain';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { KlimaStakingDoHardWork } from './KlimaStakingDoHardWork';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
@@ -40,13 +40,13 @@ const argv = require("yargs/yargs")()
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Klima staking tests", async () => {
+describe('Klima staking tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const underlying = MaticAddresses.KLIMA_TOKEN;
-  const strategyName = "StrategyKlimaStaking";
-  const tokenName = "KLIMA";
+  const strategyName = 'StrategyKlimaStaking';
+  const tokenName = 'KLIMA';
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
@@ -67,8 +67,8 @@ describe("Klima staking tests", async () => {
     await f.addLargestLps(
       [MaticAddresses.KLIMA_TOKEN, MaticAddresses.BCT_TOKEN],
       [
-        "0x9803c7aE526049210a1725F7487AF26fE2c24614",
-        "0x1E67124681b402064CD0ABE8ed1B5c79D2e02f64",
+        '0x9803c7aE526049210a1725F7487AF26fE2c24614',
+        '0x1E67124681b402064CD0ABE8ed1B5c79D2e02f64',
       ]
     );
   };

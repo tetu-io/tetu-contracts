@@ -1,4 +1,4 @@
-import { DoHardWorkLoopBase } from "../../DoHardWorkLoopBase";
+import { DoHardWorkLoopBase } from '../../DoHardWorkLoopBase';
 import {
   ICamToken,
   IErc20Stablecoin,
@@ -6,18 +6,18 @@ import {
   PriceSource,
   SmartVault,
   StrategyAaveMaiBal,
-} from "../../../../typechain";
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { TokenUtils } from "../../../TokenUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber } from "ethers";
-import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
-import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
-import { AMBUtils } from "./AMBUtils";
-import { ethers } from "hardhat";
+} from '../../../../typechain';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { TokenUtils } from '../../../TokenUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { BigNumber } from 'ethers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { AMBUtils } from './AMBUtils';
+import { ethers } from 'hardhat';
 
 chai.use(chaiAsPromised);
 
@@ -74,10 +74,10 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
       .strategy as StrategyAaveMaiBal;
 
     // claim aave rewards on mai
-    console.log("claimAaveRewards");
+    console.log('claimAaveRewards');
     const cam = (await DeployerUtils.connectInterface(
       this.signer,
-      "ICamToken",
+      'ICamToken',
       this.camToken
     )) as ICamToken;
     await cam.claimAaveRewards();
@@ -111,20 +111,20 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
       this.underlying
     );
     const stablecoin = (await ethers.getContractAt(
-      "IErc20Stablecoin",
+      'IErc20Stablecoin',
       stablecoinAddress
     )) as IErc20Stablecoin;
 
     const priceSourceAddress = await stablecoin.ethPriceSource();
     const priceSource = (await ethers.getContractAt(
-      "PriceSource",
+      'PriceSource',
       priceSourceAddress
     )) as PriceSource;
     const [, priceSourcePrice, ,] = await priceSource.latestRoundData();
 
     const mockPriceSource = await DeployerUtils.deployContract(
       this.signer,
-      "MockPriceSource",
+      'MockPriceSource',
       0
     );
     const mockPricePercents = 75; // % from original price
@@ -134,7 +134,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     const ethPriceSourceSlotIndex = priceSlotIndex;
     // set matic price source to our mock contract
     // convert address string to bytes32 string
-    const adrBytes32 = "0x" + "0".repeat(24) + mockPriceSource.address.slice(2);
+    const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2);
     await DeployerUtils.setStorageAt(
       stablecoin.address,
       ethPriceSourceSlotIndex,

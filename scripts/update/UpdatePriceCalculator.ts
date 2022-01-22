@@ -1,18 +1,18 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../deploy/DeployerUtils";
-import { TetuProxyGov } from "../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../deploy/DeployerUtils';
+import { TetuProxyGov } from '../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const tools = await DeployerUtils.getToolsAddresses();
   const net = await ethers.provider.getNetwork();
 
-  const logic = await DeployerUtils.deployContract(signer, "PriceCalculator");
+  const logic = await DeployerUtils.deployContract(signer, 'PriceCalculator');
 
-  if ((await ethers.provider.getNetwork()).name !== "matic") {
+  if ((await ethers.provider.getNetwork()).name !== 'matic') {
     const proxy = (await DeployerUtils.connectContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       tools.calculator
     )) as TetuProxyGov;
     await proxy.upgrade(logic.address);

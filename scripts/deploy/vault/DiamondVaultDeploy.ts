@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../DeployerUtils";
-import { NoopStrategy, SmartVault } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../DeployerUtils';
+import { NoopStrategy, SmartVault } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
 
 const REWARDS_DURATION = 60 * 60 * 24 * 28; // 28 days
 
@@ -9,17 +9,17 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
-  const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+  const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
   const vaultProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     vaultLogic.address
   );
   const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
   const strategy = (await DeployerUtils.deployContract(
     signer,
-    "NoopStrategy",
+    'NoopStrategy',
     core.controller,
     core.psVault,
     vault.address,
@@ -32,8 +32,8 @@ async function main() {
 
   await RunHelper.runAndWait(() =>
     vault.initializeSmartVault(
-      "TETU_DIAMOND_VAULT",
-      "dxTETU",
+      'TETU_DIAMOND_VAULT',
+      'dxTETU',
       core.controller,
       strategyUnderlying,
       REWARDS_DURATION,
@@ -49,7 +49,7 @@ async function main() {
   await DeployerUtils.verifyProxy(vaultProxy.address);
   await DeployerUtils.verifyWithContractName(
     strategy.address,
-    "contracts/base/strategies/NoopStrategy.sol:NoopStrategy",
+    'contracts/base/strategies/NoopStrategy.sol:NoopStrategy',
     [core.controller, core.psVault, vault.address, [], [core.psVault], 1]
   );
 }

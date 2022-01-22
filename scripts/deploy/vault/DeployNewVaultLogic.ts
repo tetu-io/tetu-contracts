@@ -1,13 +1,13 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../DeployerUtils";
-import { SmartVault } from "../../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../DeployerUtils';
+import { SmartVault } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    "SmartVault"
+    'SmartVault'
   )) as SmartVault;
 
   await DeployerUtils.wait(5);

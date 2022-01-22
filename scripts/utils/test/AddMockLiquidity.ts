@@ -1,11 +1,11 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { utils } from "ethers";
-import { UniswapUtils } from "../../../test/UniswapUtils";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { RunHelper } from "../tools/RunHelper";
-import { RopstenAddresses } from "../../addresses/RopstenAddresses";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { utils } from 'ethers';
+import { UniswapUtils } from '../../../test/UniswapUtils';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { RunHelper } from '../tools/RunHelper';
+import { RopstenAddresses } from '../../addresses/RopstenAddresses';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
@@ -18,10 +18,10 @@ async function main() {
   for (const mockName of Array.from(mocks.keys())) {
     const mock = mocks.get(mockName) as string;
     if (!mock) {
-      console.log("empty mock", mockName);
+      console.log('empty mock', mockName);
       continue;
     }
-    if (mockName === "sushi_lp_token_usdc") {
+    if (mockName === 'sushi_lp_token_usdc') {
       continue;
     }
     const decimals = await TokenUtils.decimals(mock);
@@ -30,7 +30,7 @@ async function main() {
     // await mockContract.mint(signer.address, utils.parseUnits("10000", decimals));
 
     const mockBal = await TokenUtils.balanceOf(mock, signer.address);
-    console.log("mockBal", mockName, utils.formatUnits(mockBal, decimals));
+    console.log('mockBal', mockName, utils.formatUnits(mockBal, decimals));
 
     const lp = await UniswapUtils.addLiquidity(
       signer,
@@ -44,12 +44,12 @@ async function main() {
       RopstenAddresses.SUSHI_ROUTER,
       true
     );
-    console.log("liquidity added to Reward TOKEN and", mockName, lp);
+    console.log('liquidity added to Reward TOKEN and', mockName, lp);
 
-    if (mockName !== "usdc") {
+    if (mockName !== 'usdc') {
       const nonUsdclp = await UniswapUtils.addLiquidity(
         signer,
-        mocks.get("usdc") as string,
+        mocks.get('usdc') as string,
         mock,
         utils.parseUnits((Math.random() * base + base).toFixed(), 6).toString(),
         utils
@@ -59,7 +59,7 @@ async function main() {
         RopstenAddresses.SUSHI_ROUTER,
         true
       );
-      console.log("liquidity added to usdc ", mockName, nonUsdclp);
+      console.log('liquidity added to usdc ', mockName, nonUsdclp);
     }
 
     if (prevMock) {
@@ -78,7 +78,7 @@ async function main() {
         RopstenAddresses.SUSHI_ROUTER,
         true
       );
-      console.log("liquidity added to", mockName, prevMockName, prevMocklp);
+      console.log('liquidity added to', mockName, prevMockName, prevMocklp);
     }
 
     prevMock = mock;
@@ -114,7 +114,7 @@ async function addLiquidityWithWait(
       1,
       1,
       sender.address,
-      "1000000000000"
+      '1000000000000'
     )
   );
 

@@ -1,22 +1,22 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { IUniswapV2Pair, LiquidityBalancer } from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { utils } from "ethers";
-import { RunHelper } from "../tools/RunHelper";
-import { config as dotEnvConfig } from "dotenv";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { IUniswapV2Pair, LiquidityBalancer } from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { utils } from 'ethers';
+import { RunHelper } from '../tools/RunHelper';
+import { config as dotEnvConfig } from 'dotenv';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     lbSkipUseless: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     lbFastMod: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
   }).argv;
@@ -27,17 +27,17 @@ async function main() {
   const tools = await DeployerUtils.getToolsAddresses();
   const balancer = (await DeployerUtils.connectContract(
     signer,
-    "LiquidityBalancer",
+    'LiquidityBalancer',
     tools.rebalancer
   )) as LiquidityBalancer;
   const targetToken = core.rewardToken;
   const skipUseless = argv.lbSkipUseless;
   const targetLpAddress = (await DeployerUtils.getTokenAddresses()).get(
-    "sushi_lp_token_usdc"
+    'sushi_lp_token_usdc'
   ) as string;
   const targetLp = (await DeployerUtils.connectInterface(
     signer,
-    "IUniswapV2Pair",
+    'IUniswapV2Pair',
     targetLpAddress
   )) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
@@ -48,6 +48,7 @@ async function main() {
   let lastPrice;
   let lastTvl;
   // noinspection InfiniteLoopJS
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (!argv.lbFastMod) {
       const lpData = await computePrice(
@@ -83,59 +84,59 @@ async function main() {
       const needToSell = utils.formatUnits(
         await balancer.needToSell(targetToken, targetLpAddress)
       );
-      console.log("needToSell", needToSell);
+      console.log('needToSell', needToSell);
       const needToRemove = utils.formatUnits(
         await balancer.needToRemove(targetToken, targetLpAddress)
       );
-      console.log("needToRemove", needToRemove);
+      console.log('needToRemove', needToRemove);
 
       console.log(
-        "######################### CURRENT STATS ##############################\n" +
-          "# Price:                    " +
+        '######################### CURRENT STATS ##############################\n' +
+          '# Price:                    ' +
           price +
-          " (" +
+          ' (' +
           ((price - lastPrice) / lastPrice) * 100 +
-          "%)\n" +
-          "# LP TVL:                   " +
+          '%)\n' +
+          '# LP TVL:                   ' +
           tvl +
-          " (" +
+          ' (' +
           ((tvl - lastTvl) / tvl) * 100 +
-          "%)\n" +
-          "# LP Token Reserve:         " +
+          '%)\n' +
+          '# LP Token Reserve:         ' +
           lpTokenReserve +
-          "\n" +
-          "# Balancer Tokens:          " +
+          '\n' +
+          '# Balancer Tokens:          ' +
           balancerTokenBal +
-          "\n" +
-          "# Balancer LP Tokens:       " +
+          '\n' +
+          '# Balancer LP Tokens:       ' +
           balancerLpBal +
-          "\n" +
-          "# Price Target:             " +
+          '\n' +
+          '# Price Target:             ' +
           currentPriceTarget +
-          "\n" +
-          "# TVL Target:               " +
+          '\n' +
+          '# TVL Target:               ' +
           currentTvlTarget +
-          "\n" +
-          "# Sell:                     " +
+          '\n' +
+          '# Sell:                     ' +
           needToSell +
-          "\n" +
-          "# Remove:                   " +
+          '\n' +
+          '# Remove:                   ' +
           needToRemove +
-          "\n" +
-          "######################################################################"
+          '\n' +
+          '######################################################################'
       );
       lastPrice = price;
       lastTvl = tvl;
 
       if (balancerTokenBal === 0 && balancerLpBal === 0) {
-        console.log("zero balance");
+        console.log('zero balance');
         if (skipUseless) {
           continue;
         }
       }
 
-      if (needToSell === "0.0" && needToRemove === "0.0") {
-        console.log("nothing to do");
+      if (needToSell === '0.0' && needToRemove === '0.0') {
+        console.log('nothing to do');
         if (skipUseless) {
           continue;
         }

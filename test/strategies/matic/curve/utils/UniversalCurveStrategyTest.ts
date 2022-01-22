@@ -1,15 +1,15 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { DeployInfo } from "../../../DeployInfo";
-import { SpecificStrategyTest } from "../../../SpecificStrategyTest";
-import { CoreContractsWrapper } from "../../../../CoreContractsWrapper";
-import { StrategyTestUtils } from "../../../StrategyTestUtils";
-import { DeployerUtils } from "../../../../../scripts/deploy/DeployerUtils";
-import { IStrategy, SmartVault } from "../../../../../typechain";
-import { ToolsContractsWrapper } from "../../../../ToolsContractsWrapper";
-import { universalStrategyTest } from "../../../UniversalStrategyTest";
-import { CurveDoHardWork } from "./CurveDoHardWork";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { DeployInfo } from '../../../DeployInfo';
+import { SpecificStrategyTest } from '../../../SpecificStrategyTest';
+import { CoreContractsWrapper } from '../../../../CoreContractsWrapper';
+import { StrategyTestUtils } from '../../../StrategyTestUtils';
+import { DeployerUtils } from '../../../../../scripts/deploy/DeployerUtils';
+import { IStrategy, SmartVault } from '../../../../../typechain';
+import { ToolsContractsWrapper } from '../../../../ToolsContractsWrapper';
+import { universalStrategyTest } from '../../../UniversalStrategyTest';
+import { CurveDoHardWork } from './CurveDoHardWork';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);

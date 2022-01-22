@@ -1,7 +1,7 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
-import { ContractReader, IStrategy } from "../../../../typechain";
-import { appendFileSync, mkdir, readFileSync } from "fs";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
+import { ContractReader, IStrategy } from '../../../../typechain';
+import { appendFileSync, mkdir, readFileSync } from 'fs';
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -10,25 +10,25 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  mkdir("./tmp/deployed", { recursive: true }, (err) => {
+  mkdir('./tmp/deployed', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   const infos = readFileSync(
-    "scripts/utils/download/data/scream_markets.csv",
-    "utf8"
+    'scripts/utils/download/data/scream_markets.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const vaultNames = new Set<string>();
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -36,7 +36,7 @@ async function main() {
 
   // *********** DEPLOY VAULT
   for (const info of infos) {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const scTokenName = strat[1];
@@ -47,24 +47,24 @@ async function main() {
     const borrowTarget = strat[6];
     const tvl = strat[7];
 
-    if (idx === "idx" || !token) {
-      console.log("skip", idx);
+    if (idx === 'idx' || !token) {
+      console.log('skip', idx);
       continue;
     }
 
     if (alreadyDeployed.has(idx)) {
-      console.log("Strategy already deployed", idx);
+      console.log('Strategy already deployed', idx);
       continue;
     }
 
     const vaultNameWithoutPrefix = `${tokenName}`;
 
-    if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-      console.log("Strategy already exist", vaultNameWithoutPrefix);
+    if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+      console.log('Strategy already exist', vaultNameWithoutPrefix);
       continue;
     }
 
-    console.log("strat", idx, scTokenName, vaultNameWithoutPrefix);
+    console.log('strat', idx, scTokenName, vaultNameWithoutPrefix);
 
     let strategyArgs;
 
@@ -81,7 +81,7 @@ async function main() {
         ];
         return DeployerUtils.deployContract(
           signer,
-          "StrategyScreamFold",
+          'StrategyScreamFold',
           ...strategyArgs
         ) as Promise<IStrategy>;
       },
@@ -99,12 +99,12 @@ async function main() {
     await DeployerUtils.wait(5);
     await DeployerUtils.verifyWithContractName(
       data[2].address,
-      "contracts/strategies/fantom/scream/StrategyScreamFold.sol:StrategyScreamFold",
+      'contracts/strategies/fantom/scream/StrategyScreamFold.sol:StrategyScreamFold',
       strategyArgs
     );
 
     const txt = `${vaultNameWithoutPrefix} vault: ${data[1].address} strategy: ${data[2].address}\n`;
-    appendFileSync(`./tmp/deployed/SCREAM.txt`, txt, "utf8");
+    appendFileSync(`./tmp/deployed/SCREAM.txt`, txt, 'utf8');
   }
 }
 

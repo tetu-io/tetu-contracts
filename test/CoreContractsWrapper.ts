@@ -10,8 +10,8 @@ import {
   RewardToken,
   SmartVault,
   VaultController,
-} from "../typechain";
-import { tracer } from "hardhat";
+} from '../typechain';
+import { tracer } from 'hardhat';
 
 export class CoreContractsWrapper {
   public controller: Controller;
@@ -80,15 +80,15 @@ export class CoreContractsWrapper {
     if (!tracer) {
       return;
     }
-    tracer.nameTags[this.controller.address] = "controller";
-    tracer.nameTags[this.feeRewardForwarder.address] = "feeRewardForwarder";
-    tracer.nameTags[this.bookkeeper.address] = "bookkeeper";
-    tracer.nameTags[this.bookkeeperLogic] = "bookkeeperLogic";
-    tracer.nameTags[this.notifyHelper.address] = "notifyHelper";
-    tracer.nameTags[this.mintHelper.address] = "mintHelper";
-    tracer.nameTags[this.rewardToken.address] = "rewardToken";
-    tracer.nameTags[this.psVault.address] = "psVault";
-    tracer.nameTags[this.psVaultLogic] = "psVaultLogic";
-    tracer.nameTags[this.psEmptyStrategy.address] = "psEmptyStrategy";
+    tracer.nameTags[this.controller.address] = 'controller';
+    tracer.nameTags[this.feeRewardForwarder.address] = 'feeRewardForwarder';
+    tracer.nameTags[this.bookkeeper.address] = 'bookkeeper';
+    tracer.nameTags[this.bookkeeperLogic] = 'bookkeeperLogic';
+    tracer.nameTags[this.notifyHelper.address] = 'notifyHelper';
+    tracer.nameTags[this.mintHelper.address] = 'mintHelper';
+    tracer.nameTags[this.rewardToken.address] = 'rewardToken';
+    tracer.nameTags[this.psVault.address] = 'psVault';
+    tracer.nameTags[this.psVaultLogic] = 'psVaultLogic';
+    tracer.nameTags[this.psEmptyStrategy.address] = 'psEmptyStrategy';
   }
 }

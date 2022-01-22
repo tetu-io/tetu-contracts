@@ -1,23 +1,23 @@
-import { ethers } from "hardhat";
-import { ToolsContractsWrapper } from "../ToolsContractsWrapper";
-import { TimeUtils } from "../TimeUtils";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { StrategyTestUtils } from "./StrategyTestUtils";
+import { ethers } from 'hardhat';
+import { ToolsContractsWrapper } from '../ToolsContractsWrapper';
+import { TimeUtils } from '../TimeUtils';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { StrategyTestUtils } from './StrategyTestUtils';
 import {
   ForwarderV2,
   IStrategy,
   PriceCalculator,
   SmartVault,
-} from "../../typechain";
-import { VaultUtils } from "../VaultUtils";
-import { Misc } from "../../scripts/utils/tools/Misc";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { DoHardWorkLoopBase } from "./DoHardWorkLoopBase";
-import { DeployInfo } from "./DeployInfo";
-import { SpecificStrategyTest } from "./SpecificStrategyTest";
-import { BigNumber } from "ethers";
-import { UniswapUtils } from "../UniswapUtils";
+} from '../../typechain';
+import { VaultUtils } from '../VaultUtils';
+import { Misc } from '../../scripts/utils/tools/Misc';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { DoHardWorkLoopBase } from './DoHardWorkLoopBase';
+import { DeployInfo } from './DeployInfo';
+import { SpecificStrategyTest } from './SpecificStrategyTest';
+import { BigNumber } from 'ethers';
+import { UniswapUtils } from '../UniswapUtils';
 
 async function universalStrategyTest(
   name: string,
@@ -46,7 +46,7 @@ async function universalStrategyTest(
   advanceBlocks = true,
   specificTests: SpecificStrategyTest[] | null = null
 ) {
-  describe(name + "_Test", async function () {
+  describe(name + '_Test', async function () {
     let snapshotBefore: string;
     let snapshot: string;
     let signer: SignerWithAddress;
@@ -95,7 +95,7 @@ async function universalStrategyTest(
         [signer.address]
       );
       await UniswapUtils.wrapNetworkToken(this.signer);
-      Misc.printDuration("Test Preparations completed", start);
+      Misc.printDuration('Test Preparations completed', start);
     });
 
     beforeEach(async function () {
@@ -110,7 +110,7 @@ async function universalStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-    it("doHardWork loop", async function () {
+    it('doHardWork loop', async function () {
       const core = deployInfo.core as CoreContractsWrapper;
       const tools = deployInfo.tools as ToolsContractsWrapper;
       await hardworkInitiator(
@@ -125,7 +125,7 @@ async function universalStrategyTest(
       ).start(userBalance, loops, loopValue, advanceBlocks);
     });
 
-    it("common test should be ok", async () => {
+    it('common test should be ok', async () => {
       await StrategyTestUtils.commonTests(strategy, underlying);
     });
 

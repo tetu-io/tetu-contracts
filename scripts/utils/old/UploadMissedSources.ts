@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
 import {
   Bookkeeper,
   ContractReader,
@@ -10,7 +10,7 @@ import {
   SNXStrategyFullBuyback,
   TetuProxyControlled,
   WaultStrategyFullBuyback,
-} from "../../../typechain";
+} from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[1];
@@ -19,12 +19,12 @@ async function main() {
 
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
@@ -32,16 +32,16 @@ async function main() {
 
   for (let i = 120; i < vaults.length; i++) {
     const vault = vaults[i];
-    console.log("################# verify for ", i, vault);
+    console.log('################# verify for ', i, vault);
     const vaultCtr = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       vault
     )) as SmartVault;
     const vaultImpl = await (
       (await DeployerUtils.connectInterface(
         signer,
-        "TetuProxyControlled",
+        'TetuProxyControlled',
         vault
       )) as TetuProxyControlled
     ).implementation();
@@ -49,14 +49,14 @@ async function main() {
 
     const strategyCtr = (await DeployerUtils.connectInterface(
       signer,
-      "IStrategy",
+      'IStrategy',
       strategy
     )) as IStrategy;
 
     const underlying = await vaultCtr.underlying();
     const platform = await strategyCtr.platform();
     const assets = await strategyCtr.assets();
-    console.log("platform", platform, "assets", assets);
+    console.log('platform', platform, 'assets', assets);
 
     // console.log('------------ LOGIC VERIFY ----------------')
     // await DeployerUtils.verify(vaultImpl);
@@ -66,11 +66,11 @@ async function main() {
     // console.log('----------------------------')
     // await DeployerUtils.verifyProxy(vault);
 
-    console.log("------------ STRATEGY VERIFY ----------------");
+    console.log('------------ STRATEGY VERIFY ----------------');
     if (platform === 2) {
       const ctr = (await DeployerUtils.connectInterface(
         signer,
-        "SNXStrategyFullBuyback",
+        'SNXStrategyFullBuyback',
         strategy
       )) as SNXStrategyFullBuyback;
       if (assets.length === 2) {
@@ -86,7 +86,7 @@ async function main() {
     } else if (platform === 3) {
       const ctr = (await DeployerUtils.connectInterface(
         signer,
-        "MCv2StrategyFullBuyback",
+        'MCv2StrategyFullBuyback',
         strategy
       )) as MCv2StrategyFullBuyback;
       if (assets.length === 2) {
@@ -102,13 +102,13 @@ async function main() {
     } else if (platform === 4) {
       const ctr = (await DeployerUtils.connectInterface(
         signer,
-        "WaultStrategyFullBuyback",
+        'WaultStrategyFullBuyback',
         strategy
       )) as WaultStrategyFullBuyback;
       if (assets.length === 2) {
         await DeployerUtils.verifyWithContractName(
           strategy,
-          "contracts/strategies/matic/wault/StrategyWaultLp.sol:StrategyWaultLp",
+          'contracts/strategies/matic/wault/StrategyWaultLp.sol:StrategyWaultLp',
           [
             core.controller,
             vault,
@@ -121,20 +121,20 @@ async function main() {
       } else {
         await DeployerUtils.verifyWithContractName(
           strategy,
-          "contracts/strategies/matic/wault/StrategyWaultSingle.sol:StrategyWaultSingle",
+          'contracts/strategies/matic/wault/StrategyWaultSingle.sol:StrategyWaultSingle',
           [core.controller, vault, underlying, await ctr.poolID()]
         );
       }
     } else if (platform === 5) {
       const ctr = (await DeployerUtils.connectInterface(
         signer,
-        "IronMcStrategyBase",
+        'IronMcStrategyBase',
         strategy
       )) as IronMcStrategyBase;
       if (assets.length === 2) {
         await DeployerUtils.verifyWithContractName(
           strategy,
-          "contracts/strategies/matic/iron/StrategyIronUniPair.sol:StrategyIronUniPair",
+          'contracts/strategies/matic/iron/StrategyIronUniPair.sol:StrategyIronUniPair',
           [
             core.controller,
             vault,
@@ -147,12 +147,12 @@ async function main() {
       } else {
         await DeployerUtils.verifyWithContractName(
           strategy,
-          "contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap",
+          'contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap',
           [core.controller, vault, underlying, assets, await ctr.poolID()]
         );
       }
     }
-    console.log("----------------------------");
+    console.log('----------------------------');
   }
 }
 

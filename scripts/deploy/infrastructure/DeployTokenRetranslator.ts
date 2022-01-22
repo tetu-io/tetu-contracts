@@ -1,13 +1,13 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { TokenRetranslator } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { TokenRetranslator } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const contract = (await DeployerUtils.deployContract(
     signer,
-    "TokenRetranslator"
+    'TokenRetranslator'
   )) as TokenRetranslator;
 
   await DeployerUtils.wait(5);

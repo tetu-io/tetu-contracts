@@ -1,10 +1,10 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
-import { IStrategy } from "../../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
+import { IStrategy } from '../../../typechain';
 
 const UNDERLYING = MaticAddresses.miFARM_TOKEN;
-const VAULT = "0xE7C61cBcd5592Bf1B9DB3612B220f418afe89B64";
+const VAULT = '0xE7C61cBcd5592Bf1B9DB3612B220f418afe89B64';
 const PLATFORM = 17;
 
 async function main() {
@@ -22,7 +22,7 @@ async function main() {
 
   const strategy = (await DeployerUtils.deployContract(
     signer,
-    "NoopStrategy",
+    'NoopStrategy',
     ...strategyArgs
   )) as IStrategy;
 

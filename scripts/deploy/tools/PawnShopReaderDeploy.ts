@@ -1,7 +1,7 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { PawnShopReader } from "../../../typechain";
-import { RunHelper } from "../../utils/tools/RunHelper";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { PawnShopReader } from '../../../typechain';
+import { RunHelper } from '../../utils/tools/RunHelper';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -10,11 +10,11 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    "PawnShopReader"
+    'PawnShopReader'
   )) as PawnShopReader;
   const proxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyGov",
+    'TetuProxyGov',
     logic.address
   );
   const contract = logic.attach(proxy.address) as PawnShopReader;

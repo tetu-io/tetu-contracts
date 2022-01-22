@@ -1,17 +1,17 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { Controller } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { Controller } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const controllerLogic = await DeployerUtils.deployContract(
     signer,
-    "Controller"
+    'Controller'
   );
   const controllerProxy = await DeployerUtils.deployContract(
     signer,
-    "TetuProxyControlled",
+    'TetuProxyControlled',
     controllerLogic.address
   );
   const controller = controllerLogic.attach(

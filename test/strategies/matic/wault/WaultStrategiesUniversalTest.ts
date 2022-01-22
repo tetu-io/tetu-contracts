@@ -1,32 +1,32 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { startDefaultLpStrategyTest } from "../../DefaultLpStrategyTest";
-import { readFileSync } from "fs";
-import { startDefaultSingleTokenStrategyTest } from "../../DefaultSingleTokenStrategyTest";
-import { config as dotEnvConfig } from "dotenv";
-import { DeployInfo } from "../../DeployInfo";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { startDefaultLpStrategyTest } from '../../DefaultLpStrategyTest';
+import { readFileSync } from 'fs';
+import { startDefaultSingleTokenStrategyTest } from '../../DefaultSingleTokenStrategyTest';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneWaultStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 2,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
@@ -34,13 +34,13 @@ const argv = require("yargs/yargs")()
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe.skip("Universal Wault tests", async () => {
+describe.skip('Universal Wault tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync(
-    "scripts/utils/download/data/wault_pools.csv",
-    "utf8"
+    'scripts/utils/download/data/wault_pools.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
@@ -52,7 +52,7 @@ describe.skip("Universal Wault tests", async () => {
   });
 
   infos.forEach((info) => {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const lpName = strat[1];
@@ -63,8 +63,8 @@ describe.skip("Universal Wault tests", async () => {
     const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === "idx" || idx === "0" || !lpAddress) {
-      console.log("skip", idx);
+    if (+alloc <= 0 || idx === 'idx' || idx === '0' || !lpAddress) {
+      console.log('skip', idx);
       return;
     }
     if (
@@ -74,12 +74,12 @@ describe.skip("Universal Wault tests", async () => {
       return;
     }
 
-    console.log("strat", idx, lpName);
+    console.log('strat', idx, lpName);
 
     if (strat[6]) {
       /* eslint-disable @typescript-eslint/no-floating-promises */
       startDefaultLpStrategyTest(
-        "StrategyWaultLpWithAc",
+        'StrategyWaultLpWithAc',
         MaticAddresses.WAULT_FACTORY,
         lpAddress.toLowerCase(),
         token0,
@@ -92,7 +92,7 @@ describe.skip("Universal Wault tests", async () => {
     } else {
       /* eslint-disable @typescript-eslint/no-floating-promises */
       startDefaultSingleTokenStrategyTest(
-        "StrategyWaultSingle",
+        'StrategyWaultSingle',
         lpAddress.toLowerCase(),
         token0Name,
         deployInfo

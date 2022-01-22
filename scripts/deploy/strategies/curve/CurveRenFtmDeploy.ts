@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
-import { ContractReader, IStrategy } from "../../../../typechain";
-import { writeFileSync } from "fs";
-import { DeployerUtils } from "../../DeployerUtils";
-import { FtmAddresses } from "../../../addresses/FtmAddresses";
+import { ethers } from 'hardhat';
+import { ContractReader, IStrategy } from '../../../../typechain';
+import { writeFileSync } from 'fs';
+import { DeployerUtils } from '../../DeployerUtils';
+import { FtmAddresses } from '../../../addresses/FtmAddresses';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -13,12 +13,12 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -26,8 +26,8 @@ async function main() {
 
   const vaultNameWithoutPrefix = `CRV_REN`;
 
-  if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-    console.log("Strategy already exist", vaultNameWithoutPrefix);
+  if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+    console.log('Strategy already exist', vaultNameWithoutPrefix);
   }
 
   const [vaultLogic, vault, strategy] =
@@ -36,7 +36,7 @@ async function main() {
       async (vaultAddress) =>
         DeployerUtils.deployContract(
           signer,
-          "CurveRenFtmStrategy",
+          'CurveRenFtmStrategy',
           core.controller,
           FtmAddresses.renCRV_TOKEN,
           vaultAddress
@@ -55,12 +55,12 @@ async function main() {
   await DeployerUtils.verifyProxy(vault.address);
   await DeployerUtils.verifyWithContractName(
     strategy.address,
-    "contracts/strategies/fantom/curve/CurveRenFtmStrategy.sol:CurveRenFtmStrategy",
+    'contracts/strategies/fantom/curve/CurveRenFtmStrategy.sol:CurveRenFtmStrategy',
     [core.controller, FtmAddresses.renCRV_TOKEN, vault.address]
   );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-  writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
+  writeFileSync(`./tmp/deployed/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
 }
 
 main()

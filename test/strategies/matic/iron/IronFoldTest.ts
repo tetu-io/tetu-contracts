@@ -1,37 +1,37 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { readFileSync } from "fs";
-import { config as dotEnvConfig } from "dotenv";
-import { universalStrategyTest } from "../../UniversalStrategyTest";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { IStrategy, SmartVault, StrategyIronFold } from "../../../../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
-import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
-import { DeployInfo } from "../../DeployInfo";
-import { FoldingDoHardWork } from "../../FoldingDoHardWork";
-import { FoldingProfitabilityTest } from "../../FoldingProfitabilityTest";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { IStrategy, SmartVault, StrategyIronFold } from '../../../../typechain';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { DeployInfo } from '../../DeployInfo';
+import { FoldingDoHardWork } from '../../FoldingDoHardWork';
+import { FoldingProfitabilityTest } from '../../FoldingProfitabilityTest';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneIronFoldStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 5,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
@@ -39,13 +39,13 @@ const argv = require("yargs/yargs")()
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Universal Iron Fold tests", async () => {
+describe('Universal Iron Fold tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync(
-    "scripts/utils/download/data/iron_markets.csv",
-    "utf8"
+    'scripts/utils/download/data/iron_markets.csv',
+    'utf8'
   ).split(/\r?\n/);
   const deployInfo: DeployInfo = new DeployInfo();
 
@@ -57,7 +57,7 @@ describe("Universal Iron Fold tests", async () => {
   });
 
   infos.forEach((info) => {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const rTokenName = strat[1];
@@ -67,8 +67,8 @@ describe("Universal Iron Fold tests", async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (!idx || idx === "idx") {
-      console.log("skip", idx);
+    if (!idx || idx === 'idx') {
+      console.log('skip', idx);
       return;
     }
 
@@ -79,11 +79,11 @@ describe("Universal Iron Fold tests", async () => {
       return;
     }
 
-    console.log("Start test strategy", idx, rTokenName);
+    console.log('Start test strategy', idx, rTokenName);
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = "StrategyIronFold";
+    const strategyContractName = 'StrategyIronFold';
     const underlying = token;
     // add custom liquidation path if necessary
     const forwarderConfigurator = null;
@@ -93,7 +93,7 @@ describe("Universal Iron Fold tests", async () => {
     const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0.00001;
     let deposit = 100_000;
-    if (rTokenName === "rICE") {
+    if (rTokenName === 'rICE') {
       deposit = 10_000;
     }
     // at least 3
@@ -103,7 +103,7 @@ describe("Universal Iron Fold tests", async () => {
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
     let specificTests = [new FoldingProfitabilityTest()];
-    if (borrowTarget === "0") {
+    if (borrowTarget === '0') {
       specificTests = [];
     }
     // **********************************************
@@ -156,7 +156,7 @@ describe("Universal Iron Fold tests", async () => {
     };
 
     universalStrategyTest(
-      "IronTest_" + rTokenName,
+      'IronTest_' + rTokenName,
       deployInfo,
       deployer,
       hwInitiator,

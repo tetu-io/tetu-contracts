@@ -1,45 +1,45 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { startDefaultLpStrategyTest } from "../../DefaultLpStrategyTest";
-import { readFileSync } from "fs";
-import { config as dotEnvConfig } from "dotenv";
-import { DeployInfo } from "../../DeployInfo";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { RunHelper } from "../../../../scripts/utils/tools/RunHelper";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { startDefaultLpStrategyTest } from '../../DefaultLpStrategyTest';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { RunHelper } from '../../../../scripts/utils/tools/RunHelper';
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneDinoStrategyTest: {
-      type: "number",
+      type: 'number',
       default: -1,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
+      type: 'number',
       default: 137,
     },
   }).argv;
 
 chai.use(chaiAsPromised);
 
-describe("Universal Dino tests", async () => {
+describe('Universal Dino tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
   const infos = readFileSync(
-    "scripts/utils/download/data/dino_pools.csv",
-    "utf8"
+    'scripts/utils/download/data/dino_pools.csv',
+    'utf8'
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
@@ -52,7 +52,7 @@ describe("Universal Dino tests", async () => {
   });
 
   infos.forEach((info) => {
-    const strat = info.split(",");
+    const strat = info.split(',');
 
     const idx = strat[0];
     const lpName = strat[1];
@@ -63,8 +63,8 @@ describe("Universal Dino tests", async () => {
     const token1Name = strat[6];
     const alloc = strat[7];
 
-    if (+alloc <= 0 || idx === "idx" || !token1Name) {
-      console.log("skip", idx);
+    if (+alloc <= 0 || idx === 'idx' || !token1Name) {
+      console.log('skip', idx);
       return;
     }
     if (
@@ -74,11 +74,11 @@ describe("Universal Dino tests", async () => {
       return;
     }
 
-    console.log("strat", idx, lpName);
+    console.log('strat', idx, lpName);
 
     /* eslint-disable @typescript-eslint/no-floating-promises */
     startDefaultLpStrategyTest(
-      "StrategyDinoSwapV2LpAc",
+      'StrategyDinoSwapV2LpAc',
       MaticAddresses.SUSHI_FACTORY,
       lpAddress.toLowerCase(),
       token0,

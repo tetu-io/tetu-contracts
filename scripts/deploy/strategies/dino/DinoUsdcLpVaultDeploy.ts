@@ -1,13 +1,13 @@
-import { McLpStrategyDeployer } from "../McLpStrategyDeployer";
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+import { McLpStrategyDeployer } from '../McLpStrategyDeployer';
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 async function main() {
   await McLpStrategyDeployer.deploy(
     MaticAddresses.DINO_DINO_USDC,
     10,
-    "DINO",
-    "StrategyDinoSwapLp",
-    "contracts/strategies/matic/dino/StrategyDinoSwapLp.sol:StrategyDinoSwapLp"
+    'DINO',
+    'StrategyDinoSwapLp',
+    'contracts/strategies/matic/dino/StrategyDinoSwapLp.sol:StrategyDinoSwapLp'
   );
 }
 

@@ -1,12 +1,12 @@
-import { DeployerUtils } from "../../DeployerUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { DeployerUtils } from '../../DeployerUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   AaveAmPipe,
   BalVaultPipe,
   MaiCamPipe,
   MaiStablecoinPipe,
-} from "../../../../typechain";
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+} from '../../../../typechain';
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 export class AMBPipeDeployer {
   public static async deployAaveAmPipe(
@@ -23,7 +23,7 @@ export class AMBPipeDeployer {
     return [
       (await DeployerUtils.deployContract(
         signer,
-        "AaveAmPipe",
+        'AaveAmPipe',
         args
       )) as AaveAmPipe,
       args,
@@ -39,7 +39,7 @@ export class AMBPipeDeployer {
     return [
       (await DeployerUtils.deployContract(
         signer,
-        "MaiCamPipe",
+        'MaiCamPipe',
         args
       )) as MaiCamPipe,
       args,
@@ -63,14 +63,14 @@ export class AMBPipeDeployer {
       stablecoin,
       MaticAddresses.miMATIC_TOKEN,
       targetPercentage,
-      "100", // max targetPercentage deviation (+/-) to call rebalance
+      '100', // max targetPercentage deviation (+/-) to call rebalance
       MaticAddresses.QI_TOKEN,
       collateralNumerator,
     ];
     return [
       (await DeployerUtils.deployContract(
         signer,
-        "MaiStablecoinPipe",
+        'MaiStablecoinPipe',
         args
       )) as MaiStablecoinPipe,
       args,
@@ -84,14 +84,14 @@ export class AMBPipeDeployer {
       MaticAddresses.miMATIC_TOKEN,
       MaticAddresses.BALANCER_VAULT,
       MaticAddresses.BALANCER_POOL_MAI_STABLE_ID,
-      "2", // tokenIndex
+      '2', // tokenIndex
       MaticAddresses.BALANCER_STABLE_POOL, // Balancer Polygon Stable Pool (BPSP)
       MaticAddresses.BAL_TOKEN,
     ];
     return [
       (await DeployerUtils.deployContract(
         signer,
-        "BalVaultPipe",
+        'BalVaultPipe',
         args
       )) as BalVaultPipe,
       args,

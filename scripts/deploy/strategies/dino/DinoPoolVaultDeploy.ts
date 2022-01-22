@@ -1,9 +1,9 @@
-import { McLpStrategyDeployer } from "../McLpStrategyDeployer";
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../DeployerUtils";
-import { ContractReader, IStrategy } from "../../../../typechain";
-import { writeFileSync } from "fs";
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+import { McLpStrategyDeployer } from '../McLpStrategyDeployer';
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../DeployerUtils';
+import { ContractReader, IStrategy } from '../../../../typechain';
+import { writeFileSync } from 'fs';
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -14,12 +14,12 @@ async function main() {
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
-  console.log("all vaults size", deployedVaultAddresses.length);
+  console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
     vaultNames.add(await cReader.vaultName(vAdr));
@@ -27,8 +27,8 @@ async function main() {
 
   const vaultNameWithoutPrefix = `DINO`;
 
-  if (vaultNames.has("TETU_" + vaultNameWithoutPrefix)) {
-    console.log("Strategy already exist", vaultNameWithoutPrefix);
+  if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
+    console.log('Strategy already exist', vaultNameWithoutPrefix);
   }
 
   const [vaultLogic, vault, strategy] =
@@ -37,7 +37,7 @@ async function main() {
       async (vaultAddress) =>
         DeployerUtils.deployContract(
           signer,
-          "StrategyDinoPool",
+          'StrategyDinoPool',
           core.controller,
           vaultAddress,
           MaticAddresses.DINO_TOKEN
@@ -55,12 +55,12 @@ async function main() {
   await DeployerUtils.verifyProxy(vault.address);
   await DeployerUtils.verifyWithContractName(
     strategy.address,
-    "contracts/strategies/matic/dino/StrategyDinoPool.sol:StrategyDinoPool",
+    'contracts/strategies/matic/dino/StrategyDinoPool.sol:StrategyDinoPool',
     [core.controller, vault.address, MaticAddresses.DINO_TOKEN]
   );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, "utf8");
+  writeFileSync(`./tmp/${vaultNameWithoutPrefix}.txt`, txt, 'utf8');
 }
 
 main()

@@ -1,23 +1,23 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Bookkeeper } from "../../../typechain";
-import { RunHelper } from "../tools/RunHelper";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Bookkeeper } from '../../../typechain';
+import { RunHelper } from '../tools/RunHelper';
 
 async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const signer = (await ethers.getSigners())[0];
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const vaults = await bookkeeper.vaults();
-  console.log("vaults ", vaults.length);
+  console.log('vaults ', vaults.length);
 
   for (const vault of vaults) {
     const vaultContract = await DeployerUtils.connectVault(vault, signer);
     if (!(await vaultContract.active()) || vault === core.psVault) {
-      console.log("inactive ", await vaultContract.name());
+      console.log('inactive ', await vaultContract.name());
       continue;
     }
 

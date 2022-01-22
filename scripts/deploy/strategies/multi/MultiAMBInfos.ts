@@ -1,4 +1,4 @@
-import { MaticAddresses } from "../../../addresses/MaticAddresses";
+import { MaticAddresses } from '../../../addresses/MaticAddresses';
 
 const infos: {
   underlyingName: string;
@@ -10,45 +10,45 @@ const infos: {
   collateralNumerator?: string; // will be used '1' on deploy, when undefined
 }[] = [
   {
-    underlyingName: "AAVE",
+    underlyingName: 'AAVE',
     underlying: MaticAddresses.AAVE_TOKEN,
     camToken: MaticAddresses.camAAVE_TOKEN,
     amToken: MaticAddresses.amAAVE_TOKEN,
     stablecoin: MaticAddresses.camAAVEVault,
-    targetPercentage: "300",
+    targetPercentage: '300',
   },
   {
-    underlyingName: "WMATIC",
+    underlyingName: 'WMATIC',
     underlying: MaticAddresses.WMATIC_TOKEN,
     camToken: MaticAddresses.camWMATIC_TOKEN,
     amToken: MaticAddresses.amWMATIC_TOKEN,
     stablecoin: MaticAddresses.camWMATICVault,
-    targetPercentage: "300",
+    targetPercentage: '300',
   },
   {
-    underlyingName: "DAI",
+    underlyingName: 'DAI',
     underlying: MaticAddresses.DAI_TOKEN,
     camToken: MaticAddresses.camDAI_TOKEN,
     amToken: MaticAddresses.amDAI_TOKEN,
     stablecoin: MaticAddresses.camDAIVault,
-    targetPercentage: "250",
+    targetPercentage: '250',
   },
   {
-    underlyingName: "WBTC",
+    underlyingName: 'WBTC',
     underlying: MaticAddresses.WBTC_TOKEN,
     camToken: MaticAddresses.camWBTC_TOKEN,
     amToken: MaticAddresses.amWBTC_TOKEN,
     stablecoin: MaticAddresses.camWBTCVault,
-    targetPercentage: "300",
-    collateralNumerator: "10000000000", // 10**10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao
+    targetPercentage: '300',
+    collateralNumerator: '10000000000', // 10**10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao
   },
   {
-    underlyingName: "WETH",
+    underlyingName: 'WETH',
     underlying: MaticAddresses.WETH_TOKEN,
     camToken: MaticAddresses.camWETH_TOKEN,
     amToken: MaticAddresses.amETH_TOKEN,
     stablecoin: MaticAddresses.camWETHVault,
-    targetPercentage: "300",
+    targetPercentage: '300',
   },
 ];
 

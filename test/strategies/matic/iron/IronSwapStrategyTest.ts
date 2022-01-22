@@ -1,15 +1,15 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
-import { StrategyTestUtils } from "../../StrategyTestUtils";
-import { IStrategy, SmartVault } from "../../../../typechain";
-import { SpecificStrategyTest } from "../../SpecificStrategyTest";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CoreContractsWrapper } from "../../../CoreContractsWrapper";
-import { ToolsContractsWrapper } from "../../../ToolsContractsWrapper";
-import { DoHardWorkLoopBase } from "../../DoHardWorkLoopBase";
-import { universalStrategyTest } from "../../UniversalStrategyTest";
-import { DeployInfo } from "../../DeployInfo";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { IStrategy, SmartVault } from '../../../../typechain';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { DoHardWorkLoopBase } from '../../DoHardWorkLoopBase';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { DeployInfo } from '../../DeployInfo';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -93,7 +93,7 @@ async function startIronSwapStrategyTest(
   };
 
   await universalStrategyTest(
-    strategyName + " " + tokenNames + " IronSwapTest",
+    strategyName + ' ' + tokenNames + ' IronSwapTest',
     deployInfo,
     deployer,
     hwInitiator,

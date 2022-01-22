@@ -1,27 +1,27 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   Announcer,
   Controller,
   IStrategy,
   TetuProxyControlled,
-} from "../../../typechain";
-import { ethers, web3 } from "hardhat";
-import { DeployerUtils } from "../../../scripts/deploy/DeployerUtils";
-import { TimeUtils } from "../../TimeUtils";
-import { UniswapUtils } from "../../UniswapUtils";
-import { CoreContractsWrapper } from "../../CoreContractsWrapper";
-import { TokenUtils } from "../../TokenUtils";
-import { BigNumber, utils } from "ethers";
-import { MintHelperUtils } from "../../MintHelperUtils";
-import { VaultUtils } from "../../VaultUtils";
-import { Misc } from "../../../scripts/utils/tools/Misc";
+} from '../../../typechain';
+import { ethers, web3 } from 'hardhat';
+import { DeployerUtils } from '../../../scripts/deploy/DeployerUtils';
+import { TimeUtils } from '../../TimeUtils';
+import { UniswapUtils } from '../../UniswapUtils';
+import { CoreContractsWrapper } from '../../CoreContractsWrapper';
+import { TokenUtils } from '../../TokenUtils';
+import { BigNumber, utils } from 'ethers';
+import { MintHelperUtils } from '../../MintHelperUtils';
+import { VaultUtils } from '../../VaultUtils';
+import { Misc } from '../../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Announcer tests", function () {
+describe('Announcer tests', function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
@@ -56,7 +56,7 @@ describe("Announcer tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("should close announce", async () => {
+  it('should close announce', async () => {
     const opCode = 9;
     const num = 7;
     const den = 56;
@@ -87,7 +87,7 @@ describe("Announcer tests", function () {
     expect(await announcer.timeLockSchedule(opHash)).is.eq(0);
   });
 
-  it("should change gov with time-lock", async () => {
+  it('should change gov with time-lock', async () => {
     const opCode = 0;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -107,7 +107,7 @@ describe("Announcer tests", function () {
     expect(await controller.governance()).is.eq(signer1.address);
   });
 
-  it("should change dao with time-lock", async () => {
+  it('should change dao with time-lock', async () => {
     const opCode = 1;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -127,7 +127,7 @@ describe("Announcer tests", function () {
     expect(await controller.dao()).is.eq(signer1.address);
   });
 
-  it("should change FeeRewardForwarder with time-lock", async () => {
+  it('should change FeeRewardForwarder with time-lock', async () => {
     const opCode = 2;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -147,7 +147,7 @@ describe("Announcer tests", function () {
     expect(await controller.feeRewardForwarder()).is.eq(signer1.address);
   });
 
-  it("should change Bookkeeper with time-lock", async () => {
+  it('should change Bookkeeper with time-lock', async () => {
     const opCode = 3;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -167,7 +167,7 @@ describe("Announcer tests", function () {
     expect(await controller.bookkeeper()).is.eq(signer1.address);
   });
 
-  it("should change MintHelper with time-lock", async () => {
+  it('should change MintHelper with time-lock', async () => {
     const opCode = 4;
 
     const mintHelper = (
@@ -197,7 +197,7 @@ describe("Announcer tests", function () {
     expect(await controller.mintHelper()).is.eq(mintHelper);
   });
 
-  it("should change RewardToken with time-lock", async () => {
+  it('should change RewardToken with time-lock', async () => {
     const opCode = 5;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -217,7 +217,7 @@ describe("Announcer tests", function () {
     expect(await controller.rewardToken()).is.eq(signer1.address);
   });
 
-  it("should change FundToken with time-lock", async () => {
+  it('should change FundToken with time-lock', async () => {
     const opCode = 6;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -237,7 +237,7 @@ describe("Announcer tests", function () {
     expect(await controller.fundToken()).is.eq(signer1.address);
   });
 
-  it("should change PsVault with time-lock", async () => {
+  it('should change PsVault with time-lock', async () => {
     const opCode = 7;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -257,7 +257,7 @@ describe("Announcer tests", function () {
     expect(await controller.psVault()).is.eq(signer1.address);
   });
 
-  it("should change Fund with time-lock", async () => {
+  it('should change Fund with time-lock', async () => {
     const opCode = 8;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -277,7 +277,7 @@ describe("Announcer tests", function () {
     expect(await controller.fund()).is.eq(signer1.address);
   });
 
-  it("should change vault controller with time-lock", async () => {
+  it('should change vault controller with time-lock', async () => {
     const opCode = 19;
     await announcer.announceAddressChange(opCode, signer1.address);
 
@@ -297,7 +297,7 @@ describe("Announcer tests", function () {
     expect(await controller.vaultController()).is.eq(signer1.address);
   });
 
-  it("should change ps ratio with time-lock", async () => {
+  it('should change ps ratio with time-lock', async () => {
     const opCode = 9;
     const num = 7;
     const den = 56;
@@ -326,7 +326,7 @@ describe("Announcer tests", function () {
     expect(await controller.psDenominator()).is.eq(den);
   });
 
-  it("should change fund ratio with time-lock", async () => {
+  it('should change fund ratio with time-lock', async () => {
     const opCode = 10;
     const num = 7;
     const den = 56;
@@ -355,7 +355,7 @@ describe("Announcer tests", function () {
     expect(await controller.fundDenominator()).is.eq(den);
   });
 
-  it("should controller token salvage with time-lock", async () => {
+  it('should controller token salvage with time-lock', async () => {
     const opCode = 11;
     const amount = 1000;
 
@@ -399,7 +399,7 @@ describe("Announcer tests", function () {
     expect(balControllerAfter).is.eq(balController.sub(amount));
   });
 
-  it("should strategy token salvage with time-lock", async () => {
+  it('should strategy token salvage with time-lock', async () => {
     const opCode = 12;
     const amount = 1000;
     const contract = await core.psVault.strategy();
@@ -433,7 +433,7 @@ describe("Announcer tests", function () {
     expect(balContractAfter).is.eq(balContract.sub(amount));
   });
 
-  it("should set reward boost duration", async () => {
+  it('should set reward boost duration', async () => {
     const opCode = 20;
     const amount = 1;
 
@@ -454,7 +454,7 @@ describe("Announcer tests", function () {
     expect(await core.vaultController.rewardBoostDuration()).is.eq(amount);
   });
 
-  it("should set RewardRatioWithoutBoost", async () => {
+  it('should set RewardRatioWithoutBoost', async () => {
     const opCode = 21;
     const amount = 1;
 
@@ -476,7 +476,7 @@ describe("Announcer tests", function () {
     expect(await core.vaultController.rewardRatioWithoutBoost()).is.eq(amount);
   });
 
-  it("should fund token salvage with time-lock", async () => {
+  it('should fund token salvage with time-lock', async () => {
     const opCode = 13;
     const amount = 1000;
     const contract = core.fundKeeper.address;
@@ -513,16 +513,16 @@ describe("Announcer tests", function () {
     expect(balContractAfter).is.eq(balContract.sub(amount));
   });
 
-  it("should upgrade proxy with time-lock", async () => {
+  it('should upgrade proxy with time-lock', async () => {
     const opCode = 14;
 
     const proxyAdr = core.psVault.address;
     const proxy = (await DeployerUtils.connectContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       proxyAdr
     )) as TetuProxyControlled;
-    const newImpl = await DeployerUtils.deployContract(signer, "SmartVault");
+    const newImpl = await DeployerUtils.deployContract(signer, 'SmartVault');
 
     await announcer.announceTetuProxyUpgradeBatch(
       [proxyAdr],
@@ -546,13 +546,13 @@ describe("Announcer tests", function () {
     expect(await announcer.multiTimeLockIndexes(opCode, proxyAdr)).is.eq(0);
   });
 
-  it("should upgrade strategy with time-lock", async () => {
+  it('should upgrade strategy with time-lock', async () => {
     const opCode = 15;
 
     const target = core.psVault.address;
     const newImpl = (await DeployerUtils.deployContract(
       signer,
-      "NoopStrategy",
+      'NoopStrategy',
       controller.address,
       core.rewardToken.address,
       core.psVault.address,
@@ -579,23 +579,23 @@ describe("Announcer tests", function () {
     expect(await core.psVault.strategy()).is.eq(newImpl.address);
   });
 
-  it("should stop vault with time-lock", async () => {
+  it('should stop vault with time-lock', async () => {
     const opCode = 22;
     const target = core.psVault.address;
-    const amount = utils.parseUnits("1000", 6);
+    const amount = utils.parseUnits('1000', 6);
 
     const rt = usdc;
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
-      "1000",
+      '1000',
       signer.address
     );
     await TokenUtils.getToken(usdc, signer.address, amount);
     await core.vaultController.addRewardTokens([target], rt);
     await TokenUtils.approve(rt, signer, target, amount.toString());
     await core.psVault.notifyTargetRewardAmount(rt, amount);
-    await VaultUtils.deposit(signer, core.psVault, BigNumber.from("10"));
+    await VaultUtils.deposit(signer, core.psVault, BigNumber.from('10'));
 
     expect(await TokenUtils.balanceOf(rt, target)).is.not.equal(0);
     expect(await TokenUtils.balanceOf(rt, core.controller.address)).is.equal(0);
@@ -619,7 +619,7 @@ describe("Announcer tests", function () {
     await core.psVault.exit();
   });
 
-  it("should mint with time-lock", async () => {
+  it('should mint with time-lock', async () => {
     const opCode = 16;
     const balanceSigner = await TokenUtils.balanceOf(
       core.rewardToken.address,
@@ -681,7 +681,7 @@ describe("Announcer tests", function () {
     ).is.eq(balanceSigner.add(forDev));
   });
 
-  it("should change Announcer with time-lock", async () => {
+  it('should change Announcer with time-lock', async () => {
     const opCode = 17;
 
     const newAnnouncer = (
@@ -706,7 +706,7 @@ describe("Announcer tests", function () {
     expect(await controller.announcer()).is.eq(newAnnouncer.address);
   });
 
-  it("should not mint zero amount", async () => {
+  it('should not mint zero amount', async () => {
     await expect(
       core.announcer.announceMint(
         0,
@@ -714,10 +714,10 @@ describe("Announcer tests", function () {
         core.fundKeeper.address,
         false
       )
-    ).rejectedWith("zero amount");
+    ).rejectedWith('zero amount');
   });
 
-  it("should make multiple time-lock changes", async () => {
+  it('should make multiple time-lock changes', async () => {
     const opCodeMint = 16;
     const opCodeGovChange = 0;
 
@@ -782,7 +782,7 @@ describe("Announcer tests", function () {
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
     ).is.eq(balanceSigner.add(forDev));
 
-    console.log("mint first completed");
+    console.log('mint first completed');
 
     await announcer.announceMint(
       toMint,
@@ -793,7 +793,7 @@ describe("Announcer tests", function () {
 
     // set governance
     const indexGovChange = await announcer.timeLockIndexes(opCodeGovChange);
-    console.log("indexGovChange", indexGovChange);
+    console.log('indexGovChange', indexGovChange);
     expect(indexGovChange).is.eq(2);
 
     const infoGovChange = await announcer.timeLockInfo(indexGovChange);
@@ -805,12 +805,12 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    console.log("set gov");
+    console.log('set gov');
     await controller.setGovernance(signer1.address);
 
     expect(await controller.governance()).is.eq(signer1.address);
 
-    console.log("gov change completed");
+    console.log('gov change completed');
 
     // announcer.closeAnnounce(opCodeMint, )
 
@@ -866,10 +866,10 @@ describe("Announcer tests", function () {
     ).is.eq(balanceSigner.add(forDev));
   });
 
-  it("should make multiple time-lock changes 2", async () => {
+  it('should make multiple time-lock changes 2', async () => {
     const opCodeMint = 16;
     const opCodeGovChange = 0;
-    const not = "0x099C314F792e1F91f53765Fc64AaDCcf4dCf1538";
+    const not = '0x099C314F792e1F91f53765Fc64AaDCcf4dCf1538';
     await controller.setDistributor(not);
     const fk = await controller.fund();
 
@@ -880,24 +880,24 @@ describe("Announcer tests", function () {
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
     await controller.mintAndDistribute(0, true);
-    console.log("mint first completed");
+    console.log('mint first completed');
 
     await announcer.announceMint(0, not, fk, true);
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    console.log("set gov");
+    console.log('set gov');
     await controller.setGovernance(signer1.address);
 
     expect(await controller.governance()).is.eq(signer1.address);
 
-    console.log("gov change completed");
+    console.log('gov change completed');
 
     await announcer
       .connect(signer1)
       .closeAnnounce(
         opCodeMint,
-        "0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33",
+        '0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33',
         Misc.ZERO_ADDRESS
       );
 

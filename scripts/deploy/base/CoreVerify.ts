@@ -1,37 +1,37 @@
 // noinspection DuplicatedCode
 
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
 
 export default async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const core = await DeployerUtils.getCoreAddresses();
 
-  const controllerLogic = "0xbf1fc29668e5f5Eaa819948599c9Ac1B1E03E75F";
+  const controllerLogic = '0xbf1fc29668e5f5Eaa819948599c9Ac1B1E03E75F';
   const controller = core.controller;
 
   const announcerData = [
     core.announcer,
-    "0xdF837f0327Bbf85b066c400f17b2B2727F94cb2f",
+    '0xdF837f0327Bbf85b066c400f17b2B2727F94cb2f',
   ];
 
   const feeRewardForwarderData = [
     core.feeRewardForwarder,
-    "0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F",
+    '0x0A0846c978a56D6ea9D2602eeb8f977B21F3207F',
   ];
 
-  const bookkeeperLogic = "0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2";
+  const bookkeeperLogic = '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2';
   const bookkeeper = core.bookkeeper;
 
   const fundKeeperData = [
     core.fundKeeper,
-    "0x2A3df2a428EB74B241Cf1d3374Fb07983c7059F3",
+    '0x2A3df2a428EB74B241Cf1d3374Fb07983c7059F3',
   ];
 
   const vaultControllerData = [
     core.vaultController,
-    "0x35B0329118790B8c8FC36262812D92a4923C6795",
+    '0x35B0329118790B8c8FC36262812D92a4923C6795',
   ];
 
   // controller

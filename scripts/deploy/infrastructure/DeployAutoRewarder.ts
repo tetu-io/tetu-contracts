@@ -1,7 +1,7 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { RunHelper } from "../../utils/tools/RunHelper";
-import { utils } from "ethers";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { RunHelper } from '../../utils/tools/RunHelper';
+import { utils } from 'ethers';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -12,8 +12,8 @@ async function main() {
     signer,
     core.controller,
     core.rewardCalculator,
-    utils.parseUnits("0.231").toString(),
-    utils.parseUnits("1000000").toString()
+    utils.parseUnits('0.231').toString(),
+    utils.parseUnits('1000000').toString()
   );
 
   await DeployerUtils.wait(5);

@@ -1,6 +1,6 @@
-import { ethers, web3 } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Contract, ContractFactory, utils } from "ethers";
+import { ethers, web3 } from 'hardhat';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { Contract, ContractFactory, utils } from 'ethers';
 import {
   Announcer,
   AutoRewarder,
@@ -30,34 +30,34 @@ import {
   TetuSwapFactory,
   VaultController,
   ZapContract,
-} from "../../typechain";
-import { expect } from "chai";
-import { CoreContractsWrapper } from "../../test/CoreContractsWrapper";
-import { Addresses } from "../../addresses";
-import { CoreAddresses } from "../models/CoreAddresses";
-import { ToolsAddresses } from "../models/ToolsAddresses";
-import axios from "axios";
-import { RunHelper } from "../utils/tools/RunHelper";
-import { config as dotEnvConfig } from "dotenv";
-import { ToolsContractsWrapper } from "../../test/ToolsContractsWrapper";
-import { Misc } from "../utils/tools/Misc";
-import logSettings from "../../log_settings";
-import { Logger } from "tslog";
-import { MaticAddresses } from "../addresses/MaticAddresses";
-import { FtmAddresses } from "../addresses/FtmAddresses";
-import { TimeUtils } from "../../test/TimeUtils";
+} from '../../typechain';
+import { expect } from 'chai';
+import { CoreContractsWrapper } from '../../test/CoreContractsWrapper';
+import { Addresses } from '../../addresses';
+import { CoreAddresses } from '../models/CoreAddresses';
+import { ToolsAddresses } from '../models/ToolsAddresses';
+import axios from 'axios';
+import { RunHelper } from '../utils/tools/RunHelper';
+import { config as dotEnvConfig } from 'dotenv';
+import { ToolsContractsWrapper } from '../../test/ToolsContractsWrapper';
+import { Misc } from '../utils/tools/Misc';
+import logSettings from '../../log_settings';
+import { Logger } from 'tslog';
+import { MaticAddresses } from '../addresses/MaticAddresses';
+import { FtmAddresses } from '../addresses/FtmAddresses';
+import { TimeUtils } from '../../test/TimeUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const hre = require("hardhat");
+const hre = require('hardhat');
 const log: Logger = new Logger(logSettings);
 
 dotEnvConfig();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const argv = require("yargs/yargs")()
-  .env("TETU")
+const argv = require('yargs/yargs')()
+  .env('TETU')
   .options({
     networkScanKey: {
-      type: "string",
+      type: 'string',
     },
   }).argv;
 
@@ -88,13 +88,13 @@ export class DeployerUtils {
   ): Promise<SmartVault> {
     const proxy = (await DeployerUtils.connectContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       address
     )) as TetuProxyControlled;
     const logicAddress = await proxy.implementation();
     const logic = (await DeployerUtils.connectContract(
       signer,
-      "SmartVault",
+      'SmartVault',
       logicAddress
     )) as SmartVault;
     return logic.attach(proxy.address);
@@ -107,7 +107,7 @@ export class DeployerUtils {
   ): Promise<Contract> {
     const proxy = (await DeployerUtils.connectInterface(
       signer,
-      "ITetuProxy",
+      'ITetuProxy',
       address
     )) as ITetuProxy;
     const logicAddress = await proxy.callStatic.implementation();
@@ -130,26 +130,26 @@ export class DeployerUtils {
     const start = Date.now();
     log.info(`Deploying ${name}`);
     log.info(
-      "Account balance: " + utils.formatUnits(await signer.getBalance(), 18)
+      'Account balance: ' + utils.formatUnits(await signer.getBalance(), 18)
     );
 
     const gasPrice = await web3.eth.getGasPrice();
-    log.info("Gas price: " + gasPrice);
+    log.info('Gas price: ' + gasPrice);
 
     const _factory = (await ethers.getContractFactory(name, signer)) as T;
     const instance = await _factory.deploy(...args);
     await instance.deployed();
-    Misc.printDuration(name + " deployed " + instance.address, start);
+    Misc.printDuration(name + ' deployed ' + instance.address, start);
     return instance;
   }
 
   public static async deployController(
     signer: SignerWithAddress
   ): Promise<Controller> {
-    const logic = await DeployerUtils.deployContract(signer, "Controller");
+    const logic = await DeployerUtils.deployContract(signer, 'Controller');
     const proxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     );
     const contract = logic.attach(proxy.address) as Controller;
@@ -163,11 +163,11 @@ export class DeployerUtils {
   ): Promise<[TetuSwapFactory, TetuProxyControlled, TetuSwapFactory]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "TetuSwapFactory"
+      'TetuSwapFactory'
     )) as TetuSwapFactory;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     )) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as TetuSwapFactory;
@@ -182,11 +182,11 @@ export class DeployerUtils {
   ): Promise<[Announcer, TetuProxyControlled, Announcer]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "Announcer"
+      'Announcer'
     )) as Announcer;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     )) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as Announcer;
@@ -200,11 +200,11 @@ export class DeployerUtils {
   ): Promise<[VaultController, TetuProxyControlled, VaultController]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "VaultController"
+      'VaultController'
     )) as VaultController;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     )) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as VaultController;
@@ -218,11 +218,11 @@ export class DeployerUtils {
   ): Promise<[ForwarderV2, TetuProxyControlled, ForwarderV2]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "ForwarderV2"
+      'ForwarderV2'
     )) as ForwarderV2;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     )) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as ForwarderV2;
@@ -238,11 +238,11 @@ export class DeployerUtils {
   ): Promise<[MintHelper, TetuProxyControlled, MintHelper]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "MintHelper"
+      'MintHelper'
     )) as MintHelper;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     )) as TetuProxyControlled;
     const contract = logic.attach(proxy.address) as MintHelper;
@@ -255,10 +255,10 @@ export class DeployerUtils {
     signer: SignerWithAddress,
     controller: string
   ): Promise<Bookkeeper> {
-    const logic = await DeployerUtils.deployContract(signer, "Bookkeeper");
+    const logic = await DeployerUtils.deployContract(signer, 'Bookkeeper');
     const proxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     );
     const bookkeeper = logic.attach(proxy.address) as Bookkeeper;
@@ -272,11 +272,11 @@ export class DeployerUtils {
   ): Promise<[FundKeeper, TetuProxyControlled, FundKeeper]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "FundKeeper"
+      'FundKeeper'
     )) as FundKeeper;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     )) as TetuProxyControlled;
     const fundKeeper = logic.attach(proxy.address) as FundKeeper;
@@ -290,7 +290,7 @@ export class DeployerUtils {
   ): Promise<LiquidityBalancer> {
     return (await DeployerUtils.deployContract(
       signer,
-      "LiquidityBalancer",
+      'LiquidityBalancer',
       controller
     )) as LiquidityBalancer;
   }
@@ -310,7 +310,7 @@ export class DeployerUtils {
         wait
       );
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -321,11 +321,11 @@ export class DeployerUtils {
   ): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "PriceCalculator"
+      'PriceCalculator'
     )) as PriceCalculator;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
@@ -353,7 +353,7 @@ export class DeployerUtils {
     );
     await RunHelper.runAndWait(
       () =>
-        calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, "Uniswap V2"),
+        calculator.addSwapPlatform(MaticAddresses.QUICK_FACTORY, 'Uniswap V2'),
       true,
       wait
     );
@@ -361,7 +361,7 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           MaticAddresses.SUSHI_FACTORY,
-          "SushiSwap LP Token"
+          'SushiSwap LP Token'
         ),
       true,
       wait
@@ -370,7 +370,7 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           MaticAddresses.WAULT_FACTORY,
-          "WaultSwap LP"
+          'WaultSwap LP'
         ),
       true,
       wait
@@ -379,7 +379,7 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           MaticAddresses.FIREBIRD_FACTORY,
-          "FireBird Liquidity Provider"
+          'FireBird Liquidity Provider'
         ),
       true,
       wait
@@ -388,14 +388,14 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           MaticAddresses.DFYN_FACTORY,
-          "Dfyn LP Token"
+          'Dfyn LP Token'
         ),
       true,
       wait
     );
     await RunHelper.runAndWait(
       () =>
-        calculator.addSwapPlatform(MaticAddresses.CAFE_FACTORY, "CafeSwap LPs"),
+        calculator.addSwapPlatform(MaticAddresses.CAFE_FACTORY, 'CafeSwap LPs'),
       true,
       wait
     );
@@ -403,14 +403,14 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           MaticAddresses.TETU_SWAP_FACTORY,
-          "TetuSwap LP"
+          'TetuSwap LP'
         ),
       true,
       wait
     );
     await RunHelper.runAndWait(
       () =>
-        calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, "Dinoswap V2"),
+        calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, 'Dinoswap V2'),
       true,
       wait
     );
@@ -436,11 +436,11 @@ export class DeployerUtils {
   ): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "PriceCalculator"
+      'PriceCalculator'
     )) as PriceCalculator;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
@@ -469,7 +469,7 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           FtmAddresses.SPOOKY_SWAP_FACTORY,
-          "Spooky LP"
+          'Spooky LP'
         ),
       true,
       wait
@@ -478,7 +478,7 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           FtmAddresses.TETU_SWAP_FACTORY,
-          "TetuSwap LP"
+          'TetuSwap LP'
         ),
       true,
       wait
@@ -487,7 +487,7 @@ export class DeployerUtils {
       () =>
         calculator.addSwapPlatform(
           FtmAddresses.SPIRIT_SWAP_FACTORY,
-          "Spirit LPs"
+          'Spirit LPs'
         ),
       true,
       wait
@@ -513,11 +513,11 @@ export class DeployerUtils {
   ): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "PriceCalculator"
+      'PriceCalculator'
     )) as PriceCalculator;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
@@ -525,15 +525,15 @@ export class DeployerUtils {
     const mocks = await DeployerUtils.getTokenAddresses();
 
     await calculator.addKeyTokens([
-      mocks.get("quick") as string,
-      mocks.get("sushi") as string,
-      mocks.get("usdc") as string,
-      mocks.get("weth") as string,
+      mocks.get('quick') as string,
+      mocks.get('sushi') as string,
+      mocks.get('usdc') as string,
+      mocks.get('weth') as string,
     ]);
-    await calculator.setDefaultToken(mocks.get("usdc") as string);
+    await calculator.setDefaultToken(mocks.get('usdc') as string);
     await calculator.addSwapPlatform(
       MaticAddresses.SUSHI_FACTORY,
-      "SushiSwap LP Token"
+      'SushiSwap LP Token'
     );
     return [calculator, proxy, logic];
   }
@@ -541,10 +541,10 @@ export class DeployerUtils {
   public static async deploySmartVault(
     signer: SignerWithAddress
   ): Promise<SmartVault> {
-    const logic = await DeployerUtils.deployContract(signer, "SmartVault");
+    const logic = await DeployerUtils.deployContract(signer, 'SmartVault');
     const proxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       logic.address
     );
     return logic.attach(proxy.address) as SmartVault;
@@ -557,11 +557,11 @@ export class DeployerUtils {
   ): Promise<[PayrollClerk, TetuProxyGov, PayrollClerk]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "PayrollClerk"
+      'PayrollClerk'
     )) as PayrollClerk;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as PayrollClerk;
@@ -576,11 +576,11 @@ export class DeployerUtils {
   ): Promise<[ContractReader, TetuProxyGov, ContractReader]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "ContractReader"
+      'ContractReader'
     )) as ContractReader;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as ContractReader;
@@ -595,11 +595,11 @@ export class DeployerUtils {
   ): Promise<[RewardCalculator, TetuProxyGov, RewardCalculator]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "RewardCalculator"
+      'RewardCalculator'
     )) as RewardCalculator;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as RewardCalculator;
@@ -616,11 +616,11 @@ export class DeployerUtils {
   ): Promise<[AutoRewarder, TetuProxyGov, AutoRewarder]> {
     const logic = (await DeployerUtils.deployContract(
       signer,
-      "AutoRewarder"
+      'AutoRewarder'
     )) as AutoRewarder;
     const proxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyGov",
+      'TetuProxyGov',
       logic.address
     )) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as AutoRewarder;
@@ -640,7 +640,7 @@ export class DeployerUtils {
   ): Promise<ZapContract> {
     return (await DeployerUtils.deployContract(
       signer,
-      "ZapContract",
+      'ZapContract',
       controllerAddress,
       multiSwap
     )) as ZapContract;
@@ -665,7 +665,7 @@ export class DeployerUtils {
         calculatorAddress
       );
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -676,7 +676,7 @@ export class DeployerUtils {
   ): Promise<MultiSwap> {
     return (await DeployerUtils.deployContract(
       signer,
-      "MultiSwap",
+      'MultiSwap',
       controllerAddress,
       calculatorAddress,
       [
@@ -707,7 +707,7 @@ export class DeployerUtils {
   ): Promise<MultiSwap> {
     return (await DeployerUtils.deployContract(
       signer,
-      "MultiSwap",
+      'MultiSwap',
       controllerAddress,
       calculatorAddress,
       [
@@ -733,11 +733,11 @@ export class DeployerUtils {
     // ************** CONTROLLER **********
     const controllerLogic = await DeployerUtils.deployContract(
       signer,
-      "Controller"
+      'Controller'
     );
     const controllerProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       controllerLogic.address
     );
     const controller = controllerLogic.attach(
@@ -767,11 +767,11 @@ export class DeployerUtils {
     // ********** BOOKKEEPER **********
     const bookkeeperLogic = await DeployerUtils.deployContract(
       signer,
-      "Bookkeeper"
+      'Bookkeeper'
     );
     const bookkeeperProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       bookkeeperLogic.address
     );
     const bookkeeper = bookkeeperLogic.attach(
@@ -788,7 +788,7 @@ export class DeployerUtils {
     // ******* REWARD TOKEN AND SUPPORT CONTRACTS ******
     const notifyHelper = (await DeployerUtils.deployContract(
       signer,
-      "NotifyHelper",
+      'NotifyHelper',
       controller.address
     )) as NotifyHelper;
     const mintHelperData = await DeployerUtils.deployMintHelper(
@@ -799,21 +799,21 @@ export class DeployerUtils {
     );
     const rewardToken = (await DeployerUtils.deployContract(
       signer,
-      "RewardToken",
+      'RewardToken',
       mintHelperData[0].address
     )) as RewardToken;
 
     // ****** PS ********
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
+    const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       vaultLogic.address
     );
     const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     const psEmptyStrategy = (await DeployerUtils.deployContract(
       signer,
-      "NoopStrategy",
+      'NoopStrategy',
       controller.address,
       rewardToken.address,
       psVault.address,
@@ -826,8 +826,8 @@ export class DeployerUtils {
     await RunHelper.runAndWait(
       () =>
         psVault.initializeSmartVault(
-          "TETU_PS",
-          "xTETU",
+          'TETU_PS',
+          'xTETU',
           controller.address,
           rewardToken.address,
           psRewardDuration,
@@ -889,13 +889,13 @@ export class DeployerUtils {
     try {
       const tokens = await DeployerUtils.getTokenAddresses();
       await RunHelper.runAndWait(
-        () => controller.setFundToken(tokens.get("usdc") as string),
+        () => controller.setFundToken(tokens.get('usdc') as string),
         true,
         wait
       );
     } catch (e) {
       console.error(
-        "USDC token not defined for network, need to setup Fund token later"
+        'USDC token not defined for network, need to setup Fund token later'
       );
     }
     await RunHelper.runAndWait(
@@ -919,7 +919,7 @@ export class DeployerUtils {
       wait
     );
 
-    Misc.printDuration("Core contracts deployed", start);
+    Misc.printDuration('Core contracts deployed', start);
     return new CoreContractsWrapper(
       controller,
       controllerLogic.address,
@@ -957,11 +957,11 @@ export class DeployerUtils {
     const start = Date.now();
     const vaultLogic = (await DeployerUtils.deployContract(
       signer,
-      "SmartVault"
+      'SmartVault'
     )) as SmartVault;
     const vaultProxy = (await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       vaultLogic.address
     )) as TetuProxyControlled;
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
@@ -974,8 +974,8 @@ export class DeployerUtils {
     await RunHelper.runAndWait(
       () =>
         vault.initializeSmartVault(
-          "TETU_" + vaultName,
-          "x" + vaultName,
+          'TETU_' + vaultName,
+          'x' + vaultName,
           controller.address,
           strategyUnderlying,
           rewardDuration,
@@ -986,7 +986,7 @@ export class DeployerUtils {
       true,
       wait
     );
-    Misc.printDuration(vaultName + " vault initialized", startInit);
+    Misc.printDuration(vaultName + ' vault initialized', startInit);
 
     await RunHelper.runAndWait(
       () =>
@@ -1000,7 +1000,7 @@ export class DeployerUtils {
       wait
     );
     Misc.printDuration(
-      vaultName + " deployAndInitVaultAndStrategy completed",
+      vaultName + ' deployAndInitVaultAndStrategy completed',
       start
     );
     return [vaultLogic, vault, strategy];
@@ -1018,15 +1018,15 @@ export class DeployerUtils {
   ): Promise<[SmartVault, SmartVault, IStrategy]> {
     const vaultLogic = (await DeployerUtils.deployContract(
       signer,
-      "SmartVault"
+      'SmartVault'
     )) as SmartVault;
     if (wait) {
       await DeployerUtils.wait(1);
     }
-    log.info("vaultLogic " + vaultLogic.address);
+    log.info('vaultLogic ' + vaultLogic.address);
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
-      "TetuProxyControlled",
+      'TetuProxyControlled',
       vaultLogic.address
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
@@ -1038,8 +1038,8 @@ export class DeployerUtils {
     await RunHelper.runAndWait(
       () =>
         vault.initializeSmartVault(
-          "TETU_" + vaultName,
-          "x" + vaultName,
+          'TETU_' + vaultName,
+          'x' + vaultName,
           controllerAddress,
           strategyUnderlying,
           rewardDuration,
@@ -1059,18 +1059,18 @@ export class DeployerUtils {
     vaultController: VaultController,
     underlying: string,
     vaultRewardToken: string,
-    rewardToken: string = ""
+    rewardToken = ''
   ) {
     const netToken = await DeployerUtils.getNetworkTokenAddress();
-    if (rewardToken === "") {
+    if (rewardToken === '') {
       rewardToken = netToken;
     }
     return DeployerUtils.deployAndInitVaultAndStrategy(
-      "t",
+      't',
       (vaultAddress) =>
         DeployerUtils.deployContract(
           signer,
-          "NoopStrategy",
+          'NoopStrategy',
           controller.address, // _controller
           underlying, // _underlying
           vaultAddress,
@@ -1089,23 +1089,23 @@ export class DeployerUtils {
 
   public static async verify(address: string) {
     try {
-      await hre.run("verify:verify", {
+      await hre.run('verify:verify', {
         address,
       });
     } catch (e) {
-      log.info("error verify " + e);
+      log.info('error verify ' + e);
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async verifyWithArgs(address: string, args: any[]) {
     try {
-      await hre.run("verify:verify", {
+      await hre.run('verify:verify', {
         address,
         constructorArguments: args,
       });
     } catch (e) {
-      log.info("error verify " + e);
+      log.info('error verify ' + e);
     }
   }
 
@@ -1116,13 +1116,13 @@ export class DeployerUtils {
     args?: any[]
   ) {
     try {
-      await hre.run("verify:verify", {
+      await hre.run('verify:verify', {
         address,
         contract: contractPath,
         constructorArguments: args,
       });
     } catch (e) {
-      log.info("error verify " + e);
+      log.info('error verify ' + e);
     }
   }
 
@@ -1133,13 +1133,13 @@ export class DeployerUtils {
     contractPath: string
   ) {
     try {
-      await hre.run("verify:verify", {
+      await hre.run('verify:verify', {
         address,
         constructorArguments: args,
         contract: contractPath,
       });
     } catch (e) {
-      log.info("error verify " + e);
+      log.info('error verify ' + e);
     }
   }
 
@@ -1152,7 +1152,7 @@ export class DeployerUtils {
       );
       // log.info("proxy verify resp", resp.data);
     } catch (e) {
-      log.info("error proxy verify " + adr + e);
+      log.info('error proxy verify ' + adr + e);
     }
   }
 
@@ -1160,31 +1160,31 @@ export class DeployerUtils {
 
   public static async getNetworkScanUrl(): Promise<string> {
     const net = await ethers.provider.getNetwork();
-    if (net.name === "ropsten") {
-      return "https://api-ropsten.etherscan.io/api";
-    } else if (net.name === "kovan") {
-      return "https://api-kovan.etherscan.io/api";
-    } else if (net.name === "rinkeby") {
-      return "https://api-rinkeby.etherscan.io/api";
-    } else if (net.name === "ethereum") {
-      return "https://api.etherscan.io/api";
-    } else if (net.name === "matic") {
-      return "https://api.polygonscan.com/api";
+    if (net.name === 'ropsten') {
+      return 'https://api-ropsten.etherscan.io/api';
+    } else if (net.name === 'kovan') {
+      return 'https://api-kovan.etherscan.io/api';
+    } else if (net.name === 'rinkeby') {
+      return 'https://api-rinkeby.etherscan.io/api';
+    } else if (net.name === 'ethereum') {
+      return 'https://api.etherscan.io/api';
+    } else if (net.name === 'matic') {
+      return 'https://api.polygonscan.com/api';
     } else if (net.chainId === 80001) {
-      return "https://api-testnet.polygonscan.com/api";
+      return 'https://api-testnet.polygonscan.com/api';
     } else if (net.chainId === 250) {
-      return "https://api.ftmscan.com//api";
+      return 'https://api.ftmscan.com//api';
     } else {
-      throw Error("network not found " + net);
+      throw Error('network not found ' + net);
     }
   }
 
   public static async getCoreAddresses(): Promise<CoreAddresses> {
     const net = await ethers.provider.getNetwork();
-    log.info("network " + net.chainId);
-    const core = Addresses.CORE.get(net.chainId + "");
+    log.info('network ' + net.chainId);
+    const core = Addresses.CORE.get(net.chainId + '');
     if (!core) {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
     return core;
   }
@@ -1193,78 +1193,78 @@ export class DeployerUtils {
     signer: SignerWithAddress
   ): Promise<CoreContractsWrapper> {
     const net = await ethers.provider.getNetwork();
-    log.info("network " + net.chainId);
-    const core = Addresses.CORE.get(net.chainId + "");
+    log.info('network ' + net.chainId);
+    const core = Addresses.CORE.get(net.chainId + '');
     if (!core) {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
 
     const ps = (await DeployerUtils.connectInterface(
       signer,
-      "SmartVault",
+      'SmartVault',
       core.psVault
     )) as SmartVault;
     const str = await ps.strategy();
     return new CoreContractsWrapper(
       (await DeployerUtils.connectInterface(
         signer,
-        "Controller",
+        'Controller',
         core.controller
       )) as Controller,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "ForwarderV2",
+        'ForwarderV2',
         core.feeRewardForwarder
       )) as ForwarderV2,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "Bookkeeper",
+        'Bookkeeper',
         core.bookkeeper
       )) as Bookkeeper,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "NotifyHelper",
+        'NotifyHelper',
         core.notifyHelper
       )) as NotifyHelper,
       (await DeployerUtils.connectInterface(
         signer,
-        "MintHelper",
+        'MintHelper',
         core.mintHelper
       )) as MintHelper,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "RewardToken",
+        'RewardToken',
         core.rewardToken
       )) as RewardToken,
       ps,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "NoopStrategy",
+        'NoopStrategy',
         str
       )) as NoopStrategy,
       (await DeployerUtils.connectInterface(
         signer,
-        "FundKeeper",
+        'FundKeeper',
         core.fundKeeper
       )) as FundKeeper,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "Announcer",
+        'Announcer',
         core.announcer
       )) as Announcer,
-      "",
+      '',
       (await DeployerUtils.connectInterface(
         signer,
-        "VaultController",
+        'VaultController',
         core.vaultController
       )) as VaultController,
-      ""
+      ''
     );
   }
 
@@ -1272,60 +1272,60 @@ export class DeployerUtils {
     signer: SignerWithAddress
   ): Promise<ToolsContractsWrapper> {
     const net = await ethers.provider.getNetwork();
-    log.info("network " + net.chainId);
-    const tools = Addresses.TOOLS.get(net.chainId + "");
+    log.info('network ' + net.chainId);
+    const tools = Addresses.TOOLS.get(net.chainId + '');
     if (!tools) {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
     return new ToolsContractsWrapper(
       (await DeployerUtils.connectInterface(
         signer,
-        "PriceCalculator",
+        'PriceCalculator',
         tools.calculator
       )) as PriceCalculator,
       (await DeployerUtils.connectInterface(
         signer,
-        "ContractReader",
+        'ContractReader',
         tools.reader
       )) as ContractReader,
       (await DeployerUtils.connectInterface(
         signer,
-        "ContractUtils",
+        'ContractUtils',
         tools.utils
       )) as ContractUtils,
       (await DeployerUtils.connectInterface(
         signer,
-        "LiquidityBalancer",
+        'LiquidityBalancer',
         tools.rebalancer
       )) as LiquidityBalancer,
       (await DeployerUtils.connectInterface(
         signer,
-        "PayrollClerk",
+        'PayrollClerk',
         tools.payrollClerk
       )) as PayrollClerk,
       (await DeployerUtils.connectInterface(
         signer,
-        "MockFaucet",
+        'MockFaucet',
         tools.mockFaucet
       )) as MockFaucet,
       (await DeployerUtils.connectInterface(
         signer,
-        "MultiSwap",
+        'MultiSwap',
         tools.multiSwap
       )) as MultiSwap,
       (await DeployerUtils.connectInterface(
         signer,
-        "ZapContract",
+        'ZapContract',
         tools.zapContract
       )) as ZapContract,
       (await DeployerUtils.connectInterface(
         signer,
-        "Multicall",
+        'Multicall',
         tools.multicall
       )) as Multicall,
       (await DeployerUtils.connectInterface(
         signer,
-        "PawnShopReader",
+        'PawnShopReader',
         tools.pawnshopReader
       )) as PawnShopReader
     );
@@ -1333,20 +1333,20 @@ export class DeployerUtils {
 
   public static async getToolsAddresses(): Promise<ToolsAddresses> {
     const net = await ethers.provider.getNetwork();
-    log.info("network " + net.chainId);
-    const tools = Addresses.TOOLS.get(net.chainId + "");
+    log.info('network ' + net.chainId);
+    const tools = Addresses.TOOLS.get(net.chainId + '');
     if (!tools) {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
     return tools;
   }
 
   public static async getTokenAddresses(): Promise<Map<string, string>> {
     const net = await ethers.provider.getNetwork();
-    log.info("network " + net.chainId);
-    const mocks = Addresses.TOKENS.get(net.chainId + "");
+    log.info('network ' + net.chainId);
+    const mocks = Addresses.TOKENS.get(net.chainId + '');
     if (!mocks) {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
     return mocks;
   }
@@ -1356,15 +1356,15 @@ export class DeployerUtils {
       address = await DeployerUtils.getGovernance();
     }
     await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
+      method: 'hardhat_impersonateAccount',
       params: [address],
     });
 
     await hre.network.provider.request({
-      method: "hardhat_setBalance",
-      params: [address, "0x1431E0FAE6D7217CAA0000000"],
+      method: 'hardhat_setBalance',
+      params: [address, '0x1431E0FAE6D7217CAA0000000'],
     });
-    console.log("address impersonated", address);
+    console.log('address impersonated', address);
     return ethers.getSigner(address);
   }
 
@@ -1375,7 +1375,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.SPOOKY_SWAP_FACTORY;
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1386,7 +1386,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.USDC_TOKEN;
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1397,7 +1397,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.WFTM_TOKEN;
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1408,7 +1408,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.TETU_TOKEN;
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1419,7 +1419,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.BLUE_CHIPS;
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1430,7 +1430,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.GOV_ADDRESS;
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1441,7 +1441,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.BLUE_CHIPS.has(address.toLowerCase());
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1452,7 +1452,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.getRouterByFactory(_factory);
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1463,7 +1463,7 @@ export class DeployerUtils {
     } else if (net.chainId === 250) {
       return FtmAddresses.getRouterName(_factory);
     } else {
-      throw Error("No config for " + net.chainId);
+      throw Error('No config for ' + net.chainId);
     }
   }
 
@@ -1480,8 +1480,8 @@ export class DeployerUtils {
     index: string,
     value: string
   ) {
-    await ethers.provider.send("hardhat_setStorageAt", [address, index, value]);
-    await ethers.provider.send("evm_mine", []); // Just mines to the next block
+    await ethers.provider.send('hardhat_setStorageAt', [address, index, value]);
+    await ethers.provider.send('evm_mine', []); // Just mines to the next block
   }
 
   // ****************** WAIT ******************
@@ -1492,10 +1492,11 @@ export class DeployerUtils {
 
   public static async wait(blocks: number) {
     const start = ethers.provider.blockNumber;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
-      log.info("wait 10sec");
+      log.info('wait 10sec');
       await DeployerUtils.delay(10000);
-      if (hre.network.name === "hardhat") {
+      if (hre.network.name === 'hardhat') {
         await TimeUtils.advanceNBlocks(1);
       }
       if (ethers.provider.blockNumber >= start + blocks) {

@@ -1,13 +1,13 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../deploy/DeployerUtils";
-import { ZapContract } from "../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../deploy/DeployerUtils';
+import { ZapContract } from '../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    "ZapContract"
+    'ZapContract'
   )) as ZapContract;
 
   await DeployerUtils.wait(5);

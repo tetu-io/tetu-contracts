@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { Bookkeeper, ContractReader, ContractUtils } from "../../../typechain";
-import { mkdir, writeFileSync } from "fs";
-import { TokenUtils } from "../../../test/TokenUtils";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { Bookkeeper, ContractReader, ContractUtils } from '../../../typechain';
+import { mkdir, writeFileSync } from 'fs';
+import { TokenUtils } from '../../../test/TokenUtils';
 
 const exclude = new Set<string>([]);
 
@@ -13,29 +13,29 @@ async function main() {
 
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
-    "Bookkeeper",
+    'Bookkeeper',
     core.bookkeeper
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectContract(
     signer,
-    "ContractReader",
+    'ContractReader',
     tools.reader
   )) as ContractReader;
   const utils = (await DeployerUtils.connectContract(
     signer,
-    "ContractUtils",
+    'ContractUtils',
     tools.utils
   )) as ContractUtils;
 
   const vaults = await bookkeeper.vaults();
-  console.log("vaults ", vaults.length);
+  console.log('vaults ', vaults.length);
 
   const assetsNames = {};
   const vaultsNames = {};
   for (const vault of vaults) {
     const vInfo = await cReader.vaultInfo(vault);
 
-    console.info("vInfo.name", vInfo.name);
+    console.info('vInfo.name', vInfo.name);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     vaultsNames[vault.toLowerCase()] = vInfo.name;
@@ -47,21 +47,21 @@ async function main() {
     }
   }
 
-  mkdir("./tmp/download", { recursive: true }, (err) => {
+  mkdir('./tmp/download', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   writeFileSync(
-    "./tmp/download/assets_names.json",
+    './tmp/download/assets_names.json',
     JSON.stringify(assetsNames),
-    "utf8"
+    'utf8'
   );
   writeFileSync(
-    "./tmp/download/vaults_names.json",
+    './tmp/download/vaults_names.json',
     JSON.stringify(vaultsNames),
-    "utf8"
+    'utf8'
   );
-  console.log("done");
+  console.log('done');
 }
 
 main()

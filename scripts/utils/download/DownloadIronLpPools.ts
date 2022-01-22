@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../../deploy/DeployerUtils";
-import { MaticAddresses } from "../../addresses/MaticAddresses";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../../deploy/DeployerUtils';
+import { MaticAddresses } from '../../addresses/MaticAddresses';
 import {
   ERC20,
   IIronChef,
@@ -9,12 +9,12 @@ import {
   IUniswapV2Pair,
   PriceCalculator,
   SmartVault,
-} from "../../../typechain";
-import { TokenUtils } from "../../../test/TokenUtils";
-import { mkdir, writeFileSync } from "fs";
-import { BigNumber, utils } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { VaultUtils } from "../../../test/VaultUtils";
+} from '../../../typechain';
+import { TokenUtils } from '../../../test/TokenUtils';
+import { mkdir, writeFileSync } from 'fs';
+import { BigNumber, utils } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { VaultUtils } from '../../../test/VaultUtils';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -23,24 +23,24 @@ async function main() {
 
   const chef = (await DeployerUtils.connectInterface(
     signer,
-    "IIronChef",
+    'IIronChef',
     MaticAddresses.IRON_MINISHEFV2
   )) as IIronChef;
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
-    "PriceCalculator",
+    'PriceCalculator',
     tools.calculator
   )) as PriceCalculator;
 
   const poolLength = (await chef.poolLength()).toNumber();
-  console.log("length", poolLength);
+  console.log('length', poolLength);
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
   const underlyingStatuses = new Map<string, boolean>();
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (const vInfo of vaultInfos) {
-    if (vInfo.platform !== "5") {
+    if (vInfo.platform !== '5') {
       continue;
     }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -48,7 +48,7 @@ async function main() {
     if (vInfo.active) {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
-        "SmartVault",
+        'SmartVault',
         vInfo.addr
       )) as SmartVault;
       currentRewards.set(
@@ -63,19 +63,19 @@ async function main() {
   const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(
     MaticAddresses.ICE_TOKEN
   );
-  console.log("reward price", utils.formatUnits(rewardPrice));
+  console.log('reward price', utils.formatUnits(rewardPrice));
 
-  let infos: string =
-    "idx, lp_name, lp_address, vault, tokens, token_names, alloc, rewardWeekUsd, weekRewardUsd, tvlUsd, apr, currentRewards \n";
+  let infos =
+    'idx, lp_name, lp_address, vault, tokens, token_names, alloc, rewardWeekUsd, weekRewardUsd, tvlUsd, apr, currentRewards \n';
   for (let i = 0; i < poolLength; i++) {
-    console.log("id", i);
+    console.log('id', i);
 
     // ** base contracts connections
     const lp = await chef.lpToken(i);
     const poolInfo = await chef.poolInfo(i);
     const lpContractErc20 = (await DeployerUtils.connectInterface(
       signer,
-      "ERC20",
+      'ERC20',
       lp
     )) as ERC20;
 
@@ -93,7 +93,7 @@ async function main() {
       totalAllocPoint,
       rewardPrice
     );
-    console.log("rewardWeekRewardUsd", rewardWeekUsd);
+    console.log('rewardWeekRewardUsd', rewardWeekUsd);
 
     const lpPrice = await priceCalculator.getPriceWithDefaultOutput(lp);
     const tvl = await lpContractErc20.balanceOf(chef.address);
@@ -103,49 +103,49 @@ async function main() {
 
     // ** token info
     const tokens = await collectTokensInfo(signer, lp, i);
-    let poolName = "IRON";
+    let poolName = 'IRON';
     const tokenNames = [];
     for (const token of tokens) {
       const tokenName = await TokenUtils.tokenSymbol(token);
       tokenNames.push(tokenName);
-      poolName += "_" + tokenName;
+      poolName += '_' + tokenName;
     }
 
     const data =
       i +
-      "," +
+      ',' +
       poolName +
-      "," +
+      ',' +
       lp +
-      "," +
+      ',' +
       underlyingToVault.get(lp.toLowerCase()) +
-      "," +
-      tokens.join(" | ") +
-      "," +
-      tokenNames.join(" | ") +
-      "," +
+      ',' +
+      tokens.join(' | ') +
+      ',' +
+      tokenNames.join(' | ') +
+      ',' +
       rewardAllocPoint.toNumber() +
-      "," +
+      ',' +
       rewardWeekUsd.toFixed(0) +
-      "," +
+      ',' +
       rewardWeekUsd.toFixed(0) +
-      "," +
+      ',' +
       (+tvlUsd).toFixed(0) +
-      "," +
+      ',' +
       apr.toFixed(0) +
-      "," +
+      ',' +
       currentRewards.get(lp.toLowerCase());
     console.log(data);
-    infos += data + "\n";
+    infos += data + '\n';
   }
 
-  mkdir("./tmp/download", { recursive: true }, (err) => {
+  mkdir('./tmp/download', { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   // console.log('data', data);
-  writeFileSync("./tmp/download/iron_pools.csv", infos, "utf8");
-  console.log("done");
+  writeFileSync('./tmp/download/iron_pools.csv', infos, 'utf8');
+  console.log('done');
 }
 
 main()
@@ -173,13 +173,13 @@ async function collectTokensInfoIronSwap(
 ): Promise<string[]> {
   const lpContract = (await DeployerUtils.connectInterface(
     signer,
-    "IIronLpToken",
+    'IIronLpToken',
     lp
   )) as IIronLpToken;
   const swapAddress = await lpContract.swap();
   const swapContract = (await DeployerUtils.connectInterface(
     signer,
-    "IIronSwap",
+    'IIronSwap',
     swapAddress
   )) as IIronSwap;
   return swapContract.getTokens();
@@ -192,7 +192,7 @@ async function collectTokensInfoUniswap(
   try {
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
-      "IUniswapV2Pair",
+      'IUniswapV2Pair',
       lp
     )) as IUniswapV2Pair;
     const tokens = [];
@@ -202,7 +202,7 @@ async function collectTokensInfoUniswap(
 
     return tokens;
   } catch (e) {
-    console.error("error collect tokens from ", lp);
+    console.error('error collect tokens from ', lp);
   }
   return [];
 }

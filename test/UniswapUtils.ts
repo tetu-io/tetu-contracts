@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers } from 'hardhat';
 import {
   IFireBirdFactory,
   IFireBirdRouter,
@@ -6,21 +6,21 @@ import {
   IUniswapV2Pair,
   IUniswapV2Router02,
   PriceCalculator,
-} from "../typechain";
-import { BigNumber, utils } from "ethers";
-import { TokenUtils } from "./TokenUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect } from "chai";
-import { RunHelper } from "../scripts/utils/tools/RunHelper";
-import { MintHelperUtils } from "./MintHelperUtils";
-import { CoreContractsWrapper } from "./CoreContractsWrapper";
-import { DeployerUtils } from "../scripts/deploy/DeployerUtils";
-import { Misc } from "../scripts/utils/tools/Misc";
-import { PriceCalculatorUtils } from "./PriceCalculatorUtils";
-import { MaticAddresses } from "../scripts/addresses/MaticAddresses";
+} from '../typechain';
+import { BigNumber, utils } from 'ethers';
+import { TokenUtils } from './TokenUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { expect } from 'chai';
+import { RunHelper } from '../scripts/utils/tools/RunHelper';
+import { MintHelperUtils } from './MintHelperUtils';
+import { CoreContractsWrapper } from './CoreContractsWrapper';
+import { DeployerUtils } from '../scripts/deploy/DeployerUtils';
+import { Misc } from '../scripts/utils/tools/Misc';
+import { PriceCalculatorUtils } from './PriceCalculatorUtils';
+import { MaticAddresses } from '../scripts/addresses/MaticAddresses';
 
 export class UniswapUtils {
-  public static deadline = "1000000000000";
+  public static deadline = '1000000000000';
 
   public static async swapNETWORK_COINForExactTokens(
     signer: SignerWithAddress,
@@ -30,9 +30,9 @@ export class UniswapUtils {
   ) {
     const router = await UniswapUtils.connectRouter(routerAddress, signer);
     const networkCoinAmount = (await signer.getBalance()).sub(
-      utils.parseEther("0.1")
+      utils.parseEther('0.1')
     );
-    console.log("networkCoinAmount", utils.formatUnits(networkCoinAmount));
+    console.log('networkCoinAmount', utils.formatUnits(networkCoinAmount));
     await router.swapETHForExactTokens(
       BigNumber.from(amount),
       path,
@@ -53,14 +53,14 @@ export class UniswapUtils {
     const decimals = await TokenUtils.decimals(_route[0]);
     expect(+utils.formatUnits(bal, decimals)).is.greaterThanOrEqual(
       +utils.formatUnits(amountToSell, decimals),
-      "Not enough " + (await TokenUtils.tokenSymbol(_route[0]))
+      'Not enough ' + (await TokenUtils.tokenSymbol(_route[0]))
     );
 
     if (_router.toLowerCase() === MaticAddresses.FIREBIRD_ROUTER) {
-      console.log("firebird swap");
-      expect(_route.length === 2, "firebird wrong length path");
+      console.log('firebird swap');
+      expect(_route.length === 2, 'firebird wrong length path');
       const router = (await ethers.getContractAt(
-        "IFireBirdRouter",
+        'IFireBirdRouter',
         _router,
         sender
       )) as IFireBirdRouter;
@@ -68,7 +68,7 @@ export class UniswapUtils {
 
       const fbFac = (await DeployerUtils.connectInterface(
         sender,
-        "IFireBirdFactory",
+        'IFireBirdFactory',
         MaticAddresses.FIREBIRD_FACTORY
       )) as IFireBirdFactory;
       const fbPair = await fbFac.getPair(_route[0], _route[1], 50, 20);
@@ -76,7 +76,7 @@ export class UniswapUtils {
         _route[0],
         _route[1],
         BigNumber.from(amountToSell),
-        BigNumber.from("0"),
+        BigNumber.from('0'),
         [fbPair],
         _to,
         UniswapUtils.deadline
@@ -86,7 +86,7 @@ export class UniswapUtils {
       await TokenUtils.approve(_route[0], sender, router.address, amountToSell);
       return router.swapExactTokensForTokens(
         BigNumber.from(amountToSell),
-        BigNumber.from("0"),
+        BigNumber.from('0'),
         _route,
         _to,
         UniswapUtils.deadline
@@ -114,11 +114,11 @@ export class UniswapUtils {
 
     expect(+utils.formatUnits(bal0, t0Dec)).is.greaterThanOrEqual(
       +utils.formatUnits(amountA, t0Dec),
-      "not enough bal for token A " + name0
+      'not enough bal for token A ' + name0
     );
     expect(+utils.formatUnits(bal1, t1Dec)).is.greaterThanOrEqual(
       +utils.formatUnits(amountB, t1Dec),
-      "not enough bal for token B " + name1
+      'not enough bal for token B ' + name1
     );
 
     await RunHelper.runAndWait(
@@ -143,7 +143,7 @@ export class UniswapUtils {
       );
       const router = (await DeployerUtils.connectInterface(
         sender,
-        "IFireBirdRouter",
+        'IFireBirdRouter',
         _router
       )) as IFireBirdRouter;
       await RunHelper.runAndWait(
@@ -188,7 +188,7 @@ export class UniswapUtils {
       tokenB,
       factory.address
     );
-    Misc.printDuration("addLiquidity completed", start);
+    Misc.printDuration('addLiquidity completed', start);
     return pairAdr;
   }
 
@@ -229,7 +229,7 @@ export class UniswapUtils {
     signer: SignerWithAddress
   ): Promise<IUniswapV2Router02> {
     return (await ethers.getContractAt(
-      "IUniswapV2Router02",
+      'IUniswapV2Router02',
       router,
       signer
     )) as IUniswapV2Router02;
@@ -240,7 +240,7 @@ export class UniswapUtils {
     signer: SignerWithAddress
   ): Promise<IUniswapV2Factory> {
     return (await ethers.getContractAt(
-      "IUniswapV2Factory",
+      'IUniswapV2Factory',
       factory,
       signer
     )) as IUniswapV2Factory;
@@ -251,7 +251,7 @@ export class UniswapUtils {
     signer: SignerWithAddress
   ): Promise<IUniswapV2Pair> {
     return (await ethers.getContractAt(
-      "IUniswapV2Pair",
+      'IUniswapV2Pair',
       adr,
       signer
     )) as IUniswapV2Pair;
@@ -301,7 +301,7 @@ export class UniswapUtils {
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
-    console.log("USDC bought", usdcBal.toString());
+    console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
     if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
@@ -323,7 +323,7 @@ export class UniswapUtils {
       rewardTokenAddress,
       signer.address
     );
-    console.log("Token minted", tokenBal.toString());
+    console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
     const factory = await DeployerUtils.getDefaultNetworkFactory();
@@ -357,7 +357,7 @@ export class UniswapUtils {
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
-    console.log("USDC bought", usdcBal.toString());
+    console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
     await MintHelperUtils.mint(
@@ -371,7 +371,7 @@ export class UniswapUtils {
       rewardTokenAddress,
       signer.address
     );
-    console.log("Token minted", tokenBal.toString());
+    console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
     return UniswapUtils.addLiquidity(
@@ -401,7 +401,7 @@ export class UniswapUtils {
       utils.parseUnits(amount, 6)
     );
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
-    console.log("USDC bought", usdcBal.toString());
+    console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
     if (tetu === (await DeployerUtils.getTETUAddress())) {
@@ -416,7 +416,7 @@ export class UniswapUtils {
     }
 
     const tokenBal = await TokenUtils.balanceOf(tetu, signer.address);
-    console.log("Token minted", tokenBal.toString());
+    console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal)).is.greaterThanOrEqual(+amount);
 
     const result = UniswapUtils.addLiquidity(
@@ -430,7 +430,7 @@ export class UniswapUtils {
         await DeployerUtils.getDefaultNetworkFactory()
       )
     );
-    Misc.printDuration("createTetuUsdc completed", start);
+    Misc.printDuration('createTetuUsdc completed', start);
     return result;
   }
 
@@ -473,11 +473,11 @@ export class UniswapUtils {
     usdAmountN: number,
     calculator: PriceCalculator
   ) {
-    console.log("UniswapUtils: buyTokensAndAddLiq");
+    console.log('UniswapUtils: buyTokensAndAddLiq');
     const start = Date.now();
     const lpCtr = (await DeployerUtils.connectInterface(
       signer,
-      "IUniswapV2Pair",
+      'IUniswapV2Pair',
       lp
     )) as IUniswapV2Pair;
     const token0 = await lpCtr.token0();
@@ -516,13 +516,13 @@ export class UniswapUtils {
       router,
       false
     );
-    Misc.printDuration("UniswapUtils: buyTokensAndAddLiq finished", start);
+    Misc.printDuration('UniswapUtils: buyTokensAndAddLiq finished', start);
   }
 
   public static async wrapNetworkToken(signer: SignerWithAddress) {
     await TokenUtils.wrapNetworkToken(
       signer,
-      utils.formatUnits(utils.parseUnits("10000000"))
+      utils.formatUnits(utils.parseUnits('10000000'))
     ); // 10m wmatic
   }
 
@@ -535,10 +535,10 @@ export class UniswapUtils {
     if (
       factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()
     ) {
-      console.log("Firebird factory");
+      console.log('Firebird factory');
       const factoryCtr = (await DeployerUtils.connectInterface(
         signer,
-        "IFireBirdFactory",
+        'IFireBirdFactory',
         factory
       )) as IFireBirdFactory;
       return factoryCtr.getPair(token0, token1, 50, 20);

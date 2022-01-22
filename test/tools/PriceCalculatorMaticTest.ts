@@ -1,18 +1,18 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { DeployerUtils } from "../../scripts/deploy/DeployerUtils";
-import { TimeUtils } from "../TimeUtils";
-import { CoreContractsWrapper } from "../CoreContractsWrapper";
-import { PriceCalculator } from "../../typechain";
-import { MaticAddresses } from "../../scripts/addresses/MaticAddresses";
-import { PriceCalculatorUtils } from "../PriceCalculatorUtils";
-import { TokenUtils } from "../TokenUtils";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { DeployerUtils } from '../../scripts/deploy/DeployerUtils';
+import { TimeUtils } from '../TimeUtils';
+import { CoreContractsWrapper } from '../CoreContractsWrapper';
+import { PriceCalculator } from '../../typechain';
+import { MaticAddresses } from '../../scripts/addresses/MaticAddresses';
+import { PriceCalculatorUtils } from '../PriceCalculatorUtils';
+import { TokenUtils } from '../TokenUtils';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe("Price calculator matic tests", function () {
+describe('Price calculator matic tests', function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -40,7 +40,7 @@ describe("Price calculator matic tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("calculate eth/usdc price and check", async () => {
+  it('calculate eth/usdc price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -53,7 +53,7 @@ describe("Price calculator matic tests", function () {
     expect(ethPrice).is.lessThan(100000);
   });
 
-  it("calculate eth/eth price and check", async () => {
+  it('calculate eth/eth price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -64,7 +64,7 @@ describe("Price calculator matic tests", function () {
     );
     expect(ethPrice).is.eq(1);
   });
-  it("calculate quick/usdc price and check", async () => {
+  it('calculate quick/usdc price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -76,7 +76,7 @@ describe("Price calculator matic tests", function () {
     expect(ethPrice).is.greaterThan(10);
     expect(ethPrice).is.lessThan(10000);
   });
-  it("calculate quick/eth price and check", async () => {
+  it('calculate quick/eth price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -89,7 +89,7 @@ describe("Price calculator matic tests", function () {
     expect(ethPrice).is.lessThan(10);
   });
 
-  it("calculate aTricrypto3 - usdc price and check", async () => {
+  it('calculate aTricrypto3 - usdc price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -102,7 +102,7 @@ describe("Price calculator matic tests", function () {
     expect(ethPrice).is.lessThan(10000);
   });
 
-  it("calculate crvAave - usdc price and check", async () => {
+  it('calculate crvAave - usdc price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -119,7 +119,7 @@ describe("Price calculator matic tests", function () {
     expect(ethPrice).is.lessThan(300000);
   });
 
-  it("calculate prices", async () => {
+  it('calculate prices', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -160,96 +160,96 @@ describe("Price calculator matic tests", function () {
     );
   });
 
-  it("remove key token", async () => {
+  it('remove key token', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
     const size = (await calculator.keyTokensSize()).toNumber();
-    console.log("size", size);
+    console.log('size', size);
     const last = await calculator.keyTokens(size - 1);
-    console.log("last", last);
+    console.log('last', last);
 
     await calculator.removeKeyToken(last);
 
     const newSize = (await calculator.keyTokensSize()).toNumber();
-    console.log("new size", newSize);
+    console.log('new size', newSize);
     const newLast = await calculator.keyTokens(newSize - 1);
-    console.log("new last", newLast);
+    console.log('new last', newLast);
     expect(size - newSize).is.eq(1);
     expect(newLast).is.not.eq(last);
   });
 
-  it("add key token", async () => {
+  it('add key token', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
     const size = (await calculator.keyTokensSize()).toNumber();
-    console.log("size", size);
+    console.log('size', size);
     const last = await calculator.keyTokens(size - 1);
-    console.log("last", last);
+    console.log('last', last);
 
     await calculator.addKeyToken(MaticAddresses.ZERO_ADDRESS);
 
     const newSize = (await calculator.keyTokensSize()).toNumber();
-    console.log("new size", newSize);
+    console.log('new size', newSize);
     const newLast = await calculator.keyTokens(newSize - 1);
-    console.log("new last", newLast);
+    console.log('new last', newLast);
     expect(newSize - size).is.eq(1);
     expect(newLast).is.not.eq(last);
     expect(newLast).is.eq(MaticAddresses.ZERO_ADDRESS);
   });
 
-  it("remove factory token", async () => {
+  it('remove factory token', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
     const size = (await calculator.swapFactoriesSize()).toNumber();
-    console.log("size", size);
+    console.log('size', size);
     const last = await calculator.swapFactories(size - 1);
     const lastName = await calculator.swapLpNames(size - 1);
-    console.log("last", last);
-    console.log("last name", lastName);
+    console.log('last', last);
+    console.log('last name', lastName);
 
     await calculator.removeSwapPlatform(last, lastName);
 
     const newSize = (await calculator.swapFactoriesSize()).toNumber();
-    console.log("new size", newSize);
+    console.log('new size', newSize);
     const newLast = await calculator.swapFactories(newSize - 1);
     const newLastName = await calculator.swapLpNames(newSize - 1);
-    console.log("new last", newLast);
-    console.log("new last Name", newLastName);
+    console.log('new last', newLast);
+    console.log('new last Name', newLastName);
     expect(size - newSize).is.eq(1);
     expect(newLast).is.not.eq(last);
     expect(newLastName).is.not.eq(lastName);
   });
 
-  it("add factory token", async () => {
+  it('add factory token', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
     const size = (await calculator.swapFactoriesSize()).toNumber();
-    console.log("size", size);
+    console.log('size', size);
     const last = await calculator.swapFactories(size - 1);
     const lastName = await calculator.swapLpNames(size - 1);
-    console.log("last", last);
-    console.log("last name", lastName);
+    console.log('last', last);
+    console.log('last name', lastName);
 
-    await calculator.addSwapPlatform(MaticAddresses.ZERO_ADDRESS, "test");
+    await calculator.addSwapPlatform(MaticAddresses.ZERO_ADDRESS, 'test');
 
     const newSize = (await calculator.swapFactoriesSize()).toNumber();
-    console.log("new size", newSize);
+    console.log('new size', newSize);
     const newLast = await calculator.swapFactories(newSize - 1);
     const newLastName = await calculator.swapLpNames(newSize - 1);
-    console.log("new last", newLast);
-    console.log("new last Name", newLastName);
+    console.log('new last', newLast);
+    console.log('new last Name', newLastName);
     expect(newSize - size).is.eq(1);
     expect(newLast).is.not.eq(last);
     expect(newLastName).is.not.eq(lastName);
     expect(newLast).is.eq(MaticAddresses.ZERO_ADDRESS);
-    expect(newLastName).is.eq("test");
+    expect(newLastName).is.eq('test');
   });
 
-  it("largest pool for frax", async () => {
+  it('largest pool for frax', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -258,15 +258,15 @@ describe("Price calculator matic tests", function () {
     const platformIdx = data[1];
     const lp = data[2];
     const factory = await calculator.swapFactories(platformIdx);
-    console.log("tokenOpposite", await TokenUtils.tokenSymbol(tokenOpposite));
-    console.log("factory", factory);
-    console.log("lp", lp);
+    console.log('tokenOpposite', await TokenUtils.tokenSymbol(tokenOpposite));
+    console.log('factory', factory);
+    console.log('lp', lp);
     expect(tokenOpposite.toLowerCase()).is.eq(
       MaticAddresses.USDC_TOKEN.toLowerCase()
     );
   });
 
-  it("calculate BTCCRV_TOKEN price", async () => {
+  it('calculate BTCCRV_TOKEN price', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -282,11 +282,11 @@ describe("Price calculator matic tests", function () {
     );
     expect(
       expectedTokenPrice === tokenPrice,
-      "BTCCRV_TOKEN token price should be equal WBTC_TOKEN token price"
+      'BTCCRV_TOKEN token price should be equal WBTC_TOKEN token price'
     );
   });
 
-  it("calculate AM3CRV_TOKEN price", async () => {
+  it('calculate AM3CRV_TOKEN price', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -302,11 +302,11 @@ describe("Price calculator matic tests", function () {
     );
     expect(
       expectedTokenPrice === tokenPrice,
-      "AM3CRV_TOKEN token price should be equal USDC_TOKEN token price"
+      'AM3CRV_TOKEN token price should be equal USDC_TOKEN token price'
     );
   });
 
-  it("calculate IRON_USDC_USDT_DAI, price and check", async () => {
+  it('calculate IRON_USDC_USDT_DAI, price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -319,7 +319,7 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(1.01);
   });
 
-  it("calculate FIREBIRD eth-ice, price and check", async () => {
+  it('calculate FIREBIRD eth-ice, price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -332,7 +332,7 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(500);
   });
 
-  it("calculate DFYN usdc-ice, price and check", async () => {
+  it('calculate DFYN usdc-ice, price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -345,7 +345,7 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(9411690);
   });
 
-  it("calculate IRON_IRON_IS3USD, price and check", async () => {
+  it('calculate IRON_IRON_IS3USD, price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -358,13 +358,13 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(1.01);
   });
 
-  it("calculate tetu-swap-wmatic-tetu price and check", async () => {
+  it('calculate tetu-swap-wmatic-tetu price and check', async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(
       calculator,
-      "0xBe527f95815f906625F29fc084bFd783F4d00787",
+      '0xBe527f95815f906625F29fc084bFd783F4d00787',
       MaticAddresses.USDC_TOKEN
     );
     expect(price).is.greaterThan(0.1);

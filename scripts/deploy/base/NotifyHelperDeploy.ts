@@ -1,6 +1,6 @@
-import { DeployerUtils } from "../DeployerUtils";
-import { ethers } from "hardhat";
-import { NotifyHelper } from "../../../typechain";
+import { DeployerUtils } from '../DeployerUtils';
+import { ethers } from 'hardhat';
+import { NotifyHelper } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -8,7 +8,7 @@ async function main() {
 
   const notifyHelper = (await DeployerUtils.deployContract(
     signer,
-    "NotifyHelper",
+    'NotifyHelper',
     core.controller
   )) as NotifyHelper;
 

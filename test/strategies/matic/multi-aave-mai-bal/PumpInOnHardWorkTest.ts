@@ -1,29 +1,29 @@
-import { SpecificStrategyTest } from "../../SpecificStrategyTest";
-import { BigNumber, utils } from "ethers";
-import { TokenUtils } from "../../../TokenUtils";
-import { IStrategy, StrategyAaveMaiBal } from "../../../../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { DeployInfo } from "../../DeployInfo";
-import { MaticAddresses } from "../../../../scripts/addresses/MaticAddresses";
-import { AMBUtils } from "./AMBUtils";
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { BigNumber, utils } from 'ethers';
+import { TokenUtils } from '../../../TokenUtils';
+import { IStrategy, StrategyAaveMaiBal } from '../../../../typechain';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { DeployInfo } from '../../DeployInfo';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { AMBUtils } from './AMBUtils';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
 export class PumpInOnHardWorkTest extends SpecificStrategyTest {
   public async do(deployInfo: DeployInfo): Promise<void> {
-    it("PumpIn on hardwork", async () => {
+    it('PumpIn on hardwork', async () => {
       const signer = deployInfo?.signer as SignerWithAddress;
       const underlying = deployInfo?.underlying as string;
       const strategy = deployInfo?.strategy as IStrategy;
       await AMBUtils.refuelMAI(signer, strategy.address);
 
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
-      console.log(">>>PumpIn on hardwork");
+      console.log('>>>PumpIn on hardwork');
       const strategyGov = strategyAaveMaiBal.connect(signer);
-      const amount = utils.parseUnits("10");
+      const amount = utils.parseUnits('10');
       await TokenUtils.getToken(
         MaticAddresses.WMATIC_TOKEN,
         signer.address,
@@ -40,7 +40,7 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
         await TokenUtils.getToken(underlying, signer.address, amount);
       }
       const bal = await TokenUtils.balanceOf(underlying, signer.address);
-      console.log(">>>bal   ", bal);
+      console.log('>>>bal   ', bal);
       await TokenUtils.transfer(
         underlying,
         signer,
@@ -51,15 +51,15 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
         underlying,
         strategyGov.address
       );
-      console.log(">>>before", before.toString());
+      console.log('>>>before', before.toString());
       await strategyGov.doHardWork();
       const after = await TokenUtils.balanceOf(underlying, strategyGov.address);
-      console.log(">>>after ", after.toString());
+      console.log('>>>after ', after.toString());
 
       expect(before).to.be.equal(bal);
       expect(after).to.be.equal(
         0,
-        "Underlying token should be pumped in on hard work"
+        'Underlying token should be pumped in on hard work'
       );
     });
   }

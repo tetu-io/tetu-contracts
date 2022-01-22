@@ -1,9 +1,9 @@
-import { DoHardWorkLoopBase } from "../../DoHardWorkLoopBase";
-import { DeployerUtils } from "../../../../scripts/deploy/DeployerUtils";
-import { StrategyIronFold, StrategyScreamFold } from "../../../../typechain";
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { Misc } from "../../../../scripts/utils/tools/Misc";
+import { DoHardWorkLoopBase } from '../../DoHardWorkLoopBase';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { StrategyIronFold, StrategyScreamFold } from '../../../../typechain';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { Misc } from '../../../../scripts/utils/tools/Misc';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -14,7 +14,7 @@ export class ScreamDoHardWork extends DoHardWorkLoopBase {
     const start = Date.now();
     const foldContract = (await DeployerUtils.connectInterface(
       this.signer,
-      "StrategyScreamFold",
+      'StrategyScreamFold',
       this.strategy.address
     )) as StrategyScreamFold;
     let folding = await foldContract.fold();
@@ -32,11 +32,11 @@ export class ScreamDoHardWork extends DoHardWorkLoopBase {
     }
 
     console.log(
-      "------ FOLDING",
-      "cycle:" + i,
-      "enabled:" + folding,
-      "profitable:" + (await foldContract.isFoldingProfitable())
+      '------ FOLDING',
+      'cycle:' + i,
+      'enabled:' + folding,
+      'profitable:' + (await foldContract.isFoldingProfitable())
     );
-    Misc.printDuration("Loop preparation completed", start);
+    Misc.printDuration('Loop preparation completed', start);
   }
 }

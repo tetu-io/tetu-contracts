@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { DeployerUtils } from "../DeployerUtils";
-import { TetuSwapRouter } from "../../../typechain";
+import { ethers } from 'hardhat';
+import { DeployerUtils } from '../DeployerUtils';
+import { TetuSwapRouter } from '../../../typechain';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -9,7 +9,7 @@ async function main() {
   const networkToken = await DeployerUtils.getNetworkTokenAddress();
   const contract = (await DeployerUtils.deployContract(
     signer,
-    "TetuSwapRouter",
+    'TetuSwapRouter',
     core.swapFactory,
     networkToken
   )) as TetuSwapRouter;

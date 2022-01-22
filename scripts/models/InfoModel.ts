@@ -1,5 +1,5 @@
-import { VaultInfoModel } from "./VaultInfoModel";
-import { UserInfoModel } from "./UserInfoModel";
+import { VaultInfoModel } from './VaultInfoModel';
+import { UserInfoModel } from './UserInfoModel';
 
 export class InfoModel {
   vault: VaultInfoModel;
