@@ -20,22 +20,22 @@ export class KlimaStakingDoHardWork extends DoHardWorkLoopBase {
     const amount = utils.parseUnits('10000', dec);
 
     const treasury = await DeployerUtils.impersonate(
-      MaticAddresses.KLIMA_TREASURY
+      MaticAddresses.KLIMA_TREASURY,
     );
     const klimaCtr = (await DeployerUtils.connectInterface(
       treasury,
       'RewardToken',
-      MaticAddresses.KLIMA_TOKEN
+      MaticAddresses.KLIMA_TOKEN,
     )) as RewardToken;
     await klimaCtr.mint(MaticAddresses.KLIMA_STAKING, amount);
 
     const klimaStaking = await DeployerUtils.impersonate(
-      MaticAddresses.KLIMA_STAKING
+      MaticAddresses.KLIMA_STAKING,
     );
     const stKlimaCtr = (await DeployerUtils.connectInterface(
       klimaStaking,
       'IstKlima',
-      MaticAddresses.sKLIMA
+      MaticAddresses.sKLIMA,
     )) as IstKlima;
     await stKlimaCtr.rebase(amount, 1);
   }
@@ -45,22 +45,22 @@ export class KlimaStakingDoHardWork extends DoHardWorkLoopBase {
     const amount = utils.parseUnits('10000', dec);
 
     const treasury = await DeployerUtils.impersonate(
-      MaticAddresses.KLIMA_TREASURY
+      MaticAddresses.KLIMA_TREASURY,
     );
     const klimaCtr = (await DeployerUtils.connectInterface(
       treasury,
       'RewardToken',
-      MaticAddresses.KLIMA_TOKEN
+      MaticAddresses.KLIMA_TOKEN,
     )) as RewardToken;
     await klimaCtr.mint(MaticAddresses.KLIMA_STAKING, amount);
 
     const klimaStaking = await DeployerUtils.impersonate(
-      MaticAddresses.KLIMA_STAKING
+      MaticAddresses.KLIMA_STAKING,
     );
     const stKlimaCtr = (await DeployerUtils.connectInterface(
       klimaStaking,
       'IstKlima',
-      MaticAddresses.sKLIMA
+      MaticAddresses.sKLIMA,
     )) as IstKlima;
     await stKlimaCtr.rebase(amount, 1);
 

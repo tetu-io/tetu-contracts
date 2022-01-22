@@ -7,7 +7,7 @@ export class Web3Utils {
     topics: string[],
     start: number,
     end: number,
-    step = 3_000
+    step = 3_000,
   ) {
     const logs = [];
 
@@ -23,7 +23,7 @@ export class Web3Utils {
             toBlock: to,
             address: contracts,
             topics: topics,
-          }))
+          })),
         );
 
         console.log('logs', from, to, logs.length);

@@ -33,15 +33,15 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
       const vault = deployInfo?.vault as SmartVault;
 
       const underlyingUSDPrice = +utils.formatUnits(
-        await PriceCalculatorUtils.getPriceCached(underlying)
+        await PriceCalculatorUtils.getPriceCached(underlying),
       );
       let tetuUSDCPrice = +utils.formatUnits(
-        await PriceCalculatorUtils.getPriceCached(tetu.address)
+        await PriceCalculatorUtils.getPriceCached(tetu.address),
       );
       // in case of new network
       if (tetuUSDCPrice === 0) {
         tetuUSDCPrice = +utils.formatUnits(
-          await calculator.getPriceWithDefaultOutput(tetu.address)
+          await calculator.getPriceWithDefaultOutput(tetu.address),
         );
       }
       console.log('Underlying USD price: ', underlyingUSDPrice);
@@ -67,7 +67,7 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
         undDec,
         investingPeriod,
         bookkeeper,
-        2
+        2,
       );
 
       await TimeUtils.rollback(snapshotFolding);
@@ -83,7 +83,7 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
         undDec,
         investingPeriod,
         bookkeeper,
-        1
+        1,
       );
 
       const lendingUnderlyingProfitUSD =
@@ -109,14 +109,14 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
         'Underlying: ',
         underlyingProfitLending,
         'Tetu: ',
-        tetuProfitLending
+        tetuProfitLending,
       );
       console.log('=========Folding===========');
       console.log(
         'Underlying: ',
         underlyingProfitFolding,
         'Tetu: ',
-        tetuProfitFolding
+        tetuProfitFolding,
       );
       console.log('===========================');
       console.log('Total lending profit: ', totalLendingProfitUSD);
@@ -124,7 +124,7 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
       console.log('Difference: ', difference, '%');
       expect(isFoldingProfitable).is.eq(
         isFoldingProfitableReal,
-        'Folding prediction is not fit real result'
+        'Folding prediction is not fit real result',
       );
     });
   }
@@ -137,16 +137,16 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
     undDec: number,
     investingPeriod: number,
     bookkeeper: Bookkeeper,
-    foldState: number
+    foldState: number,
   ) {
     const tetuEarnedBefore = +utils.formatUnits(
-      await bookkeeper.targetTokenEarned(strategy.address)
+      await bookkeeper.targetTokenEarned(strategy.address),
     );
     await strategy.setFold(foldState);
     await VaultUtils.deposit(user, vault, deposit);
     const undBal = +utils.formatUnits(
       await vault.underlyingBalanceWithInvestment(),
-      undDec
+      undDec,
     );
 
     // * DO HARDWORK***********
@@ -158,7 +158,7 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
       tetuEarnedBefore;
     const undBalAfter = +utils.formatUnits(
       await vault.underlyingBalanceWithInvestment(),
-      undDec
+      undDec,
     );
     return {
       underlyingProfit: undBalAfter - undBal,

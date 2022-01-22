@@ -14,17 +14,17 @@ async function main() {
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
   const utils = (await DeployerUtils.connectContract(
     signer,
     'ContractUtils',
-    tools.utils
+    tools.utils,
   )) as ContractUtils;
 
   const vaults = await bookkeeper.vaults();
@@ -54,12 +54,12 @@ async function main() {
   writeFileSync(
     './tmp/download/assets_names.json',
     JSON.stringify(assetsNames),
-    'utf8'
+    'utf8',
   );
   writeFileSync(
     './tmp/download/vaults_names.json',
     JSON.stringify(vaultsNames),
-    'utf8'
+    'utf8',
   );
   console.log('done');
 }

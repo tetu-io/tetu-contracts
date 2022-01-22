@@ -9,7 +9,7 @@ async function main() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'ICafeMasterChef',
-    MaticAddresses.CAFE_MASTERCHEF
+    MaticAddresses.CAFE_MASTERCHEF,
   )) as ICafeMasterChef;
 
   await McLpDownloader.download(
@@ -30,7 +30,7 @@ async function main() {
         };
       });
     },
-    true
+    true,
   );
 }
 

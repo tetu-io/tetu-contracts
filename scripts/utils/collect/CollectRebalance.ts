@@ -31,12 +31,12 @@ async function main() {
 
   const strategy = await SmartVault__factory.connect(
     '0xf203b855b4303985b3dd3f35a9227828cc8cb009',
-    signer
+    signer,
   ).strategy();
   console.log('strategy', strategy);
   const pipe = await AaveMaiBalStrategyBase__factory.connect(
     strategy,
-    signer
+    signer,
   ).pipes(2);
   console.log('pipe', pipe);
   // MaiStablecoinPipe__factory.connect(pipe, signer);
@@ -45,7 +45,7 @@ async function main() {
     [pipe],
     [EVENT_REBALANCE],
     START_BLOCK,
-    currentBlock
+    currentBlock,
   );
 
   console.log('logs', logs.length);
@@ -69,7 +69,7 @@ async function collectPs(
   psAdr: string,
   vaults: string[],
   signer: SignerWithAddress,
-  utilsAdr: string
+  utilsAdr: string,
 ): Promise<string> {
   let data = '';
   const exclude = new Set<string>(vaults);
@@ -77,12 +77,12 @@ async function collectPs(
   const contractUtils = (await DeployerUtils.connectInterface(
     signer,
     'ContractUtils',
-    utilsAdr
+    utilsAdr,
   )) as ContractUtils;
   const psContr = (await DeployerUtils.connectInterface(
     signer,
     'SmartVault',
-    psAdr
+    psAdr,
   )) as SmartVault;
 
   const ppfs = +utils.formatUnits(await psContr.getPricePerFullShare());
@@ -110,7 +110,7 @@ async function collectPs(
   for (const _batch of usersBatches) {
     const balances = await contractUtils.erc20BalancesForAddresses(
       psAdr,
-      _batch
+      _batch,
     );
 
     for (let j = 0; j < balances.length; j++) {

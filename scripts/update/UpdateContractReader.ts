@@ -7,7 +7,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'ContractReader'
+    'ContractReader',
   )) as ContractReader;
 
   await DeployerUtils.wait(5);

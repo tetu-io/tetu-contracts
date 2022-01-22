@@ -10,7 +10,7 @@ async function main() {
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'TetuSwapFactory',
-    coreAdrs.swapFactory
+    coreAdrs.swapFactory,
   )) as TetuSwapFactory;
 
   let txt = '';

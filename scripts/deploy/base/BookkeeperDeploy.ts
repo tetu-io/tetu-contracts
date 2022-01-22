@@ -10,7 +10,7 @@ async function main() {
   const proxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    logic.address
+    logic.address,
   );
   const bookkeeper = logic.attach(proxy.address) as Bookkeeper;
   await bookkeeper.initialize(core.controller);
@@ -18,7 +18,7 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   await controller.setBookkeeper(bookkeeper.address);
 

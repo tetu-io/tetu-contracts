@@ -39,7 +39,7 @@ async function main() {
     if (vaultBatch.length === batch || i === vaultsForStop.length) {
       try {
         await RunHelper.runAndWait(() =>
-          announcer.announceVaultStopBatch(vaultBatch)
+          announcer.announceVaultStopBatch(vaultBatch),
         );
       } catch (e) {
         console.log('ann', e);
@@ -57,7 +57,7 @@ async function main() {
       console.log('vaultBatch', i, vaultBatch);
       try {
         await RunHelper.runAndWait(() =>
-          core.vaultController.stopVaultsBatch(vaultBatch)
+          core.vaultController.stopVaultsBatch(vaultBatch),
         );
       } catch (e) {
         console.log('stop', e);

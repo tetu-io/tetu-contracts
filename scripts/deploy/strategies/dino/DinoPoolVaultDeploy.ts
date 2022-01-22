@@ -15,7 +15,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -40,13 +40,13 @@ async function main() {
           'StrategyDinoPool',
           core.controller,
           vaultAddress,
-          MaticAddresses.DINO_TOKEN
+          MaticAddresses.DINO_TOKEN,
         ) as Promise<IStrategy>,
       core.controller,
       core.psVault,
       signer,
       60 * 60 * 24 * 28,
-      true
+      true,
     );
 
   await DeployerUtils.wait(5);
@@ -56,7 +56,7 @@ async function main() {
   await DeployerUtils.verifyWithContractName(
     strategy.address,
     'contracts/strategies/matic/dino/StrategyDinoPool.sol:StrategyDinoPool',
-    [core.controller, vault.address, MaticAddresses.DINO_TOKEN]
+    [core.controller, vault.address, MaticAddresses.DINO_TOKEN],
   );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;

@@ -12,7 +12,7 @@ export class AMBPipeDeployer {
   public static async deployAaveAmPipe(
     signer: SignerWithAddress,
     underlying: string,
-    amToken: string
+    amToken: string,
   ): Promise<[AaveAmPipe, string[]]> {
     const args: string[] = [
       MaticAddresses.AAVE_LENDING_POOL,
@@ -24,7 +24,7 @@ export class AMBPipeDeployer {
       (await DeployerUtils.deployContract(
         signer,
         'AaveAmPipe',
-        args
+        args,
       )) as AaveAmPipe,
       args,
     ];
@@ -33,14 +33,14 @@ export class AMBPipeDeployer {
   public static async deployMaiCamPipe(
     signer: SignerWithAddress,
     amToken: string,
-    camToken: string
+    camToken: string,
   ): Promise<[MaiCamPipe, string[]]> {
     const args: string[] = [amToken, camToken, MaticAddresses.QI_TOKEN];
     return [
       (await DeployerUtils.deployContract(
         signer,
         'MaiCamPipe',
-        args
+        args,
       )) as MaiCamPipe,
       args,
     ];
@@ -56,7 +56,7 @@ export class AMBPipeDeployer {
     stablecoin: string,
     amToken: string,
     targetPercentage: string,
-    collateralNumerator: string
+    collateralNumerator: string,
   ): Promise<[MaiStablecoinPipe, string[]]> {
     const args: string[] = [
       camToken,
@@ -71,14 +71,14 @@ export class AMBPipeDeployer {
       (await DeployerUtils.deployContract(
         signer,
         'MaiStablecoinPipe',
-        args
+        args,
       )) as MaiStablecoinPipe,
       args,
     ];
   }
 
   public static async deployBalVaultPipe(
-    signer: SignerWithAddress
+    signer: SignerWithAddress,
   ): Promise<[BalVaultPipe, string[]]> {
     const args: string[] = [
       MaticAddresses.miMATIC_TOKEN,
@@ -92,7 +92,7 @@ export class AMBPipeDeployer {
       (await DeployerUtils.deployContract(
         signer,
         'BalVaultPipe',
-        args
+        args,
       )) as BalVaultPipe,
       args,
     ];

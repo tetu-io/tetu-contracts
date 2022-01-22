@@ -27,15 +27,15 @@ describe('Contract utils tests', function () {
     signer = (await ethers.getSigners())[0];
     util = (await DeployerUtils.deployContract(
       signer,
-      'ContractUtils'
+      'ContractUtils',
     )) as ContractUtils;
     addressWithUsdc = (await DeployerUtils.deployContract(
       signer,
-      'ContractUtils'
+      'ContractUtils',
     )) as ContractUtils;
     addressWithoutUsdc = (await DeployerUtils.deployContract(
       signer,
-      'ContractUtils'
+      'ContractUtils',
     )) as ContractUtils;
     addresses.push(addressWithUsdc.address);
     addresses.push(addressWithoutUsdc.address);
@@ -44,7 +44,7 @@ describe('Contract utils tests', function () {
     await TokenUtils.getToken(
       ercTokens[0],
       signer.address,
-      utils.parseUnits('1000', 6)
+      utils.parseUnits('1000', 6),
     );
     await TokenUtils.transfer(ercTokens[0], signer, addresses[0], '1000000000');
   });
@@ -75,13 +75,13 @@ describe('Contract utils tests', function () {
 
   it('balances_for_addresses_not_0', async () => {
     expect(
-      (await util.erc20BalancesForAddresses(ercTokens[0], addresses))[0]
+      (await util.erc20BalancesForAddresses(ercTokens[0], addresses))[0],
     ).is.not.eq(0);
   });
 
   it('balances_for_addresses_is_0', async () => {
     expect(
-      (await util.erc20BalancesForAddresses(ercTokens[0], addresses))[1]
+      (await util.erc20BalancesForAddresses(ercTokens[0], addresses))[1],
     ).is.eq(0);
   });
 });

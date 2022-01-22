@@ -11,7 +11,7 @@ export class MaticToolsAddresses {
     '0xFAce0FF59Cb97c1Bca061e78c8F73095B6590d16', // multiSwap
     '0xb907b3F16D46Eb7Ce974696AB09c723408883eDB', // zapContract
     '0x9e059EdB32FC27430CfC8c9025a55B7C0FcFAbda', // multicall
-    '0x48aD115540a0f9E128Ee62dF5Ce519451ba5F6E0' // pawnshopReader
+    '0x48aD115540a0f9E128Ee62dF5Ce519451ba5F6E0', // pawnshopReader
   );
 
   // tetu bridge 0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c

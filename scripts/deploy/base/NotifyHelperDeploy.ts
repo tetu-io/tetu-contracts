@@ -9,7 +9,7 @@ async function main() {
   const notifyHelper = (await DeployerUtils.deployContract(
     signer,
     'NotifyHelper',
-    core.controller
+    core.controller,
   )) as NotifyHelper;
 
   await DeployerUtils.wait(5);

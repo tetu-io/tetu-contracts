@@ -8,12 +8,12 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'VaultController'
+    'VaultController',
   )) as VaultController;
   const proxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    logic.address
+    logic.address,
   );
   const vaultController = logic.attach(proxy.address) as VaultController;
   await vaultController.initialize(core.controller);
@@ -22,7 +22,7 @@ async function main() {
     const controller = (await DeployerUtils.connectContract(
       signer,
       'Controller',
-      core.controller
+      core.controller,
     )) as Controller;
     await controller.setVaultController(vaultController.address);
   }

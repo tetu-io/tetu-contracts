@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 async function main() {
   const infos = readFileSync(
     'scripts/utils/download/data/dino_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   for (const info of infos) {
@@ -31,7 +31,7 @@ async function main() {
       +idx,
       'DINO_V2',
       'StrategyDinoSwapV2LpAc',
-      'contracts/strategies/matic/dino/StrategyDinoSwapV2LpAc.sol:StrategyDinoSwapV2LpAc'
+      'contracts/strategies/matic/dino/StrategyDinoSwapV2LpAc.sol:StrategyDinoSwapV2LpAc',
     );
   }
 }

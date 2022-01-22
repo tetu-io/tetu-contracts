@@ -25,12 +25,12 @@ async function main() {
   const controller = (await DeployerUtils.connectInterface(
     signer,
     'IronControllerInterface',
-    MaticAddresses.IRON_CONTROLLER
+    MaticAddresses.IRON_CONTROLLER,
   )) as IronControllerInterface;
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
     'PriceCalculator',
-    tools.calculator
+    tools.calculator,
   )) as PriceCalculator;
 
   const markets = await controller.getAllMarkets();
@@ -50,11 +50,11 @@ async function main() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       currentRewards.set(
         vInfo.underlying.toLowerCase(),
-        await VaultUtils.vaultRewardsAmount(vctr, core.psVault)
+        await VaultUtils.vaultRewardsAmount(vctr, core.psVault),
       );
     }
   }
@@ -62,7 +62,7 @@ async function main() {
   console.log('loaded vault', underlyingStatuses.size);
 
   const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(
-    MaticAddresses.ICE_TOKEN
+    MaticAddresses.ICE_TOKEN,
   );
   console.log('reward price', utils.formatUnits(rewardPrice));
 
@@ -82,12 +82,12 @@ async function main() {
     const rTokenCtr = (await DeployerUtils.connectInterface(
       signer,
       'RTokenInterface',
-      rTokenAdr
+      rTokenAdr,
     )) as RTokenInterface;
     const rTokenCtr2 = (await DeployerUtils.connectInterface(
       signer,
       'RErc20Storage',
-      rTokenAdr
+      rTokenAdr,
     )) as RErc20Storage;
     let token: string;
     if (i === 2) {
@@ -100,7 +100,7 @@ async function main() {
 
     const collateralFactor =
       +utils.formatUnits(
-        (await controller.markets(rTokenAdr)).collateralFactorMantissa
+        (await controller.markets(rTokenAdr)).collateralFactorMantissa,
       ) * 10000;
     const borrowTarget = Math.floor(collateralFactor * 0.99);
 
@@ -110,7 +110,7 @@ async function main() {
       continue;
     }
     const undPrice = +utils.formatUnits(
-      await priceCalculator.getPriceWithDefaultOutput(token)
+      await priceCalculator.getPriceWithDefaultOutput(token),
     );
 
     const undDec = await TokenUtils.decimals(token);
@@ -118,7 +118,7 @@ async function main() {
     const borrowed = +utils.formatUnits(await rTokenCtr.totalBorrows(), undDec);
     const reserves = +utils.formatUnits(
       await rTokenCtr.totalReserves(),
-      undDec
+      undDec,
     );
 
     const tvl = (cash + borrowed - reserves) * undPrice;
@@ -172,7 +172,7 @@ main()
 async function collectTokensInfo(
   signer: SignerWithAddress,
   lp: string,
-  id: number
+  id: number,
 ): Promise<string[]> {
   if (id === 0 || id === 3) {
     return collectTokensInfoIronSwap(signer, lp);
@@ -183,31 +183,31 @@ async function collectTokensInfo(
 
 async function collectTokensInfoIronSwap(
   signer: SignerWithAddress,
-  lp: string
+  lp: string,
 ): Promise<string[]> {
   const lpContract = (await DeployerUtils.connectInterface(
     signer,
     'IIronLpToken',
-    lp
+    lp,
   )) as IIronLpToken;
   const swapAddress = await lpContract.swap();
   const swapContract = (await DeployerUtils.connectInterface(
     signer,
     'IIronSwap',
-    swapAddress
+    swapAddress,
   )) as IIronSwap;
   return swapContract.getTokens();
 }
 
 async function collectTokensInfoUniswap(
   signer: SignerWithAddress,
-  lp: string
+  lp: string,
 ): Promise<string[]> {
   try {
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Pair',
-      lp
+      lp,
     )) as IUniswapV2Pair;
     const tokens = [];
 
@@ -226,7 +226,7 @@ function computeWeekReward(
   sushiPerSecond: BigNumber,
   allocPoint: BigNumber,
   totalAllocPoint: BigNumber,
-  sushiPrice: BigNumber
+  sushiPrice: BigNumber,
 ): number {
   const sushiReward = BigNumber.from(time)
     .mul(sushiPerSecond)

@@ -52,7 +52,7 @@ describe('Klima staking tests', async () => {
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -69,7 +69,7 @@ describe('Klima staking tests', async () => {
       [
         '0x9803c7aE526049210a1725F7487AF26fE2c24614',
         '0x1E67124681b402064CD0ABE8ed1B5c79D2e02f64',
-      ]
+      ],
     );
   };
   // only for strategies where we expect PPFS fluctuations
@@ -102,10 +102,10 @@ describe('Klima staking tests', async () => {
         return DeployerUtils.deployContract(
           signer,
           strategyContractName,
-          ...strategyArgs
+          ...strategyArgs,
         ) as Promise<IStrategy>;
       },
-      underlying
+      underlying,
     );
   };
   const hwInitiator = (
@@ -116,7 +116,7 @@ describe('Klima staking tests', async () => {
     _underlying: string,
     _vault: SmartVault,
     _strategy: IStrategy,
-    _balanceTolerance: number
+    _balanceTolerance: number,
   ) => {
     return new KlimaStakingDoHardWork(
       _signer,
@@ -127,7 +127,7 @@ describe('Klima staking tests', async () => {
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
   };
 
@@ -143,6 +143,6 @@ describe('Klima staking tests', async () => {
     loops,
     loopValue,
     advanceBlocks,
-    specificTests
+    specificTests,
   );
 });

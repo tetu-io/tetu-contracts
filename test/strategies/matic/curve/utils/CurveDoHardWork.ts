@@ -14,7 +14,7 @@ export class CurveDoHardWork extends DoHardWorkLoopBase {
       (
         await ethers.getSigners()
       )[3],
-      this.underlying
+      this.underlying,
     );
   }
 }

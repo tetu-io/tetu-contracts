@@ -19,7 +19,7 @@ async function main() {
   await RunHelper.runAndWait(() => core.controller.addHardWorker(hw4));
 
   await RunHelper.runAndWait(() =>
-    core.controller.setRewardDistribution([deployer, hw1, hw2, hw3, hw4], true)
+    core.controller.setRewardDistribution([deployer, hw1, hw2, hw3, hw4], true),
   );
 }
 

@@ -13,7 +13,7 @@ async function main() {
     const proxy = (await DeployerUtils.connectContract(
       signer,
       'TetuProxyGov',
-      tools.calculator
+      tools.calculator,
     )) as TetuProxyGov;
     await proxy.upgrade(logic.address);
   }

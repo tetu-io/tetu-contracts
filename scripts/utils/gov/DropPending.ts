@@ -14,7 +14,7 @@ const MATIC_CHAIN = Common.forCustomChain(
     networkId: 137,
     chainId: 137,
   },
-  'petersburg'
+  'petersburg',
 );
 
 dotEnvConfig();
@@ -41,7 +41,7 @@ async function main() {
     console.log('nonce', nonce.toString());
     const nonce1 = await web3.eth.getTransactionCount(
       signer.address,
-      'pending'
+      'pending',
     );
     console.log('pending nonce', nonce1.toString());
     if (nonce1 === nonce) {
@@ -57,11 +57,11 @@ async function main() {
         to: signer.address,
         // data: result.input,
         gasPrice: web3.utils.numberToHex(
-          utils.parseUnits(1000 + '', 9).toString()
+          utils.parseUnits(1000 + '', 9).toString(),
         ),
         gasLimit: web3.utils.numberToHex(1_000_000),
       },
-      { common: chain }
+      { common: chain },
     );
 
     tx.sign(Buffer.from(argv.speedUpPrivateKey, 'hex'));

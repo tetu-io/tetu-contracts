@@ -30,7 +30,7 @@ export class StrategyTestUtils {
     vaultName: string,
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     underlying: string,
-    depositFee = 0
+    depositFee = 0,
   ): Promise<[SmartVault, IStrategy, string]> {
     const start = Date.now();
     log.info('Starting deploy');
@@ -42,7 +42,7 @@ export class StrategyTestUtils {
       core.psVault.address,
       signer,
       60 * 60 * 24 * 28,
-      depositFee
+      depositFee,
     );
     log.info('Vault deployed');
     const vault = data[1] as SmartVault;
@@ -51,21 +51,21 @@ export class StrategyTestUtils {
     const rewardTokenLp = await UniswapUtils.createTetuUsdc(
       signer,
       core,
-      '1000000'
+      '1000000',
     );
     log.info('LP created');
 
     await core.feeRewardForwarder.addLargestLps(
       [core.rewardToken.address],
-      [rewardTokenLp]
+      [rewardTokenLp],
     );
     log.info('Path setup completed');
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(
-      underlying.toLowerCase()
+      underlying.toLowerCase(),
     );
     expect((await vault.underlying()).toLowerCase()).is.eq(
-      underlying.toLowerCase()
+      underlying.toLowerCase(),
     );
 
     Misc.printDuration('Vault and strategy deployed and initialized', start);
@@ -74,7 +74,7 @@ export class StrategyTestUtils {
 
   public static async checkStrategyRewardsBalance(
     strategy: IStrategy,
-    balances: string[]
+    balances: string[],
   ) {
     const tokens = await strategy.rewardTokens();
     const bbRatio = await strategy.buyBackRatio();
@@ -87,12 +87,12 @@ export class StrategyTestUtils {
       expect(
         +utils.formatUnits(
           await TokenUtils.balanceOf(tokens[i], strategy.address),
-          rtDec
-        )
+          rtDec,
+        ),
       ).is.approximately(
         +expected,
         0.0000000001,
-        'strategy has wrong reward balance for ' + i
+        'strategy has wrong reward balance for ' + i,
       );
     }
   }
@@ -101,14 +101,14 @@ export class StrategyTestUtils {
     user: SignerWithAddress,
     vault: SmartVault,
     underlying: string,
-    deposit: string
+    deposit: string,
   ) {
     const dec = await TokenUtils.decimals(underlying);
     const bal = await TokenUtils.balanceOf(underlying, user.address);
     log.info('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec)).is.greaterThanOrEqual(
       +utils.formatUnits(deposit, dec),
-      'not enough balance'
+      'not enough balance',
     );
     const vaultForUser = vault.connect(user);
     await TokenUtils.approve(underlying, user, vault.address, deposit);
@@ -117,7 +117,7 @@ export class StrategyTestUtils {
   }
 
   public static async saveStrategyRtBalances(
-    strategy: IStrategy
+    strategy: IStrategy,
   ): Promise<BigNumber[]> {
     const rts = await strategy.rewardTokens();
     const balances: BigNumber[] = [];
@@ -130,7 +130,7 @@ export class StrategyTestUtils {
   public static async commonTests(strategy: IStrategy, underlying: string) {
     expect(await strategy.unsalvageableTokens(underlying)).is.eq(true);
     expect(
-      await strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)
+      await strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS),
     ).is.eq(false);
     expect(await strategy.buyBackRatio()).is.not.eq('0');
     expect(await strategy.platform()).is.not.eq(0);
@@ -147,8 +147,8 @@ export class StrategyTestUtils {
     await forwarder.setLiquidityNumerator(30);
     await forwarder.setLiquidityRouter(
       await DeployerUtils.getRouterByFactory(
-        await DeployerUtils.getDefaultNetworkFactory()
-      )
+        await DeployerUtils.getDefaultNetworkFactory(),
+      ),
     );
     await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);
@@ -157,7 +157,7 @@ export class StrategyTestUtils {
   public static async setConversionPaths(forwarder: ForwarderV2) {
     const net = (await ethers.provider.getNetwork()).chainId;
     const bc: string[] = JSON.parse(
-      readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8')
+      readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8'),
     );
 
     const batch = 20;
@@ -168,10 +168,10 @@ export class StrategyTestUtils {
     }
 
     const tokens: string[] = JSON.parse(
-      readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8')
+      readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8'),
     );
     const lps: string[] = JSON.parse(
-      readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8')
+      readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8'),
     );
     for (let i = 0; i < tokens.length / batch; i++) {
       const t = tokens.slice(i * batch, i * batch + batch);
@@ -185,7 +185,7 @@ export class StrategyTestUtils {
 
   public static async deployCoreAndInit(
     deployInfo: DeployInfo,
-    deploy: boolean
+    deploy: boolean,
   ) {
     const start = Date.now();
     const signer = await DeployerUtils.impersonate();
@@ -204,7 +204,7 @@ export class StrategyTestUtils {
     amountN: number,
     signer: SignerWithAddress,
     calculator: PriceCalculator,
-    recipients: string[]
+    recipients: string[],
   ) {
     log.info('get underlying', amountN, recipients.length, underlying);
     const start = Date.now();
@@ -217,7 +217,7 @@ export class StrategyTestUtils {
     const amountAdjustedN = amountN / uPriceN;
     const amountAdjusted = utils.parseUnits(
       amountAdjustedN.toFixed(uDec),
-      uDec
+      uDec,
     );
     log.info('Get underlying: ', uName, amountAdjustedN);
 
@@ -230,7 +230,7 @@ export class StrategyTestUtils {
         (await DeployerUtils.connectInterface(
           signer,
           'IUniswapV2Pair',
-          underlying
+          underlying,
         )) as IUniswapV2Pair
       ).getReserves();
       isLp = true;
@@ -243,7 +243,7 @@ export class StrategyTestUtils {
         signer,
         underlying,
         amountN,
-        calculator
+        calculator,
       );
       balance = await TokenUtils.balanceOf(underlying, signer.address);
     } else {
@@ -255,7 +255,7 @@ export class StrategyTestUtils {
         underlying,
         signer,
         recipient,
-        balance.div(recipients.length + 1).toString()
+        balance.div(recipients.length + 1).toString(),
       );
     }
     const finalBal = await TokenUtils.balanceOf(underlying, signer.address);

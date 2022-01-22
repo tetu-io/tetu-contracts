@@ -30,7 +30,7 @@ export class CoreAddresses {
     swapFactory: string,
     swapRouter: string,
     rewardCalculator: string,
-    autoRewarder: string
+    autoRewarder: string,
   ) {
     this.controller = controller;
     this.announcer = announcer;

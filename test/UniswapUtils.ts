@@ -26,11 +26,11 @@ export class UniswapUtils {
     signer: SignerWithAddress,
     path: string[],
     amount: string,
-    routerAddress: string
+    routerAddress: string,
   ) {
     const router = await UniswapUtils.connectRouter(routerAddress, signer);
     const networkCoinAmount = (await signer.getBalance()).sub(
-      utils.parseEther('0.1')
+      utils.parseEther('0.1'),
     );
     console.log('networkCoinAmount', utils.formatUnits(networkCoinAmount));
     await router.swapETHForExactTokens(
@@ -38,7 +38,7 @@ export class UniswapUtils {
       path,
       signer.address,
       UniswapUtils.deadline,
-      { value: networkCoinAmount }
+      { value: networkCoinAmount },
     );
   }
 
@@ -47,13 +47,13 @@ export class UniswapUtils {
     _route: string[],
     amountToSell: string,
     _to: string,
-    _router: string
+    _router: string,
   ) {
     const bal = await TokenUtils.balanceOf(_route[0], sender.address);
     const decimals = await TokenUtils.decimals(_route[0]);
     expect(+utils.formatUnits(bal, decimals)).is.greaterThanOrEqual(
       +utils.formatUnits(amountToSell, decimals),
-      'Not enough ' + (await TokenUtils.tokenSymbol(_route[0]))
+      'Not enough ' + (await TokenUtils.tokenSymbol(_route[0])),
     );
 
     if (_router.toLowerCase() === MaticAddresses.FIREBIRD_ROUTER) {
@@ -62,14 +62,14 @@ export class UniswapUtils {
       const router = (await ethers.getContractAt(
         'IFireBirdRouter',
         _router,
-        sender
+        sender,
       )) as IFireBirdRouter;
       await TokenUtils.approve(_route[0], sender, router.address, amountToSell);
 
       const fbFac = (await DeployerUtils.connectInterface(
         sender,
         'IFireBirdFactory',
-        MaticAddresses.FIREBIRD_FACTORY
+        MaticAddresses.FIREBIRD_FACTORY,
       )) as IFireBirdFactory;
       const fbPair = await fbFac.getPair(_route[0], _route[1], 50, 20);
       return router.swapExactTokensForTokens(
@@ -79,7 +79,7 @@ export class UniswapUtils {
         BigNumber.from('0'),
         [fbPair],
         _to,
-        UniswapUtils.deadline
+        UniswapUtils.deadline,
       );
     } else {
       const router = await UniswapUtils.connectRouter(_router, sender);
@@ -89,7 +89,7 @@ export class UniswapUtils {
         BigNumber.from('0'),
         _route,
         _to,
-        UniswapUtils.deadline
+        UniswapUtils.deadline,
       );
     }
   }
@@ -102,7 +102,7 @@ export class UniswapUtils {
     amountB: string,
     _factory: string,
     _router: string,
-    wait = false
+    wait = false,
   ): Promise<string> {
     const start = Date.now();
     const t0Dec = await TokenUtils.decimals(tokenA);
@@ -114,22 +114,22 @@ export class UniswapUtils {
 
     expect(+utils.formatUnits(bal0, t0Dec)).is.greaterThanOrEqual(
       +utils.formatUnits(amountA, t0Dec),
-      'not enough bal for token A ' + name0
+      'not enough bal for token A ' + name0,
     );
     expect(+utils.formatUnits(bal1, t1Dec)).is.greaterThanOrEqual(
       +utils.formatUnits(amountB, t1Dec),
-      'not enough bal for token B ' + name1
+      'not enough bal for token B ' + name1,
     );
 
     await RunHelper.runAndWait(
       async () => TokenUtils.approve(tokenA, sender, _router, amountA),
       true,
-      wait
+      wait,
     );
     await RunHelper.runAndWait(
       async () => TokenUtils.approve(tokenB, sender, _router, amountB),
       true,
-      wait
+      wait,
     );
 
     if (
@@ -139,12 +139,12 @@ export class UniswapUtils {
         sender,
         tokenA,
         tokenB,
-        _factory
+        _factory,
       );
       const router = (await DeployerUtils.connectInterface(
         sender,
         'IFireBirdRouter',
-        _router
+        _router,
       )) as IFireBirdRouter;
       await RunHelper.runAndWait(
         () =>
@@ -157,10 +157,10 @@ export class UniswapUtils {
             1,
             1,
             sender.address,
-            UniswapUtils.deadline
+            UniswapUtils.deadline,
           ),
         true,
-        wait
+        wait,
       );
     } else {
       const router = await UniswapUtils.connectRouter(_router, sender);
@@ -174,10 +174,10 @@ export class UniswapUtils {
             1,
             1,
             sender.address,
-            UniswapUtils.deadline
+            UniswapUtils.deadline,
           ),
         true,
-        wait
+        wait,
       );
     }
 
@@ -186,7 +186,7 @@ export class UniswapUtils {
       sender,
       tokenA,
       tokenB,
-      factory.address
+      factory.address,
     );
     Misc.printDuration('addLiquidity completed', start);
     return pairAdr;
@@ -199,12 +199,12 @@ export class UniswapUtils {
     tokenB: string,
     lpTokenAmount: string,
     _router: string,
-    wait = false
+    wait = false,
   ) {
     await RunHelper.runAndWait(
       async () => TokenUtils.approve(lpToken, sender, _router, lpTokenAmount),
       true,
-      wait
+      wait,
     );
 
     const router = await UniswapUtils.connectRouter(_router, sender);
@@ -217,50 +217,50 @@ export class UniswapUtils {
           1,
           1,
           sender.address,
-          UniswapUtils.deadline
+          UniswapUtils.deadline,
         ),
       true,
-      wait
+      wait,
     );
   }
 
   public static async connectRouter(
     router: string,
-    signer: SignerWithAddress
+    signer: SignerWithAddress,
   ): Promise<IUniswapV2Router02> {
     return (await ethers.getContractAt(
       'IUniswapV2Router02',
       router,
-      signer
+      signer,
     )) as IUniswapV2Router02;
   }
 
   public static async connectFactory(
     factory: string,
-    signer: SignerWithAddress
+    signer: SignerWithAddress,
   ): Promise<IUniswapV2Factory> {
     return (await ethers.getContractAt(
       'IUniswapV2Factory',
       factory,
-      signer
+      signer,
     )) as IUniswapV2Factory;
   }
 
   public static async connectLpContract(
     adr: string,
-    signer: SignerWithAddress
+    signer: SignerWithAddress,
   ): Promise<IUniswapV2Pair> {
     return (await ethers.getContractAt(
       'IUniswapV2Pair',
       adr,
-      signer
+      signer,
     )) as IUniswapV2Pair;
   }
 
   public static async getLpInfo(
     adr: string,
     signer: SignerWithAddress,
-    targetToken: string
+    targetToken: string,
   ): Promise<[number, string, number, number]> {
     const lp = await UniswapUtils.connectLpContract(adr, signer);
     const token0 = await lp.token0();
@@ -290,13 +290,13 @@ export class UniswapUtils {
   public static async createPairForRewardToken(
     signer: SignerWithAddress,
     core: CoreContractsWrapper,
-    amount: string
+    amount: string,
   ) {
     const usdc = await DeployerUtils.getUSDCAddress();
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits(amount, 6)
+      utils.parseUnits(amount, 6),
     );
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -308,20 +308,20 @@ export class UniswapUtils {
       await TokenUtils.getToken(
         core.rewardToken.address,
         signer.address,
-        utils.parseUnits(amount)
+        utils.parseUnits(amount),
       );
     } else {
       await MintHelperUtils.mint(
         core.controller,
         core.announcer,
         (+amount * 2).toString(),
-        signer.address
+        signer.address,
       );
     }
 
     const tokenBal = await TokenUtils.balanceOf(
       rewardTokenAddress,
-      signer.address
+      signer.address,
     );
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
@@ -334,11 +334,11 @@ export class UniswapUtils {
       utils.parseUnits(amount, 18).toString(),
       utils.parseUnits(amount, 6).toString(),
       factory,
-      await DeployerUtils.getRouterByFactory(factory)
+      await DeployerUtils.getRouterByFactory(factory),
     );
     await core.feeRewardForwarder.addLargestLps(
       [core.rewardToken.address],
-      [lp]
+      [lp],
     );
     return lp;
   }
@@ -346,13 +346,13 @@ export class UniswapUtils {
   public static async createPairForRewardTokenWithBuy(
     signer: SignerWithAddress,
     core: CoreContractsWrapper,
-    amount: string
+    amount: string,
   ) {
     const usdc = await DeployerUtils.getUSDCAddress();
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits(amount, 6)
+      utils.parseUnits(amount, 6),
     );
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -364,12 +364,12 @@ export class UniswapUtils {
       core.controller,
       core.announcer,
       amount,
-      signer.address
+      signer.address,
     );
 
     const tokenBal = await TokenUtils.balanceOf(
       rewardTokenAddress,
-      signer.address
+      signer.address,
     );
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
@@ -382,15 +382,15 @@ export class UniswapUtils {
       utils.parseUnits(amount, 6).toString(),
       await DeployerUtils.getDefaultNetworkFactory(),
       await DeployerUtils.getRouterByFactory(
-        await DeployerUtils.getDefaultNetworkFactory()
-      )
+        await DeployerUtils.getDefaultNetworkFactory(),
+      ),
     );
   }
 
   public static async createTetuUsdc(
     signer: SignerWithAddress,
     core: CoreContractsWrapper,
-    amount: string
+    amount: string,
   ) {
     const start = Date.now();
     const usdc = await DeployerUtils.getUSDCAddress();
@@ -398,7 +398,7 @@ export class UniswapUtils {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits(amount, 6)
+      utils.parseUnits(amount, 6),
     );
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
     console.log('USDC bought', usdcBal.toString());
@@ -411,7 +411,7 @@ export class UniswapUtils {
         core.controller,
         core.announcer,
         amount,
-        signer.address
+        signer.address,
       );
     }
 
@@ -427,8 +427,8 @@ export class UniswapUtils {
       utils.parseUnits(amount, 6).toString(),
       await DeployerUtils.getDefaultNetworkFactory(),
       await DeployerUtils.getRouterByFactory(
-        await DeployerUtils.getDefaultNetworkFactory()
-      )
+        await DeployerUtils.getDefaultNetworkFactory(),
+      ),
     );
     Misc.printDuration('createTetuUsdc completed', start);
     return result;
@@ -440,7 +440,7 @@ export class UniswapUtils {
     token: string,
     amountForSell: BigNumber,
     oppositeToken: string | null = null,
-    wait = false
+    wait = false,
   ) {
     await TokenUtils.getToken(token, signer.address);
     // const dec = await TokenUtils.decimals(token);
@@ -471,14 +471,14 @@ export class UniswapUtils {
     signer: SignerWithAddress,
     lp: string,
     usdAmountN: number,
-    calculator: PriceCalculator
+    calculator: PriceCalculator,
   ) {
     console.log('UniswapUtils: buyTokensAndAddLiq');
     const start = Date.now();
     const lpCtr = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Pair',
-      lp
+      lp,
     )) as IUniswapV2Pair;
     const token0 = await lpCtr.token0();
     const token1 = await lpCtr.token1();
@@ -495,12 +495,12 @@ export class UniswapUtils {
     const token0AmountN = usdAmountN / 2 / token0PriceN;
     const token0Amount = utils.parseUnits(
       token0AmountN.toFixed(token0Und),
-      token0Und
+      token0Und,
     );
     const token1AmountN = usdAmountN / 2 / token1PriceN;
     const token1Amount = utils.parseUnits(
       token1AmountN.toFixed(token1Und),
-      token1Und
+      token1Und,
     );
 
     await TokenUtils.getToken(token0, signer.address, token0Amount);
@@ -514,7 +514,7 @@ export class UniswapUtils {
       token1Amount.toString(),
       factory,
       router,
-      false
+      false,
     );
     Misc.printDuration('UniswapUtils: buyTokensAndAddLiq finished', start);
   }
@@ -522,7 +522,7 @@ export class UniswapUtils {
   public static async wrapNetworkToken(signer: SignerWithAddress) {
     await TokenUtils.wrapNetworkToken(
       signer,
-      utils.formatUnits(utils.parseUnits('10000000'))
+      utils.formatUnits(utils.parseUnits('10000000')),
     ); // 10m wmatic
   }
 
@@ -530,7 +530,7 @@ export class UniswapUtils {
     signer: SignerWithAddress,
     token0: string,
     token1: string,
-    factory: string
+    factory: string,
   ): Promise<string> {
     if (
       factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()
@@ -539,7 +539,7 @@ export class UniswapUtils {
       const factoryCtr = (await DeployerUtils.connectInterface(
         signer,
         'IFireBirdFactory',
-        factory
+        factory,
       )) as IFireBirdFactory;
       return factoryCtr.getPair(token0, token1, 50, 20);
     } else {

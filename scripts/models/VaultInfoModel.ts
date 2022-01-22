@@ -44,7 +44,7 @@ export class VaultInfoModel {
     assets: string[],
     strategyRewards: string[],
     strategyOnPause: boolean,
-    earned: BigNumber
+    earned: BigNumber,
   ) {
     this.addr = addr;
     this.name = name;

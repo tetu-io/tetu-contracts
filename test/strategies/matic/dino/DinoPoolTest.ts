@@ -40,7 +40,7 @@ describe('Dino pool tests', async () => {
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -48,6 +48,6 @@ describe('Dino pool tests', async () => {
     strategyName,
     underlying,
     tokenName,
-    deployInfo
+    deployInfo,
   );
 });

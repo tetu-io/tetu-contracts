@@ -21,7 +21,7 @@ async function startIronSwapStrategyTest(
   tokens: string[],
   tokenNames: string,
   platformPoolIdentifier: string,
-  deployInfo: DeployInfo
+  deployInfo: DeployInfo,
 ) {
   // **********************************************
   // ************** CONFIG*************************
@@ -63,10 +63,10 @@ async function startIronSwapStrategyTest(
         return DeployerUtils.deployContract(
           signer,
           strategyContractName,
-          ...strategyArgs
+          ...strategyArgs,
         ) as Promise<IStrategy>;
       },
-      underlying
+      underlying,
     );
   };
   const hwInitiator = (
@@ -77,7 +77,7 @@ async function startIronSwapStrategyTest(
     _underlying: string,
     _vault: SmartVault,
     _strategy: IStrategy,
-    _balanceTolerance: number
+    _balanceTolerance: number,
   ) => {
     return new DoHardWorkLoopBase(
       _signer,
@@ -88,7 +88,7 @@ async function startIronSwapStrategyTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
   };
 
@@ -104,7 +104,7 @@ async function startIronSwapStrategyTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests
+    specificTests,
   );
 }
 

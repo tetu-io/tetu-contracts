@@ -14,7 +14,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -39,13 +39,13 @@ async function main() {
           'CurveATriCrypto3Strategy',
           core.controller,
           MaticAddresses.USD_BTC_ETH_CRV_TOKEN,
-          vaultAddress
+          vaultAddress,
         ) as Promise<IStrategy>,
       core.controller,
       core.psVault,
       signer,
       60 * 60 * 24 * 28,
-      true
+      true,
     );
 
   await DeployerUtils.wait(5);
@@ -55,7 +55,7 @@ async function main() {
   await DeployerUtils.verifyWithContractName(
     strategy.address,
     'contracts/strategies/matic/curve/CurveATriCrypto3Strategy.sol:CurveATriCrypto3Strategy',
-    [core.controller, MaticAddresses.USD_BTC_ETH_CRV_TOKEN, vault.address]
+    [core.controller, MaticAddresses.USD_BTC_ETH_CRV_TOKEN, vault.address],
   );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;

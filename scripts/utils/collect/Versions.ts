@@ -38,12 +38,12 @@ async function main() {
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const vaults = await bookkeeper.vaults();
@@ -65,7 +65,7 @@ main()
 async function version(
   contract: string,
   signer: SignerWithAddress,
-  name: string
+  name: string,
 ): Promise<string> {
   if (
     contract === '0x0000000000000000000000000000000000000000' ||
@@ -76,7 +76,7 @@ async function version(
   const ctr = (await DeployerUtils.connectInterface(
     signer,
     'IVersion',
-    contract
+    contract,
   )) as IVersion;
   try {
     const v = await ctr.VERSION();

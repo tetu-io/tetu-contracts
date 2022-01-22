@@ -34,7 +34,7 @@ const MATIC_CHAIN = Common.forCustomChain(
     networkId: 137,
     chainId: 137,
   },
-  'petersburg'
+  'petersburg',
 );
 
 async function main() {
@@ -48,7 +48,7 @@ async function main() {
         headers: {
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
   } catch (e) {
     console.error('error request', e);
@@ -76,7 +76,7 @@ async function main() {
       gasPrice: web3.utils.numberToHex(argv.speedUpGasPrice),
       gasLimit: web3.utils.numberToHex(19_000_000),
     },
-    { common: MATIC_CHAIN }
+    { common: MATIC_CHAIN },
   );
 
   tx.sign(Buffer.from(argv.speedUpPrivateKey, 'hex'));

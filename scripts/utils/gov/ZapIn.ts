@@ -26,18 +26,18 @@ async function main() {
   const zap = (await DeployerUtils.connectInterface(
     signer,
     'ZapContract',
-    tools.zapContract as string
+    tools.zapContract as string,
   )) as ZapContract;
   const mSwap = (await DeployerUtils.connectInterface(
     signer,
     'MultiSwap',
-    tools.multiSwap as string
+    tools.multiSwap as string,
   )) as MultiSwap;
 
   const contractReader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader as string
+    tools.reader as string,
   )) as ContractReader;
 
   if (
@@ -45,7 +45,7 @@ async function main() {
       await TokenUtils.allowance(
         await DeployerUtils.getUSDCAddress(),
         signer,
-        zap.address
+        zap.address,
       )
     ).lt(utils.parseUnits('100000', 6))
   ) {
@@ -53,7 +53,7 @@ async function main() {
       await DeployerUtils.getUSDCAddress(),
       signer,
       zap.address,
-      utils.parseUnits('1000000', 6).toString()
+      utils.parseUnits('1000000', 6).toString(),
     );
   }
 
@@ -66,7 +66,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     if (
       (await contractReader.strategyAssets(await vCtr.strategy())).length !==
@@ -91,7 +91,7 @@ async function main() {
       vault,
       await DeployerUtils.getUSDCAddress(),
       '2',
-      10
+      10,
     );
   }
 }
@@ -111,7 +111,7 @@ async function zapIntoVaultWithLp(
   vault: string,
   tokenIn: string,
   amountRaw = '1000',
-  slippage: number
+  slippage: number,
 ) {
   const tokenInDec = await TokenUtils.decimals(tokenIn);
   const amount = utils.parseUnits(amountRaw, tokenInDec);
@@ -124,7 +124,7 @@ async function zapIntoVaultWithLp(
   const smartVault = (await DeployerUtils.connectInterface(
     signer,
     'SmartVault',
-    vault
+    vault,
   )) as SmartVault;
   const strategy = await smartVault.strategy();
   const assets = await cReader.strategyAssets(strategy);
@@ -143,14 +143,14 @@ async function zapIntoVaultWithLp(
       const lpCtr = (await DeployerUtils.connectInterface(
         signer,
         'IUniswapV2Pair',
-        lp
+        lp,
       )) as IUniswapV2Pair;
       const t0 = await lpCtr.token0();
       const t1 = await lpCtr.token1();
       console.log(
         'lp',
         await TokenUtils.tokenSymbol(t0),
-        await TokenUtils.tokenSymbol(t1)
+        await TokenUtils.tokenSymbol(t1),
       );
     }
     console.log('============');
@@ -170,13 +170,13 @@ async function zapIntoVaultWithLp(
         tokensOut[1],
         tokensOutLps[1],
         amount,
-        slippage
-      )
+        slippage,
+      ),
   );
 
   const balanceAfter = +utils.formatUnits(
     await TokenUtils.balanceOf(tokenIn, signer.address),
-    tokenInDec
+    tokenInDec,
   );
   console.log('balance after ADD', balanceAfter);
 }

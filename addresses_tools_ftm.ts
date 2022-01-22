@@ -11,7 +11,7 @@ export class FtmToolsAddresses {
     '0x385A81966ad5D00da556fE7F1eE59c24b5e2eF45', // multiSwap
     '0xaEA41eb474a16DBF475eEFebC5672C753f8105D4', // zapContract
     '0x75e1e98650c119c4E3dCE3070CE6A5397Ed70c6a', // multicall
-    '0x0000000000000000000000000000000000000000' // pawnshopReader
+    '0x0000000000000000000000000000000000000000', // pawnshopReader
   );
 
   // retranslator 0xcBDeF56CE454A81c3c6C6b639D683285bd467D02

@@ -18,14 +18,14 @@ async function main() {
     const vaultCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const vaultName = await vaultCtr.name();
     const rewards = await vaultCtr.rewardTokens();
     console.log('vaultName', vault, vaultName, rewards);
     if (rewards[0] === core.psVault.address) {
       await RunHelper.runAndWait(() =>
-        core.vaultController.removeRewardTokens([vault], core.psVault.address)
+        core.vaultController.removeRewardTokens([vault], core.psVault.address),
       );
     }
     // if (rewards.length === 2) {

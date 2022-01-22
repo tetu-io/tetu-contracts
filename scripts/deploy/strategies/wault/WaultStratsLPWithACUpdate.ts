@@ -24,13 +24,13 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/wault_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -82,7 +82,7 @@ async function main() {
       lpAddress,
       token0,
       token1,
-      idx
+      idx,
     )) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
@@ -93,7 +93,7 @@ async function main() {
       await DeployerUtils.verifyWithContractName(
         strategy.address,
         'contracts/strategies/matic/wault/StrategyWaultLpWithAc.sol:StrategyWaultLpWithAc',
-        [core.controller, vAdr, lpAddress, token0, token1, idx]
+        [core.controller, vAdr, lpAddress, token0, token1, idx],
       );
     }
   }

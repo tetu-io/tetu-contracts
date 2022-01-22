@@ -11,27 +11,27 @@ async function main() {
   const controller = (await DeployerUtils.connectInterface(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const announcer = (await DeployerUtils.connectInterface(
     signer,
     'Announcer',
-    core.announcer
+    core.announcer,
   )) as Announcer;
 
   // await RunHelper.runAndWait(() =>announcer.closeAnnounce(14, '0xe82aef9f146dd13ddedc65d1892d7fc7d42b8dc902313cae69be5eea11358b28', '0x00aEC86D06B4336bCA967b42724E3596d3622313'));
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'Announcer'
+    'Announcer',
   )) as Announcer;
 
   if ((await ethers.provider.getNetwork()).name !== 'matic') {
     await RunHelper.runAndWait(() =>
-      announcer.announceTetuProxyUpgrade(core.announcer, logic.address)
+      announcer.announceTetuProxyUpgrade(core.announcer, logic.address),
     );
     await RunHelper.runAndWait(() =>
-      controller.upgradeTetuProxy(core.announcer, logic.address)
+      controller.upgradeTetuProxy(core.announcer, logic.address),
     );
   }
 

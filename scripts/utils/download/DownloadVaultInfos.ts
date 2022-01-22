@@ -13,7 +13,7 @@ async function main() {
   const contractReader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const vaults = await contractReader.vaults();
@@ -50,18 +50,18 @@ async function main() {
     const vaultCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vaults[i]
+      vaults[i],
     )) as SmartVault;
     const estRew = await VaultUtils.vaultRewardsAmountCurrent(
       vaultCtr,
-      core.psVault
+      core.psVault,
     );
     console.log(
       'estRew',
       estRew,
       'realRew',
       utils.formatUnits(info.rewardTokensBal[0]),
-      estRew - +utils.formatUnits(info.rewardTokensBal[0])
+      estRew - +utils.formatUnits(info.rewardTokensBal[0]),
     );
     data +=
       info.addr.toString() +

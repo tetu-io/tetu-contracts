@@ -13,7 +13,7 @@ async function main() {
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'TetuSwapFactory',
-    coreAdrs.swapFactory
+    coreAdrs.swapFactory,
   )) as TetuSwapFactory;
 
   const vaults = await core.bookkeeper.vaults();
@@ -21,7 +21,7 @@ async function main() {
   for (const vault of vaults) {
     const strategy = await SmartVault__factory.connect(
       vault,
-      signer
+      signer,
     ).strategy();
     const assets = await tools.reader.strategyAssets(strategy);
     if (assets.length === 1) {

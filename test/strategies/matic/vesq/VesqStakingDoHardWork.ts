@@ -20,22 +20,22 @@ export class VesqStakingDoHardWork extends DoHardWorkLoopBase {
     const amount = utils.parseUnits('10000', dec);
 
     const treasury = await DeployerUtils.impersonate(
-      MaticAddresses.VESQ_TREASURY
+      MaticAddresses.VESQ_TREASURY,
     );
     const klimaCtr = (await DeployerUtils.connectInterface(
       treasury,
       'RewardToken',
-      MaticAddresses.VSQ_TOKEN
+      MaticAddresses.VSQ_TOKEN,
     )) as RewardToken;
     await klimaCtr.mint(MaticAddresses.VESQ_STAKING, amount);
 
     const klimaStaking = await DeployerUtils.impersonate(
-      MaticAddresses.VESQ_STAKING
+      MaticAddresses.VESQ_STAKING,
     );
     const stKlimaCtr = (await DeployerUtils.connectInterface(
       klimaStaking,
       'IstKlima',
-      MaticAddresses.sVESQ
+      MaticAddresses.sVESQ,
     )) as IstKlima;
     await stKlimaCtr.rebase(amount, 1);
   }
@@ -45,22 +45,22 @@ export class VesqStakingDoHardWork extends DoHardWorkLoopBase {
     const amount = utils.parseUnits('10000', dec);
 
     const treasury = await DeployerUtils.impersonate(
-      MaticAddresses.VESQ_TREASURY
+      MaticAddresses.VESQ_TREASURY,
     );
     const klimaCtr = (await DeployerUtils.connectInterface(
       treasury,
       'RewardToken',
-      MaticAddresses.VSQ_TOKEN
+      MaticAddresses.VSQ_TOKEN,
     )) as RewardToken;
     await klimaCtr.mint(MaticAddresses.VESQ_STAKING, amount);
 
     const klimaStaking = await DeployerUtils.impersonate(
-      MaticAddresses.VESQ_STAKING
+      MaticAddresses.VESQ_STAKING,
     );
     const stKlimaCtr = (await DeployerUtils.connectInterface(
       klimaStaking,
       'IstKlima',
-      MaticAddresses.sVESQ
+      MaticAddresses.sVESQ,
     )) as IstKlima;
     await stKlimaCtr.rebase(amount, 1);
 

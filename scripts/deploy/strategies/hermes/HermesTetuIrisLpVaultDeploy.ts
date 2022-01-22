@@ -7,7 +7,7 @@ async function main() {
     21,
     'HERMES',
     'StrategyHermesSwapLp',
-    'contracts/strategies/matic/hermes/StrategyHermesSwapLp.sol:StrategyHermesSwapLp'
+    'contracts/strategies/matic/hermes/StrategyHermesSwapLp.sol:StrategyHermesSwapLp',
   );
 }
 

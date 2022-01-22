@@ -17,12 +17,12 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
     'VaultController',
-    core.vaultController
+    core.vaultController,
   )) as VaultController;
 
   for (let i = 0; i < 10; i++) {
@@ -35,7 +35,7 @@ async function main() {
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      vaultLogic.address
+      vaultLogic.address,
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
@@ -47,7 +47,7 @@ async function main() {
       vault.address,
       [mocks.get('quick')],
       [mocks.get('usdc')],
-      1
+      1,
     )) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
@@ -60,21 +60,21 @@ async function main() {
       rewardDuration,
       false,
       Misc.ZERO_ADDRESS,
-      0
+      0,
     );
     await vaultController.addRewardTokens([vault.address], vaultRewardToken);
     await vaultController.addRewardTokens(
       [vault.address],
-      mocks.get('weth') as string
+      mocks.get('weth') as string,
     );
     await vaultController.addRewardTokens(
       [vault.address],
-      mocks.get('sushi') as string
+      mocks.get('sushi') as string,
     );
 
     await controller.addVaultsAndStrategies(
       [vault.address],
-      [strategy.address]
+      [strategy.address],
     );
 
     datas.push([vaultLogic, vault, strategy]);

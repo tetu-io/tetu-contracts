@@ -28,17 +28,17 @@ async function main() {
   const balancer = (await DeployerUtils.connectContract(
     signer,
     'LiquidityBalancer',
-    tools.rebalancer
+    tools.rebalancer,
   )) as LiquidityBalancer;
   const targetToken = core.rewardToken;
   const skipUseless = argv.lbSkipUseless;
   const targetLpAddress = (await DeployerUtils.getTokenAddresses()).get(
-    'sushi_lp_token_usdc'
+    'sushi_lp_token_usdc',
   ) as string;
   const targetLp = (await DeployerUtils.connectInterface(
     signer,
     'IUniswapV2Pair',
-    targetLpAddress
+    targetLpAddress,
   )) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
   const token1 = await targetLp.token1();
@@ -56,22 +56,22 @@ async function main() {
         targetToken,
         token0,
         token0Decimals,
-        token1Decimals
+        token1Decimals,
       );
       const price = lpData[0];
       const tvl = lpData[1] * 2;
       const lpTokenReserve = lpData[2];
       const balancerTokenBal = +utils.formatUnits(
-        await TokenUtils.balanceOf(targetToken, balancer.address)
+        await TokenUtils.balanceOf(targetToken, balancer.address),
       );
       const balancerLpBal = +utils.formatUnits(
-        await TokenUtils.balanceOf(targetLpAddress, balancer.address)
+        await TokenUtils.balanceOf(targetLpAddress, balancer.address),
       );
       const currentPriceTarget = +utils.formatUnits(
-        await balancer.priceTargets(targetToken)
+        await balancer.priceTargets(targetToken),
       );
       const currentTvlTarget = +utils.formatUnits(
-        await balancer.lpTvlTargets(targetLpAddress)
+        await balancer.lpTvlTargets(targetLpAddress),
       );
 
       if (!lastPrice) {
@@ -82,11 +82,11 @@ async function main() {
       }
 
       const needToSell = utils.formatUnits(
-        await balancer.needToSell(targetToken, targetLpAddress)
+        await balancer.needToSell(targetToken, targetLpAddress),
       );
       console.log('needToSell', needToSell);
       const needToRemove = utils.formatUnits(
-        await balancer.needToRemove(targetToken, targetLpAddress)
+        await balancer.needToRemove(targetToken, targetLpAddress),
       );
       console.log('needToRemove', needToRemove);
 
@@ -123,7 +123,7 @@ async function main() {
           '# Remove:                   ' +
           needToRemove +
           '\n' +
-          '######################################################################'
+          '######################################################################',
       );
       lastPrice = price;
       lastTvl = tvl;
@@ -145,7 +145,7 @@ async function main() {
 
     await RunHelper.runAndWait(
       () => balancer.changeLiquidity(targetToken, targetLpAddress),
-      true
+      true,
     );
   }
 }
@@ -162,7 +162,7 @@ async function computePrice(
   targetToken: string,
   token0: string,
   token0Decimals: number,
-  token1Decimals: number
+  token1Decimals: number,
 ): Promise<[number, number, number]> {
   const reserves = await lp.getReserves();
   const reserve0 = +utils.formatUnits(reserves[0], token0Decimals);
@@ -179,7 +179,7 @@ async function computePrice(
 function computeAmountToSell(
   reserveToken: number,
   reserveOpposite: number,
-  targetPrice: number
+  targetPrice: number,
 ): number {
   if (targetPrice === 0) {
     return 0;
@@ -197,7 +197,7 @@ function computeAmountToSell(
 function computeAmountToRem(
   totalSupply: number,
   reserveOpposite: number,
-  targetTvl: number
+  targetTvl: number,
 ): number {
   if (targetTvl === 0) {
     return 0;

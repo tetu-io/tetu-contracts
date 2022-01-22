@@ -10,7 +10,7 @@ async function main() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'ICosmicMasterChef',
-    MaticAddresses.COSMIC_MASTERCHEF
+    MaticAddresses.COSMIC_MASTERCHEF,
   )) as ICosmicMasterChef;
 
   await McLpDownloader.download(
@@ -29,7 +29,7 @@ async function main() {
           lastUpdateTime: info[2].toNumber(),
         };
       });
-    }
+    },
   );
 }
 

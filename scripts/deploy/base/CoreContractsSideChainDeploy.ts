@@ -14,15 +14,15 @@ export default async function main() {
   // ************** CONTROLLER **********
   const controllerLogic = await DeployerUtils.deployContract(
     signer,
-    'Controller'
+    'Controller',
   );
   const controllerProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    controllerLogic.address
+    controllerLogic.address,
   );
   const controller = controllerLogic.attach(
-    controllerProxy.address
+    controllerProxy.address,
   ) as Controller;
   await controller.initialize();
 
@@ -30,71 +30,71 @@ export default async function main() {
   const announcerData = await DeployerUtils.deployAnnouncer(
     signer,
     controller.address,
-    TIME_LOCK
+    TIME_LOCK,
   );
 
   // ************ VAULT CONTROLLER **********
   const vaultControllerData = await DeployerUtils.deployVaultController(
     signer,
-    controller.address
+    controller.address,
   );
 
   // ********* FEE FORWARDER *********
   const feeRewardForwarderData = await DeployerUtils.deployForwarderV2(
     signer,
-    controller.address
+    controller.address,
   );
 
   // ********** BOOKKEEPER **********
   const bookkeeperLogic = await DeployerUtils.deployContract(
     signer,
-    'Bookkeeper'
+    'Bookkeeper',
   );
   const bookkeeperProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    bookkeeperLogic.address
+    bookkeeperLogic.address,
   );
   const bookkeeper = bookkeeperLogic.attach(
-    bookkeeperProxy.address
+    bookkeeperProxy.address,
   ) as Bookkeeper;
   await bookkeeper.initialize(controller.address);
 
   // ********** FUND KEEPER **************
   const fundKeeperData = await DeployerUtils.deployFundKeeper(
     signer,
-    controller.address
+    controller.address,
   );
 
   // ******* SETUP CONTROLLER ********
   await RunHelper.runAndWait(() =>
-    controller.setFeeRewardForwarder(feeRewardForwarderData[0].address)
+    controller.setFeeRewardForwarder(feeRewardForwarderData[0].address),
   );
   await RunHelper.runAndWait(() =>
-    controller.setBookkeeper(bookkeeper.address)
+    controller.setBookkeeper(bookkeeper.address),
   );
   await RunHelper.runAndWait(() =>
-    controller.setFund(fundKeeperData[0].address)
+    controller.setFund(fundKeeperData[0].address),
   );
   await RunHelper.runAndWait(() =>
-    controller.setAnnouncer(announcerData[0].address)
+    controller.setAnnouncer(announcerData[0].address),
   );
   await RunHelper.runAndWait(() =>
-    controller.setVaultController(vaultControllerData[0].address)
+    controller.setVaultController(vaultControllerData[0].address),
   );
 
   try {
     const tokens = await DeployerUtils.getTokenAddresses();
     await RunHelper.runAndWait(() =>
-      controller.setFundToken(tokens.get('usdc') as string)
+      controller.setFundToken(tokens.get('usdc') as string),
     );
   } catch (e) {
     console.error(
-      'USDC token not defined for network, need to setup Fund token later'
+      'USDC token not defined for network, need to setup Fund token later',
     );
   }
   await RunHelper.runAndWait(() =>
-    controller.setRewardDistribution([feeRewardForwarderData[0].address], true)
+    controller.setRewardDistribution([feeRewardForwarderData[0].address], true),
   );
 
   writeFileSync(
@@ -111,7 +111,7 @@ export default async function main() {
       ', // psVault\n' +
       fundKeeperData[0].address +
       ', // fundKeeper\n',
-    'utf8'
+    'utf8',
   );
 
   await DeployerUtils.wait(5);

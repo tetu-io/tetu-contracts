@@ -12,15 +12,15 @@ async function main() {
 
   const controllerLogic = await DeployerUtils.deployContract(
     signer,
-    'Controller'
+    'Controller',
   );
   const controllerProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    controllerLogic.address
+    controllerLogic.address,
   );
   const controller = controllerLogic.attach(
-    controllerProxy.address
+    controllerProxy.address,
   ) as Controller;
   await controller.initialize();
 
@@ -29,12 +29,12 @@ async function main() {
     data = await DeployerUtils.deployPriceCalculatorMatic(
       signer,
       controller.address,
-      true
+      true,
     );
   } else {
     data = await DeployerUtils.deployPriceCalculatorTestNet(
       signer,
-      controller.address
+      controller.address,
     );
   }
 

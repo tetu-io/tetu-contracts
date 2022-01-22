@@ -10,7 +10,7 @@ async function main() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'IIrisMasterChef',
-    MaticAddresses.HERMES_MASTERCHEF
+    MaticAddresses.HERMES_MASTERCHEF,
   )) as IIrisMasterChef;
 
   await McLpDownloader.download(
@@ -30,7 +30,7 @@ async function main() {
           depositFeeBP: info[4],
         };
       });
-    }
+    },
   );
 }
 

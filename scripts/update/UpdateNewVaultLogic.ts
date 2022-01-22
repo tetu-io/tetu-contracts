@@ -19,22 +19,22 @@ async function main() {
   const controller = (await DeployerUtils.connectInterface(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const announcer = (await DeployerUtils.connectInterface(
     signer,
     'Announcer',
-    core.announcer
+    core.announcer,
   )) as Announcer;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const vaultsLength = (await bookkeeper.vaultsLength()).toNumber();
@@ -61,14 +61,14 @@ async function main() {
     logicBatch.push(vaultLogicAdr);
     if (vaultBatch.length === batch) {
       await RunHelper.runAndWait(() =>
-        announcer.announceTetuProxyUpgradeBatch(vaultBatch, logicBatch)
+        announcer.announceTetuProxyUpgradeBatch(vaultBatch, logicBatch),
       );
       vaultBatch = [];
       logicBatch = [];
     }
   }
   await RunHelper.runAndWait(() =>
-    announcer.announceTetuProxyUpgradeBatch(vaultBatch, logicBatch)
+    announcer.announceTetuProxyUpgradeBatch(vaultBatch, logicBatch),
   );
 
   vaultBatch = [];
@@ -78,14 +78,14 @@ async function main() {
     logicBatch.push(vaultLogicAdr);
     if (vaultBatch.length === batch) {
       await RunHelper.runAndWait(() =>
-        controller.upgradeTetuProxyBatch(vaultBatch, logicBatch)
+        controller.upgradeTetuProxyBatch(vaultBatch, logicBatch),
       );
       vaultBatch = [];
       logicBatch = [];
     }
   }
   await RunHelper.runAndWait(() =>
-    controller.upgradeTetuProxyBatch(vaultBatch, logicBatch)
+    controller.upgradeTetuProxyBatch(vaultBatch, logicBatch),
   );
 }
 

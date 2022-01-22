@@ -239,10 +239,10 @@ export class TokenUtils {
 
   public static async balanceOf(
     tokenAddress: string,
-    account: string
+    account: string,
   ): Promise<BigNumber> {
     return ERC20__factory.connect(tokenAddress, ethers.provider).balanceOf(
-      account
+      account,
     );
   }
 
@@ -254,12 +254,12 @@ export class TokenUtils {
     tokenAddress: string,
     signer: SignerWithAddress,
     spender: string,
-    amount: string
+    amount: string,
   ) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
     return ERC20__factory.connect(tokenAddress, signer).approve(
       spender,
-      BigNumber.from(amount)
+      BigNumber.from(amount),
     );
   }
 
@@ -267,7 +267,7 @@ export class TokenUtils {
     tokenAddress: string,
     signer: SignerWithAddress,
     spender: string,
-    id: string
+    id: string,
   ) {
     console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), id);
     await TokenUtils.checkNftBalance(tokenAddress, signer.address, id);
@@ -277,11 +277,11 @@ export class TokenUtils {
   public static async allowance(
     tokenAddress: string,
     signer: SignerWithAddress,
-    spender: string
+    spender: string,
   ): Promise<BigNumber> {
     return ERC20__factory.connect(tokenAddress, signer).allowance(
       signer.address,
-      spender
+      spender,
     );
   }
 
@@ -289,23 +289,23 @@ export class TokenUtils {
     tokenAddress: string,
     signer: SignerWithAddress,
     destination: string,
-    amount: string
+    amount: string,
   ) {
     console.log('transfer', await TokenUtils.tokenSymbol(tokenAddress), amount);
     return ERC20__factory.connect(tokenAddress, signer).transfer(
       destination,
-      BigNumber.from(amount)
+      BigNumber.from(amount),
     );
   }
 
   public static async wrapNetworkToken(
     signer: SignerWithAddress,
-    amount: string
+    amount: string,
   ) {
     const token = (await ethers.getContractAt(
       'IWmatic',
       await DeployerUtils.getNetworkTokenAddress(),
-      signer
+      signer,
     )) as IWmatic;
     return token.deposit({ value: utils.parseUnits(amount, 18).toString() });
   }
@@ -325,12 +325,12 @@ export class TokenUtils {
   public static async checkBalance(
     tokenAddress: string,
     account: string,
-    amount: string
+    amount: string,
   ) {
     const bal = await TokenUtils.balanceOf(tokenAddress, account);
     expect(bal.gt(BigNumber.from(amount))).is.eq(
       true,
-      'Balance less than amount'
+      'Balance less than amount',
     );
     return bal;
   }
@@ -338,18 +338,18 @@ export class TokenUtils {
   public static async tokenOfOwnerByIndex(
     tokenAddress: string,
     account: string,
-    index: number
+    index: number,
   ) {
     return IERC721Enumerable__factory.connect(
       tokenAddress,
-      ethers.provider
+      ethers.provider,
     ).tokenOfOwnerByIndex(account, index);
   }
 
   public static async checkNftBalance(
     tokenAddress: string,
     account: string,
-    id: string
+    id: string,
   ) {
     const nftCount = (
       await TokenUtils.balanceOf(tokenAddress, account)
@@ -373,16 +373,16 @@ export class TokenUtils {
     console.log(
       'transfer token from biggest holder',
       token,
-      amount?.toString()
+      amount?.toString(),
     );
     if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
       const minter = await DeployerUtils.impersonate(
-        '0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c'
+        '0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c',
       );
       const tokenCtr = (await DeployerUtils.connectInterface(
         minter,
         'RewardToken',
-        FtmAddresses.TETU_TOKEN
+        FtmAddresses.TETU_TOKEN,
       )) as RewardToken;
       await tokenCtr.mint(to, amount as BigNumber);
       return amount;

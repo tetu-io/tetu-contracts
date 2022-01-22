@@ -19,7 +19,7 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/quick_pools_dual.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -28,7 +28,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -86,7 +86,7 @@ async function main() {
           return DeployerUtils.deployContract(
             signer,
             'StrategyQuickSwapLpDualAC',
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
         core.controller,
@@ -94,8 +94,8 @@ async function main() {
         signer,
         60 * 60 * 24 * 28,
         0,
-        true
-      )
+        true,
+      ),
     );
     data.push(strategyArgs);
     deployed.push(data);

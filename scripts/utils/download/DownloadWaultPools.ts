@@ -21,13 +21,13 @@ async function downloadWault() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'IWexPolyMaster',
-    MaticAddresses.WAULT_POLYMASTER
+    MaticAddresses.WAULT_POLYMASTER,
   )) as IWexPolyMaster;
 
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
     'PriceCalculator',
-    tools.calculator
+    tools.calculator,
   )) as PriceCalculator;
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
@@ -45,7 +45,7 @@ async function downloadWault() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       const rewards = await VaultUtils.vaultRewardsAmount(vctr, core.psVault);
       console.log('rewards', rewards);
@@ -59,7 +59,7 @@ async function downloadWault() {
   const wexPerBlock = await chef.wexPerBlock();
   const totalAllocPoint = await chef.totalAllocPoint();
   const wexPrice = await priceCalculator.getPriceWithDefaultOutput(
-    MaticAddresses.WEXpoly_TOKEN
+    MaticAddresses.WEXpoly_TOKEN,
   );
   console.log('wex price', utils.formatUnits(wexPrice));
 
@@ -75,7 +75,7 @@ async function downloadWault() {
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
       'IWaultSwapPair',
-      lp
+      lp,
     )) as IWaultSwapPair;
 
     const waultAllocPoint = poolInfo[1];
@@ -87,7 +87,7 @@ async function downloadWault() {
       wexPerBlock,
       waultAllocPoint,
       totalAllocPoint,
-      wexPrice
+      wexPrice,
     );
     console.log('weekRewardUsd', weekRewardUsd);
 
@@ -106,7 +106,7 @@ async function downloadWault() {
       const _lpContract = (await DeployerUtils.connectInterface(
         signer,
         'IWaultSwapPair',
-        lp
+        lp,
       )) as IWaultSwapPair;
       token0 = await _lpContract.token0();
       token1 = await _lpContract.token1();
@@ -119,7 +119,7 @@ async function downloadWault() {
       const token = (await DeployerUtils.connectInterface(
         signer,
         'ERC20',
-        lp
+        lp,
       )) as ERC20;
       token0Name = await token.symbol();
     }
@@ -178,7 +178,7 @@ function computeWeekReward(
   allocPoint: BigNumber,
   totalAllocPoint: BigNumber,
   tokenPrice: BigNumber,
-  averageBlockTime = 2.25
+  averageBlockTime = 2.25,
 ): number {
   const reward = BigNumber.from(block)
     .mul(tokenPerBlock)

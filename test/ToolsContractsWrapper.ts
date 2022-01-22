@@ -33,7 +33,7 @@ export class ToolsContractsWrapper {
     multiSwap: MultiSwap,
     zapContract: ZapContract,
     multicall: Multicall,
-    pawnshopReader: PawnShopReader
+    pawnshopReader: PawnShopReader,
   ) {
     this.calculator = calculator;
     this.reader = reader;

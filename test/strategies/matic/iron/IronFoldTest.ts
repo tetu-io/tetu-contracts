@@ -45,14 +45,14 @@ describe('Universal Iron Fold tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/iron_markets.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
   const deployInfo: DeployInfo = new DeployInfo();
 
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -126,10 +126,10 @@ describe('Universal Iron Fold tests', async () => {
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -140,7 +140,7 @@ describe('Universal Iron Fold tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new FoldingDoHardWork(
         _signer,
@@ -151,7 +151,7 @@ describe('Universal Iron Fold tests', async () => {
         _vault,
         _strategy,
         _balanceTolerance,
-        finalBalanceTolerance
+        finalBalanceTolerance,
       );
     };
 
@@ -167,7 +167,7 @@ describe('Universal Iron Fold tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests
+      specificTests,
     );
   });
 });

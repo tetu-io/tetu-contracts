@@ -5,7 +5,7 @@ async function main() {
   await SingleTokenVaultStrategyDeploy.deploy(
     MaticAddresses.VSQ_TOKEN,
     'VSQ',
-    'StrategyVesqStaking'
+    'StrategyVesqStaking',
   );
 }
 

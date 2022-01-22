@@ -30,7 +30,7 @@ export class EmergencyWithdrawFromPoolTest extends SpecificStrategyTest {
       const userAddress = user.address;
       const _depositAmount = await TokenUtils.balanceOf(
         underlying,
-        userAddress
+        userAddress,
       );
       const before = await strategyAaveMaiBal.getMostUnderlyingBalance();
       console.log('>>>before      ', before.toString());

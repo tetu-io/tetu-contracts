@@ -18,7 +18,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -52,7 +52,7 @@ async function main() {
     const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
       signer,
       info.underlying,
-      info.amToken
+      info.amToken,
     );
     pipes.push(aaveAmPipeData[0].address);
     pipesArgs.push(aaveAmPipeData[1]);
@@ -60,7 +60,7 @@ async function main() {
     const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
       signer,
       info.amToken,
-      info.camToken
+      info.camToken,
     );
     pipes.push(maiCamPipeData[0].address);
     pipesArgs.push(maiCamPipeData[1]);
@@ -71,7 +71,7 @@ async function main() {
       info.stablecoin,
       info.amToken,
       info.targetPercentage,
-      info.collateralNumerator || '1'
+      info.collateralNumerator || '1',
     );
     pipes.push(maiStablecoinPipeData[0].address);
     pipesArgs.push(maiStablecoinPipeData[1]);
@@ -91,7 +91,7 @@ async function main() {
     const strategy = (await DeployerUtils.deployContract(
       signer,
       strategyContractName,
-      ...strategyArgs
+      ...strategyArgs,
     )) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vaultAddress}     strategy: ${strategy.address}\n`;
@@ -107,7 +107,7 @@ async function main() {
     await DeployerUtils.verifyWithContractName(
       strategy.address,
       'contracts/strategies/matic/multi/StrategyAaveMaiBal.sol:StrategyAaveMaiBal',
-      strategyArgs
+      strategyArgs,
     );
   }
 }

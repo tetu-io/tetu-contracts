@@ -31,13 +31,13 @@ export class AMBTargetPercentageTest extends SpecificStrategyTest {
 
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
       const strategyGov = strategyAaveMaiBal.connect(
-        deployInfo.signer as SignerWithAddress
+        deployInfo.signer as SignerWithAddress,
       );
 
       const targetPercentageInitial = await strategyGov.targetPercentage();
       console.log(
         '>>>targetPercentageInitial',
-        targetPercentageInitial.toString()
+        targetPercentageInitial.toString(),
       );
 
       await VaultUtils.deposit(user, vault, BigNumber.from(bal));

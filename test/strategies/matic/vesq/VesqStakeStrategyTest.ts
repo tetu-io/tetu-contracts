@@ -47,7 +47,7 @@ describe('Vesq staking tests', async () => {
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -61,7 +61,7 @@ describe('Vesq staking tests', async () => {
   const forwarderConfigurator = async (f: ForwarderV2) => {
     await f.addLargestLps(
       [MaticAddresses.VSQ_TOKEN],
-      ['0x5Cf66CeAf7F6395642cD11b5929499229edEF531'] // VSQ-DAI
+      ['0x5Cf66CeAf7F6395642cD11b5929499229edEF531'], // VSQ-DAI
     );
   };
   // only for strategies where we expect PPFS fluctuations
@@ -94,10 +94,10 @@ describe('Vesq staking tests', async () => {
         return DeployerUtils.deployContract(
           signer,
           strategyContractName,
-          ...strategyArgs
+          ...strategyArgs,
         ) as Promise<IStrategy>;
       },
-      underlying
+      underlying,
     );
   };
   const hwInitiator = (
@@ -108,7 +108,7 @@ describe('Vesq staking tests', async () => {
     _underlying: string,
     _vault: SmartVault,
     _strategy: IStrategy,
-    _balanceTolerance: number
+    _balanceTolerance: number,
   ) => {
     return new VesqStakingDoHardWork(
       _signer,
@@ -119,7 +119,7 @@ describe('Vesq staking tests', async () => {
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
   };
 
@@ -135,6 +135,6 @@ describe('Vesq staking tests', async () => {
     loops,
     loopValue,
     advanceBlocks,
-    specificTests
+    specificTests,
   );
 });

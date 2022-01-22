@@ -12,12 +12,12 @@ async function main() {
   const proxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyGov',
-    logic.address
+    logic.address,
   );
   const contractReader = logic.attach(proxy.address) as ContractReader;
 
   await RunHelper.runAndWait(() =>
-    contractReader.initialize(core.controller, tools.calculator)
+    contractReader.initialize(core.controller, tools.calculator),
   );
   await contractReader.setPriceCalculator(tools.calculator);
 

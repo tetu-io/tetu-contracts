@@ -39,7 +39,7 @@ describe('Curve aave tests', async () => {
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 

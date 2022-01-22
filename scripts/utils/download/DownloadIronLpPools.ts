@@ -24,12 +24,12 @@ async function main() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'IIronChef',
-    MaticAddresses.IRON_MINISHEFV2
+    MaticAddresses.IRON_MINISHEFV2,
   )) as IIronChef;
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
     'PriceCalculator',
-    tools.calculator
+    tools.calculator,
   )) as PriceCalculator;
 
   const poolLength = (await chef.poolLength()).toNumber();
@@ -49,11 +49,11 @@ async function main() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       currentRewards.set(
         vInfo.underlying.toLowerCase(),
-        await VaultUtils.vaultRewardsAmount(vctr, core.psVault)
+        await VaultUtils.vaultRewardsAmount(vctr, core.psVault),
       );
     }
   }
@@ -61,7 +61,7 @@ async function main() {
   const rewardPerSecond = await chef.rewardPerSecond();
   const totalAllocPoint = await chef.totalAllocPoint();
   const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(
-    MaticAddresses.ICE_TOKEN
+    MaticAddresses.ICE_TOKEN,
   );
   console.log('reward price', utils.formatUnits(rewardPrice));
 
@@ -76,7 +76,7 @@ async function main() {
     const lpContractErc20 = (await DeployerUtils.connectInterface(
       signer,
       'ERC20',
-      lp
+      lp,
     )) as ERC20;
 
     // ** calculation numbers
@@ -91,7 +91,7 @@ async function main() {
       rewardPerSecond,
       rewardAllocPoint,
       totalAllocPoint,
-      rewardPrice
+      rewardPrice,
     );
     console.log('rewardWeekRewardUsd', rewardWeekUsd);
 
@@ -158,7 +158,7 @@ main()
 async function collectTokensInfo(
   signer: SignerWithAddress,
   lp: string,
-  id: number
+  id: number,
 ): Promise<string[]> {
   if (id === 0 || id === 3) {
     return collectTokensInfoIronSwap(signer, lp);
@@ -169,31 +169,31 @@ async function collectTokensInfo(
 
 async function collectTokensInfoIronSwap(
   signer: SignerWithAddress,
-  lp: string
+  lp: string,
 ): Promise<string[]> {
   const lpContract = (await DeployerUtils.connectInterface(
     signer,
     'IIronLpToken',
-    lp
+    lp,
   )) as IIronLpToken;
   const swapAddress = await lpContract.swap();
   const swapContract = (await DeployerUtils.connectInterface(
     signer,
     'IIronSwap',
-    swapAddress
+    swapAddress,
   )) as IIronSwap;
   return swapContract.getTokens();
 }
 
 async function collectTokensInfoUniswap(
   signer: SignerWithAddress,
-  lp: string
+  lp: string,
 ): Promise<string[]> {
   try {
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Pair',
-      lp
+      lp,
     )) as IUniswapV2Pair;
     const tokens = [];
 
@@ -212,7 +212,7 @@ function computeWeekReward(
   sushiPerSecond: BigNumber,
   allocPoint: BigNumber,
   totalAllocPoint: BigNumber,
-  sushiPrice: BigNumber
+  sushiPrice: BigNumber,
 ): number {
   const sushiReward = BigNumber.from(time)
     .mul(sushiPerSecond)

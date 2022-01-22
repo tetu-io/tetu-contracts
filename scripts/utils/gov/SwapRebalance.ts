@@ -35,17 +35,17 @@ async function main() {
   const calculator = (await DeployerUtils.connectProxy(
     tools.calculator,
     signer,
-    'PriceCalculator'
+    'PriceCalculator',
   )) as PriceCalculator;
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'TetuSwapFactory',
-    core.swapFactory
+    core.swapFactory,
   )) as TetuSwapFactory;
   const router = (await DeployerUtils.connectInterface(
     signer,
     'TetuSwapRouter',
-    core.swapRouter
+    core.swapRouter,
   )) as TetuSwapRouter;
 
   const lpCount = (await factory.allPairsLength()).toNumber();
@@ -58,14 +58,14 @@ async function main() {
         const quickFactory = (await DeployerUtils.connectInterface(
           signer,
           'IUniswapV2Factory',
-          MaticAddresses.QUICK_FACTORY
+          MaticAddresses.QUICK_FACTORY,
         )) as IUniswapV2Factory;
 
         const lp = await factory.allPairs(i);
         const lpCtr = (await DeployerUtils.connectInterface(
           signer,
           'TetuSwapPair',
-          lp
+          lp,
         )) as TetuSwapPair;
 
         const token0 = await lpCtr.token0();
@@ -80,11 +80,11 @@ async function main() {
 
         let tokenBal0 = +utils.formatUnits(
           await TokenUtils.balanceOf(token0, signer.address),
-          tokenDec0
+          tokenDec0,
         );
         let tokenBal1 = +utils.formatUnits(
           await TokenUtils.balanceOf(token1, signer.address),
-          tokenDec1
+          tokenDec1,
         );
 
         const reserves = await lpCtr.getReserves();
@@ -98,7 +98,7 @@ async function main() {
           const quickPairCtr = (await DeployerUtils.connectInterface(
             signer,
             'IUniswapV2Pair',
-            quickPair
+            quickPair,
           )) as IUniswapV2Pair;
           const qsReserves = await quickPairCtr.getReserves();
           qsReserve0 = +utils.formatUnits(qsReserves[0], tokenDec0);
@@ -116,19 +116,19 @@ async function main() {
         let path: string[];
         if (token0SwapAmount > 0) {
           const price = +utils.formatUnits(
-            await calculator.getPriceWithDefaultOutput(token0)
+            await calculator.getPriceWithDefaultOutput(token0),
           );
           path = [token0, token1];
           toSwap = utils.parseUnits(
             token0SwapAmount.toFixed(tokenDec0),
-            tokenDec0
+            tokenDec0,
           );
           if (token0SwapAmount * price < MIN_AMOUNT_TO_REBALANCE) {
             console.log(
               'skip low amount 0',
               tokenName0,
               tokenName1,
-              token0SwapAmount * price
+              token0SwapAmount * price,
             );
             continue;
           }
@@ -137,28 +137,28 @@ async function main() {
             token0,
             calculator,
             tools.multiSwap,
-            token0SwapAmount * price
+            token0SwapAmount * price,
           );
           tokenBal0 = +utils.formatUnits(
             await TokenUtils.balanceOf(token0, signer.address),
-            tokenDec0
+            tokenDec0,
           );
           if (token0SwapAmount > tokenBal0) {
             console.log(
               'TOO LOW AMOUNT ' + tokenName0,
               token0SwapAmount,
-              tokenBal0
+              tokenBal0,
             );
             continue;
           }
           console.log(
             '==> SWAP amount 0 ' + tokenName0,
             token0SwapAmount,
-            token0SwapAmount * price
+            token0SwapAmount * price,
           );
           const allowance = +utils.formatUnits(
             await TokenUtils.allowance(token0, signer, router.address),
-            tokenDec0
+            tokenDec0,
           );
           if (allowance < token0SwapAmount) {
             console.log('approve 0');
@@ -166,26 +166,26 @@ async function main() {
               token0,
               signer,
               router.address,
-              utils.parseUnits('10000000000', tokenDec0).toString()
+              utils.parseUnits('10000000000', tokenDec0).toString(),
             );
           }
         } else {
           const price = +utils.formatUnits(
-            await calculator.getPriceWithDefaultOutput(token1)
+            await calculator.getPriceWithDefaultOutput(token1),
           );
           const token1SwapAmount = calculate(reserve1, reserve0, targetPrice1);
 
           path = [token1, token0];
           toSwap = utils.parseUnits(
             token1SwapAmount.toFixed(tokenDec1),
-            tokenDec1
+            tokenDec1,
           );
           if (token1SwapAmount * price < MIN_AMOUNT_TO_REBALANCE) {
             console.log(
               'skip low amount 1',
               tokenName0,
               tokenName1,
-              token1SwapAmount * price
+              token1SwapAmount * price,
             );
             continue;
           }
@@ -194,29 +194,29 @@ async function main() {
             token1,
             calculator,
             tools.multiSwap,
-            token1SwapAmount * price
+            token1SwapAmount * price,
           );
           tokenBal1 = +utils.formatUnits(
             await TokenUtils.balanceOf(token1, signer.address),
-            tokenDec1
+            tokenDec1,
           );
           if (token1SwapAmount > tokenBal1) {
             console.log(
               'TOO LOW AMOUNT ' + tokenName1,
               token1SwapAmount,
-              tokenBal1
+              tokenBal1,
             );
             continue;
           }
           console.log(
             '==> SWAP amount 1 ' + tokenName1,
             token1SwapAmount,
-            token1SwapAmount * price
+            token1SwapAmount * price,
           );
 
           const allowance = +utils.formatUnits(
             await TokenUtils.allowance(token1, signer, router.address),
-            tokenDec1
+            tokenDec1,
           );
           if (allowance < token1SwapAmount) {
             console.log('approve 1');
@@ -224,7 +224,7 @@ async function main() {
               token1,
               signer,
               router.address,
-              utils.parseUnits('10000000000', tokenDec1).toString()
+              utils.parseUnits('10000000000', tokenDec1).toString(),
             );
           }
         }
@@ -245,8 +245,8 @@ async function main() {
               BigNumber.from('0'),
               path,
               signer.address,
-              UniswapUtils.deadline
-            )
+              UniswapUtils.deadline,
+            ),
           );
         } catch (e) {
           console.log('Error', e);
@@ -270,7 +270,7 @@ main()
 function calculate(
   tokenReserve: number,
   oppReserve: number,
-  targetPrice: number
+  targetPrice: number,
 ) {
   const result =
     Math.sqrt((tokenReserve * oppReserve) / targetPrice) - tokenReserve;
@@ -282,23 +282,23 @@ async function buyToken(
   tokenToBuy: string,
   calculator: PriceCalculator,
   multiswapAdr: string,
-  toBuyAmountUSD: number
+  toBuyAmountUSD: number,
 ) {
   const tokenToBuyName = await TokenUtils.tokenSymbol(tokenToBuy);
   const tokenToBuyDec = await TokenUtils.decimals(tokenToBuy);
   const tokenToBuyPrice = +utils.formatUnits(
-    await calculator.getPriceWithDefaultOutput(tokenToBuy)
+    await calculator.getPriceWithDefaultOutput(tokenToBuy),
   );
 
   const tokenToBuyBalance = +utils.formatUnits(
     await TokenUtils.balanceOf(tokenToBuy, signer.address),
-    tokenToBuyDec
+    tokenToBuyDec,
   );
 
   const multiswap = (await DeployerUtils.connectInterface(
     signer,
     'MultiSwap',
-    multiswapAdr
+    multiswapAdr,
   )) as MultiSwap;
 
   const data = await findMaxBalance(signer, calculator, tokenToBuy);
@@ -306,7 +306,7 @@ async function buyToken(
   const maxBal = data[1];
   const tokenToSellDec = await TokenUtils.decimals(tokenToSell as string);
   const tokenToSellPrice = +utils.formatUnits(
-    await calculator.getPriceWithDefaultOutput(tokenToSell as string)
+    await calculator.getPriceWithDefaultOutput(tokenToSell as string),
   );
   const tokenToSellName = await TokenUtils.tokenSymbol(tokenToSell as string);
 
@@ -326,7 +326,7 @@ async function buyToken(
       tokenToBuyName,
       tokenToSellName,
       toSell,
-      maxBal
+      maxBal,
     );
     return;
   }
@@ -357,7 +357,7 @@ async function buyToken(
 
   const allowance = +utils.formatUnits(
     await TokenUtils.allowance(tokenToSell as string, signer, multiswapAdr),
-    tokenToSellDec
+    tokenToSellDec,
   );
   if (allowance < toSell) {
     console.log('approve');
@@ -365,7 +365,7 @@ async function buyToken(
       tokenToSell as string,
       signer,
       multiswapAdr,
-      utils.parseUnits('10000000000', tokenToSellDec).toString()
+      utils.parseUnits('10000000000', tokenToSellDec).toString(),
     );
   }
 
@@ -375,15 +375,15 @@ async function buyToken(
       tokenToSell,
       tokenToBuy,
       utils.parseUnits(toSell.toFixed(tokenToSellDec), tokenToSellDec),
-      5
-    )
+      5,
+    ),
   );
 }
 
 async function findMaxBalance(
   signer: SignerWithAddress,
   calculator: PriceCalculator,
-  exclude: string
+  exclude: string,
 ): Promise<[string, number]> {
   let maxBal = 0;
   let maxToken = MaticAddresses.ZERO_ADDRESS;
@@ -393,11 +393,11 @@ async function findMaxBalance(
     }
     const tokenDec = await TokenUtils.decimals(token);
     const price = +utils.formatUnits(
-      await calculator.getPriceWithDefaultOutput(token)
+      await calculator.getPriceWithDefaultOutput(token),
     );
     const bal = +utils.formatUnits(
       await TokenUtils.balanceOf(token, signer.address),
-      tokenDec
+      tokenDec,
     );
     const balUsd = bal * price;
     if (maxBal < balUsd) {

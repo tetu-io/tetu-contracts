@@ -18,7 +18,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -56,7 +56,7 @@ async function main() {
           const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
             signer,
             info.underlying,
-            info.amToken
+            info.amToken,
           );
           pipes.push(aaveAmPipeData[0].address);
           pipesArgs.push(aaveAmPipeData[1]);
@@ -64,7 +64,7 @@ async function main() {
           const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
             signer,
             info.amToken,
-            info.camToken
+            info.camToken,
           );
           pipes.push(maiCamPipeData[0].address);
           pipesArgs.push(maiCamPipeData[1]);
@@ -76,13 +76,13 @@ async function main() {
               info.stablecoin,
               info.amToken,
               info.targetPercentage,
-              info.collateralNumerator || '1'
+              info.collateralNumerator || '1',
             );
           pipes.push(maiStablecoinPipeData[0].address);
           pipesArgs.push(maiStablecoinPipeData[1]);
           // -----------------
           const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-            signer
+            signer,
           );
           pipes.push(balVaultPipeData[0].address);
           pipesArgs.push(balVaultPipeData[1]);
@@ -98,7 +98,7 @@ async function main() {
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
         core.controller,
@@ -106,8 +106,8 @@ async function main() {
         signer,
         60 * 60 * 24 * 28,
         30,
-        true
-      ))
+        true,
+      )),
     );
     data.push(strategyArgs);
     deployed.push(data);
@@ -131,7 +131,7 @@ async function main() {
     await DeployerUtils.verifyWithContractName(
       data[2].address,
       'contracts/strategies/matic/multi/StrategyAaveMaiBal.sol:StrategyAaveMaiBal',
-      data[3]
+      data[3],
     );
   }
 }

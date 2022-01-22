@@ -34,7 +34,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const strategy = await vCtr.strategy();
     info += `'${vault}',`;
@@ -44,7 +44,7 @@ async function main() {
     info += `'${(await tools.calculator.getLargestPool(underlying, []))[2]}',`;
     info += `${await tools.reader.vaultCreated(vault)},`;
     info += `'${Misc.platformName(
-      await tools.reader.strategyPlatform(strategy)
+      await tools.reader.strategyPlatform(strategy),
     )}'\n`;
     txt += info;
     console.log(info);

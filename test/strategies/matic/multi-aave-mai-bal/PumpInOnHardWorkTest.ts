@@ -27,14 +27,14 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       await TokenUtils.getToken(
         MaticAddresses.WMATIC_TOKEN,
         signer.address,
-        amount
+        amount,
       );
       if (underlying.toLowerCase() === MaticAddresses.WBTC_TOKEN) {
         // send 0.1 WBTC (as WBTC have 8 decimals and 'amount' too big)
         await TokenUtils.getToken(
           underlying,
           signer.address,
-          BigNumber.from(10000000)
+          BigNumber.from(10000000),
         );
       } else {
         await TokenUtils.getToken(underlying, signer.address, amount);
@@ -45,11 +45,11 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
         underlying,
         signer,
         strategyGov.address,
-        bal.toString()
+        bal.toString(),
       );
       const before = await TokenUtils.balanceOf(
         underlying,
-        strategyGov.address
+        strategyGov.address,
       );
       console.log('>>>before', before.toString());
       await strategyGov.doHardWork();
@@ -59,7 +59,7 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       expect(before).to.be.equal(bal);
       expect(after).to.be.equal(
         0,
-        'Underlying token should be pumped in on hard work'
+        'Underlying token should be pumped in on hard work',
       );
     });
   }

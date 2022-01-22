@@ -18,7 +18,7 @@ async function startDefaultSingleTokenStrategyTest(
   strategyName: string,
   underlying: string,
   tokenName: string,
-  deployInfo: DeployInfo
+  deployInfo: DeployInfo,
 ) {
   // **********************************************
   // ************** CONFIG*************************
@@ -58,10 +58,10 @@ async function startDefaultSingleTokenStrategyTest(
         return DeployerUtils.deployContract(
           signer,
           strategyContractName,
-          ...strategyArgs
+          ...strategyArgs,
         ) as Promise<IStrategy>;
       },
-      underlying
+      underlying,
     );
   };
   const hwInitiator = (
@@ -72,7 +72,7 @@ async function startDefaultSingleTokenStrategyTest(
     _underlying: string,
     _vault: SmartVault,
     _strategy: IStrategy,
-    _balanceTolerance: number
+    _balanceTolerance: number,
   ) => {
     return new DoHardWorkLoopBase(
       _signer,
@@ -83,7 +83,7 @@ async function startDefaultSingleTokenStrategyTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
   };
 
@@ -99,7 +99,7 @@ async function startDefaultSingleTokenStrategyTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests
+    specificTests,
   );
 }
 

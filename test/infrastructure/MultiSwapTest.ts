@@ -40,12 +40,12 @@ describe('Multi swap tests', function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
 
     calculator = (
@@ -54,13 +54,13 @@ describe('Multi swap tests', function () {
     multiSwap = await DeployerUtils.deployMultiSwap(
       signer,
       core.controller.address,
-      calculator.address
+      calculator.address,
     );
     cReader = (
       await DeployerUtils.deployContractReader(
         signer,
         core.controller.address,
-        calculator.address
+        calculator.address,
       )
     )[0];
   });
@@ -109,7 +109,7 @@ describe('Multi swap tests', function () {
       'ContractReader',
       (
         await DeployerUtils.getToolsAddresses()
-      ).reader as string
+      ).reader as string,
     )) as ContractReader;
 
     const strategies = await contractReader.strategies();
@@ -132,7 +132,7 @@ async function tryToSwap(
   multiSwap: MultiSwap,
   tokenIn: string,
   tokenOut: string,
-  amountRaw = '1000'
+  amountRaw = '1000',
 ) {
   const tokenInDec = await TokenUtils.decimals(tokenIn);
 
@@ -141,8 +141,8 @@ async function tryToSwap(
   expect(
     +utils.formatUnits(
       await TokenUtils.balanceOf(tokenIn, signer.address),
-      tokenInDec
-    )
+      tokenInDec,
+    ),
   ).is.greaterThan(+utils.formatUnits(amount, tokenInDec));
 
   const lps = await multiSwap.findLpsForSwaps(tokenIn, tokenOut);
@@ -151,20 +151,20 @@ async function tryToSwap(
     '===== PATH =======',
     await TokenUtils.tokenSymbol(tokenIn),
     '=>',
-    await TokenUtils.tokenSymbol(tokenOut)
+    await TokenUtils.tokenSymbol(tokenOut),
   );
   for (const lp of lps) {
     const lpCtr = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Pair',
-      lp
+      lp,
     )) as IUniswapV2Pair;
     const t0 = await lpCtr.token0();
     const t1 = await lpCtr.token1();
     console.log(
       'lp',
       await TokenUtils.tokenSymbol(t0),
-      await TokenUtils.tokenSymbol(t1)
+      await TokenUtils.tokenSymbol(t1),
     );
   }
   console.log('============');
@@ -173,7 +173,7 @@ async function tryToSwap(
     tokenIn,
     signer,
     multiSwap.address,
-    amount.toString()
+    amount.toString(),
   );
   await multiSwap.multiSwap(lps, tokenIn, tokenOut, amount, 9);
 

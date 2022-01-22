@@ -38,14 +38,14 @@ describe.skip('Universal Hermes tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/hermes_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -84,7 +84,7 @@ describe.skip('Universal Hermes tests', async () => {
       token1,
       token1Name,
       idx,
-      deployInfo
+      deployInfo,
     );
   });
 });

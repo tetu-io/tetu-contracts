@@ -44,12 +44,12 @@ describe('pawnshop reader tests', function () {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     const logic = (await DeployerUtils.deployContract(
       signer,
-      'PawnShopReader'
+      'PawnShopReader',
     )) as PawnShopReader;
     const proxy = (await DeployerUtils.deployContract(
       signer,
       'TetuProxyGov',
-      logic.address
+      logic.address,
     )) as TetuProxyGov;
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
@@ -59,7 +59,7 @@ describe('pawnshop reader tests', function () {
       'TetuPawnShop',
       signer.address,
       Misc.ZERO_ADDRESS,
-      core.controller.address
+      core.controller.address,
     )) as TetuPawnShop;
     calculator = (
       await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
@@ -68,39 +68,39 @@ describe('pawnshop reader tests', function () {
     await reader.initialize(
       core.controller.address,
       calculator.address,
-      shop.address
+      shop.address,
     );
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       usdc,
       user1.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       usdc,
       user2.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
     await TokenUtils.getToken(
       networkToken,
       user1.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
     await TokenUtils.getToken(
       networkToken,
       user2.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
 
     for (let i = 0; i < EXECUTED_POSITION_COUNT; i++) {
@@ -111,7 +111,7 @@ describe('pawnshop reader tests', function () {
         '10' + i,
         '555' + i,
         99 + i,
-        10 + i
+        10 + i,
       );
       await PawnShopTestUtils.bidAndCheck(posId, '555' + i, user2, shop);
     }
@@ -128,7 +128,7 @@ describe('pawnshop reader tests', function () {
         '10' + i,
         aAmount,
         99 + i,
-        10 + i
+        10 + i,
       );
       if (aAmount === '0') {
         await PawnShopTestUtils.bidAndCheck(posId, '555' + i, user2, shop);
@@ -160,7 +160,7 @@ describe('pawnshop reader tests', function () {
     }
     expect(positions.length).is.eq(allPosSize.sub(1));
     expect(positions.length).is.eq(
-      OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT
+      OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT,
     );
   });
 
@@ -238,7 +238,7 @@ describe('pawnshop reader tests', function () {
     }
     expect(positions.length).is.eq(allPosSize);
     expect(positions.length).is.eq(
-      OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT
+      OPEN_POSITION_COUNT + EXECUTED_POSITION_COUNT,
     );
   });
 

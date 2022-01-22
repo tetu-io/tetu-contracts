@@ -55,7 +55,7 @@ describe('ForwarderV2 tests', function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits(amountLp, 6)
+      utils.parseUnits(amountLp, 6),
     );
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -67,12 +67,12 @@ describe('ForwarderV2 tests', function () {
       core.controller,
       core.announcer,
       amountLp,
-      signer.address
+      signer.address,
     );
 
     const tokenBal = await TokenUtils.balanceOf(
       rewardTokenAddress,
-      signer.address
+      signer.address,
     );
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amountLp);
@@ -85,7 +85,7 @@ describe('ForwarderV2 tests', function () {
       utils.parseUnits(amountLp, 18).toString(),
       utils.parseUnits(amountLp, 6).toString(),
       factory,
-      await DeployerUtils.getRouterByFactory(factory)
+      await DeployerUtils.getRouterByFactory(factory),
     );
 
     await forwarder.addLargestLps([rewardTokenAddress], [tetuLp]);
@@ -110,35 +110,35 @@ describe('ForwarderV2 tests', function () {
 
   it('should not setup wrong lps arrays', async () => {
     await expect(forwarder.addLargestLps([Misc.ZERO_ADDRESS], [])).rejectedWith(
-      'F2: Wrong arrays'
+      'F2: Wrong arrays',
     );
   });
 
   it('should not setup wrong lps', async () => {
     await expect(
-      forwarder.addLargestLps([Misc.ZERO_ADDRESS], [tetuLp])
+      forwarder.addLargestLps([Misc.ZERO_ADDRESS], [tetuLp]),
     ).rejectedWith('F2: Wrong LP');
   });
 
   it('should not distribute  with zero fund token', async () => {
     const controllerLogic = await DeployerUtils.deployContract(
       signer,
-      'Controller'
+      'Controller',
     );
     const controllerProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      controllerLogic.address
+      controllerLogic.address,
     );
     const controller = controllerLogic.attach(
-      controllerProxy.address
+      controllerProxy.address,
     ) as Controller;
     await controller.initialize();
     const feeRewardForwarder = (
       await DeployerUtils.deployForwarderV2(signer, controller.address)
     )[0];
     await expect(
-      feeRewardForwarder.distribute(1, Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS)
+      feeRewardForwarder.distribute(1, Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS),
     ).is.rejectedWith('F2: Fund token is zero');
   });
 
@@ -147,10 +147,10 @@ describe('ForwarderV2 tests', function () {
       usdc,
       signer,
       forwarder.address,
-      amount.toString()
+      amount.toString(),
     );
     expect(
-      forwarder.distribute(amount, usdc, core.psVault.address)
+      forwarder.distribute(amount, usdc, core.psVault.address),
     ).rejectedWith('psToken not added to vault');
   });
 
@@ -160,20 +160,20 @@ describe('ForwarderV2 tests', function () {
     await core.vaultController.addRewardTokens([vault.address], vault.address);
     await TokenUtils.getToken(usdc, signer.address, _amount);
     expect(
-      +utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6)
+      +utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6),
     ).is.greaterThanOrEqual(+utils.formatUnits(_amount, 6));
     await TokenUtils.approve(
       usdc,
       signer,
       forwarder.address,
-      _amount.toString()
+      _amount.toString(),
     );
     await forwarder.distribute(_amount, usdc, vault.address);
 
     const qsFactory = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Factory',
-      factory
+      factory,
     )) as IUniswapV2Factory;
 
     const lpToken = await qsFactory.getPair(usdc, core.rewardToken.address);
@@ -181,20 +181,23 @@ describe('ForwarderV2 tests', function () {
 
     const fundKeeperUSDCBal = +utils.formatUnits(
       await TokenUtils.balanceOf(usdc, core.fundKeeper.address),
-      6
+      6,
     );
     const fundKeeperLPBal = +utils.formatUnits(
-      await TokenUtils.balanceOf(lpToken, core.fundKeeper.address)
+      await TokenUtils.balanceOf(lpToken, core.fundKeeper.address),
     );
     const psVaultBal = +utils.formatUnits(
-      await TokenUtils.balanceOf(core.rewardToken.address, core.psVault.address)
+      await TokenUtils.balanceOf(
+        core.rewardToken.address,
+        core.psVault.address,
+      ),
     );
     const forwarderUsdcBal = +utils.formatUnits(
       await TokenUtils.balanceOf(usdc, forwarder.address),
-      6
+      6,
     );
     const forwarderTetuBal = +utils.formatUnits(
-      await TokenUtils.balanceOf(core.rewardToken.address, forwarder.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, forwarder.address),
     );
 
     console.log('fundKeeperUSDCBal', fundKeeperUSDCBal);
@@ -202,7 +205,7 @@ describe('ForwarderV2 tests', function () {
     console.log('psVaultBal', psVaultBal);
 
     expect(fundKeeperUSDCBal).is.greaterThanOrEqual(
-      +utils.formatUnits(amount.div(10), 6)
+      +utils.formatUnits(amount.div(10), 6),
     );
     expect(fundKeeperLPBal).is.greaterThan(0);
     expect(psVaultBal).is.greaterThan(0);
@@ -218,10 +221,10 @@ describe('ForwarderV2 tests', function () {
       usdc,
       signer,
       forwarder.address,
-      _amount.toString()
+      _amount.toString(),
     );
     expect(
-      +utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), dec)
+      +utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), dec),
     ).is.greaterThanOrEqual(+utils.formatUnits(_amount, dec));
     await forwarder.liquidate(usdc, core.rewardToken.address, _amount);
   });
@@ -229,7 +232,7 @@ describe('ForwarderV2 tests', function () {
   it.skip('should liquidate sushi to fxs', async () => {
     await forwarder.addLargestLps(
       [MaticAddresses.FXS_TOKEN],
-      ['0x4756FF6A714AB0a2c69a566E548B59c72eB26725']
+      ['0x4756FF6A714AB0a2c69a566E548B59c72eB26725'],
     );
     const tokenIn = MaticAddresses.SUSHI_TOKEN;
     const dec = await TokenUtils.decimals(tokenIn);
@@ -239,7 +242,7 @@ describe('ForwarderV2 tests', function () {
       tokenIn,
       signer,
       forwarder.address,
-      _amount.toString()
+      _amount.toString(),
     );
     await forwarder.liquidate(tokenIn, MaticAddresses.FXS_TOKEN, _amount);
   });
@@ -253,7 +256,7 @@ describe('ForwarderV2 tests', function () {
       tokenIn,
       signer,
       forwarder.address,
-      _amount.toString()
+      _amount.toString(),
     );
     await forwarder.liquidate(tokenIn, MaticAddresses.polyDoge_TOKEN, _amount);
   });

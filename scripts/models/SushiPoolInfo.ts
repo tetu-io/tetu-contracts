@@ -12,7 +12,7 @@ export class SushiPoolInfo {
     token0: string,
     token0Name: string,
     token1: string,
-    token1Name: string
+    token1Name: string,
   ) {
     this.address = address;
     this.name = name;

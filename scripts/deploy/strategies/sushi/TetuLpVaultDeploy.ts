@@ -19,12 +19,12 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
     'VaultController',
-    core.vaultController
+    core.vaultController,
   )) as VaultController;
 
   const vaultNames = new Set<string>();
@@ -32,7 +32,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -43,13 +43,13 @@ async function main() {
   }
 
   const tetuLp = (await DeployerUtils.getTokenAddresses()).get(
-    'sushi_lp_token_usdc'
+    'sushi_lp_token_usdc',
   ) as string;
 
   const lpCont = (await DeployerUtils.connectInterface(
     signer,
     'IUniswapV2Pair',
-    tetuLp
+    tetuLp,
   )) as IUniswapV2Pair;
   const token0 = await lpCont.token0();
   const token0Name = await TokenUtils.tokenSymbol(token0);
@@ -61,7 +61,7 @@ async function main() {
   const vaultProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    vaultLogic.address
+    vaultLogic.address,
   );
   const tetuLpVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
   const tetuLpEmptyStrategy = (await DeployerUtils.deployContract(
@@ -72,7 +72,7 @@ async function main() {
     tetuLpVault.address,
     [],
     [MaticAddresses.USDC_TOKEN, core.rewardToken],
-    3
+    3,
   )) as NoopStrategy;
 
   const vaultNameWithoutPrefix = `SUSHI_${token0Name}_${token1Name}`;
@@ -92,7 +92,7 @@ async function main() {
     60 * 60 * 24 * 28,
     false,
     core.psVault,
-    0
+    0,
   );
 
   await DeployerUtils.wait(5);

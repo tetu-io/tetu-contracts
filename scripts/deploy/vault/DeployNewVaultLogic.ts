@@ -7,7 +7,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'SmartVault'
+    'SmartVault',
   )) as SmartVault;
 
   await DeployerUtils.wait(5);

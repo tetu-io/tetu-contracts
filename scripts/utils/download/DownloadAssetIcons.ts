@@ -6,15 +6,15 @@ async function main() {
   const outputPath = 'tmp/assets/matic/';
   const quickInfos = readFileSync(
     'scripts/utils/download/data/quick_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
   const sushiInfos = readFileSync(
     'scripts/utils/download/data/sushi_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
   const waultInfos = readFileSync(
     'scripts/utils/download/data/wault_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   mkdir(outputPath, { recursive: true }, (err) => {

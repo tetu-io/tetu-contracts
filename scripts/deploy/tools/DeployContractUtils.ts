@@ -7,7 +7,7 @@ async function main() {
 
   const contract = (await DeployerUtils.deployContract(
     signer,
-    'ContractUtils'
+    'ContractUtils',
   )) as ContractUtils;
 
   await DeployerUtils.wait(5);

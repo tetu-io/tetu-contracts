@@ -21,12 +21,12 @@ async function main() {
   const controller = (await DeployerUtils.connectInterface(
     signer,
     'IScreamController',
-    FtmAddresses.SCREAM_CONTROLLER
+    FtmAddresses.SCREAM_CONTROLLER,
   )) as IScreamController;
   const priceOracle = (await DeployerUtils.connectInterface(
     signer,
     'PriceOracle',
-    await controller.oracle()
+    await controller.oracle(),
   )) as PriceOracle;
 
   const markets = await controller.getAllMarkets();
@@ -47,11 +47,11 @@ async function main() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       currentRewards.set(
         vInfo.underlying.toLowerCase(),
-        await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken)
+        await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken),
       );
     }
   }
@@ -70,18 +70,18 @@ async function main() {
     const scTokenCtr = (await DeployerUtils.connectInterface(
       signer,
       'CompleteRToken',
-      scTokenAdr
+      scTokenAdr,
     )) as CompleteRToken;
 
     const undPrice = +utils.formatUnits(
-      await priceOracle.getUnderlyingPrice(scTokenAdr)
+      await priceOracle.getUnderlyingPrice(scTokenAdr),
     );
     console.log(' >> undPrice', undPrice);
     const token = await scTokenCtr.underlying();
     const tokenName = await TokenUtils.tokenSymbol(token);
     const collateralFactor =
       +utils.formatUnits(
-        (await controller.markets(scTokenAdr)).collateralFactorMantissa
+        (await controller.markets(scTokenAdr)).collateralFactorMantissa,
       ) * 10000;
     const borrowTarget = Math.floor(collateralFactor * 0.99);
     const undDec = await TokenUtils.decimals(token);
@@ -90,11 +90,11 @@ async function main() {
     const cash = +utils.formatUnits(await scTokenCtr.getCash(), undDec);
     const borrowed = +utils.formatUnits(
       await scTokenCtr.totalBorrows(),
-      undDec
+      undDec,
     );
     const reserves = +utils.formatUnits(
       await scTokenCtr.totalReserves(),
-      undDec
+      undDec,
     );
 
     const tvl = (cash + borrowed - reserves) * undPrice;

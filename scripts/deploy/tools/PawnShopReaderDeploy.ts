@@ -10,17 +10,17 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'PawnShopReader'
+    'PawnShopReader',
   )) as PawnShopReader;
   const proxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyGov',
-    logic.address
+    logic.address,
   );
   const contract = logic.attach(proxy.address) as PawnShopReader;
 
   await RunHelper.runAndWait(() =>
-    contract.initialize(core.controller, tools.calculator, core.pawnshop)
+    contract.initialize(core.controller, tools.calculator, core.pawnshop),
   );
 
   await DeployerUtils.wait(5);

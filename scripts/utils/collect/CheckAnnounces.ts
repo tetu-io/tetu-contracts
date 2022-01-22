@@ -36,7 +36,7 @@ async function main() {
   const announcer = (await DeployerUtils.connectContract(
     signer,
     'Announcer',
-    core.announcer
+    core.announcer,
   )) as Announcer;
 
   const timeLockInfosLength = (

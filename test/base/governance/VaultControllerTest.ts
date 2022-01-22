@@ -56,11 +56,11 @@ describe('Controller tests', function () {
     await vaultController.addRewardTokens([core.psVault.address], networkToken);
     await vaultController.addRewardTokens([core.psVault.address], usdc);
     expect((await core.psVault.rewardTokens())[0].toLowerCase()).is.eq(
-      networkToken
+      networkToken,
     );
     await vaultController.removeRewardTokens(
       [core.psVault.address],
-      networkToken
+      networkToken,
     );
     expect((await core.psVault.rewardTokens()).length).is.eq(1);
   });

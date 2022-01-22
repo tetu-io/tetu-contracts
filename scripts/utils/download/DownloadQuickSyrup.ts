@@ -19,25 +19,25 @@ async function start() {
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'IStakingRewardsFactorySyrups',
-    MaticAddresses.QUICK_STAKING_FACTORY_SYRUP
+    MaticAddresses.QUICK_STAKING_FACTORY_SYRUP,
   )) as IStakingRewardsFactorySyrups;
 
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
     'PriceCalculator',
-    tools.calculator
+    tools.calculator,
   )) as PriceCalculator;
 
   // no info in contract
   const rewardTokensLength = 10000;
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(
-    MaticAddresses.QUICK_TOKEN
+    MaticAddresses.QUICK_TOKEN,
   );
 
   const dQuickCtr = (await DeployerUtils.connectInterface(
     signer,
     'IDragonLair',
-    MaticAddresses.dQUICK_TOKEN
+    MaticAddresses.dQUICK_TOKEN,
   )) as IDragonLair;
   const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
   const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));

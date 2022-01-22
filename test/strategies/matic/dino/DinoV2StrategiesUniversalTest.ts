@@ -39,14 +39,14 @@ describe('Universal Dino tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/dino_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
     // await deployInfo?.tools?.calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, "Dinoswap V2");
   });
@@ -86,7 +86,7 @@ describe('Universal Dino tests', async () => {
       token1,
       token1Name,
       idx,
-      deployInfo
+      deployInfo,
     );
   });
 });

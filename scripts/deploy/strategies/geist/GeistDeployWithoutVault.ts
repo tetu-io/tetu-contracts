@@ -13,7 +13,7 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/geist_markets.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const vaultsByUnderlying = new Map<string, string>();
@@ -21,7 +21,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -38,7 +38,7 @@ async function main() {
   appendFileSync(
     `./tmp/deployed/GEIST_STRATS_UPD.txt`,
     '-------------------\n',
-    'utf8'
+    'utf8',
   );
   for (const info of infos) {
     const strat = info.split(',');
@@ -81,7 +81,7 @@ async function main() {
     const strategy = (await DeployerUtils.deployContract(
       signer,
       'StrategyGeistFold',
-      ...strategyArgs
+      ...strategyArgs,
     )) as IStrategy;
 
     await DeployerUtils.wait(5);
@@ -89,7 +89,7 @@ async function main() {
     await DeployerUtils.verifyWithContractName(
       strategy.address,
       'contracts/strategies/fantom/geist/StrategyGeistFold.sol:StrategyGeistFold',
-      strategyArgs
+      strategyArgs,
     );
 
     mkdir('./tmp/deployed', { recursive: true }, (err) => {

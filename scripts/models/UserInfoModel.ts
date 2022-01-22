@@ -14,7 +14,7 @@ export class UserInfoModel {
     balance: BigNumber,
     balanceUsdc: BigNumber,
     rewardTokens: string[],
-    rewards: BigNumber[]
+    rewards: BigNumber[],
   ) {
     this.wallet = wallet;
     this.vault = vault;

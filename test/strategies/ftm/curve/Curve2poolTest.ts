@@ -39,7 +39,7 @@ describe('Curve 2pool tests', async () => {
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -48,6 +48,6 @@ describe('Curve 2pool tests', async () => {
     underlying,
     tokenName,
     deployInfo,
-    1_000_000
+    1_000_000,
   );
 });

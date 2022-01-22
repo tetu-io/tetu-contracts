@@ -42,14 +42,14 @@ describe('Universal Iron tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/iron_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -85,7 +85,7 @@ describe('Universal Iron tests', async () => {
         tokens,
         tokenNames.join('_'),
         idx,
-        deployInfo
+        deployInfo,
       );
     } else {
       startDefaultLpStrategyTest(
@@ -97,7 +97,7 @@ describe('Universal Iron tests', async () => {
         tokens[1],
         tokenNames[1],
         idx,
-        deployInfo
+        deployInfo,
       );
     }
   });

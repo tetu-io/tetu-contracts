@@ -38,14 +38,14 @@ describe('Universal Cafe tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/cafe_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -84,7 +84,7 @@ describe('Universal Cafe tests', async () => {
       token1Name,
       idx,
       deployInfo,
-      10_000
+      10_000,
     );
   });
 });

@@ -34,14 +34,14 @@ describe('Universal Spooky tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/spooky_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -82,7 +82,7 @@ describe('Universal Spooky tests', async () => {
       deployInfo,
       100_000,
       60 * 60 * 24,
-      false
+      false,
     );
   });
 });

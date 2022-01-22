@@ -20,7 +20,7 @@ export class ToolsAddresses {
     multiSwap: string,
     zapContract: string,
     multicall: string,
-    pawnshopReader: string
+    pawnshopReader: string,
   ) {
     this.calculator = calculator;
     this.reader = reader;

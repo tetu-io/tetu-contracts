@@ -44,7 +44,7 @@ export class TimeUtils {
     const tools = await DeployerUtils.getToolsAddresses();
     const multicall = Multicall__factory.connect(
       tools.multicall,
-      ethers.provider
+      ethers.provider,
     );
     const blockHash = await multicall.getLastBlockHash();
     return (await ethers.provider.getBlock(blockHash)).number;
@@ -54,7 +54,7 @@ export class TimeUtils {
     const tools = await DeployerUtils.getToolsAddresses();
     const multicall = Multicall__factory.connect(
       tools.multicall,
-      ethers.provider
+      ethers.provider,
     );
     if (block) {
       return (

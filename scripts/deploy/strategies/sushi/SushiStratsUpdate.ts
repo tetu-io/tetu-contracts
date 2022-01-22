@@ -25,17 +25,17 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
     'VaultController',
-    core.vaultController
+    core.vaultController,
   )) as VaultController;
 
   const infos = readFileSync(
     'scripts/utils/download/data/sushi_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -43,7 +43,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -83,7 +83,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vAdr
+      vAdr,
     )) as SmartVault;
 
     if (!(await vCtr.active())) {
@@ -94,7 +94,7 @@ async function main() {
     const strCtr = (await DeployerUtils.connectInterface(
       signer,
       'IStrategy',
-      await vCtr.strategy()
+      await vCtr.strategy(),
     )) as IStrategy;
     const strName = await strCtr.STRATEGY_NAME();
     if (strName === 'MCv2StrategyAC') {
@@ -112,7 +112,7 @@ async function main() {
       lpAddress,
       token0,
       token1,
-      idx
+      idx,
     )) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
@@ -123,7 +123,7 @@ async function main() {
       await DeployerUtils.verifyWithContractName(
         strategy.address,
         'contracts/strategies/matic/sushiswap/StrategySushiSwapLpWithAc.sol:StrategySushiSwapLpWithAc',
-        [core.controller, vAdr, lpAddress, token0, token1, idx]
+        [core.controller, vAdr, lpAddress, token0, token1, idx],
       );
     }
   }

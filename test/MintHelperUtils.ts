@@ -11,7 +11,7 @@ export class MintHelperUtils {
     amount: string,
     destination: string,
     mintAll = false,
-    period = 60 * 60 * 48
+    period = 60 * 60 * 48,
   ) {
     const fund = await controller.fund();
     const distributor = await controller.distributor();
@@ -20,7 +20,7 @@ export class MintHelperUtils {
       utils.parseUnits(amount),
       distributor,
       fund,
-      mintAll
+      mintAll,
     );
 
     await TimeUtils.advanceBlocksOnTs(period);
@@ -33,13 +33,13 @@ export class MintHelperUtils {
       tetu,
       await DeployerUtils.impersonate(fund),
       destination,
-      fundBal.toString()
+      fundBal.toString(),
     );
     await TokenUtils.transfer(
       tetu,
       await DeployerUtils.impersonate(distributor),
       destination,
-      distBal.toString()
+      distBal.toString(),
     );
   }
 }

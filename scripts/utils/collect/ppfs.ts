@@ -32,7 +32,7 @@ async function main() {
     const ppfs =
       +utils.formatUnits(
         await vault.getPricePerFullShare({ blockTag: i }),
-        dec
+        dec,
       ) - 1;
     const blocTs = await TimeUtils.getBlockTime(i);
     const d = new Date(blocTs * 1000)

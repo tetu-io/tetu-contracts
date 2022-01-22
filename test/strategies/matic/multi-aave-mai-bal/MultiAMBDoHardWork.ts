@@ -42,7 +42,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     airDropper: SignerWithAddress,
     airDropToken: string,
     airDropAmount: BigNumber,
-    airDropPipeIndex: number
+    airDropPipeIndex: number,
   ) {
     super(
       signer,
@@ -53,7 +53,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
       vault,
       strategy,
       balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
     this.camToken = camToken;
     this.airDropper = airDropper;
@@ -78,7 +78,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     const cam = (await DeployerUtils.connectInterface(
       this.signer,
       'ICamToken',
-      this.camToken
+      this.camToken,
     )) as ICamToken;
     await cam.claimAaveRewards();
 
@@ -86,46 +86,46 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     await TokenUtils.getToken(
       MaticAddresses.WMATIC_TOKEN,
       this.airDropper.address,
-      this.airDropAmount
+      this.airDropAmount,
     );
     await TokenUtils.getToken(
       this.airDropToken,
       this.airDropper.address,
-      this.airDropAmount
+      this.airDropAmount,
     );
     const bal = await TokenUtils.balanceOf(
       this.airDropToken,
-      this.airDropper.address
+      this.airDropper.address,
     );
     const pipeAddress = await strategyAaveMaiBal.pipes(this.airDropPipeIndex);
     await TokenUtils.transfer(
       this.airDropToken,
       this.airDropper,
       pipeAddress,
-      bal.toString()
+      bal.toString(),
     );
 
     // *** mock price ***
 
     const { stablecoinAddress, priceSlotIndex } = AMBUtils.getSlotsInfo(
-      this.underlying
+      this.underlying,
     );
     const stablecoin = (await ethers.getContractAt(
       'IErc20Stablecoin',
-      stablecoinAddress
+      stablecoinAddress,
     )) as IErc20Stablecoin;
 
     const priceSourceAddress = await stablecoin.ethPriceSource();
     const priceSource = (await ethers.getContractAt(
       'PriceSource',
-      priceSourceAddress
+      priceSourceAddress,
     )) as PriceSource;
     const [, priceSourcePrice, ,] = await priceSource.latestRoundData();
 
     const mockPriceSource = await DeployerUtils.deployContract(
       this.signer,
       'MockPriceSource',
-      0
+      0,
     );
     const mockPricePercents = 75; // % from original price
     const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100);
@@ -138,7 +138,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     await DeployerUtils.setStorageAt(
       stablecoin.address,
       ethPriceSourceSlotIndex,
-      adrBytes32
+      adrBytes32,
     );
 
     // rebalance strategy

@@ -53,7 +53,7 @@ export class DoHardWorkLoopBase {
     vault: SmartVault,
     strategy: IStrategy,
     balanceTolerance: number,
-    finalBalanceTolerance: number
+    finalBalanceTolerance: number,
   ) {
     this.signer = signer;
     this.user = user;
@@ -73,7 +73,7 @@ export class DoHardWorkLoopBase {
     deposit: BigNumber,
     loops: number,
     loopValue: number,
-    advanceBlocks: boolean
+    advanceBlocks: boolean,
   ) {
     const start = Date.now();
     this.loops = loops;
@@ -93,22 +93,22 @@ export class DoHardWorkLoopBase {
 
   protected async initialCheckVault() {
     expect((await this.vault.rewardTokens())[0].toLowerCase()).eq(
-      this.vaultRt.toLowerCase()
+      this.vaultRt.toLowerCase(),
     );
   }
 
   protected async initialSnapshot() {
     this.userRTBal = await TokenUtils.balanceOf(
       this.vaultRt,
-      this.user.address
+      this.user.address,
     );
     this.vaultRTBal = await TokenUtils.balanceOf(
       this.vaultRt,
-      this.vault.address
+      this.vault.address,
     );
     this.psBal = await TokenUtils.balanceOf(
       this.vaultRt,
-      this.core.psVault.address
+      this.core.psVault.address,
     );
     this.psPPFS = await this.core.psVault.getPricePerFullShare();
     this.startTs = await Misc.getBlockTsFromChain();
@@ -122,7 +122,7 @@ export class DoHardWorkLoopBase {
     await VaultUtils.deposit(
       this.signer,
       this.vault,
-      this.userDeposited.div(2)
+      this.userDeposited.div(2),
     );
     this.signerDeposited = this.userDeposited.div(2);
     await VaultUtils.deposit(this.user, this.vault, this.userDeposited);
@@ -131,23 +131,23 @@ export class DoHardWorkLoopBase {
     // remove excess tokens
     const excessBalUser = await TokenUtils.balanceOf(
       this.underlying,
-      this.user.address
+      this.user.address,
     );
     await TokenUtils.transfer(
       this.underlying,
       this.user,
       this.tools.utils.address,
-      excessBalUser.toString()
+      excessBalUser.toString(),
     );
     const excessBalSigner = await TokenUtils.balanceOf(
       this.underlying,
-      this.signer.address
+      this.signer.address,
     );
     await TokenUtils.transfer(
       this.underlying,
       this.signer,
       this.tools.utils.address,
-      excessBalSigner.toString()
+      excessBalSigner.toString(),
     );
   }
 
@@ -168,7 +168,7 @@ export class DoHardWorkLoopBase {
     this.loopStartTs = await Misc.getBlockTsFromChain();
     this.vaultPPFS = await this.vault.getPricePerFullShare();
     this.stratEarnedTotal = await this.core.bookkeeper.targetTokenEarned(
-      this.strategy.address
+      this.strategy.address,
     );
   }
 
@@ -178,7 +178,7 @@ export class DoHardWorkLoopBase {
       const earnedN = +utils.formatUnits(this.stratEarned);
       const earnedNAdjusted = earnedN / (this.bbRatio / 10000);
       expect(earnedNAdjusted).is.greaterThanOrEqual(
-        this.totalToClaimInTetuN * this.toClaimCheckTolerance
+        this.totalToClaimInTetuN * this.toClaimCheckTolerance,
       ); // very approximately
     }
   }
@@ -187,45 +187,45 @@ export class DoHardWorkLoopBase {
     // assume that at this point we deposited all expected amount except userWithdrew amount
     const userBalance =
       await this.vault.underlyingBalanceWithInvestmentForHolder(
-        this.user.address
+        this.user.address,
       );
     // avoid rounding errors
     const userBalanceN = +utils.formatUnits(userBalance.add(1), this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(
       this.userDeposited.sub(this.userWithdrew),
-      this.undDec
+      this.undDec,
     );
 
     console.log(
       'User balance +-:',
-      DoHardWorkLoopBase.toPercent(userBalanceN, userBalanceExpectedN)
+      DoHardWorkLoopBase.toPercent(userBalanceN, userBalanceExpectedN),
     );
     expect(userBalanceN).is.greaterThanOrEqual(
       userBalanceExpectedN - userBalanceExpectedN * this.balanceTolerance,
       'User has wrong balance inside the vault.\n' +
         'If you expect not zero balance it means the vault has a nature of PPFS decreasing.\n' +
         'It is not always wrong but you should triple check behavior and reasonable tolerance value.\n' +
-        'If you expect zero balance and it has something inside IT IS NOT GOOD!\n'
+        'If you expect zero balance and it has something inside IT IS NOT GOOD!\n',
     );
   }
 
   protected async userCheckBalance(expectedBalance: BigNumber) {
     const userUndBal = await TokenUtils.balanceOf(
       this.underlying,
-      this.user.address
+      this.user.address,
     );
     const userUndBalN = +utils.formatUnits(userUndBal, this.undDec);
     const userBalanceExpectedN = +utils.formatUnits(
       expectedBalance,
-      this.undDec
+      this.undDec,
     );
     console.log(
       'User balance +-:',
-      DoHardWorkLoopBase.toPercent(userUndBalN, userBalanceExpectedN)
+      DoHardWorkLoopBase.toPercent(userUndBalN, userBalanceExpectedN),
     );
     expect(userUndBalN).is.greaterThanOrEqual(
       userBalanceExpectedN - userBalanceExpectedN * this.balanceTolerance,
-      'User has not enough balance'
+      'User has not enough balance',
     );
   }
 
@@ -240,7 +240,7 @@ export class DoHardWorkLoopBase {
     }
     console.log(
       'PPFS before withdraw',
-      (await this.vault.getPricePerFullShare()).toString()
+      (await this.vault.getPricePerFullShare()).toString(),
     );
     await this.userCheckBalanceInVault();
     if (exit) {
@@ -251,23 +251,23 @@ export class DoHardWorkLoopBase {
     } else {
       const userUndBal = await TokenUtils.balanceOf(
         this.underlying,
-        this.user.address
+        this.user.address,
       );
       console.log('withdraw', amount.toString());
       await this.vaultForUser.withdraw(amount);
       await this.userCheckBalance(this.userWithdrew.add(amount));
       const userUndBalAfter = await TokenUtils.balanceOf(
         this.underlying,
-        this.user.address
+        this.user.address,
       );
       this.userWithdrew = this.userWithdrew.add(
-        userUndBalAfter.sub(userUndBal)
+        userUndBalAfter.sub(userUndBal),
       );
     }
     console.log('userWithdrew', this.userWithdrew.toString());
     console.log(
       'PPFS after withdraw',
-      (await this.vault.getPricePerFullShare()).toString()
+      (await this.vault.getPricePerFullShare()).toString(),
     );
   }
 
@@ -275,7 +275,7 @@ export class DoHardWorkLoopBase {
   protected async deposit(amount: BigNumber, invest: boolean) {
     console.log(
       'PPFS before deposit',
-      (await this.vault.getPricePerFullShare()).toString()
+      (await this.vault.getPricePerFullShare()).toString(),
     );
     await VaultUtils.deposit(this.user, this.vault, amount, invest);
     this.userWithdrew = this.userWithdrew.sub(amount);
@@ -283,7 +283,7 @@ export class DoHardWorkLoopBase {
     await this.userCheckBalanceInVault();
     console.log(
       'PPFS after deposit',
-      (await this.vault.getPricePerFullShare()).toString()
+      (await this.vault.getPricePerFullShare()).toString(),
     );
   }
 
@@ -297,7 +297,7 @@ export class DoHardWorkLoopBase {
       } else {
         const userXTokenBal = await TokenUtils.balanceOf(
           this.vault.address,
-          this.user.address
+          this.user.address,
         );
         const toWithdraw = BigNumber.from(userXTokenBal).mul(95).div(100);
         await this.withdraw(false, toWithdraw);
@@ -306,7 +306,7 @@ export class DoHardWorkLoopBase {
       this.isUserDeposited = true;
       const uBal = await TokenUtils.balanceOf(
         this.underlying,
-        this.user.address
+        this.user.address,
       );
       await this.deposit(BigNumber.from(uBal).div(3), false);
       await this.deposit(BigNumber.from(uBal).div(3), true);
@@ -317,7 +317,7 @@ export class DoHardWorkLoopBase {
   protected async loopPrintROIAndSaveEarned(i: number) {
     const start = Date.now();
     const stratEarnedTotal = await this.core.bookkeeper.targetTokenEarned(
-      this.strategy.address
+      this.strategy.address,
     );
     const stratEarnedTotalN = +utils.formatUnits(stratEarnedTotal);
     this.stratEarned = stratEarnedTotal.sub(this.stratEarnedTotal);
@@ -361,7 +361,7 @@ export class DoHardWorkLoopBase {
     const toClaim = await this.strategy.readyToClaim();
     if (toClaim.length !== 0) {
       const tetuPriceN = +utils.formatUnits(
-        await this.getPrice(this.core.rewardToken.address)
+        await this.getPrice(this.core.rewardToken.address),
       );
       const rts = await this.strategy.rewardTokens();
       for (let i = 0; i < rts.length; i++) {
@@ -380,7 +380,7 @@ export class DoHardWorkLoopBase {
   protected async loop(
     loops: number,
     loopValue: number,
-    advanceBlocks: boolean
+    advanceBlocks: boolean,
   ) {
     for (let i = 0; i < loops; i++) {
       const start = Date.now();
@@ -414,7 +414,7 @@ export class DoHardWorkLoopBase {
 
     // strategy should not contain any tokens in the end
     const stratRtBalances = await StrategyTestUtils.saveStrategyRtBalances(
-      this.strategy
+      this.strategy,
     );
     for (const rtBal of stratRtBalances) {
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
@@ -423,72 +423,72 @@ export class DoHardWorkLoopBase {
     // check vault balance
     const vaultBalanceAfter = await TokenUtils.balanceOf(
       this.core.psVault.address,
-      this.vault.address
+      this.vault.address,
     );
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq(
       '0',
-      'vault reward should increase'
+      'vault reward should increase',
     );
 
     // check ps balance
     const psBalanceAfter = await TokenUtils.balanceOf(
       this.core.rewardToken.address,
-      this.core.psVault.address
+      this.core.psVault.address,
     );
     expect(psBalanceAfter.sub(this.psBal)).is.not.eq(
       '0',
-      'ps balance should increase'
+      'ps balance should increase',
     );
 
     // check ps PPFS
     const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
     expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq(
       '0',
-      'ps share price should increase'
+      'ps share price should increase',
     );
 
     // check reward for user
     const rewardBalanceAfter = await TokenUtils.balanceOf(
       this.core.psVault.address,
-      this.user.address
+      this.user.address,
     );
     expect(rewardBalanceAfter.sub(this.userRTBal).toString()).is.not.eq(
       '0',
-      'should have earned xTETU rewards'
+      'should have earned xTETU rewards',
     );
 
     const userDepositedN = +utils.formatUnits(this.userDeposited, this.undDec);
     // some pools have auto compounding so user balance can increase
     const userUnderlyingBalanceAfter = await TokenUtils.balanceOf(
       this.underlying,
-      this.user.address
+      this.user.address,
     );
     const userUnderlyingBalanceAfterN = +utils.formatUnits(
       userUnderlyingBalanceAfter,
-      this.undDec
+      this.undDec,
     );
     const userBalanceExpected =
       userDepositedN - userDepositedN * this.finalBalanceTolerance;
     console.log(
       'User final balance +-: ',
-      DoHardWorkLoopBase.toPercent(userUnderlyingBalanceAfterN, userDepositedN)
+      DoHardWorkLoopBase.toPercent(userUnderlyingBalanceAfterN, userDepositedN),
     );
     expect(userUnderlyingBalanceAfterN).is.greaterThanOrEqual(
       userBalanceExpected,
-      'user should have more underlying'
+      'user should have more underlying',
     );
 
     const signerDepositedN = +utils.formatUnits(
       this.signerDeposited,
-      this.undDec
+      this.undDec,
     );
     const signerUnderlyingBalanceAfter = await TokenUtils.balanceOf(
       this.underlying,
-      this.signer.address
+      this.signer.address,
     );
     const signerUnderlyingBalanceAfterN = +utils.formatUnits(
       signerUnderlyingBalanceAfter,
-      this.undDec
+      this.undDec,
     );
     const signerBalanceExpected =
       signerDepositedN - signerDepositedN * this.finalBalanceTolerance;
@@ -496,12 +496,12 @@ export class DoHardWorkLoopBase {
       'Signer final balance +-: ',
       DoHardWorkLoopBase.toPercent(
         signerUnderlyingBalanceAfterN,
-        signerDepositedN
-      )
+        signerDepositedN,
+      ),
     );
     expect(signerUnderlyingBalanceAfterN).is.greaterThanOrEqual(
       signerBalanceExpected,
-      'signer should have more underlying'
+      'signer should have more underlying',
     );
   }
 

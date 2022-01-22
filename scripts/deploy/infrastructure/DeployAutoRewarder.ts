@@ -13,7 +13,7 @@ async function main() {
     core.controller,
     core.rewardCalculator,
     utils.parseUnits('0.231').toString(),
-    utils.parseUnits('1000000').toString()
+    utils.parseUnits('1000000').toString(),
   );
 
   await DeployerUtils.wait(5);

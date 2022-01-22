@@ -53,7 +53,7 @@ export class CoreContractsWrapper {
     announcer: Announcer,
     announcerLogic: string,
     vaultController: VaultController,
-    vaultControllerLogic: string
+    vaultControllerLogic: string,
   ) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;

@@ -18,13 +18,13 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/quick_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -66,7 +66,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vAdr
+      vAdr,
     )) as SmartVault;
 
     if (!(await vCtr.active())) {
@@ -77,7 +77,7 @@ async function main() {
     const strCtr = (await DeployerUtils.connectInterface(
       signer,
       'IStrategy',
-      await vCtr.strategy()
+      await vCtr.strategy(),
     )) as IStrategy;
     const strName = await strCtr.STRATEGY_NAME();
     if (
@@ -98,7 +98,7 @@ async function main() {
       lpAddress,
       token0,
       token1,
-      pool
+      pool,
     )) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
@@ -109,7 +109,7 @@ async function main() {
       await DeployerUtils.verifyWithContractName(
         strategy.address,
         'contracts/strategies/matic/quick/StrategyQuickSwapLpAc.sol:StrategyQuickSwapLpAc',
-        [core.controller, vAdr, lpAddress, token0, token1, pool]
+        [core.controller, vAdr, lpAddress, token0, token1, pool],
       );
     }
   }

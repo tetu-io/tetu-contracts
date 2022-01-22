@@ -68,7 +68,7 @@ describe('Universal AMB tests', async () => {
     airdroper = (await ethers.getSigners())[2];
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -89,7 +89,7 @@ describe('Universal AMB tests', async () => {
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
         [MaticAddresses.BAL_TOKEN],
-        ['0xc67136e235785727a0d3B5Cfd08325327b81d373']
+        ['0xc67136e235785727a0d3B5Cfd08325327b81d373'],
       );
     };
     // only for strategies where we expect PPFS fluctuations
@@ -134,7 +134,7 @@ describe('Universal AMB tests', async () => {
           const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
             signer,
             underlying,
-            info.amToken
+            info.amToken,
           );
           pipes.push(aaveAmPipeData[0].address);
           pipesArgs.push(aaveAmPipeData[1]);
@@ -142,7 +142,7 @@ describe('Universal AMB tests', async () => {
           const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
             signer,
             info.amToken,
-            info.camToken
+            info.camToken,
           );
           pipes.push(maiCamPipeData[0].address);
           pipesArgs.push(maiCamPipeData[1]);
@@ -154,13 +154,13 @@ describe('Universal AMB tests', async () => {
               info.stablecoin,
               info.amToken,
               info.targetPercentage,
-              info.collateralNumerator || '1'
+              info.collateralNumerator || '1',
             );
           pipes.push(maiStablecoinPipeData[0].address);
           pipesArgs.push(maiStablecoinPipeData[1]);
           // -----------------
           const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-            signer
+            signer,
           );
           pipes.push(balVaultPipeData[0].address);
           pipesArgs.push(balVaultPipeData[1]);
@@ -176,11 +176,11 @@ describe('Universal AMB tests', async () => {
           return (await DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           )) as StrategyAaveMaiBal;
         },
         underlying,
-        25
+        25,
       );
     };
     const hwInitiator = (
@@ -191,7 +191,7 @@ describe('Universal AMB tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new MultiAaveMaiBalTest(
         _signer,
@@ -207,7 +207,7 @@ describe('Universal AMB tests', async () => {
         airdroper,
         MaticAddresses.BAL_TOKEN,
         AIRDROP_REWARDS_AMOUNT,
-        BAL_PIPE_INDEX
+        BAL_PIPE_INDEX,
       );
     };
 
@@ -223,7 +223,7 @@ describe('Universal AMB tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests
+      specificTests,
     );
   });
 });

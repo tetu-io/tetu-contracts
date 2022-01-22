@@ -46,14 +46,14 @@ describe('Universal Quick Dual tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/quick_pools_dual.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -131,10 +131,10 @@ describe('Universal Quick Dual tests', async () => {
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -145,7 +145,7 @@ describe('Universal Quick Dual tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new DoHardWorkLoopBase(
         _signer,
@@ -156,7 +156,7 @@ describe('Universal Quick Dual tests', async () => {
         _vault,
         _strategy,
         _balanceTolerance,
-        finalBalanceTolerance
+        finalBalanceTolerance,
       );
     };
 
@@ -172,7 +172,7 @@ describe('Universal Quick Dual tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests
+      specificTests,
     );
   });
 });

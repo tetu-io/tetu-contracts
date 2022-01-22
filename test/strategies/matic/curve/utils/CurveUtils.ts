@@ -27,7 +27,7 @@ export class CurveUtils {
   public static async addLiquidity(
     signer: SignerWithAddress,
     token: string,
-    amountN: number
+    amountN: number,
   ) {
     token = token.toLowerCase();
     if (token === MaticAddresses.AM3CRV_TOKEN) {
@@ -41,27 +41,27 @@ export class CurveUtils {
 
   public static async addLiquidityAave(
     investor: SignerWithAddress,
-    amountN: number
+    amountN: number,
   ) {
     await UniswapUtils.getTokenFromHolder(
       investor,
       MaticAddresses.SUSHI_ROUTER,
       MaticAddresses.USDC_TOKEN,
-      utils.parseUnits('1000000')
+      utils.parseUnits('1000000'),
     );
     const usdcUserBalance = await TokenUtils.balanceOf(
       MaticAddresses.USDC_TOKEN,
-      investor.address
+      investor.address,
     );
     const aavePool = (await ethers.getContractAt(
       'IAavePool',
       MaticAddresses.CURVE_AAVE_POOL,
-      investor
+      investor,
     )) as IAavePool;
     const usdcToken = (await ethers.getContractAt(
       'IERC20',
       MaticAddresses.USDC_TOKEN,
-      investor
+      investor,
     )) as IERC20;
     await usdcToken.approve(MaticAddresses.CURVE_AAVE_POOL, usdcUserBalance, {
       from: investor.address,
@@ -71,53 +71,53 @@ export class CurveUtils {
 
   public static async addLiquidityRen(
     investor: SignerWithAddress,
-    amountN: number
+    amountN: number,
   ) {
     const dec = await TokenUtils.decimals(MaticAddresses.WBTC_TOKEN);
     const amount = utils.parseUnits('0.01', dec);
     await TokenUtils.getToken(
       MaticAddresses.WBTC_TOKEN,
       investor.address,
-      amount
+      amount,
     );
     const renBTCPool = (await ethers.getContractAt(
       'IRenBTCPool',
       MaticAddresses.CURVE_renBTC_POOL,
-      investor
+      investor,
     )) as IRenBTCPool;
     await TokenUtils.approve(
       MaticAddresses.WBTC_TOKEN,
       investor,
       MaticAddresses.CURVE_renBTC_POOL,
-      amount.toString()
+      amount.toString(),
     );
     await renBTCPool.add_liquidity([amount, 0], 0, true);
   }
 
   public static async addLiquidityTrirypto(
     investor: SignerWithAddress,
-    amountN: number
+    amountN: number,
   ) {
     console.log('try to deposit to atricrypto');
     await TokenUtils.getToken(
       MaticAddresses.USDC_TOKEN,
       investor.address,
-      utils.parseUnits('10000', 6)
+      utils.parseUnits('10000', 6),
     );
     const pool = (await ethers.getContractAt(
       'ITricryptoPool',
       MaticAddresses.CURVE_aTricrypto3_POOL,
-      investor
+      investor,
     )) as ITricryptoPool;
     const bal = await TokenUtils.balanceOf(
       MaticAddresses.USDC_TOKEN,
-      investor.address
+      investor.address,
     );
     await TokenUtils.approve(
       MaticAddresses.USDC_TOKEN,
       investor,
       pool.address,
-      bal.toString()
+      bal.toString(),
     );
     await pool.add_liquidity([0, bal, 0, 0, 0], 0);
   }
@@ -148,29 +148,29 @@ export class CurveUtils {
       trader,
       MaticAddresses.SUSHI_ROUTER,
       MaticAddresses.WMATIC_TOKEN,
-      utils.parseUnits('10000000')
+      utils.parseUnits('10000000'),
     ); // 100m wmatic
     await UniswapUtils.getTokenFromHolder(
       trader,
       MaticAddresses.SUSHI_ROUTER,
       MaticAddresses.USDC_TOKEN,
-      utils.parseUnits('10000000')
+      utils.parseUnits('10000000'),
     );
 
     const usdcToken = (await ethers.getContractAt(
       'IERC20',
       MaticAddresses.USDC_TOKEN,
-      trader
+      trader,
     )) as IERC20;
     const usdcUserBalance = await usdcToken.balanceOf(trader.address);
     expect(usdcUserBalance).is.not.eq(
       '0',
-      'user should have some USDC tokens to swap'
+      'user should have some USDC tokens to swap',
     );
     const depContract = (await ethers.getContractAt(
       'IAavePool',
       MaticAddresses.CURVE_AAVE_POOL,
-      trader
+      trader,
     )) as IAavePool;
     await usdcToken.approve(MaticAddresses.CURVE_AAVE_POOL, usdcUserBalance, {
       from: trader.address,
@@ -181,12 +181,12 @@ export class CurveUtils {
       0,
       usdcUserBalance,
       BigNumber.from('0'),
-      { from: trader.address }
+      { from: trader.address },
     );
     const daiToken = (await ethers.getContractAt(
       'IERC20',
       MaticAddresses.DAI_TOKEN,
-      trader
+      trader,
     )) as IERC20;
     const daiTokenBalance = await daiToken.balanceOf(trader.address);
     await daiToken.approve(MaticAddresses.CURVE_AAVE_POOL, daiTokenBalance, {
@@ -198,7 +198,7 @@ export class CurveUtils {
       1,
       daiTokenBalance,
       BigNumber.from('0'),
-      { from: trader.address }
+      { from: trader.address },
     );
   }
 
@@ -210,12 +210,12 @@ export class CurveUtils {
     const usdcUserBalance = await usdcToken.balanceOf(trader.address);
     expect(usdcUserBalance).is.not.eq(
       '0',
-      'user should have some USDC tokens to swap'
+      'user should have some USDC tokens to swap',
     );
     const depContract = (await ethers.getContractAt(
       'IAavePool',
       FtmAddresses.CURVE_geist_POOL,
-      trader
+      trader,
     )) as IAavePool;
     await usdcToken.approve(FtmAddresses.CURVE_geist_POOL, usdcUserBalance);
     // swap usdc to dai
@@ -223,7 +223,7 @@ export class CurveUtils {
       1,
       0,
       usdcUserBalance,
-      BigNumber.from('0')
+      BigNumber.from('0'),
     );
   }
 
@@ -232,25 +232,25 @@ export class CurveUtils {
     await TokenUtils.getToken(
       MaticAddresses.USDC_TOKEN,
       signer.address,
-      utils.parseUnits('10000', 6)
+      utils.parseUnits('10000', 6),
     );
     const pool = (await DeployerUtils.connectInterface(
       signer,
       'ITricryptoPool',
-      MaticAddresses.CURVE_aTricrypto3_POOL
+      MaticAddresses.CURVE_aTricrypto3_POOL,
     )) as ITricryptoPool;
     await TokenUtils.approve(
       MaticAddresses.USDC_TOKEN,
       signer,
       pool.address,
-      utils.parseUnits('10000', 6).mul(2).toString()
+      utils.parseUnits('10000', 6).mul(2).toString(),
     );
     await pool.exchange_underlying(
       1,
       0,
       utils.parseUnits('10000', 6),
       0,
-      signer.address
+      signer.address,
     );
     console.log('swap tricrypto completed');
   }
@@ -262,18 +262,18 @@ export class CurveUtils {
     await TokenUtils.getToken(
       token,
       signer.address,
-      utils.parseUnits('10000', dec)
+      utils.parseUnits('10000', dec),
     );
     const pool = (await DeployerUtils.connectInterface(
       signer,
       'ICurve2Pool',
-      FtmAddresses.CURVE_2_POOL
+      FtmAddresses.CURVE_2_POOL,
     )) as ICurve2Pool;
     await TokenUtils.approve(
       token,
       signer,
       pool.address,
-      utils.parseUnits('10000', dec).mul(2).toString()
+      utils.parseUnits('10000', dec).mul(2).toString(),
     );
     await pool.exchange(1, 0, utils.parseUnits('10000', dec), 0);
     console.log('swap 2pool completed');
@@ -286,18 +286,18 @@ export class CurveUtils {
     await TokenUtils.getToken(
       token,
       signer.address,
-      utils.parseUnits('10000', dec)
+      utils.parseUnits('10000', dec),
     );
     const pool = (await DeployerUtils.connectInterface(
       signer,
       'ITricryptoPoolFtm',
-      FtmAddresses.CURVE_tricrypto_POOL
+      FtmAddresses.CURVE_tricrypto_POOL,
     )) as ITricryptoPoolFtm;
     await TokenUtils.approve(
       token,
       signer,
       pool.address,
-      utils.parseUnits('10000', dec).mul(2).toString()
+      utils.parseUnits('10000', dec).mul(2).toString(),
     );
     await pool.exchange(0, 1, utils.parseUnits('10000', dec), 0, false);
     console.log('swap tricrypto ftm completed');
@@ -309,18 +309,18 @@ export class CurveUtils {
     await TokenUtils.getToken(
       MaticAddresses.WBTC_TOKEN,
       signer.address,
-      amount
+      amount,
     );
     const pool = (await DeployerUtils.connectInterface(
       signer,
       'IRenBTCPool',
-      MaticAddresses.CURVE_renBTC_POOL
+      MaticAddresses.CURVE_renBTC_POOL,
     )) as IRenBTCPool;
     await TokenUtils.approve(
       MaticAddresses.WBTC_TOKEN,
       signer,
       pool.address,
-      amount.mul(2).toString()
+      amount.mul(2).toString(),
     );
     await pool.exchange_underlying(0, 1, amount, 0);
     console.log('swap ren completed');
@@ -333,13 +333,13 @@ export class CurveUtils {
     const pool = (await DeployerUtils.connectInterface(
       signer,
       'IRenBTCFtmPool',
-      FtmAddresses.CURVE_ren_POOL
+      FtmAddresses.CURVE_ren_POOL,
     )) as IRenBTCFtmPool;
     await TokenUtils.approve(
       FtmAddresses.WBTC_TOKEN,
       signer,
       pool.address,
-      amount.mul(2).toString()
+      amount.mul(2).toString(),
     );
     await pool.exchange(0, 1, amount, 0);
     console.log('swap ren ftm completed');

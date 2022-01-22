@@ -15,7 +15,7 @@ export class ScreamDoHardWork extends DoHardWorkLoopBase {
     const foldContract = (await DeployerUtils.connectInterface(
       this.signer,
       'StrategyScreamFold',
-      this.strategy.address
+      this.strategy.address,
     )) as StrategyScreamFold;
     let folding = await foldContract.fold();
     // switch off folding on the 1/3 of cycles
@@ -35,7 +35,7 @@ export class ScreamDoHardWork extends DoHardWorkLoopBase {
       '------ FOLDING',
       'cycle:' + i,
       'enabled:' + folding,
-      'profitable:' + (await foldContract.isFoldingProfitable())
+      'profitable:' + (await foldContract.isFoldingProfitable()),
     );
     Misc.printDuration('Loop preparation completed', start);
   }

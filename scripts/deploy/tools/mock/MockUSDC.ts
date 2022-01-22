@@ -7,7 +7,7 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const contract = (await DeployerUtils.deployContract(
     signer,
-    'MockUSDC'
+    'MockUSDC',
   )) as MockUSDC;
   await contract.mint(signer.address, utils.parseUnits('10000000', 6));
 

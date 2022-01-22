@@ -34,7 +34,7 @@ describe('Fund Keeper tests', function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('1000000', 6)
+      utils.parseUnits('1000000', 6),
     );
   });
 
@@ -57,19 +57,19 @@ describe('Fund Keeper tests', function () {
       13,
       core.fundKeeper.address,
       usdc,
-      '1000'
+      '1000',
     );
     await TimeUtils.advanceBlocksOnTs(
-      (await core.announcer.timeLock()).toNumber()
+      (await core.announcer.timeLock()).toNumber(),
     );
     await core.controller.fundKeeperTokenMove(
       core.fundKeeper.address,
       usdc,
-      '1000'
+      '1000',
     );
 
     expect(await TokenUtils.balanceOf(usdc, core.controller.address)).is.eq(
-      '1000'
+      '1000',
     );
   });
 
@@ -83,11 +83,11 @@ describe('Fund Keeper tests', function () {
     await core.announcer.announceTokenMove(opCode, contract, usdc, amount);
 
     await TimeUtils.advanceBlocksOnTs(
-      (await core.announcer.timeLock()).toNumber()
+      (await core.announcer.timeLock()).toNumber(),
     );
 
     await expect(
-      core.controller.fundKeeperTokenMove(contract, usdc, amount)
+      core.controller.fundKeeperTokenMove(contract, usdc, amount),
     ).rejectedWith('not enough balance');
   });
 });

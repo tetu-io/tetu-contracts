@@ -23,7 +23,7 @@ async function main() {
   const reader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const vaultsPure = await core.bookkeeper.vaults();
@@ -54,7 +54,7 @@ async function main() {
     vaults,
     [EVENT_NOTIFY],
     START_BLOCK,
-    currentBlock
+    currentBlock,
   );
 
   let i = 0;
@@ -77,7 +77,7 @@ async function main() {
           },
         ],
         log.data,
-        log.topics.slice(1)
+        log.topics.slice(1),
       );
       const vault = log.address.toLowerCase();
       const rewardPerToken = rewards.get(vault) as Map<string, number>;
@@ -98,7 +98,7 @@ async function main() {
     const strategiesCtr = (await DeployerUtils.connectInterface(
       signer,
       'IStrategy',
-      strategy
+      strategy,
     )) as IStrategy;
     const stratVault = await strategiesCtr.vault();
     vaultStrategies.get(stratVault.toLowerCase())?.add(strategy);
@@ -110,11 +110,11 @@ async function main() {
       const vaultCtr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vault
+        vault,
       )) as SmartVault;
       const vaultName = await vaultCtr.name();
       const strategies = vaultStrategies.get(
-        vault.toLowerCase()
+        vault.toLowerCase(),
       ) as Set<string>;
 
       let earned = 0;

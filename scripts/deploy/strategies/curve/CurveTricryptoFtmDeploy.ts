@@ -14,7 +14,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -39,14 +39,14 @@ async function main() {
           'CurveTriCryptoFtmStrategy',
           core.controller,
           FtmAddresses.USD_BTC_ETH_CRV_TOKEN,
-          vaultAddress
+          vaultAddress,
         ) as Promise<IStrategy>,
       core.controller,
       core.rewardToken,
       signer,
       60 * 60 * 24 * 28,
       0,
-      true
+      true,
     );
 
   await DeployerUtils.wait(5);
@@ -56,7 +56,7 @@ async function main() {
   await DeployerUtils.verifyWithContractName(
     strategy.address,
     'contracts/strategies/fantom/curve/CurveTriCryptoFtmStrategy.sol:CurveTriCryptoFtmStrategy',
-    [core.controller, FtmAddresses.USD_BTC_ETH_CRV_TOKEN, vault.address]
+    [core.controller, FtmAddresses.USD_BTC_ETH_CRV_TOKEN, vault.address],
   );
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;

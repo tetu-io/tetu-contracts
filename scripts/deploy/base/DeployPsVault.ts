@@ -15,7 +15,7 @@ export default async function main() {
   const controller = (await DeployerUtils.connectInterface(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
 
   // const rewardToken = MaticAddresses.ZERO_ADDRESS;
@@ -27,7 +27,7 @@ export default async function main() {
   const vaultProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    vaultLogic.address
+    vaultLogic.address,
   );
   const psVault = vaultLogic.attach(vaultProxy.address) as SmartVault;
   const psEmptyStrategy = (await DeployerUtils.deployContract(
@@ -38,7 +38,7 @@ export default async function main() {
     psVault.address,
     [],
     [core.rewardToken],
-    1
+    1,
   )) as NoopStrategy;
 
   await RunHelper.runAndWait(
@@ -51,20 +51,20 @@ export default async function main() {
         psRewardDuration,
         false,
         Misc.ZERO_ADDRESS,
-        0
+        0,
       ),
     true,
-    wait
+    wait,
   );
   await RunHelper.runAndWait(
     () => controller.setRewardToken(core.rewardToken),
     true,
-    wait
+    wait,
   );
   await RunHelper.runAndWait(
     () => controller.setPsVault(psVault.address),
     true,
-    wait
+    wait,
   );
 
   // need to add after adding bookkeeper
@@ -72,10 +72,10 @@ export default async function main() {
     () =>
       controller.addVaultsAndStrategies(
         [psVault.address],
-        [psEmptyStrategy.address]
+        [psEmptyStrategy.address],
       ),
     true,
-    wait
+    wait,
   );
 
   // ps

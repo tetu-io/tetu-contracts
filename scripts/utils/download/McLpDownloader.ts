@@ -27,7 +27,7 @@ export class McLpDownloader {
       lastUpdateTime: number;
       depositFeeBP?: number;
     }>,
-    onlyDeployed = false
+    onlyDeployed = false,
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -36,7 +36,7 @@ export class McLpDownloader {
     const priceCalculator = (await DeployerUtils.connectInterface(
       signer,
       'PriceCalculator',
-      tools.calculator
+      tools.calculator,
     )) as PriceCalculator;
 
     const vaultInfos = await VaultUtils.getVaultInfoFromServer();
@@ -54,7 +54,7 @@ export class McLpDownloader {
         const vctr = (await DeployerUtils.connectInterface(
           signer,
           'SmartVault',
-          vInfo.addr
+          vInfo.addr,
         )) as SmartVault;
         const rts = await vctr.rewardTokens();
         const rewards = await VaultUtils.vaultRewardsAmount(vctr, rts[0]);
@@ -69,7 +69,7 @@ export class McLpDownloader {
     const rewardPerBlock = await rewardPerBlocCall();
     const totalAllocPoint = await totalAllocPointCall();
     const rewardPrice = await priceCalculator.getPriceWithDefaultOutput(
-      rewardAddress
+      rewardAddress,
     );
     const currentBlock = await web3.eth.getBlockNumber();
     console.log('reward price', utils.formatUnits(rewardPrice));
@@ -85,7 +85,7 @@ export class McLpDownloader {
             i,
             'depositFeeBP',
             poolInfo.depositFeeBP,
-            'is defined, skipping the pool'
+            'is defined, skipping the pool',
           );
           continue;
         }
@@ -102,7 +102,7 @@ export class McLpDownloader {
         const lpContract = (await DeployerUtils.connectInterface(
           signer,
           'IUniswapV2Pair',
-          lp
+          lp,
         )) as IUniswapV2Pair;
 
         const allocPoint = poolInfo.allocPoint;
@@ -111,14 +111,14 @@ export class McLpDownloader {
           'duration',
           duration,
           currentBlock,
-          poolInfo.lastUpdateTime
+          poolInfo.lastUpdateTime,
         );
         const weekRewardUsd = McLpDownloader.computeWeekReward(
           duration,
           rewardPerBlock,
           allocPoint,
           totalAllocPoint,
-          rewardPrice
+          rewardPrice,
         );
         console.log('weekRewardUsd', weekRewardUsd);
 
@@ -143,7 +143,7 @@ export class McLpDownloader {
           const _lpContract = (await DeployerUtils.connectInterface(
             signer,
             'IWaultSwapPair',
-            lp
+            lp,
           )) as IWaultSwapPair;
           token0 = await _lpContract.token0();
           token1 = await _lpContract.token1();
@@ -156,7 +156,7 @@ export class McLpDownloader {
           const token = (await DeployerUtils.connectInterface(
             signer,
             'ERC20',
-            lp
+            lp,
           )) as ERC20;
           token0Name = await token.symbol();
         }
@@ -205,7 +205,7 @@ export class McLpDownloader {
     writeFileSync(
       `./tmp/download/${prefix.toLowerCase()}_pools.csv`,
       infos,
-      'utf8'
+      'utf8',
     );
     console.log('downloaded', prefix, counter);
   }
@@ -216,7 +216,7 @@ export class McLpDownloader {
     allocPoint: BigNumber,
     totalAllocPoint: BigNumber,
     tokenPrice: BigNumber,
-    averageBlockTime = 2.25
+    averageBlockTime = 2.25,
   ): number {
     console.log(
       'blockDuration',
@@ -230,7 +230,7 @@ export class McLpDownloader {
       'tokenPrice',
       tokenPrice.toString(),
       'averageBlockTime',
-      averageBlockTime
+      averageBlockTime,
     );
     blockDuration = Math.max(blockDuration, 1);
     const reward = BigNumber.from(blockDuration)

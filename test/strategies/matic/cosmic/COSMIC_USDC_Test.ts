@@ -39,7 +39,7 @@ describe.skip('Cosmic COSMIC-USDC Test', async () => {
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -52,6 +52,6 @@ describe.skip('Cosmic COSMIC-USDC Test', async () => {
     MaticAddresses.COSMIC_TOKEN,
     'COSMIC',
     '0',
-    deployInfo
+    deployInfo,
   );
 });

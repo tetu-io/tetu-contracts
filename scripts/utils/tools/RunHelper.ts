@@ -11,7 +11,7 @@ export class RunHelper {
   public static async runAndWait(
     callback: () => Promise<ContractTransaction>,
     stopOnError = true,
-    wait = true
+    wait = true,
   ) {
     const start = Date.now();
     const tr = await callback();

@@ -40,14 +40,14 @@ describe.skip('Universal Wault tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/wault_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -87,7 +87,7 @@ describe.skip('Universal Wault tests', async () => {
         token1,
         token1Name,
         idx,
-        deployInfo
+        deployInfo,
       );
     } else {
       /* eslint-disable @typescript-eslint/no-floating-promises */
@@ -95,7 +95,7 @@ describe.skip('Universal Wault tests', async () => {
         'StrategyWaultSingle',
         lpAddress.toLowerCase(),
         token0Name,
-        deployInfo
+        deployInfo,
       );
     }
   });

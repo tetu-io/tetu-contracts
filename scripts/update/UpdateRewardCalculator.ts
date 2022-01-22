@@ -7,7 +7,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'RewardCalculator'
+    'RewardCalculator',
   )) as RewardCalculator;
 
   await DeployerUtils.wait(5);

@@ -14,7 +14,7 @@ async function main() {
     core.controller,
     tools.calculator,
     [MaticAddresses.SUSHI_FACTORY],
-    [MaticAddresses.SUSHI_ROUTER]
+    [MaticAddresses.SUSHI_ROUTER],
   )) as MultiSwap;
 
   await DeployerUtils.wait(5);

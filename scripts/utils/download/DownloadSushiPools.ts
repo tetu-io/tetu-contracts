@@ -21,13 +21,13 @@ async function downloadSushi() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'IMiniChefV2',
-    MaticAddresses.SUSHI_MINISHEFV2
+    MaticAddresses.SUSHI_MINISHEFV2,
   )) as IMiniChefV2;
 
   const oracle = (await DeployerUtils.connectInterface(
     signer,
     'IOracleMatic',
-    Addresses.ORACLE
+    Addresses.ORACLE,
   )) as IOracleMatic;
 
   const poolLength = (await chef.poolLength()).toNumber();
@@ -47,11 +47,11 @@ async function downloadSushi() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       currentRewards.set(
         vInfo.underlying.toLowerCase(),
-        await VaultUtils.vaultRewardsAmount(vctr, core.psVault)
+        await VaultUtils.vaultRewardsAmount(vctr, core.psVault),
       );
     }
   }
@@ -80,7 +80,7 @@ async function downloadSushi() {
     const lpContract = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Pair',
-      lp
+      lp,
     )) as IUniswapV2Pair;
     const token0 = await lpContract.token0();
     const token1 = await lpContract.token1();
@@ -90,7 +90,7 @@ async function downloadSushi() {
       continue;
     }
     const sushiDuration = +(Date.now() / 1000 - poolInfo[1].toNumber()).toFixed(
-      0
+      0,
     );
 
     const sushiWeekRewardUsd = computeWeekReward(
@@ -98,7 +98,7 @@ async function downloadSushi() {
       sushiPerSecond,
       sushiAllocPoint,
       totalAllocPoint,
-      sushiPrice
+      sushiPrice,
     );
     console.log('sushiWeekRewardUsd', sushiWeekRewardUsd);
 
@@ -106,7 +106,7 @@ async function downloadSushi() {
     const rewarderContract = (await DeployerUtils.connectInterface(
       signer,
       'IRewarder',
-      rewarder
+      rewarder,
     )) as IRewarder;
 
     const rewarderPoolInfo = await rewarderContract.poolInfo(i);
@@ -124,7 +124,7 @@ async function downloadSushi() {
       maticPerSec,
       rewarderPoolInfo[2],
       maticTotalAllocPoint,
-      maticPrice
+      maticPrice,
     );
     console.log('maticWeekRewardUsd', maticWeekRewardUsd);
 
@@ -195,7 +195,7 @@ function computeWeekReward(
   sushiPerSecond: BigNumber,
   allocPoint: BigNumber,
   totalAllocPoint: BigNumber,
-  sushiPrice: BigNumber
+  sushiPrice: BigNumber,
 ): number {
   const sushiReward = BigNumber.from(time)
     .mul(sushiPerSecond)

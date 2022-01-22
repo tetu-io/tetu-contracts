@@ -12,18 +12,18 @@ async function main() {
     data = await DeployerUtils.deployPriceCalculatorMatic(
       signer,
       core.controller,
-      true
+      true,
     );
   } else if (net.chainId === 250) {
     data = await DeployerUtils.deployPriceCalculatorFantom(
       signer,
       core.controller,
-      true
+      true,
     );
   } else {
     data = await DeployerUtils.deployPriceCalculatorTestNet(
       signer,
-      core.controller
+      core.controller,
     );
   }
 

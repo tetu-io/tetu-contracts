@@ -11,12 +11,12 @@ export class TestAsserts {
     eventName: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any[],
-    eIdx = 0
+    eIdx = 0,
   ) {
     const receipt = await tx.wait();
 
     const events = receipt.events?.filter(
-      (e) => e.event === eventName
+      (e) => e.event === eventName,
     ) as Event[];
     expect(events !== undefined).is.eq(true, `Event ${eventName} not found`);
     const event = events[eIdx];
@@ -28,12 +28,12 @@ export class TestAsserts {
         expect(typeof args[i]).is.eq('string', `Arg ${i} is not string`);
         expect(value.toLowerCase()).is.eq(
           args[i].toLowerCase(),
-          `Arg ${i} is not equal`
+          `Arg ${i} is not equal`,
         );
       } else if (value instanceof BigNumber) {
         expect(value.toString()).is.eq(
           BigNumber.from(args[i]).toString(),
-          `Arg ${i} is not equal`
+          `Arg ${i} is not equal`,
         );
       } else {
         expect(value).is.eq(args[i], `Arg ${i} is not equal`);
@@ -45,7 +45,7 @@ export class TestAsserts {
     actual: BigNumber,
     expected: BigNumber,
     deltaFactor: number,
-    dec = 18
+    dec = 18,
   ) {
     const actualN = +utils.formatUnits(actual);
     const expectedN = +utils.formatUnits(expected);

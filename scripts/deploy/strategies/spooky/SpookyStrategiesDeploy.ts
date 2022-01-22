@@ -10,7 +10,7 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/spooky_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -19,7 +19,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -73,14 +73,14 @@ async function main() {
             lpAddress,
             token0,
             token1,
-            idx
+            idx,
           ) as Promise<IStrategy>,
         core.controller,
         core.psVault,
         signer,
         60 * 60 * 24 * 28,
-        true
-      ))
+        true,
+      )),
     );
     data.push([
       core.controller,
@@ -105,7 +105,7 @@ async function main() {
     await DeployerUtils.verifyWithContractName(
       data[2].address,
       'contracts/strategies/fantom/spooky/StrategySpookySwapLp.sol:StrategySpookySwapLp',
-      data[3]
+      data[3],
     );
   }
 }

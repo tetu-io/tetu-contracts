@@ -49,49 +49,49 @@ describe('Bookkeeper tests', function () {
 
   it('should not deploy with zero controller', async () => {
     await expect(
-      DeployerUtils.deployBookkeeper(signer, Misc.ZERO_ADDRESS)
+      DeployerUtils.deployBookkeeper(signer, Misc.ZERO_ADDRESS),
     ).rejectedWith('zero address');
   });
 
   it('should not register strat action for non strat', async () => {
     await expect(bookkeeper.registerStrategyEarned('1')).is.rejectedWith(
-      'B: Only exist strategy'
+      'B: Only exist strategy',
     );
   });
 
   it('should not register ppfs change for non forwarder', async () => {
     await expect(
-      bookkeeper.registerPpfsChange(Misc.ZERO_ADDRESS, '1')
+      bookkeeper.registerPpfsChange(Misc.ZERO_ADDRESS, '1'),
     ).is.rejectedWith('B: Only exist forwarder or strategy');
   });
 
   it('should not register user action for non vault', async () => {
     await expect(
-      bookkeeper.registerUserAction(Misc.ZERO_ADDRESS, '1', true)
+      bookkeeper.registerUserAction(Misc.ZERO_ADDRESS, '1', true),
     ).is.rejectedWith('B: Only exist vault');
   });
 
   it('should not add vault', async () => {
     await expect(
-      bookkeeper.connect(signer1).addVault(Misc.ZERO_ADDRESS)
+      bookkeeper.connect(signer1).addVault(Misc.ZERO_ADDRESS),
     ).is.rejectedWith('not controller');
   });
 
   it('should not add strategy', async () => {
     await expect(
-      bookkeeper.connect(signer1).addStrategy(Misc.ZERO_ADDRESS)
+      bookkeeper.connect(signer1).addStrategy(Misc.ZERO_ADDRESS),
     ).is.rejectedWith('not controller');
   });
 
   it('is governance', async () => {
     expect(
-      await bookkeeper.connect(signer1).isGovernance(Misc.ZERO_ADDRESS)
+      await bookkeeper.connect(signer1).isGovernance(Misc.ZERO_ADDRESS),
     ).is.eq(false);
   });
 
   it('last hardwork', async () => {
     expect(
-      (await bookkeeper.connect(signer1).lastHardWork(Misc.ZERO_ADDRESS))[1]
+      (await bookkeeper.connect(signer1).lastHardWork(Misc.ZERO_ADDRESS))[1],
     ).is.eq(0);
   });
 
@@ -103,16 +103,16 @@ describe('Bookkeeper tests', function () {
 
     await bookkeeper.addVaultAndStrategy(
       core.psVault.address,
-      await core.psVault.strategy()
+      await core.psVault.strategy(),
     );
 
     expect((await bookkeeper.vaults()).length).is.eq(
       vaults.length,
-      'existed vault should not be added'
+      'existed vault should not be added',
     );
     expect((await bookkeeper.strategies()).length).is.eq(
       strategies.length,
-      'existed strategy should not be added'
+      'existed strategy should not be added',
     );
   });
 
@@ -125,11 +125,11 @@ describe('Bookkeeper tests', function () {
     await bookkeeper.addVaultAndStrategy(Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS);
     expect((await bookkeeper.vaults()).length).is.eq(
       vaults.length + 1,
-      'existed vault should not be added'
+      'existed vault should not be added',
     );
     expect((await bookkeeper.strategies()).length).is.eq(
       strategies.length + 1,
-      'existed strategy should not be added'
+      'existed strategy should not be added',
     );
   });
 
@@ -144,11 +144,11 @@ describe('Bookkeeper tests', function () {
 
     expect((await bookkeeper.vaults()).length).is.eq(
       vaults.length - 1,
-      'existed vault should not be added'
+      'existed vault should not be added',
     );
     expect((await bookkeeper.strategies()).length).is.eq(
       strategies.length - 1,
-      'existed strategy should not be added'
+      'existed strategy should not be added',
     );
   });
 
@@ -160,13 +160,13 @@ describe('Bookkeeper tests', function () {
       core.controller,
       core.announcer,
       '100000',
-      signer.address
+      signer.address,
     );
     await VaultUtils.deposit(signer, vault, BigNumber.from('1000'));
 
     let user1Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer.address
+      signer.address,
     );
     let vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
 
@@ -178,11 +178,11 @@ describe('Bookkeeper tests', function () {
 
     user1Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer.address
+      signer.address,
     );
     let user2Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer1.address
+      signer1.address,
     );
     vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
 
@@ -195,11 +195,11 @@ describe('Bookkeeper tests', function () {
 
     user1Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer.address
+      signer.address,
     );
     user2Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer1.address
+      signer1.address,
     );
     vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
 
@@ -213,11 +213,11 @@ describe('Bookkeeper tests', function () {
 
     user1Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer.address
+      signer.address,
     );
     user2Bal = await bookkeeper.vaultUsersBalances(
       vault.address,
-      signer1.address
+      signer1.address,
     );
     vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
 

@@ -42,7 +42,7 @@ async function main() {
         .toString(),
       RopstenAddresses.SUSHI_FACTORY,
       RopstenAddresses.SUSHI_ROUTER,
-      true
+      true,
     );
     console.log('liquidity added to Reward TOKEN and', mockName, lp);
 
@@ -57,7 +57,7 @@ async function main() {
           .toString(),
         RopstenAddresses.SUSHI_FACTORY,
         RopstenAddresses.SUSHI_ROUTER,
-        true
+        true,
       );
       console.log('liquidity added to usdc ', mockName, nonUsdclp);
     }
@@ -76,7 +76,7 @@ async function main() {
           .toString(),
         RopstenAddresses.SUSHI_FACTORY,
         RopstenAddresses.SUSHI_ROUTER,
-        true
+        true,
       );
       console.log('liquidity added to', mockName, prevMockName, prevMocklp);
     }
@@ -100,7 +100,7 @@ async function addLiquidityWithWait(
   amountA: string,
   amountB: string,
   _factory: string,
-  _router: string
+  _router: string,
 ): Promise<string> {
   const router = await UniswapUtils.connectRouter(_router, sender);
   await TokenUtils.approve(tokenA, sender, router.address, amountA);
@@ -114,8 +114,8 @@ async function addLiquidityWithWait(
       1,
       1,
       sender.address,
-      '1000000000000'
-    )
+      '1000000000000',
+    ),
   );
 
   const factory = await UniswapUtils.connectFactory(_factory, sender);

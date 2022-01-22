@@ -28,17 +28,17 @@ async function main() {
   const reader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const rewarder = (await DeployerUtils.connectInterface(
     signer,
     'AutoRewarder',
-    core.autoRewarder
+    core.autoRewarder,
   )) as AutoRewarder;
 
   const allVaults = await bookkeeper.vaults();
@@ -62,7 +62,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const platform = (
       await reader.strategyPlatform(await vCtr.strategy())
@@ -81,7 +81,7 @@ async function main() {
     console.log(
       'distributed',
       vaultNames.get(item.toLowerCase()),
-      utils.formatUnits(amount)
+      utils.formatUnits(amount),
     );
   }
 }

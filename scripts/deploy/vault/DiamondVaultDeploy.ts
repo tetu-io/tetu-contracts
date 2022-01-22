@@ -13,7 +13,7 @@ async function main() {
   const vaultProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    vaultLogic.address
+    vaultLogic.address,
   );
   const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
@@ -25,7 +25,7 @@ async function main() {
     vault.address,
     [],
     [core.psVault],
-    1
+    1,
   )) as NoopStrategy;
 
   const strategyUnderlying = await strategy.underlying();
@@ -39,8 +39,8 @@ async function main() {
       REWARDS_DURATION,
       true,
       vault.address,
-      0
-    )
+      0,
+    ),
   );
 
   await DeployerUtils.wait(5);
@@ -50,7 +50,7 @@ async function main() {
   await DeployerUtils.verifyWithContractName(
     strategy.address,
     'contracts/base/strategies/NoopStrategy.sol:NoopStrategy',
-    [core.controller, core.psVault, vault.address, [], [core.psVault], 1]
+    [core.controller, core.psVault, vault.address, [], [core.psVault], 1],
   );
 }
 

@@ -5,7 +5,7 @@ async function main() {
   await SingleTokenVaultStrategyDeploy.deploy(
     MaticAddresses.KLIMA_TOKEN,
     'KLIMA',
-    'StrategyKlimaStaking'
+    'StrategyKlimaStaking',
   );
 }
 

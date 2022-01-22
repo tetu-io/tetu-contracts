@@ -21,17 +21,17 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
     'VaultController',
-    core.vaultController
+    core.vaultController,
   )) as VaultController;
 
   const infos = readFileSync(
     'scripts/utils/download/data/iron_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const vaultNames = new Set<string>();
@@ -39,7 +39,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -91,13 +91,13 @@ async function main() {
             vaultAddress,
             lpAddress,
             tokens,
-            idx
+            idx,
           ) as Promise<IStrategy>,
         core.controller,
         core.psVault,
         signer,
         60 * 60 * 24 * 28,
-        true
+        true,
       );
 
       if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
@@ -105,7 +105,7 @@ async function main() {
         await DeployerUtils.verifyWithContractName(
           data[2].address,
           'contracts/strategies/matic/iron/StrategyIronSwap.sol:StrategyIronSwap',
-          [core.controller, data[1].address, lpAddress, tokens, idx]
+          [core.controller, data[1].address, lpAddress, tokens, idx],
         );
       }
     } else {
@@ -120,13 +120,13 @@ async function main() {
             lpAddress,
             tokens[0],
             tokens[1],
-            idx
+            idx,
           ) as Promise<IStrategy>,
         core.controller,
         core.psVault,
         signer,
         60 * 60 * 24 * 28,
-        true
+        true,
       );
 
       if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
@@ -141,7 +141,7 @@ async function main() {
             tokens[0],
             tokens[1],
             idx,
-          ]
+          ],
         );
       }
     }
@@ -153,7 +153,7 @@ async function main() {
     writeFileSync(
       `./tmp/${vaultNameWithoutPrefix}.txt`,
       JSON.stringify(data),
-      'utf8'
+      'utf8',
     );
   }
 }

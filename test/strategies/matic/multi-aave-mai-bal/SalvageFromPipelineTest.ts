@@ -30,7 +30,7 @@ export class SalvageFromPipelineTest extends SpecificStrategyTest {
       await TokenUtils.getToken(
         MaticAddresses.WMATIC_TOKEN,
         signer.address,
-        totalAmount
+        totalAmount,
       );
       await TokenUtils.getToken(token, signer.address, totalAmount);
 
@@ -43,7 +43,7 @@ export class SalvageFromPipelineTest extends SpecificStrategyTest {
           token,
           signer,
           pipe,
-          amountPerPipe.toString()
+          amountPerPipe.toString(),
         );
       }
 

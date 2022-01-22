@@ -11,7 +11,7 @@ async function main() {
     signer,
     'TetuPawnShop',
     core.controller,
-    core.rewardToken
+    core.rewardToken,
   )) as TetuPawnShop;
 
   await DeployerUtils.wait(5);

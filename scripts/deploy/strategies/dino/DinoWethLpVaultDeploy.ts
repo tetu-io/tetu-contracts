@@ -7,7 +7,7 @@ async function main() {
     11,
     'DINO',
     'StrategyDinoSwapLp',
-    'contracts/strategies/matic/dino/StrategyDinoSwapLp.sol:StrategyDinoSwapLp'
+    'contracts/strategies/matic/dino/StrategyDinoSwapLp.sol:StrategyDinoSwapLp',
   );
 }
 

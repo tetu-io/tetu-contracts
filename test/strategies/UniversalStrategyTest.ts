@@ -23,7 +23,7 @@ async function universalStrategyTest(
   name: string,
   deployInfo: DeployInfo,
   deployer: (
-    signer: SignerWithAddress
+    signer: SignerWithAddress,
   ) => Promise<[SmartVault, IStrategy, string]>,
   hardworkInitiator: (
     signer: SignerWithAddress,
@@ -33,7 +33,7 @@ async function universalStrategyTest(
     underlying: string,
     vault: SmartVault,
     strategy: IStrategy,
-    balanceTolerance: number
+    balanceTolerance: number,
   ) => DoHardWorkLoopBase,
   forwarderConfigurator:
     | ((forwarder: ForwarderV2) => Promise<void>)
@@ -44,7 +44,7 @@ async function universalStrategyTest(
   loops = 9,
   loopValue = 300,
   advanceBlocks = true,
-  specificTests: SpecificStrategyTest[] | null = null
+  specificTests: SpecificStrategyTest[] | null = null,
 ) {
   describe(name + '_Test', async function () {
     let snapshotBefore: string;
@@ -74,7 +74,7 @@ async function universalStrategyTest(
       if (ppfsDecreaseAllowed) {
         await core.vaultController.changePpfsDecreasePermissions(
           [vault.address],
-          true
+          true,
         );
       }
       await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
@@ -92,7 +92,7 @@ async function universalStrategyTest(
         deposit,
         user,
         deployInfo?.tools?.calculator as PriceCalculator,
-        [signer.address]
+        [signer.address],
       );
       await UniswapUtils.wrapNetworkToken(this.signer);
       Misc.printDuration('Test Preparations completed', start);
@@ -121,7 +121,7 @@ async function universalStrategyTest(
         underlying,
         vault,
         strategy,
-        balanceTolerance
+        balanceTolerance,
       ).start(userBalance, loops, loopValue, advanceBlocks);
     });
 

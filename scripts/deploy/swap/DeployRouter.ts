@@ -11,7 +11,7 @@ async function main() {
     signer,
     'TetuSwapRouter',
     core.swapFactory,
-    networkToken
+    networkToken,
   )) as TetuSwapRouter;
 
   await DeployerUtils.wait(5);

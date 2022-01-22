@@ -12,12 +12,12 @@ async function main() {
   const proxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyGov',
-    logic.address
+    logic.address,
   );
   const contract = logic.attach(proxy.address) as PayrollClerk;
 
   await RunHelper.runAndWait(() =>
-    contract.initialize(core.controller, tools.calculator)
+    contract.initialize(core.controller, tools.calculator),
   );
 
   await DeployerUtils.wait(5);

@@ -10,7 +10,7 @@ async function main() {
   const dataProvider = (await DeployerUtils.connectInterface(
     signer,
     'IAaveProtocolDataProvider',
-    MaticAddresses.AAVE_PROTOCOL_DATA_PROVIDER
+    MaticAddresses.AAVE_PROTOCOL_DATA_PROVIDER,
   )) as IAaveProtocolDataProvider;
 
   const allLendingTokens = await dataProvider.getAllATokens();
@@ -32,7 +32,7 @@ async function main() {
     const aToken = (await DeployerUtils.connectInterface(
       signer,
       'IAToken',
-      aTokenAdr
+      aTokenAdr,
     )) as IAToken;
     const tokenAdr = await aToken.UNDERLYING_ASSET_ADDRESS();
     const tokenName = await TokenUtils.tokenSymbol(tokenAdr);

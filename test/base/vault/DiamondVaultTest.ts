@@ -43,22 +43,22 @@ describe('Diamond vault test', () => {
 
     multicall = (await DeployerUtils.deployContract(
       signer,
-      'Multicall'
+      'Multicall',
     )) as Multicall;
     const crLogic = await DeployerUtils.deployContract(
       signer,
-      'ContractReader'
+      'ContractReader',
     );
     const crProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyGov',
-      crLogic.address
+      crLogic.address,
     );
     contractReader = crLogic.attach(crProxy.address) as ContractReader;
 
     await contractReader.initialize(
       core.controller.address,
-      calculator.address
+      calculator.address,
     );
   });
 
@@ -89,7 +89,7 @@ describe('Diamond vault test', () => {
       vault.address,
       [Misc.ZERO_ADDRESS],
       [underlying],
-      1
+      1,
     )) as NoopStrategy;
     await vault.initializeSmartVault(
       'NOOP',
@@ -99,11 +99,11 @@ describe('Diamond vault test', () => {
       60 * 60 * 24 * 28,
       true,
       rt,
-      0
+      0,
     );
     await core.controller.addVaultsAndStrategies(
       [vault.address],
-      [strategy.address]
+      [strategy.address],
     );
     await vault.setLockPenalty(LOCK_PENALTY);
     await vault.setLockPeriod(LOCK_DURATION);
@@ -122,27 +122,27 @@ describe('Diamond vault test', () => {
     await VaultUtils.deposit(
       signer,
       core.psVault,
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     );
     console.log(
       'underlying amount',
       utils.formatUnits(
         await TokenUtils.balanceOf(underlying, signer.address),
-        underlyingDec
-      )
+        underlyingDec,
+      ),
     );
     await VaultUtils.deposit(signer, vault, rewardsToDistribute.mul(2).add(1));
     await TokenUtils.approve(
       rt,
       signer,
       vault.address,
-      rewardsToDistribute.toString()
+      rewardsToDistribute.toString(),
     );
     await vault.notifyTargetRewardAmount(rt, rewardsToDistribute);
 
     const signerUndBal = +utils.formatUnits(
       await TokenUtils.balanceOf(underlying, signer.address),
-      underlyingDec
+      underlyingDec,
     );
     let user1Balance = +(signerUndBal * 0.2).toFixed(underlyingDec);
     let user2Balance = +(signerUndBal * 0.3).toFixed(underlyingDec);
@@ -151,13 +151,13 @@ describe('Diamond vault test', () => {
       underlying,
       signer,
       user1.address,
-      utils.parseUnits(user1Balance.toString(), underlyingDec).toString()
+      utils.parseUnits(user1Balance.toString(), underlyingDec).toString(),
     );
     await TokenUtils.transfer(
       underlying,
       signer,
       user2.address,
-      utils.parseUnits(user2Balance.toString(), underlyingDec).toString()
+      utils.parseUnits(user2Balance.toString(), underlyingDec).toString(),
     );
 
     // *************** CYCLES *************
@@ -173,7 +173,7 @@ describe('Diamond vault test', () => {
     for (let i = 0; i < cycles; i++) {
       const ppfs = +utils.formatUnits(
         await vault.getPricePerFullShare(),
-        underlyingDec
+        underlyingDec,
       );
       console.log('cycle', i, cycles, ppfs);
 
@@ -183,14 +183,14 @@ describe('Diamond vault test', () => {
           rt,
           signer,
           vault.address,
-          rewardsToDistribute.toString()
+          rewardsToDistribute.toString(),
         );
         await vault.notifyTargetRewardAmount(rt, rewardsToDistribute);
         rewardsTotalAmount = rewardsTotalAmount.add(rewardsToDistribute);
         finish = (await vault.periodFinishForToken(rt)).toNumber();
         console.log(
           'ppfs after notify',
-          +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec)
+          +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec),
         );
         console.log('!!!!!!!!!!end add rewards', finish);
       }
@@ -205,20 +205,20 @@ describe('Diamond vault test', () => {
 
           const undBalBeforeExit = +utils.formatUnits(
             await vault.underlyingBalanceWithInvestmentForHolder(user1.address),
-            underlyingDec
+            underlyingDec,
           );
           expect(+user1Balance).is.approximately(
             undBalBeforeExit,
-            undBalBeforeExit * 0.001
+            undBalBeforeExit * 0.001,
           );
 
           await vault.connect(user1).exit();
           expect(
             (
               await vault.underlyingBalanceWithInvestmentForHolder(
-                user1.address
+                user1.address,
               )
-            ).isZero()
+            ).isZero(),
           ).is.eq(true);
           const lastWithdrawTs = (
             await vault.userLastWithdrawTs(user1.address)
@@ -226,7 +226,7 @@ describe('Diamond vault test', () => {
 
           const curUndBal = +utils.formatUnits(
             await TokenUtils.balanceOf(underlying, user1.address),
-            underlyingDec
+            underlyingDec,
           );
           await printBalance(
             user1.address,
@@ -235,13 +235,13 @@ describe('Diamond vault test', () => {
             curUndBal,
             undBalBeforeExit, // user claim rewards and withdraw it when exit
             (await vault.userLastDepositTs(user1.address)).toNumber(),
-            lastWithdrawTs
+            lastWithdrawTs,
           );
           const diff = undBalBeforeExit - curUndBal;
           console.log('--USER 1 diff', diff, user1Balance, curUndBal);
           user1Balance = curUndBal;
           rewardsTotalAmount = rewardsTotalAmount.add(
-            utils.parseUnits(diff.toString(), underlyingDec)
+            utils.parseUnits(diff.toString(), underlyingDec),
           );
           user1Deposited = false;
         } else {
@@ -249,7 +249,10 @@ describe('Diamond vault test', () => {
           await VaultUtils.deposit(
             user1,
             vault,
-            utils.parseUnits(Math.floor(user1Balance).toString(), underlyingDec)
+            utils.parseUnits(
+              Math.floor(user1Balance).toString(),
+              underlyingDec,
+            ),
           );
           user1Deposited = true;
         }
@@ -260,15 +263,15 @@ describe('Diamond vault test', () => {
           console.log('--USER 2 WITHDRAW');
           const user2Staked = await TokenUtils.balanceOf(
             vault.address,
-            user2.address
+            user2.address,
           );
           const bal = +utils.formatUnits(
-            await vault.underlyingBalanceWithInvestmentForHolder(user2.address)
+            await vault.underlyingBalanceWithInvestmentForHolder(user2.address),
           );
           await vault.connect(user2).withdraw(user2Staked);
           const curBal = +utils.formatUnits(
             await TokenUtils.balanceOf(underlying, user2.address),
-            underlyingDec
+            underlyingDec,
           );
           const newDeposit = await printBalance(
             user2.address,
@@ -277,28 +280,31 @@ describe('Diamond vault test', () => {
             curBal,
             bal,
             (await vault.userLastDepositTs(user2.address)).toNumber(),
-            (await vault.userLastWithdrawTs(user2.address)).toNumber()
+            (await vault.userLastWithdrawTs(user2.address)).toNumber(),
           );
           const diff = bal - +newDeposit;
           console.log('--USER 2 diff', diff, bal, newDeposit);
           user2Balance = curBal;
           rewardsTotalAmount = rewardsTotalAmount.add(
-            utils.parseUnits(diff.toString(), underlyingDec)
+            utils.parseUnits(diff.toString(), underlyingDec),
           );
           user2Deposited = false;
           console.log(
             'ppfs after user2 withdraw',
             +utils.formatUnits(
               await vault.getPricePerFullShare(),
-              underlyingDec
-            )
+              underlyingDec,
+            ),
           );
         } else {
           console.log('--USER 2 DEPOSIT');
           await VaultUtils.deposit(
             user2,
             vault,
-            utils.parseUnits(Math.floor(user2Balance).toString(), underlyingDec)
+            utils.parseUnits(
+              Math.floor(user2Balance).toString(),
+              underlyingDec,
+            ),
           );
           user2Deposited = true;
         }
@@ -309,25 +315,25 @@ describe('Diamond vault test', () => {
 
       console.log(
         'ppfs after time machine',
-        +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec)
+        +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec),
       );
 
       console.log(
         'vaultApr',
         await VaultUtils.vaultApr(vault, rt, contractReader),
         utils.formatUnits(
-          (await contractReader.vaultRewardsApr(vault.address))[0]
-        )
+          (await contractReader.vaultRewardsApr(vault.address))[0],
+        ),
       );
       console.log(
         'rewardPerToken',
-        utils.formatUnits(await vault.rewardPerToken(rt))
+        utils.formatUnits(await vault.rewardPerToken(rt)),
       );
 
       if (user1Deposited) {
         const toClaimUser1 = +utils.formatUnits(
           await vault.earnedWithBoost(rt, user1.address),
-          rtDecimals
+          rtDecimals,
         );
         expect(toClaimUser1).is.greaterThan(0, 'to claim is zero ' + i);
       }
@@ -341,18 +347,18 @@ describe('Diamond vault test', () => {
       // ppfs change test
       const ppfsAfter = +utils.formatUnits(
         await vault.getPricePerFullShare(),
-        underlyingDec
+        underlyingDec,
       );
       expect(ppfsAfter).eq(ppfs);
       console.log(
         'claimedTotal',
         claimedTotal,
-        +utils.formatUnits(rewardsTotalAmount, rtDecimals)
+        +utils.formatUnits(rewardsTotalAmount, rtDecimals),
       );
 
       const vaultToClaim = +utils.formatUnits(
         await vault.earnedWithBoost(rt, vault.address),
-        rtDecimals
+        rtDecimals,
       );
       console.log('vaultToClaim', vaultToClaim);
       // expect(vaultToClaim).is.eq(0);
@@ -374,8 +380,8 @@ describe('Diamond vault test', () => {
       'vaultRtBalance before all exit',
       +utils.formatUnits(
         await TokenUtils.balanceOf(rt, vault.address),
-        rtDecimals
-      )
+        rtDecimals,
+      ),
     );
 
     await exit(vault, signer);
@@ -384,39 +390,39 @@ describe('Diamond vault test', () => {
 
     const vaultRtBalance = +utils.formatUnits(
       await TokenUtils.balanceOf(rt, vault.address),
-      rtDecimals
+      rtDecimals,
     );
     console.log('vaultRtBalance', vaultRtBalance);
     const controllerBal = +utils.formatUnits(
       await TokenUtils.balanceOf(rt, core.controller.address),
-      rtDecimals
+      rtDecimals,
     );
     console.log('controller bal', controllerBal);
     console.log(
       'controller earned',
       utils.formatUnits(
         await vault.earned(vault.address, core.controller.address),
-        underlyingDec
-      )
+        underlyingDec,
+      ),
     );
     console.log(
       'vault earned',
       utils.formatUnits(
         await vault.earned(vault.address, vault.address),
-        underlyingDec
-      )
+        underlyingDec,
+      ),
     );
 
     console.log(
       'claimedTotal with contr',
       claimedTotal + controllerBal,
-      +utils.formatUnits(rewardsTotalAmount, rtDecimals)
+      +utils.formatUnits(rewardsTotalAmount, rtDecimals),
     );
 
     expect(claimedTotal + controllerBal).is.approximately(
       +utils.formatUnits(rewardsTotalAmount, rtDecimals),
       +utils.formatUnits(rewardsTotalAmount, rtDecimals) * 0.01,
-      'total claimed not enough'
+      'total claimed not enough',
     );
   });
 });
@@ -428,7 +434,7 @@ async function printBalance(
   curBal: number,
   prevBal: number,
   depositedTime: number,
-  withdrawTime: number
+  withdrawTime: number,
 ): Promise<string> {
   const currentLockDuration = withdrawTime - depositedTime;
   const sharesBase = (prevBal * (1000 - LOCK_PENALTY)) / 1000;
@@ -445,14 +451,14 @@ async function printBalance(
   console.log(
     '-- currentLockDur   ',
     currentLockDuration,
-    (currentLockDuration / 60 / 60).toFixed(2)
+    (currentLockDuration / 60 / 60).toFixed(2),
   );
   console.log('-- sharesBase       ', sharesBase);
   console.log('-- toWithdraw       ', toWithdraw);
   console.log('-- expected diff    ', curBal - toWithdraw);
   console.log(
     '-- expected diff %  ',
-    (((curBal - toWithdraw) / curBal) * 100).toFixed(4)
+    (((curBal - toWithdraw) / curBal) * 100).toFixed(4),
   );
   console.log('------------------------------------');
   expect(toWithdraw).is.approximately(curBal, curBal * 0.1);
@@ -471,18 +477,18 @@ async function claim(
   vault: SmartVault,
   signer: SignerWithAddress,
   name: string,
-  allowedZero = false
+  allowedZero = false,
 ) {
   const rt = (await vault.rewardTokens())[0];
   const rtDecimals = await TokenUtils.decimals(rt);
 
   const toClaimSignerFullBoost = +utils.formatUnits(
     await vault.earned(rt, signer.address),
-    rtDecimals
+    rtDecimals,
   );
   const toClaimSigner = +utils.formatUnits(
     await vault.earnedWithBoost(rt, signer.address),
-    rtDecimals
+    rtDecimals,
   );
 
   if (toClaimSigner === 0 && allowedZero) {
@@ -491,14 +497,14 @@ async function claim(
 
   const rtBalanceSigner = +utils.formatUnits(
     await TokenUtils.balanceOf(rt, signer.address),
-    rtDecimals
+    rtDecimals,
   );
   console.log(
     name,
     'toClaim',
     toClaimSigner,
     '100% boost',
-    toClaimSignerFullBoost
+    toClaimSignerFullBoost,
   );
 
   await vault.connect(signer).getAllRewards();
@@ -506,14 +512,14 @@ async function claim(
   const claimedSigner =
     +utils.formatUnits(
       await TokenUtils.balanceOf(rt, signer.address),
-      rtDecimals
+      rtDecimals,
     ) - rtBalanceSigner;
   console.log(name, 'claimed', claimedSigner);
   expect(claimedSigner).is.greaterThan(0);
   expect(toClaimSigner).is.approximately(
     claimedSigner,
     claimedSigner * 0.01,
-    name + ' claimed not enough'
+    name + ' claimed not enough',
   );
   return claimedSigner;
 }

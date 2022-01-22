@@ -8,7 +8,7 @@ async function main() {
   const contract = await DeployerUtils.deployContract(
     signer,
     'LiquidityBalancer',
-    core.controller
+    core.controller,
   );
 
   await DeployerUtils.wait(5);

@@ -7,7 +7,7 @@ async function main() {
 
   const contract = (await DeployerUtils.deployContract(
     signer,
-    'Multicall'
+    'Multicall',
   )) as Multicall;
 
   await DeployerUtils.wait(5);

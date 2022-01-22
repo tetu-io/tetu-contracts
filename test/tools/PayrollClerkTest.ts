@@ -38,7 +38,7 @@ describe('Payroll Clerk tests', function () {
       await DeployerUtils.deployPayrollClerk(
         signer,
         core.controller.address,
-        calculator.address
+        calculator.address,
       )
     )[0];
 
@@ -47,12 +47,12 @@ describe('Payroll Clerk tests', function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
 
     await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, '10000');
@@ -76,7 +76,7 @@ describe('Payroll Clerk tests', function () {
       [100],
       ['Signer0'],
       ['TEST'],
-      [true]
+      [true],
     );
     expect(await clerk.workerIndex(signer.address)).is.eq(0);
     await clerk.changeTokens([core.rewardToken.address], [100]);
@@ -85,24 +85,24 @@ describe('Payroll Clerk tests', function () {
       core.controller,
       core.announcer,
       '10000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits('1000').toString()
+      utils.parseUnits('1000').toString(),
     );
 
     const balance = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
 
     await clerk.pay(signer.address, 1);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(balance.add(utils.parseUnits('100')));
 
     const newWallet = (await ethers.getSigners())[1];
@@ -112,7 +112,7 @@ describe('Payroll Clerk tests', function () {
     expect(await clerk.baseHourlyRates(newWallet.address)).is.eq(100);
     expect(await clerk.workedHours(newWallet.address)).is.eq(1);
     expect(await clerk.earned(newWallet.address)).is.eq(
-      '100000000000000000000'
+      '100000000000000000000',
     );
     expect(await clerk.workerNames(newWallet.address)).is.eq('Signer0');
     expect(await clerk.workerRoles(newWallet.address)).is.eq('TEST');
@@ -126,20 +126,20 @@ describe('Payroll Clerk tests', function () {
     expect(await clerk.isGovernance(signer.address)).is.eq(true);
     await clerk.changeTokens(
       [core.rewardToken.address, networkToken],
-      [50, 50]
+      [50, 50],
     );
 
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       '10000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits('1000').toString()
+      utils.parseUnits('1000').toString(),
     );
 
     // await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, networkToken, utils.parseUnits('10000'));
@@ -147,25 +147,25 @@ describe('Payroll Clerk tests', function () {
       networkToken,
       signer,
       clerk.address,
-      utils.parseUnits('1000').toString()
+      utils.parseUnits('1000').toString(),
     );
 
     const balance1 = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
     const balance2 = await TokenUtils.balanceOf(networkToken, signer.address);
 
     await clerk.multiplePay([signer.address], [2]);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(balance1.add(utils.parseUnits('100')));
 
     const p2 = await calculator.getPriceWithDefaultOutput(networkToken);
 
     expect(await TokenUtils.balanceOf(networkToken, signer.address)).eq(
-      balance2.add(utils.parseUnits('100').mul(1e9).mul(1e9).div(p2))
+      balance2.add(utils.parseUnits('100').mul(1e9).mul(1e9).div(p2)),
     );
   });
 
@@ -177,24 +177,24 @@ describe('Payroll Clerk tests', function () {
       core.controller,
       core.announcer,
       '1000000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits('1000000').toString()
+      utils.parseUnits('1000000').toString(),
     );
 
     const balance = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
 
     await clerk.pay(signer.address, 1000);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(balance.add(utils.parseUnits('100000')));
 
     // second pay with boost
@@ -206,13 +206,13 @@ describe('Payroll Clerk tests', function () {
       core.rewardToken.address,
       signer,
       clerk.address,
-      b
+      b,
     );
 
     await clerk.pay(signer.address, 1);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(utils.parseUnits('200'));
 
     // third pay after downgrade
@@ -223,14 +223,14 @@ describe('Payroll Clerk tests', function () {
       clerk.address,
       (
         await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
-      ).toString()
+      ).toString(),
     );
 
     await clerk.setBaseHourlyRate(signer.address, 50);
     await clerk.pay(signer.address, 1);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(utils.parseUnits('150'));
   });
 
@@ -243,24 +243,24 @@ describe('Payroll Clerk tests', function () {
       core.controller,
       core.announcer,
       '1000000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits('1000000').toString()
+      utils.parseUnits('1000000').toString(),
     );
 
     const balance = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
 
     await clerk.pay(signer.address, 1000);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(balance.add(utils.parseUnits('100000')));
 
     // second pay without boost
@@ -272,19 +272,19 @@ describe('Payroll Clerk tests', function () {
       core.rewardToken.address,
       signer,
       clerk.address,
-      b
+      b,
     );
 
     await clerk.pay(signer.address, 1);
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).eq(utils.parseUnits('100'));
   });
 
   it('should not pay salary for unknown worker', async () => {
     await expect(clerk.pay(signer.address, 1)).rejectedWith(
-      'worker not registered'
+      'worker not registered',
     );
   });
 
@@ -299,31 +299,31 @@ describe('Payroll Clerk tests', function () {
       core.controller,
       core.announcer,
       '1000000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       clerk.address,
-      utils.parseUnits('1000000').toString()
+      utils.parseUnits('1000000').toString(),
     );
     const govBal = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
     const bal = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      clerk.address
+      clerk.address,
     );
     expect(bal.isZero()).is.eq(false);
     await clerk.moveTokensToGovernance(core.rewardToken.address, bal);
     expect(
       (
         await TokenUtils.balanceOf(core.rewardToken.address, clerk.address)
-      ).isZero()
+      ).isZero(),
     ).is.eq(true);
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq(govBal.add(bal));
   });
 });

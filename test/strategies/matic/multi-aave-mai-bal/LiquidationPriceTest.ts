@@ -49,14 +49,14 @@ export class LiquidationPriceTest extends SpecificStrategyTest {
       const maiStbPipeCtr = (await DeployerUtils.connectInterface(
         signer,
         'MaiStablecoinPipe',
-        maiStbPipe
+        maiStbPipe,
       )) as MaiStablecoinPipe;
       const pipeData = await maiStbPipeCtr.pipeData();
 
       const stablecoin = (await DeployerUtils.connectInterface(
         signer,
         'IErc20Stablecoin',
-        pipeData.stablecoin
+        pipeData.stablecoin,
       )) as IErc20Stablecoin;
       const currPrice = await stablecoin.getEthPriceSource();
       console.log('currPrice     ', currPrice.toString());

@@ -45,29 +45,29 @@ describe.skip('Proxy tests', function () {
     await TokenUtils.getToken(
       MaticAddresses.WMATIC_TOKEN,
       signer.address,
-      utils.parseUnits('100000000')
+      utils.parseUnits('100000000'),
     ); // 100m wmatic
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       '1000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.getToken(
       MaticAddresses.TETU_TOKEN,
       signer.address,
-      utils.parseUnits('1000')
+      utils.parseUnits('1000'),
     );
 
     const vaultLogic = (await DeployerUtils.deployContract(
       signer,
-      'SmartVaultV110'
+      'SmartVaultV110',
     )) as SmartVaultV110;
 
     const vaultProxy1 = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      vaultLogic.address
+      vaultLogic.address,
     );
     const vault = vaultLogic.attach(vaultProxy1.address) as SmartVaultV110;
     const psEmptyStrategy1 = (await DeployerUtils.deployContract(
@@ -78,7 +78,7 @@ describe.skip('Proxy tests', function () {
       vault.address,
       [],
       [MaticAddresses.WMATIC_TOKEN],
-      1
+      1,
     )) as NoopStrategy;
 
     await vault.initializeSmartVault(
@@ -86,31 +86,31 @@ describe.skip('Proxy tests', function () {
       'xTETU1',
       core.controller.address,
       MaticAddresses.WMATIC_TOKEN,
-      999999
+      999999,
     );
 
     await core.controller.addVaultsAndStrategies(
       [vault.address],
-      [psEmptyStrategy1.address]
+      [psEmptyStrategy1.address],
     );
     await core.vaultController.addRewardTokens(
       [vault.address],
-      core.psVault.address
+      core.psVault.address,
     );
     await core.vaultController.addRewardTokens(
       [vault.address],
-      core.rewardToken.address
+      core.rewardToken.address,
     );
 
     await TokenUtils.approve(
       core.rewardToken.address,
       signer,
       vault.address,
-      utils.parseUnits('100').toString()
+      utils.parseUnits('100').toString(),
     );
     await vault.notifyTargetRewardAmount(
       core.rewardToken.address,
-      utils.parseUnits('100')
+      utils.parseUnits('100'),
     );
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -124,7 +124,7 @@ describe.skip('Proxy tests', function () {
     await TimeUtils.advanceBlocksOnTs(999);
 
     expect(
-      await vault.underlyingBalanceWithInvestmentForHolder(signer.address)
+      await vault.underlyingBalanceWithInvestmentForHolder(signer.address),
     ).is.equal(10);
 
     expect(await vault.name()).is.eq('TETU_PS1');
@@ -135,24 +135,24 @@ describe.skip('Proxy tests', function () {
     expect(+utils.formatUnits(earned)).is.greaterThan(0);
 
     expect(
-      await vault.underlyingBalanceWithInvestmentForHolder(signer.address)
+      await vault.underlyingBalanceWithInvestmentForHolder(signer.address),
     ).is.equal(10);
 
     const newVaultLogic = await DeployerUtils.deployContract(
       signer,
-      'SmartVault'
+      'SmartVault',
     );
 
     await core.announcer.announceTetuProxyUpgradeBatch(
       [vault.address],
-      [newVaultLogic.address]
+      [newVaultLogic.address],
     );
 
     await TimeUtils.advanceBlocksOnTs(999);
 
     await core.controller.upgradeTetuProxyBatch(
       [vault.address],
-      [newVaultLogic.address]
+      [newVaultLogic.address],
     );
 
     await TokenUtils.transfer(vault.address, signer, user1.address, '10');
@@ -173,29 +173,29 @@ describe.skip('Proxy tests', function () {
     expect(await vault.rewardTokensLength()).is.eq(2);
 
     expect(
-      await vault.underlyingBalanceWithInvestmentForHolder(signer.address)
+      await vault.underlyingBalanceWithInvestmentForHolder(signer.address),
     ).is.equal(10);
     expect(
       +utils.formatUnits(
-        await vault.earned(core.rewardToken.address, signer.address)
-      )
+        await vault.earned(core.rewardToken.address, signer.address),
+      ),
     ).is.eq(0);
     const balanceBefore = await TokenUtils.balanceOf(
       MaticAddresses.WMATIC_TOKEN,
-      signer.address
+      signer.address,
     );
 
     await vault.exit();
 
     expect(
       +utils.formatUnits(
-        await vault.earned(core.rewardToken.address, signer.address)
-      )
+        await vault.earned(core.rewardToken.address, signer.address),
+      ),
     ).is.eq(0);
 
     const balanceAfter = await TokenUtils.balanceOf(
       MaticAddresses.WMATIC_TOKEN,
-      signer.address
+      signer.address,
     );
     expect(balanceAfter.sub(balanceBefore).toString()).is.eq('10');
   });

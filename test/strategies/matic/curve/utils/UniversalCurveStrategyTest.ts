@@ -20,7 +20,7 @@ async function startCurveStratTest(
   tokenName: string,
   deployInfo: DeployInfo,
   deposit = 100_000,
-  loopValue = 3000
+  loopValue = 3000,
 ) {
   // **********************************************
   // ************** CONFIG*************************
@@ -57,10 +57,10 @@ async function startCurveStratTest(
         return DeployerUtils.deployContract(
           signer,
           strategyContractName,
-          ...strategyArgs
+          ...strategyArgs,
         ) as Promise<IStrategy>;
       },
-      underlying
+      underlying,
     );
   };
   const hwInitiator = (
@@ -71,7 +71,7 @@ async function startCurveStratTest(
     _underlying: string,
     _vault: SmartVault,
     _strategy: IStrategy,
-    _balanceTolerance: number
+    _balanceTolerance: number,
   ) => {
     return new CurveDoHardWork(
       _signer,
@@ -82,7 +82,7 @@ async function startCurveStratTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
   };
 
@@ -98,7 +98,7 @@ async function startCurveStratTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests
+    specificTests,
   );
 }
 

@@ -16,6 +16,6 @@ export class FtmCoreAddresses {
     '0xFB6A440af0bbBAd0cC5f24323c7Df9d400084a12', // swapFactory
     '0xbd21EC4b56A50aBF3C52ca9977C26291632Ce5A6', // swapRouter
     '0xcE9F7173420b41678320cd4BB93517382b6D48e8', // rewardCalculator
-    '0x4dd1514c8ef880095AC16332Ff046d0dc2c962AA' // autoRewarder
+    '0x4dd1514c8ef880095AC16332Ff046d0dc2c962AA', // autoRewarder
   );
 }

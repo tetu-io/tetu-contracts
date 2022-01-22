@@ -47,14 +47,14 @@ describe('Universal Geist Fold tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/geist_markets.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -94,7 +94,7 @@ describe('Universal Geist Fold tests', async () => {
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
         [FtmAddresses.GEIST_TOKEN],
-        ['0x668AE94D0870230AC007a01B471D02b2c94DDcB9']
+        ['0x668AE94D0870230AC007a01B471D02b2c94DDcB9'],
       );
     };
     // only for strategies where we expect PPFS fluctuations
@@ -129,10 +129,10 @@ describe('Universal Geist Fold tests', async () => {
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -143,7 +143,7 @@ describe('Universal Geist Fold tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       const hw = new FoldingDoHardWork(
         _signer,
@@ -154,7 +154,7 @@ describe('Universal Geist Fold tests', async () => {
         _vault,
         _strategy,
         _balanceTolerance,
-        finalBalanceTolerance
+        finalBalanceTolerance,
       );
       hw.toClaimCheckTolerance = 0.5;
       return hw;
@@ -172,7 +172,7 @@ describe('Universal Geist Fold tests', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests
+      specificTests,
     );
   });
 });

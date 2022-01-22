@@ -11,7 +11,7 @@ async function main() {
   const clerk = (await DeployerUtils.connectInterface(
     signer,
     'PayrollClerk',
-    tools.payrollClerk
+    tools.payrollClerk,
   )) as PayrollClerk;
 
   const workers = await clerk.allWorkers();

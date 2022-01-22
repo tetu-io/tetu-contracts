@@ -9,7 +9,7 @@ async function main() {
   const chef = (await DeployerUtils.connectInterface(
     signer,
     'ISpookyMasterChef',
-    FtmAddresses.SPOOKY_MASTERCHEF
+    FtmAddresses.SPOOKY_MASTERCHEF,
   )) as ISpookyMasterChef;
 
   await McLpDownloader.download(
@@ -30,7 +30,7 @@ async function main() {
         };
       });
     },
-    false
+    false,
   );
 }
 

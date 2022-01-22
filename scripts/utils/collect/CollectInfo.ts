@@ -45,12 +45,12 @@ async function main() {
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   mkdir('./tmp/stats', { recursive: true }, (err) => {
@@ -89,7 +89,7 @@ async function main() {
     vaults,
     [EVENT_DEPOSIT],
     START_BLOCK,
-    currentBlock
+    currentBlock,
   );
 
   console.log('logs', logs.length);
@@ -111,7 +111,7 @@ async function main() {
         },
       ],
       log.data,
-      log.topics.slice(1)
+      log.topics.slice(1),
     );
     uniqueUsers.add(logDecoded.beneficiary.toLowerCase());
     usersTotal.get(log.address)?.add(logDecoded.beneficiary.toLowerCase());
@@ -128,7 +128,7 @@ async function main() {
       const u = users.get(vaultAddress) as Map<string, string>;
       for (const userAddress of Array.from(u.keys())) {
         const userToClaim = utils.formatUnits(
-          (await cReader.userRewards(userAddress, vaultAddress))[0]
+          (await cReader.userRewards(userAddress, vaultAddress))[0],
         );
         if (+userToClaim === 0) {
           continue;
@@ -141,7 +141,7 @@ async function main() {
       writeFileSync(
         `./tmp/stats/unclaimed_partially.txt`,
         vaultUnclaimed,
-        'utf8'
+        'utf8',
       );
     } catch (e) {
       console.error('error with vault ', vaultAddress, e);
@@ -153,7 +153,7 @@ async function main() {
     core.psVault,
     vaults,
     signer,
-    tools.utils
+    tools.utils,
   );
 
   writeFileSync(`./tmp/stats/to_claim.txt`, data, 'utf8');
@@ -172,7 +172,7 @@ async function collectPs(
   psAdr: string,
   vaults: string[],
   signer: SignerWithAddress,
-  utilsAdr: string
+  utilsAdr: string,
 ): Promise<string> {
   let data = '';
   const exclude = new Set<string>(vaults);
@@ -180,12 +180,12 @@ async function collectPs(
   const contractUtils = (await DeployerUtils.connectInterface(
     signer,
     'ContractUtils',
-    utilsAdr
+    utilsAdr,
   )) as ContractUtils;
   const psContr = (await DeployerUtils.connectInterface(
     signer,
     'SmartVault',
-    psAdr
+    psAdr,
   )) as SmartVault;
 
   const ppfs = +utils.formatUnits(await psContr.getPricePerFullShare());
@@ -213,7 +213,7 @@ async function collectPs(
   for (const _batch of usersBatches) {
     const balances = await contractUtils.erc20BalancesForAddresses(
       psAdr,
-      _batch
+      _batch,
     );
 
     for (let j = 0; j < balances.length; j++) {

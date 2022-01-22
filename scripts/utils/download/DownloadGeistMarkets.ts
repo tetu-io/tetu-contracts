@@ -17,7 +17,7 @@ async function main() {
   const dataProvider = (await DeployerUtils.connectInterface(
     signer,
     'IAaveProtocolDataProvider',
-    FtmAddresses.GEIST_PROTOCOL_DATA_PROVIDER
+    FtmAddresses.GEIST_PROTOCOL_DATA_PROVIDER,
   )) as IAaveProtocolDataProvider;
 
   const allLendingTokens = await dataProvider.getAllATokens();
@@ -37,11 +37,11 @@ async function main() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       currentRewards.set(
         vInfo.underlying.toLowerCase(),
-        await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken)
+        await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken),
       );
     }
   }
@@ -63,7 +63,7 @@ async function main() {
     const aToken = (await DeployerUtils.connectInterface(
       signer,
       'IAToken',
-      aTokenAdr
+      aTokenAdr,
     )) as IAToken;
     const tokenAdr = await aToken.UNDERLYING_ASSET_ADDRESS();
     const tokenName = await TokenUtils.tokenSymbol(tokenAdr);

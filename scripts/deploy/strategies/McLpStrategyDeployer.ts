@@ -17,7 +17,7 @@ export class McLpStrategyDeployer {
     poolId: number,
     platformPrefix: string,
     strategyName: string,
-    strategyPath: string
+    strategyPath: string,
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -26,12 +26,12 @@ export class McLpStrategyDeployer {
     const controller = (await DeployerUtils.connectContract(
       signer,
       'Controller',
-      core.controller
+      core.controller,
     )) as Controller;
     const vaultController = (await DeployerUtils.connectContract(
       signer,
       'VaultController',
-      core.vaultController
+      core.vaultController,
     )) as VaultController;
 
     const vaultNames = new Set<string>();
@@ -39,7 +39,7 @@ export class McLpStrategyDeployer {
     const cReader = (await DeployerUtils.connectContract(
       signer,
       'ContractReader',
-      tools.reader
+      tools.reader,
     )) as ContractReader;
 
     const deployedVaultAddresses = await cReader.vaults();
@@ -52,7 +52,7 @@ export class McLpStrategyDeployer {
     const lpCont = (await DeployerUtils.connectInterface(
       signer,
       'IUniswapV2Pair',
-      underlying
+      underlying,
     )) as IUniswapV2Pair;
     const token0 = await lpCont.token0();
     const token0Name = await TokenUtils.tokenSymbol(token0);
@@ -64,7 +64,7 @@ export class McLpStrategyDeployer {
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      vaultLogic.address
+      vaultLogic.address,
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
     const strategy = await DeployerUtils.deployContract(
@@ -75,7 +75,7 @@ export class McLpStrategyDeployer {
       underlying,
       token0,
       token1,
-      poolId
+      poolId,
     );
 
     const vaultNameWithoutPrefix = `${platformPrefix}_${token0Name}_${token1Name}`;
@@ -96,8 +96,8 @@ export class McLpStrategyDeployer {
         60 * 60 * 24 * 28,
         false,
         core.psVault,
-        0
-      )
+        0,
+      ),
     );
 
     if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
@@ -110,7 +110,7 @@ export class McLpStrategyDeployer {
       await DeployerUtils.verifyWithContractName(
         strategy.address,
         strategyPath,
-        [core.controller, vault.address, underlying, token0, token1, poolId]
+        [core.controller, vault.address, underlying, token0, token1, poolId],
       );
     }
 

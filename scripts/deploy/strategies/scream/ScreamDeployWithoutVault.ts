@@ -22,7 +22,7 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/scream_markets.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const vaultsByUnderlying = new Map<string, string>();
@@ -30,7 +30,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -47,7 +47,7 @@ async function main() {
   appendFileSync(
     `./tmp/deployed/SCREAM_STRATS_UPD.txt`,
     '-------------------\n',
-    'utf8'
+    'utf8',
   );
 
   // *********** DEPLOY VAULT
@@ -89,7 +89,7 @@ async function main() {
     const strategy = (await DeployerUtils.deployContract(
       signer,
       'StrategyScreamFold',
-      ...strategyArgs
+      ...strategyArgs,
     )) as IStrategy;
 
     await DeployerUtils.wait(5);
@@ -97,7 +97,7 @@ async function main() {
     await DeployerUtils.verifyWithContractName(
       strategy.address,
       'contracts/strategies/fantom/scream/StrategyScreamFold.sol:StrategyScreamFold',
-      strategyArgs
+      strategyArgs,
     );
 
     mkdir('./tmp/deployed', { recursive: true }, (err) => {

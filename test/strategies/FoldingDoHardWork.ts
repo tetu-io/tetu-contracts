@@ -15,7 +15,7 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
     const foldContract = (await DeployerUtils.connectInterface(
       this.signer,
       'FoldingBase',
-      this.strategy.address
+      this.strategy.address,
     )) as FoldingBase;
     let foldingState = (await foldContract.foldState()).toNumber();
     // switch off folding on the 1/3 of cycles
@@ -35,7 +35,7 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
       '------ FOLDING',
       'cycle:' + i,
       'enabled:' + foldingState,
-      'profitable:' + (await foldContract.isFoldingProfitable())
+      'profitable:' + (await foldContract.isFoldingProfitable()),
     );
     Misc.printDuration('Loop preparation for folding completed', start);
   }

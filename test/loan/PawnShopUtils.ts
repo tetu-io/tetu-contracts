@@ -20,21 +20,21 @@ export class PawnShopUtils {
     collateralAmount: string,
     acquiredAmount: string,
     posDurationBlocks = 99,
-    posFee = 100
+    posFee = 100,
   ): Promise<number> {
     console.log('Try to open erc20 position for usdc');
     const bal = await TokenUtils.balanceOf(collateralToken, signer.address);
     const dec = await TokenUtils.decimals(collateralToken);
     expect(+utils.formatUnits(bal, dec)).is.greaterThanOrEqual(
       +utils.formatUnits(collateralAmount, dec),
-      'not enough balance for open position'
+      'not enough balance for open position',
     );
 
     await TokenUtils.approve(
       collateralToken,
       signer,
       shop.address,
-      collateralAmount
+      collateralAmount,
     );
     await shop
       .connect(signer)
@@ -45,7 +45,7 @@ export class PawnShopUtils {
         await DeployerUtils.getUSDCAddress(),
         acquiredAmount,
         posDurationBlocks,
-        posFee
+        posFee,
       );
     const id = (await shop.positionCounter()).toNumber() - 1;
     console.log('Position opened', id);
@@ -59,7 +59,7 @@ export class PawnShopUtils {
     collateralId: string,
     acquiredAmount: string,
     posDurationBlocks = 99,
-    posFee = 100
+    posFee = 100,
   ): Promise<number> {
     console.log('Try to open NFT position for usdc', collateralId);
 
@@ -67,7 +67,7 @@ export class PawnShopUtils {
       collateralToken,
       signer,
       shop.address,
-      collateralId
+      collateralId,
     );
     await shop
       .connect(signer)
@@ -78,7 +78,7 @@ export class PawnShopUtils {
         await DeployerUtils.getUSDCAddress(),
         acquiredAmount,
         posDurationBlocks,
-        posFee
+        posFee,
       );
     const id = (await shop.positionCounter()).toNumber() - 1;
     console.log('NFT Position opened', id);
@@ -88,7 +88,7 @@ export class PawnShopUtils {
   public static async closePosition(
     id: number,
     signer: SignerWithAddress,
-    shop: TetuPawnShop
+    shop: TetuPawnShop,
   ): Promise<void> {
     console.log('Try to close position', id);
     await shop.connect(signer).closePosition(id);
@@ -98,7 +98,7 @@ export class PawnShopUtils {
     id: number,
     amount: string,
     signer: SignerWithAddress,
-    shop: TetuPawnShop
+    shop: TetuPawnShop,
   ) {
     console.log('Try to bid on position', id, amount);
     const l = await shop.positions(id);
@@ -110,7 +110,7 @@ export class PawnShopUtils {
   public static async claim(
     id: number,
     signer: SignerWithAddress,
-    shop: TetuPawnShop
+    shop: TetuPawnShop,
   ) {
     console.log('Try to claim on position', id);
     await shop.connect(signer).claim(id);
@@ -119,7 +119,7 @@ export class PawnShopUtils {
   public static async redeem(
     id: number,
     signer: SignerWithAddress,
-    shop: TetuPawnShop
+    shop: TetuPawnShop,
   ) {
     console.log('Try to redeem on position', id);
     const l = await shop.positions(id);
@@ -132,7 +132,7 @@ export class PawnShopUtils {
   public static async closeAuctionBid(
     bidId: number,
     signer: SignerWithAddress,
-    shop: TetuPawnShop
+    shop: TetuPawnShop,
   ) {
     console.log('Try to close auction bid', bidId);
     await shop.connect(signer).closeAuctionBid(bidId);
@@ -141,7 +141,7 @@ export class PawnShopUtils {
   public static async acceptAuctionBid(
     posId: number,
     signer: SignerWithAddress,
-    shop: TetuPawnShop
+    shop: TetuPawnShop,
   ) {
     console.log('Try to accept auction bid for loanId', posId);
     await shop.connect(signer).acceptAuctionBid(posId);

@@ -45,7 +45,7 @@ export class MoreMaiFromBalTest extends SpecificStrategyTest {
       const targetPercentageInitial = await strategyGov.targetPercentage();
       console.log(
         '>>>targetPercentageInitial',
-        targetPercentageInitial.toString()
+        targetPercentageInitial.toString(),
       );
       await VaultUtils.deposit(user, vault, BigNumber.from(bal));
       console.log('>>>deposited');
@@ -57,7 +57,7 @@ export class MoreMaiFromBalTest extends SpecificStrategyTest {
       await TokenUtils.getToken(
         MaticAddresses.WMATIC_TOKEN,
         signer.address,
-        addAmount
+        addAmount,
       );
       await TokenUtils.getToken(token, balPipe, addAmount);
       const bal2 = await strategyGov.getMostUnderlyingBalance();

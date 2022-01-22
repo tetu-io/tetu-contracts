@@ -7,7 +7,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'ZapContract'
+    'ZapContract',
   )) as ZapContract;
 
   await DeployerUtils.wait(5);

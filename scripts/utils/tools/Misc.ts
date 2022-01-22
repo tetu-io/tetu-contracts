@@ -14,7 +14,7 @@ const MATIC_CHAIN = Common.forCustomChain(
     networkId: 137,
     chainId: 137,
   },
-  'petersburg'
+  'petersburg',
 );
 
 const FANTOM_CHAIN = Common.forCustomChain(
@@ -24,7 +24,7 @@ const FANTOM_CHAIN = Common.forCustomChain(
     networkId: 250,
     chainId: 250,
   },
-  'petersburg'
+  'petersburg',
 );
 
 export class Misc {
@@ -44,7 +44,7 @@ export class Misc {
     const ctr = (await DeployerUtils.connectInterface(
       signer,
       'Multicall',
-      tools.multicall
+      tools.multicall,
     )) as Multicall;
     const ts = await ctr.getCurrentBlockTimestamp();
     return ts.toNumber();

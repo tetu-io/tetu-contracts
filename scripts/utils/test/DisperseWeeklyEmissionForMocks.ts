@@ -11,18 +11,18 @@ async function main() {
   const notifyHelper = (await DeployerUtils.connectContract(
     signer,
     'NotifyHelper',
-    core.notifyHelper
+    core.notifyHelper,
   )) as NotifyHelper;
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
 
   const vaults = await bookkeeper.vaults();
   const availableAmount = +(+utils.formatUnits(
     await TokenUtils.balanceOf(core.rewardToken, core.notifyHelper),
-    18
+    18,
   )).toFixed();
   console.log('availableAmount', availableAmount);
   const basePerVault = availableAmount / vaults.length;
@@ -48,7 +48,7 @@ async function main() {
   }
 
   await RunHelper.runAndWait(() =>
-    notifyHelper.notifyVaults(amounts, vaultsFiltered, sum, core.rewardToken)
+    notifyHelper.notifyVaults(amounts, vaultsFiltered, sum, core.rewardToken),
   );
 }
 

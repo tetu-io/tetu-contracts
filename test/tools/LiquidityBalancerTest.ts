@@ -37,20 +37,20 @@ describe('liquidity balancer tsets', function () {
 
     liquidityBalancer = (await DeployerUtils.deployLiquidityBalancer(
       signer,
-      core.controller.address
+      core.controller.address,
     )) as LiquidityBalancer;
 
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       '1000000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       liquidityBalancer.address,
-      utils.parseUnits('100000').toString()
+      utils.parseUnits('100000').toString(),
     );
 
     await liquidityBalancer.setTargetPriceUpdateNumerator(1000);
@@ -61,7 +61,7 @@ describe('liquidity balancer tsets', function () {
     lp = await UniswapUtils.createPairForRewardTokenWithBuy(
       signer,
       core,
-      '1000'
+      '1000',
     );
 
     usdc = await DeployerUtils.getUSDCAddress();
@@ -69,12 +69,12 @@ describe('liquidity balancer tsets', function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
 
     const factory = await DeployerUtils.getDefaultNetworkFactory();
@@ -106,7 +106,7 @@ describe('liquidity balancer tsets', function () {
       'tokenStacked: ' + tokenStacked,
       'oppositeToken: ' + oppositeToken,
       'oppositeTokenStacked: ' + oppositeTokenStacked,
-      'price: ' + price
+      'price: ' + price,
     );
 
     await liquidityBalancer.setRouter(lp, router);
@@ -120,11 +120,11 @@ describe('liquidity balancer tsets', function () {
         [usdc, token],
         utils.parseUnits('1000', 6).toString(),
         signer.address,
-        router
+        router,
       );
 
       const targetPrice = +utils.formatUnits(
-        await liquidityBalancer.priceTargets(token)
+        await liquidityBalancer.priceTargets(token),
       );
       console.log('targetPrice', targetPrice);
 
@@ -137,7 +137,7 @@ describe('liquidity balancer tsets', function () {
       expect(priceAfter).is.approximately(
         targetPrice,
         targetPrice * 0.01,
-        'target price was not reached'
+        'target price was not reached',
       );
 
       compareLpInfo(lpInfoBefore, lpInfoAfter, false);
@@ -149,7 +149,7 @@ describe('liquidity balancer tsets', function () {
       signer,
       [networkToken, usdc],
       utils.parseUnits('1000000', 6).toString(),
-      router
+      router,
     );
 
     // buy TargetToken for USDC
@@ -158,7 +158,7 @@ describe('liquidity balancer tsets', function () {
       [usdc, token],
       utils.parseUnits('1000', 6).toString(),
       signer.address,
-      router
+      router,
     );
 
     const lpContract = await UniswapUtils.connectLpContract(lp, signer);
@@ -177,7 +177,7 @@ describe('liquidity balancer tsets', function () {
       'tokenStacked: ' + tokenStacked,
       'oppositeToken: ' + oppositeToken,
       'oppositeTokenStacked: ' + oppositeTokenStacked,
-      'price: ' + price
+      'price: ' + price,
     );
 
     await liquidityBalancer.setRouter(lp, router);
@@ -190,17 +190,17 @@ describe('liquidity balancer tsets', function () {
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits('2134'));
     await liquidityBalancer.setTargetPrice(
       token,
-      utils.parseUnits('100000000')
+      utils.parseUnits('100000000'),
     );
 
     console.log('###################### START LOOPS #####################');
     for (let i = 0; i < 2; i++) {
       const targetPrice = +utils.formatUnits(
-        await liquidityBalancer.priceTargets(token)
+        await liquidityBalancer.priceTargets(token),
       );
       console.log('targetPrice', targetPrice);
       const targetTvl = +utils.formatUnits(
-        await liquidityBalancer.lpTvlTargets(lp)
+        await liquidityBalancer.lpTvlTargets(lp),
       );
       console.log('targetTvl', targetTvl);
 
@@ -209,7 +209,7 @@ describe('liquidity balancer tsets', function () {
       const sellAmount = Math.max(lpInfoBefore[0] * 0.01, 100);
       const lpTokenBalance = +utils.formatUnits(
         await TokenUtils.balanceOf(lp, liquidityBalancer.address),
-        lpDecimals
+        lpDecimals,
       );
       console.log('lpTokenBalance', lpTokenBalance);
       const remAmount = lpTokenBalance * 0.1;
@@ -230,7 +230,7 @@ describe('liquidity balancer tsets', function () {
         [usdc, token],
         utils.parseUnits('1000', 6).toString(),
         signer.address,
-        router
+        router,
       );
     }
   });
@@ -238,15 +238,15 @@ describe('liquidity balancer tsets', function () {
   it('should salvage', async () => {
     const balanceBefore = await TokenUtils.balanceOf(
       token,
-      core.controller.address
+      core.controller.address,
     );
     await liquidityBalancer.moveTokensToController(token, '123456789');
     const balanceAfter = await TokenUtils.balanceOf(
       token,
-      core.controller.address
+      core.controller.address,
     );
     expect(+utils.formatUnits(balanceAfter, 18)).is.eq(
-      +utils.formatUnits(balanceBefore.add('123456789'), 18)
+      +utils.formatUnits(balanceBefore.add('123456789'), 18),
     );
   });
 
@@ -282,7 +282,7 @@ describe('liquidity balancer tsets', function () {
 function compareLpInfo(
   before: [number, string, number, number],
   after: [number, string, number, number],
-  priceShouldIncrease: boolean
+  priceShouldIncrease: boolean,
 ) {
   const tokenStacked = after[0] - before[0];
   const oppositeTokenStacked = after[2] - before[2];
@@ -292,20 +292,20 @@ function compareLpInfo(
     'BEFORE',
     'tokenStacked: ' + before[0],
     'oppositeTokenStacked: ' + before[2],
-    'price: ' + before[3]
+    'price: ' + before[3],
   );
 
   console.log(
     'AFTER ',
     'tokenStacked: ' + after[0],
     'oppositeTokenStacked: ' + after[2],
-    'price: ' + after[3]
+    'price: ' + after[3],
   );
 
   console.log(
     'change tokenStacked: ' + tokenStacked,
     'change oppositeTokenStacked: ' + oppositeTokenStacked,
-    'change price: ' + price + '%'
+    'change price: ' + price + '%',
   );
   expect(price).is.not.eq(0, 'price doesnt change');
   expect(price > 0).is.eq(priceShouldIncrease, 'price changed wrong ' + price);

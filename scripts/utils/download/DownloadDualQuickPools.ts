@@ -23,13 +23,13 @@ async function downloadQuick() {
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'IStakingRewardsFactoryV2',
-    MaticAddresses.QUICK_STAKING_FACTORY_V3
+    MaticAddresses.QUICK_STAKING_FACTORY_V3,
   )) as IStakingRewardsFactoryV2;
 
   const priceCalculator = (await DeployerUtils.connectInterface(
     signer,
     'PriceCalculator',
-    tools.calculator
+    tools.calculator,
   )) as PriceCalculator;
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
@@ -46,27 +46,27 @@ async function downloadQuick() {
       const vctr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vInfo.addr
+        vInfo.addr,
       )) as SmartVault;
       currentRewards.set(
         vInfo.underlying.toLowerCase(),
-        await VaultUtils.vaultRewardsAmount(vctr, core.psVault)
+        await VaultUtils.vaultRewardsAmount(vctr, core.psVault),
       );
     }
   }
   console.log('loaded vaults', underlyingStatuses.size);
   const poolLength = 10000;
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(
-    MaticAddresses.QUICK_TOKEN
+    MaticAddresses.QUICK_TOKEN,
   );
   const maticPrice = await priceCalculator.getPriceWithDefaultOutput(
-    MaticAddresses.WMATIC_TOKEN
+    MaticAddresses.WMATIC_TOKEN,
   );
 
   const dQuickCtr = (await DeployerUtils.connectInterface(
     signer,
     'IDragonLair',
-    MaticAddresses.dQUICK_TOKEN
+    MaticAddresses.dQUICK_TOKEN,
   )) as IDragonLair;
   const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
   const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
@@ -103,7 +103,7 @@ async function downloadQuick() {
       const lpContract = (await DeployerUtils.connectInterface(
         signer,
         'IUniswapV2Pair',
-        lp
+        lp,
       )) as IUniswapV2Pair;
       token0 = await lpContract.token0();
       token1 = await lpContract.token1();
@@ -122,7 +122,7 @@ async function downloadQuick() {
     const poolContract = (await DeployerUtils.connectInterface(
       signer,
       'IStakingDualRewards',
-      info[0]
+      info[0],
     )) as IStakingDualRewards;
 
     const rewardRateA = await poolContract.rewardRateA();
@@ -156,7 +156,7 @@ async function downloadQuick() {
     try {
       const tvl = await poolContract.totalSupply();
       const underlyingPrice = await priceCalculator.getPriceWithDefaultOutput(
-        lp
+        lp,
       );
       tvlUsd = +utils.formatUnits(tvl) * +utils.formatUnits(underlyingPrice);
     } catch (e) {

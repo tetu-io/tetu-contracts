@@ -15,7 +15,7 @@ async function main() {
   const strategy = (await DeployerUtils.deployContract(
     signer,
     STRATEGY_NAME,
-    ...args
+    ...args,
   )) as IStrategy;
 
   await DeployerUtils.verifyWithArgs(strategy.address, args);

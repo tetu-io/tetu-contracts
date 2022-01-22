@@ -18,7 +18,7 @@ async function main() {
   const targetLp = (await DeployerUtils.connectInterface(
     signer,
     'IUniswapV2Pair',
-    targetLpAddress
+    targetLpAddress,
   )) as IUniswapV2Pair;
   const token0 = await targetLp.token0();
   const token1 = await targetLp.token1();
@@ -66,7 +66,7 @@ async function main() {
         '# Amount:      ' +
         baseAmount +
         '\n' +
-        '######################################################################'
+        '######################################################################',
     );
 
     await RunHelper.runAndWait(
@@ -76,9 +76,9 @@ async function main() {
           route,
           amount.toString(),
           signer.address,
-          router
+          router,
         ),
-      true
+      true,
     );
   }
 }

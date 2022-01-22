@@ -14,10 +14,10 @@ export class PriceCalculatorUtils {
   public static async getFormattedPrice(
     calculator: PriceCalculator,
     token: string,
-    outputToken: string
+    outputToken: string,
   ): Promise<number> {
     const price = +utils.formatUnits(
-      await calculator.getPrice(token, outputToken)
+      await calculator.getPrice(token, outputToken),
     );
     const name = await TokenUtils.tokenName(token);
     const outputName = await TokenUtils.tokenName(outputToken);
@@ -34,20 +34,20 @@ export class PriceCalculatorUtils {
       const tools = await DeployerUtils.getToolsAddresses();
       return PriceCalculator__factory.connect(
         tools.calculator,
-        ethers.provider
+        ethers.provider,
       ).getPriceWithDefaultOutput(token);
     } else if (net.chainId === 250) {
       network = 'FANTOM';
       const tools = await DeployerUtils.getToolsAddresses();
       return PriceCalculator__factory.connect(
         tools.calculator,
-        ethers.provider
+        ethers.provider,
       ).getPriceWithDefaultOutput(token);
     } else {
       throw Error('No config for ' + net.chainId);
     }
     const response = await axios.get(
-      `https://tetu-server-staging.herokuapp.com/api/v1/price/longTTL/?token=${token}&network=${network}`
+      `https://tetu-server-staging.herokuapp.com/api/v1/price/longTTL/?token=${token}&network=${network}`,
     );
     log.info('price for', token, response?.data?.result);
     return BigNumber.from(response?.data?.result);

@@ -44,7 +44,7 @@ export class MaxDepositTest extends SpecificStrategyTest {
       await TokenUtils.getToken(underlying, user.address, maxDeposit101);
 
       await expect(
-        VaultUtils.deposit(user, vault, BigNumber.from(maxDeposit101))
+        VaultUtils.deposit(user, vault, BigNumber.from(maxDeposit101)),
       ).to.be.reverted;
       console.log('>>>reverted 101% of maxDeposit');
 

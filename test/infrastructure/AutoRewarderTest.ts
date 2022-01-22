@@ -50,12 +50,12 @@ describe('auto rewarder tests', function () {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
 
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
@@ -70,7 +70,7 @@ describe('auto rewarder tests', function () {
       await DeployerUtils.deployRewardCalculator(
         signer,
         controller.address,
-        priceCalculator.address
+        priceCalculator.address,
       )
     )[0] as RewardCalculator;
     rewarder = (
@@ -79,7 +79,7 @@ describe('auto rewarder tests', function () {
         controller.address,
         rewardCalculator.address,
         utils.parseUnits('0.231').toString(),
-        utils.parseUnits('1000').toString()
+        utils.parseUnits('1000').toString(),
       )
     )[0];
 
@@ -109,12 +109,12 @@ describe('auto rewarder tests', function () {
       announcer,
       '0',
       rewarder.address,
-      true
+      true,
     );
 
     const bal = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      rewarder.address
+      rewarder.address,
     );
     console.log('minted', utils.formatUnits(bal));
 
@@ -135,7 +135,7 @@ describe('auto rewarder tests', function () {
 
     console.log(
       'totalStrategyRewards',
-      utils.formatUnits(await rewarder.totalStrategyRewards())
+      utils.formatUnits(await rewarder.totalStrategyRewards()),
     );
 
     for (let i = 0; i < vaults.length; i = i + step) {
@@ -159,12 +159,12 @@ describe('auto rewarder tests', function () {
     await TokenUtils.getToken(
       core.rewardToken.address,
       rewarder.address,
-      utils.parseUnits('100000')
+      utils.parseUnits('100000'),
     );
 
     const bal = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      rewarder.address
+      rewarder.address,
     );
     console.log('minted', utils.formatUnits(bal));
 
@@ -186,7 +186,7 @@ describe('auto rewarder tests', function () {
 
     console.log(
       'totalStrategyRewards',
-      utils.formatUnits(await rewarder.totalStrategyRewards())
+      utils.formatUnits(await rewarder.totalStrategyRewards()),
     );
 
     for (let i = 0; i < vaults.length; i = i + step) {
@@ -204,7 +204,7 @@ describe('auto rewarder tests', function () {
       console.log('distributed', utils.formatUnits(distributed));
       console.log(
         'info.strategyRewardsUsd',
-        utils.formatUnits(info.strategyRewardsUsd)
+        utils.formatUnits(info.strategyRewardsUsd),
       );
     }
 
@@ -214,7 +214,7 @@ describe('auto rewarder tests', function () {
     for (const vault of vaults) {
       const info = await rewarder.lastInfo(vault);
       const distributed = +utils.formatUnits(
-        await rewarder.lastDistributedAmount(vault)
+        await rewarder.lastDistributedAmount(vault),
       );
       const toDistribute =
         +utils.formatUnits(rewardsPerDay) *
@@ -226,7 +226,7 @@ describe('auto rewarder tests', function () {
     }
     expect(+utils.formatUnits(distributedSum)).is.approximately(
       +utils.formatUnits(await rewarder.rewardsPerDay()),
-      0.00001
+      0.00001,
     );
 
     expect(await rewarder.distributed()).is.eq(0);
@@ -268,7 +268,7 @@ describe('auto rewarder tests', function () {
     console.log('distributed sum', utils.formatUnits(distributedSum));
     expect(+utils.formatUnits(distributedSum)).is.approximately(
       +utils.formatUnits(await rewarder.rewardsPerDay()),
-      0.00001
+      0.00001,
     );
   });
 });
@@ -276,12 +276,12 @@ describe('auto rewarder tests', function () {
 async function distribute(
   rewarder: AutoRewarder,
   count: number,
-  xTetu: string
+  xTetu: string,
 ) {
   const xTetuVault = (await DeployerUtils.connectInterface(
     rewarder.signer as SignerWithAddress,
     'SmartVault',
-    xTetu
+    xTetu,
   )) as SmartVault;
   const vaultsSize = (await rewarder.vaultsSize()).toNumber();
   // console.log('vaultsSize', vaultsSize);
@@ -301,7 +301,7 @@ async function distribute(
   console.log(
     'DISTRIBUTE',
     count,
-    (await rewarder.lastDistributedId()).toString()
+    (await rewarder.lastDistributedId()).toString(),
   );
   await rewarder.distribute(count);
 
@@ -311,11 +311,11 @@ async function distribute(
     const distributed = await rewarder.lastDistributedAmount(vault);
     console.log('distributed', utils.formatUnits(distributed));
     const curBal = await xTetuVault.underlyingBalanceWithInvestmentForHolder(
-      vault
+      vault,
     );
     expect(+utils.formatUnits(curBal.sub(d.bal))).is.approximately(
       +utils.formatUnits(distributed),
-      0.00001
+      0.00001,
     );
   }
 }

@@ -10,7 +10,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'VaultController'
+    'VaultController',
   )) as VaultController;
 
   await DeployerUtils.wait(5);

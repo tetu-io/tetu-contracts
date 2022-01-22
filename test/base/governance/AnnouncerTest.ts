@@ -78,7 +78,7 @@ describe('Announcer tests', function () {
     expect(info.numValues[1]).is.eq(den);
 
     const opHash = web3.utils.keccak256(
-      web3.utils.encodePacked(opCode, num, den) as string
+      web3.utils.encodePacked(opCode, num, den) as string,
     );
     expect(await announcer.timeLockSchedule(opHash)).is.not.eq(0);
 
@@ -175,7 +175,7 @@ describe('Announcer tests', function () {
         signer,
         core.controller.address,
         [signer.address],
-        [3000]
+        [3000],
       )
     )[0].address;
 
@@ -304,7 +304,7 @@ describe('Announcer tests', function () {
     await announcer.announceRatioChange(opCode, num, den);
 
     const opHash = web3.utils.keccak256(
-      web3.utils.encodePacked(opCode, num, den) as string
+      web3.utils.encodePacked(opCode, num, den) as string,
     );
     expect(await announcer.timeLockSchedule(opHash)).is.not.eq(0);
 
@@ -333,7 +333,7 @@ describe('Announcer tests', function () {
     await announcer.announceRatioChange(opCode, num, den);
 
     const opHash = web3.utils.keccak256(
-      web3.utils.encodePacked(opCode, num, den) as string
+      web3.utils.encodePacked(opCode, num, den) as string,
     );
     expect(await announcer.timeLockSchedule(opHash)).is.not.eq(0);
 
@@ -364,13 +364,13 @@ describe('Announcer tests', function () {
       usdc,
       signer,
       core.controller.address,
-      amount.toString()
+      amount.toString(),
     );
 
     const balUser = await TokenUtils.balanceOf(usdc, signer.address);
     const balController = await TokenUtils.balanceOf(
       usdc,
-      core.controller.address
+      core.controller.address,
     );
 
     await announcer.announceTokenMove(opCode, signer.address, usdc, amount);
@@ -392,7 +392,7 @@ describe('Announcer tests', function () {
     const balUserAfter = await TokenUtils.balanceOf(usdc, signer.address);
     const balControllerAfter = await TokenUtils.balanceOf(
       usdc,
-      core.controller.address
+      core.controller.address,
     );
 
     expect(balUserAfter).is.eq(balUser.add(amount));
@@ -505,7 +505,7 @@ describe('Announcer tests', function () {
 
     const balUserAfter = await TokenUtils.balanceOf(
       usdc,
-      core.controller.address
+      core.controller.address,
     );
     const balContractAfter = await TokenUtils.balanceOf(usdc, contract);
 
@@ -520,13 +520,13 @@ describe('Announcer tests', function () {
     const proxy = (await DeployerUtils.connectContract(
       signer,
       'TetuProxyControlled',
-      proxyAdr
+      proxyAdr,
     )) as TetuProxyControlled;
     const newImpl = await DeployerUtils.deployContract(signer, 'SmartVault');
 
     await announcer.announceTetuProxyUpgradeBatch(
       [proxyAdr],
-      [newImpl.address]
+      [newImpl.address],
     );
 
     const index = await announcer.multiTimeLockIndexes(opCode, proxyAdr);
@@ -558,7 +558,7 @@ describe('Announcer tests', function () {
       core.psVault.address,
       [],
       [core.rewardToken.address],
-      1
+      1,
     )) as IStrategy;
 
     await announcer.announceStrategyUpgrades([target], [newImpl.address]);
@@ -589,7 +589,7 @@ describe('Announcer tests', function () {
       core.controller,
       core.announcer,
       '1000',
-      signer.address
+      signer.address,
     );
     await TokenUtils.getToken(usdc, signer.address, amount);
     await core.vaultController.addRewardTokens([target], rt);
@@ -614,7 +614,7 @@ describe('Announcer tests', function () {
     expect(await core.psVault.active()).is.eq(false);
     expect(await TokenUtils.balanceOf(rt, target)).is.equal(0);
     expect(
-      await TokenUtils.balanceOf(rt, core.controller.address)
+      await TokenUtils.balanceOf(rt, core.controller.address),
     ).is.not.equal(0);
     await core.psVault.exit();
   });
@@ -623,15 +623,15 @@ describe('Announcer tests', function () {
     const opCode = 16;
     const balanceSigner = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
     const balanceNotifier = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     const balanceFund = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.fundKeeper.address
+      core.fundKeeper.address,
     );
 
     const toMint = 10_000;
@@ -639,7 +639,7 @@ describe('Announcer tests', function () {
       toMint,
       core.notifyHelper.address,
       core.fundKeeper.address,
-      false
+      false,
     );
 
     const index = await announcer.timeLockIndexes(opCode);
@@ -665,19 +665,19 @@ describe('Announcer tests', function () {
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.notifyHelper.address
-      )
+        core.notifyHelper.address,
+      ),
     ).is.eq(balanceNotifier.add(forVaults));
 
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.fundKeeper.address
-      )
+        core.fundKeeper.address,
+      ),
     ).is.eq(balanceFund.add(toMint - curNetAmount));
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq(balanceSigner.add(forDev));
   });
 
@@ -712,8 +712,8 @@ describe('Announcer tests', function () {
         0,
         core.notifyHelper.address,
         core.fundKeeper.address,
-        false
-      )
+        false,
+      ),
     ).rejectedWith('zero amount');
   });
 
@@ -725,22 +725,22 @@ describe('Announcer tests', function () {
     const toMint = 10_000;
     let balanceSigner = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
     let balanceNotifier = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     let balanceFund = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.fundKeeper.address
+      core.fundKeeper.address,
     );
 
     await announcer.announceMint(
       toMint,
       core.notifyHelper.address,
       core.fundKeeper.address,
-      false
+      false,
     );
     await announcer.announceAddressChange(opCodeGovChange, signer1.address);
 
@@ -767,19 +767,19 @@ describe('Announcer tests', function () {
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.notifyHelper.address
-      )
+        core.notifyHelper.address,
+      ),
     ).is.eq(balanceNotifier.add(forVaults));
 
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.fundKeeper.address
-      )
+        core.fundKeeper.address,
+      ),
     ).is.eq(balanceFund.add(toMint - curNetAmount));
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq(balanceSigner.add(forDev));
 
     console.log('mint first completed');
@@ -788,7 +788,7 @@ describe('Announcer tests', function () {
       toMint,
       core.notifyHelper.address,
       core.fundKeeper.address,
-      false
+      false,
     );
 
     // set governance
@@ -817,15 +817,15 @@ describe('Announcer tests', function () {
     // mint 2
     balanceSigner = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      signer.address
+      signer.address,
     );
     balanceNotifier = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     balanceFund = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.fundKeeper.address
+      core.fundKeeper.address,
     );
 
     const index = await announcer.timeLockIndexes(opCodeMint);
@@ -850,19 +850,19 @@ describe('Announcer tests', function () {
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.notifyHelper.address
-      )
+        core.notifyHelper.address,
+      ),
     ).is.eq(balanceNotifier.add(forVaults));
 
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.fundKeeper.address
-      )
+        core.fundKeeper.address,
+      ),
     ).is.eq(balanceFund.add(toMint - curNetAmount));
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq(balanceSigner.add(forDev));
   });
 
@@ -898,7 +898,7 @@ describe('Announcer tests', function () {
       .closeAnnounce(
         opCodeMint,
         '0x3b547b6d5a058f0c4e79c98ef8e0536512f4687c9958e7b870e1ccbe47694c33',
-        Misc.ZERO_ADDRESS
+        Misc.ZERO_ADDRESS,
       );
 
     // *************** CHANGE ANNOUNCER

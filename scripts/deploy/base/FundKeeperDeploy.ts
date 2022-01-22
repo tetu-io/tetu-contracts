@@ -12,7 +12,7 @@ async function main() {
   const proxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyControlled',
-    logic.address
+    logic.address,
   );
   const fundKeeper = logic.attach(proxy.address) as FundKeeper;
   await fundKeeper.initialize(core.controller);
@@ -20,11 +20,11 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   await RunHelper.runAndWait(() => controller.setFund(fundKeeper.address));
   await RunHelper.runAndWait(() =>
-    controller.setFundToken(tokens.get('usdc') as string)
+    controller.setFundToken(tokens.get('usdc') as string),
   );
 
   await DeployerUtils.wait(5);

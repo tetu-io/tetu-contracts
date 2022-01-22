@@ -41,7 +41,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       const stablecoin = (await ethers.getContractAt(
         'IErc20Stablecoin',
-        stablecoinAddress
+        stablecoinAddress,
       )) as IErc20Stablecoin;
 
       await strategyGov.rebalanceAllPipes(); // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
@@ -70,7 +70,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const priceSourceAddress = await stablecoin.ethPriceSource();
       const priceSource = (await ethers.getContractAt(
         'PriceSource',
-        priceSourceAddress
+        priceSourceAddress,
       )) as PriceSource;
       const [, priceSourcePrice, ,] = await priceSource.latestRoundData();
       console.log('>>>priceSourcePrice   ', priceSourcePrice.toString());
@@ -78,7 +78,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const mockPriceSource = await DeployerUtils.deployContract(
         signer,
         'MockPriceSource',
-        0
+        0,
       );
       const mockPricePercents = 200;
       const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100);
@@ -89,7 +89,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const ethPriceSourceSlotIndex = priceSlotIndex;
       const adrOriginal = await DeployerUtils.getStorageAt(
         stablecoin.address,
-        ethPriceSourceSlotIndex
+        ethPriceSourceSlotIndex,
       );
       console.log('>>>adrOriginal        ', adrOriginal);
       // set matic price source to our mock contract
@@ -101,7 +101,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       await DeployerUtils.setStorageAt(
         stablecoin.address,
         ethPriceSourceSlotIndex,
-        adrBytes32
+        adrBytes32,
       );
 
       const stablecoinEthPrice2 = await stablecoin.getEthPriceSource();
@@ -120,7 +120,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       await expect(strategyGov.rebalanceAllPipes()).to.emit(
         strategyGov,
-        'RebalancedAllPipes'
+        'RebalancedAllPipes',
       );
       const bal2 = await strategyGov.getMostUnderlyingBalance();
       console.log('>>>bal2', bal2.toString());
@@ -137,7 +137,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       await DeployerUtils.setStorageAt(
         stablecoin.address,
         ethPriceSourceSlotIndex,
-        adrOriginal
+        adrOriginal,
       );
       const stablecoinEthPrice3 = await stablecoin.getEthPriceSource();
       console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
@@ -151,7 +151,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       await expect(strategyGov.rebalanceAllPipes()).to.emit(
         strategyGov,
-        'RebalancedAllPipes'
+        'RebalancedAllPipes',
       );
       console.log('>>>rebalanced');
       const bal3 = await strategyGov.getMostUnderlyingBalance();
@@ -168,7 +168,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
         bal2,
         bal1.mul(mockPricePercents).div(100),
         0.005,
-        dec
+        dec,
       );
       TestAsserts.closeTo(bal3, bal1, 0.005, dec);
 
@@ -184,14 +184,14 @@ export class MabRebalanceTest extends SpecificStrategyTest {
         collateralPercentage1,
         targetPercentage.mul(mockPricePercents).div(100),
         1,
-        0
+        0,
       );
       TestAsserts.closeTo(collateralPercentage2, targetPercentage, 1, 0);
       TestAsserts.closeTo(
         collateralPercentage3,
         targetPercentage.mul(100).div(mockPricePercents),
         1,
-        0
+        0,
       );
       TestAsserts.closeTo(collateralPercentage4, targetPercentage, 1, 0);
     });

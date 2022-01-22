@@ -37,12 +37,12 @@ describe('Tetu Swap specific tests', function () {
     factory = (await DeployerUtils.connectInterface(
       signer,
       'TetuSwapFactory',
-      coreAddresses.swapFactory
+      coreAddresses.swapFactory,
     )) as TetuSwapFactory;
     router = (await DeployerUtils.connectInterface(
       signer,
       'TetuSwapRouter',
-      coreAddresses.swapRouter
+      coreAddresses.swapRouter,
     )) as TetuSwapRouter;
   });
 

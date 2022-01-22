@@ -9,12 +9,12 @@ async function main() {
   if (chainId === 137) {
     logic = (await DeployerUtils.deployContract(
       signer,
-      'AutoRewarder'
+      'AutoRewarder',
     )) as AutoRewarder;
   } else if (chainId === 250) {
     logic = (await DeployerUtils.deployContract(
       signer,
-      'AutoRewarderSideChain'
+      'AutoRewarderSideChain',
     )) as AutoRewarder;
   } else {
     throw new Error('unknown chain ' + chainId);

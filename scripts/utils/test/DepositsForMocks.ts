@@ -12,7 +12,7 @@ async function main() {
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const percentOfBalance = 0.001;
   const vaults = await bookkeeper.vaults();
@@ -30,25 +30,25 @@ async function main() {
 
     const vaultBalance =
       await vaultContract.underlyingBalanceWithInvestmentForHolder(
-        signer.address
+        signer.address,
       );
     if (!vaultBalance.isZero()) {
       console.log(
         'already deposited',
-        utils.formatUnits(vaultBalance, decimals)
+        utils.formatUnits(vaultBalance, decimals),
       );
       continue;
     }
 
     const availableAmount = +utils.formatUnits(
       await TokenUtils.balanceOf(underlying, signer.address),
-      decimals
+      decimals,
     );
     if (availableAmount === 0) {
       console.error(
         'zero balance',
         await TokenUtils.tokenSymbol(underlying),
-        underlying
+        underlying,
       );
       continue;
     }
@@ -60,7 +60,7 @@ async function main() {
 
     const deposit = utils.parseUnits(depositN.toFixed(decimals), decimals);
     await RunHelper.runAndWait(async () =>
-      VaultUtils.deposit(signer, vaultContract, deposit)
+      VaultUtils.deposit(signer, vaultContract, deposit),
     );
 
     console.log(
@@ -68,7 +68,7 @@ async function main() {
       await vaultContract.name(),
       depositN,
       'availableAmount',
-      availableAmount
+      availableAmount,
     );
   }
 }

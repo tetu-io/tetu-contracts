@@ -17,7 +17,7 @@ export class CoverageCallsTest extends SpecificStrategyTest {
       const vault = deployInfo?.vault as SmartVault;
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
       const strategyGov = strategyAaveMaiBal.connect(
-        deployInfo.signer as SignerWithAddress
+        deployInfo.signer as SignerWithAddress,
       );
       const UNWRAPPING_PIPE_INDEX = 0;
       const AAVE_PIPE_INDEX = 1;

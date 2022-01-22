@@ -53,12 +53,12 @@ async function main() {
   let signer;
   if (argv.fork) {
     signer = await DeployerUtils.impersonate(
-      '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94'
+      '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94',
     );
     const controllerCtr = (await DeployerUtils.connectInterface(
       await DeployerUtils.impersonate(),
       'Controller',
-      core.controller
+      core.controller,
     )) as Controller;
     await controllerCtr.setRewardDistribution([core.autoRewarder], true);
   } else {
@@ -70,22 +70,22 @@ async function main() {
   const reader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const rewarder = (await DeployerUtils.connectInterface(
     signer,
     'AutoRewarder',
-    core.autoRewarder
+    core.autoRewarder,
   )) as AutoRewarder;
   const rewardCalculator = (await DeployerUtils.connectInterface(
     signer,
     'RewardCalculator',
-    core.rewardCalculator
+    core.rewardCalculator,
   )) as RewardCalculator;
 
   const allVaults = await bookkeeper.vaults();
@@ -105,7 +105,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const platform = (
       await reader.strategyPlatform(await vCtr.strategy())
@@ -123,7 +123,7 @@ async function main() {
   for (let i = argv.startInfoFrom; i < vaults.length / argv.infoBatch; i++) {
     const vaultBatch = vaults.slice(
       i * argv.infoBatch,
-      i * argv.infoBatch + argv.infoBatch
+      i * argv.infoBatch + argv.infoBatch,
     );
     console.log('collect', i, vaultBatch);
     const rewardInfo: BigNumber[] = [];
@@ -131,21 +131,21 @@ async function main() {
       const vCtr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        v
+        v,
       )) as SmartVault;
       const info = await rewardCalculator.strategyRewardsUsd(
         await vCtr.strategy(),
-        60 * 60 * 24
+        60 * 60 * 24,
       );
       console.log(
         'reward',
         vaultNames.get(v.toLowerCase()),
-        utils.formatUnits(info)
+        utils.formatUnits(info),
       );
       rewardInfo.push(info);
     }
     await RunHelper.runAndWait(() =>
-      rewarder.storeInfo(vaultBatch, rewardInfo)
+      rewarder.storeInfo(vaultBatch, rewardInfo),
     );
     // await RunHelper.runAndWait(() => rewarder.collectAndStoreInfo(tmp, {gasPrice: 40_000_000_000}));
   }
@@ -154,17 +154,17 @@ async function main() {
     await TokenUtils.getToken(
       MaticAddresses.WMATIC_TOKEN,
       signer.address,
-      utils.parseUnits('1000000')
+      utils.parseUnits('1000000'),
     );
     await TokenUtils.getToken(
       MaticAddresses.USDC_TOKEN,
       signer.address,
-      utils.parseUnits('1000000', 6)
+      utils.parseUnits('1000000', 6),
     );
     await TokenUtils.getToken(
       MaticAddresses.TETU_TOKEN,
       signer.address,
-      utils.parseUnits('1000000')
+      utils.parseUnits('1000000'),
     );
     await TokenUtils.transfer(
       MaticAddresses.TETU_TOKEN,
@@ -172,7 +172,7 @@ async function main() {
       rewarder.address,
       (
         await TokenUtils.balanceOf(MaticAddresses.TETU_TOKEN, signer.address)
-      ).toString()
+      ).toString(),
     );
   }
 
@@ -186,7 +186,7 @@ async function main() {
     const lastDistributedId = (await rewarder.lastDistributedId()).toNumber();
     const lastId = Math.min(
       lastDistributedId + argv.distributeBatch,
-      vaultForDistributionSize
+      vaultForDistributionSize,
     );
 
     const balanceBefore = new Map<string, BigNumber>();
@@ -194,7 +194,7 @@ async function main() {
       const vaultForDistr = await rewarder.vaults(j);
       balanceBefore.set(
         vaultForDistr.toLowerCase(),
-        await TokenUtils.balanceOf(core.psVault, vaultForDistr)
+        await TokenUtils.balanceOf(core.psVault, vaultForDistr),
       );
     }
 
@@ -203,15 +203,15 @@ async function main() {
     for (const vaultForDistr of Array.from(balanceBefore.keys())) {
       const currentBal = await TokenUtils.balanceOf(
         core.psVault,
-        vaultForDistr
+        vaultForDistr,
       );
       const distributed = currentBal.sub(
-        balanceBefore.get(vaultForDistr.toLowerCase()) as BigNumber
+        balanceBefore.get(vaultForDistr.toLowerCase()) as BigNumber,
       );
       console.log(
         'distributed',
         vaultNames.get(vaultForDistr.toLowerCase()),
-        utils.formatUnits(distributed)
+        utils.formatUnits(distributed),
       );
     }
   }

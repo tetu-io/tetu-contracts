@@ -7,7 +7,7 @@ export class SingleTokenVaultStrategyDeploy {
   public static async deploy(
     underlying: string,
     tokenName: string,
-    strategyName: string
+    strategyName: string,
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -18,7 +18,7 @@ export class SingleTokenVaultStrategyDeploy {
     const cReader = (await DeployerUtils.connectContract(
       signer,
       'ContractReader',
-      tools.reader
+      tools.reader,
     )) as ContractReader;
 
     const deployedVaultAddresses = await cReader.vaults();
@@ -43,14 +43,14 @@ export class SingleTokenVaultStrategyDeploy {
             strategyName,
             core.controller,
             vaultAddress,
-            underlying
+            underlying,
           ) as Promise<IStrategy>,
         core.controller,
         core.psVault,
         signer,
         60 * 60 * 24 * 28,
         0,
-        true
+        true,
       );
 
     await DeployerUtils.wait(5);

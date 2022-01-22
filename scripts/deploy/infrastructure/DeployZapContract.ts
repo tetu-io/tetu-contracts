@@ -9,7 +9,7 @@ async function main() {
   const zap = await DeployerUtils.deployZapContract(
     signer,
     core.controller,
-    tools.multiSwap
+    tools.multiSwap,
   );
 
   await DeployerUtils.wait(5);

@@ -50,12 +50,12 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
     'VaultController',
-    core.vaultController
+    core.vaultController,
   )) as VaultController;
 
   const possibleTokens = [
@@ -73,7 +73,7 @@ async function main() {
   const sushiFactory = (await DeployerUtils.connectInterface(
     signer,
     'IUniswapV2Factory',
-    RopstenAddresses.SUSHI_FACTORY
+    RopstenAddresses.SUSHI_FACTORY,
   )) as IUniswapV2Factory;
 
   for (let i = 0; i < argv.mockBatchDeployCount; i++) {
@@ -106,7 +106,7 @@ async function main() {
     const poolProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      poolLogic.address
+      poolLogic.address,
     );
     const pool = poolLogic.attach(poolProxy.address) as SmartVault;
 
@@ -118,7 +118,7 @@ async function main() {
       pool.address,
       [],
       [underlying0, underlying1],
-      1
+      1,
     )) as IStrategy;
 
     const noopStrategyUnderlying = await noopStrategy.underlying();
@@ -132,8 +132,8 @@ async function main() {
         rewardDuration,
         false,
         poolReward,
-        0
-      )
+        0,
+      ),
     );
 
     const poolRewardDecimals = await TokenUtils.decimals(poolReward);
@@ -141,31 +141,31 @@ async function main() {
     const mockContract = (await DeployerUtils.connectContract(
       signer,
       'ERC20PresetMinterPauser',
-      poolReward
+      poolReward,
     )) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() =>
       mockContract.mint(
         signer.address,
-        utils.parseUnits(poolRewardAmountN, poolRewardDecimals)
-      )
+        utils.parseUnits(poolRewardAmountN, poolRewardDecimals),
+      ),
     );
     await RunHelper.runAndWait(async () =>
       TokenUtils.approve(
         poolReward,
         signer,
         pool.address,
-        utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString()
-      )
+        utils.parseUnits(poolRewardAmountN, poolRewardDecimals).toString(),
+      ),
     );
     await RunHelper.runAndWait(() =>
       pool.notifyTargetRewardAmount(
         poolReward,
-        utils.parseUnits(poolRewardAmountN, poolRewardDecimals)
-      )
+        utils.parseUnits(poolRewardAmountN, poolRewardDecimals),
+      ),
     );
 
     await RunHelper.runAndWait(() =>
-      controller.addVaultsAndStrategies([pool.address], [noopStrategy.address])
+      controller.addVaultsAndStrategies([pool.address], [noopStrategy.address]),
     );
 
     datasPools.push([poolLogic, pool, noopStrategy]);
@@ -175,7 +175,7 @@ async function main() {
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      vaultLogic.address
+      vaultLogic.address,
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
@@ -188,7 +188,7 @@ async function main() {
       underlying,
       [underlying0, underlying1],
       platform,
-      [poolReward]
+      [poolReward],
     )) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
@@ -202,34 +202,34 @@ async function main() {
         rewardDuration,
         false,
         Misc.ZERO_ADDRESS,
-        0
-      )
+        0,
+      ),
     );
     await RunHelper.runAndWait(() =>
-      vaultController.addRewardTokens([vault.address], vaultRewardToken)
+      vaultController.addRewardTokens([vault.address], vaultRewardToken),
     );
     await RunHelper.runAndWait(() =>
-      vaultController.addRewardTokens([vault.address], vaultSecondReward)
+      vaultController.addRewardTokens([vault.address], vaultSecondReward),
     );
     await RunHelper.runAndWait(() =>
-      vaultController.addRewardTokens([vault.address], vaultThirdReward)
+      vaultController.addRewardTokens([vault.address], vaultThirdReward),
     );
 
     await RunHelper.runAndWait(() =>
-      controller.addVaultsAndStrategies([vault.address], [strategy.address])
+      controller.addVaultsAndStrategies([vault.address], [strategy.address]),
     );
 
     const vaultSecondRewardDec = await TokenUtils.decimals(vaultSecondReward);
     const mockContract2 = (await DeployerUtils.connectContract(
       signer,
       'ERC20PresetMinterPauser',
-      vaultSecondReward
+      vaultSecondReward,
     )) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() =>
       mockContract2.mint(
         signer.address,
-        utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)
-      )
+        utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec),
+      ),
     );
     await RunHelper.runAndWait(async () =>
       TokenUtils.approve(
@@ -238,27 +238,27 @@ async function main() {
         vault.address,
         utils
           .parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)
-          .toString()
-      )
+          .toString(),
+      ),
     );
     await RunHelper.runAndWait(() =>
       vault.notifyTargetRewardAmount(
         vaultSecondReward,
-        utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec)
-      )
+        utils.parseUnits(vaultSecondRewardAmountN, vaultSecondRewardDec),
+      ),
     );
 
     const vaultThirdRewardDec = await TokenUtils.decimals(vaultThirdReward);
     const mockContract3 = (await DeployerUtils.connectContract(
       signer,
       'ERC20PresetMinterPauser',
-      vaultThirdReward
+      vaultThirdReward,
     )) as ERC20PresetMinterPauser;
     await RunHelper.runAndWait(() =>
       mockContract3.mint(
         signer.address,
-        utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)
-      )
+        utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec),
+      ),
     );
     await RunHelper.runAndWait(async () =>
       TokenUtils.approve(
@@ -267,14 +267,14 @@ async function main() {
         vault.address,
         utils
           .parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)
-          .toString()
-      )
+          .toString(),
+      ),
     );
     await RunHelper.runAndWait(() =>
       vault.notifyTargetRewardAmount(
         vaultThirdReward,
-        utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec)
-      )
+        utils.parseUnits(vaultThirdRewardAmountN, vaultThirdRewardDec),
+      ),
     );
 
     datas.push([vaultLogic, vault, strategy, pool]);

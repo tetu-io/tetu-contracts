@@ -15,19 +15,19 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'AutoRewarderSideChain'
+    'AutoRewarderSideChain',
   )) as AutoRewarderSideChain;
   const proxy = (await DeployerUtils.deployContract(
     signer,
     'TetuProxyGov',
-    logic.address
+    logic.address,
   )) as TetuProxyGov;
   const contract = logic.attach(proxy.address) as AutoRewarder;
   await contract.initialize(
     core.controller,
     core.rewardCalculator,
     utils.parseUnits('0'),
-    utils.parseUnits('50000')
+    utils.parseUnits('50000'),
   );
   const data = [contract, proxy, logic];
 

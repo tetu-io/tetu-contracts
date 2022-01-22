@@ -9,7 +9,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'Bookkeeper'
+    'Bookkeeper',
   )) as Bookkeeper;
 
   await DeployerUtils.wait(5);

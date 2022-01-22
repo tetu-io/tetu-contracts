@@ -38,7 +38,7 @@ describe('Mint helper tests', () => {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('10000', 6)
+      utils.parseUnits('10000', 6),
     );
   });
 
@@ -64,7 +64,7 @@ describe('Mint helper tests', () => {
         signer,
         controller.address,
         [signer.address],
-        [3000]
+        [3000],
       )
     )[0];
 
@@ -77,13 +77,13 @@ describe('Mint helper tests', () => {
       1,
       core.notifyHelper.address,
       core.fundKeeper.address,
-      false
+      false,
     );
 
     await TimeUtils.advanceBlocksOnTs(1);
 
     await expect(controller.mintAndDistribute(1, false)).rejectedWith(
-      'Token not init'
+      'Token not init',
     );
   });
 
@@ -96,20 +96,20 @@ describe('Mint helper tests', () => {
       core.controller,
       core.announcer,
       '100000',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signerAddress)
+      await TokenUtils.balanceOf(core.rewardToken.address, signerAddress),
     ).at.eq(utils.parseUnits('9900', 18));
 
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       '200',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).at.eq(utils.parseUnits('9919.8', 18));
   });
 
@@ -119,8 +119,8 @@ describe('Mint helper tests', () => {
         signer,
         core.controller.address,
         [signer.address, core.psVault.address],
-        [2100, 10]
-      )
+        [2100, 10],
+      ),
     ).to.be.rejectedWith('wrong sum of fraction');
 
     await expect(
@@ -128,8 +128,8 @@ describe('Mint helper tests', () => {
         signer,
         core.controller.address,
         [signer.address, Misc.ZERO_ADDRESS],
-        [2100, 900]
-      )
+        [2100, 900],
+      ),
     ).to.be.rejectedWith('Address should not be 0');
 
     await expect(
@@ -137,8 +137,8 @@ describe('Mint helper tests', () => {
         signer,
         core.controller.address,
         [signer.address],
-        [2100, 900]
-      )
+        [2100, 900],
+      ),
     ).to.be.rejectedWith('wrong size');
 
     await expect(
@@ -146,8 +146,8 @@ describe('Mint helper tests', () => {
         signer,
         core.controller.address,
         [signer.address, core.psVault.address],
-        [3000, 0]
-      )
+        [3000, 0],
+      ),
     ).to.be.rejectedWith('Ratio should not be 0');
   });
 
@@ -156,7 +156,7 @@ describe('Mint helper tests', () => {
       core.controller,
       core.announcer,
       '1',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     const maxTotalAmount =
       await core.rewardToken.maxTotalSupplyForCurrentBlock();
@@ -168,11 +168,11 @@ describe('Mint helper tests', () => {
       toMint,
       core.notifyHelper.address,
       core.fundKeeper.address,
-      false
+      false,
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(core.controller.mintAndDistribute(toMint, false)).rejectedWith(
-      'limit exceeded'
+      'limit exceeded',
     );
   });
 
@@ -182,11 +182,11 @@ describe('Mint helper tests', () => {
       toMint,
       core.notifyHelper.address,
       core.fundKeeper.address,
-      false
+      false,
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(core.controller.mintAndDistribute(toMint, false)).rejectedWith(
-      'ERC20Capped: cap exceeded'
+      'ERC20Capped: cap exceeded',
     );
   });
   it('Should mint max emission per week', async () => {
@@ -194,7 +194,7 @@ describe('Mint helper tests', () => {
       core.controller,
       core.announcer,
       '100',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     const curWeek = await core.rewardToken.currentWeek();
     const maxTotalAmount =
@@ -206,7 +206,7 @@ describe('Mint helper tests', () => {
       utils.formatUnits(maxTotalAmount, 18),
       utils.formatUnits(totalAmount, 18),
       curWeek.toString(),
-      mintingStartTs.toString()
+      mintingStartTs.toString(),
     );
     const mintAmount = utils.formatUnits(maxTotalAmount.sub(totalAmount), 18);
     expect(mintAmount).at.eq('129746027.0');
@@ -214,7 +214,7 @@ describe('Mint helper tests', () => {
       core.controller,
       core.announcer,
       mintAmount,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
   });
   it('Should mint max emission after few weeks', async () => {
@@ -222,7 +222,7 @@ describe('Mint helper tests', () => {
       core.controller,
       core.announcer,
       '100',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7 * 2.5);
     const currentWeek = await core.rewardToken.currentWeek();
@@ -232,16 +232,16 @@ describe('Mint helper tests', () => {
     const totalAmount = await core.rewardToken.totalSupply();
     const mintAmount = utils.formatUnits(maxTotalAmount.sub(totalAmount), 18);
     expect(maxTotalAmount.sub(totalAmount).toString()).at.eq(
-      '259492154000000000000000000'
+      '259492154000000000000000000',
     );
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       mintAmount,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).at.eq('25689733146000000000000000');
   });
   it('Should mint all emission', async () => {
@@ -249,7 +249,7 @@ describe('Mint helper tests', () => {
       core.controller,
       core.announcer,
       '1',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7 * 52 * 4);
     const currentWeek = await core.rewardToken.currentWeek();
@@ -259,13 +259,13 @@ describe('Mint helper tests', () => {
     const totalAmount = await core.rewardToken.totalSupply();
     const mintAmount = utils.formatUnits(maxTotalAmount.sub(totalAmount), 18);
     expect(maxTotalAmount.sub(totalAmount).toString()).at.eq(
-      '999999999000000000000000000'
+      '999999999000000000000000000',
     );
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       mintAmount,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
 
     const total = 10 ** 9;
@@ -273,7 +273,7 @@ describe('Mint helper tests', () => {
     const devExpected = totalNet * 0.3;
 
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).at.eq(utils.parseUnits(devExpected.toFixed(), 18));
   });
   it('log2 test', async () => {
@@ -281,48 +281,48 @@ describe('Mint helper tests', () => {
     const rewardToken = (await DeployerUtils.deployContract(
       _signer,
       'RewardToken',
-      usdc
+      usdc,
     )) as RewardToken;
     expect(
-      (await rewardToken._log2(utils.parseUnits('1', 18))).toString()
+      (await rewardToken._log2(utils.parseUnits('1', 18))).toString(),
     ).at.eq('0');
 
     expect(
-      (await rewardToken._log2(utils.parseUnits('2', 18))).toString()
+      (await rewardToken._log2(utils.parseUnits('2', 18))).toString(),
     ).at.eq(utils.parseUnits('1', 18));
 
     expect(
-      (await rewardToken._log2(utils.parseUnits('8', 18))).toString()
+      (await rewardToken._log2(utils.parseUnits('8', 18))).toString(),
     ).at.eq(utils.parseUnits('3', 18));
 
     expect(
-      (await rewardToken._log2(utils.parseUnits('5', 18))).toString()
+      (await rewardToken._log2(utils.parseUnits('5', 18))).toString(),
     ).at.eq('2321928094887362334');
 
     expect(
-      (await rewardToken._log2(utils.parseUnits('500', 18))).toString()
+      (await rewardToken._log2(utils.parseUnits('500', 18))).toString(),
     ).at.eq('8965784284662087030');
 
     expect(
-      (await rewardToken._log2(utils.parseUnits('123456789', 18))).toString()
+      (await rewardToken._log2(utils.parseUnits('123456789', 18))).toString(),
     ).at.eq('26879430932860473806');
 
     expect(
       (
         await rewardToken._log2(utils.parseUnits('123456789123456789', 18))
-      ).toString()
+      ).toString(),
     ).at.eq('56776783788289429979');
 
     expect(
       (
         await rewardToken._log2(
-          utils.parseUnits('123456789123456789123456789123456789', 18)
+          utils.parseUnits('123456789123456789123456789123456789', 18),
         )
-      ).toString()
+      ).toString(),
     ).at.eq('116571489496261952241');
 
     await expect(rewardToken._log2(2)).rejectedWith(
-      'log input should be greater 1e18'
+      'log input should be greater 1e18',
     );
   });
   it('all time vesting', async () => {
@@ -332,7 +332,7 @@ describe('Mint helper tests', () => {
     const weeks: number[] = [];
     for (let i = 1; i < w; i++) {
       const maxTotalAmount = +utils.formatUnits(
-        await core.rewardToken.maxTotalSupplyForCurrentBlock()
+        await core.rewardToken.maxTotalSupplyForCurrentBlock(),
       );
       await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7 + 10000);
       weeks.push(maxTotalAmount);
@@ -346,7 +346,7 @@ describe('Mint helper tests', () => {
   it('external user should not start', async () => {
     const extUser = (await ethers.getSigners())[1];
     await expect(core.rewardToken.connect(extUser).startMinting()).rejectedWith(
-      'not owner'
+      'not owner',
     );
   });
 
@@ -354,7 +354,7 @@ describe('Mint helper tests', () => {
     const token = (await DeployerUtils.deployContract(
       signer,
       'RewardToken',
-      signer.address
+      signer.address,
     )) as RewardToken;
     await token.startMinting();
     await expect(token.startMinting()).rejectedWith('minting already started');
@@ -364,10 +364,10 @@ describe('Mint helper tests', () => {
     const token = (await DeployerUtils.deployContract(
       signer,
       'RewardToken',
-      signer.address
+      signer.address,
     )) as RewardToken;
     await expect(token.mint(signer.address, '1')).rejectedWith(
-      'minting not started'
+      'minting not started',
     );
   });
 
@@ -375,7 +375,7 @@ describe('Mint helper tests', () => {
     const token = (await DeployerUtils.deployContract(
       signer,
       'RewardToken',
-      signer.address
+      signer.address,
     )) as RewardToken;
     expect(await token.currentWeek()).is.eq(0);
     expect(await token.maxTotalSupplyForCurrentBlock()).is.eq(0);
@@ -404,17 +404,17 @@ describe('Mint helper tests', () => {
     const amount = '0';
     const destination = signer.address;
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq(0);
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       '0',
       destination,
-      true
+      true,
     );
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq('129746127000000000000000000');
   });
 });

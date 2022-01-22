@@ -9,7 +9,7 @@ async function main() {
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const vaults = await bookkeeper.vaults();
   console.log('vaults ', vaults.length);
@@ -23,7 +23,7 @@ async function main() {
 
     const vaultBalance =
       await vaultContract.underlyingBalanceWithInvestmentForHolder(
-        signer.address
+        signer.address,
       );
     if (!vaultBalance.isZero()) {
       await RunHelper.runAndWait(() => vaultContract.exit());

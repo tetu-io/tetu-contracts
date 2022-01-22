@@ -29,7 +29,7 @@ describe('Tetu pawnshop gov tests', function () {
       'TetuPawnShop',
       signer.address,
       Misc.ZERO_ADDRESS,
-      signer.address
+      signer.address,
     )) as TetuPawnShop;
   });
 
@@ -48,7 +48,7 @@ describe('Tetu pawnshop gov tests', function () {
   it('Change governance', async () => {
     const currentTime = await TimeUtils.getBlockTime();
     expect((await shop.owner()).toLowerCase()).is.eq(
-      signer.address.toLowerCase()
+      signer.address.toLowerCase(),
     );
 
     await shop.announceGovernanceAction(0, usdc, 0);
@@ -61,7 +61,7 @@ describe('Tetu pawnshop gov tests', function () {
     await expect(shop.setOwner(networkToken)).revertedWith('TPS: Time Lock');
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(shop.setOwner(networkToken)).revertedWith(
-      'TPS: Wrong address value'
+      'TPS: Wrong address value',
     );
 
     await shop.setOwner(usdc);
@@ -77,7 +77,7 @@ describe('Tetu pawnshop gov tests', function () {
   it('Change fee recipient', async () => {
     const currentTime = await TimeUtils.getBlockTime();
     expect((await shop.feeRecipient()).toLowerCase()).is.eq(
-      signer.address.toLowerCase()
+      signer.address.toLowerCase(),
     );
 
     await shop.announceGovernanceAction(1, usdc, 0);
@@ -88,11 +88,11 @@ describe('Tetu pawnshop gov tests', function () {
     expect(tl.uintValue).is.eq(0);
 
     await expect(shop.setFeeRecipient(networkToken)).revertedWith(
-      'TPS: Time Lock'
+      'TPS: Time Lock',
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(shop.setFeeRecipient(networkToken)).revertedWith(
-      'TPS: Wrong address value'
+      'TPS: Wrong address value',
     );
 
     await shop.setFeeRecipient(usdc);
@@ -118,11 +118,11 @@ describe('Tetu pawnshop gov tests', function () {
     expect(tl.uintValue).is.eq(200);
 
     await expect(shop.setPlatformFee(networkToken)).revertedWith(
-      'TPS: Time Lock'
+      'TPS: Time Lock',
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(shop.setPlatformFee(211)).revertedWith(
-      'TPS: Wrong uint value'
+      'TPS: Wrong uint value',
     );
 
     await shop.setPlatformFee(200);
@@ -149,11 +149,11 @@ describe('Tetu pawnshop gov tests', function () {
     expect(tl.uintValue).is.eq(value);
 
     await expect(shop.setPositionDepositAmount(networkToken)).revertedWith(
-      'TPS: Time Lock'
+      'TPS: Time Lock',
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(shop.setPositionDepositAmount(211)).revertedWith(
-      'TPS: Wrong uint value'
+      'TPS: Wrong uint value',
     );
 
     await shop.setPositionDepositAmount(value);
@@ -170,7 +170,7 @@ describe('Tetu pawnshop gov tests', function () {
     const id = 4;
     const currentTime = await TimeUtils.getBlockTime();
     expect((await shop.positionDepositToken()).toLowerCase()).is.eq(
-      Misc.ZERO_ADDRESS
+      Misc.ZERO_ADDRESS,
     );
 
     await shop.announceGovernanceAction(id, usdc, 0);
@@ -181,11 +181,11 @@ describe('Tetu pawnshop gov tests', function () {
     expect(tl.uintValue).is.eq(0);
 
     await expect(shop.setPositionDepositToken(networkToken)).revertedWith(
-      'TPS: Time Lock'
+      'TPS: Time Lock',
     );
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 48);
     await expect(shop.setPositionDepositToken(networkToken)).revertedWith(
-      'TPS: Wrong address value'
+      'TPS: Wrong address value',
     );
 
     await shop.setPositionDepositToken(usdc);

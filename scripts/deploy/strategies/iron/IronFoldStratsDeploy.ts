@@ -18,7 +18,7 @@ async function main() {
 
   const infos = readFileSync(
     'scripts/utils/download/data/iron_markets.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const vaultNames = new Set<string>();
@@ -26,7 +26,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -78,13 +78,13 @@ async function main() {
           token,
           rTokenAddress,
           borrowTarget,
-          collateralFactor
+          collateralFactor,
         ) as Promise<IStrategy>,
       core.controller,
       core.psVault,
       signer,
       60 * 60 * 24 * 28,
-      true
+      true,
     );
 
     if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
@@ -99,7 +99,7 @@ async function main() {
           rTokenAddress,
           borrowTarget,
           collateralFactor,
-        ]
+        ],
       );
     }
 

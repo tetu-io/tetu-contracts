@@ -15,12 +15,12 @@ async function main() {
   const notifyHelper = (await DeployerUtils.connectContract(
     signer,
     'NotifyHelper',
-    core.notifyHelper
+    core.notifyHelper,
   )) as NotifyHelper;
   const bookkeeper = (await DeployerUtils.connectContract(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
 
   const vaults = await bookkeeper.vaults();
@@ -49,16 +49,16 @@ async function main() {
       const mockContract = (await DeployerUtils.connectContract(
         signer,
         'ERC20PresetMinterPauser',
-        rt
+        rt,
       )) as ERC20PresetMinterPauser;
       await mockContract.mint(
         signer.address,
-        utils.parseUnits('100000', rtDecimals)
+        utils.parseUnits('100000', rtDecimals),
       );
 
       const availableAmount = +(+utils.formatUnits(
         await TokenUtils.balanceOf(rt, signer.address),
-        rtDecimals
+        rtDecimals,
       )).toFixed();
       console.log('availableAmount', availableAmount);
       const amountN = (availableAmount / vaults.length / 2).toFixed();
@@ -98,7 +98,7 @@ async function main() {
 
         const bal = utils.formatUnits(
           await TokenUtils.balanceOf(rt, signer.address),
-          rtDecimals
+          rtDecimals,
         );
         console.log(
           'notify',
@@ -106,17 +106,17 @@ async function main() {
           amounts.length,
           vlts.length,
           bal,
-          utils.formatUnits(sum, rtDecimals)
+          utils.formatUnits(sum, rtDecimals),
         );
 
         await TokenUtils.transfer(
           rt,
           signer,
           notifyHelper.address,
-          sum.toString()
+          sum.toString(),
         );
         await RunHelper.runAndWait(() =>
-          notifyHelper.notifyVaults(amounts, vlts, sum, rt)
+          notifyHelper.notifyVaults(amounts, vlts, sum, rt),
         );
       }
       i = 0;

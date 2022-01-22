@@ -23,17 +23,17 @@ async function main() {
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
   const calculator = (await DeployerUtils.connectInterface(
     signer,
     'PriceCalculator',
-    tools.calculator
+    tools.calculator,
   )) as PriceCalculator;
   const cReader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const blueChipsLps: string[] = [];
@@ -64,7 +64,7 @@ async function main() {
         const lpCtr = (await DeployerUtils.connectInterface(
           signer,
           'IUniswapV2Pair',
-          lp
+          lp,
         )) as IUniswapV2Pair;
 
         let tokenOpposite;
@@ -84,7 +84,7 @@ async function main() {
 
         const reserves = await lpCtr.getReserves();
         const token0Price = +utils.formatUnits(
-          await calculator.getPriceWithDefaultOutput(token0)
+          await calculator.getPriceWithDefaultOutput(token0),
         );
         // const token1Price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(token1));
         const token0Dec = await TokenUtils.decimals(token0);
@@ -136,7 +136,7 @@ async function main() {
     await DeployerUtils.getUSDCAddress(),
     calculator,
     allLps,
-    allTokens
+    allTokens,
   );
 
   let i = 0;
@@ -149,7 +149,7 @@ async function main() {
       const vCtr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vAdr
+        vAdr,
       )) as SmartVault;
       const strategy = await vCtr.strategy();
       console.log('strategy', strategy);
@@ -215,7 +215,7 @@ async function addRoutes(
   token: string,
   calculator: PriceCalculator,
   allLps: string[],
-  allTokens: string[]
+  allTokens: string[],
 ) {
   if (allTokens.includes(token.toLowerCase())) {
     return;

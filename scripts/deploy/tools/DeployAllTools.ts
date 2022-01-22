@@ -18,26 +18,26 @@ async function main() {
     calculatorData = await DeployerUtils.deployPriceCalculatorMatic(
       signer,
       core.controller,
-      true
+      true,
     );
   } else {
     calculatorData = await DeployerUtils.deployPriceCalculatorTestNet(
       signer,
-      core.controller
+      core.controller,
     );
   }
 
   const readerLogic = await DeployerUtils.deployContract(
     signer,
-    'ContractReader'
+    'ContractReader',
   );
   const readerProxy = await DeployerUtils.deployContract(
     signer,
     'TetuProxyGov',
-    readerLogic.address
+    readerLogic.address,
   );
   const contractReader = readerLogic.attach(
-    readerProxy.address
+    readerProxy.address,
   ) as ContractReader;
 
   await contractReader.initialize(core.controller, calculatorData[0].address);
@@ -45,12 +45,12 @@ async function main() {
   const balancer = await DeployerUtils.deployContract(
     signer,
     'LiquidityBalancer',
-    core.controller
+    core.controller,
   );
 
   const utils = (await DeployerUtils.deployContract(
     signer,
-    'ContractUtils'
+    'ContractUtils',
   )) as ContractUtils;
 
   writeFileSync(
@@ -63,7 +63,7 @@ async function main() {
       ', // utils\n' +
       balancer.address +
       ', // balancer\n',
-    'utf8'
+    'utf8',
   );
 
   await DeployerUtils.wait(5);

@@ -9,7 +9,7 @@ async function main() {
   const mocks = await DeployerUtils.getTokenAddresses();
   const contract = (await DeployerUtils.deployContract(
     signer,
-    'MockFaucet'
+    'MockFaucet',
   )) as MockFaucet;
 
   for (const mockName of Array.from(mocks.keys())) {
@@ -26,8 +26,8 @@ async function main() {
         mock,
         signer,
         contract.address,
-        balance.div(2).toString()
-      )
+        balance.div(2).toString(),
+      ),
     );
   }
 

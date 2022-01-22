@@ -32,12 +32,12 @@ async function main() {
   const reader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
   const rewardCalculator = (await DeployerUtils.connectInterface(
     signer,
     'RewardCalculator',
-    coreAdrs.rewardCalculator
+    coreAdrs.rewardCalculator,
   )) as RewardCalculator;
 
   const vaultsPure = await core.bookkeeper.vaults();
@@ -57,7 +57,7 @@ async function main() {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const platform = (
       await reader.strategyPlatform(await vCtr.strategy())
@@ -77,7 +77,7 @@ async function main() {
       const vaultCtr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vault
+        vault,
       )) as SmartVault;
       const vaultName = await vaultCtr.name();
 
@@ -93,8 +93,8 @@ async function main() {
             await core.bookkeeper.vaultRewards(
               vault,
               MaticAddresses.xTETU,
-              rewardsSize - 1
-            )
+              rewardsSize - 1,
+            ),
           ) * psPpfs;
       }
       console.log('lastRewards', lastRewards);
@@ -108,19 +108,19 @@ async function main() {
         lastEarned = +utils.formatUnits(
           await core.bookkeeper.strategyEarnedSnapshots(
             strategy,
-            earnedSize - 1
-          )
+            earnedSize - 1,
+          ),
         );
         lastSnapshotTs = (
           await core.bookkeeper.strategyEarnedSnapshotsTime(
             strategy,
-            earnedSize - 1
+            earnedSize - 1,
           )
         ).toNumber();
       }
 
       const currentEarned = +utils.formatUnits(
-        await core.bookkeeper.targetTokenEarned(strategy)
+        await core.bookkeeper.targetTokenEarned(strategy),
       );
       console.log('currentEarned', currentEarned);
       console.log('lastEarned', lastEarned);
@@ -128,7 +128,7 @@ async function main() {
 
       const timeSinceDistribution = currentTs - lastSnapshotTs;
       const avgDistributedRewards = +utils.formatUnits(
-        await rewardCalculator.vaultLastTetuReward(vault)
+        await rewardCalculator.vaultLastTetuReward(vault),
       );
 
       const kpi = (earned / avgDistributedRewards) * 100;
@@ -137,7 +137,7 @@ async function main() {
       const kpiFromCalc =
         +utils.formatUnits(await rewardCalculator.kpi(vault)) * 100;
       const estRewards = utils.formatUnits(
-        await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24)
+        await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24),
       );
 
       const info =

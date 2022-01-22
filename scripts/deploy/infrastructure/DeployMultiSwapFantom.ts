@@ -11,7 +11,7 @@ async function main() {
   const multiSwap = (await DeployerUtils.deployMultiSwapFantom(
     signer,
     core.controller,
-    tools.calculator
+    tools.calculator,
   )) as MultiSwap;
 
   await DeployerUtils.wait(5);

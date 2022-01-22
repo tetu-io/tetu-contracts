@@ -37,7 +37,7 @@ async function main() {
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'TetuSwapFactory',
-    core.swapFactory
+    core.swapFactory,
   )) as TetuSwapFactory;
 
   const length = (await factory.allPairsLength()).toNumber();
@@ -47,7 +47,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -62,7 +62,7 @@ async function main() {
     const pairCtr = (await DeployerUtils.connectInterface(
       signer,
       'TetuSwapPair',
-      pair
+      pair,
     )) as TetuSwapPair;
     const token0 = await pairCtr.token0();
     const token1 = await pairCtr.token1();
@@ -91,7 +91,7 @@ async function main() {
     const vaultProxy = await DeployerUtils.deployContract(
       signer,
       'TetuProxyControlled',
-      vaultLogic.address
+      vaultLogic.address,
     );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
@@ -100,7 +100,7 @@ async function main() {
     const strategy = (await DeployerUtils.deployContract(
       signer,
       strategyName,
-      ...strategyArgs
+      ...strategyArgs,
     )) as IStrategy;
 
     const strategyUnderlying = await strategy.underlying();
@@ -114,8 +114,8 @@ async function main() {
         REWARDS_DURATION,
         false,
         rt,
-        0
-      )
+        0,
+      ),
     );
 
     const txt = `${vaultNameWithoutPrefix} vault: ${vault.address} strategy: ${strategy.address} pair ${pair}\n`;

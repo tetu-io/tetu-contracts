@@ -26,7 +26,7 @@ async function startDefaultLpStrategyTest(
   deployInfo: DeployInfo,
   deposit = 100_000,
   loopValue = 300,
-  advanceBlocks = true
+  advanceBlocks = true,
 ) {
   // **********************************************
   // ************** CONFIG*************************
@@ -64,10 +64,10 @@ async function startDefaultLpStrategyTest(
         return DeployerUtils.deployContract(
           signer,
           strategyContractName,
-          ...strategyArgs
+          ...strategyArgs,
         ) as Promise<IStrategy>;
       },
-      underlying
+      underlying,
     );
   };
   const hwInitiator = (
@@ -78,7 +78,7 @@ async function startDefaultLpStrategyTest(
     _underlying: string,
     _vault: SmartVault,
     _strategy: IStrategy,
-    _balanceTolerance: number
+    _balanceTolerance: number,
   ) => {
     return new DoHardWorkLoopBase(
       _signer,
@@ -89,7 +89,7 @@ async function startDefaultLpStrategyTest(
       _vault,
       _strategy,
       _balanceTolerance,
-      finalBalanceTolerance
+      finalBalanceTolerance,
     );
   };
 
@@ -105,7 +105,7 @@ async function startDefaultLpStrategyTest(
     loops,
     loopValue,
     advanceBlocks,
-    specificTests
+    specificTests,
   );
 }
 

@@ -39,14 +39,14 @@ describe('Universal Quick tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/quick_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -89,7 +89,7 @@ describe('Universal Quick tests', async () => {
       token1,
       token1Name,
       pool,
-      deployInfo
+      deployInfo,
     );
   });
 });

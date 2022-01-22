@@ -9,12 +9,12 @@ async function main() {
   const factory = (await DeployerUtils.connectInterface(
     signer,
     'TetuSwapFactory',
-    core.swapFactory
+    core.swapFactory,
   )) as TetuSwapFactory;
   const bookkeeper = (await DeployerUtils.connectInterface(
     signer,
     'Bookkeeper',
-    core.bookkeeper
+    core.bookkeeper,
   )) as Bookkeeper;
 
   const lpCount = (await factory.allPairsLength()).toNumber();
@@ -26,7 +26,7 @@ async function main() {
       const lpCtr = (await DeployerUtils.connectInterface(
         signer,
         'TetuSwapPair',
-        lp
+        lp,
       )) as TetuSwapPair;
 
       const v0 = (await lpCtr.vault0()).toLowerCase();
@@ -63,7 +63,7 @@ async function main() {
       const lpCtr = (await DeployerUtils.connectInterface(
         signer,
         'TetuSwapPair',
-        lp
+        lp,
       )) as TetuSwapPair;
       console.log('sync ', lp);
       await lpCtr.sync();

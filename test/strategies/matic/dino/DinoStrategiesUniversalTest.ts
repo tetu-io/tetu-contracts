@@ -38,14 +38,14 @@ describe.skip('Universal Dino tests', async () => {
   }
   const infos = readFileSync(
     'scripts/utils/download/data/dino_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(
       deployInfo,
-      argv.deployCoreContracts
+      argv.deployCoreContracts,
     );
   });
 
@@ -84,7 +84,7 @@ describe.skip('Universal Dino tests', async () => {
       token1,
       token1Name,
       idx,
-      deployInfo
+      deployInfo,
     );
   });
 });

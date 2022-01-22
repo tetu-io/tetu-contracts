@@ -9,12 +9,12 @@ async function main() {
   const controller = (await DeployerUtils.connectProxy(
     core.controller,
     signer,
-    'Controller'
+    'Controller',
   )) as Controller;
   const bookkeeper = (await DeployerUtils.connectProxy(
     core.bookkeeper,
     signer,
-    'Bookkeeper'
+    'Bookkeeper',
   )) as Bookkeeper;
 
   const vaults = await bookkeeper.vaults();

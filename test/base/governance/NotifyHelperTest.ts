@@ -36,13 +36,13 @@ describe('Notify Helper test', () => {
       core.controller,
       core.announcer,
       '1000000',
-      signer.address
+      signer.address,
     );
     await MintHelperUtils.mint(
       core.controller,
       core.announcer,
       '1000000',
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
 
     usdc = await DeployerUtils.getUSDCAddress();
@@ -50,12 +50,12 @@ describe('Notify Helper test', () => {
     await TokenUtils.getToken(
       usdc,
       signer.address,
-      utils.parseUnits('100000', 6)
+      utils.parseUnits('100000', 6),
     );
     await TokenUtils.getToken(
       networkToken,
       signer.address,
-      utils.parseUnits('10000')
+      utils.parseUnits('10000'),
     );
 
     for (let i = 0; i < 2; i++) {
@@ -70,12 +70,12 @@ describe('Notify Helper test', () => {
             vaultAddress,
             [core.psVault.address], // __rewardTokens
             [usdc], // __assets
-            1 // __platform
+            1, // __platform
           ) as Promise<IStrategy>,
         core.controller,
         core.vaultController,
         core.psVault.address,
-        signer
+        signer,
       );
     }
   });
@@ -111,19 +111,19 @@ describe('Notify Helper test', () => {
     // await Erc20Utils.transfer(core.rewardToken.address, signer, core.notifyHelper.address, sum.toString());
     const tokenBal = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     console.log('rtBalance', utils.formatUnits(tokenBal, 18));
     await core.notifyHelper.notifyVaults(
       amounts,
       vaults,
       sum,
-      core.rewardToken.address
+      core.rewardToken.address,
     );
 
     for (const vault of vaults) {
       expect(await TokenUtils.balanceOf(core.psVault.address, vault)).is.eq(
-        utils.parseUnits('1', 18).toString()
+        utils.parseUnits('1', 18).toString(),
       );
     }
   });
@@ -141,7 +141,7 @@ describe('Notify Helper test', () => {
       vault.address,
       [Misc.ZERO_ADDRESS],
       [underlying],
-      1
+      1,
     )) as NoopStrategy;
     await vault.initializeSmartVault(
       'NOOP',
@@ -151,11 +151,11 @@ describe('Notify Helper test', () => {
       60 * 60 * 24 * 28,
       true,
       rt,
-      0
+      0,
     );
     await core.controller.addVaultsAndStrategies(
       [vault.address],
-      [strategy.address]
+      [strategy.address],
     );
     await vault.setLockPenalty(10);
     await vault.setLockPeriod(1);
@@ -167,17 +167,17 @@ describe('Notify Helper test', () => {
     const amount = utils.parseUnits('1', 18);
     const tokenBal = await TokenUtils.balanceOf(
       core.rewardToken.address,
-      core.notifyHelper.address
+      core.notifyHelper.address,
     );
     console.log('rtBalance', utils.formatUnits(tokenBal, 18));
     await core.notifyHelper.notifyVaults(
       [amount],
       [dxTETU],
       amount,
-      core.rewardToken.address
+      core.rewardToken.address,
     );
     expect(await TokenUtils.balanceOf(dxTETU, dxTETU)).is.eq(
-      utils.parseUnits('1', 18).toString()
+      utils.parseUnits('1', 18).toString(),
     );
   });
 
@@ -197,27 +197,27 @@ describe('Notify Helper test', () => {
     }
 
     expect(
-      +utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), 6)
+      +utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), 6),
     ).is.greaterThanOrEqual(1000);
 
     await TokenUtils.transfer(
       rt,
       signer,
       core.notifyHelper.address,
-      sum.toString()
+      sum.toString(),
     );
     expect(
       +utils.formatUnits(
         await TokenUtils.balanceOf(rt, core.notifyHelper.address),
-        18
-      )
+        18,
+      ),
     ).is.eq(+utils.formatUnits(sum, 18));
 
     await core.notifyHelper.notifyVaults(amounts, vaults, sum, rt);
 
     for (const vault of vaults) {
       expect(await TokenUtils.balanceOf(rt, vault)).is.eq(
-        utils.parseUnits('1').toString()
+        utils.parseUnits('1').toString(),
       );
     }
   });
@@ -226,20 +226,20 @@ describe('Notify Helper test', () => {
     expect(
       await TokenUtils.balanceOf(
         core.rewardToken.address,
-        core.notifyHelper.address
-      )
+        core.notifyHelper.address,
+      ),
     ).is.eq('901000000000000000000000');
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq('1099000000000000000000000');
     await TokenUtils.transfer(
       core.rewardToken.address,
       signer,
       core.notifyHelper.address,
-      '1099000000000000000000000'
+      '1099000000000000000000000',
     );
     expect(
-      await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
+      await TokenUtils.balanceOf(core.rewardToken.address, signer.address),
     ).is.eq('0');
     // await core.notifyHelper.moveFunds(core.rewardToken.address, signer.address);
     // expect(await Erc20Utils.balanceOf(core.rewardToken.address, signer.address)).is.eq("1000000000000000000000000");
@@ -252,7 +252,7 @@ describe('Notify Helper test', () => {
 
   it('should not notify without balance', async () => {
     await expect(
-      notifier.notifyVaults(['1'], [Misc.ZERO_ADDRESS], '1', usdc)
+      notifier.notifyVaults(['1'], [Misc.ZERO_ADDRESS], '1', usdc),
     ).rejectedWith('NH: Not enough balance');
   });
 
@@ -262,10 +262,10 @@ describe('Notify Helper test', () => {
       usdc,
       signer,
       notifier.address,
-      amount.toString()
+      amount.toString(),
     );
     await expect(notifier.notifyVaults(['1'], [], '1', usdc)).rejectedWith(
-      'wrong data'
+      'wrong data',
     );
   });
 
@@ -275,10 +275,10 @@ describe('Notify Helper test', () => {
       usdc,
       signer,
       notifier.address,
-      amount.toString()
+      amount.toString(),
     );
     await expect(
-      notifier.notifyVaults(['0'], [Misc.ZERO_ADDRESS], '1', usdc)
+      notifier.notifyVaults(['0'], [Misc.ZERO_ADDRESS], '1', usdc),
     ).rejectedWith('Notify zero');
   });
 
@@ -288,10 +288,10 @@ describe('Notify Helper test', () => {
       usdc,
       signer,
       notifier.address,
-      amount.toString()
+      amount.toString(),
     );
     await expect(
-      notifier.notifyVaults(['1'], [Misc.ZERO_ADDRESS], '1', usdc)
+      notifier.notifyVaults(['1'], [Misc.ZERO_ADDRESS], '1', usdc),
     ).rejectedWith('Vault not registered');
   });
 
@@ -309,8 +309,8 @@ describe('Notify Helper test', () => {
         ],
         [allVaults[0], allVaults[0]],
         amount,
-        rt
-      )
+        rt,
+      ),
     ).rejectedWith('NH: No rewards');
   });
 
@@ -328,8 +328,8 @@ describe('Notify Helper test', () => {
         ],
         [allVaults[1], allVaults[1]],
         amount,
-        rt
-      )
+        rt,
+      ),
     ).rejectedWith('Duplicate pool');
   });
 
@@ -346,7 +346,7 @@ describe('Notify Helper test', () => {
       ],
       [allVaults[1], allVaults[2]],
       amount,
-      rt
+      rt,
     );
 
     await expect(
@@ -354,8 +354,8 @@ describe('Notify Helper test', () => {
         [utils.parseUnits('250', rtDecimals)],
         [allVaults[1]],
         utils.parseUnits('250', rtDecimals),
-        rt
-      )
+        rt,
+      ),
     ).rejectedWith('Duplicate pool');
   });
 
@@ -372,7 +372,7 @@ describe('Notify Helper test', () => {
       ],
       [allVaults[1], allVaults[2]],
       amount,
-      rt
+      rt,
     );
 
     await notifier.clearNotifiedStatuses();
@@ -383,7 +383,7 @@ describe('Notify Helper test', () => {
       [utils.parseUnits('250', rtDecimals)],
       [allVaults[1]],
       utils.parseUnits('250', rtDecimals),
-      rt
+      rt,
     );
   });
 
@@ -393,11 +393,11 @@ describe('Notify Helper test', () => {
       usdc,
       signer,
       notifier.address,
-      amount.toString()
+      amount.toString(),
     );
     await notifier.moveTokensToController(usdc, amount);
     expect(await TokenUtils.balanceOf(usdc, core.controller.address)).is.eq(
-      amount
+      amount,
     );
   });
 });

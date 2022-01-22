@@ -7,7 +7,7 @@ async function main() {
 
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'ForwarderV2'
+    'ForwarderV2',
   )) as ForwarderV2;
 
   await DeployerUtils.wait(5);

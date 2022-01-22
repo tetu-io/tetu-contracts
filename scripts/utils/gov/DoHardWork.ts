@@ -19,17 +19,17 @@ async function main() {
   const controller = (await DeployerUtils.connectProxy(
     core.controller,
     signer,
-    'Controller'
+    'Controller',
   )) as Controller;
   const bookkeeper = (await DeployerUtils.connectProxy(
     core.bookkeeper,
     signer,
-    'Bookkeeper'
+    'Bookkeeper',
   )) as Bookkeeper;
   const calculator = (await DeployerUtils.connectProxy(
     tools.calculator,
     signer,
-    'PriceCalculator'
+    'PriceCalculator',
   )) as PriceCalculator;
   const ps = await DeployerUtils.connectVault(core.psVault, signer);
 
@@ -46,7 +46,7 @@ async function main() {
       const stratContr = (await DeployerUtils.connectInterface(
         signer,
         'IStrategy',
-        strategy
+        strategy,
       )) as IStrategy;
       const platform = await stratContr.platform();
       const vaultName = await vaultContract.name();
@@ -81,10 +81,10 @@ async function main() {
       const psPpfs = +utils.formatUnits(await ps.getPricePerFullShare());
       const ppfs = +utils.formatUnits(
         await vaultContract.getPricePerFullShare(),
-        undDec
+        undDec,
       );
       const iTokenBal = +utils.formatUnits(
-        await TokenUtils.balanceOf(core.rewardToken, vault)
+        await TokenUtils.balanceOf(core.rewardToken, vault),
       );
 
       console.log(i, 'DoHardWork for', await vaultContract.name(), iTokenBal);
@@ -96,10 +96,10 @@ async function main() {
       const psPpfsAfter = +utils.formatUnits(await ps.getPricePerFullShare());
       const ppfsAfter = +utils.formatUnits(
         await vaultContract.getPricePerFullShare(),
-        undDec
+        undDec,
       );
       const iTokenBalAfter = +utils.formatUnits(
-        await TokenUtils.balanceOf(core.rewardToken, vault)
+        await TokenUtils.balanceOf(core.rewardToken, vault),
       );
 
       console.log('reward change', iTokenBalAfter - iTokenBal);

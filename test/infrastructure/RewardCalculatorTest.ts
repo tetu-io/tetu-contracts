@@ -39,7 +39,7 @@ describe('Reward calculator tests', function () {
       await DeployerUtils.deployRewardCalculator(
         signer,
         core.controller.address,
-        priceCalculator.address
+        priceCalculator.address,
       )
     )[0] as RewardCalculator;
   });
@@ -61,11 +61,11 @@ describe('Reward calculator tests', function () {
     const vCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const strategy = await vCtr.strategy();
     const rewardUsd = +utils.formatUnits(
-      await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24)
+      await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24),
     );
     console.log('rewardUsd', rewardUsd);
     // todo activate after launch
@@ -93,7 +93,7 @@ describe('Reward calculator tests', function () {
     const bookkeeper = (await DeployerUtils.connectInterface(
       signer,
       'Bookkeeper',
-      bkAdr
+      bkAdr,
     )) as Bookkeeper;
     const vaults = await bookkeeper.vaults();
     let sum = 0;
@@ -101,7 +101,7 @@ describe('Reward calculator tests', function () {
       const vaultCtr = (await DeployerUtils.connectInterface(
         signer,
         'SmartVault',
-        vault
+        vault,
       )) as SmartVault;
       if (!(await vaultCtr.active())) {
         continue;
@@ -110,14 +110,14 @@ describe('Reward calculator tests', function () {
       const strCtr = (await DeployerUtils.connectInterface(
         signer,
         'IStrategy',
-        strategy
+        strategy,
       )) as IStrategy;
       const name = await strCtr.STRATEGY_NAME();
       if (exclude.has(name)) {
         continue;
       }
       const rewardUsd = +utils.formatUnits(
-        await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24)
+        await rewardCalculator.strategyRewardsUsd(strategy, 60 * 60 * 24),
       );
       sum += rewardUsd;
       // console.log('strategy', strategy, name, await vaultCtr.name(), '===>', rewardUsd, ' sum: ', sum);

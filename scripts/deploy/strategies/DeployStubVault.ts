@@ -7,7 +7,7 @@ export class DeployStubVault {
   public static async deploy(
     tokenName: string,
     tokenAddress: string,
-    platformId: number
+    platformId: number,
   ) {
     const signer = (await ethers.getSigners())[0];
     const core = await DeployerUtils.getCoreAddresses();
@@ -18,7 +18,7 @@ export class DeployStubVault {
     const cReader = (await DeployerUtils.connectContract(
       signer,
       'ContractReader',
-      tools.reader
+      tools.reader,
     )) as ContractReader;
 
     const deployedVaultAddresses = await cReader.vaults();
@@ -49,7 +49,7 @@ export class DeployStubVault {
           return DeployerUtils.deployContract(
             signer,
             'NoopStrategy',
-            ...args
+            ...args,
           ) as Promise<IStrategy>;
         },
         core.controller,
@@ -57,7 +57,7 @@ export class DeployStubVault {
         signer,
         60 * 60 * 24 * 28,
         0,
-        true
+        true,
       );
 
     await DeployerUtils.wait(5);

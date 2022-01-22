@@ -17,7 +17,7 @@ async function main() {
     utils.parseUnits('1000', 6).toString(),
     MaticAddresses.SUSHI_FACTORY,
     MaticAddresses.SUSHI_ROUTER,
-    true
+    true,
   );
   console.log('lpAddress', lpAddress);
 }

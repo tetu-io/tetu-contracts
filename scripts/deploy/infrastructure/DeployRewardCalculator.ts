@@ -9,7 +9,7 @@ async function main() {
   const data = await DeployerUtils.deployRewardCalculator(
     signer,
     core.controller,
-    tools.calculator
+    tools.calculator,
   );
 
   await DeployerUtils.wait(5);

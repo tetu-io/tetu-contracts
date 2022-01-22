@@ -23,7 +23,7 @@ async function main() {
   const strategy = (await DeployerUtils.deployContract(
     signer,
     'NoopStrategy',
-    ...strategyArgs
+    ...strategyArgs,
   )) as IStrategy;
 
   await DeployerUtils.wait(5);

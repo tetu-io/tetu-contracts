@@ -17,7 +17,7 @@ export default async function main() {
     signer,
     60 * 60 * 24 * 28,
     timeLock,
-    true
+    true,
   );
 
   writeFileSync(
@@ -40,7 +40,7 @@ export default async function main() {
       ', // psVault\n' +
       core.fundKeeper.address +
       ', // fundKeeper\n',
-    'utf8'
+    'utf8',
   );
 
   await DeployerUtils.wait(5);

@@ -6,7 +6,7 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const logic = (await DeployerUtils.deployContract(
     signer,
-    'TetuSwapFactory'
+    'TetuSwapFactory',
   )) as TetuSwapFactory;
 
   await DeployerUtils.wait(5);

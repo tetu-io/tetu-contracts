@@ -55,10 +55,10 @@ describe('Controller tests', function () {
     await controller.removeHardWorker(usdc);
     expect(await controller.isHardWorker(usdc)).at.eq(false);
     await expect(
-      controller.connect(signer1).addHardWorker(usdc)
+      controller.connect(signer1).addHardWorker(usdc),
     ).to.be.rejectedWith('C: Not governance');
     await expect(
-      controller.connect(signer1).removeHardWorker(usdc)
+      controller.connect(signer1).removeHardWorker(usdc),
     ).to.be.rejectedWith('C: Not governance');
   });
   it('should add and remove to whitelist', async () => {
@@ -67,7 +67,7 @@ describe('Controller tests', function () {
     await controller.changeWhiteListStatus([usdc], false);
     expect(await controller.isAllowedUser(usdc)).at.eq(false);
     await expect(
-      controller.connect(signer1).changeWhiteListStatus([usdc], true)
+      controller.connect(signer1).changeWhiteListStatus([usdc], true),
     ).to.be.rejectedWith('C: Not governance');
   });
   it('should add vault and strategy', async () => {
@@ -80,7 +80,7 @@ describe('Controller tests', function () {
       REWARD_DURATION,
       false,
       Misc.ZERO_ADDRESS,
-      0
+      0,
     );
     const strategy = (await DeployerUtils.deployContract(
       signer,
@@ -90,11 +90,11 @@ describe('Controller tests', function () {
       vault.address,
       [],
       [usdc],
-      1
+      1,
     )) as NoopStrategy;
     await controller.addVaultsAndStrategies(
       [vault.address],
-      [strategy.address]
+      [strategy.address],
     );
     expect(await controller.isValidVault(vault.address)).at.eq(true);
     expect(await controller.strategies(strategy.address)).at.eq(true);
@@ -103,7 +103,7 @@ describe('Controller tests', function () {
     expect((await bookkeeper.strategies())[1]).at.eq(strategy.address);
 
     await expect(
-      controller.connect(signer1).addVaultsAndStrategies([usdc], [usdc])
+      controller.connect(signer1).addVaultsAndStrategies([usdc], [usdc]),
     ).to.be.rejectedWith('C: Not governance');
   });
   it('should doHardWork', async () => {
@@ -116,7 +116,7 @@ describe('Controller tests', function () {
       REWARD_DURATION,
       false,
       Misc.ZERO_ADDRESS,
-      0
+      0,
     );
     const strategy = (await DeployerUtils.deployContract(
       signer,
@@ -126,23 +126,25 @@ describe('Controller tests', function () {
       vault.address,
       [Misc.ZERO_ADDRESS],
       [usdc],
-      1
+      1,
     )) as NoopStrategy;
     await controller.addVaultsAndStrategies(
       [vault.address],
-      [strategy.address]
+      [strategy.address],
     );
 
     await controller.doHardWork(vault.address);
 
     await expect(
-      controller.connect(signer1).doHardWork(vault.address)
+      controller.connect(signer1).doHardWork(vault.address),
     ).to.be.rejectedWith('C: Not hardworker or governance');
   });
 
   it('should not salvage', async () => {
     await expect(
-      controller.connect(signer1).controllerTokenMove(signer.address, usdc, 100)
+      controller
+        .connect(signer1)
+        .controllerTokenMove(signer.address, usdc, 100),
     ).to.be.rejectedWith('C: Not announced');
   });
   it('created', async () => {
@@ -151,7 +153,7 @@ describe('Controller tests', function () {
 
   it('should not setup strategy', async () => {
     await expect(controller.addStrategy(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not vault'
+      'C: Not vault',
     );
   });
 
@@ -162,37 +164,37 @@ describe('Controller tests', function () {
 
   it('should not set gov without announce', async () => {
     await expect(controller.setGovernance(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup forwarder without announce', async () => {
     await expect(
-      controller.setFeeRewardForwarder(Misc.ZERO_ADDRESS)
+      controller.setFeeRewardForwarder(Misc.ZERO_ADDRESS),
     ).rejectedWith('C: Not announced');
   });
 
   it('should not setup bookkeeper without announce', async () => {
     await expect(controller.setBookkeeper(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup mint helper without announce', async () => {
     await expect(controller.setMintHelper(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup ps vault without announce', async () => {
     await expect(controller.setPsVault(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup ps rate without announce', async () => {
     await expect(
-      controller.setPSNumeratorDenominator('100', '99')
+      controller.setPSNumeratorDenominator('100', '99'),
     ).rejectedWith('C: Not announced');
   });
 
@@ -202,7 +204,7 @@ describe('Controller tests', function () {
 
   it('should not remove zero hard worker', async () => {
     await expect(controller.removeHardWorker(Misc.ZERO_ADDRESS)).rejectedWith(
-      ''
+      '',
     );
   });
 
@@ -210,8 +212,8 @@ describe('Controller tests', function () {
     await expect(
       controller.addVaultsAndStrategies(
         [Misc.ZERO_ADDRESS],
-        [Misc.ZERO_ADDRESS]
-      )
+        [Misc.ZERO_ADDRESS],
+      ),
     ).rejectedWith("new vault shouldn't be empty");
   });
 
@@ -219,8 +221,8 @@ describe('Controller tests', function () {
     await expect(
       controller.addVaultsAndStrategies(
         [core.psVault.address],
-        [Misc.ZERO_ADDRESS]
-      )
+        [Misc.ZERO_ADDRESS],
+      ),
     ).rejectedWith('vault already exists');
   });
 
@@ -228,44 +230,44 @@ describe('Controller tests', function () {
     await expect(
       controller.addVaultsAndStrategies(
         [core.bookkeeper.address],
-        [Misc.ZERO_ADDRESS]
-      )
+        [Misc.ZERO_ADDRESS],
+      ),
     ).rejectedWith('new strategy must not be empty');
   });
 
   it('should not setup reward token without announce', async () => {
     await expect(controller.setRewardToken(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup fund token without announce', async () => {
     await expect(controller.setFundToken(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup fund without announce', async () => {
     await expect(controller.setFund(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not announced'
+      'C: Not announced',
     );
   });
 
   it('should not setup fund rate without announce', async () => {
     await expect(
-      controller.setFundNumeratorDenominator('100', '99')
+      controller.setFundNumeratorDenominator('100', '99'),
     ).rejectedWith('C: Not announced');
   });
 
   it('should not add wrong arrays for vaults and strategies', async () => {
     await expect(
-      controller.addVaultsAndStrategies([Misc.ZERO_ADDRESS], [])
+      controller.addVaultsAndStrategies([Misc.ZERO_ADDRESS], []),
     ).rejectedWith('arrays wrong length');
   });
 
   it('should not doHardWork for wrong vault', async () => {
     await expect(controller.doHardWork(Misc.ZERO_ADDRESS)).rejectedWith(
-      'C: Not vault'
+      'C: Not vault',
     );
   });
 });

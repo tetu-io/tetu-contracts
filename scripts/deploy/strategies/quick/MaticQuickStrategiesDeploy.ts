@@ -16,17 +16,17 @@ async function main() {
   const controller = (await DeployerUtils.connectContract(
     signer,
     'Controller',
-    core.controller
+    core.controller,
   )) as Controller;
   const vaultController = (await DeployerUtils.connectContract(
     signer,
     'VaultController',
-    core.vaultController
+    core.vaultController,
   )) as VaultController;
 
   const infos = readFileSync(
     'scripts/utils/download/data/quick_pools.csv',
-    'utf8'
+    'utf8',
   ).split(/\r?\n/);
 
   const deployed = [];
@@ -35,7 +35,7 @@ async function main() {
   const cReader = (await DeployerUtils.connectContract(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
@@ -85,7 +85,7 @@ async function main() {
             lpAddress,
             token0,
             token1,
-            pool
+            pool,
           ) as Promise<IStrategy>,
         controller,
         vaultController,
@@ -93,8 +93,8 @@ async function main() {
         signer,
         60 * 60 * 24 * 28,
         0,
-        true
-      )
+        true,
+      ),
     );
     data.push([
       core.controller,

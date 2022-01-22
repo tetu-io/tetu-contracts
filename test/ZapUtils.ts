@@ -20,7 +20,7 @@ export class ZapUtils {
     vault: string,
     tokenIn: string,
     amountN = 1000,
-    slippage: number
+    slippage: number,
   ) {
     console.log('zap lp in', amountN, slippage);
     const tokenInDec = await TokenUtils.decimals(tokenIn);
@@ -28,14 +28,14 @@ export class ZapUtils {
     expect(
       +utils.formatUnits(
         await TokenUtils.balanceOf(tokenIn, signer.address),
-        tokenInDec
-      )
+        tokenInDec,
+      ),
     ).is.greaterThanOrEqual(amountN);
 
     const smartVault = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const strategy = await smartVault.strategy();
     const assets = await cReader.strategyAssets(strategy);
@@ -55,20 +55,20 @@ export class ZapUtils {
         'zapLpIn ============',
         await TokenUtils.tokenSymbol(tokenIn),
         '=>',
-        await TokenUtils.tokenSymbol(asset)
+        await TokenUtils.tokenSymbol(asset),
       );
       for (const lp of lps) {
         const lpCtr = (await DeployerUtils.connectInterface(
           signer,
           'IUniswapV2Pair',
-          lp
+          lp,
         )) as IUniswapV2Pair;
         const t0 = await lpCtr.token0();
         const t1 = await lpCtr.token1();
         console.log(
           'lp',
           await TokenUtils.tokenSymbol(t0),
-          await TokenUtils.tokenSymbol(t1)
+          await TokenUtils.tokenSymbol(t1),
         );
       }
       console.log('============');
@@ -81,7 +81,7 @@ export class ZapUtils {
       tokenIn,
       signer,
       zapContract.address,
-      amount.toString()
+      amount.toString(),
     );
     await zapContract
       .connect(signer)
@@ -93,7 +93,7 @@ export class ZapUtils {
         tokensOut[1],
         tokensOutLps[1],
         amount,
-        slippage
+        slippage,
       );
   }
 
@@ -105,18 +105,18 @@ export class ZapUtils {
     vault: string,
     tokenOut: string,
     amountShare: string,
-    slippage: number
+    slippage: number,
   ) {
     console.log('zap lp out', amountShare, slippage);
 
     expect(
-      +utils.formatUnits(await TokenUtils.balanceOf(vault, signer.address))
+      +utils.formatUnits(await TokenUtils.balanceOf(vault, signer.address)),
     ).is.greaterThanOrEqual(+utils.formatUnits(amountShare));
 
     const smartVault = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const strategy = await smartVault.strategy();
     const assets = await cReader.strategyAssets(strategy);
@@ -132,20 +132,20 @@ export class ZapUtils {
         'zapLpOut ============',
         await TokenUtils.tokenSymbol(asset),
         '=>',
-        await TokenUtils.tokenSymbol(tokenOut)
+        await TokenUtils.tokenSymbol(tokenOut),
       );
       for (const lp of lps) {
         const lpCtr = (await DeployerUtils.connectInterface(
           signer,
           'IUniswapV2Pair',
-          lp
+          lp,
         )) as IUniswapV2Pair;
         const t0 = await lpCtr.token0();
         const t1 = await lpCtr.token1();
         console.log(
           'lp',
           await TokenUtils.tokenSymbol(t0),
-          await TokenUtils.tokenSymbol(t1)
+          await TokenUtils.tokenSymbol(t1),
         );
       }
       console.log('============');
@@ -157,7 +157,7 @@ export class ZapUtils {
       vault,
       signer,
       zapContract.address,
-      amountShare.toString()
+      amountShare.toString(),
     );
     await zapContract
       .connect(signer)
@@ -169,7 +169,7 @@ export class ZapUtils {
         assets[1],
         assetsLpRoute[1],
         amountShare,
-        slippage
+        slippage,
       );
   }
 }

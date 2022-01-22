@@ -7,7 +7,7 @@ async function main() {
     0,
     'COSMIC',
     'StrategyCosmicSwapLp',
-    'contracts/strategies/matic/cosmic/StrategyCosmicSwapLp.sol:StrategyCosmicSwapLp'
+    'contracts/strategies/matic/cosmic/StrategyCosmicSwapLp.sol:StrategyCosmicSwapLp',
   );
 }
 

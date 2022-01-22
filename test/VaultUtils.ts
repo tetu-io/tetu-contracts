@@ -26,7 +26,7 @@ export class VaultUtils {
     deployer: string,
     toInvestNumerator: number,
     toInvestDenominator: number,
-    duration: number
+    duration: number,
   ) {
     const vault = this.vault;
     // vault storage initial stats
@@ -40,7 +40,7 @@ export class VaultUtils {
     expect(await vault.underlyingBalanceInVault()).to.eq(0);
     expect(await vault.underlyingBalanceWithInvestment()).to.eq(0);
     expect(
-      await vault.underlyingBalanceWithInvestmentForHolder(deployer)
+      await vault.underlyingBalanceWithInvestmentForHolder(deployer),
     ).to.eq(0);
     expect(await vault.getPricePerFullShare()).to.eq(1000000);
     expect(await vault.availableToInvestOut()).to.eq(0);
@@ -53,12 +53,12 @@ export class VaultUtils {
     expect(await vault.rewardRateForToken(vaultRewardToken0)).to.eq(0);
     expect(await vault.lastUpdateTimeForToken(vaultRewardToken0)).to.eq(0);
     expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(
-      0
+      0,
     );
   }
 
   public static async profitSharingRatio(
-    controller: Controller
+    controller: Controller,
   ): Promise<number> {
     const ratio =
       (await controller.psNumerator()).toNumber() /
@@ -72,7 +72,7 @@ export class VaultUtils {
     user: SignerWithAddress,
     vault: SmartVault,
     amount: BigNumber,
-    invest = true
+    invest = true,
   ): Promise<ContractTransaction> {
     const vaultForUser = vault.connect(user);
     const underlying = await vaultForUser.underlying();
@@ -81,14 +81,14 @@ export class VaultUtils {
     console.log('balance', utils.formatUnits(bal, dec), bal.toString());
     expect(+utils.formatUnits(bal, dec)).is.greaterThanOrEqual(
       +utils.formatUnits(amount, dec),
-      'not enough balance'
+      'not enough balance',
     );
 
     await TokenUtils.approve(
       underlying,
       user,
       vault.address,
-      amount.toString()
+      amount.toString(),
     );
     console.log('deposit', BigNumber.from(amount).toString());
     if (invest) {
@@ -101,19 +101,19 @@ export class VaultUtils {
   public static async vaultApr(
     vault: SmartVault,
     rt: string,
-    cReader: ContractReader
+    cReader: ContractReader,
   ): Promise<number> {
     const rtDec = await TokenUtils.decimals(rt);
     const undDec = await vault.decimals();
     const rewardRateForToken = +utils.formatUnits(
       await vault.rewardRateForToken(rt),
-      rtDec
+      rtDec,
     );
     const totalSupply = +utils.formatUnits(await vault.totalSupply(), undDec);
     const finish = (await vault.periodFinishForToken(rt)).toNumber();
     const duration = (await vault.duration()).toNumber();
     const tvlUsd = +utils.formatUnits(
-      await cReader.vaultTvlUsdc(vault.address)
+      await cReader.vaultTvlUsdc(vault.address),
     );
     const rtPrice = +utils.formatUnits(await cReader.getPrice(rt));
 
@@ -135,7 +135,7 @@ export class VaultUtils {
     console.log(
       'rewardsForFullPeriodUsd',
       rewardsForFullPeriodUsd,
-      rewardRateForToken * duration
+      rewardRateForToken * duration,
     );
     console.log('currentRewardsAmountUsd', currentRewardsAmountUsd);
     console.log('---------------------------------------');
@@ -149,12 +149,12 @@ export class VaultUtils {
 
   public static async vaultRewardsAmount(
     vault: SmartVault,
-    rt: string
+    rt: string,
   ): Promise<number> {
     const rtDec = await TokenUtils.decimals(rt);
     const rewardRateForToken = +utils.formatUnits(
       await vault.rewardRateForToken(rt),
-      rtDec
+      rtDec,
     );
     const duration = (await vault.duration()).toNumber();
     return rewardRateForToken * duration;
@@ -162,12 +162,12 @@ export class VaultUtils {
 
   public static async vaultRewardsAmountCurrent(
     vault: SmartVault,
-    rt: string
+    rt: string,
   ): Promise<number> {
     const rtDec = await TokenUtils.decimals(rt);
     const rewardRateForToken = +utils.formatUnits(
       await vault.rewardRateForToken(rt),
-      rtDec
+      rtDec,
     );
     const duration = (await vault.duration()).toNumber();
     const finish = (await vault.periodFinishForToken(rt)).toNumber();
@@ -191,7 +191,7 @@ export class VaultUtils {
     }
     return (
       await axios.get(
-        `https://tetu-server-staging.herokuapp.com//api/v1/reader/vaultInfos?network=${network}`
+        `https://tetu-server-staging.herokuapp.com//api/v1/reader/vaultInfos?network=${network}`,
       )
     ).data;
   }
@@ -201,7 +201,7 @@ export class VaultUtils {
     vault: SmartVault,
     core: CoreContractsWrapper,
     amount: number,
-    period = 60 * 60 * 24 * 7 + 1
+    period = 60 * 60 * 24 * 7 + 1,
   ) {
     const start = Date.now();
     console.log('Add xTETU as reward to vault: ', amount.toString());
@@ -210,7 +210,7 @@ export class VaultUtils {
       await TokenUtils.getToken(
         core.rewardToken.address,
         signer.address,
-        utils.parseUnits(amount + '')
+        utils.parseUnits(amount + ''),
       );
     } else {
       await MintHelperUtils.mint(
@@ -219,19 +219,19 @@ export class VaultUtils {
         amount * 2 + '',
         signer.address,
         false,
-        period
+        period,
       );
     }
     await TokenUtils.approve(
       core.rewardToken.address,
       signer,
       core.psVault.address,
-      utils.parseUnits(amount + '').toString()
+      utils.parseUnits(amount + '').toString(),
     );
     await core.psVault.deposit(utils.parseUnits(amount + ''));
     const xTetuBal = await TokenUtils.balanceOf(
       core.psVault.address,
-      signer.address
+      signer.address,
     );
     await TokenUtils.approve(rtAdr, signer, vault.address, xTetuBal.toString());
     await vault.notifyTargetRewardAmount(rtAdr, xTetuBal);
@@ -240,20 +240,20 @@ export class VaultUtils {
 
   public static async doHardWorkAndCheck(
     vault: SmartVault,
-    positiveCheck = true
+    positiveCheck = true,
   ) {
     const start = Date.now();
     const controller = await vault.controller();
     const controllerCtr = (await DeployerUtils.connectInterface(
       vault.signer as SignerWithAddress,
       'Controller',
-      controller
+      controller,
     )) as Controller;
     const psVault = await controllerCtr.psVault();
     const psVaultCtr = (await DeployerUtils.connectInterface(
       vault.signer as SignerWithAddress,
       'SmartVault',
-      psVault
+      psVault,
     )) as SmartVault;
     const und = await vault.underlying();
     const undDec = await TokenUtils.decimals(und);
@@ -265,34 +265,34 @@ export class VaultUtils {
     const strategyCtr = (await DeployerUtils.connectInterface(
       vault.signer as SignerWithAddress,
       'IStrategy',
-      strategy
+      strategy,
     )) as IStrategy;
 
     const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBal = +utils.formatUnits(
       await vault.underlyingBalanceWithInvestment(),
-      undDec
+      undDec,
     );
     const psPpfs = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
     const rtBal = +utils.formatUnits(
-      await TokenUtils.balanceOf(rt, vault.address)
+      await TokenUtils.balanceOf(rt, vault.address),
     );
 
     await vault.doHardWork();
 
     const ppfsAfter = +utils.formatUnits(
       await vault.getPricePerFullShare(),
-      undDec
+      undDec,
     );
     const undBalAfter = +utils.formatUnits(
       await vault.underlyingBalanceWithInvestment(),
-      undDec
+      undDec,
     );
     const psPpfsAfter = +utils.formatUnits(
-      await psVaultCtr.getPricePerFullShare()
+      await psVaultCtr.getPricePerFullShare(),
     );
     const rtBalAfter = +utils.formatUnits(
-      await TokenUtils.balanceOf(rt, vault.address)
+      await TokenUtils.balanceOf(rt, vault.address),
     );
     const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
 
@@ -311,19 +311,19 @@ export class VaultUtils {
         expect(psPpfsAfter).is.greaterThan(
           psPpfs,
           'PS didnt have any income, it means that rewards was not liquidated and properly sent to PS.' +
-            ' Check reward tokens list and liquidation paths'
+            ' Check reward tokens list and liquidation paths',
         );
         if (psRatio !== 1) {
           expect(rtBalAfter).is.greaterThan(
             rtBal,
-            'With ps ratio less than 1 we should send a part of buybacks to vaults as rewards.'
+            'With ps ratio less than 1 we should send a part of buybacks to vaults as rewards.',
           );
         }
       }
       if (bbRatio !== 10000) {
         expect(ppfsAfter).is.greaterThan(
           ppfs,
-          'With not 100% buybacks we should autocompound underlying asset'
+          'With not 100% buybacks we should autocompound underlying asset',
         );
       }
     }

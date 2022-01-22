@@ -7,7 +7,7 @@ async function main() {
 
   const contract = (await DeployerUtils.deployContract(
     signer,
-    'TokenRetranslator'
+    'TokenRetranslator',
   )) as TokenRetranslator;
 
   await DeployerUtils.wait(5);

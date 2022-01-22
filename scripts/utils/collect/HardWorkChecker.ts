@@ -10,12 +10,12 @@ async function main() {
   const cReader = (await DeployerUtils.connectInterface(
     signer,
     'ContractReader',
-    tools.reader
+    tools.reader,
   )) as ContractReader;
   const bookkeeper = (await DeployerUtils.connectProxy(
     core.bookkeeper,
     signer,
-    'Bookkeeper'
+    'Bookkeeper',
   )) as Bookkeeper;
 
   const vaults = await bookkeeper.vaults();
@@ -25,7 +25,7 @@ async function main() {
     const vaultCtr = (await DeployerUtils.connectInterface(
       signer,
       'SmartVault',
-      vault
+      vault,
     )) as SmartVault;
     const strategy = await vaultCtr.strategy();
     const data = await bookkeeper.lastHardWork(strategy);
@@ -38,7 +38,7 @@ async function main() {
     console.log(
       data.time.toNumber(),
       new Date(data.time.toNumber() * 1000),
-      daysSinceLast
+      daysSinceLast,
     );
   }
 }

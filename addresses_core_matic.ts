@@ -16,7 +16,7 @@ export class MaticCoreAddresses {
     '0x684d8c187be836171a1Af8D533e4724893031828', // swapFactory
     '0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c', // swapRouter
     '0x690a41ab256046dF39faDd3f32F6d26cB4490bed', // rewardCalculator
-    '0x5Cc44D1787aFB510F563Fe55Fd082D3d4d720671' // autoRewarder
+    '0x5Cc44D1787aFB510F563Fe55Fd082D3d4d720671', // autoRewarder
   );
 }
 
