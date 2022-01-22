@@ -1,6 +1,9 @@
 import {MultiRouter} from "../../typechain";
 import * as fs from 'fs';
+import {BigNumber} from "ethers";
 // import pairs from 'json/MultiRouterPairs.json'
+
+const MULTI_ROUTER_MATIC = '0x6dB6CeA8BB997525164a8960d74143685b0a00F7'
 
 type Pair = {
   lp: string;
@@ -8,6 +11,8 @@ type Pair = {
   tokenOut: string;
   reverse: boolean;
   stepNumber: number;
+  reserve0?: BigNumber;
+  reserve1?: BigNumber;
 }
 
 type IndexedPair = { [key: string]: Pair }
@@ -133,4 +138,35 @@ function extractPairsFromRoutes(routes: Route[]): IndexedPair {
   return pairs
 }
 
-export {Pair, loadAllPairs, saveObjectToJsonFile, indexAllPairs, findAllRoutes, extractPairsFromRoutes}
+
+// function loadPairReserves(address[] memory pairs)
+// external view returns (ReservesData[] memory data) {
+async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
+  const addresses = Object.keys(pairs)
+  const reserves = await multiRouter.loadPairReserves(addresses)
+  for (let p = 0; p < addresses.length; p++) {
+    const pair: Pair = pairs[addresses[p]]
+    const reserve = reserves[p]
+    if (pair) {
+      if (pair.reverse) {
+        pair.reserve0 = reserve[1]
+        pair.reserve1 = reserve[0]
+      } else {
+        pair.reserve0 = reserve[0]
+        pair.reserve1 = reserve[1]
+      }
+    }
+  }
+
+}
+
+export {
+  MULTI_ROUTER_MATIC,
+  Pair,
+  loadAllPairs,
+  saveObjectToJsonFile,
+  indexAllPairs,
+  findAllRoutes,
+  extractPairsFromRoutes,
+  loadPairReserves
+}

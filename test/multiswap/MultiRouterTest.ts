@@ -14,7 +14,9 @@ import {
   saveObjectToJsonFile,
   indexAllPairs,
   findAllRoutes,
-  extractPairsFromRoutes
+  extractPairsFromRoutes,
+  loadPairReserves,
+  MULTI_ROUTER_MATIC
 } from "../../scripts/multiswap/MultiRouterLib";
 import pairsJson from '../../scripts/multiswap/json/MultiRouterPairs.json'
 
@@ -23,9 +25,15 @@ const pairs = pairsJson as string[][]
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
+let signer: SignerWithAddress;
+let multiRouter: MultiRouter;
+
 describe("MultiRouter base tests", function () {
 
   before(async function () {
+    signer = (await ethers.getSigners())[0];
+    // multiRouter = await DeployerUtils.deployContract(signer, 'MultiRouter') as MultiRouter;
+    multiRouter = await DeployerUtils.connectInterface(signer, "MultiRouter", MULTI_ROUTER_MATIC) as MultiRouter
   })
 
   after(async function () {
@@ -45,11 +53,17 @@ describe("MultiRouter base tests", function () {
         2)
     console.log('allRoutes', allRoutes);
     console.log('allRoutes.length', allRoutes.length);
+
     console.time()
     const usedPairs = extractPairsFromRoutes(allRoutes)
     console.timeEnd()
     const usedPairsKeys = Object.keys(usedPairs)
     console.log('usedPairsKeys.length', usedPairsKeys.length);
+
+    console.time()
+    await loadPairReserves(multiRouter, usedPairs)
+    console.timeEnd()
+    console.log('usedPairs', usedPairs);
   })
 
 
