@@ -122,7 +122,7 @@ function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string
   return finishedRoutes
 }
 
-function extractPairsFromRoutes(routes: Route[]): Pair[] {
+function extractPairsFromRoutes(routes: Route[]): IndexedPair {
   const pairs: IndexedPair = {}
   for (const route of routes) {
     const steps = route.steps
@@ -130,7 +130,7 @@ function extractPairsFromRoutes(routes: Route[]): Pair[] {
       pairs[pair.lp] = pair
     }
   }
-  return Object.values(pairs)
+  return pairs
 }
 
 export {Pair, loadAllPairs, saveObjectToJsonFile, indexAllPairs, findAllRoutes, extractPairsFromRoutes}

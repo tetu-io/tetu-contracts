@@ -26,7 +26,6 @@ chai.use(chaiAsPromised);
 describe("MultiRouter base tests", function () {
 
   before(async function () {
-
   })
 
   after(async function () {
@@ -49,7 +48,8 @@ describe("MultiRouter base tests", function () {
     console.time()
     const usedPairs = extractPairsFromRoutes(allRoutes)
     console.timeEnd()
-    console.log('usedPairs.length', usedPairs.length);
+    const usedPairsKeys = Object.keys(usedPairs)
+    console.log('usedPairsKeys.length', usedPairsKeys.length);
   })
 
 

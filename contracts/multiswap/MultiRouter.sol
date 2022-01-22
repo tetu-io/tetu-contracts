@@ -30,6 +30,11 @@ contract MultiRouter /*is IMultiRouter*/ { // TODO interface
     address token1;
   }
 
+  struct ReservesData {
+    uint256 reserve0;
+    uint256 reserve1;
+  }
+
   struct TokenData {
     address token;
     string symbol;
@@ -55,9 +60,26 @@ contract MultiRouter /*is IMultiRouter*/ { // TODO interface
     }
   }
 
+  function loadPairReserves(address[] memory pairs)
+  external view returns (ReservesData[] memory data) {
+    uint256 len = pairs.length;
+    data = new ReservesData[](len);
+
+    for (uint i = 0; i < len; i++) {
+      address pairAddress = pairs[i];
+      IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
+//      (uint256 r0, uint256 r1,) = pair.getReserves();
+//      data[i] = ReservesData{reserve0:r0, reserve1:r1});
+      try pair.getReserves() returns (uint112 reserve0, uint112 reserve1, uint32) {
+        data[i] = ReservesData({reserve0:reserve0, reserve1:reserve1});
+      } catch (bytes memory) { // any error interpret as nil reserves
+        data[i] = ReservesData({reserve0:0, reserve1:0});
+      }
+    }
+  }
+
   function loadTokenNames(address[] memory tokens)
   external view returns (TokenData[] memory data) {
-    console.log('loadTokens');
     uint256 len = tokens.length;
     data = new TokenData[](len);
 
@@ -65,7 +87,6 @@ contract MultiRouter /*is IMultiRouter*/ { // TODO interface
       address tokenAddress = tokens[i];
       IERC20Name tokenName = IERC20Name(tokenAddress);
       string memory symbol = tokenName.symbol();
-      console.log('token', symbol);
       data[i] = TokenData({token:tokenAddress, symbol: symbol});
     }
   }
