@@ -27,7 +27,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneBeethovenStrategyTest: {
       type: "number",
-      default: 1,
+      default: 0,
     },
     hardhatChainId: {
       type: "number",
@@ -55,11 +55,10 @@ describe('Universal Beethoven tests', async () => {
     const idx = strat[0];
     const lpName = strat[1];
     const lpAddress = strat[2];
-    // const token0 = strat[3];
-    // const token0Name = strat[4];
-    // const token1 = strat[5];
-    // const token1Name = strat[6];
-    // const alloc = strat[7];
+    const depositToken = strat[3];
+    const beethovenPoolId = strat[4];
+    const rewardToDepositPoolId = strat[5];
+
 
     if (idx === 'idx') {
       console.log('skip', idx);
@@ -105,9 +104,9 @@ describe('Universal Beethoven tests', async () => {
             underlying,
             vaultAddress,
             idx,
-            FtmAddresses.WFTM_TOKEN,
-            "0x713ee620a7702b79ea5413096a90702244fe4532000100000000000000000105",
-            "0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019"
+            depositToken,
+            beethovenPoolId,
+            rewardToDepositPoolId
           ];
           return DeployerUtils.deployContract(
             signer,

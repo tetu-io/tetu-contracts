@@ -178,7 +178,9 @@ abstract contract BeethovenACBase is StrategyBase {
     if (toCompound == 0) {
       return;
     }
-    balancerSwap(rewardToDepositPoolId, rewardToken, depositToken, toCompound);
+    if (rewardToken != depositToken) {
+      balancerSwap(rewardToDepositPoolId, rewardToken, depositToken, toCompound);
+    }
     uint depositTokenBalance = IERC20(depositToken).balanceOf(address (this));
     IERC20(depositToken).safeApprove(address(beethovenVault), 0);
     IERC20(depositToken).safeApprove(address(beethovenVault), depositTokenBalance);

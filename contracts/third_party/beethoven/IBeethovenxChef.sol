@@ -19,4 +19,5 @@ interface IBeethovenxChef {
     function userInfo(uint256 _pid, address _user) external view returns (uint256, uint256);
     function emergencyWithdraw(uint256 _pid, address _to) external;
     function pendingBeets(uint256 _pid, address _to) external view returns (uint256);
+    function lpTokens(uint256 lpId) external view returns (address);
 }

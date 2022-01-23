@@ -10,6 +10,7 @@ import {StrategyTestUtils} from "./StrategyTestUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
+import {FtmAddresses} from "../../scripts/addresses/FtmAddresses";
 
 
 export class DoHardWorkLoopBase {
@@ -361,7 +362,7 @@ export class DoHardWorkLoopBase {
       return this.priceCache.get(token) as BigNumber;
     }
     let price;
-    if(token === "0x713ee620a7702b79eA5413096A90702244FE4532".toLowerCase() && this.core.newCalculator!=null){
+    if(DoHardWorkLoopBase.isBPTLP(token) && this.core.newCalculator!=null){
       price = await this.core.newCalculator.getPriceWithDefaultOutput(token);
     }else if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
@@ -385,6 +386,15 @@ export class DoHardWorkLoopBase {
       result = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
     }
     return result;
+  }
+
+  private static isBPTLP(token: string){
+    for (const bptLp of FtmAddresses.BPT_LPs) {
+      if(token === bptLp){
+        return true
+      }
+    }
+    return false
   }
 
   private static toPercent(actual: number, expected: number): string {

@@ -69,8 +69,20 @@ export class FtmAddresses {
   // Tarot
   public static TAROT_FACTORY = "0x35C052bBf8338b06351782A565aa9AaD173432eA".toLowerCase();
 
+  // beethoven
+  public static BEETS_TOKEN = "0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e".toLowerCase();
+  public static BEETS_MASTERCHEF = "0x8166994d9ebBe5829EC86Bd81258149B87faCfd3".toLowerCase();
   public static BPT_WAGMI_TOKEN = "0x713ee620a7702b79eA5413096A90702244FE4532".toLowerCase();
+  public static BPT_BEETS_USDC_TOKEN = "0x03c6B3f09D2504606936b1A4DeCeFaD204687890".toLowerCase();
+  public static BPT_BEETS_FTM_TOKEN = "0xcdE5a11a4ACB4eE4c805352Cec57E236bdBC3837".toLowerCase();
+  public static BPT_GRAND_ORCH_TOKEN = "0xd47D2791d3B46f9452709Fa41855a045304D6f9d".toLowerCase();
 
+  public static BPT_LPs= new Set<string>([
+      FtmAddresses.BPT_WAGMI_TOKEN,
+      FtmAddresses.BPT_BEETS_USDC_TOKEN,
+      FtmAddresses.BPT_BEETS_FTM_TOKEN,
+      FtmAddresses.BPT_GRAND_ORCH_TOKEN,
+  ]);
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

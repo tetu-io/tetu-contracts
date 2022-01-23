@@ -13,6 +13,7 @@ import {DeployInfo} from "./DeployInfo";
 import {SpecificStrategyTest} from "./SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
+import {FtmAddresses} from "../../scripts/addresses/FtmAddresses";
 
 async function universalStrategyTest(
   name: string,
@@ -77,11 +78,13 @@ async function universalStrategyTest(
       let calculator =  deployInfo?.tools?.calculator as PriceCalculator;
       // temporary solution until new Price calculator deployed
       const isBTP = await StrategyTestUtils.isBalancerLP(user, underlying);
-      if(isBTP && deployInfo?.core?.controller !=null && deployInfo.tools?.calculator != null){
-         const newCalculator = (await DeployerUtils.deployPriceCalculator(signer, deployInfo.core.controller.address))[0];
-         await newCalculator.registerBPT("0x713ee620a7702b79eA5413096A90702244FE4532");
-         calculator = newCalculator;
-         deployInfo.core.newCalculator = newCalculator;
+      if (isBTP && deployInfo?.core?.controller != null && deployInfo.tools?.calculator != null) {
+        const newCalculator = (await DeployerUtils.deployPriceCalculator(signer, deployInfo.core.controller.address))[0];
+        for (const bptLp of FtmAddresses.BPT_LPs) {
+          await newCalculator.registerBPT(bptLp);
+        }
+        calculator = newCalculator;
+        deployInfo.core.newCalculator = newCalculator;
       }
       // get underlying
       userBalance = await StrategyTestUtils.getUnderlying(
