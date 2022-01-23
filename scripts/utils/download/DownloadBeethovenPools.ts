@@ -40,12 +40,11 @@ async function main() {
         infos += data + '\n';
     }
 
-//     mkdir('./tmp/download', {recursive: true}, (err) => {
-//       if (err) throw err;
-//     });
-//
-    // console.log('data', data);
-    writeFileSync('/Users/anatseuski/work/tetu-contracts/scripts/utils/download/data/beethoven_pools_raw.csv', infos, 'utf8');
+    mkdir('./tmp/download', {recursive: true}, (err) => {
+      if (err) throw err;
+    });
+
+    writeFileSync('./tmp/download/beethoven_pools_raw.csv', infos, 'utf8');
     console.log('done');
 }
 main()
