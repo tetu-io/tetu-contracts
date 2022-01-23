@@ -13,6 +13,7 @@
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./IPriceCalculator.sol";
 import "../../base/governance/Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
@@ -21,7 +22,6 @@ import "../../third_party/firebird/IFireBirdFactory.sol";
 import "../../base/interface/ISmartVault.sol";
 import "../../third_party/iron/IIronSwap.sol";
 import "../../third_party/iron/IIronLpToken.sol";
-import "./IPriceCalculator.sol";
 import "../../third_party/curve/ICurveLpToken.sol";
 import "../../third_party/curve/ICurveMinter.sol";
 import "../../third_party/IERC20Extended.sol";
@@ -434,7 +434,6 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   function calculateBPTPrice(address token, address outputToken) internal view returns (uint256){
     IBPT bpt = IBPT(token);
     address balancerVault = bpt.getVault();
-    uint256[] memory normalizedWeights = bpt.getNormalizedWeights();
     bytes32 poolId = bpt.getPoolId();
     uint256 totalBPTSupply =  bpt.totalSupply();
     (IERC20[] memory poolTokens, uint256[] memory balances,) = IBVault(balancerVault).getPoolTokens(poolId);
