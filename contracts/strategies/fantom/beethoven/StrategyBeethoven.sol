@@ -13,9 +13,9 @@ pragma solidity 0.8.4;
 
 
 import "../../../third_party/uniswap/IUniswapV2Pair.sol";
-import "../../../base/strategies/beethoven/BeethovenACBase.sol";
+import "../../../base/strategies/beethoven/BeethovenBase.sol";
 
-contract StrategyBeethovenAC is BeethovenACBase {
+contract StrategyBeethoven is BeethovenBase {
 
   // MASTER_CHEF
   address private constant _MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
@@ -30,12 +30,12 @@ contract StrategyBeethovenAC is BeethovenACBase {
     address _controller,
     address _vault,
     address _underlying,
-    uint256 _poolId, //29
+    uint256 _poolId,
     address _depositToken,
     bytes32 _beethovenPoolId,
     bytes32 _rewardToDepositPoolId
 
-  ) BeethovenACBase(
+  ) BeethovenBase(
     _controller,
     _vault,
     _underlying,
@@ -48,15 +48,8 @@ contract StrategyBeethovenAC is BeethovenACBase {
     _rewardToDepositPoolId
   ) {
     require(_underlying != address(0), "zero underlying");
-    //    require(_token0 != address(0), "zero token0");
-    //    require(_token1 != address(0), "zero token1");
-    //    require(_token0 != _token1, "same tokens");
-    //    address token0 = IUniswapV2Pair(_underlying).token0();
-    //    address token1 = IUniswapV2Pair(_underlying).token1();
-    //    require(_token0 == token0 || _token0 == token1, "wrong token0");
-    //    require(_token1 == token0 || _token1 == token1, "wrong token1");
+    require(_depositToken != address(0), "zero _depositToken");
   }
-
 
   function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;

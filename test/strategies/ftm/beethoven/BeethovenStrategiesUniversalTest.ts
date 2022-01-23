@@ -27,7 +27,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneBeethovenStrategyTest: {
       type: "number",
-      default: 0,
+      default: 1,
     },
     hardhatChainId: {
       type: "number",
@@ -64,20 +64,20 @@ describe('Universal Beethoven tests', async () => {
       console.log('skip', idx);
       return;
     }
-    // if (argv.onlyOneBeethovenStrategyTest !== -1 && +strat[0] !== argv.onlyOneBeethovenStrategyTest) {
-    //   return;
-    // }
+    if (argv.onlyOneBeethovenStrategyTest !== -1 && +strat[0] !== argv.onlyOneBeethovenStrategyTest) {
+      return;
+    }
 
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = "StrategyBeethovenAC";
+    const strategyContractName = "StrategyBeethoven";
     const vaultName = "Beets" + "_" + lpName;
     const underlying = lpAddress;
     // add custom liquidation path if necessary
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
-        ["0xf24bcf4d1e507740041c9cfd2dddb29585adce1e"],
+        [FtmAddresses.BEETS_TOKEN],
         ["0x648a7452DA25B4fB4BDB79bADf374a8f8a5ea2b5"]
       );
     };
