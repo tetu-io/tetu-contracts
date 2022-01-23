@@ -361,7 +361,9 @@ export class DoHardWorkLoopBase {
       return this.priceCache.get(token) as BigNumber;
     }
     let price;
-    if (token === this.core.rewardToken.address.toLowerCase()) {
+    if(token === "0x713ee620a7702b79eA5413096A90702244FE4532".toLowerCase() && this.core.newCalculator!=null){
+      price = await this.core.newCalculator.getPriceWithDefaultOutput(token);
+    }else if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
     } else {
       price = await PriceCalculatorUtils.getPriceCached(token);

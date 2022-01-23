@@ -74,13 +74,21 @@ async function universalStrategyTest(
       deployInfo.underlying = underlying;
       deployInfo.vault = vault;
       deployInfo.strategy = strategy;
-
+      let calculator =  deployInfo?.tools?.calculator as PriceCalculator;
+      // temporary solution until new Price calculator deployed
+      const isBTP = await StrategyTestUtils.isBalancerLP(user, underlying);
+      if(isBTP && deployInfo?.core?.controller !=null && deployInfo.tools?.calculator != null){
+         const newCalculator = (await DeployerUtils.deployPriceCalculator(signer, deployInfo.core.controller.address))[0];
+         await newCalculator.registerBPT("0x713ee620a7702b79eA5413096A90702244FE4532");
+         calculator = newCalculator;
+         deployInfo.core.newCalculator = newCalculator;
+      }
       // get underlying
       userBalance = await StrategyTestUtils.getUnderlying(
         underlying,
         deposit,
         user,
-        deployInfo?.tools?.calculator as PriceCalculator,
+        calculator,
         [signer.address],
       );
       await UniswapUtils.wrapNetworkToken(this.signer);

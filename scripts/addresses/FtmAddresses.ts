@@ -69,6 +69,9 @@ export class FtmAddresses {
   // Tarot
   public static TAROT_FACTORY = "0x35C052bBf8338b06351782A565aa9AaD173432eA".toLowerCase();
 
+  public static BPT_WAGMI_TOKEN = "0x713ee620a7702b79eA5413096A90702244FE4532".toLowerCase();
+
+
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
     FtmAddresses.fUSDT_TOKEN,

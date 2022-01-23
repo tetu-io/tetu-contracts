@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "../StrategyBase.sol";
 import "../../../third_party/beethoven/IBeethovenxChef.sol";
+import "../../../third_party/beethoven/IBeethovenVault.sol";
 
 /// @title Abstract contract for Beethoven strategy implementation
 /// @author OlegN
@@ -34,6 +35,21 @@ abstract contract BeethovenACBase is StrategyBase {
   /// @notice MasterChef rewards pool ID
   uint256 public poolId;
 
+  /// @notice Beethoven vault
+  IBeethovenVault public beethovenVault;
+
+  /// @notice Token used for LP deposit. In balancer pool could contain up to 20 different tokens.
+  /// We need to choose one to be used for deposit. Usually the most liquid one.
+  address public depositToken;
+
+  IBeethovenVault.FundManagement private fundManagementStuct;
+
+  IBeethovenVault.SwapKind private _defaultSwapKind = IBeethovenVault.SwapKind.GIVEN_IN;
+
+  bytes32 public beethovenPoolId;
+  bytes32 public rewardToDepositPoolId;
+  IAsset[] public poolTokens;
+
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
   constructor(
@@ -42,14 +58,22 @@ abstract contract BeethovenACBase is StrategyBase {
     address _vault,
     address[] memory __rewardTokens,
     address _pool,
-    uint256 _poolId
-  //    bytes32 _underlyingPoolID
-
+    uint256 _poolId,
+    address _beethovenVault,
+    address _depositToken,
+    bytes32 _beethovenPoolId,
+    bytes32 _rewardToDepositPoolId
 
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_pool != address(0), "SSAB: Zero address pool");
     pool = _pool;
     poolId = _poolId;
+    beethovenVault = IBeethovenVault(_beethovenVault);
+    depositToken = _depositToken;
+    fundManagementStuct = IBeethovenVault.FundManagement(address(this), false, payable(address(this)), false);
+    beethovenPoolId = _beethovenPoolId;
+    rewardToDepositPoolId = _rewardToDepositPoolId;
+    setupPullTokens();
 
     //    ISpookyMasterChef.PoolInfo memory poolInfo = ISpookyMasterChef(pool).poolInfo(_poolID);
     //    require(address(poolInfo.lpToken) == _underlyingToken, "SSAB: Wrong underlying");
@@ -80,12 +104,21 @@ abstract contract BeethovenACBase is StrategyBase {
     return IERC20(_underlyingToken).balanceOf(pool);
   }
 
+  // assets should reflect underlying tokens need to investing
+  function assets() external override view returns (address[] memory) {
+    address[] memory assets = new address[](poolTokens.length);
+    for (uint256 i = 0; i < poolTokens.length; i++) {
+      assets[i] = address(poolTokens[i]);
+    }
+    return assets;
+  }
+
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override restricted {
     investAllUnderlying();
-    withdrawAndClaimFromPool(0);
+    IBeethovenxChef(pool).harvest(poolId, address(this));
     liquidateReward();
   }
 
@@ -113,9 +146,69 @@ abstract contract BeethovenACBase is StrategyBase {
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-//    autocompoundLP(router);
-//    // if we have not enough balance for buybacks we will autocompound 100%
-//    liquidateRewardSilently();
+    autocompoundBalancer();
+    liquidateRewardSilently();
+  }
+
+  /// @dev Concert pool tokens from IERC20[] to IAsset[]
+  function setupPullTokens() internal {
+    (IERC20[] memory tokens,,) = beethovenVault.getPoolTokens(beethovenPoolId);
+    IAsset[] memory assets = new IAsset[](tokens.length);
+    for (uint256 i = 0; i < tokens.length; i++) {
+      assets[i] = IAsset(address(tokens[i]));
+    }
+    poolTokens = assets;
+  }
+
+  /// @dev Liquidate rewards, buy assets and add to beethoven pool
+  function autocompoundBalancer() internal {
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      uint256 amount = rewardBalance(i);
+      if (amount != 0) {
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
+        address rt = _rewardTokens[i];
+        rewardToUnderlying(rt, toCompound);
+        depositToPool(underlyingBalance());
+      }
+    }
+  }
+
+  /// @dev swap reward token to underlying using Beethoven pool
+  function rewardToUnderlying(address rewardToken, uint toCompound) internal{
+    if (toCompound == 0) {
+      return;
+    }
+    balancerSwap(rewardToDepositPoolId, rewardToken, depositToken, toCompound);
+    uint depositTokenBalance = IERC20(depositToken).balanceOf(address (this));
+    IERC20(depositToken).safeApprove(address(beethovenVault), 0);
+    IERC20(depositToken).safeApprove(address(beethovenVault), depositTokenBalance);
+    balancerJoin(beethovenPoolId, depositToken, depositTokenBalance);
+  }
+
+  /// @dev swap _tokenIn to _tokenOut using pool identified by _poolId
+  function balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint256 _amountIn) internal returns (uint256) {
+    IBeethovenVault.SingleSwap memory singleSwapData = IBeethovenVault.SingleSwap(
+      _poolId,
+      _defaultSwapKind,
+      IAsset(_tokenIn),
+      IAsset(_tokenOut),
+      _amountIn,
+      ""
+    );
+    IERC20(_tokenIn).safeApprove(address(beethovenVault), _amountIn);
+    return beethovenVault.swap(singleSwapData, fundManagementStuct, 1, block.timestamp);
+  }
+
+  /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
+  function balancerJoin(bytes32 _poolId, address _tokenIn, uint256 _amountIn) internal {
+    uint256[] memory amounts = new uint256[](poolTokens.length);
+    for (uint256 i = 0; i < amounts.length; i++) {
+      amounts[i] = address(poolTokens[i]) == _tokenIn ? _amountIn : 0;
+    }
+    bytes memory userData = abi.encode(1, amounts, 1);
+    IBeethovenVault.JoinPoolRequest memory request = IBeethovenVault.JoinPoolRequest(
+      poolTokens, amounts, userData, false);
+    beethovenVault.joinPool(_poolId, address(this), address(this), request);
   }
 
 }

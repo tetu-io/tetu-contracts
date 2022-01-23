@@ -26,6 +26,8 @@ import "../../third_party/curve/ICurveLpToken.sol";
 import "../../third_party/curve/ICurveMinter.sol";
 import "../../third_party/IERC20Extended.sol";
 import "../../third_party/aave/IAaveToken.sol";
+import "../../third_party/balancer/IBPT.sol";
+import "../../third_party/balancer/IBVault.sol";
 
 pragma solidity 0.8.4;
 
@@ -59,6 +61,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   address[] public keyTokens;
 
   mapping(address => address) public replacementTokens;
+  mapping(address => bool) public registeredBPTTokens;
 
   // ********** EVENTS ****************************
 
@@ -151,7 +154,9 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(IAaveToken(token).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
       price = price * ratio / (10 ** PRECISION_DECIMALS);
-    } else {
+    }else if (isBPT(token)) {
+      price = calculateBPTPrice(token, outputToken);
+    }else {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(token, outputToken, usedLps, 0);
     }
@@ -183,6 +188,10 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       return true;
     } catch {}
     return false;
+  }
+
+  function isBPT(address token) public view returns (bool) {
+    return registeredBPTTokens[token];
   }
 
   /* solhint-disable no-unused-vars */
@@ -422,6 +431,26 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     return amount.mul(10 ** PRECISION_DECIMALS).div(10 ** decimals);
   }
 
+  function calculateBPTPrice(address token, address outputToken) internal view returns (uint256){
+    IBPT bpt = IBPT(token);
+    address balancerVault = bpt.getVault();
+    uint256[] memory normalizedWeights = bpt.getNormalizedWeights();
+    bytes32 poolId = bpt.getPoolId();
+    uint256 totalBPTSupply =  bpt.totalSupply();
+    (IERC20[] memory poolTokens, uint256[] memory balances,) = IBVault(balancerVault).getPoolTokens(poolId);
+
+    uint256 totalPrice = 0;
+    for(uint i = 0; i < poolTokens.length; i++){
+      uint256 tokenPrice = getPrice(address(poolTokens[i]), outputToken);
+      // unknown token price
+      if (tokenPrice == 0){
+        return 0;
+      }
+      totalPrice = totalPrice + tokenPrice * balances[i];
+    }
+    return totalPrice / totalBPTSupply;
+  }
+
   // ************* GOVERNANCE ACTIONS ***************
 
   function setDefaultToken(address _newDefaultToken) external onlyControllerOrGovernance {
@@ -492,4 +521,13 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     replacementTokens[_inputToken] = _replacementToken;
     emit ReplacementTokenUpdated(_inputToken, _replacementToken);
   }
+
+  function registerBPT(address _bptToken) external onlyControllerOrGovernance {
+    registeredBPTTokens[_bptToken] = true;
+  }
+
+  function unregisterBPT(address _bptToken) external onlyControllerOrGovernance {
+    registeredBPTTokens[_bptToken] = false;
+  }
+
 }

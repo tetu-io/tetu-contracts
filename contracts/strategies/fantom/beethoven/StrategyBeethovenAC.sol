@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: ISC
 /**
 * By using this software, you understand, acknowledge and accept that Tetu
@@ -20,44 +19,46 @@ contract StrategyBeethovenAC is BeethovenACBase {
 
   // MASTER_CHEF
   address private constant _MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
-//  address private constant _ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
+  address private constant _BEETHOVEN_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.BEETHOVEN;
 
   // rewards
   address private constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
   address[] private poolRewards = [BEETS];
-  address[] private _assets;
 
   constructor(
     address _controller,
     address _vault,
     address _underlying,
-//    address _token0,
-//    address _token1,
-    uint256 _poolId //29
-  ) BeethovenACBase(_controller, _underlying, _vault, poolRewards, _MASTER_CHEF, _poolId) {
+    uint256 _poolId, //29
+    address _depositToken,
+    bytes32 _beethovenPoolId,
+    bytes32 _rewardToDepositPoolId
+
+  ) BeethovenACBase(
+    _controller,
+    _vault,
+    _underlying,
+    poolRewards,
+    _MASTER_CHEF,
+    _poolId,
+    _BEETHOVEN_VAULT,
+    _depositToken,
+    _beethovenPoolId,
+    _rewardToDepositPoolId
+  ) {
     require(_underlying != address(0), "zero underlying");
-//    require(_token0 != address(0), "zero token0");
-//    require(_token1 != address(0), "zero token1");
-//    require(_token0 != _token1, "same tokens");
-
-    //todo move to base
-//    _assets.push(_token0);
-//    _assets.push(_token1);
-
-//    address token0 = IUniswapV2Pair(_underlying).token0();
-//    address token1 = IUniswapV2Pair(_underlying).token1();
-//    require(_token0 == token0 || _token0 == token1, "wrong token0");
-//    require(_token1 == token0 || _token1 == token1, "wrong token1");
+    //    require(_token0 != address(0), "zero token0");
+    //    require(_token1 != address(0), "zero token1");
+    //    require(_token0 != _token1, "same tokens");
+    //    address token0 = IUniswapV2Pair(_underlying).token0();
+    //    address token1 = IUniswapV2Pair(_underlying).token1();
+    //    require(_token0 == token0 || _token0 == token1, "wrong token0");
+    //    require(_token1 == token0 || _token1 == token1, "wrong token1");
   }
 
 
   function platform() external override pure returns (IStrategy.Platform) {
     return _PLATFORM;
-  }
-
-  // assets should reflect underlying tokens need to investing
-  function assets() external override view returns (address[] memory) {
-    return _assets;
   }
 }

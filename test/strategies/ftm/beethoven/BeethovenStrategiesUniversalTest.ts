@@ -11,7 +11,7 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {IStrategy, SmartVault} from "../../../../typechain";
+import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {ethers} from "ethers";
@@ -42,9 +42,6 @@ describe('Universal Beethoven tests', async () => {
     return;
   }
   const infos = readFileSync('scripts/utils/download/data/beethoven_pools.csv', 'utf8').split(/\r?\n/);
-
-  // const result = await ethers.utils.fetchJson("https://rpc.ftm.tools/", '{ "id": 250, "jsonrpc": "2.0", "method": "eth_chainId", "params": [ ] }')
-  // console.log(result);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
@@ -79,7 +76,13 @@ describe('Universal Beethoven tests', async () => {
     const vaultName = "Beets" + "_" + lpName;
     const underlying = lpAddress;
     // add custom liquidation path if necessary
-    const forwarderConfigurator = null;
+    const forwarderConfigurator = async (forwarder: ForwarderV2) => {
+      await forwarder.addLargestLps(
+        ["0xf24bcf4d1e507740041c9cfd2dddb29585adce1e"],
+        ["0x648a7452DA25B4fB4BDB79bADf374a8f8a5ea2b5"]
+      );
+    };
+
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = false;
     // only for strategies where we expect PPFS fluctuations
@@ -101,9 +104,10 @@ describe('Universal Beethoven tests', async () => {
             core.controller.address,
             underlying,
             vaultAddress,
-            // token0,
-            // token1,
-            idx
+            idx,
+            FtmAddresses.WFTM_TOKEN,
+            "0x713ee620a7702b79ea5413096a90702244fe4532000100000000000000000105",
+            "0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019"
           ];
           return DeployerUtils.deployContract(
             signer,
