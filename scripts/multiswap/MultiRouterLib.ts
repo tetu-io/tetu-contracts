@@ -1,9 +1,12 @@
 import {MultiRouter} from "../../typechain";
 import * as fs from 'fs';
 import {BigNumber} from "ethers";
+import {ethers} from "hardhat";
+
 // import pairs from 'json/MultiRouterPairs.json'
 
-const MULTI_ROUTER_MATIC = '0x6dB6CeA8BB997525164a8960d74143685b0a00F7'
+// const MULTI_ROUTER_MATIC = '0x6dB6CeA8BB997525164a8960d74143685b0a00F7'
+const MULTI_ROUTER_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
 
 type Pair = {
   lp: string;
@@ -57,9 +60,9 @@ function indexAllPairs(pairs: string[][]): IndexedPairs {
   }
 
   for (const p of pairs) {
-    p[0] = p[0].toLowerCase()
-    p[1] = p[1].toLowerCase()
-    p[2] = p[2].toLowerCase()
+    // p[0] = p[0].toLowerCase()
+    // p[1] = p[1].toLowerCase()
+    // p[2] = p[2].toLowerCase()
     const pair: Pair = {lp: p[0], tokenIn: p[1], tokenOut: p[2], reverse: false, stepNumber: 0}
     pushPairToWays(pair)
     const reversePair: Pair = {lp: p[0], tokenIn: p[2], tokenOut: p[1], reverse: true, stepNumber: 0}
@@ -75,8 +78,8 @@ type Route = {
 
 function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string, maxRouteLength: number): Route[] {
   console.log('findAllRoutes maxRouteLength', maxRouteLength);
-  tokenIn = tokenIn.toLowerCase()
-  tokenOut = tokenOut.toLowerCase()
+  tokenIn = ethers.utils.getAddress(tokenIn)
+  tokenOut = ethers.utils.getAddress(tokenOut)
 
   console.log('tokenIn', tokenIn);
   const routes: Route[] = []
@@ -143,7 +146,9 @@ function extractPairsFromRoutes(routes: Route[]): IndexedPair {
 // external view returns (ReservesData[] memory data) {
 async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
   const addresses = Object.keys(pairs)
+  console.log('addresses', addresses);
   const reserves = await multiRouter.loadPairReserves(addresses)
+  console.log('reserves', reserves);
   for (let p = 0; p < addresses.length; p++) {
     const pair: Pair = pairs[addresses[p]]
     const reserve = reserves[p]

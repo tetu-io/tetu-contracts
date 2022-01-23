@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import {
   MultiRouter,
 } from "../../typechain";
-import {ethers, web3} from "hardhat";
+import {ethers, web3, network} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {BigNumberish} from "ethers";
@@ -32,8 +32,13 @@ describe("MultiRouter base tests", function () {
 
   before(async function () {
     signer = (await ethers.getSigners())[0];
-    // multiRouter = await DeployerUtils.deployContract(signer, 'MultiRouter') as MultiRouter;
-    multiRouter = await DeployerUtils.connectInterface(signer, "MultiRouter", MULTI_ROUTER_MATIC) as MultiRouter
+    console.log('network.name', network.name);
+    if (network.name === 'matic') {
+      multiRouter = await DeployerUtils.connectInterface(signer, "MultiRouter", MULTI_ROUTER_MATIC) as MultiRouter
+    } else if (network.name === 'hardhat') {
+      multiRouter = await DeployerUtils.deployContract(signer, 'MultiRouter') as MultiRouter;
+    } else
+      console.error('Unsupported network', network.name)
   })
 
   after(async function () {
