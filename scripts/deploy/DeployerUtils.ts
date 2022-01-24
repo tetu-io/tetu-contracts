@@ -126,8 +126,12 @@ export class DeployerUtils {
     const instance = await _factory.deploy(...args);
     console.log('Deploy tx:', instance.deployTransaction.hash);
     await instance.deployed();
-    Misc.printDuration(name + ' deployed ' + instance.address, start);
-    return instance;
+
+    const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
+    console.log('Receipt', receipt.contractAddress)
+
+    Misc.printDuration(name + ' deployed ' + receipt.contractAddress, start);
+    return _factory.attach(receipt.contractAddress);
   }
 
   public static async deployController(signer: SignerWithAddress): Promise<Controller> {
