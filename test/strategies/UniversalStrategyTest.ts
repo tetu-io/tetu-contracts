@@ -80,11 +80,8 @@ async function universalStrategyTest(
       const isBTP = await StrategyTestUtils.isBalancerLP(user, underlying);
       if (isBTP && deployInfo?.core?.controller != null && deployInfo.tools?.calculator != null) {
         const newCalculator = (await DeployerUtils.deployPriceCalculator(signer, deployInfo.core.controller.address))[0];
-        for (const bptLp of FtmAddresses.BPT_LPs) {
-          await newCalculator.registerBPT(bptLp);
-        }
         calculator = newCalculator;
-        deployInfo.core.newCalculator = newCalculator;
+        deployInfo.tools.newCalculator = newCalculator;
       }
       // get underlying
       userBalance = await StrategyTestUtils.getUnderlying(

@@ -47,6 +47,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   uint256 constant public DEPTH = 20;
   address public constant CRV_USD_BTC_ETH_MATIC = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
   address public constant CRV_USD_BTC_ETH_FANTOM = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
+  address public constant BEETHOVEN_VAULT_FANTOM = 0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce;
 
   // ************ VARIABLES **********************
   // !!! DON'T CHANGE NAMES OR ORDERING !!!
@@ -61,7 +62,6 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   address[] public keyTokens;
 
   mapping(address => address) public replacementTokens;
-  mapping(address => bool) public registeredBPTTokens;
 
   // ********** EVENTS ****************************
 
@@ -191,7 +191,11 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function isBPT(address token) public view returns (bool) {
-    return registeredBPTTokens[token];
+    IBPT bpt = IBPT(token);
+    try bpt.getVault() returns (address beethovenVault){
+      return (beethovenVault == BEETHOVEN_VAULT_FANTOM);
+    } catch {}
+    return false;
   }
 
   /* solhint-disable no-unused-vars */
@@ -520,13 +524,4 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     replacementTokens[_inputToken] = _replacementToken;
     emit ReplacementTokenUpdated(_inputToken, _replacementToken);
   }
-
-  function registerBPT(address _bptToken) external onlyControllerOrGovernance {
-    registeredBPTTokens[_bptToken] = true;
-  }
-
-  function unregisterBPT(address _bptToken) external onlyControllerOrGovernance {
-    registeredBPTTokens[_bptToken] = false;
-  }
-
 }

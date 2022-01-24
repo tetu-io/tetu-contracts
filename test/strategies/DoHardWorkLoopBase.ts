@@ -362,8 +362,8 @@ export class DoHardWorkLoopBase {
       return this.priceCache.get(token) as BigNumber;
     }
     let price;
-    if(DoHardWorkLoopBase.isBPTLP(token) && this.core.newCalculator!=null){
-      price = await this.core.newCalculator.getPriceWithDefaultOutput(token);
+    if(DoHardWorkLoopBase.isBPTLP(token) && this.tools.newCalculator!=null){
+      price = await this.tools.newCalculator.getPriceWithDefaultOutput(token);
     }else if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
     } else {

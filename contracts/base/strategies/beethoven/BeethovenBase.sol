@@ -15,6 +15,7 @@ pragma solidity 0.8.4;
 import "../StrategyBase.sol";
 import "../../../third_party/beethoven/IBeethovenxChef.sol";
 import "../../../third_party/beethoven/IBeethovenVault.sol";
+import "hardhat/console.sol";
 
 /// @title Abstract contract for Beethoven strategy implementation
 /// @author OlegN
@@ -49,6 +50,8 @@ abstract contract BeethovenBase is StrategyBase {
   /// @notice Token used for LP deposit. In balancer pool could contain up to 20 different tokens.
   /// We need to choose one to be used for deposit. Usually the most liquid one.
   address public depositToken;
+
+  bool public useBeethovenSingleSwap = true;
 
   IBeethovenVault.FundManagement private fundManagementStruct;
   IBeethovenVault.SwapKind private _defaultSwapKind = IBeethovenVault.SwapKind.GIVEN_IN;
@@ -123,6 +126,11 @@ abstract contract BeethovenBase is StrategyBase {
     liquidateReward();
   }
 
+  // @dev enable or disable beethoven for single swaps (use forwarder if disabled)
+  function isUseBeethovenSingleSwap(bool isEnabled) external restricted {
+    useBeethovenSingleSwap = isEnabled;
+  }
+
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
   /// @dev Deposit underlying to MasterChef pool
@@ -180,16 +188,18 @@ abstract contract BeethovenBase is StrategyBase {
       return;
     }
     if (rewardToken != depositToken) {
-      balancerSwap(rewardToDepositPoolId, rewardToken, depositToken, toCompound);
+      if (useBeethovenSingleSwap){
+        balancerSwap(rewardToDepositPoolId, rewardToken, depositToken, toCompound);
+      }else{
+        forwarderSwap(rewardToken, depositToken, toCompound);
+      }
     }
     uint depositTokenBalance = IERC20(depositToken).balanceOf(address (this));
-    IERC20(depositToken).safeApprove(address(beethovenVault), 0);
-    IERC20(depositToken).safeApprove(address(beethovenVault), depositTokenBalance);
     balancerJoin(beethovenPoolId, depositToken, depositTokenBalance);
   }
 
   /// @dev swap _tokenIn to _tokenOut using pool identified by _poolId
-  function balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint256 _amountIn) internal returns (uint256) {
+  function balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint256 _amountIn) internal{
     IBeethovenVault.SingleSwap memory singleSwapData = IBeethovenVault.SingleSwap(
       _poolId,
       _defaultSwapKind,
@@ -199,7 +209,17 @@ abstract contract BeethovenBase is StrategyBase {
       ""
     );
     IERC20(_tokenIn).safeApprove(address(beethovenVault), _amountIn);
-    return beethovenVault.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+    uint amount = beethovenVault.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+    require(amount != 0, "CS: Liquidated zero");
+  }
+
+  /// @dev swap _tokenIn to _tokenOut using pool identified by _poolId
+  function forwarderSwap( address _tokenIn, address _tokenOut, uint256 _amountIn) internal {
+    address forwarder = IController(controller()).feeRewardForwarder();
+    IERC20(_tokenIn).safeApprove(forwarder, 0);
+    IERC20(_tokenIn).safeApprove(forwarder, _amountIn);
+    uint amount = IFeeRewardForwarder(forwarder).liquidate(_tokenIn, _tokenOut, _amountIn);
+    require(amount != 0, "CS: Liquidated zero");
   }
 
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
@@ -210,7 +230,14 @@ abstract contract BeethovenBase is StrategyBase {
     }
     bytes memory userData = abi.encode(1, amounts, 1);
     IBeethovenVault.JoinPoolRequest memory request = IBeethovenVault.JoinPoolRequest(
-      poolTokens, amounts, userData, false);
+      poolTokens,
+      amounts,
+      userData,
+      false
+    );
+
+    IERC20(depositToken).safeApprove(address(beethovenVault), 0);
+    IERC20(depositToken).safeApprove(address(beethovenVault), _amountIn);
     beethovenVault.joinPool(_poolId, address(this), address(this), request);
   }
 
