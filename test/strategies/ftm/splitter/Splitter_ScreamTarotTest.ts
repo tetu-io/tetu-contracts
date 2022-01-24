@@ -103,7 +103,14 @@ describe('Splitter with Scream /Tarot tests', async () => {
 
           // *** INIT FIRST SPLITTER ***
           const aave = await deployScream(signer, screamStart, core.controller.address, splitter.address);
-          const tarots = await deployTarots(signer, core.controller.address, splitter.address, underlying);
+          const tarots = await DeployerUtils.deployImpermaxLikeStrategies(
+            signer,
+            core.controller.address,
+            splitter.address,
+            underlying,
+            'StrategyTarot',
+            'scripts/utils/download/data/tarot.csv'
+          );
           if (tarots.length === 0) {
             throw new Error('NO TAROTS');
           }
@@ -194,48 +201,4 @@ async function deployScream(
     ...strategyArgs
   ) as IStrategy;
   return strat.address;
-}
-
-async function deployTarots(
-  signer: SignerWithAddress,
-  controller: string,
-  vaultAddress: string,
-  underlying: string
-) {
-
-  const infos = readFileSync('scripts/utils/download/data/tarot.csv', 'utf8').split(/\r?\n/);
-
-  const strategies = [];
-
-  for (const i of infos) {
-    const info = i.split(',');
-    const idx = info[0];
-    const tokenName = info[2];
-    const tokenAdr = info[3];
-    const poolAdr = info[4];
-    const tvl = info[5];
-
-    if (+tvl < 2_000_000 || idx === 'idx' || !tokenAdr || underlying.toLowerCase() !== tokenAdr.toLowerCase()) {
-      console.log('skip', idx, underlying, tokenAdr, +tvl);
-      continue;
-    }
-    console.log(' Tarot strat', idx, tokenName);
-
-    const strategyArgs = [
-      controller,
-      vaultAddress,
-      tokenAdr,
-      poolAdr,
-      10_00
-    ];
-
-    const deployedStart = await DeployerUtils.deployContract(
-      signer,
-      'StrategyTarot',
-      ...strategyArgs
-    ) as IStrategy;
-    strategies.push(deployedStart.address);
-  }
-  console.log(' ================ TAROT DEPLOYED', strategies.length);
-  return strategies;
 }

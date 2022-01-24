@@ -11,6 +11,7 @@ import {
   ForwarderV2,
   FundKeeper,
   IStrategy,
+  IStrategy__factory,
   ITetuProxy,
   LiquidityBalancer,
   MintHelper,
@@ -24,7 +25,8 @@ import {
   PriceCalculator,
   RewardCalculator,
   RewardToken,
-  SmartVault, StrategySplitter,
+  SmartVault,
+  StrategySplitter,
   TetuProxyControlled,
   TetuProxyGov,
   TetuSwapFactory,
@@ -46,6 +48,7 @@ import {Logger} from "tslog";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
 import {TimeUtils} from "../../test/TimeUtils";
+import {readFileSync} from "fs";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -121,9 +124,14 @@ export class DeployerUtils {
       signer
     )) as T;
     const instance = await _factory.deploy(...args);
+    console.log('Deploy tx:', instance.deployTransaction.hash);
     await instance.deployed();
-    Misc.printDuration(name + ' deployed ' + instance.address, start);
-    return instance;
+
+    const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
+    console.log('Receipt', receipt.contractAddress)
+
+    Misc.printDuration(name + ' deployed ' + receipt.contractAddress, start);
+    return _factory.attach(receipt.contractAddress);
   }
 
   public static async deployController(signer: SignerWithAddress): Promise<Controller> {
@@ -605,6 +613,34 @@ export class DeployerUtils {
     return [vaultLogic, vault, strategy];
   }
 
+  public static async deployVaultWithSplitter(
+    vaultName: string,
+    signer: SignerWithAddress,
+    controller: string,
+    underlying: string,
+    vaultRt: string
+  ) {
+    return DeployerUtils.deployVaultAndStrategy(
+      vaultName,
+      async (vaultAddress: string) => {
+        console.log('Start deploy splitter')
+        const splitter = await DeployerUtils.deployStrategySplitter(signer);
+        console.log('Splitter init')
+        await RunHelper.runAndWait(() => splitter.initialize(
+          controller,
+          underlying,
+          vaultAddress,
+        ));
+        return IStrategy__factory.connect(splitter.address, signer);
+      },
+      controller,
+      vaultRt,
+      signer,
+      60 * 60 * 24 * 28,
+      0
+    );
+  }
+
   public static async deployDefaultNoopStrategyAndVault(
     signer: SignerWithAddress,
     controller: Controller,
@@ -634,6 +670,54 @@ export class DeployerUtils {
       vaultRewardToken,
       signer
     );
+  }
+
+  public static async deployImpermaxLikeStrategies(
+    signer: SignerWithAddress,
+    controller: string,
+    vaultAddress: string,
+    underlying: string,
+    strategyName: string,
+    infoPath: string,
+    minTvl = 2_000_000,
+    buyBackRatio = 10_00,
+  ) {
+
+    const infos = readFileSync(infoPath, 'utf8').split(/\r?\n/);
+
+    const strategies = [];
+
+    for (const i of infos) {
+      const info = i.split(',');
+      const idx = info[0];
+      const tokenName = info[2];
+      const tokenAdr = info[3];
+      const poolAdr = info[4];
+      const tvl = info[5];
+
+      if (+tvl < minTvl || idx === 'idx' || !tokenAdr || underlying.toLowerCase() !== tokenAdr.toLowerCase()) {
+        console.log('skip', idx, underlying, tokenAdr, +tvl);
+        continue;
+      }
+      console.log('SubStrategy', idx, tokenName);
+
+      const strategyArgs = [
+        controller,
+        vaultAddress,
+        tokenAdr,
+        poolAdr,
+        buyBackRatio
+      ];
+
+      const deployedStart = await DeployerUtils.deployContract(
+        signer,
+        strategyName,
+        ...strategyArgs
+      ) as IStrategy;
+      strategies.push(deployedStart.address);
+    }
+    console.log(' ================ IMPERMAX-LIKE DEPLOYED', strategies.length);
+    return strategies;
   }
 
   // ************** VERIFY **********************
@@ -945,7 +1029,7 @@ export class DeployerUtils {
     while (true) {
       log.info('wait 10sec');
       await DeployerUtils.delay(10000);
-      if(hre.network.name === 'hardhat') {
+      if (hre.network.name === 'hardhat') {
         await TimeUtils.advanceNBlocks(1);
       }
       if (ethers.provider.blockNumber >= start + blocks) {
