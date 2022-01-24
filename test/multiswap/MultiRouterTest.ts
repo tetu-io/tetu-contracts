@@ -45,30 +45,32 @@ describe("MultiRouter base tests", function () {
   });
 
   it("generateWays", async () => {
-    console.time()
+    console.time('indexAllPairs')
     const allPairs = indexAllPairs(pairs)
-    console.timeEnd()
+    console.timeEnd('indexAllPairs')
     console.log('pairs.length', pairs.length);
     console.log('keys allPairs.length', Object.keys(allPairs).length);
 
+    console.time('findAllRoutes')
     const allRoutes = findAllRoutes(
         allPairs,
         MaticAddresses.TETU_TOKEN,
         MaticAddresses.USDC_TOKEN,
         2)
+    console.timeEnd('findAllRoutes')
     console.log('allRoutes', allRoutes);
     console.log('allRoutes.length', allRoutes.length);
 
-    console.time()
+    console.time('extractPairsFromRoutes')
     const usedPairs = extractPairsFromRoutes(allRoutes)
-    console.timeEnd()
+    console.timeEnd('extractPairsFromRoutes')
     const usedPairsKeys = Object.keys(usedPairs)
     console.log('usedPairsKeys.length', usedPairsKeys.length);
 
-    console.time()
+    console.time('loadPairReserves')
     await loadPairReserves(multiRouter, usedPairs)
-    console.timeEnd()
-    console.log('usedPairs', usedPairs);
+    console.timeEnd('loadPairReserves')
+    // console.log('usedPairs', usedPairs);
   })
 
 

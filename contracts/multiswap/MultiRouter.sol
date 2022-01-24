@@ -68,8 +68,6 @@ contract MultiRouter /*is IMultiRouter*/ { // TODO interface
     for (uint i = 0; i < len; i++) {
       address pairAddress = pairs[i];
       IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
-//      (uint256 r0, uint256 r1,) = pair.getReserves();
-//      data[i] = ReservesData{reserve0:r0, reserve1:r1});
       try pair.getReserves() returns (uint112 reserve0, uint112 reserve1, uint32) {
         data[i] = ReservesData({reserve0:reserve0, reserve1:reserve1});
       } catch (bytes memory) { // any error interpret as nil reserves

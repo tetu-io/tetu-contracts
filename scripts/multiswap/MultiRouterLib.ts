@@ -81,7 +81,6 @@ function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string
   tokenIn = ethers.utils.getAddress(tokenIn)
   tokenOut = ethers.utils.getAddress(tokenOut)
 
-  console.log('tokenIn', tokenIn);
   const routes: Route[] = []
   const finishedRoutes: Route[] = []
   const firstPairs = allPairs[tokenIn]
@@ -92,8 +91,6 @@ function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string
     const finished = pair.tokenOut === tokenOut;
     (finished ? finishedRoutes : routes).push({steps: [pair], finished})
   }
-  console.log('routes', routes);
-  console.log('routes.length', routes.length);
 
   for (let s = 1; s < maxRouteLength; s++) {
     const routesLen = routes.length
@@ -141,14 +138,9 @@ function extractPairsFromRoutes(routes: Route[]): IndexedPair {
   return pairs
 }
 
-
-// function loadPairReserves(address[] memory pairs)
-// external view returns (ReservesData[] memory data) {
 async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
   const addresses = Object.keys(pairs)
-  console.log('addresses', addresses);
   const reserves = await multiRouter.loadPairReserves(addresses)
-  console.log('reserves', reserves);
   for (let p = 0; p < addresses.length; p++) {
     const pair: Pair = pairs[addresses[p]]
     const reserve = reserves[p]
@@ -162,7 +154,35 @@ async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
       }
     }
   }
+}
 
+// copy from UniswapV2Library
+// given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+function getAmountIn(
+    amountOut: BigNumber,
+    reserveIn: BigNumber,
+    reserveOut: BigNumber
+): BigNumber {
+  if (!amountOut.gt(0)) BigNumber.from(0);
+  if (!(reserveIn.gt(0) && reserveOut.gt(0))) BigNumber.from(0);
+  const numerator = reserveIn.mul(amountOut).mul(1000);
+  const denominator = reserveOut.sub(amountOut).mul(997);
+  return numerator.div(denominator).add(1);
+}
+
+// copy from UniswapV2Library
+// given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+function getAmountOut(
+    amountIn: BigNumber,
+    reserveIn: BigNumber,
+    reserveOut: BigNumber
+): BigNumber {
+  if (!amountIn.gt(0)) return BigNumber.from(0);
+  if (!(reserveIn.gt(0) && reserveOut.gt(0))) BigNumber.from(0);
+  const amountInWithFee = amountIn.mul(997);
+  const numerator = amountInWithFee.mul(reserveOut);
+  const denominator = reserveIn.mul(1000).add(amountInWithFee);
+  return numerator.div(denominator);
 }
 
 export {
