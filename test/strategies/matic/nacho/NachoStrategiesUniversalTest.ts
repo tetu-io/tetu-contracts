@@ -1,18 +1,18 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {DeployInfo} from "../../DeployInfo";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { MaticAddresses } from '../../../../scripts/addresses/MaticAddresses';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { ForwarderV2, IStrategy, SmartVault } from '../../../../typechain';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { DoHardWorkLoopBase } from '../../DoHardWorkLoopBase';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -20,20 +20,20 @@ const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneNachoStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 0,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
-      default: 137
+      type: 'number',
+      default: 137,
     },
   }).argv;
 
@@ -43,14 +43,20 @@ describe('Universal Nacho tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/nacho_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    'scripts/utils/download/data/nacho_pools.csv',
+    'utf8',
+  ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(
+      deployInfo,
+      argv.deployCoreContracts,
+    );
   });
 
-  infos.forEach(info => {
+  infos.forEach((info) => {
     const strat = info.split(',');
     const idx = strat[0];
     const lpName = strat[1];
@@ -64,7 +70,10 @@ describe('Universal Nacho tests', async () => {
       console.log('skip', idx);
       return;
     }
-    if (argv.onlyOneNachoStrategyTest !== -1 && +strat[0] !== argv.onlyOneNachoStrategyTest) {
+    if (
+      argv.onlyOneNachoStrategyTest !== -1 &&
+      +strat[0] !== argv.onlyOneNachoStrategyTest
+    ) {
       return;
     }
 
@@ -74,7 +83,7 @@ describe('Universal Nacho tests', async () => {
     // ************** CONFIG*************************
     // **********************************************
     const strategyContractName = 'StrategyNachoLp';
-    const vaultName = token0Name + "_" + token1Name;
+    const vaultName = token0Name + '_' + token1Name;
     const underlying = lpAddress;
     const deposit = 1000;
     const loopValue = 300;
@@ -83,7 +92,7 @@ describe('Universal Nacho tests', async () => {
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
         [MaticAddresses.NSHARE_TOKEN],
-        ['0x1c84cd20ea6cc100e0a890464411f1365ab1f664']
+        ['0x1c84cd20ea6cc100e0a890464411f1365ab1f664'],
       );
     };
     // only for strategies where we expect PPFS fluctuations
@@ -101,22 +110,22 @@ describe('Universal Nacho tests', async () => {
         signer,
         core,
         vaultName,
-        vaultAddress => {
+        (vaultAddress) => {
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
             underlying,
             token0,
             token1,
-            idx
+            idx,
           ];
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -127,7 +136,7 @@ describe('Universal Nacho tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new DoHardWorkLoopBase(
         _signer,

@@ -1,17 +1,21 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {IStrategy, IStrategy__factory, SmartVault} from "../../../../typechain";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {SplitterDoHardWork} from "../../SplitterDoHardWork";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import {
+  IStrategy,
+  IStrategy__factory,
+  SmartVault,
+} from '../../../../typechain';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { SplitterDoHardWork } from '../../SplitterDoHardWork';
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -19,39 +23,44 @@ const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneSplitterScreamTarotStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 3,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
-      default: 137
+      type: 'number',
+      default: 137,
     },
   }).argv;
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 describe('Splitter with Scream /Tarot tests', async () => {
-
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/scream_markets.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    'scripts/utils/download/data/scream_markets.csv',
+    'utf8',
+  ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(
+      deployInfo,
+      argv.deployCoreContracts,
+    );
   });
 
-  infos.forEach(screamInfo => {
+  infos.forEach((screamInfo) => {
     const screamStart = screamInfo.split(',');
     const idx = screamStart[0];
     const tokenName = screamStart[4];
@@ -63,7 +72,10 @@ describe('Splitter with Scream /Tarot tests', async () => {
     }
     console.log('Start test strategy', screamStart);
 
-    if (argv.onlyOneSplitterScreamTarotStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneSplitterScreamTarotStrategyTest) {
+    if (
+      argv.onlyOneSplitterScreamTarotStrategyTest !== -1 &&
+      parseFloat(idx) !== argv.onlyOneSplitterScreamTarotStrategyTest
+    ) {
       return;
     }
     // **********************************************
@@ -93,7 +105,7 @@ describe('Splitter with Scream /Tarot tests', async () => {
         signer,
         core,
         tokenName,
-        async vaultAddress => {
+        async (vaultAddress) => {
           const splitter = await DeployerUtils.deployStrategySplitter(signer);
           await splitter.initialize(
             core.controller.address,
@@ -102,14 +114,19 @@ describe('Splitter with Scream /Tarot tests', async () => {
           );
 
           // *** INIT FIRST SPLITTER ***
-          const aave = await deployScream(signer, screamStart, core.controller.address, splitter.address);
+          const aave = await deployScream(
+            signer,
+            screamStart,
+            core.controller.address,
+            splitter.address,
+          );
           const tarots = await DeployerUtils.deployImpermaxLikeStrategies(
             signer,
             core.controller.address,
             splitter.address,
             underlying,
             'StrategyTarot',
-            'scripts/utils/download/data/tarot.csv'
+            'scripts/utils/download/data/tarot.csv',
           );
           if (tarots.length === 0) {
             throw new Error('NO TAROTS');
@@ -119,20 +136,23 @@ describe('Splitter with Scream /Tarot tests', async () => {
           const tarotsRatios = [];
           let tarotsRatiosSum = 0;
 
-          await core.controller.addStrategiesToSplitter(splitter.address, strats);
+          await core.controller.addStrategiesToSplitter(
+            splitter.address,
+            strats,
+          );
           for (const tarot of tarots) {
             tarotsRatios.push(1);
             tarotsRatiosSum++;
           }
 
-          await splitter.setStrategyRatios(
-            strats,
-            [100 - tarotsRatiosSum, ...tarotsRatios]
-          );
+          await splitter.setStrategyRatios(strats, [
+            100 - tarotsRatiosSum,
+            ...tarotsRatios,
+          ]);
 
           return IStrategy__factory.connect(splitter.address, signer);
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -143,7 +163,7 @@ describe('Splitter with Scream /Tarot tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new SplitterDoHardWork(
         _signer,
@@ -175,12 +195,11 @@ describe('Splitter with Scream /Tarot tests', async () => {
   });
 });
 
-
 async function deployScream(
   signer: SignerWithAddress,
   info: string[],
   controller: string,
-  vaultAddress: string
+  vaultAddress: string,
 ) {
   const scTokenAddress = info[2];
   const token = info[3];
@@ -193,12 +212,12 @@ async function deployScream(
     token,
     scTokenAddress,
     borrowTarget,
-    collateralFactor
+    collateralFactor,
   ];
-  const strat = await DeployerUtils.deployContract(
+  const strat = (await DeployerUtils.deployContract(
     signer,
     'StrategyScreamFold',
-    ...strategyArgs
-  ) as IStrategy;
+    ...strategyArgs,
+  )) as IStrategy;
   return strat.address;
 }

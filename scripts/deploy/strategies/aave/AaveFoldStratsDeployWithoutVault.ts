@@ -27,8 +27,8 @@ async function main() {
   console.log('all vaults size', deployedVaultAddresses.length);
 
   for (const vAdr of deployedVaultAddresses) {
-    const platform = (await cReader.vaultPlatform(vAdr));
-    if(platform !== 9 && platform !== 14) {
+    const platform = await cReader.vaultPlatform(vAdr);
+    if (platform !== 9 && platform !== 14) {
       continue;
     }
     const underlying = (await cReader.vaultUnderlying(vAdr)).toLowerCase();

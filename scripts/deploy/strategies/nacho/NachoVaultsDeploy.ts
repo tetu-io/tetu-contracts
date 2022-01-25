@@ -1,23 +1,41 @@
-import {appendFileSync, mkdir, readFileSync, writeFileSync} from "fs";
-import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, Controller, SmartVault, VaultController} from "../../../../typechain";
-import {ethers} from "hardhat";
-import {RunHelper} from "../../../utils/tools/RunHelper";
+import { appendFileSync, mkdir, readFileSync, writeFileSync } from 'fs';
+import { DeployerUtils } from '../../DeployerUtils';
+import {
+  ContractReader,
+  Controller,
+  SmartVault,
+  VaultController,
+} from '../../../../typechain';
+import { ethers } from 'hardhat';
+import { RunHelper } from '../../../utils/tools/RunHelper';
 
 async function main() {
-
-  const infos = readFileSync('scripts/utils/download/data/nacho_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    'scripts/utils/download/data/nacho_pools.csv',
+    'utf8',
+  ).split(/\r?\n/);
 
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  const vaultController = await DeployerUtils.connectContract(signer, "VaultController", core.vaultController) as VaultController;
+  const controller = (await DeployerUtils.connectContract(
+    signer,
+    'Controller',
+    core.controller,
+  )) as Controller;
+  const vaultController = (await DeployerUtils.connectContract(
+    signer,
+    'VaultController',
+    core.vaultController,
+  )) as VaultController;
 
   const vaultNames = new Set<string>();
 
-  const cReader = await DeployerUtils.connectContract(
-    signer, "ContractReader", tools.reader) as ContractReader;
+  const cReader = (await DeployerUtils.connectContract(
+    signer,
+    'ContractReader',
+    tools.reader,
+  )) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -60,10 +78,13 @@ async function main() {
       return;
     }
 
-
     // *********** DEPLOY VAULT
-    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault");
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vaultLogic = await DeployerUtils.deployContract(signer, 'SmartVault');
+    const vaultProxy = await DeployerUtils.deployContract(
+      signer,
+      'TetuProxyControlled',
+      vaultLogic.address,
+    );
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
 
     // *********** DEPLOY STRAT
@@ -74,46 +95,53 @@ async function main() {
       token0,
       token1,
       rewardPool,
-      idx
+      idx,
     ];
     const strategy = await DeployerUtils.deployContract(
       signer,
       strategyContractName,
-      ...strategyArgs
+      ...strategyArgs,
     );
 
-    await RunHelper.runAndWait(() => vault.initializeSmartVault(
-      `TETU_${vaultNameWithoutPrefix}`,
-      `x${vaultNameWithoutPrefix}`,
-      controller.address,
-      underlying,
-      60 * 60 * 24 * 28,
-      false,
-      core.psVault,
-      0
-    ));
+    await RunHelper.runAndWait(() =>
+      vault.initializeSmartVault(
+        `TETU_${vaultNameWithoutPrefix}`,
+        `x${vaultNameWithoutPrefix}`,
+        controller.address,
+        underlying,
+        60 * 60 * 24 * 28,
+        false,
+        core.psVault,
+        0,
+      ),
+    );
 
-    if ((await ethers.provider.getNetwork()).name !== "hardhat") {
+    if ((await ethers.provider.getNetwork()).name !== 'hardhat') {
       await DeployerUtils.wait(5);
       await DeployerUtils.verify(vaultLogic.address);
-      await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
+      await DeployerUtils.verifyWithArgs(vaultProxy.address, [
+        vaultLogic.address,
+      ]);
       await DeployerUtils.verifyProxy(vaultProxy.address);
-      await DeployerUtils.verifyWithContractName(strategy.address, strategyPath, strategyArgs);
+      await DeployerUtils.verifyWithContractName(
+        strategy.address,
+        strategyPath,
+        strategyArgs,
+      );
     }
 
-    mkdir('./tmp/deployed', {recursive: true}, (err) => {
+    mkdir('./tmp/deployed', { recursive: true }, (err) => {
       if (err) throw err;
     });
 
     const txt = `${vaultNameWithoutPrefix} vault: ${vault.address}\nstrategy: ${strategy.address}\n`;
     appendFileSync(`./tmp/deployed/${platformPrefix}.txt`, txt, 'utf8');
-
   }
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

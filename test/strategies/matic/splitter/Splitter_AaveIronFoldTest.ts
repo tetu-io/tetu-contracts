@@ -1,19 +1,23 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {IStrategy, IStrategy__factory, SmartVault} from "../../../../typechain";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
-import {SplitterDoHardWork} from "../../SplitterDoHardWork";
-import {SplitterSpecificTests} from "./SplitterSpecificTests";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import {
+  IStrategy,
+  IStrategy__factory,
+  SmartVault,
+} from '../../../../typechain';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { Misc } from '../../../../scripts/utils/tools/Misc';
+import { SplitterDoHardWork } from '../../SplitterDoHardWork';
+import { SplitterSpecificTests } from './SplitterSpecificTests';
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -21,40 +25,48 @@ const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneSplitterAaveIronFoldStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 2,
     },
     deployCoreContracts: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     hardhatChainId: {
-      type: "number",
-      default: 137
+      type: 'number',
+      default: 137,
     },
   }).argv;
 
-const {expect} = chai;
+const { expect } = chai;
 chai.use(chaiAsPromised);
 
 describe('Splitter with Aave/Iron Fold tests', async () => {
-
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-  const aaveInfos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
-  const ironInfos = readFileSync('scripts/utils/download/data/iron_markets.csv', 'utf8').split(/\r?\n/);
+  const aaveInfos = readFileSync(
+    'scripts/utils/download/data/aave_markets.csv',
+    'utf8',
+  ).split(/\r?\n/);
+  const ironInfos = readFileSync(
+    'scripts/utils/download/data/iron_markets.csv',
+    'utf8',
+  ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(
+      deployInfo,
+      argv.deployCoreContracts,
+    );
   });
 
-  aaveInfos.forEach(aaveInfo => {
+  aaveInfos.forEach((aaveInfo) => {
     const aaveStart = aaveInfo.split(',');
     const aaveIdx = aaveStart[0];
     const tokenName = aaveStart[1];
@@ -74,19 +86,22 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
       if (!ironToken) {
         continue;
       }
-      console.log('ironToken', ironI)
+      console.log('ironToken', ironI);
       if (ironToken.toLowerCase() === token.toLowerCase()) {
         found = true;
         break;
       }
     }
-    console.log('found', found)
+    console.log('found', found);
     if (!found) {
-      console.log('NOT FOUND IRON!', aaveInfo)
+      console.log('NOT FOUND IRON!', aaveInfo);
       return;
     }
 
-    if (argv.onlyOneSplitterAaveIronFoldStrategyTest !== -1 && parseFloat(aaveIdx) !== argv.onlyOneSplitterAaveIronFoldStrategyTest) {
+    if (
+      argv.onlyOneSplitterAaveIronFoldStrategyTest !== -1 &&
+      parseFloat(aaveIdx) !== argv.onlyOneSplitterAaveIronFoldStrategyTest
+    ) {
       return;
     }
     // **********************************************
@@ -116,7 +131,7 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
         signer,
         core,
         tokenName,
-        async vaultAddress => {
+        async (vaultAddress) => {
           const splitter = await DeployerUtils.deployStrategySplitter(signer);
           await splitter.initialize(
             core.controller.address,
@@ -132,32 +147,52 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
           );
 
           // *** INIT FIRST SPLITTER ***
-          const aave = await deployAave(signer, aaveStart, core.controller.address, splitter.address)
-          const iron = await deployIron(signer, ironStrat, core.controller.address, splitter.address)
+          const aave = await deployAave(
+            signer,
+            aaveStart,
+            core.controller.address,
+            splitter.address,
+          );
+          const iron = await deployIron(
+            signer,
+            ironStrat,
+            core.controller.address,
+            splitter.address,
+          );
           const strats: string[] = [aave, splitter2.address, iron];
 
-          await core.controller.addStrategiesToSplitter(splitter.address, strats);
-
-          await splitter.setStrategyRatios(
+          await core.controller.addStrategiesToSplitter(
+            splitter.address,
             strats,
-            [30, 50, 20]
           );
+
+          await splitter.setStrategyRatios(strats, [30, 50, 20]);
 
           // *** INIT SECOND SPLITTER ***
-          const aave2 = await deployAave(signer, aaveStart, core.controller.address, splitter2.address)
-          const iron2 = await deployIron(signer, ironStrat, core.controller.address, splitter2.address)
+          const aave2 = await deployAave(
+            signer,
+            aaveStart,
+            core.controller.address,
+            splitter2.address,
+          );
+          const iron2 = await deployIron(
+            signer,
+            ironStrat,
+            core.controller.address,
+            splitter2.address,
+          );
           const strats2: string[] = [aave2, iron2];
 
-          await core.controller.addStrategiesToSplitter(splitter2.address, strats2);
-
-          await splitter2.setStrategyRatios(
+          await core.controller.addStrategiesToSplitter(
+            splitter2.address,
             strats2,
-            [30, 70]
           );
+
+          await splitter2.setStrategyRatios(strats2, [30, 70]);
 
           return IStrategy__factory.connect(splitter.address, signer);
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -168,7 +203,7 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new SplitterDoHardWork(
         _signer,
@@ -200,16 +235,15 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
   });
 });
 
-
 async function deployAave(
   signer: SignerWithAddress,
   info: string[],
   controller: string,
-  vaultAddress: string
+  vaultAddress: string,
 ) {
   const token = info[2];
   const ltvNum = Number(info[7]);
-  const collateralFactor = (ltvNum).toFixed(0);
+  const collateralFactor = ltvNum.toFixed(0);
   const borrowTarget = (ltvNum * Misc.AAVE_BOR_RATIO).toFixed(0);
 
   const strategyArgs = [
@@ -217,13 +251,13 @@ async function deployAave(
     vaultAddress,
     token,
     borrowTarget,
-    collateralFactor
+    collateralFactor,
   ];
-  const strat = await DeployerUtils.deployContract(
+  const strat = (await DeployerUtils.deployContract(
     signer,
     'StrategyAaveFold',
-    ...strategyArgs
-  ) as IStrategy;
+    ...strategyArgs,
+  )) as IStrategy;
   return strat.address;
 }
 
@@ -231,7 +265,7 @@ async function deployIron(
   signer: SignerWithAddress,
   info: string[],
   controller: string,
-  vaultAddress: string
+  vaultAddress: string,
 ) {
   const rTokenAddress = info[2];
   const underlying = info[3];
@@ -244,12 +278,12 @@ async function deployIron(
     underlying,
     rTokenAddress,
     borrowTarget,
-    collateralFactor
+    collateralFactor,
   ];
-  const strategy = await DeployerUtils.deployContract(
+  const strategy = (await DeployerUtils.deployContract(
     signer,
     'StrategyIronFold',
-    ...strategyArgs
-  ) as IStrategy;
+    ...strategyArgs,
+  )) as IStrategy;
   return strategy.address;
 }

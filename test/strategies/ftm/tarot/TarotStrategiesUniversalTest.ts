@@ -1,17 +1,17 @@
-import chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {DeployInfo} from "../../DeployInfo";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {IStrategy, SmartVault} from "../../../../typechain";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {universalStrategyTest} from "../../UniversalStrategyTest";
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { config as dotEnvConfig } from 'dotenv';
+import { DeployInfo } from '../../DeployInfo';
+import { StrategyTestUtils } from '../../StrategyTestUtils';
+import { SpecificStrategyTest } from '../../SpecificStrategyTest';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { CoreContractsWrapper } from '../../../CoreContractsWrapper';
+import { DeployerUtils } from '../../../../scripts/deploy/DeployerUtils';
+import { IStrategy, SmartVault } from '../../../../typechain';
+import { ToolsContractsWrapper } from '../../../ToolsContractsWrapper';
+import { DoHardWorkLoopBase } from '../../DoHardWorkLoopBase';
+import { universalStrategyTest } from '../../UniversalStrategyTest';
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -19,16 +19,16 @@ const argv = require('yargs/yargs')()
   .env('TETU')
   .options({
     disableStrategyTests: {
-      type: "boolean",
+      type: 'boolean',
       default: false,
     },
     onlyOneTarotStrategyTest: {
-      type: "number",
+      type: 'number',
       default: 1,
     },
     hardhatChainId: {
-      type: "number",
-      default: 137
+      type: 'number',
+      default: 137,
     },
   }).argv;
 
@@ -38,15 +38,20 @@ describe('Universal Tarot tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/tarot.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync(
+    'scripts/utils/download/data/tarot.csv',
+    'utf8',
+  ).split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(
+      deployInfo,
+      argv.deployCoreContracts,
+    );
   });
 
-  infos.forEach(info => {
-
+  infos.forEach((info) => {
     const strat = info.split(',');
 
     const idx = strat[0];
@@ -62,13 +67,15 @@ describe('Universal Tarot tests', async () => {
       console.log('skip', idx, +tvl);
       return;
     }
-    if (argv.onlyOneTarotStrategyTest !== -1 && +strat[0] !== argv.onlyOneTarotStrategyTest) {
+    if (
+      argv.onlyOneTarotStrategyTest !== -1 &&
+      +strat[0] !== argv.onlyOneTarotStrategyTest
+    ) {
       return;
     }
 
     console.log('strat', idx, tokenName);
     /* tslint:disable:no-floating-promises */
-
 
     // **********************************************
     // ************** CONFIG*************************
@@ -100,21 +107,21 @@ describe('Universal Tarot tests', async () => {
         signer,
         core,
         vaultName,
-        vaultAddress => {
+        (vaultAddress) => {
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
             underlying,
             poolAdr,
-            10_00
+            10_00,
           ];
           return DeployerUtils.deployContract(
             signer,
             strategyContractName,
-            ...strategyArgs
+            ...strategyArgs,
           ) as Promise<IStrategy>;
         },
-        underlying
+        underlying,
       );
     };
     const hwInitiator = (
@@ -125,7 +132,7 @@ describe('Universal Tarot tests', async () => {
       _underlying: string,
       _vault: SmartVault,
       _strategy: IStrategy,
-      _balanceTolerance: number
+      _balanceTolerance: number,
     ) => {
       return new DoHardWorkLoopBase(
         _signer,
@@ -154,8 +161,5 @@ describe('Universal Tarot tests', async () => {
       advanceBlocks,
       specificTests,
     );
-
   });
-
-
 });
