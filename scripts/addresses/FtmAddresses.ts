@@ -76,12 +76,18 @@ export class FtmAddresses {
   public static BPT_BEETS_USDC_TOKEN = "0x03c6B3f09D2504606936b1A4DeCeFaD204687890".toLowerCase();
   public static BPT_BEETS_FTM_TOKEN = "0xcdE5a11a4ACB4eE4c805352Cec57E236bdBC3837".toLowerCase();
   public static BPT_GRAND_ORCH_TOKEN = "0xd47D2791d3B46f9452709Fa41855a045304D6f9d".toLowerCase();
+  public static BPT_FTM_SONATA_TOKEN = "0xf0e2c47d4C9FBBbc2F2E19ACdaA3c773A3ECD221".toLowerCase();
+  public static BPT_E_MAJOR_TOKEN = "0xA07De66AeF84e2c01D88a48D57D1463377Ee602b".toLowerCase();
+  public static BPT_B_MAJOR_TOKEN = "0x22B30B00e6796Daf710fBE5cAFBFc9Cdd1377f2A".toLowerCase();
 
   public static BPT_LPs= new Set<string>([
       FtmAddresses.BPT_WAGMI_TOKEN,
       FtmAddresses.BPT_BEETS_USDC_TOKEN,
       FtmAddresses.BPT_BEETS_FTM_TOKEN,
       FtmAddresses.BPT_GRAND_ORCH_TOKEN,
+      FtmAddresses.BPT_FTM_SONATA_TOKEN,
+      FtmAddresses.BPT_E_MAJOR_TOKEN,
+      FtmAddresses.BPT_B_MAJOR_TOKEN,
   ]);
 
   public static BLUE_CHIPS = new Set<string>([

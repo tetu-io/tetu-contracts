@@ -149,7 +149,7 @@ describe('Universal Beethoven tests', async () => {
       forwarderConfigurator,
       ppfsDecreaseAllowed,
       balanceTolerance,
-      100_000,
+      200_000,
       loops,
       60 * 60 * 24,
       false,
