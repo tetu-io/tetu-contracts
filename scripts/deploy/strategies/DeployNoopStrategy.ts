@@ -2,10 +2,11 @@ import { ethers } from 'hardhat';
 import { DeployerUtils } from '../DeployerUtils';
 import { MaticAddresses } from '../../addresses/MaticAddresses';
 import { IStrategy } from '../../../typechain';
+import { FtmAddresses } from '../../addresses/FtmAddresses';
 
-const UNDERLYING = MaticAddresses.miFARM_TOKEN;
-const VAULT = '0xE7C61cBcd5592Bf1B9DB3612B220f418afe89B64';
-const PLATFORM = 17;
+const UNDERLYING = FtmAddresses.FUSD_TOKEN;
+const VAULT = '0x572749CD713cBfeacCF06F0c83B68e8c1C10A248';
+const PLATFORM = 1;
 
 async function main() {
   const signer = (await ethers.getSigners())[0];

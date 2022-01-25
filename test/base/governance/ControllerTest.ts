@@ -145,6 +145,9 @@ describe('Controller tests', function () {
       controller
         .connect(signer1)
         .controllerTokenMove(signer.address, usdc, 100),
+    ).to.be.rejectedWith('C: Not governance');
+    await expect(
+      controller.controllerTokenMove(signer.address, usdc, 100),
     ).to.be.rejectedWith('C: Not announced');
   });
   it('created', async () => {

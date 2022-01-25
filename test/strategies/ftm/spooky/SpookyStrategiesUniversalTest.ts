@@ -16,7 +16,7 @@ const argv = require('yargs/yargs')()
       type: 'boolean',
       default: false,
     },
-    onlyOneCafeStrategyTest: {
+    onlyOneSpookyStrategyTest: {
       type: 'number',
       default: 1,
     },
@@ -62,8 +62,8 @@ describe('Universal Spooky tests', async () => {
       return;
     }
     if (
-      argv.onlyOneCafeStrategyTest !== -1 &&
-      +strat[0] !== argv.onlyOneCafeStrategyTest
+      argv.onlyOneSpookyStrategyTest !== -1 &&
+      +strat[0] !== argv.onlyOneSpookyStrategyTest
     ) {
       return;
     }

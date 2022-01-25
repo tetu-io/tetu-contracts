@@ -74,6 +74,10 @@ async function main() {
     }
 
     const vault = vaultsByUnderlying.get(tokenAddress.toLowerCase()) as string;
+    if (!vault) {
+      console.log('vault not found for ' + tokenAddress);
+      continue;
+    }
     const vaultName = await cReader.vaultUnderlying(vault);
 
     console.log('strat', idx, scTokenName, vaultName);

@@ -62,7 +62,7 @@ async function main() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[] = [];
     data.push(
-      ...(await DeployerUtils.deployVaultAndStrategy(
+      ...((await DeployerUtils.deployVaultAndStrategy(
         vaultNameWithoutPrefix,
         async (vaultAddress) =>
           DeployerUtils.deployContract(
@@ -76,11 +76,18 @@ async function main() {
             idx,
           ) as Promise<IStrategy>,
         core.controller,
-        core.psVault,
-        signer,
-        60 * 60 * 24 * 28,
-        true,
-      )),
+        vaultAddress,
+        lpAddress,
+        token0,
+        token1,
+        idx,
+      )) as Promise<IStrategy>,
+      core.controller,
+      core.psVault,
+      signer,
+      60 * 60 * 24 * 28,
+      0,
+      true),
     );
     data.push([
       core.controller,

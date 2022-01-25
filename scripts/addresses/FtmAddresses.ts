@@ -52,6 +52,12 @@ export class FtmAddresses {
     '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501'.toLowerCase();
   public static SPELL_TOKEN =
     '0x468003B688943977e6130F4F68F23aad939a1040'.toLowerCase();
+  public static TOMB_TOKEN =
+    '0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7'.toLowerCase();
+  public static TSHARE_TOKEN =
+    '0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37'.toLowerCase();
+  public static TBOND_TOKEN =
+    '0x24248CD1747348bDC971a5395f4b3cd7feE94ea0'.toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY =
@@ -75,7 +81,7 @@ export class FtmAddresses {
   public static TETU_SWAP_FACTORY =
     '0xFB6A440af0bbBAd0cC5f24323c7Df9d400084a12'.toLowerCase();
   public static TETU_SWAP_ROUTER =
-    '0xbd21EC4b56A50aBF3C52ca9977C26291632Ce5A6'.toLowerCase();
+    '0x1c7F7210a7ACc13d26824A8267cf9CA5D4020Bc1'.toLowerCase();
 
   // Geist
   public static GEIST_PROTOCOL_DATA_PROVIDER =
@@ -104,6 +110,10 @@ export class FtmAddresses {
     '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40'.toLowerCase();
   public static renCRV_TOKEN =
     '0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858'.toLowerCase();
+
+  // Tarot
+  public static TAROT_FACTORY =
+    '0x35C052bBf8338b06351782A565aa9AaD173432eA'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

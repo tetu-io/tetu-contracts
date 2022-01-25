@@ -598,5 +598,14 @@ describe('SmartVaultNoopStrat', () => {
       expect(signerBalBefore.sub(50)).is.eq(signerBalAfter);
       expect(userBalBefore.sub(50)).is.eq(userBalAfter);
     });
+
+    it('should override name and symbol', async () => {
+      expect(await vault.name()).is.eq('NOOP');
+      expect(await vault.symbol()).is.eq('tNOOP');
+      await vault.overrideName('ovName');
+      await vault.overrideSymbol('ovSymbol');
+      expect(await vault.name()).is.eq('ovName');
+      expect(await vault.symbol()).is.eq('ovSymbol');
+    });
   });
 });

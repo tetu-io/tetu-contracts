@@ -114,6 +114,12 @@ export class MaticAddresses {
     '0x29F1e986FCa02B7E54138c04C4F503DdDD250558'.toLowerCase();
   public static SFF_TOKEN =
     '0xdf9B4b57865B403e08c85568442f95c26b7896b0'.toLowerCase();
+  public static NACHO_TOKEN =
+    '0xcD86152047e800d67BDf00A4c635A8B6C0e5C4c2'.toLowerCase();
+  public static NSHARE_TOKEN =
+    '0x948D0a28b600BDBd77AF4ea30E6F338167034181'.toLowerCase();
+  public static NBOND_NOKEN =
+    '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -297,7 +303,7 @@ export class MaticAddresses {
   public static TETU_SWAP_FACTORY =
     '0x684d8c187be836171a1Af8D533e4724893031828'.toLowerCase();
   public static TETU_SWAP_ROUTER =
-    '0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c'.toLowerCase();
+    '0x736FD9EabB15776A3adfea1B975c868F72A29d14'.toLowerCase();
 
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER =

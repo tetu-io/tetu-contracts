@@ -235,6 +235,26 @@ export class TokenUtils {
       FtmAddresses.SPELL_TOKEN,
       '0x4f41D03631Ea4dC14016CcF90690d6D22b24C12D'.toLowerCase(),
     ], // spirit lp
+    [
+      MaticAddresses.NSHARE_TOKEN,
+      '0xfb6935ef307e08cb9e9d4bfdbdc57e671d3b19a6'.toLowerCase(),
+    ], // nacho treasury Fund
+    [
+      MaticAddresses.NACHO_TOKEN,
+      '0xfb6935ef307e08cb9e9d4bfdbdc57e671d3b19a6'.toLowerCase(),
+    ], // nacho treasury Fund
+    [
+      FtmAddresses.TOMB_TOKEN,
+      '0xF50c6dAAAEC271B56FCddFBC38F0b56cA45E6f0d'.toLowerCase(),
+    ], // tomb treasury Fund
+    [
+      FtmAddresses.TSHARE_TOKEN,
+      '0x8764DE60236C5843D9faEB1B638fbCE962773B67'.toLowerCase(),
+    ], // tomb masonry
+    [
+      FtmAddresses.BOO_TOKEN,
+      '0xa48d959ae2e88f1daa7d5f611e01908106de7598'.toLowerCase(),
+    ], // xBOO
   ]);
 
   public static async balanceOf(

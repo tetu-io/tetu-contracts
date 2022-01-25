@@ -37,6 +37,14 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
       'enabled:' + foldingState,
       'profitable:' + (await foldContract.isFoldingProfitable()),
     );
+
+    await foldContract.manualRedeemMax();
+    await foldContract.rebalance();
+    await foldContract.manualSupply(1000);
+    await foldContract.manualBorrow(100);
+    await foldContract.manualRepay(100);
+    await foldContract.manualRedeem(100);
+
     Misc.printDuration('Loop preparation for folding completed', start);
   }
 }

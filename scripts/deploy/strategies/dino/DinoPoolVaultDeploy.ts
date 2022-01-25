@@ -43,11 +43,16 @@ async function main() {
           MaticAddresses.DINO_TOKEN,
         ) as Promise<IStrategy>,
       core.controller,
-      core.psVault,
-      signer,
-      60 * 60 * 24 * 28,
-      true,
-    );
+      vaultAddress,
+      MaticAddresses.DINO_TOKEN
+    ) as Promise<IStrategy>,
+    core.controller,
+    core.psVault,
+    signer,
+    60 * 60 * 24 * 28,
+    0,
+    true
+  );
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(vaultLogic.address);
