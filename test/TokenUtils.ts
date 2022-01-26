@@ -8,6 +8,7 @@ import chaiAsPromised from "chai-as-promised";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 import {Misc} from "../scripts/utils/tools/Misc";
+import {StrategyTestUtils} from "./strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -86,6 +87,20 @@ export class TokenUtils {
     [FtmAddresses.BPT_FTM_SONATA_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_E_MAJOR_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_B_MAJOR_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_CLASSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_LBP_DANCE_DEGEN_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_FTM_OPERA_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BeetXLP_MIM_USDC_USDT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BLP_USDC_MAI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BPT_DANIELE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_MOOSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_PAINT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_FTMUSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_GUQINQI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_ICEFIRE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_CRVLINK_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_HND_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BNBARON_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

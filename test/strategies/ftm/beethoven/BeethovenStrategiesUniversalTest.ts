@@ -59,8 +59,9 @@ describe('Universal Beethoven tests', async () => {
     const beethovenPoolId = strat[4];
     const rewardToDepositPoolId = strat[5];
 
-
-    if (idx === 'idx') {
+    // 0 - no rewards
+    // 9 - need stake to get rewards
+    if (idx === 'idx' || idx ==='0' || idx ==='9') {
       console.log('skip', idx);
       return;
     }
