@@ -224,7 +224,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override hardWorkers updateSupplyInTheEnd {
-    investAllUnderlying();
+    // don't invest underlying for reduce cas consumption
     _claimReward();
     if (_isAutocompound()) {
       _autocompound();
@@ -236,17 +236,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       _supply(underlyingBalance());
     }
     liquidateReward();
-    if (foldState == 0) {
-      if (!isFoldingProfitable() && fold) {
-        _stopFolding();
-      } else if (isFoldingProfitable() && !fold) {
-        _startFolding();
-      } else {
-        _rebalance();
-      }
-    } else {
-      _rebalance();
-    }
+    // don't rebalance, it should be done as separate tx
   }
 
   /// @dev Withdraw underlying from Iron MasterChef finance
