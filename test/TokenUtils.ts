@@ -97,6 +97,7 @@ export class TokenUtils {
     [FtmAddresses.BPT_PAINT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_FTMUSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_GUQINQI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_QUARTET_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_ICEFIRE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_CRVLINK_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_HND_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],

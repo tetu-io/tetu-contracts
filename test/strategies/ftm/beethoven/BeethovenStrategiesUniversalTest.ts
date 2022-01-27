@@ -1,6 +1,5 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {startDefaultLpStrategyTest} from "../../DefaultLpStrategyTest";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
@@ -14,7 +13,6 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-import {ethers} from "ethers";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -61,13 +59,14 @@ describe('Universal Beethoven tests', async () => {
 
     // 0 - no rewards
     // 9 - need stake to get rewards
-    if (idx === 'idx' || idx ==='0' || idx ==='9') {
+    // 13 - no price for mooBIFI token
+    if (idx === 'idx' || idx ==='0' || idx ==='9' || idx ==='13') {
       console.log('skip', idx);
       return;
     }
-    if (argv.onlyOneBeethovenStrategyTest !== -1 && +strat[0] !== argv.onlyOneBeethovenStrategyTest) {
-      return;
-    }
+    // if (argv.onlyOneBeethovenStrategyTest !== -1 && +strat[0] !== argv.onlyOneBeethovenStrategyTest) {
+    //   return;
+    // }
 
     // **********************************************
     // ************** CONFIG*************************

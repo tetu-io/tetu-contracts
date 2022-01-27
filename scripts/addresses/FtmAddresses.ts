@@ -71,6 +71,8 @@ export class FtmAddresses {
 
   // beethoven
   public static BEETS_TOKEN = "0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e".toLowerCase();
+  public static BEETS_VAULT = "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce".toLowerCase();
+
   public static BEETS_MASTERCHEF = "0x8166994d9ebBe5829EC86Bd81258149B87faCfd3".toLowerCase();
   public static BPT_WAGMI_TOKEN = "0x713ee620a7702b79eA5413096A90702244FE4532".toLowerCase();
   public static BPT_BEETS_USDC_TOKEN = "0x03c6B3f09D2504606936b1A4DeCeFaD204687890".toLowerCase();
@@ -89,20 +91,11 @@ export class FtmAddresses {
   public static BPT_PAINT_TOKEN = "0x7cA132d9E8c420b84578a6618F10b23545513058".toLowerCase();
   public static BPT_FTMUSIC_TOKEN = "0xfC092F85125907fFcb0f9012e6e40B3f37c4De60".toLowerCase();
   public static BPT_GUQINQI_TOKEN = "0x2C580C6F08044D6dfACA8976a66C8fAddDBD9901".toLowerCase();
+  public static BPT_QUARTET_TOKEN = "0xf3A602d30dcB723A74a0198313a7551FEacA7DAc".toLowerCase();
   public static BPT_ICEFIRE_TOKEN = "0x2BeA17EdE5D83ad19ae112B8592AadaA2B015De7".toLowerCase();
   public static BPT_CRVLINK_TOKEN = "0x65Bf2d53BD1d7050d22873f6B9Bb59edb0cA0b20".toLowerCase();
   public static BPT_HND_TOKEN = "0xD57Cda2caEBb9B64BB88905C4dE0F0Da217a77d7".toLowerCase();
   public static BPT_BNBARON_TOKEN = "0x5E65474c8400d0BB76eDBBE066B2D2E7b0b6e7fb".toLowerCase();
-
-  public static BPT_LPs= new Set<string>([
-      FtmAddresses.BPT_WAGMI_TOKEN,
-      FtmAddresses.BPT_BEETS_USDC_TOKEN,
-      FtmAddresses.BPT_BEETS_FTM_TOKEN,
-      FtmAddresses.BPT_GRAND_ORCH_TOKEN,
-      FtmAddresses.BPT_FTM_SONATA_TOKEN,
-      FtmAddresses.BPT_E_MAJOR_TOKEN,
-      FtmAddresses.BPT_B_MAJOR_TOKEN,
-  ]);
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

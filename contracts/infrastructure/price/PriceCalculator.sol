@@ -444,12 +444,13 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
     uint256 totalPrice = 0;
     for(uint i = 0; i < poolTokens.length; i++){
+      uint256 tokenDecimals = IERC20Extended(address(poolTokens[i])).decimals();
       uint256 tokenPrice = getPrice(address(poolTokens[i]), outputToken);
       // unknown token price
       if (tokenPrice == 0){
         return 0;
       }
-      totalPrice = totalPrice + tokenPrice * balances[i];
+      totalPrice = totalPrice + tokenPrice * balances[i] * 10 ** PRECISION_DECIMALS / 10 ** tokenDecimals;
     }
     return totalPrice / totalBPTSupply;
   }

@@ -14,6 +14,7 @@ import {DeployInfo} from "./DeployInfo";
 import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
+import {FtmAddresses} from "../../scripts/addresses/FtmAddresses";
 
 const log: Logger = new Logger(logSettings);
 
@@ -217,8 +218,8 @@ export class StrategyTestUtils {
   public static async isBalancerLP(signer: SignerWithAddress, underlying: string) {
     let result = false;
     try {
-      await (await DeployerUtils.connectInterface(signer, 'IBPT', underlying) as IBPT).getNormalizedWeights();
-      result =  true;
+       await (await DeployerUtils.connectInterface(signer, 'IBPT', underlying) as IBPT).getVault();
+       result = true;
     } catch (e) {
     }
     return result;

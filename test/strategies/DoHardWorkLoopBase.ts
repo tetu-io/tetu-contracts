@@ -362,7 +362,8 @@ export class DoHardWorkLoopBase {
       return this.priceCache.get(token) as BigNumber;
     }
     let price;
-    if(DoHardWorkLoopBase.isBPTLP(token) && this.tools.newCalculator!=null){
+    const isBPT = await StrategyTestUtils.isBalancerLP(this.signer, token);
+    if(isBPT && this.tools.newCalculator!=null){
       price = await this.tools.newCalculator.getPriceWithDefaultOutput(token);
     }else if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
@@ -386,15 +387,6 @@ export class DoHardWorkLoopBase {
       result = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
     }
     return result;
-  }
-
-  private static isBPTLP(token: string){
-    for (const bptLp of FtmAddresses.BPT_LPs) {
-      if(token === bptLp){
-        return true
-      }
-    }
-    return false
   }
 
   private static toPercent(actual: number, expected: number): string {
