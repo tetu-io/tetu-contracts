@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
-import "../../interface/IMasterChefStrategyV3.sol";
 import "../../../swap/interfaces/ITetuSwapPair.sol";
 import "../../interface/ISmartVault.sol";
 
@@ -78,7 +77,7 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     ITetuSwapPair(pair).claimAll();
     liquidateReward();
   }

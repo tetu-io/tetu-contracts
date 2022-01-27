@@ -17,11 +17,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/cafe/ICafeMasterChef.sol";
-import "../../interface/IMasterChefStrategyCafe.sol";
 
 /// @title Abstract contract for CafeSwap strategy implementation
 /// @author belbix
-abstract contract CafeStrategyBase is StrategyBase, IMasterChefStrategyCafe {
+abstract contract CafeStrategyBase is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -35,9 +34,9 @@ abstract contract CafeStrategyBase is StrategyBase, IMasterChefStrategyCafe {
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
   /// @notice MasterChef rewards pool
-  ICafeMasterChef public override masterChefPool;
+  ICafeMasterChef public masterChefPool;
   /// @notice MasterChef rewards pool ID
-  uint256 public override poolID;
+  uint256 public poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -90,7 +89,7 @@ abstract contract CafeStrategyBase is StrategyBase, IMasterChefStrategyCafe {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     withdrawAndClaimFromPool(0);
     liquidateReward();
     depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));

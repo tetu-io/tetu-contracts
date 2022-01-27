@@ -17,11 +17,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/synthetix/SNXRewardInterface.sol";
-import "../../interface/ISNXStrategy.sol";
 
 /// @title Abstract contract for Synthetix strategy implementation
 /// @author belbix
-abstract contract SNXStrategyFullBuyback is StrategyBase, ISNXStrategy {
+abstract contract SNXStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -35,7 +34,7 @@ abstract contract SNXStrategyFullBuyback is StrategyBase, ISNXStrategy {
   uint256 private constant _BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
 
   /// @notice Synthetix like poll with rewards
-  SNXRewardInterface public override rewardPool;
+  SNXRewardInterface public rewardPool;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -83,7 +82,7 @@ abstract contract SNXStrategyFullBuyback is StrategyBase, ISNXStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     rewardPool.getReward();
     liquidateReward();
     investAllUnderlying();

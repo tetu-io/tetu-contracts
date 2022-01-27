@@ -1,11 +1,7 @@
 import {DeployerUtils} from "../../DeployerUtils";
 import {ethers} from "hardhat";
 import {FtmAddresses} from "../../../addresses/FtmAddresses";
-import {
-  Controller__factory,
-  StrategySplitter__factory,
-  StrategyTarot__factory
-} from "../../../../typechain";
+import {StrategyTarot__factory} from "../../../../typechain";
 import {appendFileSync} from "fs";
 
 
