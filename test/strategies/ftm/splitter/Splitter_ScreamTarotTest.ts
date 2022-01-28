@@ -12,6 +12,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SplitterDoHardWork} from "../../SplitterDoHardWork";
+import {UniswapUtils} from "../../../UniswapUtils";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -81,7 +82,7 @@ describe('Splitter with Scream /Tarot tests', async () => {
     // at least 3
     const loops = 5;
     // number of blocks or timestamp value
-    const loopValue = 3000;
+    const loopValue = 30000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [];
@@ -94,6 +95,11 @@ describe('Splitter with Scream /Tarot tests', async () => {
         core,
         tokenName,
         async vaultAddress => {
+          const rewardTokenLp = await UniswapUtils.createTetuUsdc(
+            signer, core, "1000000"
+          );
+          await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
+
           const splitter = await DeployerUtils.deployStrategySplitter(signer);
           await splitter.initialize(
             core.controller.address,
@@ -109,7 +115,8 @@ describe('Splitter with Scream /Tarot tests', async () => {
             splitter.address,
             underlying,
             'StrategyTarot',
-            'scripts/utils/download/data/tarot.csv'
+            'scripts/utils/download/data/tarot.csv',
+            100_000
           );
           if (tarots.length === 0) {
             throw new Error('NO TAROTS');

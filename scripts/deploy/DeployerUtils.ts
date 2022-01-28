@@ -696,7 +696,7 @@ export class DeployerUtils {
       const tvl = info[5];
 
       if (+tvl < minTvl || idx === 'idx' || !tokenAdr || underlying.toLowerCase() !== tokenAdr.toLowerCase()) {
-        console.log('skip', idx, underlying, tokenAdr, +tvl);
+        // console.log('skip', idx, underlying, tokenAdr, +tvl);
         continue;
       }
       console.log('SubStrategy', idx, tokenName);
