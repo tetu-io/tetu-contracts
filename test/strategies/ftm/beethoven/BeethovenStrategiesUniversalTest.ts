@@ -58,9 +58,11 @@ describe('Universal Beethoven tests', async () => {
     const rewardToDepositPoolId = strat[5];
 
     // 0 - no rewards
-    // 9 - need stake to get rewards
+    // 7 - no rewards, small pool
+    // 9, 11 - need stake to get rewards
     // 13 - no price for mooBIFI token
-    if (idx === 'idx' || idx ==='0' || idx ==='9' || idx ==='13') {
+    const idxToSkip = ['0', '7', '9', '11', '13', '14'];
+    if (idx === 'idx' || idxToSkip.includes(idx)) {
       console.log('skip', idx);
       return;
     }
@@ -142,17 +144,17 @@ describe('Universal Beethoven tests', async () => {
     console.log('strat', idx, lpName);
     /* tslint:disable:no-floating-promises */
     universalStrategyTest(
-      strategyContractName + vaultName,
+      strategyContractName + '_' + vaultName,
       deployInfo,
       deployer,
       hwInitiator,
       forwarderConfigurator,
       ppfsDecreaseAllowed,
       balanceTolerance,
-      200_000,
+      100_000,
       loops,
-      60 * 60 * 24,
-      false,
+      10000,
+      true,
       specificTests,
     );
   });

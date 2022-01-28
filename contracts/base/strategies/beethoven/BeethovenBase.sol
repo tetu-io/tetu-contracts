@@ -25,12 +25,12 @@ abstract contract BeethovenBase is StrategyBase {
 
   // ************ VARIABLES **********************
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "BeethovenStrategyACBase";
+  string public constant override STRATEGY_NAME = "BeethovenBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
-  /// @dev 1% buyback
-  uint256 private constant _BUY_BACK_RATIO = 100;
+  /// @dev 10% buyback
+  uint256 private constant _BUY_BACK_RATIO = 1000;
   /// @notice MasterChef rewards pool
   address public pool;
   /// @notice MasterChef rewards pool ID
