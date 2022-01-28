@@ -90,7 +90,7 @@ abstract contract TombLPStrategyBase is StrategyBase{
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     withdrawAndClaimFromPool(0);
     liquidateReward();
     depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));

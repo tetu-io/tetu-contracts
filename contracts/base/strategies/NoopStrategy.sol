@@ -54,7 +54,7 @@ contract NoopStrategy is StrategyBase {
   }
 
   /// @dev Stub function for Strategy Base implementation
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     // call empty functions for getting 100% test coverage
     withdrawAndClaimFromPool(0);
     emergencyWithdrawFromPool();

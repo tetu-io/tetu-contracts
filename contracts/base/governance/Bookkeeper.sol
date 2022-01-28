@@ -17,6 +17,8 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../interface/IBookkeeper.sol";
 import "./Controllable.sol";
 import "../interface/ISmartVault.sol";
+import "../interface/IStrategy.sol";
+import "../interface/IStrategySplitter.sol";
 
 /// @title Contract for holding statistical info and doesn't affect any funds.
 /// @dev Only not critical functional. Use with TetuProxy
@@ -26,7 +28,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.2";
+  string public constant VERSION = "1.1.3";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault. Can have another length than strategies.
@@ -184,9 +186,19 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     vaultRewardsLength[vault][rewardToken] = vaultRewards[vault][rewardToken].length;
 
     address strategy = ISmartVault(vault).strategy();
-    strategyEarnedSnapshots[strategy].push(targetTokenEarned[strategy]);
-    strategyEarnedSnapshotsTime[strategy].push(block.timestamp);
-    strategyEarnedSnapshotsLength[strategy] = strategyEarnedSnapshots[strategy].length;
+    if (IStrategy(strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER) {
+      address[] memory subStrategies = IStrategySplitter(strategy).allStrategies();
+      for (uint i; i < subStrategies.length; i++) {
+        address subStrategy = subStrategies[i];
+        strategyEarnedSnapshots[subStrategy].push(targetTokenEarned[subStrategy]);
+        strategyEarnedSnapshotsTime[subStrategy].push(block.timestamp);
+        strategyEarnedSnapshotsLength[subStrategy] = strategyEarnedSnapshots[subStrategy].length;
+      }
+    } else {
+      strategyEarnedSnapshots[strategy].push(targetTokenEarned[strategy]);
+      strategyEarnedSnapshotsTime[strategy].push(block.timestamp);
+      strategyEarnedSnapshotsLength[strategy] = strategyEarnedSnapshots[strategy].length;
+    }
     emit RewardDistribution(vault, rewardToken, amount, block.timestamp);
   }
 

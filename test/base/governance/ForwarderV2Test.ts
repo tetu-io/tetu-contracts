@@ -85,6 +85,8 @@ describe("ForwarderV2 tests", function () {
       10000
     );
 
+    await forwarder.setSlippageNumerator(50);
+
     await StrategyTestUtils.initForwarder(forwarder);
     await TokenUtils.getToken(usdc, signer.address, amount)
   });

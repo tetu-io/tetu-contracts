@@ -36,11 +36,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.8.2";
+  string public constant VERSION = "1.9.0";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
   uint256 public constant DEPOSIT_FEE_DENOMINATOR = 10000;
+  uint256 private constant NAME_OVERRIDE_ID = 0;
+  uint256 private constant SYMBOL_OVERRIDE_ID = 1;
 
   // ********************* VARIABLES *****************
   //in upgradable contracts you can skip storage ONLY for mapping and dynamically-sized array types
@@ -74,6 +76,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @dev Only for statistical purposes, no guarantee to be accurate
   ///      Last timestamp value when user deposit. Doesn't update on transfers
   mapping(address => uint256) public override userLastDepositTs;
+  /// @dev VaultStorage doesn't have a map for strings so we need to add it here
+  mapping(uint256 => string) private _nameOverrides;
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -153,6 +157,22 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   // ************ COMMON VIEWS ***********************
 
+  function name() public view override returns (string memory) {
+    string memory nameForOverride = _nameOverrides[NAME_OVERRIDE_ID];
+    if (bytes(nameForOverride).length != 0) {
+      return nameForOverride;
+    }
+    return super.name();
+  }
+
+  function symbol() public view override returns (string memory) {
+    string memory symbolForOverride = _nameOverrides[SYMBOL_OVERRIDE_ID];
+    if (bytes(symbolForOverride).length != 0) {
+      return symbolForOverride;
+    }
+    return super.symbol();
+  }
+
   /// @notice ERC20 compatible decimals value. Should be the same as underlying
   function decimals() public view override returns (uint8) {
     return ERC20Upgradeable(underlying()).decimals();
@@ -164,6 +184,18 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   // ************ GOVERNANCE ACTIONS ******************
+
+  /// @notice Override vault name
+  function overrideName(string calldata value) external {
+    require(isGovernance(msg.sender));
+    _nameOverrides[NAME_OVERRIDE_ID] = value;
+  }
+
+  /// @notice Override vault name
+  function overrideSymbol(string calldata value) external {
+    require(isGovernance(msg.sender));
+    _nameOverrides[SYMBOL_OVERRIDE_ID] = value;
+  }
 
   /// @notice Change permission for decreasing ppfs during hard work process
   /// @param _value true - allowed, false - disallowed

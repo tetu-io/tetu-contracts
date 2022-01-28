@@ -64,7 +64,7 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
   }
 
   /// @dev Collect profit and do something useful with them
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     IKlimaStaking(klimaStaking).rebase();
     _liquidateExcessUnderlying();
@@ -173,7 +173,7 @@ abstract contract KlimaStakingStrategyBase is StrategyBase {
   }
 
   /// @dev Klima asset too fluctuated and difference between share and underlying can be a huge
-  function toleranceNominator() internal pure override returns (uint){
+  function toleranceNumerator() internal pure override returns (uint){
     return 0;
   }
 

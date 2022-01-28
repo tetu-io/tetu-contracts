@@ -17,11 +17,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/wault/IWexPolyMaster.sol";
-import "../../interface/IMasterChefStrategyV2.sol";
 
 /// @title Abstract contract for Wault strategy implementation
 /// @author belbix
-abstract contract WaultStrategyFullBuyback is StrategyBase, IMasterChefStrategyV2 {
+abstract contract WaultStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -35,9 +34,9 @@ abstract contract WaultStrategyFullBuyback is StrategyBase, IMasterChefStrategyV
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
   /// @notice Wault rewards pool
-  address public override pool;
+  address public pool;
   /// @notice WexPolyMaster rewards pool ID
-  uint256 public override poolID;
+  uint256 public poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -90,7 +89,7 @@ abstract contract WaultStrategyFullBuyback is StrategyBase, IMasterChefStrategyV
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     // wault WEXpoly pool has the same underlying and reward token
     // need to be sure that we don't liquidate invested funds
     investAllUnderlying();

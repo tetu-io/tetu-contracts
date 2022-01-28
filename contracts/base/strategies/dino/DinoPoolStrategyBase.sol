@@ -14,12 +14,11 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
-import "../../interface/IStrategyWithPool.sol";
 import "../../../third_party/dino/IEternalPool.sol";
 
 /// @title Abstract contract for Dino Pool strategy implementation
 /// @author belbix
-abstract contract DinoPoolStrategyBase is StrategyBase, IStrategyWithPool {
+abstract contract DinoPoolStrategyBase is StrategyBase {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -32,7 +31,7 @@ abstract contract DinoPoolStrategyBase is StrategyBase, IStrategyWithPool {
   uint256 private constant _BUY_BACK_RATIO = 100;
 
   /// @notice Pool with rewards
-  address public override pool;
+  address public pool;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -75,7 +74,7 @@ abstract contract DinoPoolStrategyBase is StrategyBase, IStrategyWithPool {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     // must invest all underlying before liquidation coz the same asset
     investAllUnderlying();
     IEternalPool(pool).withdraw(0);

@@ -12,7 +12,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
-import {SplitterDoHardWork} from "./SplitterDoHardWork";
+import {SplitterDoHardWork} from "../../SplitterDoHardWork";
 import {SplitterSpecificTests} from "./SplitterSpecificTests";
 
 dotEnvConfig();
@@ -136,9 +136,7 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
           const iron = await deployIron(signer, ironStrat, core.controller.address, splitter.address)
           const strats: string[] = [aave, splitter2.address, iron];
 
-          await core.controller.addStrategyToSplitter(splitter.address, aave);
-          await core.controller.addStrategyToSplitter(splitter.address, splitter2.address);
-          await core.controller.addStrategyToSplitter(splitter.address, iron);
+          await core.controller.addStrategiesToSplitter(splitter.address, strats);
 
           await splitter.setStrategyRatios(
             strats,
@@ -150,8 +148,7 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
           const iron2 = await deployIron(signer, ironStrat, core.controller.address, splitter2.address)
           const strats2: string[] = [aave2, iron2];
 
-          await core.controller.addStrategyToSplitter(splitter2.address, aave2);
-          await core.controller.addStrategyToSplitter(splitter2.address, iron2);
+          await core.controller.addStrategiesToSplitter(splitter2.address, strats2);
 
           await splitter2.setStrategyRatios(
             strats2,

@@ -20,7 +20,7 @@ import "../../../third_party/iron/CompleteRToken.sol";
 import "../../../third_party/iron/IRMatic.sol";
 import "../../../third_party/iron/IronPriceOracle.sol";
 import "../../../third_party/IWmatic.sol";
-import "../../interface/IIronFoldStrategy.sol";
+import "../../interface/strategies/IIronFoldStrategy.sol";
 
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13
@@ -34,7 +34,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   string public constant override STRATEGY_NAME = "IronFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.4.0";
+  string public constant VERSION = "1.5.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev precision for the folding profitability calculation
@@ -136,7 +136,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     IronControllerInterface(ironController).claimReward(address(this), markets);
   }
 
-  function _supply(uint256 amount) internal override updateSupplyInTheEnd {
+  function _supply(uint256 amount) internal override {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
     if (_isMatic()) {
       wmaticWithdraw(amount);
@@ -148,7 +148,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     }
   }
 
-  function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _borrow(uint256 amountUnderlying) internal override {
     // Borrow, check the balance for this contract's address
     require(CompleteRToken(rToken).borrow(amountUnderlying) == 0, "IFS: Borrow failed");
     if (_isMatic()) {
@@ -156,7 +156,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     }
   }
 
-  function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _redeemUnderlying(uint256 amountUnderlying) internal override {
     amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
     if (amountUnderlying > 0) {
       uint256 redeemCode = 999;
@@ -177,13 +177,13 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
     }
   }
 
-  function _redeemLoanToken(uint256 amount) internal updateSupplyInTheEnd {
+  function _redeemLoanToken(uint256 amount) internal {
     if (amount > 0) {
       require(CompleteRToken(rToken).redeem(amount) == 0, "IFS: Redeem failed");
     }
   }
 
-  function _repay(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _repay(uint256 amountUnderlying) internal override {
     if (amountUnderlying != 0) {
       if (_isMatic()) {
         wmaticWithdraw(amountUnderlying);
@@ -197,7 +197,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   }
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
-  function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
+  function _redeemMaximumWithLoan() internal override {
     uint256 supplied = CompleteRToken(rToken).balanceOfUnderlying(address(this));
     uint256 borrowed = CompleteRToken(rToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);
