@@ -66,9 +66,9 @@ describe('Universal Beethoven tests', async () => {
       console.log('skip', idx);
       return;
     }
-    // if (argv.onlyOneBeethovenStrategyTest !== -1 && +strat[0] !== argv.onlyOneBeethovenStrategyTest) {
-    //   return;
-    // }
+    if (argv.onlyOneBeethovenStrategyTest !== -1 && +strat[0] !== argv.onlyOneBeethovenStrategyTest) {
+      return;
+    }
 
     // **********************************************
     // ************** CONFIG*************************
