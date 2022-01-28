@@ -203,7 +203,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuTokenAmount = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
-    if (toPsAndLiq > MINIMUM_AMOUNT) {
+    if (toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount > sentToFund) {
       tetuDistributed += _sendToPsAndLiquidity(
         tetuTokenAmount,
         toLiqTetuTokenPart,

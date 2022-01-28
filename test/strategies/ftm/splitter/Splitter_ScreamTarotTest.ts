@@ -116,7 +116,7 @@ describe('Splitter with Scream /Tarot tests', async () => {
             underlying,
             'StrategyTarot',
             'scripts/utils/download/data/tarot.csv',
-            100_000
+            1_000_000
           );
           if (tarots.length === 0) {
             throw new Error('NO TAROTS');

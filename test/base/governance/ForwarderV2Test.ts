@@ -154,7 +154,7 @@ describe("ForwarderV2 tests", function () {
     expect(fundKeeperLPBal).is.greaterThan(0);
     expect(psVaultBal).is.greaterThan(0);
     expect(forwarderUsdcBal).is.eq(0);
-    expect(forwarderTetuBal).is.eq(0);
+    expect(forwarderTetuBal).is.eq(2e-18);
   });
 
   it("should liquidate usdc to tetu", async () => {
