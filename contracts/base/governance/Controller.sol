@@ -24,7 +24,7 @@ import "../interface/IFundKeeper.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
-import "../interface/IBalancingStrategy.sol";
+import "../interface/strategies/IBalancingStrategy.sol";
 import "./ControllerStorage.sol";
 import "./Controllable.sol";
 
@@ -39,7 +39,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.4.0";
+  string public constant VERSION = "1.4.1";
 
   /// @dev Allowed contracts for deposit to vaults
   mapping(address => bool) public override whiteList;

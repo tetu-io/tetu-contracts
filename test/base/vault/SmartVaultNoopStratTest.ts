@@ -269,9 +269,16 @@ describe("SmartVaultNoopStrat", () => {
       await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Only distributor');
     });
 
-    it("should not doHardWork on strat from ext user", async () => {
+    it("should doHardWork on strat for hardworker", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('SB: Not Gov or Vault');
+      console.log('extUser', extUser.address)
+      await core.controller.addHardWorker(extUser.address)
+      expect(
+        await core.controller.isHardWorker(extUser.address)
+        || await core.controller.isGovernance(extUser.address)
+        || await core.controller.isController(extUser.address)
+      ).is.eq(true);
+      await strategy.connect(extUser).doHardWork();
     });
 
     it("should not doHardWork for paused strat", async () => {

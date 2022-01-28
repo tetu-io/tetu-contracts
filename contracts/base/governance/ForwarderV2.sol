@@ -35,13 +35,12 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.1";
+  string public constant VERSION = "1.2.2";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
-  uint constant public DEFAULT_UNI_FEE_NOMINATOR = 997;
+  uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
   uint constant public ROUTE_LENGTH_MAX = 5;
   uint constant public SLIPPAGE_DENOMINATOR = 100;
-  uint constant public SLIPPAGE_NOMINATOR = 95;
 
   // ************ EVENTS **********************
   /// @notice Fee distributed to Profit Sharing pool
@@ -93,6 +92,12 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     return IController(controller()).fundToken();
   }
 
+  /// @notice Return slippage numerator
+  function slippageNumerator() public view returns (uint) {
+    return _slippageNumerator();
+  }
+
+
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Only Governance or Controller can call it.
@@ -133,6 +138,13 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   }
 
   /// @notice Only Governance or Controller can call it.
+  ///         Sets numerator for slippage value. Must be in a range 0-100
+  function setSlippageNumerator(uint256 _value) external onlyControllerOrGovernance {
+    require(_value <= SLIPPAGE_DENOMINATOR, "F2: Too high value");
+    _setSlippageNumerator(_value);
+  }
+
+  /// @notice Only Governance or Controller can call it.
   ///         Sets router for a pair with TETU liquidity
   function setLiquidityRouter(address _value) external onlyControllerOrGovernance {
     _setLiquidityRouter(_value);
@@ -140,11 +152,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Only Governance or Controller can call it.
   ///         Sets specific Swap fee for given factory
-  function setUniPlatformFee(address _factory, uint _feeNominator, uint _feeDenominator) external onlyControllerOrGovernance {
+  function setUniPlatformFee(address _factory, uint _feeNumerator, uint _feeDenominator) external onlyControllerOrGovernance {
     require(_factory != address(0), "F2: Zero factory");
-    require(_feeNominator <= _feeDenominator, "F2: Wrong values");
+    require(_feeNumerator <= _feeDenominator, "F2: Wrong values");
     require(_feeDenominator != 0, "F2: Wrong denominator");
-    uniPlatformFee[_factory] = UniFee(_feeNominator, _feeDenominator);
+    uniPlatformFee[_factory] = UniFee(_feeNumerator, _feeDenominator);
   }
 
   // ***************** EXTERNAL *******************************
@@ -538,8 +550,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     (uint reserveIn, uint reserveOut) = getReserves(lp, tokenIn, tokenOut);
 
     UniFee memory fee = uniPlatformFee[lp.factory()];
-    if (fee.nominator == 0) {
-      fee = UniFee(DEFAULT_UNI_FEE_NOMINATOR, DEFAULT_UNI_FEE_DENOMINATOR);
+    if (fee.numerator == 0) {
+      fee = UniFee(DEFAULT_UNI_FEE_NUMERATOR, DEFAULT_UNI_FEE_DENOMINATOR);
     }
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
 
@@ -564,8 +576,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       _token1,
       _token0Amount,
       _token1Amount,
-      _token0Amount * SLIPPAGE_NOMINATOR / SLIPPAGE_DENOMINATOR,
-      _token1Amount * SLIPPAGE_NOMINATOR / SLIPPAGE_DENOMINATOR,
+      _token0Amount * _slippageNumerator() / SLIPPAGE_DENOMINATOR,
+      _token1Amount * _slippageNumerator() / SLIPPAGE_DENOMINATOR,
       address(this),
       block.timestamp
     );
@@ -575,7 +587,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @dev Given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
   function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, UniFee memory fee) internal pure returns (uint amountOut) {
-    uint amountInWithFee = amountIn * fee.nominator;
+    uint amountInWithFee = amountIn * fee.numerator;
     uint numerator = amountInWithFee * reserveOut;
     uint denominator = (reserveIn * fee.denominator) + amountInWithFee;
     amountOut = numerator / denominator;

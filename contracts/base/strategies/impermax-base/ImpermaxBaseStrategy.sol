@@ -93,7 +93,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     _partiallyDecompound();
     liquidateReward();
