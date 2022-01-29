@@ -35,12 +35,13 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.2";
+  string public constant VERSION = "1.2.3";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
   uint constant public ROUTE_LENGTH_MAX = 5;
   uint constant public SLIPPAGE_DENOMINATOR = 100;
+  uint constant public MINIMUM_AMOUNT = 100;
 
   // ************ EVENTS **********************
   /// @notice Fee distributed to Profit Sharing pool
@@ -177,6 +178,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     require(_amount != 0, "F2: Zero amount for distribute");
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
+    // don't spend gas for garbage
+    if (_amount < MINIMUM_AMOUNT) {
+      return 0;
+    }
+
     // calculate require amounts
     uint toFund = _toFundAmount(_amount);
     uint toPsAndLiq = _toPsAndLiqAmount(_amount - toFund);
@@ -197,7 +203,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuTokenAmount = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
-    if (toPsAndLiq > 0) {
+    if (toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount > sentToFund) {
       tetuDistributed += _sendToPsAndLiquidity(
         tetuTokenAmount,
         toLiqTetuTokenPart,
@@ -206,7 +212,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
         fundTokenAmount - sentToFund
       );
     }
-    if (toVault > 0) {
+    if (toVault > MINIMUM_AMOUNT) {
       tetuDistributed += _sendToVault(
         _vault,
         tetuTokenAmount,
@@ -253,7 +259,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   function _sendExcessTokens() internal {
     uint excessFundToken = IERC20(fundToken()).balanceOf(address(this));
-    if (excessFundToken != 0 && fund() != address(0)) {
+    if (excessFundToken > MINIMUM_AMOUNT && fund() != address(0)) {
       IERC20(fundToken()).safeTransfer(fund(), excessFundToken);
       IBookkeeper(IController(controller()).bookkeeper())
       .registerFundKeeperEarned(fundToken(), excessFundToken);
@@ -261,7 +267,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     }
 
     uint excessTetuToken = IERC20(tetu()).balanceOf(address(this));
-    if (excessTetuToken != 0) {
+    if (excessTetuToken > MINIMUM_AMOUNT) {
       IERC20(tetu()).safeTransfer(psVault(), excessTetuToken);
       emit FeeMovedToPs(psVault(), tetu(), excessTetuToken);
     }
@@ -280,7 +286,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuLiqAmount = _sendToLiquidity(toLiqTetuTokenPart, toLiqFundTokenPart);
 
     uint toPs = tetuTokenAmount * baseToPs / baseSum;
-    if (toPs != 0) {
+    if (toPs > MINIMUM_AMOUNT) {
       IERC20(tetu()).safeTransfer(psVault(), toPs);
       emit FeeMovedToPs(psVault(), tetu(), toPs);
     }
@@ -302,6 +308,10 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
     uint baseSum = baseToLiqTetuTokenPart + baseToPs + baseToVault;
     uint toVault = tetuTokenAmount * baseToVault / baseSum;
+    // no actions if little amount
+    if (toVault < MINIMUM_AMOUNT) {
+      return 0;
+    }
 
     uint256 amountToSend;
     if (rt == xTetu) {
@@ -340,7 +350,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   function _sendToLiquidity(uint toLiqTetuTokenPart, uint toLiqFundTokenPart) internal returns (uint256) {
     // no actions if we don't have a fee for liquidity
-    if (toLiqTetuTokenPart == 0 || toLiqFundTokenPart == 0) {
+    if (toLiqTetuTokenPart < MINIMUM_AMOUNT || toLiqFundTokenPart < MINIMUM_AMOUNT) {
       return 0;
     }
 
@@ -554,9 +564,10 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       fee = UniFee(DEFAULT_UNI_FEE_NUMERATOR, DEFAULT_UNI_FEE_DENOMINATOR);
     }
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
-
     IERC20(tokenIn).safeTransfer(address(lp), amount);
-    _swapCall(lp, tokenIn, tokenOut, amountOut);
+    if (amountOut != 0) {
+      _swapCall(lp, tokenIn, tokenOut, amountOut);
+    }
   }
 
   function _addLiquidity(
