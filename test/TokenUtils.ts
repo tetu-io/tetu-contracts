@@ -78,8 +78,7 @@ export class TokenUtils {
     [FtmAddresses.TOMB_TOKEN, '0xF50c6dAAAEC271B56FCddFBC38F0b56cA45E6f0d'.toLowerCase()], // tomb treasury Fund
     [FtmAddresses.TSHARE_TOKEN,'0x8764DE60236C5843D9faEB1B638fbCE962773B67'.toLowerCase()], // tomb masonry
     [FtmAddresses.BOO_TOKEN,'0xa48d959ae2e88f1daa7d5f611e01908106de7598'.toLowerCase()], // xBOO
-    [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()], // masterchef todo fix
-    // todo fix (remove beets masterchef)
+    [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()], // beets masterchef
     [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_BEETS_USDC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_BEETS_FTM_TOKEN,'0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1'.toLowerCase()],

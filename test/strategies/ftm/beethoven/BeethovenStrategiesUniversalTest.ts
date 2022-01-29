@@ -153,11 +153,9 @@ describe('Universal Beethoven tests', async () => {
       balanceTolerance,
       100_000,
       loops,
-      10000,
-      true,
+      60 * 60 * 24,
+      false,
       specificTests,
     );
   });
-
-
 });

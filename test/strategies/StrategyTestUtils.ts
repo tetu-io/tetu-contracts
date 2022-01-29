@@ -3,7 +3,7 @@ import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ForwarderV2, IBPT, IStrategy, IUniswapV2Pair, PriceCalculator, SmartVault} from "../../typechain";
+import {ForwarderV2, IStrategy, IUniswapV2Pair, PriceCalculator, SmartVault} from "../../typechain";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {expect} from "chai";
@@ -14,7 +14,6 @@ import {DeployInfo} from "./DeployInfo";
 import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
-import {FtmAddresses} from "../../scripts/addresses/FtmAddresses";
 
 const log: Logger = new Logger(logSettings);
 
@@ -159,22 +158,15 @@ export class StrategyTestUtils {
   public static async getUnderlying(
     underlying: string,
     amountN: number,
-    user: SignerWithAddress,
+    signer: SignerWithAddress,
     calculator: PriceCalculator,
     recipients: string[],
   ) {
     log.info('get underlying', amountN, recipients.length, underlying);
     const start = Date.now();
-    const isUniswapLP = await this.isUniswapLP(user, underlying);
-    const isBTP = await this.isBalancerLP(user, underlying);
     const uName = await TokenUtils.tokenSymbol(underlying);
     const uDec = await TokenUtils.decimals(underlying);
-    let uPrice: BigNumber;
-    if(isBTP){
-      uPrice = await calculator.getPriceWithDefaultOutput(underlying);
-    }else{
-      uPrice = await PriceCalculatorUtils.getPriceCached(underlying);
-    }
+    const uPrice = await PriceCalculatorUtils.getPriceCached(underlying);
     const uPriceN = +utils.formatUnits(uPrice);
     log.info('Underlying price: ', uPriceN);
 
@@ -184,45 +176,33 @@ export class StrategyTestUtils {
 
     // const amountAdjustedN2 = amountAdjustedN * (recipients.length + 1);
     const amountAdjusted2 = amountAdjusted.mul(recipients.length + 1);
+
+    let isLp = false;
+    try {
+      await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair).getReserves();
+      isLp = true;
+    } catch (e) {
+    }
+
     let balance = amountAdjusted2;
-    if (isUniswapLP) {
+    if (isLp) {
       await UniswapUtils.getTokensAndAddLiq(
-        user,
+        signer,
         underlying,
         amountN,
         calculator
       );
-      balance = await TokenUtils.balanceOf(underlying, user.address);
+      balance = await TokenUtils.balanceOf(underlying, signer.address);
     } else {
-      await TokenUtils.getToken(underlying, user.address, amountAdjusted2);
+      await TokenUtils.getToken(underlying, signer.address, amountAdjusted2);
     }
 
     for (const recipient of recipients) {
-      await TokenUtils.transfer(underlying, user, recipient, balance.div(recipients.length + 1).toString())
+      await TokenUtils.transfer(underlying, signer, recipient, balance.div(recipients.length + 1).toString())
     }
-    const finalBal = await TokenUtils.balanceOf(underlying, user.address);
+    const finalBal = await TokenUtils.balanceOf(underlying, signer.address);
     Misc.printDuration('Get underlying finished for', start);
     return finalBal;
-  }
-
-  public static async isUniswapLP(signer: SignerWithAddress, underlying: string) {
-    let result = false;
-    try {
-      await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair).getReserves();
-      result =  true;
-    } catch (e) {
-    }
-    return result;
-  }
-
-  public static async isBalancerLP(signer: SignerWithAddress, underlying: string) {
-    let result = false;
-    try {
-       await (await DeployerUtils.connectInterface(signer, 'IBPT', underlying) as IBPT).getVault();
-       result = true;
-    } catch (e) {
-    }
-    return result;
   }
 
 }

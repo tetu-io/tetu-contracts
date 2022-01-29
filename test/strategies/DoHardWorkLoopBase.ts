@@ -10,7 +10,6 @@ import {StrategyTestUtils} from "./StrategyTestUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
-import {FtmAddresses} from "../../scripts/addresses/FtmAddresses";
 
 
 export class DoHardWorkLoopBase {
@@ -362,10 +361,7 @@ export class DoHardWorkLoopBase {
       return this.priceCache.get(token) as BigNumber;
     }
     let price;
-    const isBPT = await StrategyTestUtils.isBalancerLP(this.signer, token);
-    if(isBPT && this.tools.newCalculator!=null){
-      price = await this.tools.newCalculator.getPriceWithDefaultOutput(token);
-    }else if (token === this.core.rewardToken.address.toLowerCase()) {
+    if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
     } else {
       price = await PriceCalculatorUtils.getPriceCached(token);
