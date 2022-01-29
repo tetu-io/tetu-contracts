@@ -21,6 +21,7 @@ contract StrategyTombLp is TombLPStrategyBase {
   address private constant _TSHARE_REWARD_POOL = address(0xcc0a87F7e7c693042a9Cc703661F5060c80ACb43);
   address private constant _TSHARE = address(0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37);
   address[] private _poolRewards = [_TSHARE];
+  address private constant _ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
 
   constructor(
     address _controller,
@@ -29,8 +30,7 @@ contract StrategyTombLp is TombLPStrategyBase {
     address _token0,
     address _token1,
     uint256 _poolId
-
-  ) TombLPStrategyBase(_controller, _underlying, _vault, _poolRewards, _TSHARE_REWARD_POOL, _poolId) {
+  ) TombLPStrategyBase(_controller, _underlying, _vault, _poolRewards, _TSHARE_REWARD_POOL, _poolId, _ROUTER) {
     require(_underlying != address(0), "zero underlying");
     require(_token0 != address(0), "zero token0");
     require(_token1 != address(0), "zero token1");

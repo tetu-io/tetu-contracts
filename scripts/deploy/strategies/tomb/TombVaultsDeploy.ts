@@ -44,7 +44,7 @@ async function main() {
 
     // *** VARIABLES
     const strategyContractName = 'StrategyTombLp';
-    const strategyPath = '';
+    const strategyPath = `contracts/strategies/fantom/tomb/${strategyContractName}.sol:${strategyContractName}`;
     const underlying = lpAddress;
     const platformPrefix = 'TOMB';
     // *****
