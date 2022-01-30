@@ -39,7 +39,7 @@ describe('Universal Beethoven tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/beethoven_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/beethoven_pools_10kk_tvl.csv', 'utf8').split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
@@ -57,12 +57,7 @@ describe('Universal Beethoven tests', async () => {
     const beethovenPoolId = strat[4];
     const rewardToDepositPoolId = strat[5];
 
-    // 0 - no rewards
-    // 7 - no rewards, small pool
-    // 9, 11 - need stake to get rewards
-    // 13 - no price for mooBIFI token
-    const idxToSkip = ['0', '7', '9', '11', '13', '14'];
-    if (idx === 'idx' || idxToSkip.includes(idx)) {
+    if (idx === 'idx') {
       console.log('skip', idx);
       return;
     }
