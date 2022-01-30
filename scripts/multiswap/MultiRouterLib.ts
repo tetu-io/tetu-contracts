@@ -3,10 +3,10 @@ import * as fs from 'fs';
 import {BigNumber} from "ethers";
 import {ethers} from "hardhat";
 
-// import pairs from 'json/MultiRouterPairs.json'
-
 // const MULTI_ROUTER_MATIC = '0x6dB6CeA8BB997525164a8960d74143685b0a00F7'
 const MULTI_ROUTER_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
+
+const BIGNUMBER0 = BigNumber.from(0);
 
 type Pair = {
   lp: string;
@@ -20,6 +20,13 @@ type Pair = {
 
 type IndexedPair = { [key: string]: Pair }
 type IndexedPairs = { [key: string]: Pair[] }
+
+
+type Route = {
+  steps: Pair[];
+  finished: boolean;
+  amountOut?: BigNumber;
+}
 
 async function loadAllPairs(
     multiRouter: MultiRouter,
@@ -69,11 +76,6 @@ function indexAllPairs(pairs: string[][]): IndexedPairs {
     pushPairToWays(reversePair)
   }
   return ways
-}
-
-type Route = {
-  steps: Pair[];
-  finished: boolean;
 }
 
 function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string, maxRouteLength: number): Route[] {
@@ -156,34 +158,124 @@ async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
   }
 }
 
-// copy from UniswapV2Library
-// given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-function getAmountIn(
-    amountOut: BigNumber,
-    reserveIn: BigNumber,
-    reserveOut: BigNumber
-): BigNumber {
-  if (!amountOut.gt(0)) BigNumber.from(0);
-  if (!(reserveIn.gt(0) && reserveOut.gt(0))) BigNumber.from(0);
-  const numerator = reserveIn.mul(amountOut).mul(1000);
-  const denominator = reserveOut.sub(amountOut).mul(997);
-  return numerator.div(denominator).add(1);
+async function loadReserves(multiRouter: MultiRouter, routes: Route[]) {
+  const usedPairs = extractPairsFromRoutes(routes);
+  const usedPairsKeys = Object.keys(usedPairs) // TODO remove
+  console.log('usedPairsKeys.length', usedPairsKeys.length); // TODO remove
+  await loadPairReserves(multiRouter, usedPairs);
 }
 
 // copy from UniswapV2Library
+// given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+/*function getAmountIn(amountOut: BigNumber, reserveIn: BigNumber, reserveOut: BigNumber): BigNumber {
+  if (!amountOut.gt(0)) return BIGNUMBER0;
+  if (!(reserveIn.gt(0) && reserveOut.gt(0))) return BIGNUMBER0;
+  const numerator = reserveIn.mul(amountOut).mul(1000);
+  const denominator = reserveOut.sub(amountOut).mul(997);
+  return numerator.div(denominator).add(1);
+}*/
+
+// copy from UniswapV2Library
 // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-function getAmountOut(
-    amountIn: BigNumber,
-    reserveIn: BigNumber,
-    reserveOut: BigNumber
-): BigNumber {
-  if (!amountIn.gt(0)) return BigNumber.from(0);
-  if (!(reserveIn.gt(0) && reserveOut.gt(0))) BigNumber.from(0);
+function getAmountOut(amountIn: BigNumber, reserveIn: BigNumber, reserveOut: BigNumber): BigNumber {
+  if (!amountIn.gt(0)) return BIGNUMBER0;
+  if (!(reserveIn.gt(0) && reserveOut.gt(0))) return BIGNUMBER0;
   const amountInWithFee = amountIn.mul(997);
   const numerator = amountInWithFee.mul(reserveOut);
   const denominator = reserveIn.mul(1000).add(amountInWithFee);
   return numerator.div(denominator);
 }
+
+function calculateRouteAmountOut(route: Route, amountIn: BigNumber): BigNumber {
+  const steps = route.steps
+  let amountOut = amountIn
+  for (const pair of steps) {
+    if (!pair.reserve0 || !pair.reserve1) return BIGNUMBER0;
+    amountOut = getAmountOut(amountOut, pair.reserve0, pair.reserve1)
+  }
+  return amountOut
+}
+
+function calculateOutputs(routes: Route[], amountIn: BigNumber) {
+  for (const route of routes) {
+    route.amountOut = calculateRouteAmountOut(route, amountIn)
+  }
+}
+
+/// Descending Order
+function sortRoutesByOutputs(routes: Route[]) {
+  routes.sort((a, b) => {
+    const ao = a.amountOut ? a.amountOut : BIGNUMBER0;
+    const bo = b.amountOut ? b.amountOut : BIGNUMBER0;
+    if (ao.lt(bo)) return 1;
+    if (ao.gt(bo)) return -1;
+    return 0
+  })
+}
+
+function getBestRoute(routes: Route[]): Route | null {
+  let bestRoute: Route | null = null;
+  let maxOutput = BIGNUMBER0;
+  for (const route of routes) {
+    if (route.amountOut && route.amountOut.gt(maxOutput)) {
+      bestRoute = route;
+      maxOutput = route.amountOut;
+    }
+  }
+  return bestRoute
+}
+
+function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): number[] {
+  const weights: number[] = [];
+  const step = 5;
+
+  let bestWeights: number[] = [];
+  let bestOutput = BIGNUMBER0;
+  let weightsTested = 0;
+
+  const calcOutput = function(): BigNumber {
+    let totalOutput = BIGNUMBER0;
+    for (let routeIndex = 0; routeIndex < maxRoutes; routeIndex++) {
+      const route = routes[routeIndex];
+      const routeWeight = weights[routeIndex];
+      const routeAmountIn = amountIn.mul(routeWeight).div(100);
+      totalOutput = totalOutput.add(calculateRouteAmountOut(route, routeAmountIn));
+    }
+    return totalOutput
+  }
+
+  const iterate = function(percentage: number, weightIndex: number) {
+    if (weightIndex === 0) {
+      weights[0] = percentage;
+      const output = calcOutput();
+      weightsTested ++;
+      if (output.gt(bestOutput)) {
+        bestOutput = output;
+        bestWeights = [...weights];
+      }
+      // console.log('weights', weights, output.toString(), bestOutput.toString()); // TODO rm
+
+    } else {
+      for (let part = 0; part <= percentage; part += step) {
+        weights[weightIndex] = part;
+        iterate(percentage - part, weightIndex - 1);
+      }
+    }
+  }
+
+  iterate(100, maxRoutes - 1);
+
+  const bestRoute = getBestRoute(routes)
+  const bestRouteOutput = bestRoute?.amountOut || BIGNUMBER0;
+
+  console.log('weightsTested', weightsTested);
+  console.log('amount in    ', amountIn.toString());
+  console.log('route  Output', bestRouteOutput.toString());
+  console.log('weight Output', bestOutput.toString());
+  console.log('increase %  +', bestOutput.mul(100).div(bestRouteOutput).toNumber() - 100);
+  return bestWeights;
+}
+
 
 export {
   MULTI_ROUTER_MATIC,
@@ -193,5 +285,9 @@ export {
   indexAllPairs,
   findAllRoutes,
   extractPairsFromRoutes,
-  loadPairReserves
+  loadReserves,
+  calculateOutputs,
+  sortRoutesByOutputs,
+  getBestRoute,
+  findBestWeights
 }

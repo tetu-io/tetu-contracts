@@ -6,7 +6,7 @@ import {
 import {ethers, web3, network} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {BigNumberish} from "ethers";
+import {BigNumber, BigNumberish} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   loadAllPairs,
@@ -15,8 +15,12 @@ import {
   indexAllPairs,
   findAllRoutes,
   extractPairsFromRoutes,
-  loadPairReserves,
-  MULTI_ROUTER_MATIC
+  loadReserves,
+  MULTI_ROUTER_MATIC,
+  calculateOutputs,
+  sortRoutesByOutputs,
+  getBestRoute,
+  findBestWeights
 } from "../../scripts/multiswap/MultiRouterLib";
 import pairsJson from '../../scripts/multiswap/json/MultiRouterPairs.json'
 
@@ -54,23 +58,38 @@ describe("MultiRouter base tests", function () {
     console.time('findAllRoutes')
     const allRoutes = findAllRoutes(
         allPairs,
-        MaticAddresses.TETU_TOKEN,
-        MaticAddresses.USDC_TOKEN,
-        2)
+        // MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN,
+        // MaticAddresses.USDC_TOKEN, MaticAddresses.USDC_TOKEN,
+        // MaticAddresses.TETU_TOKEN, MaticAddresses.TETU_TOKEN,
+        // MaticAddresses.WMATIC_TOKEN, MaticAddresses.WMATIC_TOKEN,
+        MaticAddresses.AAVE_TOKEN, MaticAddresses.USDC_TOKEN,
+        4)
     console.timeEnd('findAllRoutes')
     console.log('allRoutes', allRoutes);
     console.log('allRoutes.length', allRoutes.length);
 
-    console.time('extractPairsFromRoutes')
-    const usedPairs = extractPairsFromRoutes(allRoutes)
-    console.timeEnd('extractPairsFromRoutes')
-    const usedPairsKeys = Object.keys(usedPairs)
-    console.log('usedPairsKeys.length', usedPairsKeys.length);
 
-    console.time('loadPairReserves')
-    await loadPairReserves(multiRouter, usedPairs)
-    console.timeEnd('loadPairReserves')
-    // console.log('usedPairs', usedPairs);
+    console.time('loadReserves')
+    await loadReserves(multiRouter, allRoutes)
+    console.timeEnd('loadReserves')
+
+    const amountIn = ethers.utils.parseUnits('5000', 'ether')
+    console.time('calculateOutputs')
+    calculateOutputs(allRoutes, amountIn)
+    console.timeEnd('calculateOutputs')
+
+    sortRoutesByOutputs(allRoutes)
+    console.log('allRoutes', allRoutes);
+
+    const bestRoute = getBestRoute(allRoutes)
+    console.log('bestRoute', bestRoute);
+
+    console.time('findBestWeights')
+    const bestWeights = findBestWeights(allRoutes, amountIn);
+    console.timeEnd('findBestWeights')
+    // console.log('Routes', allRoutes.slice(0,5));
+    console.log('bestWeights', bestWeights);
+
   })
 
 
