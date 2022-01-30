@@ -22,8 +22,6 @@ export class ToolsContractsWrapper {
   public readonly zapContract: ZapContract;
   public readonly multicall: Multicall;
   public readonly pawnshopReader: PawnShopReader;
-  public newCalculator: PriceCalculator | null = null;
-
   constructor(
     calculator: PriceCalculator,
     reader: ContractReader,

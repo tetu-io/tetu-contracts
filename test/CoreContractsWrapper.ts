@@ -6,7 +6,7 @@ import {
   FundKeeper,
   MintHelper,
   NoopStrategy,
-  NotifyHelper, PriceCalculator,
+  NotifyHelper,
   RewardToken,
   SmartVault,
   VaultController
@@ -33,7 +33,6 @@ export class CoreContractsWrapper {
   public announcerLogic: string;
   public vaultController: VaultController;
   public vaultControllerLogic: string;
-
 
   constructor(controller: Controller,
               controllerLogic: string,
