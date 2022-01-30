@@ -11,8 +11,6 @@
 */
 pragma solidity 0.8.4;
 
-
-import "../../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../../base/strategies/beethoven/BeethovenBase.sol";
 
 contract StrategyBeethoven is BeethovenBase {

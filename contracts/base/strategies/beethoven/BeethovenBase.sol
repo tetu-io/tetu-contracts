@@ -15,7 +15,6 @@ pragma solidity 0.8.4;
 import "../StrategyBase.sol";
 import "../../../third_party/beethoven/IBeethovenxChef.sol";
 import "../../../third_party/beethoven/IBeethovenVault.sol";
-import "hardhat/console.sol";
 
 /// @title Abstract contract for Beethoven strategy implementation
 /// @author OlegN
