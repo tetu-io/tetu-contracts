@@ -101,6 +101,8 @@ export class TokenUtils {
     [FtmAddresses.BPT_CRVLINK_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_HND_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_BNBARON_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_STABEET,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

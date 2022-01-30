@@ -96,6 +96,8 @@ export class FtmAddresses {
   public static BPT_CRVLINK_TOKEN = "0x65Bf2d53BD1d7050d22873f6B9Bb59edb0cA0b20".toLowerCase();
   public static BPT_HND_TOKEN = "0xD57Cda2caEBb9B64BB88905C4dE0F0Da217a77d7".toLowerCase();
   public static BPT_BNBARON_TOKEN = "0x5E65474c8400d0BB76eDBBE066B2D2E7b0b6e7fb".toLowerCase();
+  public static BPT_STABEET = "0xeCAa1cBd28459d34B766F9195413Cb20122Fb942".toLowerCase();
+  public static BPT_asUSDC = "0x8Bb1839393359895836688165f7c5878f8C81C5e".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

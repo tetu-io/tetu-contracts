@@ -10,8 +10,7 @@ import {mkdir, writeFileSync} from "fs";
 import {FtmAddresses} from "../../addresses/FtmAddresses";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
-// const TOTAL_LP_TOKENS = 35;
-const TOTAL_LP_TOKENS = 22;
+const TOTAL_LP_TOKENS = 35;
 
 const TOKEN_TO_POOL = new Map<string, string>([
     ['WFTM','0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019'],
@@ -25,8 +24,12 @@ async function main() {
 
 
     let infos: string = 'idx, lp_name, lp_address, deposit_token, beethoven_pool_id, reward_to_deposit_pool_id\n';
-    for (let i = 0; i < TOTAL_LP_TOKENS; i++) {
+    for (let i = 23; i < TOTAL_LP_TOKENS; i++) {
         console.log('id', i);
+        if (i === 28 || i === 34) {
+            console.log('skip', i);
+            continue;
+        }
 
         const bptAddress = await dataProvider.lpTokens(i);
         const bpt = await DeployerUtils.connectInterface(signer, "IBPT", bptAddress) as IBPT;
@@ -55,11 +58,11 @@ async function main() {
         infos += data + '\n';
     }
 
-    mkdir('./tmp/download', {recursive: true}, (err) => {
-      if (err) throw err;
-    });
+    // mkdir('./tmp/download', {recursive: true}, (err) => {
+    //   if (err) throw err;
+    // });
 
-    writeFileSync('./tmp/download/beethoven_pools_raw.csv', infos, 'utf8');
+    writeFileSync('/Users/anatseuski/work/tetu-contracts/scripts/utils/download/data/beethoven_pools_raw_new.csv', infos, 'utf8');
     console.log('done');
 }
 
