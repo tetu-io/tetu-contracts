@@ -17,11 +17,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../../third_party/hermes/IIrisMasterChef.sol";
 import "../StrategyBase.sol";
-import "../../interface/IMasterChefStrategyV2.sol";
 
 /// @title Abstract contract for Hermes strategy implementation
 /// @author belbix, bogdoslav
-abstract contract HermesStrategyFullBuyback is StrategyBase, IMasterChefStrategyV2 {
+abstract contract HermesStrategyFullBuyback is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -34,9 +33,9 @@ abstract contract HermesStrategyFullBuyback is StrategyBase, IMasterChefStrategy
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @notice Hermes rewards pool
-  address public override pool;
+  address public pool;
   /// @notice Hermes MasterChef rewards pool ID
-  uint256 public override poolID;
+  uint256 public poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -88,7 +87,7 @@ abstract contract HermesStrategyFullBuyback is StrategyBase, IMasterChefStrategy
 
   // ************ GOVERNANCE ACTIONS **************************
 
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     // only claim rewards
     IIrisMasterChef(pool).withdraw(poolID, 0);

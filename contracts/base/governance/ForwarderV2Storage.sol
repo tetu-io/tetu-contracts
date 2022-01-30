@@ -27,7 +27,7 @@ abstract contract ForwarderV2Storage is Initializable {
   }
 
   struct UniFee {
-    uint nominator;
+    uint numerator;
     uint denominator;
   }
 
@@ -69,6 +69,16 @@ abstract contract ForwarderV2Storage is Initializable {
   /// @notice Numerator for part of profit that goes to TETU liquidity
   function liquidityNumerator() public view returns (uint256) {
     return getUint256("liquidityNumerator");
+  }
+
+  function _setSlippageNumerator(uint256 _value) internal {
+    emit UpdatedUint256Slot("slippageNumerator", _slippageNumerator(), _value);
+    setUint256("slippageNumerator", _value);
+  }
+
+  /// @notice Numerator for part of profit that goes to TETU liquidity
+  function _slippageNumerator() internal view returns (uint256) {
+    return getUint256("slippageNumerator");
   }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************

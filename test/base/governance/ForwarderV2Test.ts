@@ -85,6 +85,8 @@ describe("ForwarderV2 tests", function () {
       10000
     );
 
+    await forwarder.setSlippageNumerator(50);
+
     await StrategyTestUtils.initForwarder(forwarder);
     await TokenUtils.getToken(usdc, signer.address, amount)
   });
@@ -152,7 +154,7 @@ describe("ForwarderV2 tests", function () {
     expect(fundKeeperLPBal).is.greaterThan(0);
     expect(psVaultBal).is.greaterThan(0);
     expect(forwarderUsdcBal).is.eq(0);
-    expect(forwarderTetuBal).is.eq(0);
+    expect(forwarderTetuBal).is.eq(2e-18);
   });
 
   it("should liquidate usdc to tetu", async () => {

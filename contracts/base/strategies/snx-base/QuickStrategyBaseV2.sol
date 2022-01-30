@@ -16,13 +16,12 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
-import "../../interface/ISNXStrategy.sol";
 import "../../../third_party/synthetix/SNXRewardInterface.sol";
 import "../../../third_party/quick/IDragonLair.sol";
 
 /// @title Abstract contract for Quick Swap strategy implementation
 /// @author belbix
-abstract contract QuickStrategyBaseV2 is StrategyBase, ISNXStrategy {
+abstract contract QuickStrategyBaseV2 is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -39,7 +38,7 @@ abstract contract QuickStrategyBaseV2 is StrategyBase, ISNXStrategy {
   address[] private quickPoolRewards = [QUICK];
 
   /// @notice Synthetix like pool with rewards
-  SNXRewardInterface public override rewardPool;
+  SNXRewardInterface public rewardPool;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -83,7 +82,7 @@ abstract contract QuickStrategyBaseV2 is StrategyBase, ISNXStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     rewardPool.getReward();
     liquidateReward();

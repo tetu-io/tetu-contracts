@@ -16,11 +16,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./../../../third_party/IERC20Extended.sol";
 import "./../StrategyBase.sol";
 import "./pipelines/LinearPipeline.sol";
-import "../../interface/IMaiStablecoinPipe.sol";
+import "../../interface/strategies/IMaiStablecoinPipe.sol";
+import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
-contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
+contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline, IAaveMaiBalStrategyBase {
   using SafeERC20 for IERC20;
 
   /// @notice Strategy type for statistical purposes
@@ -73,7 +74,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   }
 
   /// @dev HardWork function for Strategy Base implementation
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     uint balance = IERC20(_underlyingToken).balanceOf(address(this));
     if (balance > 0) {
       _pumpIn(balance);
@@ -135,24 +136,24 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
   /// @dev Gets targetPercentage of MaiStablecoinPipe
   /// @return target collateral to debt percentage
-  function targetPercentage() external view returns (uint256) {
+  function targetPercentage() external view override returns (uint256) {
     return _maiStablecoinPipe.targetPercentage();
   }
 
   /// @dev Gets maxImbalance of MaiStablecoinPipe
   /// @return maximum imbalance (+/-%) to do re-balance
-  function maxImbalance() external view returns (uint256) {
+  function maxImbalance() external view override returns (uint256) {
     return _maiStablecoinPipe.maxImbalance();
   }
 
   /// @dev Gets collateralPercentage of MaiStablecoinPipe
   /// @return current collateral to debt percentage
-  function collateralPercentage() external view returns (uint256) {
+  function collateralPercentage() external view override returns (uint256) {
     return _maiStablecoinPipe.collateralPercentage();
   }
   /// @dev Gets liquidationPrice of MaiStablecoinPipe
   /// @return price of source (am) token when vault will be liquidated
-  function liquidationPrice() external view returns (uint256 price) {
+  function liquidationPrice() external view override returns (uint256 price) {
     uint256 camLiqPrice = _maiStablecoinPipe.liquidationPrice();
     // balance of amToken locked in camToken
     uint256 amBalance = IERC20(_maiCamPipe.sourceToken()).balanceOf(_maiCamPipe.outputToken());
@@ -164,13 +165,13 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
   /// @dev Gets available MAI to borrow at the Mai Stablecoin contract. Should be checked at UI before deposit
   /// @return amToken maximum deposit
-  function availableMai() external view returns (uint256) {
+  function availableMai() external view override returns (uint256) {
     return _maiStablecoinPipe.availableMai();
   }
 
   /// @dev Returns maximal possible amToken deposit. Should be checked at UI before deposit
   /// @return max amToken maximum deposit
-  function maxDeposit() external view returns (uint256 max) {
+  function maxDeposit() external view override returns (uint256 max) {
     uint256 camMaxDeposit = _maiStablecoinPipe.maxDeposit();
     uint256 amBalance = IERC20(_maiCamPipe.sourceToken()).balanceOf(_maiCamPipe.outputToken());
     uint256 totalSupply = IERC20Extended(_maiCamPipe.outputToken()).totalSupply();
@@ -185,19 +186,21 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
   ///         Note that they cannot come in take away coins that are used and defined in the strategy itself
   /// @param recipient Recipient address
   /// @param token Token address
-  function salvageFromPipeline(address recipient, address token) external onlyControllerOrGovernance updateTotalAmount {
+  function salvageFromPipeline(address recipient, address token)
+  external override onlyControllerOrGovernance updateTotalAmount {
     // transfers token to this contract
     _salvageFromAllPipes(recipient, token);
     emit SalvagedFromPipeline(recipient, token);
   }
 
-  function rebalanceAllPipes() external restricted updateTotalAmount {
+  function rebalanceAllPipes() external override restricted updateTotalAmount {
     _rebalanceAllPipes();
   }
 
   /// @dev Sets targetPercentage for MaiStablecoinPipe and re-balances all pipes
   /// @param _targetPercentage - target collateral to debt percentage
-  function setTargetPercentage(uint256 _targetPercentage) onlyControllerOrGovernance updateTotalAmount external {
+  function setTargetPercentage(uint256 _targetPercentage)
+  external override onlyControllerOrGovernance updateTotalAmount {
     _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
     emit SetTargetPercentage(_targetPercentage);
     _rebalanceAllPipes();
@@ -206,7 +209,8 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline {
 
   /// @dev Sets maxImbalance for maiStablecoinPipe and re-balances all pipes
   /// @param _maxImbalance - maximum imbalance deviation (+/-%)
-  function setMaxImbalance(uint256 _maxImbalance) onlyControllerOrGovernance updateTotalAmount external {
+  function setMaxImbalance(uint256 _maxImbalance)
+  external override onlyControllerOrGovernance updateTotalAmount {
     _maiStablecoinPipe.setMaxImbalance(_maxImbalance);
     emit SetMaxImbalance(_maxImbalance);
     _rebalanceAllPipes();

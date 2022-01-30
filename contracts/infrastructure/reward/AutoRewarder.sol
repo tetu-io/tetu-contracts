@@ -16,6 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
+import "../../base/interface/IStrategy.sol";
 import "../../base/interface/IController.sol";
 import "./IRewardCalculator.sol";
 import "../../base/interface/IRewardToken.sol";
@@ -28,7 +29,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.1.2";
+  string public constant VERSION = "1.1.3";
   uint256 public constant PERIOD = 22 hours;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
@@ -39,6 +40,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   event RewardPerDayChanged(uint256 value);
   event ResetCycle(uint256 lastDistributedId, uint256 distributed);
   event DistributedTetu(address vault, uint256 toDistribute);
+  event PlatformStatusChanged(uint256 platform, bool status);
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -98,6 +100,13 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
     require(tokenBalance >= amount, "AR: Not enough balance");
     IERC20(_token).safeTransfer(controller(), amount);
     emit TokenMoved(_token, amount);
+  }
+
+  function changePlatformStatus(uint256[] calldata _platforms, bool _status) external onlyControllerOrGovernance {
+    for (uint i; i < _platforms.length; i++) {
+      excludedPlatforms[_platforms[i]] = _status;
+      emit PlatformStatusChanged(_platforms[i], _status);
+    }
   }
 
   // ********* DISTRIBUTOR ACTIONS ****************
@@ -168,7 +177,8 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
 
   /// @dev Calculate distribution amount and notify given vault
   function _distribute(address _vault) internal {
-    if (!ISmartVault(_vault).active()) {
+    if (!ISmartVault(_vault).active()
+    || excludedPlatforms[uint256(IStrategy(ISmartVault(_vault).strategy()).platform())]) {
       return;
     }
     RewardInfo memory info = lastInfo[_vault];

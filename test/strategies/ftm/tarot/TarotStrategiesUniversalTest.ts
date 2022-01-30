@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneTarotStrategyTest: {
       type: "number",
-      default: 1,
+      default: 45,
     },
     hardhatChainId: {
       type: "number",

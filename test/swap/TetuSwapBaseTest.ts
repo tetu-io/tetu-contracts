@@ -120,7 +120,7 @@ describe("Tetu Swap base tests", function () {
 
     if ((await ethers.provider.getNetwork()).chainId === 250) {
       expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
-    } else if ((await ethers.provider.getNetwork()).chainId === 250) {
+    } else if ((await ethers.provider.getNetwork()).chainId === 137) {
       expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
     }
     const lpV0 = (await lpCtr.vault0()).toLowerCase();

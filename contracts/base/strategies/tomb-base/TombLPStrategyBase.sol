@@ -30,15 +30,18 @@ abstract contract TombLPStrategyBase is StrategyBase{
   string public constant override STRATEGY_NAME = "TombLPStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
-  /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  string public constant VERSION = "1.0.1";
+  /// @dev 10% buyback
+  uint256 private constant _BUY_BACK_RATIO = 1000;
 
   /// @notice TShareRewardPool rewards pool
   ITShareRewardPool public tShareRewardPool;
 
   /// @notice TShareRewardPool rewards pool ID
   uint256 poolID;
+
+  /// @notice Uniswap router for underlying LP
+  address public router;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -54,11 +57,13 @@ abstract contract TombLPStrategyBase is StrategyBase{
     address _vault,
     address[] memory __rewardTokens,
     address _pool,
-    uint256 _poolID
+    uint256 _poolID,
+    address _router
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_pool != address(0), "CSB: Zero address pool");
     tShareRewardPool = ITShareRewardPool(_pool);
     poolID = _poolID;
+    router = _router;
     ITShareRewardPool.PoolInfo memory poolInfo = tShareRewardPool.poolInfo(_poolID);
     require(address(poolInfo.lpToken) == _underlyingToken, "CSB: Wrong underlying");
   }
@@ -90,10 +95,10 @@ abstract contract TombLPStrategyBase is StrategyBase{
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
+    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
     withdrawAndClaimFromPool(0);
     liquidateReward();
-    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
@@ -121,7 +126,9 @@ abstract contract TombLPStrategyBase is StrategyBase{
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    liquidateRewardDefault();
+    autocompoundLP(router);
+    // if we have not enough balance for buybacks we will autocompound 100%
+    liquidateRewardSilently();
   }
 
 }

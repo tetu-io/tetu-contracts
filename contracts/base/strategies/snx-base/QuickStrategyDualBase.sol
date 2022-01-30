@@ -16,13 +16,12 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
-import "../../interface/IStrategyWithPool.sol";
 import "../../../third_party/quick/IDragonLair.sol";
 import "../../../third_party/quick/IStakingDualRewards.sol";
 
 /// @title Abstract contract for Quick Swap strategy implementation
 /// @author belbix
-abstract contract QuickStrategyDualBase is StrategyBase, IStrategyWithPool {
+abstract contract QuickStrategyDualBase is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -40,7 +39,7 @@ abstract contract QuickStrategyDualBase is StrategyBase, IStrategyWithPool {
   address[] private quickPoolRewards = [QUICK, WMATIC];
 
   /// @notice QuickSwap Dual farm pool
-  address public override pool;
+  address public pool;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -87,7 +86,7 @@ abstract contract QuickStrategyDualBase is StrategyBase, IStrategyWithPool {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     IStakingDualRewards(pool).getReward();
     liquidateReward();
