@@ -42,7 +42,7 @@ interface IStrategy {
     STRATEGY_SPLITTER, //24
     TOMB, //25
     TAROT, //26
-    SLOT_27, //27
+    IMPERMAX, //27
     SLOT_28, //28
     SLOT_29, //29
     SLOT_30, //30
