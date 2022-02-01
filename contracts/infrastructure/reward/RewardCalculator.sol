@@ -27,7 +27,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.5.1";
+  string public constant VERSION = "1.5.2";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
@@ -184,7 +184,7 @@ contract RewardCalculator is Controllable, IRewardCalculator {
       uint targetSnapshot = lastSnapshot;
       for (uint i = length - 1; i > 0; i--) {
         uint256 time = bookkeeper.strategyEarnedSnapshotsTime(strategy, i - 1);
-        if (lastPoint > time) {
+        if (lastPoint > time || i == 1) {
           targetSnapshot = bookkeeper.strategyEarnedSnapshots(strategy, i - 1);
           lastEarnedTs = time;
           break;
