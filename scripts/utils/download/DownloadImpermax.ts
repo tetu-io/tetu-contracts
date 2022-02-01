@@ -31,7 +31,7 @@ async function main() {
   const currentRewards = new Map<string, number>();
   const underlyingToVault = new Map<string, string>();
   for (const vInfo of vaultInfos) {
-    if (vInfo.platform !== '27') {
+    if (vInfo.platform !== '28') {
       continue;
     }
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
@@ -45,7 +45,7 @@ async function main() {
 
 
   let infos: string = 'idx,lp,name,token_adr,pool_adr,tvl,borrow,utilization\n';
-  for (let i = 0; i < tokensLength; i++) {
+  for (let i = 54; i < tokensLength; i++) {
     console.log('id', i);
 
     const lp = await factory.allLendingPools(i);
