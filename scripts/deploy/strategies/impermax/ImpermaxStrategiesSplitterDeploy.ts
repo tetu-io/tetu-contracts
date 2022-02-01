@@ -3,7 +3,6 @@ import {ethers} from "hardhat";
 import {ContractReader, StrategyImpermax__factory} from "../../../../typechain";
 import {appendFileSync, readFileSync} from "fs";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 const splitters = [
   "0x4C095d11Fa462Da4c7Ccb4D8c2eC288b07291993",
@@ -72,10 +71,7 @@ async function main() {
     const name = 'IMPERMAX_' + uName;
     // *****************************
 
-    let minTvl = 100_000;
-    if (underlying.toLowerCase() === MaticAddresses.WMATIC_TOKEN) {
-      minTvl = 1_000_000;
-    }
+    const minTvl = 100_000;
 
     const impermaxes = await DeployerUtils.deployImpermaxLikeStrategies(
         signer,
