@@ -1,8 +1,7 @@
 import {MultiSwapLoader} from "../../typechain";
 import * as fs from 'fs';
-import {BigNumber} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {ethers} from "hardhat";
-
 
 const MULTI_SWAP_LOADER_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
 
@@ -12,7 +11,7 @@ type Pair = {
   lp: string;
   tokenIn: string;
   tokenOut: string;
-  reverse: boolean;
+  reverse: boolean; // false: change token0 to token1; true: change token1 to token0
   stepNumber: number;
   reserve0?: BigNumber;
   reserve1?: BigNumber;
@@ -26,6 +25,11 @@ type Route = {
   steps: Pair[];
   finished: boolean;
   amountOut?: BigNumber;
+}
+
+type Step = {
+  lp: string;
+  reverse: boolean;
 }
 
 async function loadAllPairs(
@@ -67,9 +71,6 @@ function indexAllPairs(pairs: string[][]): IndexedPairs {
   }
 
   for (const p of pairs) {
-    // p[0] = p[0].toLowerCase()
-    // p[1] = p[1].toLowerCase()
-    // p[2] = p[2].toLowerCase()
     const pair: Pair = {lp: p[0], tokenIn: p[1], tokenOut: p[2], reverse: false, stepNumber: 0}
     pushPairToWays(pair)
     const reversePair: Pair = {lp: p[0], tokenIn: p[2], tokenOut: p[1], reverse: true, stepNumber: 0}
@@ -87,7 +88,7 @@ function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string
   const finishedRoutes: Route[] = []
   const firstPairs = allPairs[tokenIn]
 
-  // first step - we fill pairs with tokenIn
+  // first step - we fill pairs with tokenIn as first step
   for (const pair of firstPairs) {
     pair.stepNumber = 1;
     const finished = pair.tokenOut === tokenOut;
@@ -127,6 +128,15 @@ function findAllRoutes(allPairs: IndexedPairs, tokenIn: string, tokenOut: string
     }
   }
   return finishedRoutes
+}
+
+function getAllRoutes(pairs: string[][], tokenIn: string, tokenOut: string, maxRouteLength: number = 5): Route[] {
+  console.time('indexAllPairs')
+  const allPairs = indexAllPairs(pairs)
+  console.timeEnd('indexAllPairs')
+  console.log('pairs.length', pairs.length);
+  console.log('keys allPairs.length', Object.keys(allPairs).length);
+  return findAllRoutes(allPairs, tokenIn, tokenOut, maxRouteLength);
 }
 
 function extractPairsFromRoutes(routes: Route[]): IndexedPair {
@@ -225,15 +235,21 @@ function getBestRoute(routes: Route[]): Route | null {
   return bestRoute
 }
 
-function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): number[] {
+type RoutesData = {
+  weights: number[];
+  routes: Route[];
+  amountOut: BigNumber;
+}
+
+function getBestRoutes(routes: Route[], amountIn: BigNumber, maxRoutes = 5): RoutesData {
   const weights: number[] = [];
   const percentStep = 5;
 
   let bestWeights: number[] = [];
   let bestOutput = BIGNUMBER0;
-  let weightsTested = 0; // TODO remove
+  let variantsTested = 0; // TODO remove
 
-  const calcOutput = function(): BigNumber {
+  const calcRoutesOutput = function(): BigNumber {
     let totalOutput = BIGNUMBER0;
     for (let routeIndex = 0; routeIndex < maxRoutes; routeIndex++) {
       const route = routes[routeIndex];
@@ -244,17 +260,17 @@ function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): n
     return totalOutput
   }
 
+  /// Recursive function to iterate all variants, splitting 0-100% to max routes
   const iterate = function(percentage: number, weightIndex: number) {
     if (weightIndex === 0) {
       weights[0] = percentage;
-      const output = calcOutput();
-      weightsTested ++; // TODO remove
+      const output = calcRoutesOutput();
+      variantsTested ++; // TODO remove
       if (output.gt(bestOutput)) {
         bestOutput = output;
         bestWeights = [...weights];
       }
       // console.log('weights', weights, output.toString(), bestOutput.toString()); // TODO rm
-
     } else {
       for (let part = 0; part <= percentage; part += percentStep) {
         weights[weightIndex] = part;
@@ -268,14 +284,52 @@ function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): n
   const bestRoute = getBestRoute(routes)
   const bestRouteOutput = bestRoute?.amountOut || BIGNUMBER0;
 
-  console.log('weightsTested', weightsTested);
+  console.log('variantsTested', variantsTested);
   console.log('amount in    ', amountIn.toString());
   console.log('route  Output', bestRouteOutput.toString());
   console.log('weight Output', bestOutput.toString());
   console.log('increase %  +', bestOutput.mul(100).div(bestRouteOutput).toNumber() - 100);
-  return bestWeights;
+  return {
+    weights: bestWeights,
+    routes: routes.slice(0,weights.length),
+    amountOut: bestOutput
+  };
 }
 
+function encodeRouteData(routesData: RoutesData): string {
+  const weights = routesData.weights;
+  const filteredWeights: number[] = [];
+  const filteredSteps: Step[][] = [];
+  for (let i = 0; i < weights.length; i ++) {
+    if (weights[i] > 0) {
+      filteredWeights.push(weights[i]);
+      const steps: Step[] = [];
+      const route = routesData.routes[i];
+      for (const pair of route.steps) {
+        steps.push({lp:pair.lp, reverse:pair.reverse});
+      }
+      filteredSteps.push(steps)
+    }
+  }
+
+  console.log('filteredSteps', filteredSteps);
+  console.log('filteredWeights', filteredWeights);
+
+  return utils.defaultAbiCoder.encode(
+      ['uint[]', 'tuple(address lp, bool reverse)[][]'],
+      [filteredWeights, filteredSteps]
+  );
+}
+
+function findBestRoutes(allRoutes: Route[], amountIn: BigNumber): RoutesData {
+  console.time('calculateOutputs')
+  calculateOutputs(allRoutes, amountIn)
+  console.timeEnd('calculateOutputs')
+
+  sortRoutesByOutputs(allRoutes)
+
+  return getBestRoutes(allRoutes, amountIn);
+}
 
 export {
   MULTI_SWAP_LOADER_MATIC,
@@ -284,10 +338,12 @@ export {
   saveObjectToJsonFile,
   indexAllPairs,
   findAllRoutes,
+  getAllRoutes,
   extractPairsFromRoutes,
   loadReserves,
   calculateOutputs,
   sortRoutesByOutputs,
   getBestRoute,
-  findBestWeights
+  findBestRoutes,
+  encodeRouteData,
 }

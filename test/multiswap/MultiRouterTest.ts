@@ -3,24 +3,17 @@ import chaiAsPromised from "chai-as-promised";
 import {
   MultiSwapLoader,
 } from "../../typechain";
-import {ethers, web3, network} from "hardhat";
+import {ethers, network} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {BigNumber, BigNumberish} from "ethers";
+// import {BigNumber, BigNumberish} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-  loadAllPairs,
-  Pair,
-  saveObjectToJsonFile,
-  indexAllPairs,
-  findAllRoutes,
-  extractPairsFromRoutes,
+  getAllRoutes,
   loadReserves,
   MULTI_SWAP_LOADER_MATIC,
-  calculateOutputs,
-  sortRoutesByOutputs,
-  getBestRoute,
-  findBestWeights
+  findBestRoutes,
+  encodeRouteData
 } from "../../scripts/multiswap/MultiSwapLib";
 import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
 
@@ -50,22 +43,16 @@ describe("MultiSwapLoader base tests", function () {
   });
 
   it("generateWays", async () => {
-    console.time('indexAllPairs')
-    const allPairs = indexAllPairs(pairs)
-    console.timeEnd('indexAllPairs')
-    console.log('pairs.length', pairs.length);
-    console.log('keys allPairs.length', Object.keys(allPairs).length);
-
-    console.time('findAllRoutes')
-    const allRoutes = findAllRoutes(
-        allPairs,
+    console.time('getAllRoutes')
+    const allRoutes = getAllRoutes(
+        pairs,
         // MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN,
         // MaticAddresses.USDC_TOKEN, MaticAddresses.USDC_TOKEN,
         // MaticAddresses.TETU_TOKEN, MaticAddresses.TETU_TOKEN,
         // MaticAddresses.WMATIC_TOKEN, MaticAddresses.WMATIC_TOKEN,
         MaticAddresses.AAVE_TOKEN, MaticAddresses.USDC_TOKEN,
         4)
-    console.timeEnd('findAllRoutes')
+    console.timeEnd('getAllRoutes')
     console.log('allRoutes', allRoutes);
     console.log('allRoutes.length', allRoutes.length);
 
@@ -75,21 +62,11 @@ describe("MultiSwapLoader base tests", function () {
     console.timeEnd('loadReserves')
 
     const amountIn = ethers.utils.parseUnits('5000', 'ether')
-    console.time('calculateOutputs')
-    calculateOutputs(allRoutes, amountIn)
-    console.timeEnd('calculateOutputs')
+    const routesData = findBestRoutes(allRoutes, amountIn)
+    console.log('routesData', routesData);
 
-    sortRoutesByOutputs(allRoutes)
-    console.log('allRoutes', allRoutes);
-
-    const bestRoute = getBestRoute(allRoutes)
-    console.log('bestRoute', bestRoute);
-
-    console.time('findBestWeights')
-    const bestWeights = findBestWeights(allRoutes, amountIn);
-    console.timeEnd('findBestWeights')
-    // console.log('Routes', allRoutes.slice(0,5));
-    console.log('bestWeights', bestWeights);
+    const encodedData = encodeRouteData(routesData);
+    console.log('encodedData', encodedData);
 
   })
 
