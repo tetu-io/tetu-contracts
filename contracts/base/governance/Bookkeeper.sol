@@ -28,7 +28,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.3";
+  string public constant VERSION = "1.1.4";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault. Can have another length than strategies.
@@ -190,14 +190,33 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
       address[] memory subStrategies = IStrategySplitter(strategy).allStrategies();
       for (uint i; i < subStrategies.length; i++) {
         address subStrategy = subStrategies[i];
-        strategyEarnedSnapshots[subStrategy].push(targetTokenEarned[subStrategy]);
+
+        uint currentEarned = targetTokenEarned[subStrategy];
+        uint currentLength = strategyEarnedSnapshotsLength[subStrategy];
+        if (currentLength > 0) {
+          uint prevEarned = strategyEarnedSnapshots[subStrategy][currentLength - 1];
+          if (currentEarned == prevEarned) {
+            // don't write zero values
+            continue;
+          }
+        }
+
+        strategyEarnedSnapshots[subStrategy].push(currentEarned);
         strategyEarnedSnapshotsTime[subStrategy].push(block.timestamp);
         strategyEarnedSnapshotsLength[subStrategy] = strategyEarnedSnapshots[subStrategy].length;
       }
     } else {
-      strategyEarnedSnapshots[strategy].push(targetTokenEarned[strategy]);
-      strategyEarnedSnapshotsTime[strategy].push(block.timestamp);
-      strategyEarnedSnapshotsLength[strategy] = strategyEarnedSnapshots[strategy].length;
+      uint currentEarned = targetTokenEarned[strategy];
+      uint currentLength = strategyEarnedSnapshotsLength[strategy];
+      if (currentLength > 0) {
+        uint prevEarned = strategyEarnedSnapshots[strategy][currentLength - 1];
+        // don't write zero values
+        if (currentEarned != prevEarned) {
+          strategyEarnedSnapshots[strategy].push(currentEarned);
+          strategyEarnedSnapshotsTime[strategy].push(block.timestamp);
+          strategyEarnedSnapshotsLength[strategy] = strategyEarnedSnapshots[strategy].length;
+        }
+      }
     }
     emit RewardDistribution(vault, rewardToken, amount, block.timestamp);
   }
