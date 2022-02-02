@@ -1,7 +1,7 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
-  MultiRouter,
+  MultiSwapLoader,
 } from "../../typechain";
 import {ethers, web3, network} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
@@ -16,13 +16,13 @@ import {
   findAllRoutes,
   extractPairsFromRoutes,
   loadReserves,
-  MULTI_ROUTER_MATIC,
+  MULTI_SWAP_LOADER_MATIC,
   calculateOutputs,
   sortRoutesByOutputs,
   getBestRoute,
   findBestWeights
-} from "../../scripts/multiswap/MultiRouterLib";
-import pairsJson from '../../scripts/multiswap/json/MultiRouterPairs.json'
+} from "../../scripts/multiswap/MultiSwapLib";
+import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
 
 const pairs = pairsJson as string[][]
 
@@ -30,17 +30,18 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 let signer: SignerWithAddress;
-let multiRouter: MultiRouter;
+let multiSwapLoader: MultiSwapLoader;
 
-describe("MultiRouter base tests", function () {
+describe("MultiSwapLoader base tests", function () {
 
   before(async function () {
     signer = (await ethers.getSigners())[0];
     console.log('network.name', network.name);
     if (network.name === 'matic') {
-      multiRouter = await DeployerUtils.connectInterface(signer, "MultiRouter", MULTI_ROUTER_MATIC) as MultiRouter
+      multiSwapLoader = await DeployerUtils.connectInterface(
+          signer, "MultiSwapLoader", MULTI_SWAP_LOADER_MATIC) as MultiSwapLoader
     } else if (network.name === 'hardhat') {
-      multiRouter = await DeployerUtils.deployContract(signer, 'MultiRouter') as MultiRouter;
+      multiSwapLoader = await DeployerUtils.deployContract(signer, 'MultiSwapLoader') as MultiSwapLoader;
     } else
       console.error('Unsupported network', network.name)
   })
@@ -70,7 +71,7 @@ describe("MultiRouter base tests", function () {
 
 
     console.time('loadReserves')
-    await loadReserves(multiRouter, allRoutes)
+    await loadReserves(multiSwapLoader, allRoutes)
     console.timeEnd('loadReserves')
 
     const amountIn = ethers.utils.parseUnits('5000', 'ether')

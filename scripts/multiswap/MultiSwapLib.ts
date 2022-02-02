@@ -1,10 +1,10 @@
-import {MultiRouter} from "../../typechain";
+import {MultiSwapLoader} from "../../typechain";
 import * as fs from 'fs';
 import {BigNumber} from "ethers";
 import {ethers} from "hardhat";
 
-// const MULTI_ROUTER_MATIC = '0x6dB6CeA8BB997525164a8960d74143685b0a00F7'
-const MULTI_ROUTER_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
+
+const MULTI_SWAP_LOADER_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
 
 const BIGNUMBER0 = BigNumber.from(0);
 
@@ -29,7 +29,7 @@ type Route = {
 }
 
 async function loadAllPairs(
-    multiRouter: MultiRouter,
+    multiSwapLoader: MultiSwapLoader,
     factories: string[],
     bath = 1000): Promise<string[][]> {
   const pairs: string[][] = [];
@@ -38,7 +38,7 @@ async function loadAllPairs(
     let skip = 0;
     let p
     do {
-      p = await multiRouter.loadPairsUniswapV2(factory, skip, bath)
+      p = await multiSwapLoader.loadPairsUniswapV2(factory, skip, bath)
       console.log(' skip, bath, loaded', skip, bath, p.length);
       pairs.push(...p)
       skip += p.length
@@ -140,9 +140,9 @@ function extractPairsFromRoutes(routes: Route[]): IndexedPair {
   return pairs
 }
 
-async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
+async function loadPairReserves(multiSwapLoader: MultiSwapLoader, pairs: IndexedPair) {
   const addresses = Object.keys(pairs)
-  const reserves = await multiRouter.loadPairReserves(addresses)
+  const reserves = await multiSwapLoader.loadPairReserves(addresses)
   for (let p = 0; p < addresses.length; p++) {
     const pair: Pair = pairs[addresses[p]]
     const reserve = reserves[p]
@@ -158,11 +158,11 @@ async function loadPairReserves(multiRouter: MultiRouter, pairs: IndexedPair) {
   }
 }
 
-async function loadReserves(multiRouter: MultiRouter, routes: Route[]) {
+async function loadReserves(multiSwapLoader: MultiSwapLoader, routes: Route[]) {
   const usedPairs = extractPairsFromRoutes(routes);
   const usedPairsKeys = Object.keys(usedPairs) // TODO remove
   console.log('usedPairsKeys.length', usedPairsKeys.length); // TODO remove
-  await loadPairReserves(multiRouter, usedPairs);
+  await loadPairReserves(multiSwapLoader, usedPairs);
 }
 
 // copy from UniswapV2Library
@@ -227,11 +227,11 @@ function getBestRoute(routes: Route[]): Route | null {
 
 function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): number[] {
   const weights: number[] = [];
-  const step = 5;
+  const percentStep = 5;
 
   let bestWeights: number[] = [];
   let bestOutput = BIGNUMBER0;
-  let weightsTested = 0;
+  let weightsTested = 0; // TODO remove
 
   const calcOutput = function(): BigNumber {
     let totalOutput = BIGNUMBER0;
@@ -248,7 +248,7 @@ function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): n
     if (weightIndex === 0) {
       weights[0] = percentage;
       const output = calcOutput();
-      weightsTested ++;
+      weightsTested ++; // TODO remove
       if (output.gt(bestOutput)) {
         bestOutput = output;
         bestWeights = [...weights];
@@ -256,7 +256,7 @@ function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): n
       // console.log('weights', weights, output.toString(), bestOutput.toString()); // TODO rm
 
     } else {
-      for (let part = 0; part <= percentage; part += step) {
+      for (let part = 0; part <= percentage; part += percentStep) {
         weights[weightIndex] = part;
         iterate(percentage - part, weightIndex - 1);
       }
@@ -278,7 +278,7 @@ function findBestWeights(routes: Route[], amountIn: BigNumber, maxRoutes = 5): n
 
 
 export {
-  MULTI_ROUTER_MATIC,
+  MULTI_SWAP_LOADER_MATIC,
   Pair,
   loadAllPairs,
   saveObjectToJsonFile,

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: ISC
 /**
 * By using this software, you understand, acknowledge and accept that Tetu
 * and/or the underlying software are provided “as is” and “as available”
@@ -12,17 +12,17 @@
 
 pragma solidity 0.8.4;
 
-import "../third_party/uniswap/IUniswapV2Factory.sol";
-import "../third_party/uniswap/IUniswapV2Pair.sol";
-import "../third_party/IERC20Name.sol";
-import "../swap/libraries/Math.sol";
+import "../../third_party/uniswap/IUniswapV2Factory.sol";
+import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/IERC20Name.sol";
+import "../../swap/libraries/Math.sol";
 
 import "hardhat/console.sol"; // TODO remove
 
-/// @title MultiRouter
-/// @dev Multi Swap
+/// @title MultiSwapLoader
+/// @dev Multi Swap Data Loader
 /// @author bogdoslav
-contract MultiRouter /*is IMultiRouter*/ { // TODO interface
+contract MultiSwapLoader /*is IMultiSwapLoader*/ { // TODO interface
 
   struct LpData {
     address lp;
