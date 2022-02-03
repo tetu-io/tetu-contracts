@@ -56,7 +56,7 @@ contract PayrollClerk is PayrollClerkStorage {
     return workers.length;
   }
 
-  function getPrice(address token) public view returns (uint256) {
+  function getPrice(address token) internal view returns (uint256) {
     return IPriceCalculator(calculator()).getPriceWithDefaultOutput(token);
   }
 
