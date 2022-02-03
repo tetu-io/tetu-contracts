@@ -88,7 +88,6 @@ contract PayrollClerk is PayrollClerkStorage {
     ) public onlyControllerOrGovernance {
         require(baseHourlyRates[worker] != 0, "worker not registered");
 
-        uint256 totalSalaryUsd;
         (uint256 salaryUsd, uint256 salaryToken) = computeSalary(
             worker,
             _workedHours,
@@ -100,15 +99,9 @@ contract PayrollClerk is PayrollClerkStorage {
             "not enough fund"
         );
         IERC20(token).safeTransfer(worker, salaryToken);
-        totalSalaryUsd = totalSalaryUsd.add(salaryUsd);
         workedHours[worker] = workedHours[worker].add(_workedHours);
-        earned[worker] = earned[worker].add(totalSalaryUsd);
-        emit SalaryPaid(
-            worker,
-            totalSalaryUsd,
-            _workedHours,
-            hourlyRate(worker)
-        );
+        earned[worker] = earned[worker].add(salaryUsd);
+        emit SalaryPaid(worker, salaryUsd, _workedHours, hourlyRate(worker));
     }
 
     function computeSalary(
