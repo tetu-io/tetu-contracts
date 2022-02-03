@@ -64,6 +64,10 @@ contract PayrollClerk is PayrollClerkStorage {
         return workers.length;
     }
 
+    function getPrice(address token) public view returns (uint256) {
+        return IPriceCalculator(calculator()).getPriceWithDefaultOutput(token);
+    }
+
     function multiplePay(
         address[] calldata _workers,
         uint256[] calldata _workedHours
@@ -71,8 +75,7 @@ contract PayrollClerk is PayrollClerkStorage {
         require(_workers.length == _workedHours.length, "wrong arrays");
 
         for (uint256 h = 0; h < tokens.length; h++) {
-            uint256 tPrice = IPriceCalculator(calculator())
-                .getPriceWithDefaultOutput(tokens[h]);
+            uint256 tPrice = getPrice(tokens[h]);
 
             for (uint256 i = 0; i < _workers.length; i++) {
                 pay(_workers[i], _workedHours[i], tokens[h], tPrice);
