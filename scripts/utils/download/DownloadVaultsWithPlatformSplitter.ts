@@ -18,7 +18,7 @@ async function main() {
       'name,' +
       'strategy' +
       '\n';
-  for (let i = 10; i < vaults.length; i++) {
+  for (let i = 0; i < vaults.length; i++) {
     const info = await contractReader.vaultInfo(vaults[i]);
     if (info.platform !== 24) {
       console.log('skip ', i, ' ', info.name.toString())
