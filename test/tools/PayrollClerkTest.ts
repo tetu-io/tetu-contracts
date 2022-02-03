@@ -14,7 +14,7 @@ import { UniswapUtils } from '../UniswapUtils';
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-describe.only('Payroll Clerk tests', function () {
+describe('Payroll Clerk tests', function() {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -24,7 +24,7 @@ describe.only('Payroll Clerk tests', function () {
   let usdc: string;
   let networkToken: string;
 
-  before(async function () {
+  before(async function() {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
@@ -58,15 +58,15 @@ describe.only('Payroll Clerk tests', function () {
     await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, '10000');
   });
 
-  after(async function () {
+  after(async function() {
     await TimeUtils.rollback(snapshot);
   });
 
-  beforeEach(async function () {
+  beforeEach(async function() {
     snapshotForEach = await TimeUtils.snapshot();
   });
 
-  afterEach(async function () {
+  afterEach(async function() {
     await TimeUtils.rollback(snapshotForEach);
   });
 
@@ -80,7 +80,6 @@ describe.only('Payroll Clerk tests', function () {
     );
 
     const workerIdx = await clerk.workerIndex(signer.address);
-    console.log(workerIdx);
     expect(workerIdx).is.eq(0);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
@@ -102,7 +101,8 @@ describe.only('Payroll Clerk tests', function () {
       signer.address
     );
 
-    await clerk.multiplePay([signer.address], [1]);
+    const tPrice = await clerk.getPrice(core.rewardToken.address);
+    await clerk.pay(signer.address, 1, core.rewardToken.address, tPrice);
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
@@ -168,7 +168,13 @@ describe.only('Payroll Clerk tests', function () {
     const p2 = await calculator.getPriceWithDefaultOutput(networkToken);
 
     expect(await TokenUtils.balanceOf(networkToken, signer.address)).eq(
-      balance2.add(utils.parseUnits('100').mul(1e9).mul(1e9).div(p2))
+      balance2.add(
+        utils
+          .parseUnits('100')
+          .mul(1e9)
+          .mul(1e9)
+          .div(p2)
+      )
     );
   });
 
@@ -194,7 +200,8 @@ describe.only('Payroll Clerk tests', function () {
       signer.address
     );
 
-    await clerk.multiplePay([signer.address], [1000]);
+    const tPrice = await clerk.getPrice(core.rewardToken.address);
+    await clerk.pay(signer.address, 1000, core.rewardToken.address, tPrice);
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
@@ -212,7 +219,7 @@ describe.only('Payroll Clerk tests', function () {
       b
     );
 
-    await clerk.multiplePay([signer.address], [1]);
+    await clerk.pay(signer.address, 1, core.rewardToken.address, tPrice);
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
@@ -230,7 +237,7 @@ describe.only('Payroll Clerk tests', function () {
     );
 
     await clerk.setBaseHourlyRate(signer.address, 50);
-    await clerk.multiplePay([signer.address], [1]);
+    await clerk.pay(signer.address, 1, core.rewardToken.address, tPrice);
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
@@ -260,7 +267,8 @@ describe.only('Payroll Clerk tests', function () {
       signer.address
     );
 
-    await clerk.multiplePay([signer.address], [1000]);
+    const tPrice = await clerk.getPrice(core.rewardToken.address);
+    await clerk.pay(signer.address, 1000, core.rewardToken.address, tPrice);
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
@@ -278,7 +286,7 @@ describe.only('Payroll Clerk tests', function () {
       b
     );
 
-    await clerk.multiplePay([signer.address], [1]);
+    await clerk.pay(signer.address, 1, core.rewardToken.address, tPrice);
 
     expect(
       await TokenUtils.balanceOf(core.rewardToken.address, signer.address)
@@ -286,17 +294,20 @@ describe.only('Payroll Clerk tests', function () {
   });
 
   it('should not pay salary for unknown worker', async () => {
-    await expect(clerk.multiplePay([signer.address], [1])).rejectedWith(
-      'worker not registered'
-    );
+    const tPrice = await clerk.getPrice(core.rewardToken.address);
+    await expect(
+      clerk.pay(signer.address, 1, core.rewardToken.address, tPrice)
+    ).rejectedWith('worker not registered');
   });
 
   it('should not pay salary without funds', async () => {
     await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.changeTokens([core.rewardToken.address], [100]);
-    await expect(clerk.multiplePay([signer.address], [1])).rejectedWith(
-      'not enough fund'
-    );
+
+    const tPrice = await clerk.getPrice(core.rewardToken.address);
+    await expect(
+      clerk.pay(signer.address, 1, core.rewardToken.address, tPrice)
+    ).rejectedWith('not enough fund');
   });
 
   it('should salvage token', async () => {
