@@ -113,8 +113,6 @@ contract PayrollClerk is PayrollClerkStorage {
         address token,
         uint256 tPrice
     ) public view returns (uint256 salaryUsd, uint256 salaryToken) {
-        // uint256 tPrice = IPriceCalculator(calculator())
-        //     .getPriceWithDefaultOutput(token);
         uint256 hRate = hourlyRate(worker);
         salaryUsd = hRate
             .mul(_workedHours)
