@@ -30,7 +30,7 @@ abstract contract NachoLPStrategyBase is StrategyBase{
   string public constant override STRATEGY_NAME = "NachoLPStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
@@ -90,10 +90,10 @@ abstract contract NachoLPStrategyBase is StrategyBase{
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
+    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
     withdrawAndClaimFromPool(0);
     liquidateReward();
-    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************

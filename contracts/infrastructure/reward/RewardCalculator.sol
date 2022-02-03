@@ -27,14 +27,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.5.0";
+  string public constant VERSION = "1.5.2";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
   uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
   uint256 public constant AVG_REWARDS = 7;
-  uint256 public constant LAST_EARNED = 3;
+  uint256 public constant SNAPSHOTS_AVG_TIME = 3 days;
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
@@ -174,20 +174,25 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   function strategyEarnedAvg(address strategy)
   public view returns (uint256 earned, uint256 lastEarnedTs){
     IBookkeeper bookkeeper = IBookkeeper(IController(controller()).bookkeeper());
-    uint256 lastEarned = 0;
     lastEarnedTs = 0;
     earned = 0;
 
-    uint256 earnedSize = bookkeeper.strategyEarnedSnapshotsLength(strategy);
-    uint i = Math.min(earnedSize, LAST_EARNED);
-    if (earnedSize > 0) {
-      lastEarned = bookkeeper.strategyEarnedSnapshots(strategy, earnedSize - i);
-      lastEarnedTs = bookkeeper.strategyEarnedSnapshotsTime(strategy, earnedSize - i);
-    }
-    lastEarnedTs = Math.max(lastEarnedTs, IControllableExtended(strategy).created());
-    uint256 currentEarned = bookkeeper.targetTokenEarned(strategy);
-    if (currentEarned >= lastEarned) {
-      earned = currentEarned - lastEarned;
+    uint256 length = bookkeeper.strategyEarnedSnapshotsLength(strategy);
+    if (length >= 2) {
+      uint lastPoint = block.timestamp - SNAPSHOTS_AVG_TIME;
+      uint lastSnapshot = bookkeeper.strategyEarnedSnapshots(strategy, length - 1);
+      uint targetSnapshot = lastSnapshot;
+      for (uint i = length - 1; i > 0; i--) {
+        uint256 time = bookkeeper.strategyEarnedSnapshotsTime(strategy, i - 1);
+        if (lastPoint > time || i == 1) {
+          targetSnapshot = bookkeeper.strategyEarnedSnapshots(strategy, i - 1);
+          lastEarnedTs = time;
+          break;
+        }
+      }
+      earned = lastSnapshot - targetSnapshot;
+    } else if (length == 1) {
+      earned = bookkeeper.strategyEarnedSnapshots(strategy, length - 1);
     }
   }
 

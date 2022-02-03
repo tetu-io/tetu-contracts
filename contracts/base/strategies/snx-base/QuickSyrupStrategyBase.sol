@@ -82,7 +82,7 @@ contract QuickSyrupStrategyBase is StrategyBase {
   }
 
   /// @dev HardWork function for Strategy Base implementation
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     //    investAllUnderlying();
     _claimAll();
     liquidateReward();

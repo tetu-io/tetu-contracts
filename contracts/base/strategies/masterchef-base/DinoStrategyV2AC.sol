@@ -12,12 +12,11 @@
 
 pragma solidity 0.8.4;
 import "../StrategyBase.sol";
-import "../../interface/IMasterChefStrategyV2.sol";
 import "../../../third_party/dino/IFossilFarms.sol";
 
 /// @title Abstract contract for Dino strategy implementation
 /// @author belbix
-abstract contract DinoStrategyV2AC is StrategyBase, IMasterChefStrategyV2 {
+abstract contract DinoStrategyV2AC is StrategyBase {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -30,9 +29,9 @@ abstract contract DinoStrategyV2AC is StrategyBase, IMasterChefStrategyV2 {
   uint256 private constant _BUY_BACK_RATIO = 100;
 
   /// @notice Dino rewards pool
-  address public override pool;
+  address public pool;
   /// @notice Dino FossilFarms rewards pool ID
-  uint256 public override poolID;
+  uint256 public poolID;
   /// @notice Uniswap router for underlying LP
   address public router;
 
@@ -103,7 +102,7 @@ abstract contract DinoStrategyV2AC is StrategyBase, IMasterChefStrategyV2 {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     IFossilFarms(pool).withdraw(poolID,0);
     liquidateReward();

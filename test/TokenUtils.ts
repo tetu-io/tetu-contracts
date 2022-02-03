@@ -8,6 +8,7 @@ import chaiAsPromised from "chai-as-promised";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 import {Misc} from "../scripts/utils/tools/Misc";
+import {StrategyTestUtils} from "./strategies/StrategyTestUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -77,6 +78,31 @@ export class TokenUtils {
     [FtmAddresses.TOMB_TOKEN, '0xF50c6dAAAEC271B56FCddFBC38F0b56cA45E6f0d'.toLowerCase()], // tomb treasury Fund
     [FtmAddresses.TSHARE_TOKEN,'0x8764DE60236C5843D9faEB1B638fbCE962773B67'.toLowerCase()], // tomb masonry
     [FtmAddresses.BOO_TOKEN,'0xa48d959ae2e88f1daa7d5f611e01908106de7598'.toLowerCase()], // xBOO
+    [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()], // beets masterchef
+    [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BEETS_USDC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BEETS_FTM_TOKEN,'0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1'.toLowerCase()],
+    [FtmAddresses.BPT_GRAND_ORCH_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_FTM_SONATA_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_E_MAJOR_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_B_MAJOR_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_CLASSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_LBP_DANCE_DEGEN_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_FTM_OPERA_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BeetXLP_MIM_USDC_USDT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BLP_USDC_MAI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BPT_DANIELE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_MOOSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_PAINT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_FTMUSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_GUQINQI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_QUARTET_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_ICEFIRE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_CRVLINK_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_HND_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_BNBARON_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_STABEET,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
+    [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

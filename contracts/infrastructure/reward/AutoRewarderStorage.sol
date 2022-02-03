@@ -39,6 +39,8 @@ abstract contract AutoRewarderStorage is Initializable {
   mapping(address => uint256) public lastDistributionTs;
   /// @dev Last distributed amount for vaults
   mapping(address => uint256) public lastDistributedAmount;
+  /// @dev Skip distribution for vaults with this strategy platform id
+  mapping(uint256 => bool) public excludedPlatforms;
 
   /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
@@ -137,5 +139,5 @@ abstract contract AutoRewarderStorage is Initializable {
   }
 
   //slither-disable-next-line unused-state
-  uint256[50] private ______gap;
+  uint256[49] private ______gap;
 }

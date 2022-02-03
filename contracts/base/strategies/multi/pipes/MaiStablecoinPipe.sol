@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/IErc20Stablecoin.sol";
-import "../../../interface/IMaiStablecoinPipe.sol";
+import "../../../interface/strategies/IMaiStablecoinPipe.sol";
 
 /// @title Mai Stablecoin Pipe Contract
 /// @author bogdoslav

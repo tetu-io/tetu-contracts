@@ -12,8 +12,6 @@
 
 pragma solidity 0.8.4;
 
-import "../../third_party/cafe/ICafeMasterChef.sol";
-
 interface IFoldStrategy {
 
   function borrowTargetFactorNumeratorStored() external view returns (uint);

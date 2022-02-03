@@ -84,10 +84,11 @@ async function collect(pool: string, signer: SignerWithAddress) {
   const calculator = PriceCalculator__factory.connect(tools.calculator, signer);
 
   const underlying = await poolUnderlying(pool, signer);
+  const dec = await TokenUtils.decimals(underlying);
   const underlyingName = await TokenUtils.tokenSymbol(underlying);
   const price = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(underlying));
-  const tvl = await poolTvl(pool, signer) * price;
-  const borrowed = await poolBorrowed(pool, signer) * price;
+  const tvl = await poolTvl(pool, dec, signer) * price;
+  const borrowed = await poolBorrowed(pool, dec, signer) * price;
   const utilisation = ((borrowed / tvl) * 100).toFixed(2);
   return underlyingName + ','
     + underlying + ','
@@ -97,17 +98,17 @@ async function collect(pool: string, signer: SignerWithAddress) {
     + utilisation
 }
 
-async function poolTvl(adr: string, signer: SignerWithAddress) {
+async function poolTvl(adr: string, dec: number, signer: SignerWithAddress) {
   const pool = IBorrowable__factory.connect(adr, signer);
   const rate = +utils.formatUnits(await pool.callStatic.exchangeRate());
-  const totalSupply = +utils.formatUnits(await pool.totalSupply());
+  const totalSupply = +utils.formatUnits(await pool.totalSupply(), dec);
   return rate * totalSupply;
 }
 
-async function poolBorrowed(adr: string, signer: SignerWithAddress) {
+async function poolBorrowed(adr: string, dec: number, signer: SignerWithAddress) {
   const pool = IBorrowable__factory.connect(adr, signer);
   const rate = +utils.formatUnits(await pool.callStatic.exchangeRate());
-  const amount = +utils.formatUnits(await pool.totalBorrows());
+  const amount = +utils.formatUnits(await pool.totalBorrows(), dec);
   return rate * amount;
 }
 
