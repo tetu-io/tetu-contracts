@@ -64,16 +64,15 @@ contract PayrollClerk is PayrollClerkStorage {
   external onlyControllerOrGovernance {
     require(_workers.length == _workedHours.length, "wrong arrays");
     for (uint256 h = 0; h < tokens.length; h++) {
-
+      uint256 tPrice = getPrice(tokens[h]);
       for (uint256 i = 0; i < _workers.length; i++) {
-        pay(_workers[i], _workedHours[i], tokens[h]);
+        require(baseHourlyRates[_workers[i]] != 0, "worker not registered");
+        pay(_workers[i], _workedHours[i], tokens[h], tPrice);
       }
     }
   }
 
-  function pay(address worker, uint256 _workedHours, address token) internal onlyControllerOrGovernance {
-    require(baseHourlyRates[worker] != 0, "worker not registered");
-    uint256 tPrice = getPrice(token);
+  function pay(address worker, uint256 _workedHours, address token, uint256 tPrice) internal onlyControllerOrGovernance {
     (uint256 salaryUsd, uint256 salaryToken) = computeSalary(worker, _workedHours, token, tPrice);
     require(salaryToken <= ERC20(token).balanceOf(address(this)), "not enough fund");
     IERC20(token).safeTransfer(worker, salaryToken);
