@@ -1,4 +1,4 @@
-import {MultiSwapLoader} from "../../typechain";
+import {MultiSwap2} from "../../typechain";
 import * as fs from 'fs';
 import {BigNumber, utils} from "ethers";
 import {ethers} from "hardhat";
@@ -33,7 +33,7 @@ type Step = {
 }
 
 async function loadAllPairs(
-    multiSwapLoader: MultiSwapLoader,
+    multiSwap2: MultiSwap2,
     factories: string[],
     bath = 1000): Promise<string[][]> {
   const pairs: string[][] = [];
@@ -42,7 +42,7 @@ async function loadAllPairs(
     let skip = 0;
     let p
     do {
-      p = await multiSwapLoader.loadPairsUniswapV2(factory, skip, bath)
+      p = await multiSwap2.loadPairsUniswapV2(factory, skip, bath)
       console.log(' skip, bath, loaded', skip, bath, p.length);
       pairs.push(...p)
       skip += p.length
@@ -150,9 +150,9 @@ function extractPairsFromRoutes(routes: Route[]): IndexedPair {
   return pairs
 }
 
-async function loadPairReserves(multiSwapLoader: MultiSwapLoader, pairs: IndexedPair) {
+async function loadPairReserves(multiSwap2: MultiSwap2, pairs: IndexedPair) {
   const addresses = Object.keys(pairs)
-  const reserves = await multiSwapLoader.loadPairReserves(addresses)
+  const reserves = await multiSwap2.loadPairReserves(addresses)
   for (let p = 0; p < addresses.length; p++) {
     const pair: Pair = pairs[addresses[p]]
     const reserve = reserves[p]
@@ -168,11 +168,11 @@ async function loadPairReserves(multiSwapLoader: MultiSwapLoader, pairs: Indexed
   }
 }
 
-async function loadReserves(multiSwapLoader: MultiSwapLoader, routes: Route[]) {
+async function loadReserves(multiSwap2: MultiSwap2, routes: Route[]) {
   const usedPairs = extractPairsFromRoutes(routes);
   const usedPairsKeys = Object.keys(usedPairs) // TODO remove
   console.log('usedPairsKeys.length', usedPairsKeys.length); // TODO remove
-  await loadPairReserves(multiSwapLoader, usedPairs);
+  await loadPairReserves(multiSwap2, usedPairs);
 }
 
 // copy from UniswapV2Library

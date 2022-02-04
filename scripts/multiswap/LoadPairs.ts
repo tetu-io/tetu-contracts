@@ -1,5 +1,5 @@
 import {
-  MultiSwapLoader,
+  MultiSwap2,
 } from "../../typechain";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {loadAllPairs, saveObjectToJsonFile, MULTI_SWAP_LOADER_MATIC} from "./MultiSwapLib";

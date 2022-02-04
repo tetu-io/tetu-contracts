@@ -68,14 +68,14 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   /// @param _vault A target vault for deposit
   /// @param _tokenIn This token will be swapped to required token for adding liquidity
   /// @param _asset Token address required for adding liquidity
-  /// @param _assetRoute Pair addresses for buying asset0
+  /// @param _routesData Routes data with weights
   /// @param _tokenInAmount Amount of token for deposit
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapInto(
     address _vault,
     address _tokenIn,
     address _asset,
-    address[] memory _assetRoute,
+    bytes memory _routesData,
     uint256 _tokenInAmount,
     uint256 slippageTolerance
   ) external override nonReentrant onlyOneCallPerBlock {
@@ -88,7 +88,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     callMultiSwap(
       _tokenIn,
       _tokenInAmount,
-      _assetRoute,
+      _routesData,
+      false,
       _asset,
       slippageTolerance
     );
@@ -105,18 +106,18 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   /// @param _vault A target vault for deposit
   /// @param _tokenIn This token will be swapped to required token for adding liquidity
   /// @param _asset0 Token address required for adding liquidity
-  /// @param _asset0Route Pair addresses for buying asset0
+  /// @param _routesData0 Pair weighted routes for buying asset0
   /// @param _asset1 Token address required for adding liquidity
-  /// @param _asset1Route Pair addresses for buying asset1
+  /// @param _routesData1 Pair weighted routes for buying asset1
   /// @param _tokenInAmount Amount of token for deposit
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapIntoLp(
     address _vault,
     address _tokenIn,
     address _asset0,
-    address[] memory _asset0Route,
+    bytes memory _routesData0,
     address _asset1,
-    address[] memory _asset1Route,
+    bytes memory _routesData1,
     uint256 _tokenInAmount,
     uint256 slippageTolerance
   ) external override nonReentrant onlyOneCallPerBlock {
@@ -133,7 +134,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     callMultiSwap(
       _tokenIn,
       _tokenInAmount.div(2),
-      _asset0Route,
+      _routesData0,
+      false,
       _asset0,
       slippageTolerance
     );
@@ -142,7 +144,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     callMultiSwap(
       _tokenIn,
       _tokenInAmount.div(2),
-      _asset1Route,
+      _routesData1,
+      false,
       _asset1,
       slippageTolerance
     );
@@ -153,9 +156,9 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
         address(lp),
         _tokenIn,
         _asset0,
-        _asset0Route,
+        _routesData0,
         _asset1,
-        _asset1Route,
+        _routesData1,
         _tokenInAmount,
         slippageTolerance
       )
@@ -170,14 +173,14 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   /// @param _vault A target vault for withdraw
   /// @param _tokenOut This token will be a target for swaps
   /// @param _asset Token address required selling removed assets
-  /// @param _assetRoute Pair addresses for selling asset0
+  /// @param _routesData Pair weighted routes for selling asset0
   /// @param _shareTokenAmount Amount of share token for withdraw
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapOut(
     address _vault,
     address _tokenOut,
     address _asset,
-    address[] memory _assetRoute,
+    bytes memory _routesData,
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
   ) external override nonReentrant onlyOneCallPerBlock {
@@ -192,7 +195,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     callMultiSwap(
       _asset,
       assetBalance,
-      _assetRoute,
+      _routesData,
+      false,
       _tokenOut,
       slippageTolerance
     );
@@ -207,18 +211,18 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   /// @param _vault A target vault for withdraw
   /// @param _tokenOut This token will be a target for swaps
   /// @param _asset0 Token address required selling removed assets
-  /// @param _asset0Route Pair addresses for selling asset0
+  /// @param _routesData0 Pair weighted routes for selling asset0
   /// @param _asset1 Token address required selling removed assets
-  /// @param _asset1Route Pair addresses for selling asset1
+  /// @param _routesData1 Pair weighted routes for selling asset1
   /// @param _shareTokenAmount Amount of share token for withdraw
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapOutLp(
     address _vault,
     address _tokenOut,
     address _asset0,
-    address[] memory _asset0Route,
+    bytes memory _routesData0,
     address _asset1,
-    address[] memory _asset1Route,
+    bytes memory _routesData1,
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
   ) external override nonReentrant onlyOneCallPerBlock {
@@ -251,7 +255,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     callMultiSwap(
       _asset0,
       IERC20(_asset0).balanceOf(address(this)),
-      _asset0Route,
+      _routesData0,
+      false,
       _tokenOut,
       slippageTolerance
     );
@@ -260,7 +265,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     callMultiSwap(
       _asset1,
       IERC20(_asset1).balanceOf(address(this)),
-      _asset1Route,
+      _routesData1,
+      false,
       _tokenOut,
       slippageTolerance
     );
@@ -302,31 +308,21 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     uint256 bal0 = IERC20(zapInfo.asset0).balanceOf(address(this));
     uint256 bal1 = IERC20(zapInfo.asset1).balanceOf(address(this));
     if (bal0 != 0) {
-      address[] memory reverseRoute = new address[](zapInfo.asset0Route.length);
-
-      for (uint256 i = zapInfo.asset0Route.length; i > 0; i--) {
-        reverseRoute[zapInfo.asset0Route.length - i] = zapInfo.asset0Route[i - 1];
-      }
-
       callMultiSwap(
         zapInfo.asset0,
         bal0,
-        reverseRoute,
+        zapInfo.asset0Route,
+        true,
         zapInfo.tokenIn,
         zapInfo.slippageTolerance
       );
     }
     if (bal1 != 0) {
-      address[] memory reverseRoute = new address[](zapInfo.asset1Route.length);
-
-      for (uint256 i = zapInfo.asset1Route.length; i > 0; i--) {
-        reverseRoute[zapInfo.asset1Route.length - i] = zapInfo.asset1Route[i - 1];
-      }
-
       callMultiSwap(
         zapInfo.asset1,
         bal1,
-        reverseRoute,
+        zapInfo.asset1Route,
+        true,
         zapInfo.tokenIn,
         zapInfo.slippageTolerance
       );
@@ -341,7 +337,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   function callMultiSwap(
     address _tokenIn,
     uint256 _tokenInAmount,
-    address[] memory _lpRoute,
+    bytes memory _routesData,
+    bool _reverseSwap,
     address _tokenOut,
     uint256 slippageTolerance
   ) internal {
@@ -352,7 +349,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
     IERC20(_tokenIn).safeApprove(address(multiSwap), 0);
     IERC20(_tokenIn).safeApprove(address(multiSwap), _tokenInAmount);
-    multiSwap.multiSwap(_lpRoute, _tokenIn, _tokenOut, _tokenInAmount, slippageTolerance);
+    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, slippageTolerance, _routesData, _reverseSwap);
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender

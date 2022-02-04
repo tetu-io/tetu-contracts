@@ -11,18 +11,20 @@
 */
 pragma solidity 0.8.4;
 
+import "./IMultiSwap2.sol";
+
 /// @title Dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults
-/// @author belbix
+/// @author belbix, bogdoslav
 interface IZapContract2 {
 
   struct ZapInfo {
     address lp;
     address tokenIn;
     address asset0;
-    address[] asset0Route;
+    bytes asset0Route;
     address asset1;
-    address[] asset1Route;
+    bytes asset1Route;
     uint256 tokenInAmount;
     uint256 slippageTolerance;
   }
@@ -35,14 +37,14 @@ interface IZapContract2 {
   /// @param _vault A target vault for deposit
   /// @param _tokenIn This token will be swapped to required token for adding liquidity
   /// @param _asset Token address required for adding liquidity
-  /// @param _assetRoute Pair addresses for buying asset0
+  /// @param _routesData Pair weighted routes for buying asset0
   /// @param _tokenInAmount Amount of token for deposit
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapInto(
     address _vault,
     address _tokenIn,
     address _asset,
-    address[] memory _assetRoute,
+    bytes memory _routesData,
     uint256 _tokenInAmount,
     uint256 slippageTolerance
   ) external;
@@ -53,18 +55,18 @@ interface IZapContract2 {
   /// @param _vault A target vault for deposit
   /// @param _tokenIn This token will be swapped to required token for adding liquidity
   /// @param _asset0 Token address required for adding liquidity
-  /// @param _asset0Route Pair addresses for buying asset0
+  /// @param _routesData0 Pair weighted routes for buying asset0
   /// @param _asset1 Token address required for adding liquidity
-  /// @param _asset1Route Pair addresses for buying asset1
+  /// @param _routesData1 Pair weighted routes for buying asset1
   /// @param _tokenInAmount Amount of token for deposit
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapIntoLp(
     address _vault,
     address _tokenIn,
     address _asset0,
-    address[] memory _asset0Route,
+    bytes memory _routesData0,
     address _asset1,
-    address[] memory _asset1Route,
+    bytes memory _routesData1,
     uint256 _tokenInAmount,
     uint256 slippageTolerance
   ) external;
@@ -74,14 +76,14 @@ interface IZapContract2 {
   /// @param _vault A target vault for withdraw
   /// @param _tokenOut This token will be a target for swaps
   /// @param _asset Token address required selling removed assets
-  /// @param _assetRoute Pair addresses for selling asset0
+  /// @param _routesData Pair weighted routes for selling asset0
   /// @param _shareTokenAmount Amount of share token for withdraw
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapOut(
     address _vault,
     address _tokenOut,
     address _asset,
-    address[] memory _assetRoute,
+    bytes memory _routesData,
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
   ) external;
@@ -91,18 +93,18 @@ interface IZapContract2 {
   /// @param _vault A target vault for withdraw
   /// @param _tokenOut This token will be a target for swaps
   /// @param _asset0 Token address required selling removed assets
-  /// @param _asset0Route Pair addresses for selling asset0
+  /// @param _routesData0 Pair weighted routes for selling asset0
   /// @param _asset1 Token address required selling removed assets
-  /// @param _asset1Route Pair addresses for selling asset1
+  /// @param _routesData1 Pair weighted routes for selling asset1
   /// @param _shareTokenAmount Amount of share token for withdraw
   /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapOutLp(
     address _vault,
     address _tokenOut,
     address _asset0,
-    address[] memory _asset0Route,
+    bytes memory _routesData0,
     address _asset1,
-    address[] memory _asset1Route,
+    bytes memory _routesData1,
     uint256 _shareTokenAmount,
     uint256 slippageTolerance
   ) external;

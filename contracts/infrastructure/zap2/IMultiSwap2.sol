@@ -18,14 +18,27 @@ pragma solidity 0.8.4;
 
 
 /// @title Multi Swap 2 Interface
-/// @dev Interface to do multiple swaps
+/// @dev Interface to do multiple swaps, based on routes with weights
 /// @author bogdoslav
 interface IMultiSwap2 {
 
-  function findLpsForSwaps(address _tokenIn, address _tokenOut) external view returns (address[] memory);
+  struct Step {
+    address lp;
+    bool reverse;
+  }
+//  function findLpsForSwaps(address _tokenIn, address _tokenOut) external view returns (address[] memory);// TODO remove
 
   function routerForPair(address pair) external view returns (address);
 
-  function multiSwap(address[] memory lps, address tokenIn, address tokenOut, uint256 amount, uint256 slippageTolerance) external;
+  function multiSwap(
+    address tokenIn,
+    address tokenOut,
+    uint256 amount,
+    uint256 slippageTolerance,
+    bytes memory routesData,
+    bool reverseSwap
+  ) external;
 
+  function getReverseRouteData(bytes memory routeData)
+  external view returns (bytes memory reverseRouteData);
 }

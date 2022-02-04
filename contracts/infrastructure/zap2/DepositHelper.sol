@@ -16,6 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
+import "./IMultiSwap2.sol";
 import "./IZapContract2.sol";
 
 //import "hardhat/console.sol"; // TODO remove
@@ -38,7 +39,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
     address vault;
     address tokenIn;
     address asset;
-    address[] assetRoute; // TODO data for new multi swap
+    bytes routesData;
     uint256 tokenInAmount;
     uint256 slippageTolerance;
   }
@@ -47,7 +48,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
     address vault;
     address tokenOut;
     address asset;
-    address[] assetRoute;
+    bytes routesData;
     uint256 shareTokenAmount;
     uint256 slippageTolerance;
   }
@@ -162,7 +163,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
     IERC20(d.tokenIn).safeTransferFrom(msg.sender, address(this), d.tokenInAmount);
     IERC20(d.tokenIn).safeApprove(d.vault, 0);
     IERC20(d.tokenIn).safeApprove(d.vault, d.tokenInAmount);
-    zap.zapInto(d.vault, d.tokenIn, d.asset, d.assetRoute, d.tokenInAmount, d.slippageTolerance);
+    zap.zapInto(d.vault, d.tokenIn, d.asset, d.routesData, d.tokenInAmount, d.slippageTolerance);
 
     shareBalance = IERC20(d.vault).balanceOf(address(this));
     require(shareBalance != 0, "DH: zero shareBalance");
@@ -173,7 +174,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
   /// @dev Withdraw from vault, check the result and send token to msg.sender
   function zapOutVault(ZapOutData memory d)
   internal returns (uint256 underlyingBalance) {
-    zap.zapOut(d.vault, d.tokenOut, d.asset, d.assetRoute, d.shareTokenAmount, d.slippageTolerance);
+    zap.zapOut(d.vault, d.tokenOut, d.asset, d.routesData, d.shareTokenAmount, d.slippageTolerance);
 
     underlyingBalance = IERC20(d.tokenOut).balanceOf(address(this));
     require(underlyingBalance != 0, "DH: zero underlying balance");
