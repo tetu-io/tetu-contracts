@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"; // TODO remove
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
@@ -65,7 +66,7 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
 }
   // ******************* VIEWS *****************************
 
-  function routerForPair(address pair) external override view returns (address) {
+  function routerForPair(address pair) public override view returns (address) { // TODO split to internal and external
     return factoryToRouter[IUniswapV2Pair(pair).factory()];
   }
 
@@ -140,7 +141,7 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
     bytes memory routesData,
     bool reverseSwap
   ) external override nonReentrant {
-    /*require(tokenIn != address(0), "MC: zero tokenIn");
+    require(tokenIn != address(0), "MC: zero tokenIn");
     require(tokenOut != address(0), "MC: zero tokenOut");
     require(amount != 0, "MC: zero amount");
     require(slippageTolerance <= 100, "MC: too high slippage tolerance");
@@ -151,22 +152,19 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
     // we are recommend to use manual swapping for this kind of tokens
     require(amount <= IERC20(tokenIn).balanceOf(address(this)),
       "MS: transfer fees forbidden for input Token");
-*/ // TODO uncomment
 
-    // TODO decode
     (uint[] memory weights, Step[][] memory routes) = abi.decode(routesData, (uint[], Step[][]));
-    uint len = weights.length;
-    for (uint i = 0; i < len; i++) {
-      console.log('weight', i, weights[i]);
-      Step[] memory steps = routes[i];
-      for (uint s = 0; s < steps.length; s++) {
-        console.log(s, steps[s].lp, steps[s].reverse);
+    require(routes.length > 0, 'MS: empty array');
+    require(routes.length == weights.length, 'MS: different arrays lengths');
+
+    // swap routes
+    for (uint r = 0; r < routes.length; r++) { // routes
+      console.log('******************');
+      console.log('weight', r, weights[r]);
+      for (uint s = 0; s < routes[r].length; s++) { // steps
+        doSwapStepUniswap2(s, routes[r][s], weights[r]);
       }
-
     }
-
-    // TODO  do swap in cycle
-
 
     uint256 tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
     require(tokenOutBalance != 0, "MS: zero token out amount");
@@ -179,6 +177,47 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
 
 
   // ******************* INTERNAL ***************************
+
+  function doSwapStepUniswap2(uint256 stepNumber, Step memory step, uint256 weight)
+  internal {
+    IUniswapV2Pair pair = IUniswapV2Pair(step.lp);
+    console.log(' ');
+    console.log(stepNumber, step.lp, step.reverse);
+
+    address tokenIn  =  step.reverse ? pair.token1() : pair.token0();
+    address tokenOut =  step.reverse ? pair.token0() : pair.token1();
+
+    address[] memory path = new address[](2);
+    path[0] = tokenIn;
+    path[1] = tokenOut;
+    uint256 amountIn = IERC20(tokenIn).balanceOf(address(this)); // TODO use weights for first step
+    uint256 amountOutMin = 1; // TODO
+
+    console.log(IERC20Metadata(tokenIn).symbol(), IERC20Metadata(tokenOut).symbol());
+
+//    uint256 amount0Out = 0;
+//    uint256 amount1Out = 0;
+//    bytes memory emptyData;
+
+//    IERC20(tokenIn).safeTransferFrom(address(this), address(pair), amountIn);
+//    pair.swap(amount0Out, amount1Out, address(this), emptyData);
+    address router = routerForPair(step.lp);
+    IERC20(tokenIn).safeApprove(router, 0);
+    IERC20(tokenIn).safeApprove(router, amountIn);
+    {
+    try IUniswapV2Router02(router).swapExactTokensForTokens(
+      amountIn,
+      amountOutMin,
+      path,
+      address(this),
+      block.timestamp
+    ) returns (uint256[] memory) {
+
+    } catch Error(string memory reason){
+      revert(reason);
+    }
+    }
+  }
 
   /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
   /// @param _router Uniswap router address

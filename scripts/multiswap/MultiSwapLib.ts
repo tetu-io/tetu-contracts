@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import {BigNumber, utils} from "ethers";
 import {ethers} from "hardhat";
 
-const MULTI_SWAP_LOADER_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
+const MULTI_SWAP2_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
 
 const BIGNUMBER0 = BigNumber.from(0);
 
@@ -332,7 +332,7 @@ function findBestRoutes(allRoutes: Route[], amountIn: BigNumber): RoutesData {
 }
 
 export {
-  MULTI_SWAP_LOADER_MATIC,
+  MULTI_SWAP2_MATIC,
   Pair,
   loadAllPairs,
   saveObjectToJsonFile,

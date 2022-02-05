@@ -11,16 +11,18 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   getAllRoutes,
   loadReserves,
-  MULTI_SWAP_LOADER_MATIC,
+  MULTI_SWAP2_MATIC,
   findBestRoutes,
   encodeRouteData,
   saveObjectToJsonFile
 } from "../../scripts/multiswap/MultiSwapLib";
 import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
 
-import savedRoute from './json/AAVE_USDC.json';
+import savedRoute from './json/USDC_AAVE.json';
+import {TokenUtils} from "../TokenUtils";
+import {utils} from "ethers";
 
-const encodedRouteDataFileName = 'test/multiswap/json/AAVE_USDC.json';
+const encodedRouteDataFileName = 'test/multiswap/json/USDC_AAVE.json';
 const pairs = pairsJson as string[][]
 
 // const {expect} = chai;
@@ -29,29 +31,50 @@ chai.use(chaiAsPromised);
 let signer: SignerWithAddress;
 let multiSwap2: MultiSwap2;
 
+const FACTORIES_MATIC = [
+  MaticAddresses.TETU_SWAP_FACTORY,
+  MaticAddresses.QUICK_FACTORY,
+  MaticAddresses.SUSHI_FACTORY,
+]
+
+const ROUTERS_MATIC = [
+  MaticAddresses.TETU_SWAP_ROUTER,
+  MaticAddresses.QUICK_ROUTER,
+  MaticAddresses.SUSHI_ROUTER,
+]
+
 describe("MultiSwap2 base tests", function () {
 
   before(async function () {
     signer = (await ethers.getSigners())[0];
     console.log('network.name', network.name);
+
     if (network.name === 'matic') {
+
       multiSwap2 = await DeployerUtils.connectInterface(
-          signer, "MultiSwap2", MULTI_SWAP_LOADER_MATIC) as MultiSwap2
-    } else if (network.name === 'hardhat') {
-      multiSwap2 = await DeployerUtils.deployContract(signer, 'MultiSwap2',
-          signer.address, [], [] // TODO fill factories and routes constructor params
+          signer, "MultiSwap2", MULTI_SWAP2_MATIC
       ) as MultiSwap2;
-    } else
-      console.error('Unsupported network', network.name)
+
+    } else if (network.name === 'hardhat') {
+
+      multiSwap2 = await DeployerUtils.deployContract(signer, 'MultiSwap2',
+          signer.address, FACTORIES_MATIC, ROUTERS_MATIC
+      ) as MultiSwap2;
+
+      const usdc = await DeployerUtils.getUSDCAddress();
+      await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('500000', 6));
+
+    } else console.error('Unsupported network', network.name)
+
   })
 
   after(async function () {
   });
 
   it("generateWays", async () => {
-    const tokenIn = MaticAddresses.AAVE_TOKEN;
-    const tokenOut = MaticAddresses.USDC_TOKEN;
-    const amount = ethers.utils.parseUnits('5000', 'ether');
+    const tokenIn = MaticAddresses.USDC_TOKEN;
+    const tokenOut = MaticAddresses.AAVE_TOKEN;
+    const amount = ethers.utils.parseUnits('500000', 6);
 
     let encodedRoutesData: string;
     if (network.name === 'matic') {
@@ -68,13 +91,14 @@ describe("MultiSwap2 base tests", function () {
       console.log('routesData', routesData);
 
       encodedRoutesData = encodeRouteData(routesData);
-      saveObjectToJsonFile({data: encodedRoutesData}, encodedRouteDataFileName)
+      await saveObjectToJsonFile({data: encodedRoutesData}, encodedRouteDataFileName)
       console.log('encodedRoutesData', encodedRoutesData);
+      console.log('+++ Route data saved to ', encodedRouteDataFileName);
     } else {
       encodedRoutesData = savedRoute.data;
+      await multiSwap2.multiSwap(tokenIn, tokenOut, amount, 1, encodedRoutesData, false);
     }
 
-    await multiSwap2.multiSwap(tokenIn, tokenOut, amount, 1, encodedRoutesData, false);
 
   })
 
