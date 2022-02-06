@@ -72,6 +72,7 @@ describe("Tetu Swap base tests", function () {
     networkToken = await DeployerUtils.getNetworkTokenAddress();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
     await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    console.log('--- NETWORK BALANCE', (await TokenUtils.balanceOf(networkToken, signer.address)).toString())
     tokenA = usdc
     tokenB = networkToken
 
@@ -117,11 +118,15 @@ describe("Tetu Swap base tests", function () {
 
     lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
 
-
+    let strategyName = '';
     if ((await ethers.provider.getNetwork()).chainId === 250) {
       expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
+      strategyName = 'StrategyTetuSwapFantom';
     } else if ((await ethers.provider.getNetwork()).chainId === 137) {
       expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
+      strategyName = 'StrategyTetuSwap';
+    } else {
+      throw Error('Unsopported chain')
     }
     const lpV0 = (await lpCtr.vault0()).toLowerCase();
     const lpV1 = (await lpCtr.vault1()).toLowerCase();
@@ -144,7 +149,7 @@ describe("Tetu Swap base tests", function () {
       'TETU_LP_VAULT',
       vaultAddress => DeployerUtils.deployContract(
         signer,
-        'StrategyTetuSwapFantom',
+        strategyName,
         core.controller.address,
         vaultAddress,
         lp
@@ -448,6 +453,7 @@ describe("Tetu Swap base tests", function () {
     const toClaim = +utils.formatUnits((await vaultUsdcCtr.earned(rt, lp)).add(await vaultUsdtCtr.earned(rt, lp)));
 
     const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, lpVault.address));
+    console.log('call hw')
     await lpVault.doHardWork();
     const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, lpVault.address));
 
@@ -507,11 +513,13 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('healthy K', async () => {
+    console.log('--- NETWORK BALANCE', (await TokenUtils.balanceOf(networkToken, signer.address)).toString())
+    console.log('--- USDC BALANCE', (await TokenUtils.balanceOf(usdc, signer.address)).toString())
     const amountOut = 10000;
     const reserves = await lpCtr.getReserves();
     const inputIn = await lpCtr.getAmountIn(amountOut, reserves[0], reserves[1]);
     console.log('inputIn', inputIn.toString());
-    await TokenUtils.transfer(tokenA, signer, lp, inputIn.sub(1).toString());
+    await TokenUtils.transfer(tokenB, signer, lp, inputIn.sub(1).toString());
     await expect(lpCtr.swap(
       0,
       amountOut,
@@ -534,7 +542,7 @@ describe("Tetu Swap base tests", function () {
     const reserves = await lpCtr.getReserves();
     const inputIn = await lpCtr.getAmountIn(amountOut, reserves[0], reserves[1]);
     console.log('inputIn', inputIn.toString());
-    await TokenUtils.transfer(tokenA, signer, lp, inputIn.toString());
+    await TokenUtils.transfer(tokenB, signer, lp, inputIn.toString());
     await lpCtr.sync();
     await lpCtr.swap(
       0,

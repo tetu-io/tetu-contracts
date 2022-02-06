@@ -26,7 +26,7 @@ import "./ForwarderV2Storage.sol";
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
 ///        After swap TETU tokens are deposited to the Profit Share pool and give xTETU tokens.
-///        These tokens send to Vault as a reward for vesting (4 weeks).
+///        These tokens sent to Vault as a reward for vesting (4 weeks).
 ///        If external rewards have a destination Profit Share pool
 ///        it is just sent to the contract as TETU tokens increasing share price.
 /// @author belbix
@@ -34,7 +34,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   using SafeERC20 for IERC20;
 
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.2.3";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;

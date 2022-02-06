@@ -34,7 +34,7 @@ import "../interface/IAnnouncer.sol";
 contract Announcer is Controllable, IAnnouncer {
 
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.1.0";
   bytes32 internal constant _TIME_LOCK_SLOT = 0x244FE7C39AF244D294615908664E79A2F65DD3F4D5C387AF1D52197F465D1C2E;
 
@@ -140,7 +140,7 @@ contract Announcer is Controllable, IAnnouncer {
   // ************** ANNOUNCES **************
 
   /// @notice Only Governance can do it.
-  ///         Announce address change. You will able to setup new address after Time-lock period
+  ///         Announce address change. You will be able to setup new address after Time-lock period
   /// @param opCode Operation code from the list
   ///                 0 - Governance
   ///                 1 - Dao
@@ -168,7 +168,7 @@ contract Announcer is Controllable, IAnnouncer {
   }
 
   /// @notice Only Governance can do it.
-  ///         Announce some single uint256 change. You will able to setup new value after Time-lock period
+  ///         Announce some single uint256 change. You will be able to setup new value after Time-lock period
   /// @param opCode Operation code from the list
   ///                 20 - RewardBoostDuration
   ///                 21 - RewardRatioWithoutBoost
@@ -187,7 +187,7 @@ contract Announcer is Controllable, IAnnouncer {
   }
 
   /// @notice Only Governance or DAO can do it.
-  ///         Announce ratio change. You will able to setup new ratio after Time-lock period
+  ///         Announce ratio change. You will be able to setup new ratio after Time-lock period
   /// @param opCode Operation code from the list
   ///                 9 - PsRatio
   ///                 10 - FundRatio
@@ -209,13 +209,13 @@ contract Announcer is Controllable, IAnnouncer {
     emit RatioChangeAnnounced(opCode, numerator, denominator);
   }
 
-  /// @notice Only Governance can do it. Announce token movement. You will able to transfer after Time-lock period
+  /// @notice Only Governance can do it. Announce token movement. You will be able to transfer after Time-lock period
   /// @param opCode Operation code from the list
   ///                 11 - ControllerTokenMove
   ///                 12 - StrategyTokenMove
   ///                 13 - FundTokenMove
-  /// @param target Target address
-  /// @param token Token that you want to move
+  /// @param target Destination of the transfer
+  /// @param token Token the user wants to move.
   /// @param amount Amount that you want to move
   function announceTokenMove(TimeLockOpCodes opCode, address target, address token, uint256 amount)
   external onlyGovernance {

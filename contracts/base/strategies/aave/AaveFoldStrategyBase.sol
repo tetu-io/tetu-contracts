@@ -42,7 +42,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "AaveFoldStrategyBase";
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.3.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;

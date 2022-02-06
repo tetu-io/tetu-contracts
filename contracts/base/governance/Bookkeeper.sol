@@ -21,13 +21,13 @@ import "../interface/IStrategy.sol";
 import "../interface/IStrategySplitter.sol";
 
 /// @title Contract for holding statistical info and doesn't affect any funds.
-/// @dev Only not critical functional. Use with TetuProxy
+/// @dev Only non critical functions. Use with TetuProxy
 /// @author belbix
 contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   using SafeMathUpgradeable for uint256;
 
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.1.4";
 
   // DO NOT CHANGE NAMES OR ORDERING!
@@ -44,7 +44,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   mapping(address => mapping(address => mapping(address => uint256))) public override userEarned;
   /// @inheritdoc IBookkeeper
   mapping(address => uint256) public override vaultUsersQuantity;
-  /// @dev Hold last price per full share change for given user
+  /// @dev Hold last price per full share change for a given user
   mapping(address => PpfsChange) private _lastPpfsChange;
   /// @dev Stored any FundKeeper earnings by tokens
   mapping(address => uint256) public override fundKeeperEarned;
@@ -115,7 +115,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     addStrategy(_strategy);
   }
 
-  /// @notice Add Vault if it is not exist. Only Controller sender allowed
+  /// @notice Add Vault if it doesn't exist. Only Controller sender allowed
   /// @param _vault Vault address
   function addVault(address _vault) public override onlyControllerOrGovernance {
     if (!isVaultExist(_vault)) {
@@ -124,7 +124,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     }
   }
 
-  /// @notice Add Strategy if it is not exist. Only Controller sender allowed
+  /// @notice Add Strategy if it doesn't exist. Only Controller sender allowed
   /// @param _strategy Strategy address
   function addStrategy(address _strategy) public override onlyControllerOrGovernance {
     if (!isStrategyExist(_strategy)) {
@@ -290,7 +290,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Return vaults array
-  /// @dev This function should not use in any critical logics because DoS possible
+  /// @dev This function should not be use in any critical logics because DoS possible
   /// @return Array of all registered vaults
   function vaults() external override view returns (address[] memory) {
     return _vaults;
@@ -303,7 +303,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Return strategy array
-  /// @dev This function should not use in any critical logics because DoS possible
+  /// @dev This function should not be use in any critical logics because DoS possible
   /// @return Array of all registered strategies
   function strategies() external override view returns (address[] memory) {
     return _strategies;
@@ -333,24 +333,14 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @param _value Vault address
   /// @return true if Vault registered
   function isVaultExist(address _value) internal view returns (bool) {
-    for (uint256 i = 0; i < _vaults.length; i++) {
-      if (_vaults[i] == _value) {
-        return true;
-      }
-    }
-    return false;
+    return IController(controller()).isValidVault(_value);
   }
 
   /// @notice Return true for registered Strategy
   /// @param _value Strategy address
   /// @return true if Strategy registered
   function isStrategyExist(address _value) internal view returns (bool) {
-    for (uint256 i = 0; i < _strategies.length; i++) {
-      if (_strategies[i] == _value) {
-        return true;
-      }
-    }
-    return false;
+    return IController(controller()).isValidStrategy(_value);
   }
 
   /// @notice Governance action. Remove given Vault from vaults array
