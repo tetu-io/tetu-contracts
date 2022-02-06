@@ -172,7 +172,8 @@ describe("Payroll Clerk tests", function () {
   });
 
   it("should not pay salary for unknown worker", async () => {
-    await expect(clerk.multiplePay([signer.address], [1])).rejectedWith('worker not registered');
+    expect(await clerk.multiplePay([signer.address], [1])).to.emit(clerk, "UnknownWorker")
+      .withArgs(signer.address, 1);
   });
 
   it("should not pay salary without funds", async () => {

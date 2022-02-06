@@ -37,6 +37,7 @@ contract PayrollClerk is PayrollClerkStorage {
   event TokenChanged(address[] tokens, uint256[] ratios);
   event SalaryPaid(address indexed worker, uint256 usdAmount, uint256 workedHours, uint256 rate);
   event TokenMoved(address token, uint256 amount);
+  event UnknownWorker(address worker, uint256 workedHours);
 
   function initialize(address _controller, address _calculator) external initializer {
     require(_calculator != address(0), "zero calculator address");
@@ -66,7 +67,10 @@ contract PayrollClerk is PayrollClerkStorage {
     for (uint256 h = 0; h < tokens.length; h++) {
       uint256 tPrice = getPrice(tokens[h]);
       for (uint256 i = 0; i < _workers.length; i++) {
-        require(baseHourlyRates[_workers[i]] != 0, "worker not registered");
+        if (baseHourlyRates[_workers[i]] == 0) {
+          emit UnknownWorker(_workers[i], _workedHours[i]);
+          continue;
+        }
         pay(_workers[i], _workedHours[i], tokens[h], tPrice);
       }
     }
