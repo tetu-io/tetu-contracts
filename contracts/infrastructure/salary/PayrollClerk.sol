@@ -72,7 +72,7 @@ contract PayrollClerk is PayrollClerkStorage {
     }
   }
 
-  function pay(address worker, uint256 _workedHours, address token, uint256 tPrice) internal onlyControllerOrGovernance {
+  function pay(address worker, uint256 _workedHours, address token, uint256 tPrice) internal {
     (uint256 salaryUsd, uint256 salaryToken) = computeSalary(worker, _workedHours, token, tPrice);
     require(salaryToken <= ERC20(token).balanceOf(address(this)), "not enough fund");
     IERC20(token).safeTransfer(worker, salaryToken);
@@ -82,7 +82,7 @@ contract PayrollClerk is PayrollClerkStorage {
   }
 
   function computeSalary(address worker, uint256 _workedHours, address token, uint256 tPrice)
-  public view returns (uint256 salaryUsd, uint256 salaryToken) {
+  internal view returns (uint256 salaryUsd, uint256 salaryToken) {
     uint256 hRate = hourlyRate(worker);
     salaryUsd = hRate.mul(_workedHours).mul(1e18)
     .mul(tokenRatios[token]).div(FULL_RATIO);
