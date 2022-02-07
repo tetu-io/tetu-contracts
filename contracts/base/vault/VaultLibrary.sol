@@ -92,9 +92,13 @@ library VaultLibrary {
       if (numberOfShares == totalSupply) {
         IStrategy(strategy).withdrawAllToVault();
       } else {
-        uint missing = underlyingAmountToWithdraw - underlyingBalanceInVault;
-        missing += (missing * (TO_INVEST_DENOMINATOR - toInvest)) / TO_INVEST_DENOMINATOR;
-        missing = Math.min(missing, IStrategy(strategy).investedUnderlyingBalance());
+        uint strategyBalance = IStrategy(strategy).investedUnderlyingBalance();
+        // we should always have buffer amount inside the vault
+        uint missing = (strategyBalance + underlyingBalanceInVault)
+        * (TO_INVEST_DENOMINATOR - toInvest)
+        / TO_INVEST_DENOMINATOR
+        + underlyingAmountToWithdraw;
+        missing = Math.min(missing, strategyBalance);
         if (missing > 0) {
           IStrategy(strategy).withdrawToVault(missing);
         }
