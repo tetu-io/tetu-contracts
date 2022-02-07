@@ -26,7 +26,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   string public constant override STRATEGY_NAME = "ImpermaxBaseStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev No reward tokens
   address[] private _REWARD_TOKENS;
   /// @dev Threshold for partially decompound
