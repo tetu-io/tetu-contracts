@@ -57,6 +57,9 @@ export class DeployStubVault {
       true
     );
 
+    const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
+    writeFileSync(`./tmp/deployed/${tokenName}.txt`, txt, 'utf8');
+
     await DeployerUtils.wait(5);
     await DeployerUtils.verify(vaultLogic.address);
     await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
@@ -67,11 +70,8 @@ export class DeployStubVault {
       vault.address,
       [], // __rewardTokens
       [UNDERLYING], // __assets
-      17, // __platform
+      platformId, // __platform
     ]);
-
-    const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-    writeFileSync(`./tmp/deployed/${tokenName}.txt`, txt, 'utf8');
   }
 
 }
