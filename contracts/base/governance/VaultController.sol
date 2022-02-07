@@ -31,7 +31,7 @@ contract VaultController is Initializable, Controllable, VaultControllerStorage 
 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.2.0";
 
   /// @notice Initialize contract after setup it as proxy implementation

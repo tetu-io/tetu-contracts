@@ -29,7 +29,7 @@ const argv = require('yargs/yargs')()
 chai.use(chaiAsPromised);
 
 
-describe('Curve 2pool tests', async () => {
+describe.skip('Curve 2pool tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }

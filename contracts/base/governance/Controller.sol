@@ -29,7 +29,7 @@ import "./ControllerStorage.sol";
 import "./Controllable.sol";
 
 /// @title A central contract for control everything.
-///        Governance should be a Multi-Sig Wallet
+///        Governance is a Multi-Sig Wallet
 /// @dev Use with TetuProxy
 /// @author belbix
 contract Controller is Initializable, Controllable, ControllerStorage {
@@ -38,16 +38,16 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.4.1";
 
-  /// @dev Allowed contracts for deposit to vaults
+  /// @dev Allowed contracts to deposit in the vaults
   mapping(address => bool) public override whiteList;
   /// @dev Registered vaults
   mapping(address => bool) public override vaults;
   /// @dev Registered strategies
   mapping(address => bool) public override strategies;
-  /// @dev Allowed address for do maintenance work
+  /// @dev Allowed addresses for maintenance work
   mapping(address => bool) public hardWorkers;
   /// @dev Allowed address for reward distributing
   mapping(address => bool) public rewardDistribution;
@@ -423,7 +423,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     _setFundDenominator(denominator);
   }
 
-  // ------------------ TIME-LOCK SALVAGE -------------------
+  // ------------------ TIME-LOCK TOKEN MOVEMENTS -------------------
 
   /// @notice Only Governance can do it. Transfer token from this contract to governance address
   /// @param _recipient Recipient address
@@ -454,7 +454,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
       address(0)
     );
     // the strategy is responsible for maintaining the list of
-    // salvagable tokens, to make sure that governance cannot come
+    // salvageable tokens, to make sure that governance cannot come
     // in and take away the coins
     IStrategy(_strategy).salvage(_governance(), _token, _amount);
     emit StrategyTokenMoved(_strategy, _token, _amount);
@@ -563,7 +563,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     emit VaultAndStrategyAdded(_vault, _strategy);
   }
 
-  /// @notice Only Vault can do it. Register Strategy. Vault call it when gov set a strategy
+  /// @notice Only Vault can do it. Register Strategy. Vault call it when governance set a strategy
   /// @param _strategy Strategy addresses
   function addStrategy(address _strategy) external override {
     require(vaults[msg.sender], "C: Not vault");
@@ -626,7 +626,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @notice Return true if the given address:
-  ///         - not smart contract
+  ///         - is not smart contract
   ///         - added to whitelist
   ///         - governance address
   ///         - hardworker
@@ -646,7 +646,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     || strategies[_adr];
   }
 
-  /// @notice Return true if given address is not smart contract but wallet address
+  /// @notice Return true if given address is not a smart contract but a wallet address
   /// @dev it is not 100% guarantee after EIP-3074 implementation
   ///       use it as an additional check
   /// @param _adr Address for check
@@ -655,14 +655,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     return _adr == tx.origin;
   }
 
-  /// @notice Return true if the given address is registered vault
+  /// @notice Return true if the given address is a registered vault
   /// @param _vault Address for check
   /// @return true if it is a registered vault
   function isValidVault(address _vault) external override view returns (bool) {
     return vaults[_vault];
   }
 
-  /// @notice Return true if the given address is registered strategy
+  /// @notice Return true if the given address is a registered strategy
   /// @param _strategy Address for check
   /// @return true if it is a registered strategy
   function isValidStrategy(address _strategy) external override view returns (bool) {
