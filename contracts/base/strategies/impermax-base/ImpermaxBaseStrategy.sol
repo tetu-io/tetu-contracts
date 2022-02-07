@@ -183,7 +183,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
       // no actions if profit too low
       return 0;
     }
-    uint profitAmount = _rewardPoolBalance() * rateChange / 1e18;
+    uint profitAmount = _rewardPoolBalance() * rateChange / currentRate;
     uint profitAmountAdjusted = profitAmount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
     if (profitAmountAdjusted < _MIN_PROFIT) {
       // no actions if profit too low

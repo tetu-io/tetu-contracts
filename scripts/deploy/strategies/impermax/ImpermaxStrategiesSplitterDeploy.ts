@@ -80,7 +80,8 @@ async function main() {
         underlying,
         'StrategyImpermax',
         'scripts/utils/download/data/impermax.csv',
-        minTvl
+        minTvl,
+        100_00
     );
 
     if (impermaxes.length === 0) {

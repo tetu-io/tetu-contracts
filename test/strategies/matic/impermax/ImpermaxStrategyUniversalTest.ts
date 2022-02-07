@@ -87,7 +87,7 @@ describe('Universal Impermax tests', async () => {
     // add custom liquidation path if necessary
     const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = false;
+    const ppfsDecreaseAllowed = true;
     const balanceTolerance = 0;
     const finalBalanceTolerance = 0;
     // at least 3
@@ -107,7 +107,7 @@ describe('Universal Impermax tests', async () => {
               vaultAddress,
               underlying,
               poolAdr,
-              10_00
+              100_00
             ];
             return DeployerUtils.deployContract(
                 signer,
