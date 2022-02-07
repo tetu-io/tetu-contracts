@@ -1,26 +1,20 @@
 import {DeployerUtils} from "../../deploy/DeployerUtils";
 import {ethers} from "hardhat";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
-  const adrs = [
-    "0x11253fF148902A837A6f5c7Cd113d46B58A5CeA5",
-  ]
 
-  for (const adr of adrs) {
-    await DeployerUtils.verifyWithArgs(adr, [
-      core.controller,
-      '0x715aC7649612ecBbf3AdE416b4fd56698291820b',
-      '0x7AfC060acCA7ec6985d982dD85cC62B111CAc7a7',
-      '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
-      '0x42d61D766B85431666B39B89C43011f24451bFf6',
-      '0x64D2B3994F64E3E82E48CC92e1122489e88e8727',
-      ['0x831753DD7087CaC61aB5644b308642cc1c33Dc13', '0x42d61D766B85431666B39B89C43011f24451bFf6']
-    ]);
-
-  }
+  await DeployerUtils.verifyWithArgs('0x4b6D0175c8d2F2487F032f2847BD5501F307D7af', [
+    core.controller,
+    MaticAddresses.QI_TOKEN,
+    '0x5B34773b4cE2719c7b707C7675d64ff15B33Bd92',
+    [], // __rewardTokens
+    [MaticAddresses.QI_TOKEN], // __assets
+    21, // __platform
+  ]);
 
 
 }

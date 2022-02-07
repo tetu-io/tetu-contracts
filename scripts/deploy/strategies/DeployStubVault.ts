@@ -61,9 +61,6 @@ export class DeployStubVault {
     writeFileSync(`./tmp/deployed/${tokenName}.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
-    await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
-    await DeployerUtils.verifyProxy(vault.address);
     await DeployerUtils.verifyWithArgs(strategy.address, [
       core.controller,
       UNDERLYING,
@@ -72,6 +69,12 @@ export class DeployStubVault {
       [UNDERLYING], // __assets
       platformId, // __platform
     ]);
+    await DeployerUtils.wait(1);
+    await DeployerUtils.verify(vaultLogic.address);
+    await DeployerUtils.wait(1);
+    await DeployerUtils.verifyWithArgs(vault.address, [vaultLogic.address]);
+    await DeployerUtils.wait(1);
+    await DeployerUtils.verifyProxy(vault.address);
   }
 
 }
