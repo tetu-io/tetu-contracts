@@ -712,7 +712,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     return Math.min(block.timestamp, periodFinishForToken[rt]);
   }
 
-  /// @notice Return reward token array length
+  /// @notice Return reward token array
   function rewardTokens() external view override returns (address[] memory){
     return _rewardTokens;
   }
