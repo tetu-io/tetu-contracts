@@ -21,19 +21,19 @@ import "../interface/IStrategy.sol";
 import "../interface/IStrategySplitter.sol";
 
 /// @title Contract for holding statistical info and doesn't affect any funds.
-/// @dev Only not critical functional. Use with TetuProxy
+/// @dev Only non critical functions. Use with TetuProxy
 /// @author belbix
 contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   using SafeMathUpgradeable for uint256;
 
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.4";
+  /// @dev Should be incremented when contract is changed
+  string public constant VERSION = "1.1.5";
 
   // DO NOT CHANGE NAMES OR ORDERING!
-  /// @dev Add when Controller register vault. Can have another length than strategies.
+  /// @dev Add when Controller register vault
   address[] public _vaults;
-  /// @dev Add when Controller register strategy. Can have another length than vaults.
+  /// @dev Add when Controller register strategy
   address[] public _strategies;
   /// @inheritdoc IBookkeeper
   mapping(address => uint256) public override targetTokenEarned;
@@ -44,7 +44,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   mapping(address => mapping(address => mapping(address => uint256))) public override userEarned;
   /// @inheritdoc IBookkeeper
   mapping(address => uint256) public override vaultUsersQuantity;
-  /// @dev Hold last price per full share change for given user
+  /// @dev Hold last price per full share change for a given user
   mapping(address => PpfsChange) private _lastPpfsChange;
   /// @dev Stored any FundKeeper earnings by tokens
   mapping(address => uint256) public override fundKeeperEarned;
@@ -106,31 +106,20 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     _;
   }
 
-  /// @notice Add Vault and Strategy if they not exist. Only Controller or Governance
-  /// @dev Manually we should add a pair vault / strategy for keep both array in the same state
+  /// @notice Add Vault if it doesn't exist. Only Controller sender allowed
   /// @param _vault Vault address
-  /// @param _strategy Strategy address
-  function addVaultAndStrategy(address _vault, address _strategy) external onlyControllerOrGovernance {
-    addVault(_vault);
-    addStrategy(_strategy);
+  function addVault(address _vault) public override onlyController {
+    require(isVaultExist(_vault), "B: Vault is not registered in controller");
+    _vaults.push(_vault);
+    emit RegisterVault(_vault);
   }
 
-  /// @notice Add Vault if it is not exist. Only Controller sender allowed
-  /// @param _vault Vault address
-  function addVault(address _vault) public override onlyControllerOrGovernance {
-    if (!isVaultExist(_vault)) {
-      _vaults.push(_vault);
-      emit RegisterVault(_vault);
-    }
-  }
-
-  /// @notice Add Strategy if it is not exist. Only Controller sender allowed
+  /// @notice Add Strategy if it doesn't exist. Only Controller sender allowed
   /// @param _strategy Strategy address
-  function addStrategy(address _strategy) public override onlyControllerOrGovernance {
-    if (!isStrategyExist(_strategy)) {
-      _strategies.push(_strategy);
-      emit RegisterStrategy(_strategy);
-    }
+  function addStrategy(address _strategy) public override onlyController {
+    require(isStrategyExist(_strategy), "B: Strategy is not registered in controller");
+    _strategies.push(_strategy);
+    emit RegisterStrategy(_strategy);
   }
 
   /// @notice Only Strategy action. Save TETU earned values
@@ -290,7 +279,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Return vaults array
-  /// @dev This function should not use in any critical logics because DoS possible
+  /// @dev This function should not be use in any critical logics because DoS possible
   /// @return Array of all registered vaults
   function vaults() external override view returns (address[] memory) {
     return _vaults;
@@ -303,7 +292,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   }
 
   /// @notice Return strategy array
-  /// @dev This function should not use in any critical logics because DoS possible
+  /// @dev This function should not be use in any critical logics because DoS possible
   /// @return Array of all registered strategies
   function strategies() external override view returns (address[] memory) {
     return _strategies;
@@ -333,42 +322,14 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @param _value Vault address
   /// @return true if Vault registered
   function isVaultExist(address _value) internal view returns (bool) {
-    for (uint256 i = 0; i < _vaults.length; i++) {
-      if (_vaults[i] == _value) {
-        return true;
-      }
-    }
-    return false;
+    return IController(controller()).isValidVault(_value);
   }
 
   /// @notice Return true for registered Strategy
   /// @param _value Strategy address
   /// @return true if Strategy registered
   function isStrategyExist(address _value) internal view returns (bool) {
-    for (uint256 i = 0; i < _strategies.length; i++) {
-      if (_strategies[i] == _value) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// @notice Governance action. Remove given Vault from vaults array
-  /// @param index Index of vault in the vault array
-  function removeFromVaults(uint256 index) external onlyControllerOrGovernance {
-    require(index < _vaults.length, "B: Wrong index");
-    emit RemoveVault(_vaults[index]);
-    _vaults[index] = _vaults[_vaults.length - 1];
-    _vaults.pop();
-  }
-
-  /// @notice Governance action. Remove given Strategy from strategies array
-  /// @param index Index of strategy in the strategies array
-  function removeFromStrategies(uint256 index) external onlyControllerOrGovernance {
-    require(index < _strategies.length, "B: Wrong index");
-    emit RemoveStrategy(_strategies[index]);
-    _strategies[index] = _strategies[_strategies.length - 1];
-    _strategies.pop();
+    return IController(controller()).isValidStrategy(_value);
   }
 
 }

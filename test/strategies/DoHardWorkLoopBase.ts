@@ -259,7 +259,7 @@ export class DoHardWorkLoopBase {
     Misc.printDuration('fLoopPrintROIAndSaveEarned completed', start);
   }
 
-  protected async afterBlocAdvance() {
+  protected async afterBlockAdvance() {
     const start = Date.now();
     // ** calculate to claim
     this.totalToClaimInTetuN = 0;
@@ -297,7 +297,7 @@ export class DoHardWorkLoopBase {
       } else {
         await TimeUtils.advanceBlocksOnTs(loopValue);
       }
-      await this.afterBlocAdvance();
+      await this.afterBlockAdvance();
       await VaultUtils.doHardWorkAndCheck(this.vault);
       await this.loopPrintROIAndSaveEarned(i);
       await this.loopEndCheck();

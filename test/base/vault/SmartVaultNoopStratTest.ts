@@ -255,18 +255,18 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not doHardWork from users", async () => {
-      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Not controller or gov");
+      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Forbidden");
     });
 
     it("should not deposit from contract", async () => {
       const extUser = (await ethers.getSigners())[1];
       const contract = await DeployerUtils.deployContract(extUser, 'EvilHackerContract') as EvilHackerContract;
-      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Not allowed');
+      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Forbidden');
     });
 
     it("should not notify from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Only distributor');
+      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Forbidden');
     });
 
     it("should doHardWork on strat for hardworker", async () => {

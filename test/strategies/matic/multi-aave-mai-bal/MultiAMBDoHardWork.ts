@@ -44,8 +44,8 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     await AMBUtils.refuelMAI(this.signer, this.strategy.address);
   }
 
-  public async afterBlocAdvance() {
-    await super.afterBlocAdvance();
+  public async afterBlockAdvance() {
+    await super.afterBlockAdvance();
 
     const strategyAaveMaiBal: StrategyAaveMaiBal = this.strategy as StrategyAaveMaiBal;
 

@@ -26,7 +26,7 @@ abstract contract BeethovenBase is StrategyBase {
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "BeethovenBase";
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.0.0";
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 1000;

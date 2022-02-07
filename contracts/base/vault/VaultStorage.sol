@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../openzeppelin/Initializable.sol";
 import "../interface/ISmartVault.sol";
 
 /// @title Eternal storage + getters and setters pattern
@@ -40,36 +40,45 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   function initializeVaultStorage(
     address _underlyingToken,
     uint256 _durationValue,
-    bool _lockAllowed
+    bool __lockAllowed
   ) public initializer {
     _setUnderlying(_underlyingToken);
     _setDuration(_durationValue);
     _setActive(true);
     // no way to change it after initialisation for avoiding risks of misleading users
-    setBoolean("lockAllowed", _lockAllowed);
+    setBoolean("lockAllowed", __lockAllowed);
   }
 
   // ******************* SETTERS AND GETTERS **********************
 
   function _setStrategy(address _address) internal {
-    emit UpdatedAddressSlot("strategy", strategy(), _address);
+    emit UpdatedAddressSlot("strategy", _strategy(), _address);
     setAddress("strategy", _address);
   }
 
   /// @notice Current strategy that vault use for farming
-  function strategy() public override view returns (address) {
+  function strategy() external override view returns (address) {
+    return _strategy();
+  }
+
+  function _strategy() internal view returns (address) {
     return getAddress("strategy");
   }
 
   function _setUnderlying(address _address) private {
-    emit UpdatedAddressSlot("underlying", strategy(), _address);
+    emit UpdatedAddressSlot("underlying", _underlying(), _address);
     setAddress("underlying", _address);
   }
 
   /// @notice Vault underlying
-  function underlying() public view override returns (address) {
+  function underlying() external view override returns (address) {
+    return _underlying();
+  }
+
+  function _underlying() internal view returns (address) {
     return getAddress("underlying");
   }
+
 
   function _setDuration(uint256 _value) internal {
     emit UpdatedUint256Slot("duration", duration(), _value);
@@ -82,12 +91,16 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   }
 
   function _setActive(bool _value) internal {
-    emit UpdatedBoolSlot("active", active(), _value);
+    emit UpdatedBoolSlot("active", _active(), _value);
     setBoolean("active", _value);
   }
 
   /// @notice Vault status
-  function active() public view override returns (bool) {
+  function active() external view override returns (bool) {
+    return _active();
+  }
+
+  function _active() internal view returns (bool) {
     return getBoolean("active");
   }
 
@@ -122,21 +135,29 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   }
 
   function _disableLock() internal {
-    emit UpdatedBoolSlot("lockAllowed", lockAllowed(), false);
+    emit UpdatedBoolSlot("lockAllowed", _lockAllowed(), false);
     setBoolean("lockAllowed", false);
   }
 
   /// @notice Lock functionality allowed for this contract or not
-  function lockAllowed() public view override returns (bool) {
+  function lockAllowed() external view override returns (bool) {
+    return _lockAllowed();
+  }
+
+  function _lockAllowed() internal view returns (bool) {
     return getBoolean("lockAllowed");
   }
 
   function _setToInvest(uint256 _value) internal {
-    emit UpdatedUint256Slot("toInvest", toInvest(), _value);
+    emit UpdatedUint256Slot("toInvest", _toInvest(), _value);
     setUint256("toInvest", _value);
   }
 
-  function toInvest() public view override returns (uint256) {
+  function toInvest() external view override returns (uint256) {
+    return _toInvest();
+  }
+
+  function _toInvest() internal view returns (uint256) {
     return getUint256("toInvest");
   }
 
@@ -145,16 +166,20 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   }
 
   /// @notice Vault status
-  function reentrantLock() internal view returns (bool) {
+  function _reentrantLock() internal view returns (bool) {
     return getBoolean("reentrantLock");
   }
 
   function _setDepositFeeNumerator(uint256 _value) internal {
-    emit UpdatedUint256Slot("depositFeeNumerator", depositFeeNumerator(), _value);
+    emit UpdatedUint256Slot("depositFeeNumerator", _depositFeeNumerator(), _value);
     setUint256("depositFeeNumerator", _value);
   }
 
-  function depositFeeNumerator() public view override returns (uint256) {
+  function depositFeeNumerator() external view override returns (uint256) {
+    return getUint256("depositFeeNumerator");
+  }
+
+  function _depositFeeNumerator() internal view returns (uint256) {
     return getUint256("depositFeeNumerator");
   }
 
@@ -170,6 +195,34 @@ abstract contract VaultStorage is Initializable, ISmartVault {
 
   function _protectionMode() internal view returns (bool) {
     return getBoolean("protectionMode");
+  }
+
+  function _setDoHardWorkOnInvest(bool _value) internal {
+    emit UpdatedBoolSlot("hw_inv", _doHardWorkOnInvest(), _value);
+    setBoolean("hw_inv", _value);
+  }
+
+  /// @dev Returns doHardWorkOnInvest mode status
+  function doHardWorkOnInvest() external view returns (bool) {
+    return _doHardWorkOnInvest();
+  }
+
+  function _doHardWorkOnInvest() internal view returns (bool) {
+    return getBoolean("hw_inv");
+  }
+
+  function _setAlwaysInvest(bool _value) internal {
+    emit UpdatedBoolSlot("alwaysInvest", _alwaysInvest(), _value);
+    setBoolean("alwaysInvest", _value);
+  }
+
+  /// @dev Returns doHardWorkOnInvest mode status
+  function alwaysInvest() external view returns (bool) {
+    return _doHardWorkOnInvest();
+  }
+
+  function _alwaysInvest() internal view returns (bool) {
+    return getBoolean("alwaysInvest");
   }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
