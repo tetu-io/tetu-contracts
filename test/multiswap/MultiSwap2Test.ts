@@ -1,7 +1,7 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
-  MultiSwap2,
+  MultiSwap2, IERC20,
 } from "../../typechain";
 import {ethers, network} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
@@ -15,7 +15,7 @@ import {
   findBestRoutes,
   encodeRouteData,
   saveObjectToJsonFile
-} from "../../scripts/multiswap/MultiSwapLib";
+} from "../../scripts/multiswap/MultiSwapLibrary";
 import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
 
 import savedRoute from './json/USDC_AAVE.json';
@@ -62,7 +62,8 @@ describe("MultiSwap2 base tests", function () {
       ) as MultiSwap2;
 
       const usdc = await DeployerUtils.getUSDCAddress();
-      await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('500000', 6));
+      await TokenUtils.getToken(usdc, signer.address,
+          utils.parseUnits('500000', 6));
 
     } else console.error('Unsupported network', network.name)
 
@@ -74,7 +75,7 @@ describe("MultiSwap2 base tests", function () {
   it("generateWays", async () => {
     const tokenIn = MaticAddresses.USDC_TOKEN;
     const tokenOut = MaticAddresses.AAVE_TOKEN;
-    const amount = ethers.utils.parseUnits('500000', 6);
+    const amount = ethers.utils.parseUnits('50000', 6);
 
     let encodedRoutesData: string;
     if (network.name === 'matic') {
@@ -96,7 +97,8 @@ describe("MultiSwap2 base tests", function () {
       console.log('+++ Route data saved to ', encodedRouteDataFileName);
     } else {
       encodedRoutesData = savedRoute.data;
-      await multiSwap2.multiSwap(tokenIn, tokenOut, amount, 1, encodedRoutesData, false);
+      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString())
+      await multiSwap2.multiSwap(tokenIn, tokenOut, amount, 1, encodedRoutesData);
     }
 
 

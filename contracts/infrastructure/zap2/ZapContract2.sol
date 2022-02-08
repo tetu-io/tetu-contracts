@@ -89,7 +89,6 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       _tokenIn,
       _tokenInAmount,
       _routesData,
-      false,
       _asset,
       slippageTolerance
     );
@@ -135,7 +134,6 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       _tokenIn,
       _tokenInAmount.div(2),
       _routesData0,
-      false,
       _asset0,
       slippageTolerance
     );
@@ -145,7 +143,6 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       _tokenIn,
       _tokenInAmount.div(2),
       _routesData1,
-      false,
       _asset1,
       slippageTolerance
     );
@@ -196,7 +193,6 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       _asset,
       assetBalance,
       _routesData,
-      false,
       _tokenOut,
       slippageTolerance
     );
@@ -256,7 +252,6 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       _asset0,
       IERC20(_asset0).balanceOf(address(this)),
       _routesData0,
-      false,
       _tokenOut,
       slippageTolerance
     );
@@ -266,7 +261,6 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       _asset1,
       IERC20(_asset1).balanceOf(address(this)),
       _routesData1,
-      false,
       _tokenOut,
       slippageTolerance
     );
@@ -300,11 +294,12 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       block.timestamp
     );
     // send back change if exist
-    sendBackChange(zapInfo);
+//    sendBackChange(zapInfo); // TODO remove
     return liquidity;
   }
 
-  function sendBackChange(ZapInfo memory zapInfo) internal {
+  // TODO remove
+/*  function sendBackChange(ZapInfo memory zapInfo) internal {
     uint256 bal0 = IERC20(zapInfo.asset0).balanceOf(address(this));
     uint256 bal1 = IERC20(zapInfo.asset1).balanceOf(address(this));
     if (bal0 != 0) {
@@ -332,13 +327,12 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     if (tokenBal != 0) {
       IERC20(zapInfo.tokenIn).safeTransfer(msg.sender, tokenBal);
     }
-  }
+  }*/
 
   function callMultiSwap(
     address _tokenIn,
     uint256 _tokenInAmount,
     bytes memory _routesData,
-    bool _reverseSwap,
     address _tokenOut,
     uint256 slippageTolerance
   ) internal {
@@ -349,7 +343,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
     IERC20(_tokenIn).safeApprove(address(multiSwap), 0);
     IERC20(_tokenIn).safeApprove(address(multiSwap), _tokenInAmount);
-    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, slippageTolerance, _routesData, _reverseSwap);
+    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, slippageTolerance, _routesData);
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender

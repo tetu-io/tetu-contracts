@@ -35,10 +35,7 @@ interface IMultiSwap2 {
     address tokenOut,
     uint256 amount,
     uint256 slippageTolerance,
-    bytes memory routesData,
-    bool reverseSwap
+    bytes memory routesData
   ) external;
 
-  function getReverseRouteData(bytes memory routeData)
-  external view returns (bytes memory reverseRouteData);
 }

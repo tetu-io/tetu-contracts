@@ -18,6 +18,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"; // T
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
+import "../../swap/interfaces/ITetuSwapPair.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
@@ -34,6 +35,9 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
   using SafeERC20 for IERC20;
 
   string public constant VERSION = "2.0.0";
+  uint256 public constant MAX_AMOUNT = type(uint).max;
+  uint128 constant private _PRECISION_FEE = 10000;
+
 
   mapping(address => address) public factoryToRouter;
 
@@ -70,11 +74,6 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
     return factoryToRouter[IUniswapV2Pair(pair).factory()];
   }
 
-  function getReverseRouteData(bytes memory routeData)
-  external pure override returns (bytes memory reverseRouteData) {
-    require(false, 'MS: Not implemented getReverseRouteData');
-    return routeData; // TODO !!! implement
-  }
 
   // ******* VIEWS FOR BACKEND TS LIBRARY DATA LOADING ******
 
@@ -132,14 +131,12 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
   /// @dev Approval for token is assumed.
   ///      Swap tokenIn to tokenOut using given lp path
   ///      Slippage tolerance is a number from 0 to 100 that reflect is a percent of acceptable slippage
-  /// @param reverseSwap Do swap at routesData in reverse order
   function multiSwap(
     address tokenIn,
     address tokenOut,
     uint256 amount,
     uint256 slippageTolerance,
-    bytes memory routesData,
-    bool reverseSwap
+    bytes memory routesData
   ) external override nonReentrant {
     require(tokenIn != address(0), "MC: zero tokenIn");
     require(tokenOut != address(0), "MC: zero tokenOut");
@@ -157,16 +154,34 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
     require(routes.length > 0, 'MS: empty array');
     require(routes.length == weights.length, 'MS: different arrays lengths');
 
+    console.log('amount =>', amount);
+    // calculate amounts for each route based on weights
+    uint[] memory weightedAmounts = new uint[](weights.length);
+    uint256 amountDistributed = 0;
+    uint256 lastWeightIndex = weights.length - 1;
+    for (uint w = 0; w < lastWeightIndex; w++) { // weights
+      uint256 partialAmount = amount * weights[w] / 100;
+      weightedAmounts[w] = partialAmount;
+      amountDistributed += partialAmount;
+      console.log('partial, distributed amounts', partialAmount, amountDistributed);
+    }
+    // set last route weight separately, to avoid rounding errors
+    weightedAmounts[lastWeightIndex] = amount - amountDistributed;
+
     // swap routes
     for (uint r = 0; r < routes.length; r++) { // routes
       console.log('******************');
-      console.log('weight', r, weights[r]);
-      for (uint s = 0; s < routes[r].length; s++) { // steps
-        doSwapStepUniswap2(s, routes[r][s], weights[r]);
+      console.log('weight', r, weights[r], weightedAmounts[r]);
+      Step[] memory route = routes[r];
+      for (uint s = 0; s < route.length; s++) { // steps
+        // swap weightedAmount for initial step and MAX_AMOUNT for next steps
+        doSwapStepUniswap2(route[s], s == 0 ? weightedAmounts[r] : MAX_AMOUNT);
       }
     }
 
     uint256 tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
+    console.log('=> tokenOutBalance', tokenOutBalance);
+
     require(tokenOutBalance != 0, "MS: zero token out amount");
     IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
@@ -178,48 +193,67 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
 
   // ******************* INTERNAL ***************************
 
-  function doSwapStepUniswap2(uint256 stepNumber, Step memory step, uint256 weight)
+  function doSwapStepUniswap2(Step memory step, uint256 amountIn)
   internal {
     IUniswapV2Pair pair = IUniswapV2Pair(step.lp);
     console.log(' ');
-    console.log(stepNumber, step.lp, step.reverse);
+    if (amountIn == MAX_AMOUNT)
+      console.log('swap', step.lp, step.reverse, 'MAX');
+    else
+      console.log('swap', step.lp, step.reverse, amountIn);
 
     address tokenIn  =  step.reverse ? pair.token1() : pair.token0();
     address tokenOut =  step.reverse ? pair.token0() : pair.token1();
 
-    address[] memory path = new address[](2);
-    path[0] = tokenIn;
-    path[1] = tokenOut;
-    uint256 amountIn = IERC20(tokenIn).balanceOf(address(this)); // TODO use weights for first step
-    uint256 amountOutMin = 1; // TODO
+    console.log(
+      IERC20Metadata(tokenIn).symbol(),  IERC20(tokenIn).balanceOf(address(this)),
+      IERC20Metadata(tokenOut).symbol(), IERC20(tokenOut).balanceOf(address(this)));
 
-    console.log(IERC20Metadata(tokenIn).symbol(), IERC20Metadata(tokenOut).symbol());
+    amountIn = amountIn == MAX_AMOUNT ? IERC20(tokenIn).balanceOf(address(this)) : amountIn;
+    IERC20(tokenIn).safeTransfer(address(pair), amountIn);
 
-//    uint256 amount0Out = 0;
-//    uint256 amount1Out = 0;
-//    bytes memory emptyData;
+    bytes memory emptyData;
+    (uint256 amountOut0, uint256 amountOut1) = getAmountsOut(pair, amountIn, step.reverse);
+    console.log('amountOut0, amountOut1', amountOut0, amountOut1);
+    pair.swap(amountOut0, amountOut1, address(this), emptyData);
+  }
 
-//    IERC20(tokenIn).safeTransferFrom(address(this), address(pair), amountIn);
-//    pair.swap(amount0Out, amount1Out, address(this), emptyData);
-    address router = routerForPair(step.lp);
-    IERC20(tokenIn).safeApprove(router, 0);
-    IERC20(tokenIn).safeApprove(router, amountIn);
-    {
-    try IUniswapV2Router02(router).swapExactTokensForTokens(
-      amountIn,
-      amountOutMin,
-      path,
-      address(this),
-      block.timestamp
-    ) returns (uint256[] memory) {
+  function getAmountsOut(IUniswapV2Pair pair, uint amountIn, bool reverse)
+  internal view returns(uint amountOut0, uint amountOut1) {
+    (amountOut0, amountOut1) = (0, 0);
+    uint256 fee = getTetuSwapFee(address(pair));
+    (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
 
-    } catch Error(string memory reason){
-      revert(reason);
-    }
+    if (reverse) {
+      amountOut0 = getAmountOut(amountIn, reserve1, reserve0, fee);
+    } else {
+      amountOut1 = getAmountOut(amountIn, reserve0, reserve1, fee);
     }
   }
 
-  /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
+  /// @dev given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee) internal view returns (uint amountOut) {
+    console.log('getAmountOut amountIn', amountIn);
+    console.log('reserveIn, reserveOut, fee', reserveIn, reserveOut, fee);
+    require(amountIn > 0, "MS: INSUFFICIENT_INPUT_AMOUNT");
+    require(reserveIn > 0 && reserveOut > 0, "MS: INSUFFICIENT_LIQUIDITY");
+    uint amountInWithFee = amountIn * (_PRECISION_FEE - fee);
+    uint numerator = amountInWithFee * reserveOut;
+    uint denominator = reserveIn * _PRECISION_FEE + amountInWithFee;
+    amountOut = numerator / denominator;
+  }
+
+  /// @dev returns fee for tetuswap or default uniswap v2 fee for other swaps
+  function getTetuSwapFee(address pair) internal view returns(uint) {
+    try ITetuSwapPair(pair).fee() returns (uint fee) {
+      return fee;
+    } catch Error(string memory /*reason*/) {
+    } catch (bytes memory /*lowLevelData*/) {
+    }
+    return 30;
+  }
+
+/*  /// @dev https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
   /// @param _router Uniswap router address
   /// @param _route Path for swap
   /// @param _amount Amount for swap
@@ -241,7 +275,7 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
       address(this),
       block.timestamp
     );
-  }
+  }*/
 
   // ************************* GOV ACTIONS *******************
 
