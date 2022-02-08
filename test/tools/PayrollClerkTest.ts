@@ -65,7 +65,7 @@ describe("Payroll Clerk tests", function () {
 
     const balance = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
 
-    await clerk.pay(signer.address, 1);
+    await clerk.multiplePay([signer.address], [1]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(balance.add(utils.parseUnits("100")));
@@ -118,7 +118,7 @@ describe("Payroll Clerk tests", function () {
 
     const balance = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
 
-    await clerk.pay(signer.address, 1000);
+    await clerk.multiplePay([signer.address], [1000]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(balance.add(utils.parseUnits("100000")));
@@ -128,7 +128,7 @@ describe("Payroll Clerk tests", function () {
     const b = (await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).toString();
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, b);
 
-    await clerk.pay(signer.address, 1);
+    await clerk.multiplePay([signer.address], [1]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(utils.parseUnits("200"));
@@ -139,7 +139,7 @@ describe("Payroll Clerk tests", function () {
       (await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).toString());
 
     await clerk.setBaseHourlyRate(signer.address, 50);
-    await clerk.pay(signer.address, 1);
+    await clerk.multiplePay([signer.address], [1]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(utils.parseUnits("150"));
@@ -155,7 +155,7 @@ describe("Payroll Clerk tests", function () {
 
     const balance = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
 
-    await clerk.pay(signer.address, 1000);
+    await clerk.multiplePay([signer.address], [1000]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(balance.add(utils.parseUnits("100000")));
@@ -165,20 +165,21 @@ describe("Payroll Clerk tests", function () {
     const b = (await TokenUtils.balanceOf(core.rewardToken.address, signer.address)).toString();
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, b);
 
-    await clerk.pay(signer.address, 1);
+    await clerk.multiplePay([signer.address], [1]);
 
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signer.address))
       .eq(utils.parseUnits("100"));
   });
 
   it("should not pay salary for unknown worker", async () => {
-    await expect(clerk.pay(signer.address, 1)).rejectedWith('worker not registered');
+    expect(await clerk.multiplePay([signer.address], [1])).to.emit(clerk, "UnknownWorker")
+      .withArgs(signer.address, 1);
   });
 
   it("should not pay salary without funds", async () => {
     await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.changeTokens([core.rewardToken.address], [100]);
-    await expect(clerk.pay(signer.address, 1)).rejectedWith('not enough fund');
+    await expect(clerk.multiplePay([signer.address], [1])).rejectedWith('not enough fund');
   });
 
   it("should salvage token", async () => {

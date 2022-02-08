@@ -37,6 +37,7 @@ contract PayrollClerk is PayrollClerkStorage {
   event TokenChanged(address[] tokens, uint256[] ratios);
   event SalaryPaid(address indexed worker, uint256 usdAmount, uint256 workedHours, uint256 rate);
   event TokenMoved(address token, uint256 amount);
+  event UnknownWorker(address worker, uint256 workedHours);
 
   function initialize(address _controller, address _calculator) external initializer {
     require(_calculator != address(0), "zero calculator address");
@@ -56,32 +57,36 @@ contract PayrollClerk is PayrollClerkStorage {
     return workers.length;
   }
 
+  function getPrice(address token) internal view returns (uint256) {
+    return IPriceCalculator(calculator()).getPriceWithDefaultOutput(token);
+  }
+
   function multiplePay(address[] calldata _workers, uint256[] calldata _workedHours)
   external onlyControllerOrGovernance {
     require(_workers.length == _workedHours.length, "wrong arrays");
-    for (uint256 i = 0; i < _workers.length; i++) {
-      pay(_workers[i], _workedHours[i]);
+    for (uint256 h = 0; h < tokens.length; h++) {
+      uint256 tPrice = getPrice(tokens[h]);
+      for (uint256 i = 0; i < _workers.length; i++) {
+        if (baseHourlyRates[_workers[i]] == 0) {
+          emit UnknownWorker(_workers[i], _workedHours[i]);
+          continue;
+        }
+        pay(_workers[i], _workedHours[i], tokens[h], tPrice);
+      }
     }
   }
 
-  function pay(address worker, uint256 _workedHours) public onlyControllerOrGovernance {
-    require(baseHourlyRates[worker] != 0, "worker not registered");
-
-    uint256 totalSalaryUsd;
-    for (uint256 i = 0; i < tokens.length; i++) {
-      (uint256 salaryUsd, uint256 salaryToken) = computeSalary(worker, _workedHours, tokens[i]);
-      require(salaryToken <= ERC20(tokens[i]).balanceOf(address(this)), "not enough fund");
-      IERC20(tokens[i]).safeTransfer(worker, salaryToken);
-      totalSalaryUsd = totalSalaryUsd.add(salaryUsd);
-    }
+  function pay(address worker, uint256 _workedHours, address token, uint256 tPrice) internal {
+    (uint256 salaryUsd, uint256 salaryToken) = computeSalary(worker, _workedHours, token, tPrice);
+    require(salaryToken <= ERC20(token).balanceOf(address(this)), "not enough fund");
+    IERC20(token).safeTransfer(worker, salaryToken);
     workedHours[worker] = workedHours[worker].add(_workedHours);
-    earned[worker] = earned[worker].add(totalSalaryUsd);
-    emit SalaryPaid(worker, totalSalaryUsd, _workedHours, hourlyRate(worker));
+    earned[worker] = earned[worker].add(salaryUsd);
+    emit SalaryPaid(worker, salaryUsd, _workedHours, hourlyRate(worker));
   }
 
-  function computeSalary(address worker, uint256 _workedHours, address token)
-  public view returns (uint256 salaryUsd, uint256 salaryToken) {
-    uint256 tPrice = IPriceCalculator(calculator()).getPriceWithDefaultOutput(token);
+  function computeSalary(address worker, uint256 _workedHours, address token, uint256 tPrice)
+  internal view returns (uint256 salaryUsd, uint256 salaryToken) {
     uint256 hRate = hourlyRate(worker);
     salaryUsd = hRate.mul(_workedHours).mul(1e18)
     .mul(tokenRatios[token]).div(FULL_RATIO);
