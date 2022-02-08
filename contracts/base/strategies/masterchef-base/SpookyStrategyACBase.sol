@@ -16,12 +16,11 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
-import "../../interface/IMasterChefStrategyV2.sol";
 import "../../../third_party/spooky/ISpookyMasterChef.sol";
 
 /// @title Abstract contract for SpookySwap strategy implementation
 /// @author belbix
-abstract contract SpookyStrategyACBase is StrategyBase, IMasterChefStrategyV2 {
+abstract contract SpookyStrategyACBase is StrategyBase {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -35,9 +34,9 @@ abstract contract SpookyStrategyACBase is StrategyBase, IMasterChefStrategyV2 {
   uint256 private constant _BUY_BACK_RATIO = 100;
 
   /// @notice MasterChef rewards pool
-  address public override pool;
+  address public pool;
   /// @notice MasterChef rewards pool ID
-  uint256 public override poolID;
+  uint256 public poolID;
   /// @notice Uniswap router for underlying LP
   address public router;
 
@@ -88,7 +87,7 @@ abstract contract SpookyStrategyACBase is StrategyBase, IMasterChefStrategyV2 {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     withdrawAndClaimFromPool(0);
     liquidateReward();

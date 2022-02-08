@@ -69,6 +69,36 @@ export class FtmAddresses {
   // Tarot
   public static TAROT_FACTORY = "0x35C052bBf8338b06351782A565aa9AaD173432eA".toLowerCase();
 
+  // beethoven
+  public static BEETS_TOKEN = "0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e".toLowerCase();
+  public static BEETS_VAULT = "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce".toLowerCase();
+
+  public static BEETS_MASTERCHEF = "0x8166994d9ebBe5829EC86Bd81258149B87faCfd3".toLowerCase();
+  public static BPT_WAGMI_TOKEN = "0x713ee620a7702b79eA5413096A90702244FE4532".toLowerCase();
+  public static BPT_BEETS_USDC_TOKEN = "0x03c6B3f09D2504606936b1A4DeCeFaD204687890".toLowerCase();
+  public static BPT_BEETS_FTM_TOKEN = "0xcdE5a11a4ACB4eE4c805352Cec57E236bdBC3837".toLowerCase();
+  public static BPT_GRAND_ORCH_TOKEN = "0xd47D2791d3B46f9452709Fa41855a045304D6f9d".toLowerCase();
+  public static BPT_FTM_SONATA_TOKEN = "0xf0e2c47d4C9FBBbc2F2E19ACdaA3c773A3ECD221".toLowerCase();
+  public static BPT_E_MAJOR_TOKEN = "0xA07De66AeF84e2c01D88a48D57D1463377Ee602b".toLowerCase();
+  public static BPT_B_MAJOR_TOKEN = "0x22B30B00e6796Daf710fBE5cAFBFc9Cdd1377f2A".toLowerCase();
+  public static BPT_CLASSIC_TOKEN = "0x6FDC8415B654B0F60475944A0b9421Dc36ee1363".toLowerCase();
+  public static BPT_LBP_DANCE_DEGEN_TOKEN = "0x72C0eB973Dc95e2d185563f58fC26626CC2e8034".toLowerCase();
+  public static BPT_FTM_OPERA_TOKEN = "0xcdF68a4d525Ba2E90Fe959c74330430A5a6b8226".toLowerCase();
+  public static BPT_BeetXLP_MIM_USDC_USDT_TOKEN = "0xD163415BD34EF06f57C58D2AEd5A5478AfB464cC".toLowerCase();
+  public static BPT_BLP_USDC_MAI_TOKEN = "0x2ed55f12e700CdE978E1F0491D681919814ca44B".toLowerCase();
+  public static BPT_BPT_DANIELE_TOKEN = "0x6d12D3fE16dD83115254a32B273B05Ac5444C349".toLowerCase();
+  public static BPT_MOOSIC_TOKEN = "0x2975035545008935152FdF48ca13406cc5D4e475".toLowerCase();
+  public static BPT_PAINT_TOKEN = "0x7cA132d9E8c420b84578a6618F10b23545513058".toLowerCase();
+  public static BPT_FTMUSIC_TOKEN = "0xfC092F85125907fFcb0f9012e6e40B3f37c4De60".toLowerCase();
+  public static BPT_GUQINQI_TOKEN = "0x2C580C6F08044D6dfACA8976a66C8fAddDBD9901".toLowerCase();
+  public static BPT_QUARTET_TOKEN = "0xf3A602d30dcB723A74a0198313a7551FEacA7DAc".toLowerCase();
+  public static BPT_ICEFIRE_TOKEN = "0x2BeA17EdE5D83ad19ae112B8592AadaA2B015De7".toLowerCase();
+  public static BPT_CRVLINK_TOKEN = "0x65Bf2d53BD1d7050d22873f6B9Bb59edb0cA0b20".toLowerCase();
+  public static BPT_HND_TOKEN = "0xD57Cda2caEBb9B64BB88905C4dE0F0Da217a77d7".toLowerCase();
+  public static BPT_BNBARON_TOKEN = "0x5E65474c8400d0BB76eDBBE066B2D2E7b0b6e7fb".toLowerCase();
+  public static BPT_STABEET = "0xeCAa1cBd28459d34B766F9195413Cb20122Fb942".toLowerCase();
+  public static BPT_asUSDC = "0x8Bb1839393359895836688165f7c5878f8C81C5e".toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
     FtmAddresses.fUSDT_TOKEN,

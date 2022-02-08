@@ -211,7 +211,8 @@ export class MaticAddresses {
   public static VESQ_DISTRIBUTOR = '0xabE372DCFB8800B3cDE30f1d6666401C765f2F3B'.toLowerCase();
   public static VESQ_TREASURY = '0x8c7290399cECbBBf31E471951Cc4C2ce91F5073c'.toLowerCase();
 
-
+  // IMPERMAX
+  public static IMPERMAX_FACTORY = "0xBB92270716C8c424849F17cCc12F4F24AD4064D6".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,

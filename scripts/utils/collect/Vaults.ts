@@ -12,8 +12,11 @@ async function main() {
   let txt = '';
   const vaults = await core.bookkeeper.vaults();
   for (const vault of vaults) {
-    const vName = await tools.reader.vaultName(vault);
     const active = await tools.reader.vaultActive(vault);
+    if (!active) {
+      continue;
+    }
+    const vName = await tools.reader.vaultName(vault);
     const tvl = +utils.formatUnits(await tools.reader.vaultTvlUsdc(vault));
     txt += `${vName};${vault};${tvl.toFixed(0)};${active}\n`;
     console.log(txt);

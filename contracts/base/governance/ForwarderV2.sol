@@ -26,7 +26,7 @@ import "./ForwarderV2Storage.sol";
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
 ///        After swap TETU tokens are deposited to the Profit Share pool and give xTETU tokens.
-///        These tokens send to Vault as a reward for vesting (4 weeks).
+///        These tokens sent to Vault as a reward for vesting (4 weeks).
 ///        If external rewards have a destination Profit Share pool
 ///        it is just sent to the contract as TETU tokens increasing share price.
 /// @author belbix
@@ -34,14 +34,14 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   using SafeERC20 for IERC20;
 
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.1";
+  /// @dev Should be incremented when contract is changed
+  string public constant VERSION = "1.2.3";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
-  uint constant public DEFAULT_UNI_FEE_NOMINATOR = 997;
+  uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
   uint constant public ROUTE_LENGTH_MAX = 5;
   uint constant public SLIPPAGE_DENOMINATOR = 100;
-  uint constant public SLIPPAGE_NOMINATOR = 95;
+  uint constant public MINIMUM_AMOUNT = 100;
 
   // ************ EVENTS **********************
   /// @notice Fee distributed to Profit Sharing pool
@@ -93,6 +93,12 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     return IController(controller()).fundToken();
   }
 
+  /// @notice Return slippage numerator
+  function slippageNumerator() public view returns (uint) {
+    return _slippageNumerator();
+  }
+
+
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Only Governance or Controller can call it.
@@ -133,6 +139,13 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   }
 
   /// @notice Only Governance or Controller can call it.
+  ///         Sets numerator for slippage value. Must be in a range 0-100
+  function setSlippageNumerator(uint256 _value) external onlyControllerOrGovernance {
+    require(_value <= SLIPPAGE_DENOMINATOR, "F2: Too high value");
+    _setSlippageNumerator(_value);
+  }
+
+  /// @notice Only Governance or Controller can call it.
   ///         Sets router for a pair with TETU liquidity
   function setLiquidityRouter(address _value) external onlyControllerOrGovernance {
     _setLiquidityRouter(_value);
@@ -140,11 +153,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Only Governance or Controller can call it.
   ///         Sets specific Swap fee for given factory
-  function setUniPlatformFee(address _factory, uint _feeNominator, uint _feeDenominator) external onlyControllerOrGovernance {
+  function setUniPlatformFee(address _factory, uint _feeNumerator, uint _feeDenominator) external onlyControllerOrGovernance {
     require(_factory != address(0), "F2: Zero factory");
-    require(_feeNominator <= _feeDenominator, "F2: Wrong values");
+    require(_feeNumerator <= _feeDenominator, "F2: Wrong values");
     require(_feeDenominator != 0, "F2: Wrong denominator");
-    uniPlatformFee[_factory] = UniFee(_feeNominator, _feeDenominator);
+    uniPlatformFee[_factory] = UniFee(_feeNumerator, _feeDenominator);
   }
 
   // ***************** EXTERNAL *******************************
@@ -164,6 +177,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     require(fundToken() != address(0), "F2: Fund token is zero");
     require(_amount != 0, "F2: Zero amount for distribute");
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
+    // don't spend gas for garbage
+    if (_amount < MINIMUM_AMOUNT) {
+      return 0;
+    }
 
     // calculate require amounts
     uint toFund = _toFundAmount(_amount);
@@ -185,7 +203,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuTokenAmount = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
-    if (toPsAndLiq > 0) {
+    if (toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount > sentToFund) {
       tetuDistributed += _sendToPsAndLiquidity(
         tetuTokenAmount,
         toLiqTetuTokenPart,
@@ -194,7 +212,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
         fundTokenAmount - sentToFund
       );
     }
-    if (toVault > 0) {
+    if (toVault > MINIMUM_AMOUNT) {
       tetuDistributed += _sendToVault(
         _vault,
         tetuTokenAmount,
@@ -241,7 +259,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   function _sendExcessTokens() internal {
     uint excessFundToken = IERC20(fundToken()).balanceOf(address(this));
-    if (excessFundToken != 0 && fund() != address(0)) {
+    if (excessFundToken > MINIMUM_AMOUNT && fund() != address(0)) {
       IERC20(fundToken()).safeTransfer(fund(), excessFundToken);
       IBookkeeper(IController(controller()).bookkeeper())
       .registerFundKeeperEarned(fundToken(), excessFundToken);
@@ -249,7 +267,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     }
 
     uint excessTetuToken = IERC20(tetu()).balanceOf(address(this));
-    if (excessTetuToken != 0) {
+    if (excessTetuToken > MINIMUM_AMOUNT) {
       IERC20(tetu()).safeTransfer(psVault(), excessTetuToken);
       emit FeeMovedToPs(psVault(), tetu(), excessTetuToken);
     }
@@ -268,7 +286,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint tetuLiqAmount = _sendToLiquidity(toLiqTetuTokenPart, toLiqFundTokenPart);
 
     uint toPs = tetuTokenAmount * baseToPs / baseSum;
-    if (toPs != 0) {
+    if (toPs > MINIMUM_AMOUNT) {
       IERC20(tetu()).safeTransfer(psVault(), toPs);
       emit FeeMovedToPs(psVault(), tetu(), toPs);
     }
@@ -290,6 +308,10 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
     uint baseSum = baseToLiqTetuTokenPart + baseToPs + baseToVault;
     uint toVault = tetuTokenAmount * baseToVault / baseSum;
+    // no actions if little amount
+    if (toVault < MINIMUM_AMOUNT) {
+      return 0;
+    }
 
     uint256 amountToSend;
     if (rt == xTetu) {
@@ -328,7 +350,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   function _sendToLiquidity(uint toLiqTetuTokenPart, uint toLiqFundTokenPart) internal returns (uint256) {
     // no actions if we don't have a fee for liquidity
-    if (toLiqTetuTokenPart == 0 || toLiqFundTokenPart == 0) {
+    if (toLiqTetuTokenPart < MINIMUM_AMOUNT || toLiqFundTokenPart < MINIMUM_AMOUNT) {
       return 0;
     }
 
@@ -538,13 +560,14 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     (uint reserveIn, uint reserveOut) = getReserves(lp, tokenIn, tokenOut);
 
     UniFee memory fee = uniPlatformFee[lp.factory()];
-    if (fee.nominator == 0) {
-      fee = UniFee(DEFAULT_UNI_FEE_NOMINATOR, DEFAULT_UNI_FEE_DENOMINATOR);
+    if (fee.numerator == 0) {
+      fee = UniFee(DEFAULT_UNI_FEE_NUMERATOR, DEFAULT_UNI_FEE_DENOMINATOR);
     }
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
-
     IERC20(tokenIn).safeTransfer(address(lp), amount);
-    _swapCall(lp, tokenIn, tokenOut, amountOut);
+    if (amountOut != 0) {
+      _swapCall(lp, tokenIn, tokenOut, amountOut);
+    }
   }
 
   function _addLiquidity(
@@ -564,8 +587,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       _token1,
       _token0Amount,
       _token1Amount,
-      _token0Amount * SLIPPAGE_NOMINATOR / SLIPPAGE_DENOMINATOR,
-      _token1Amount * SLIPPAGE_NOMINATOR / SLIPPAGE_DENOMINATOR,
+      _token0Amount * _slippageNumerator() / SLIPPAGE_DENOMINATOR,
+      _token1Amount * _slippageNumerator() / SLIPPAGE_DENOMINATOR,
       address(this),
       block.timestamp
     );
@@ -575,7 +598,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @dev Given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
   function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, UniFee memory fee) internal pure returns (uint amountOut) {
-    uint amountInWithFee = amountIn * fee.nominator;
+    uint amountInWithFee = amountIn * fee.numerator;
     uint numerator = amountInWithFee * reserveOut;
     uint denominator = (reserveIn * fee.denominator) + amountInWithFee;
     amountOut = numerator / denominator;

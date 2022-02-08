@@ -255,23 +255,30 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not doHardWork from users", async () => {
-      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Not controller or gov");
+      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Forbidden");
     });
 
     it("should not deposit from contract", async () => {
       const extUser = (await ethers.getSigners())[1];
       const contract = await DeployerUtils.deployContract(extUser, 'EvilHackerContract') as EvilHackerContract;
-      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Not allowed');
+      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Forbidden');
     });
 
     it("should not notify from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Only distributor');
+      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Forbidden');
     });
 
-    it("should not doHardWork on strat from ext user", async () => {
+    it("should doHardWork on strat for hardworker", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('SB: Not Gov or Vault');
+      console.log('extUser', extUser.address)
+      await core.controller.addHardWorker(extUser.address)
+      expect(
+        await core.controller.isHardWorker(extUser.address)
+        || await core.controller.isGovernance(extUser.address)
+        || await core.controller.isController(extUser.address)
+      ).is.eq(true);
+      await strategy.connect(extUser).doHardWork();
     });
 
     it("should not doHardWork for paused strat", async () => {

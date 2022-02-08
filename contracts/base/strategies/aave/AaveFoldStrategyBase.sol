@@ -15,7 +15,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../FoldingBase.sol";
-import "../../interface/IAveFoldStrategy.sol";
+import "../../interface/strategies/IAveFoldStrategy.sol";
 import "../../../third_party/IWmatic.sol";
 import "../../../third_party/aave/IAToken.sol";
 import "../../../third_party/aave/ILendingPool.sol";
@@ -42,7 +42,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "AaveFoldStrategyBase";
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
+  /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.3.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;

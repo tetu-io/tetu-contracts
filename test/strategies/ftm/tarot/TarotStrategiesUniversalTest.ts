@@ -24,7 +24,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneTarotStrategyTest: {
       type: "number",
-      default: 1,
+      default: 45,
     },
     hardhatChainId: {
       type: "number",
@@ -84,7 +84,7 @@ describe('Universal Tarot tests', async () => {
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0;
     const finalBalanceTolerance = 0;
-    const deposit = 100_000;
+    const deposit = 1_000_000;
     // at least 3
     const loops = 3;
     // number of blocks or timestamp value

@@ -273,8 +273,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.DFYN_USDC_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(94116);
-    expect(price).is.lessThan(9411690);
+    expect(price).is.greaterThan(50000);
+    expect(price).is.lessThan(500000);
   });
 
   it("calculate IRON_IRON_IS3USD, price and check", async () => {
