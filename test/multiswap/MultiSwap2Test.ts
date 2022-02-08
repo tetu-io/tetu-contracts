@@ -75,7 +75,7 @@ describe("MultiSwap2 base tests", function () {
   it("generateWays", async () => {
     const tokenIn = MaticAddresses.USDC_TOKEN;
     const tokenOut = MaticAddresses.AAVE_TOKEN;
-    const amount = ethers.utils.parseUnits('50000', 6);
+    const amount = ethers.utils.parseUnits('100000', 6);
 
     let encodedRoutesData: string;
     if (network.name === 'matic') {
