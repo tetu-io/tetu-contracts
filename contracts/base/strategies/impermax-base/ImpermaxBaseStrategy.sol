@@ -26,7 +26,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   string public constant override STRATEGY_NAME = "ImpermaxBaseStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev No reward tokens
   address[] private _REWARD_TOKENS;
   /// @dev Threshold for partially decompound
@@ -183,7 +183,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
       // no actions if profit too low
       return 0;
     }
-    uint profitAmount = _rewardPoolBalance() * rateChange / 1e18;
+    uint profitAmount = _rewardPoolBalance() * rateChange / currentRate;
     uint profitAmountAdjusted = profitAmount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
     if (profitAmountAdjusted < _MIN_PROFIT) {
       // no actions if profit too low
