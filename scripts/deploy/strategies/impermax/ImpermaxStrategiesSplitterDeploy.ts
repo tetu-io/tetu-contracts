@@ -15,7 +15,7 @@ const splitters = [
 
 let verified = false;
 
-const alreadyDeployed = new Set<string>([]);
+const alreadyDeployed = new Set<string>(['0', '1', '2', '3']);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -35,7 +35,6 @@ async function main() {
     }
     splittersByUnderlying.set(u, sAdr);
   }
-  console.log(splittersByUnderlying);
 
   appendFileSync(`./tmp/deployed/IMPERMAX_STRATS_SPLITTER.txt`, '-------------------\n', 'utf8');
 
