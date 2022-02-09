@@ -35,6 +35,7 @@ async function main() {
     }
     splittersByUnderlying.set(u, sAdr);
   }
+  console.log(splittersByUnderlying);
 
   appendFileSync(`./tmp/deployed/IMPERMAX_STRATS_SPLITTER.txt`, '-------------------\n', 'utf8');
 
@@ -42,13 +43,8 @@ async function main() {
     const strat = info.split(',');
 
     const idx = strat[0];
-    const aTokenName = strat[1];
-    const aTokenAddress = strat[2];
-    const tokenAddress = strat[3];
-    const tokenName = strat[4];
-    const collateralFactor = strat[5];
-    const borrowTarget = strat[6];
-    const tvl = strat[7];
+    const tokenAddress = strat[2];
+    const aTokenName = strat[3];
 
     if (idx === 'idx' || !tokenAddress) {
       console.log('skip', idx);
