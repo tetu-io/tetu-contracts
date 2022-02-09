@@ -43,7 +43,7 @@ interface IStrategy {
     TOMB, //25
     TAROT, //26
     BEETHOVEN, //27
-    SLOT_28, //28
+    IMPERMAX, //28
     SLOT_29, //29
     SLOT_30, //30
     SLOT_31, //31
