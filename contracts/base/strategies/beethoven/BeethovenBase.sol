@@ -19,7 +19,7 @@ import "../../../third_party/beethoven/IBeethovenVault.sol";
 /// @title Abstract contract for Beethoven strategy implementation
 /// @author OlegN
 abstract contract BeethovenBase is StrategyBase {
-  using SafeMath for uint256;
+  using SafeMath for uint;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -27,13 +27,15 @@ abstract contract BeethovenBase is StrategyBase {
   string public constant override STRATEGY_NAME = "BeethovenBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev 10% buyback
-  uint256 private constant _BUY_BACK_RATIO = 1000;
+  uint private constant _BUY_BACK_RATIO = 1000;
   /// @notice MasterChef rewards pool
   address public pool;
   /// @notice MasterChef rewards pool ID
-  uint256 public poolId;
+  uint public poolId;
+
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.BEETHOVEN;
 
   /// @notice Beethoven vault
   IBeethovenVault public beethovenVault;
@@ -64,7 +66,7 @@ abstract contract BeethovenBase is StrategyBase {
     address _vault,
     address[] memory __rewardTokens,
     address _pool,
-    uint256 _poolId,
+    uint _poolId,
     address _beethovenVault,
     address _depositToken,
     bytes32 _beethovenPoolId,
@@ -86,16 +88,16 @@ abstract contract BeethovenBase is StrategyBase {
 
   /// @notice Strategy balance in the MasterChef pool
   /// @return bal Balance amount in underlying tokens
-  function rewardPoolBalance() public override view returns (uint256) {
-    (uint256 _amount,) = IBeethovenxChef(pool).userInfo(poolId, address(this));
+  function rewardPoolBalance() public virtual override view returns (uint) {
+    (uint _amount,) = IBeethovenxChef(pool).userInfo(poolId, address(this));
     return _amount;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in MasterChef pool
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
-  function readyToClaim() external view override returns (uint256[] memory) {
-    uint256[] memory toClaim = new uint256[](1);
+  function readyToClaim() external view override returns (uint[] memory) {
+    uint[] memory toClaim = new uint[](1);
     toClaim[0] = IBeethovenxChef(pool).pendingBeets(poolId, address(this));
     return toClaim;
   }
@@ -103,14 +105,14 @@ abstract contract BeethovenBase is StrategyBase {
   /// @notice TVL of the underlying in the MasterChef pool
   /// @dev Only for statistic
   /// @return Pool TVL
-  function poolTotalAmount() external view override returns (uint256) {
+  function poolTotalAmount() external view virtual override returns (uint) {
     return IERC20(_underlyingToken).balanceOf(pool);
   }
 
   // assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {
     address[] memory token = new address[](poolTokens.length);
-    for (uint256 i = 0; i < poolTokens.length; i++) {
+    for (uint i = 0; i < poolTokens.length; i++) {
       token[i] = address(poolTokens[i]);
     }
     return token;
@@ -119,7 +121,7 @@ abstract contract BeethovenBase is StrategyBase {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting virtual override restricted {
     investAllUnderlying();
     IBeethovenxChef(pool).harvest(poolId, address(this));
     liquidateReward();
@@ -134,7 +136,7 @@ abstract contract BeethovenBase is StrategyBase {
 
   /// @dev Deposit underlying to MasterChef pool
   /// @param amount Deposit amount
-  function depositToPool(uint256 amount) internal override {
+  function depositToPool(uint amount) internal virtual override {
     IERC20(_underlyingToken).safeApprove(pool, 0);
     IERC20(_underlyingToken).safeApprove(pool, amount);
     IBeethovenxChef(pool).deposit(poolId, amount, address(this));
@@ -142,13 +144,13 @@ abstract contract BeethovenBase is StrategyBase {
 
   /// @dev Withdraw underlying from MasterChef pool
   /// @param amount Deposit amount
-  function withdrawAndClaimFromPool(uint256 amount) internal override {
+  function withdrawAndClaimFromPool(uint amount) internal virtual override {
      IBeethovenxChef(pool).withdrawAndHarvest(poolId, amount, address(this));
   }
 
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
-  function emergencyWithdrawFromPool() internal override {
+  function emergencyWithdrawFromPool() internal virtual override {
     IBeethovenxChef(pool).emergencyWithdraw(poolId, address(this));
   }
 
@@ -162,7 +164,7 @@ abstract contract BeethovenBase is StrategyBase {
   function setupPullTokens() internal {
     (IERC20[] memory tokens,,) = beethovenVault.getPoolTokens(beethovenPoolId);
     IAsset[] memory tokenAssets = new IAsset[](tokens.length);
-    for (uint256 i = 0; i < tokens.length; i++) {
+    for (uint i = 0; i < tokens.length; i++) {
       tokenAssets[i] = IAsset(address(tokens[i]));
     }
     poolTokens = tokenAssets;
@@ -170,8 +172,8 @@ abstract contract BeethovenBase is StrategyBase {
 
   /// @dev Liquidate rewards, buy assets and add to beethoven pool
   function autoCompoundBalancer() internal {
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      uint256 amount = rewardBalance(i);
+    for (uint i = 0; i < _rewardTokens.length; i++) {
+      uint amount = rewardBalance(i);
       if (amount != 0) {
         uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio) / _BUY_BACK_DENOMINATOR;
         address rt = _rewardTokens[i];
@@ -186,19 +188,20 @@ abstract contract BeethovenBase is StrategyBase {
     if (toCompound == 0) {
       return;
     }
+    uint tokensToDeposit = toCompound;
     if (rewardToken != depositToken) {
       if (useBeethovenSingleSwap){
         balancerSwap(rewardToDepositPoolId, rewardToken, depositToken, toCompound);
       }else{
         forwarderSwap(rewardToken, depositToken, toCompound);
       }
+      tokensToDeposit = IERC20(depositToken).balanceOf(address (this));
     }
-    uint depositTokenBalance = IERC20(depositToken).balanceOf(address (this));
-    balancerJoin(beethovenPoolId, depositToken, depositTokenBalance);
+    balancerJoin(beethovenPoolId, depositToken, tokensToDeposit);
   }
 
   /// @dev swap _tokenIn to _tokenOut using pool identified by _poolId
-  function balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint256 _amountIn) internal{
+  function balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint _amountIn) internal{
     IBeethovenVault.SingleSwap memory singleSwapData = IBeethovenVault.SingleSwap(
       _poolId,
       _defaultSwapKind,
@@ -213,7 +216,7 @@ abstract contract BeethovenBase is StrategyBase {
   }
 
   /// @dev swap _tokenIn to _tokenOut using pool identified by _poolId
-  function forwarderSwap( address _tokenIn, address _tokenOut, uint256 _amountIn) internal {
+  function forwarderSwap( address _tokenIn, address _tokenOut, uint _amountIn) internal {
     address forwarder = IController(controller()).feeRewardForwarder();
     IERC20(_tokenIn).safeApprove(forwarder, 0);
     IERC20(_tokenIn).safeApprove(forwarder, _amountIn);
@@ -222,9 +225,9 @@ abstract contract BeethovenBase is StrategyBase {
   }
 
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
-  function balancerJoin(bytes32 _poolId, address _tokenIn, uint256 _amountIn) internal {
-    uint256[] memory amounts = new uint256[](poolTokens.length);
-    for (uint256 i = 0; i < amounts.length; i++) {
+  function balancerJoin(bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
+    uint[] memory amounts = new uint[](poolTokens.length);
+    for (uint i = 0; i < amounts.length; i++) {
       amounts[i] = address(poolTokens[i]) == _tokenIn ? _amountIn : 0;
     }
     bytes memory userData = abi.encode(1, amounts, 1);
@@ -238,6 +241,10 @@ abstract contract BeethovenBase is StrategyBase {
     IERC20(depositToken).safeApprove(address(beethovenVault), 0);
     IERC20(depositToken).safeApprove(address(beethovenVault), _amountIn);
     beethovenVault.joinPool(_poolId, address(this), address(this), request);
+  }
+
+  function platform() external override pure returns (IStrategy.Platform) {
+    return _PLATFORM;
   }
 
 }

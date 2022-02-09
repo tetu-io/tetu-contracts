@@ -68,7 +68,10 @@ describe('Universal Beethoven tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = "StrategyBeethoven";
+    let strategyContractName = "StrategyBeethoven";
+    if (idx === "22"){
+      strategyContractName = "StrategyBeethovenFD";
+    }
     const vaultName = "Beets" + "_" + lpName;
     const underlying = lpAddress;
     // add custom liquidation path if necessary

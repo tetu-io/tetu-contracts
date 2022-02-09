@@ -18,7 +18,6 @@ contract StrategyBeethoven is BeethovenBase {
   // MASTER_CHEF
   address private constant _MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
   address private constant _BEETHOVEN_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.BEETHOVEN;
 
   // rewards
   address private constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
@@ -28,7 +27,7 @@ contract StrategyBeethoven is BeethovenBase {
     address _controller,
     address _vault,
     address _underlying,
-    uint256 _poolId,
+    uint _poolId,
     address _depositToken,
     bytes32 _beethovenPoolId,
     bytes32 _rewardToDepositPoolId
@@ -49,7 +48,4 @@ contract StrategyBeethoven is BeethovenBase {
     require(_depositToken != address(0), "zero _depositToken");
   }
 
-  function platform() external override pure returns (IStrategy.Platform) {
-    return _PLATFORM;
-  }
 }
