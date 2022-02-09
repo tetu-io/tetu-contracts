@@ -193,6 +193,7 @@ export class MaticAddresses {
   public static camWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
   public static camWBTCVault = "0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0".toLowerCase();
   public static camWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
+  public static QI_DelegateRegistry = "0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446".toLowerCase();
 
   // BALANCER
   public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
