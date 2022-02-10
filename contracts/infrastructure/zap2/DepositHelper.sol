@@ -18,40 +18,15 @@ import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
 import "./IMultiSwap2.sol";
 import "./IZapContract2.sol";
-
-//import "hardhat/console.sol"; // TODO remove
+import "./IDepositHelper.sol";
 
 /// @title DepositHelper
 /// @dev Contract to hold all token approvals and bath actions
 /// @author bogdoslav
-contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
+contract DepositHelper is IDepositHelper, Controllable {
   using SafeERC20 for IERC20;
 
   IZapContract2 zap;
-
-  struct DepositWithdrawData {
-    address vault;
-    address underlying;
-    uint256 amount;
-  }
-
-  struct ZapIntoData {
-    address vault;
-    address tokenIn;
-    address asset;
-    bytes routesData;
-    uint256 tokenInAmount;
-    uint256 slippageTolerance;
-  }
-
-  struct ZapOutData {
-    address vault;
-    address tokenOut;
-    address asset;
-    bytes routesData;
-    uint256 shareTokenAmount;
-    uint256 slippageTolerance;
-  }
 
   /// @dev Restrict indirect calls (calls from contracts)
   modifier onlyDirectCall() {
@@ -65,7 +40,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
   }
 
   function setZap(address zapContract2)
-  external onlyControllerOrGovernance {
+  external override onlyControllerOrGovernance {
     _setZap(zapContract2);
   }
 
@@ -77,7 +52,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
 
   /// @dev Bath deposit into the vaults
   function depositToVaults(DepositWithdrawData[] memory deposits)
-  external onlyDirectCall returns (uint256[] memory shareBalances) {
+  external override onlyDirectCall returns (uint256[] memory shareBalances) {
     uint len = deposits.length;
     require(len != 0, 'DH: Empty data array');
     shareBalances = new uint256[](len);
@@ -90,7 +65,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
 
   /// @dev Bath withdraw from the vaults
   function withdrawFromVaults(DepositWithdrawData[] memory withdrawals)
-  external onlyDirectCall returns (uint256[] memory underlyingBalances) {
+  external override onlyDirectCall returns (uint256[] memory underlyingBalances) {
     uint len = withdrawals.length;
     require(len != 0, 'DH: Empty data array');
     underlyingBalances = new uint256[](len);
@@ -103,7 +78,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
 
   /// @dev Bath zap into the vaults
   function zapIntoVaults(ZapIntoData[] memory deposits)
-  external onlyDirectCall returns (uint256[] memory shareBalances) {
+  external override onlyDirectCall returns (uint256[] memory shareBalances) {
     uint len = deposits.length;
     require(len != 0, 'DH: Empty data array');
     shareBalances = new uint256[](len);
@@ -116,7 +91,7 @@ contract DepositHelper is Controllable /*is IDepositHelper*/ {// TODO interface
 
   /// @dev Bath zap out the vaults
   function zapOutVaults(ZapOutData[] memory withdrawals)
-  external onlyDirectCall returns (uint256[] memory underlyingBalances) {
+  external override onlyDirectCall returns (uint256[] memory underlyingBalances) {
     uint len = withdrawals.length;
     require(len != 0, 'DH: Empty data array');
     underlyingBalances = new uint256[](len);

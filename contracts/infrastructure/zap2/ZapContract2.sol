@@ -11,10 +11,10 @@
 */
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
 import "../../base/interface/IStrategy.sol";
@@ -32,10 +32,11 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "2.0.0";
 
   IMultiSwap2 public multiSwap;
   mapping(address => uint256) calls;
+  mapping(address => address) public factoryToRouter;
 
 /*  struct ZapInfo {
     address lp;
@@ -48,16 +49,31 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     uint256 slippageTolerance;
   }*/
 
-  constructor(address _controller, address _multiSwap) {
+  constructor(address _controller, address _multiSwap, address[] memory _factories,
+    address[] memory _routers) {
+    initialize(_controller, _multiSwap, _factories, _routers);
+  }
+
+  function initialize(address _controller, address _multiSwap, address[] memory _factories,
+    address[] memory _routers) public initializer {
     require(_multiSwap != address(0), "ZC: zero multiSwap address");
     Controllable.initializeControllable(_controller);
     multiSwap = IMultiSwap2(_multiSwap);
+    for (uint256 i = 0; i < _factories.length; i++) {
+      factoryToRouter[_factories[i]] = _routers[i];
+    }
   }
 
   modifier onlyOneCallPerBlock() {
     require(calls[msg.sender] < block.number, "ZC: call in the same block forbidden");
     _;
     calls[msg.sender] = block.number;
+  }
+
+  // ******************* VIEWS *****************************
+
+  function routerForPair(address pair) public override view returns (address) { // TODO split to internal and external
+    return factoryToRouter[IUniswapV2Pair(pair).factory()];
   }
 
   // ******************** USERS ACTIONS *********************
@@ -232,7 +248,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
 
     uint256 lpBalance = withdrawFromVault(_vault, address(lp), _shareTokenAmount);
 
-    IUniswapV2Router02 router = IUniswapV2Router02(multiSwap.routerForPair(address(lp)));
+    IUniswapV2Router02 router = IUniswapV2Router02(routerForPair(address(lp)));
 
     IERC20(address(lp)).safeApprove(address(router), 0);
     IERC20(address(lp)).safeApprove(address(router), lpBalance);
@@ -276,7 +292,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     uint256 asset0Amount = IERC20(zapInfo.asset0).balanceOf(address(this));
     uint256 asset1Amount = IERC20(zapInfo.asset1).balanceOf(address(this));
 
-    IUniswapV2Router02 router = IUniswapV2Router02(multiSwap.routerForPair(zapInfo.lp));
+    IUniswapV2Router02 router = IUniswapV2Router02(routerForPair(zapInfo.lp));
 
     IERC20(zapInfo.asset0).safeApprove(address(router), 0);
     IERC20(zapInfo.asset0).safeApprove(address(router), asset0Amount);

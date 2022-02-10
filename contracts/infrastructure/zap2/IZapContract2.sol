@@ -29,6 +29,10 @@ interface IZapContract2 {
     uint256 slippageTolerance;
   }
 
+  // ******************* VIEWS *****************************
+
+  function routerForPair(address pair) external view returns (address);
+
   // ******************** USERS ACTIONS *********************
 
   /// @notice Approval for token is assumed.

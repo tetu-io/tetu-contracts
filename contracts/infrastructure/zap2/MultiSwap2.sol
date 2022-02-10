@@ -12,11 +12,10 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"; // TODO remove
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/IERC20Metadata.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
 import "../../swap/interfaces/ITetuSwapPair.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
@@ -26,20 +25,17 @@ import "../../third_party/IERC20Name.sol";
 import "../../swap/libraries/Math.sol";
 import "./IMultiSwap2.sol";
 
-import "hardhat/console.sol"; // TODO remove
+import "hardhat/console.sol";
 
 /// @title MultiSwapLoader
 /// @dev Multi Swap Data Loader
 /// @author bogdoslav
-contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
+contract MultiSwap2 is IMultiSwap2, Controllable,  ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   string public constant VERSION = "2.0.0";
   uint256 public constant MAX_AMOUNT = type(uint).max;
   uint128 constant private _PRECISION_FEE = 10000;
-
-
-  mapping(address => address) public factoryToRouter;
 
   struct LpData {
     address lp;
@@ -57,23 +53,14 @@ contract MultiSwap2 is Controllable, IMultiSwap2, ReentrancyGuard  {
     string symbol;
   }
 
-
-  constructor(
-    address _controller,
-    address[] memory _factories,
-    address[] memory _routers
-) {
-  Controllable.initializeControllable(_controller);
-  for (uint256 i = 0; i < _factories.length; i++) {
-    factoryToRouter[_factories[i]] = _routers[i];
-  }
-}
-  // ******************* VIEWS *****************************
-
-  function routerForPair(address pair) public override view returns (address) { // TODO split to internal and external
-    return factoryToRouter[IUniswapV2Pair(pair).factory()];
+  constructor(address _controller) {
+    initialize(_controller);
   }
 
+  function initialize(address _controller)
+  public initializer {
+    Controllable.initializeControllable(_controller);
+  }
 
   // ******* VIEWS FOR BACKEND TS LIBRARY DATA LOADING ******
 
