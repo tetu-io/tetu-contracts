@@ -49,6 +49,7 @@ import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
 import {TimeUtils} from "../../test/TimeUtils";
 import {readFileSync} from "fs";
+import {Libraries} from "hardhat-deploy/dist/types";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -64,6 +65,10 @@ const argv = require('yargs/yargs')()
       type: "string",
     },
   }).argv;
+
+const libraries = new Map<string, string>([
+  ['SmartVault', 'VaultLibrary']
+]);
 
 export class DeployerUtils {
 
@@ -118,11 +123,26 @@ export class DeployerUtils {
 
     const gasPrice = await web3.eth.getGasPrice();
     log.info("Gas price: " + gasPrice);
-
-    const _factory = (await ethers.getContractFactory(
-      name,
-      signer
-    )) as T;
+    const lib: string | undefined = libraries.get(name);
+    let _factory;
+    if (lib) {
+      console.log('DEPLOY LIBRARY', lib, 'for', name);
+      const libAddress = (await DeployerUtils.deployContract(signer, lib)).address;
+      const librariesObj: Libraries = {};
+      librariesObj[lib] = libAddress;
+      _factory = (await ethers.getContractFactory(
+        name,
+        {
+          signer,
+          libraries: librariesObj
+        }
+      )) as T;
+    } else {
+      _factory = (await ethers.getContractFactory(
+        name,
+        signer
+      )) as T;
+    }
     const instance = await _factory.deploy(...args);
     console.log('Deploy tx:', instance.deployTransaction.hash);
     await instance.deployed();
@@ -309,6 +329,17 @@ export class DeployerUtils {
     const logic = await DeployerUtils.deployContract(signer, "SmartVault");
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as SmartVault;
+  }
+
+  public static async deploySmartVaultLogic(signer: SignerWithAddress): Promise<SmartVault> {
+    const logic = await DeployerUtils.deployContract(signer, "SmartVault");
+    return logic as SmartVault;
+  }
+
+  public static async deployStrategyProxy(signer: SignerWithAddress, strategyName: string): Promise<IStrategy> {
+    const logic = await DeployerUtils.deployContract(signer, strategyName);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
+    return logic.attach(proxy.address) as IStrategy;
   }
 
   public static async deployStrategySplitter(signer: SignerWithAddress): Promise<StrategySplitter> {

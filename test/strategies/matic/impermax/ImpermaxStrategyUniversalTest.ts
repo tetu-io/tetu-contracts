@@ -16,29 +16,33 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-  .env('TETU')
-  .options({
-    disableStrategyTests: {
-      type: "boolean",
-      default: false,
-    },
-    onlyOneTarotStrategyTest: {
-      type: "number",
-      default: 45,
-    },
-    hardhatChainId: {
-      type: "number",
-      default: 137
-    },
-  }).argv;
+    .env('TETU')
+    .options({
+      disableStrategyTests: {
+        type: "boolean",
+        default: false,
+      },
+      onlyOneImpermaxStrategyTest: {
+        type: "number",
+        default: 47,
+      },
+      deployCoreContracts: {
+        type: "boolean",
+        default: true,
+      },
+      hardhatChainId: {
+        type: "number",
+        default: 137
+      },
+    }).argv;
 
 chai.use(chaiAsPromised);
 
-describe('Universal Tarot tests', async () => {
-  if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
+describe('Universal Impermax tests', async () => {
+  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/tarot.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/impermax.csv', 'utf8').split(/\r?\n/);
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
@@ -58,11 +62,11 @@ describe('Universal Tarot tests', async () => {
     const borrow = strat[6];
     const utilization = strat[7];
 
-    if (+tvl < 1_000_000 || idx === 'idx') {
+    if (+tvl < 1_000 || idx === 'idx') {
       console.log('skip', idx, +tvl);
       return;
     }
-    if (argv.onlyOneTarotStrategyTest !== -1 && +strat[0] !== argv.onlyOneTarotStrategyTest) {
+    if (argv.onlyOneImpermaxStrategyTest !== -1 && +strat[0] !== argv.onlyOneImpermaxStrategyTest) {
       return;
     }
 
@@ -73,89 +77,83 @@ describe('Universal Tarot tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyTarot';
+    const strategyContractName = 'StrategyImpermax';
     const vaultName = tokenName;
     const underlying = tokenAdr;
+    const deposit = 100_000;
+    const loopValue = 300;
+    const advanceBlocks = true;
 
     // add custom liquidation path if necessary
     const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = false;
-    // only for strategies where we expect PPFS fluctuations
+    const ppfsDecreaseAllowed = true;
     const balanceTolerance = 0;
     const finalBalanceTolerance = 0;
-    const deposit = 1_000_000;
     // at least 3
     const loops = 3;
-    // number of blocks or timestamp value
-    const loopValue = 3000;
-    // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
-    const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [];
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
-        signer,
-        core,
-        vaultName,
-        vaultAddress => {
-          const strategyArgs = [
-            core.controller.address,
-            vaultAddress,
-            underlying,
-            poolAdr,
-            10_00
-          ];
-          return DeployerUtils.deployContract(
-            signer,
-            strategyContractName,
-            ...strategyArgs
-          ) as Promise<IStrategy>;
-        },
-        underlying
+          signer,
+          core,
+          vaultName,
+          vaultAddress => {
+            const strategyArgs = [
+              core.controller.address,
+              vaultAddress,
+              underlying,
+              poolAdr,
+              100_00
+            ];
+            return DeployerUtils.deployContract(
+                signer,
+                strategyContractName,
+                ...strategyArgs
+            ) as Promise<IStrategy>;
+          },
+          underlying
       );
     };
     const hwInitiator = (
-      _signer: SignerWithAddress,
-      _user: SignerWithAddress,
-      _core: CoreContractsWrapper,
-      _tools: ToolsContractsWrapper,
-      _underlying: string,
-      _vault: SmartVault,
-      _strategy: IStrategy,
-      _balanceTolerance: number
+        _signer: SignerWithAddress,
+        _user: SignerWithAddress,
+        _core: CoreContractsWrapper,
+        _tools: ToolsContractsWrapper,
+        _underlying: string,
+        _vault: SmartVault,
+        _strategy: IStrategy,
+        _balanceTolerance: number
     ) => {
       return new DoHardWorkLoopBase(
-        _signer,
-        _user,
-        _core,
-        _tools,
-        _underlying,
-        _vault,
-        _strategy,
-        _balanceTolerance,
-        finalBalanceTolerance,
+          _signer,
+          _user,
+          _core,
+          _tools,
+          _underlying,
+          _vault,
+          _strategy,
+          _balanceTolerance,
+          finalBalanceTolerance,
       );
     };
 
     universalStrategyTest(
-      strategyContractName + vaultName + idx,
-      deployInfo,
-      deployer,
-      hwInitiator,
-      forwarderConfigurator,
-      ppfsDecreaseAllowed,
-      balanceTolerance,
-      deposit,
-      loops,
-      loopValue,
-      advanceBlocks,
-      specificTests,
+        strategyContractName + '_' + vaultName,
+        deployInfo,
+        deployer,
+        hwInitiator,
+        forwarderConfigurator,
+        ppfsDecreaseAllowed,
+        balanceTolerance,
+        deposit,
+        loops,
+        loopValue,
+        advanceBlocks,
+        specificTests,
     );
-
   });
-
-
 });
