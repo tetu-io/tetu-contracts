@@ -26,7 +26,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   string public constant override STRATEGY_NAME = "ImpermaxBaseStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   /// @dev No reward tokens
   address[] private _REWARD_TOKENS;
   /// @dev Threshold for partially decompound
@@ -122,10 +122,16 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
     return IBorrowable(pool).redeem(address(this));
   }
 
+  /// @dev Withdraw everything from external pool
+  function exitRewardPool() internal override {
+    IERC20(pool).safeTransfer(pool, IERC20(pool).balanceOf(address(this)));
+    IBorrowable(pool).redeem(address(this));
+  }
+
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-    IERC20(pool).safeTransfer(pool, _rewardPoolBalance());
+    IERC20(pool).safeTransfer(pool, IERC20(pool).balanceOf(address(this)));
     IBorrowable(pool).redeem(address(this));
   }
 

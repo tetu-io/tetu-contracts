@@ -321,6 +321,8 @@ export class DoHardWorkLoopBase {
     for (const rtBal of stratRtBalances) {
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
+    expect(await this.strategy.rewardPoolBalance()).is.eq(0);
+    expect(await TokenUtils.balanceOf(this.underlying, this.strategy.address)).is.eq(0);
 
     // check vault balance
     const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
