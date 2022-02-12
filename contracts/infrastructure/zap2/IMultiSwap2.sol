@@ -26,13 +26,12 @@ interface IMultiSwap2 {
     address lp;
     bool reverse;
   }
-//  function findLpsForSwaps(address _tokenIn, address _tokenOut) external view returns (address[] memory);// TODO remove
 
   function multiSwap(
     address tokenIn,
     address tokenOut,
-    uint256 amount,
-    uint256 slippageTolerance,
+    uint amount,
+    uint slippageTolerance,
     bytes memory routesData
   ) external;
 

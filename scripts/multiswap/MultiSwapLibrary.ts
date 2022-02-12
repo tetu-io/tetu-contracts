@@ -1,9 +1,14 @@
-import {MultiSwap2} from "../../typechain";
+import {
+  MultiSwap2,
+  ContractUtils
+} from "../../typechain";
 import * as fs from 'fs';
 import {BigNumber, utils} from "ethers";
 import {ethers} from "hardhat";
 
 const MULTI_SWAP2_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
+// TODO set address after deploy
+const CONTRACT_UTILS_MATIC = '0xF5BcFFf7E063Ebd673f0e1F4f7239516300B32d8'
 
 const BIGNUMBER0 = BigNumber.from(0);
 
@@ -20,7 +25,6 @@ type Pair = {
 type IndexedPair = { [key: string]: Pair }
 type IndexedPairs = { [key: string]: Pair[] }
 
-
 type Route = {
   steps: Pair[];
   finished: boolean;
@@ -33,7 +37,7 @@ type Step = {
 }
 
 async function loadAllPairs(
-    multiSwap2: MultiSwap2,
+    contractUtils: ContractUtils,
     factories: string[],
     bath = 1000): Promise<string[][]> {
   const pairs: string[][] = [];
@@ -42,7 +46,7 @@ async function loadAllPairs(
     let skip = 0;
     let p
     do {
-      p = await multiSwap2.loadPairsUniswapV2(factory, skip, bath)
+      p = await contractUtils.loadPairsUniswapV2(factory, skip, bath)
       console.log(' skip, bath, loaded', skip, bath, p.length);
       pairs.push(...p)
       skip += p.length
@@ -150,9 +154,9 @@ function extractPairsFromRoutes(routes: Route[]): IndexedPair {
   return pairs
 }
 
-async function loadPairReserves(multiSwap2: MultiSwap2, pairs: IndexedPair) {
+async function loadPairReserves(contractUtils: ContractUtils, pairs: IndexedPair) {
   const addresses = Object.keys(pairs)
-  const reserves = await multiSwap2.loadPairReserves(addresses)
+  const reserves = await contractUtils.loadPairReserves(addresses)
   for (let p = 0; p < addresses.length; p++) {
     const pair: Pair = pairs[addresses[p]]
     const reserve = reserves[p]
@@ -168,11 +172,11 @@ async function loadPairReserves(multiSwap2: MultiSwap2, pairs: IndexedPair) {
   }
 }
 
-async function loadReserves(multiSwap2: MultiSwap2, routes: Route[]) {
+async function loadReserves(contractUtils: ContractUtils, routes: Route[]) {
   const usedPairs = extractPairsFromRoutes(routes);
   const usedPairsKeys = Object.keys(usedPairs) // TODO remove
   console.log('usedPairsKeys.length', usedPairsKeys.length); // TODO remove
-  await loadPairReserves(multiSwap2, usedPairs);
+  await loadPairReserves(contractUtils, usedPairs);
 }
 
 // copy from UniswapV2Library
@@ -316,8 +320,8 @@ function encodeRouteData(routesData: RoutesData): string {
   console.log('filteredWeights', filteredWeights);
 
   return utils.defaultAbiCoder.encode(
-      ['uint[]', 'tuple(address lp, bool reverse)[][]'],
-      [filteredWeights, filteredSteps]
+      ['uint[]', 'tuple(address lp, bool reverse)[][]','uint'],
+      [filteredWeights, filteredSteps, routesData.amountOut]
   );
 }
 
@@ -333,6 +337,7 @@ function findBestRoutes(allRoutes: Route[], amountIn: BigNumber): RoutesData {
 
 export {
   MULTI_SWAP2_MATIC,
+  CONTRACT_UTILS_MATIC,
   Pair,
   loadAllPairs,
   saveObjectToJsonFile,
@@ -345,5 +350,6 @@ export {
   sortRoutesByOutputs,
   getBestRoute,
   findBestRoutes,
+  RoutesData,
   encodeRouteData,
 }

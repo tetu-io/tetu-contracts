@@ -1,15 +1,15 @@
 import {
-  MultiSwap2,
+  ContractUtils
 } from "../../typechain";
 import {MaticAddresses} from "../addresses/MaticAddresses";
-import {loadAllPairs, saveObjectToJsonFile, MULTI_SWAP2_MATIC} from "./MultiSwapLib";
+import {loadAllPairs, saveObjectToJsonFile, CONTRACT_UTILS_MATIC} from "./MultiSwapLibrary";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {ethers} from "hardhat";
 
 const pairsFileName = 'scripts/multiswap/json/MultiSwapPairs.json'
 let signer: SignerWithAddress;
-let multiSwapLoader: MultiSwap2;
+let contractUtils: ContractUtils;
 
 const factories = [
   MaticAddresses.TETU_SWAP_FACTORY,
@@ -20,10 +20,10 @@ const factories = [
 async function main() {
   signer = (await ethers.getSigners())[0];
   // MultiSwapLoader = await DeployerUtils.deployContract(signer, 'MultiRouter') as MultiRouter;
-  multiSwapLoader = await DeployerUtils.connectInterface(
-      signer, "MultiSwap2", MULTI_SWAP2_MATIC) as MultiSwap2
+  contractUtils = await DeployerUtils.connectInterface(
+      signer, "ContractUtils", CONTRACT_UTILS_MATIC) as ContractUtils
 
-  const pairs = await loadAllPairs(multiSwapLoader, factories)
+  const pairs = await loadAllPairs(contractUtils, factories)
   console.log('pairs.length', pairs.length);
   await saveObjectToJsonFile(pairs, pairsFileName)
   console.log('saved to', pairsFileName);

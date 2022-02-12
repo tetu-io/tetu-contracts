@@ -11,11 +11,11 @@
 */
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../../openzeppelin/SafeMath.sol";
 import "../../openzeppelin/IERC20.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/ReentrancyGuard.sol";
-import "../../base/governance/Controllable.sol";
+import "../../base/governance/ControllableV2.sol";
 import "../../base/interface/ISmartVault.sol";
 import "../../base/interface/IStrategy.sol";
 import "../../base/interface/IController.sol";
@@ -28,7 +28,7 @@ import "./IZapContract2.sol";
 /// @title Dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults
 /// @author belbix
-contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
+contract ZapContract2 is IZapContract2, ControllableV2, ReentrancyGuard {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -45,8 +45,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     address[] asset0Route;
     address asset1;
     address[] asset1Route;
-    uint256 tokenInAmount;
-    uint256 slippageTolerance;
+    uint tokenInAmount;
+    uint slippageTolerance;
   }*/
 
   constructor(address _controller, address _multiSwap, address[] memory _factories,
@@ -57,14 +57,15 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   function initialize(address _controller, address _multiSwap, address[] memory _factories,
     address[] memory _routers) public initializer {
     require(_multiSwap != address(0), "ZC: zero multiSwap address");
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
     multiSwap = IMultiSwap2(_multiSwap);
-    for (uint256 i = 0; i < _factories.length; i++) {
+    for (uint i = 0; i < _factories.length; i++) {
       factoryToRouter[_factories[i]] = _routers[i];
     }
   }
 
-  modifier onlyOneCallPerBlock() {
+  modifier onlyOneCallPerBlockDirect() {
+    require(msg.sender == tx.origin, "ZC: Indirect calls restricted");
     require(calls[msg.sender] < block.number, "ZC: call in the same block forbidden");
     _;
     calls[msg.sender] = block.number;
@@ -92,16 +93,16 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     address _tokenIn,
     address _asset,
     bytes memory _routesData,
-    uint256 _tokenInAmount,
-    uint256 slippageTolerance
-  ) external override nonReentrant onlyOneCallPerBlock {
+    uint _tokenInAmount,
+    uint slippageTolerance
+  ) external override nonReentrant onlyOneCallPerBlockDirect {
     require(_tokenInAmount > 1, "ZC: not enough amount");
     require(_asset == ISmartVault(_vault).underlying(), "ZC: asset is not underlying");
 
     IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _tokenInAmount);
 
     // asset multi-swap
-    callMultiSwap(
+    _callMultiSwap(
       _tokenIn,
       _tokenInAmount,
       _routesData,
@@ -110,9 +111,9 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     );
     // assume that final outcome amount was checked on the multiSwap contract side
 
-    uint256 assetAmount = IERC20(_asset).balanceOf(address(this));
+    uint assetAmount = IERC20(_asset).balanceOf(address(this));
 
-    depositToVault(_vault, assetAmount, _asset);
+    _depositToVault(_vault, assetAmount, _asset);
   }
 
   /// @notice Approval for token is assumed.
@@ -133,9 +134,9 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     bytes memory _routesData0,
     address _asset1,
     bytes memory _routesData1,
-    uint256 _tokenInAmount,
-    uint256 slippageTolerance
-  ) external override nonReentrant onlyOneCallPerBlock {
+    uint _tokenInAmount,
+    uint slippageTolerance
+  ) external override nonReentrant onlyOneCallPerBlockDirect {
     require(_tokenInAmount > 1, "ZC: not enough amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
@@ -146,7 +147,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _tokenInAmount.div(2).mul(2));
 
     // asset0 multi-swap
-    callMultiSwap(
+    _callMultiSwap(
       _tokenIn,
       _tokenInAmount.div(2),
       _routesData0,
@@ -154,8 +155,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       slippageTolerance
     );
 
-    // asset0 multi-swap
-    callMultiSwap(
+    // asset1 multi-swap
+    _callMultiSwap(
       _tokenIn,
       _tokenInAmount.div(2),
       _routesData1,
@@ -164,7 +165,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     );
     // assume that final outcome amounts was checked on the multiSwap contract side
 
-    uint256 liquidity = addLiquidity(
+    uint liquidity = _addLiquidity(
       ZapInfo(
         address(lp),
         _tokenIn,
@@ -178,7 +179,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     );
 
     require(liquidity != 0, "ZC: zero liq");
-    depositToVault(_vault, liquidity, address(lp));
+    _depositToVault(_vault, liquidity, address(lp));
   }
 
   /// @notice Approval for share token is assumed.
@@ -194,18 +195,18 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     address _tokenOut,
     address _asset,
     bytes memory _routesData,
-    uint256 _shareTokenAmount,
-    uint256 slippageTolerance
-  ) external override nonReentrant onlyOneCallPerBlock {
+    uint _shareTokenAmount,
+    uint slippageTolerance
+  ) external override nonReentrant onlyOneCallPerBlockDirect {
     require(_shareTokenAmount != 0, "ZC: zero amount");
     require(_asset == ISmartVault(_vault).underlying(), "ZC: asset is not underlying");
 
     IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
 
-    uint256 assetBalance = withdrawFromVault(_vault, _asset, _shareTokenAmount);
+    uint assetBalance = _withdrawFromVault(_vault, _asset, _shareTokenAmount);
 
     // asset multi-swap
-    callMultiSwap(
+    _callMultiSwap(
       _asset,
       assetBalance,
       _routesData,
@@ -213,7 +214,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       slippageTolerance
     );
 
-    uint256 tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
+    uint tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
     require(tokenOutBalance != 0, "zero token out balance");
     IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
   }
@@ -235,9 +236,9 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     bytes memory _routesData0,
     address _asset1,
     bytes memory _routesData1,
-    uint256 _shareTokenAmount,
-    uint256 slippageTolerance
-  ) external override nonReentrant onlyOneCallPerBlock {
+    uint _shareTokenAmount,
+    uint slippageTolerance
+  ) external override nonReentrant onlyOneCallPerBlockDirect {
     require(_shareTokenAmount != 0, "ZC: zero amount");
 
     IUniswapV2Pair lp = IUniswapV2Pair(ISmartVault(_vault).underlying());
@@ -246,7 +247,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
 
     IERC20(_vault).safeTransferFrom(msg.sender, address(this), _shareTokenAmount);
 
-    uint256 lpBalance = withdrawFromVault(_vault, address(lp), _shareTokenAmount);
+    uint lpBalance = _withdrawFromVault(_vault, address(lp), _shareTokenAmount);
 
     IUniswapV2Router02 router = IUniswapV2Router02(routerForPair(address(lp)));
 
@@ -264,7 +265,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     );
 
     // asset0 multi-swap
-    callMultiSwap(
+    _callMultiSwap(
       _asset0,
       IERC20(_asset0).balanceOf(address(this)),
       _routesData0,
@@ -273,7 +274,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     );
 
     // asset1 multi-swap
-    callMultiSwap(
+    _callMultiSwap(
       _asset1,
       IERC20(_asset1).balanceOf(address(this)),
       _routesData1,
@@ -281,16 +282,16 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
       slippageTolerance
     );
 
-    uint256 tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
+    uint tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
     require(tokenOutBalance != 0, "zero token out balance");
     IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
   }
 
   // ************************* INTERNAL *******************
 
-  function addLiquidity(ZapInfo memory zapInfo) internal returns (uint256){
-    uint256 asset0Amount = IERC20(zapInfo.asset0).balanceOf(address(this));
-    uint256 asset1Amount = IERC20(zapInfo.asset1).balanceOf(address(this));
+  function _addLiquidity(ZapInfo memory zapInfo) internal returns (uint256){
+    uint asset0Amount = IERC20(zapInfo.asset0).balanceOf(address(this));
+    uint asset1Amount = IERC20(zapInfo.asset1).balanceOf(address(this));
 
     IUniswapV2Router02 router = IUniswapV2Router02(routerForPair(zapInfo.lp));
 
@@ -299,7 +300,7 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     IERC20(zapInfo.asset1).safeApprove(address(router), 0);
     IERC20(zapInfo.asset1).safeApprove(address(router), asset1Amount);
     // without care about min amounts
-    (,, uint256 liquidity) = router.addLiquidity(
+    (,, uint liquidity) = router.addLiquidity(
       zapInfo.asset0,
       zapInfo.asset1,
       asset0Amount,
@@ -314,43 +315,12 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     return liquidity;
   }
 
-  // TODO remove
-/*  function sendBackChange(ZapInfo memory zapInfo) internal {
-    uint256 bal0 = IERC20(zapInfo.asset0).balanceOf(address(this));
-    uint256 bal1 = IERC20(zapInfo.asset1).balanceOf(address(this));
-    if (bal0 != 0) {
-      callMultiSwap(
-        zapInfo.asset0,
-        bal0,
-        zapInfo.asset0Route,
-        true,
-        zapInfo.tokenIn,
-        zapInfo.slippageTolerance
-      );
-    }
-    if (bal1 != 0) {
-      callMultiSwap(
-        zapInfo.asset1,
-        bal1,
-        zapInfo.asset1Route,
-        true,
-        zapInfo.tokenIn,
-        zapInfo.slippageTolerance
-      );
-    }
-
-    uint256 tokenBal = IERC20(zapInfo.tokenIn).balanceOf(address(this));
-    if (tokenBal != 0) {
-      IERC20(zapInfo.tokenIn).safeTransfer(msg.sender, tokenBal);
-    }
-  }*/
-
-  function callMultiSwap(
+  function _callMultiSwap(
     address _tokenIn,
-    uint256 _tokenInAmount,
+    uint _tokenInAmount,
     bytes memory _routesData,
     address _tokenOut,
-    uint256 slippageTolerance
+    uint _slippageTolerance
   ) internal {
     if (_tokenIn == _tokenOut) {
       // no actions if we already have required token
@@ -359,28 +329,30 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
     require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
     IERC20(_tokenIn).safeApprove(address(multiSwap), 0);
     IERC20(_tokenIn).safeApprove(address(multiSwap), _tokenInAmount);
-    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, slippageTolerance, _routesData);
+    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, _slippageTolerance, _routesData);
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender
-  function depositToVault(address _vault, uint256 _amount, address _underlying) internal {
+  function _depositToVault(address _vault, uint _amount, address _underlying)
+  internal {
     require(ISmartVault(_vault).underlying() == _underlying, "ZC: wrong lp for vault");
 
     IERC20(_underlying).safeApprove(_vault, 0);
     IERC20(_underlying).safeApprove(_vault, _amount);
     ISmartVault(_vault).depositAndInvest(_amount);
 
-    uint256 shareBalance = IERC20(_vault).balanceOf(address(this));
+    uint shareBalance = IERC20(_vault).balanceOf(address(this));
     require(shareBalance != 0, "ZC: zero shareBalance");
 
     IERC20(_vault).safeTransfer(msg.sender, shareBalance);
   }
 
   /// @dev Withdraw from vault and check the result
-  function withdrawFromVault(address _vault, address _underlying, uint256 _amount) internal returns (uint256){
+  function _withdrawFromVault(address _vault, address _underlying, uint _amount)
+  internal returns (uint256){
     ISmartVault(_vault).withdraw(_amount);
 
-    uint256 underlyingBalance = IERC20(_underlying).balanceOf(address(this));
+    uint underlyingBalance = IERC20(_underlying).balanceOf(address(this));
     require(underlyingBalance != 0, "ZC: zero underlying balance");
     return underlyingBalance;
   }
@@ -390,7 +362,8 @@ contract ZapContract2 is IZapContract2, Controllable, ReentrancyGuard {
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
   /// @param _token Token address
   /// @param _amount Token amount
-  function salvage(address _token, uint256 _amount) override external onlyControllerOrGovernance {
+  function salvage(address _token, uint _amount) override external {
+    require(_isGovernance(msg.sender) || _isController(msg.sender), "ZC: forbidden");
     IERC20(_token).safeTransfer(msg.sender, _amount);
   }
 

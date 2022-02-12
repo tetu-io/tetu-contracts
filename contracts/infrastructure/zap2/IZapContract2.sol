@@ -25,8 +25,8 @@ interface IZapContract2 {
     bytes asset0Route;
     address asset1;
     bytes asset1Route;
-    uint256 tokenInAmount;
-    uint256 slippageTolerance;
+    uint tokenInAmount;
+    uint slippageTolerance;
   }
 
   // ******************* VIEWS *****************************
@@ -49,8 +49,8 @@ interface IZapContract2 {
     address _tokenIn,
     address _asset,
     bytes memory _routesData,
-    uint256 _tokenInAmount,
-    uint256 slippageTolerance
+    uint _tokenInAmount,
+    uint slippageTolerance
   ) external;
 
   /// @notice Approval for token is assumed.
@@ -71,8 +71,8 @@ interface IZapContract2 {
     bytes memory _routesData0,
     address _asset1,
     bytes memory _routesData1,
-    uint256 _tokenInAmount,
-    uint256 slippageTolerance
+    uint _tokenInAmount,
+    uint slippageTolerance
   ) external;
 
   /// @notice Approval for share token is assumed.
@@ -88,8 +88,8 @@ interface IZapContract2 {
     address _tokenOut,
     address _asset,
     bytes memory _routesData,
-    uint256 _shareTokenAmount,
-    uint256 slippageTolerance
+    uint _shareTokenAmount,
+    uint slippageTolerance
   ) external;
 
   /// @notice Approval for share token is assumed.
@@ -109,8 +109,8 @@ interface IZapContract2 {
     bytes memory _routesData0,
     address _asset1,
     bytes memory _routesData1,
-    uint256 _shareTokenAmount,
-    uint256 slippageTolerance
+    uint _shareTokenAmount,
+    uint slippageTolerance
   ) external;
 
   // ************************* GOV ACTIONS *******************
@@ -118,6 +118,6 @@ interface IZapContract2 {
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
   /// @param _token Token address
   /// @param _amount Token amount
-  function salvage(address _token, uint256 _amount) external;
+  function salvage(address _token, uint _amount) external;
 
 }

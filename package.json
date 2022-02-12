@@ -14,7 +14,8 @@
     "coverage": "npm run build && npx cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" hardhat coverage --temp artifacts --max-memory 4096",
     "slither": "npm run build && slither .",
     "lint": "tslint -p tsconfig.json",
-    "lint-fix": "tslint --fix -p tsconfig.json"
+    "lint-fix": "tslint --fix -p tsconfig.json",
+    "hardhat": "npx hardhat"
   },
   "repository": {
     "type": "git",

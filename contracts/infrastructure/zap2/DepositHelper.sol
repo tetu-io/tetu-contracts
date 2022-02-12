@@ -12,9 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../../base/governance/Controllable.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
 import "../../base/interface/ISmartVault.sol";
 import "./IMultiSwap2.sol";
 import "./IZapContract2.sol";
@@ -23,7 +22,7 @@ import "./IDepositHelper.sol";
 /// @title DepositHelper
 /// @dev Contract to hold all token approvals and bath actions
 /// @author bogdoslav
-contract DepositHelper is IDepositHelper, Controllable {
+contract DepositHelper is IDepositHelper {
   using SafeERC20 for IERC20;
 
   IZapContract2 zap;
@@ -34,20 +33,9 @@ contract DepositHelper is IDepositHelper, Controllable {
     _;
   }
 
-  constructor(address _controller, address _zapContract2) {
-    Controllable.initializeControllable(_controller);
-    _setZap(_zapContract2);
-  }
-
-  function setZap(address zapContract2)
-  external override onlyControllerOrGovernance {
-    _setZap(zapContract2);
-  }
-
-  function _setZap(address zapContract2)
-  internal {
-    require(zapContract2 != address(0), 'DH: Zap contract is not set');
-    zap = IZapContract2(zapContract2);
+  constructor(address _zapContract2) {
+    require(_zapContract2 != address(0), 'DH: Zap contract is not set');
+    zap = IZapContract2(_zapContract2);
   }
 
   /// @dev Bath deposit into the vaults
@@ -57,9 +45,9 @@ contract DepositHelper is IDepositHelper, Controllable {
     require(len != 0, 'DH: Empty data array');
     shareBalances = new uint256[](len);
 
-    for (uint256 i = 0; i < len; i++) {
+    for (uint i = 0; i < len; i++) {
       DepositWithdrawData memory d = deposits[i];
-      shareBalances[i] = depositToVault(d.vault, d.underlying, d.amount);
+      shareBalances[i] = _depositToVault(d.vault, d.underlying, d.amount);
     }
   }
 
@@ -70,9 +58,9 @@ contract DepositHelper is IDepositHelper, Controllable {
     require(len != 0, 'DH: Empty data array');
     underlyingBalances = new uint256[](len);
 
-    for (uint256 i = 0; i < len; i++) {
+    for (uint i = 0; i < len; i++) {
       DepositWithdrawData memory d = withdrawals[i];
-      underlyingBalances[i] = withdrawFromVault(d.vault, d.underlying, d.amount);
+      underlyingBalances[i] = _withdrawFromVault(d.vault, d.underlying, d.amount);
     }
   }
 
@@ -83,9 +71,9 @@ contract DepositHelper is IDepositHelper, Controllable {
     require(len != 0, 'DH: Empty data array');
     shareBalances = new uint256[](len);
 
-    for (uint256 i = 0; i < len; i++) {
+    for (uint i = 0; i < len; i++) {
       ZapIntoData memory d = deposits[i];
-      shareBalances[i] = zapIntoVault(d);
+      shareBalances[i] = _zapIntoVault(d);
     }
   }
 
@@ -96,17 +84,17 @@ contract DepositHelper is IDepositHelper, Controllable {
     require(len != 0, 'DH: Empty data array');
     underlyingBalances = new uint256[](len);
 
-    for (uint256 i = 0; i < len; i++) {
+    for (uint i = 0; i < len; i++) {
       ZapOutData memory d = withdrawals[i];
-      underlyingBalances[i] = zapOutVault(d);
+      underlyingBalances[i] = _zapOutVault(d);
     }
   }
 
   // ************************* INTERNAL *******************
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender
-  function depositToVault(address _vault, address _underlying, uint256 _amount)
-  internal returns (uint256 shareBalance) {
+  function _depositToVault(address _vault, address _underlying, uint _amount)
+  internal returns (uint shareBalance) {
     require(ISmartVault(_vault).underlying() == _underlying, "DH: wrong lp for vault");
 
     IERC20(_underlying).safeTransferFrom(msg.sender, address(this), _amount);
@@ -121,8 +109,8 @@ contract DepositHelper is IDepositHelper, Controllable {
   }
 
   /// @dev Withdraw from vault, check the result and send token to msg.sender
-  function withdrawFromVault(address _vault, address _underlying, uint256 _amount)
-  internal returns (uint256 underlyingBalance) {
+  function _withdrawFromVault(address _vault, address _underlying, uint _amount)
+  internal returns (uint underlyingBalance) {
     ISmartVault(_vault).withdraw(_amount);
 
     underlyingBalance = IERC20(_underlying).balanceOf(address(this));
@@ -132,7 +120,7 @@ contract DepositHelper is IDepositHelper, Controllable {
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender
-  function zapIntoVault(ZapIntoData memory d) internal returns (uint256 shareBalance){
+  function _zapIntoVault(ZapIntoData memory d) internal returns (uint shareBalance){
     require(ISmartVault(d.vault).underlying() == d.tokenIn, "DH: wrong lp for vault");
 
     IERC20(d.tokenIn).safeTransferFrom(msg.sender, address(this), d.tokenInAmount);
@@ -147,8 +135,8 @@ contract DepositHelper is IDepositHelper, Controllable {
   }
 
   /// @dev Withdraw from vault, check the result and send token to msg.sender
-  function zapOutVault(ZapOutData memory d)
-  internal returns (uint256 underlyingBalance) {
+  function _zapOutVault(ZapOutData memory d)
+  internal returns (uint underlyingBalance) {
     zap.zapOut(d.vault, d.tokenOut, d.asset, d.routesData, d.shareTokenAmount, d.slippageTolerance);
 
     underlyingBalance = IERC20(d.tokenOut).balanceOf(address(this));

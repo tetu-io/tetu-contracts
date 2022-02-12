@@ -1,0 +1,180 @@
+{
+ "weights": [
+  65,
+  20,
+  5,
+  5,
+  5
+ ],
+ "routes": [
+  {
+   "steps": [
+    {
+     "lp": "0x80fF4e4153883d770204607eb4aF9994739C72DC",
+     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+     "tokenOut": "0x255707B70BF90aa112006E1b07B9AeA6De021424",
+     "reverse": true,
+     "stepNumber": 1,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x3efa51ba16"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x08228f70e1ffb2ec43cd14"
+     }
+    }
+   ],
+   "finished": true,
+   "amountOut": {
+    "type": "BigNumber",
+    "hex": "0x0230e192c9fb20364b7f96"
+   }
+  },
+  {
+   "steps": [
+    {
+     "lp": "0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B",
+     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+     "tokenOut": "0x255707B70BF90aa112006E1b07B9AeA6De021424",
+     "reverse": true,
+     "stepNumber": 1,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x11dfa1c324"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x0250a282f44734819a055f"
+     }
+    }
+   ],
+   "finished": true,
+   "amountOut": {
+    "type": "BigNumber",
+    "hex": "0x014ed3b18648372f5ccb16"
+   }
+  },
+  {
+   "steps": [
+    {
+     "lp": "0xF85aC8afF5aD22C745Bfca07d65FbCdE67A04C90",
+     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+     "tokenOut": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+     "reverse": true,
+     "stepNumber": 1,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x061767a879"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x034835857bc8bb80271d"
+     }
+    },
+    {
+     "lp": "0x0196959958d923F2854E684B1694fb9B2d17AeE9",
+     "tokenIn": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+     "tokenOut": "0x255707B70BF90aa112006E1b07B9AeA6De021424",
+     "reverse": false,
+     "stepNumber": 2,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x06debfc360a8f104ffd0"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x01a6051173132ce3156f44"
+     }
+    }
+   ],
+   "finished": true,
+   "amountOut": {
+    "type": "BigNumber",
+    "hex": "0x739b683c0a34ad9e7631"
+   }
+  },
+  {
+   "steps": [
+    {
+     "lp": "0x0A1970792114AAa40611B95988b24644583E7d3C",
+     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+     "tokenOut": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+     "reverse": false,
+     "stepNumber": 1,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x3315bb20ef"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x3317623890"
+     }
+    },
+    {
+     "lp": "0xCA522CD609F7187C67C8B97bE0a3A3259e7BB6FF",
+     "tokenIn": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+     "tokenOut": "0x255707B70BF90aa112006E1b07B9AeA6De021424",
+     "reverse": true,
+     "stepNumber": 2,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x04770ccc89"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x9356b165ea2f935513c3"
+     }
+    }
+   ],
+   "finished": true,
+   "amountOut": {
+    "type": "BigNumber",
+    "hex": "0x730ed9b76f04d6bfbb98"
+   }
+  },
+  {
+   "steps": [
+    {
+     "lp": "0xad13Ad855FcAc6ffe6dbBa9362873228937Fba53",
+     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+     "tokenOut": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+     "reverse": false,
+     "stepNumber": 1,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x051aa413fa"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x6845a0ef10e367cf"
+     }
+    },
+    {
+     "lp": "0x8c9D7b1c0dAD06166Ef643Dbb75DEF0913Fe5760",
+     "tokenIn": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+     "tokenOut": "0x255707B70BF90aa112006E1b07B9AeA6De021424",
+     "reverse": true,
+     "stepNumber": 2,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0xb8cbafa94cb71287"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x012b751c5efac2a9e7e316"
+     }
+    }
+   ],
+   "finished": true,
+   "amountOut": {
+    "type": "BigNumber",
+    "hex": "0x5e834e9b6a59fd9af544"
+   }
+  }
+ ],
+ "amountOut": {
+  "type": "BigNumber",
+  "hex": "0x0264a8b25dee34a5d6e706"
+ }
+}

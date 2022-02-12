@@ -20,7 +20,7 @@ interface IDepositHelper {
   struct DepositWithdrawData {
     address vault;
     address underlying;
-    uint256 amount;
+    uint amount;
   }
 
   struct ZapIntoData {
@@ -28,8 +28,8 @@ interface IDepositHelper {
     address tokenIn;
     address asset;
     bytes routesData;
-    uint256 tokenInAmount;
-    uint256 slippageTolerance;
+    uint tokenInAmount;
+    uint slippageTolerance;
   }
 
   struct ZapOutData {
@@ -37,11 +37,9 @@ interface IDepositHelper {
     address tokenOut;
     address asset;
     bytes routesData;
-    uint256 shareTokenAmount;
-    uint256 slippageTolerance;
+    uint shareTokenAmount;
+    uint slippageTolerance;
   }
-
-  function setZap(address zapContract2) external;
 
   /// @dev Bath deposit into the vaults
   function depositToVaults(DepositWithdrawData[] memory deposits)

@@ -12,18 +12,35 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../openzeppelin/IERC20.sol";
+import "../openzeppelin/IERC20Metadata.sol";
+import "../third_party/uniswap/IUniswapV2Factory.sol";
+import "../third_party/uniswap/IUniswapV2Pair.sol";
+import "../third_party/IERC20Name.sol";
+import "../swap/libraries/Math.sol";
+
 
 /// @title Utility contract for using on website UI and other integrations
 /// @author belbix
 contract ContractUtils {
+
+  struct LpData {
+    address lp;
+    address token0;
+    address token1;
+  }
+
+  struct ReservesData {
+    uint reserve0;
+    uint reserve1;
+  }
 
   // ********************* ERC20 UTILS ************************************
 
   function erc20Names(address[] memory tokens) external view returns (string[] memory) {
     string[] memory result = new string[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      result[i] = ERC20(tokens[i]).name();
+      result[i] = IERC20Name(tokens[i]).name();
     }
     return result;
   }
@@ -31,7 +48,7 @@ contract ContractUtils {
   function erc20Symbols(address[] memory tokens) external view returns (string[] memory) {
     string[] memory result = new string[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      result[i] = ERC20(tokens[i]).symbol();
+      result[i] = IERC20Name(tokens[i]).symbol();
     }
     return result;
   }
@@ -39,33 +56,69 @@ contract ContractUtils {
   function erc20Decimals(address[] memory tokens) external view returns (uint8[] memory) {
     uint8[] memory result = new uint8[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      result[i] = ERC20(tokens[i]).decimals();
+      result[i] = IERC20Metadata(tokens[i]).decimals();
     }
     return result;
   }
 
-  function erc20Balances(address[] memory tokens, address adr) external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](tokens.length);
+  function erc20Balances(address[] memory tokens, address adr) external view returns (uint[] memory) {
+    uint[] memory result = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      result[i] = ERC20(tokens[i]).balanceOf(adr);
+      result[i] = IERC20(tokens[i]).balanceOf(adr);
     }
     return result;
   }
 
-  function erc20BalancesForAddresses(address token, address[] memory _addresses) external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](_addresses.length);
+  function erc20BalancesForAddresses(address token, address[] memory _addresses) external view returns (uint[] memory) {
+    uint[] memory result = new uint[](_addresses.length);
     for (uint i = 0; i < _addresses.length; i++) {
-      result[i] = ERC20(token).balanceOf(_addresses[i]);
+      result[i] = IERC20(token).balanceOf(_addresses[i]);
     }
     return result;
   }
 
-  function erc20TotalSupply(address[] memory tokens) external view returns (uint256[] memory) {
-    uint256[] memory result = new uint256[](tokens.length);
+  function erc20TotalSupply(address[] memory tokens) external view returns (uint[] memory) {
+    uint[] memory result = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      result[i] = ERC20(tokens[i]).totalSupply();
+      result[i] = IERC20(tokens[i]).totalSupply();
     }
     return result;
+  }
+
+  // ********************* UNISWAP V2 UTILS ************************************
+
+  function loadPairsUniswapV2(address factoryAddress, uint skip, uint count )
+  external view returns (LpData[] memory pairs) {
+    IUniswapV2Factory factory = IUniswapV2Factory(factoryAddress);
+    uint allPairsLength = factory.allPairsLength();
+    uint maxPair = Math.min(allPairsLength, skip + count);
+    pairs = new LpData[](maxPair - skip);
+
+    uint b = 0;
+    for (uint p = skip; p < maxPair; p++) {
+      address pairAddress = factory.allPairs(p);
+      IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
+      address token0 = pair.token0();
+      address token1 = pair.token1();
+
+      pairs[b++] = LpData({lp:pairAddress, token0:token0, token1: token1});
+    }
+  }
+
+  function loadPairReserves(address[] memory pairs)
+  external view returns (ReservesData[] memory data) {
+    uint len = pairs.length;
+    data = new ReservesData[](len);
+
+    for (uint i = 0; i < len; i++) {
+      address pairAddress = pairs[i];
+      IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
+      try pair.getReserves() returns (uint112 reserve0, uint112 reserve1, uint32) {
+        data[i] = ReservesData({reserve0:reserve0, reserve1:reserve1});
+      } catch (bytes memory) { // any error interpret as nil reserves
+        data[i] = ReservesData({reserve0:0, reserve1:0});
+      }
+    }
   }
 
 }
