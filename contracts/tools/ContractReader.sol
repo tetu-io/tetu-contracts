@@ -29,7 +29,7 @@ import "../infrastructure/price/IPriceCalculator.sol";
 contract ContractReader is Initializable, Controllable {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.6";
+  string public constant VERSION = "1.0.7";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -471,6 +471,9 @@ contract ContractReader is Initializable, Controllable {
   // https://www.investopedia.com/terms/a/apr.asp
   // TVL and rewards should be in the same currency and with the same decimals
   function computeApr(uint256 tvl, uint256 rewards, uint256 duration) public pure returns (uint256) {
+    if (tvl == 0 || duration == 0) {
+      return 0;
+    }
     uint256 rewardsPerTvlRatio = rewards.mul(PRECISION).div(tvl).mul(PRECISION);
     return rewardsPerTvlRatio.mul(PRECISION).div(duration.mul(PRECISION).div(1 days))
     .mul(uint256(365)).mul(uint256(100)).div(PRECISION);
@@ -514,6 +517,9 @@ contract ContractReader is Initializable, Controllable {
     }
     uint256 ppfsChange = ppfs.sub(startPpfs);
     uint256 timeChange = Math.max(curTime.sub(startTime), 1);
+    if (timeChange == 0) {
+      return 0;
+    }
     return ppfsChange.mul(PRECISION).div(timeChange)
     .mul(uint256(1 days * 365)).mul(uint256(100)).div(PRECISION);
   }
@@ -532,7 +538,7 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function strategyRewardTokens(address _strategy) public view returns (address[] memory){
-    if(IStrategy(_strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER) {
+    if (IStrategy(_strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER) {
       return IStrategySplitter(_strategy).strategyRewardTokens();
     }
     return IStrategy(_strategy).rewardTokens();
@@ -698,7 +704,10 @@ contract ContractReader is Initializable, Controllable {
     }
   }
 
-  function normalizePrecision(uint256 amount, uint256 decimals) internal pure returns (uint256){
+  function normalizePrecision(uint256 amount, uint256 decimals) internal pure returns (uint256) {
+    if (decimals == 0) {
+      return 0;
+    }
     return amount.mul(PRECISION).div(10 ** decimals);
   }
 

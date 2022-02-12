@@ -332,4 +332,22 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     return IController(controller()).isValidStrategy(_value);
   }
 
+  /// @notice Governance action. Remove given Vault from vaults array
+  /// @param index Index of vault in the vault array
+  function removeFromVaults(uint256 index) external onlyControllerOrGovernance {
+    require(index < _vaults.length, "B: Wrong index");
+    emit RemoveVault(_vaults[index]);
+    _vaults[index] = _vaults[_vaults.length - 1];
+    _vaults.pop();
+  }
+
+  /// @notice Governance action. Remove given Strategy from strategies array
+  /// @param index Index of strategy in the strategies array
+  function removeFromStrategies(uint256 index) external onlyControllerOrGovernance {
+    require(index < _strategies.length, "B: Wrong index");
+    emit RemoveStrategy(_strategies[index]);
+    _strategies[index] = _strategies[_strategies.length - 1];
+    _strategies.pop();
+  }
+
 }

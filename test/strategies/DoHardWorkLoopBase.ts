@@ -313,8 +313,13 @@ export class DoHardWorkLoopBase {
     await this.withdraw(true, BigNumber.from(0));
     // exit for signer
     await this.vault.connect(this.signer).exit();
+    await this.strategy.withdrawAllToVault();
+
+    expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
+
     // need to call hard work for sell a little excess rewards
-    await this.vault.doHardWork();
+    await this.strategy.doHardWork();
+
 
     // strategy should not contain any tokens in the end
     const stratRtBalances = await StrategyTestUtils.saveStrategyRtBalances(this.strategy);

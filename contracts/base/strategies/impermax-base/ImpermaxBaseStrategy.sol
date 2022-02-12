@@ -26,7 +26,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   string public constant override STRATEGY_NAME = "ImpermaxBaseStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   /// @dev No reward tokens
   address[] private _REWARD_TOKENS;
   /// @dev Threshold for partially decompound
@@ -104,6 +104,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   /// @dev Deposit underlying
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
+    // decompound and update exchange rate for be sure that new assets will be not decompounded with wrong rate
     _partiallyDecompound();
     IERC20(_underlyingToken).safeTransfer(pool, amount);
     IBorrowable(pool).mint(address(this));
@@ -112,20 +113,35 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   /// @dev Withdraw underlying
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
+    // don't decompound for cheap withdraw
+    // we will not earn part of profit from withdrew assets
     _redeem(amount);
   }
 
   function _redeem(uint amount) internal returns (uint){
     uint toRedeem = amount * 1e18 / IBorrowable(pool).exchangeRateLast();
     toRedeem = Math.min(toRedeem, IERC20(pool).balanceOf(address(this)));
-    IERC20(pool).safeTransfer(pool, toRedeem);
-    return IBorrowable(pool).redeem(address(this));
+    if (toRedeem > 1) {
+      IERC20(pool).safeTransfer(pool, toRedeem);
+      return IBorrowable(pool).redeem(address(this));
+    } else {
+      return 0;
+    }
+  }
+
+  /// @dev Withdraw everything from external pool
+  function exitRewardPool() internal override {
+    uint toRedeem = IERC20(pool).balanceOf(address(this));
+    if (toRedeem > 1) {
+      IERC20(pool).safeTransfer(pool, toRedeem);
+      IBorrowable(pool).redeem(address(this));
+    }
   }
 
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-    IERC20(pool).safeTransfer(pool, _rewardPoolBalance());
+    IERC20(pool).safeTransfer(pool, IERC20(pool).balanceOf(address(this)));
     IBorrowable(pool).redeem(address(this));
   }
 
