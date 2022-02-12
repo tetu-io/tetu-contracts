@@ -104,6 +104,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   /// @dev Deposit underlying
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
+    // decompound and update exchange rate for be sure that new assets will be not decompounded with wrong rate
     _partiallyDecompound();
     IERC20(_underlyingToken).safeTransfer(pool, amount);
     IBorrowable(pool).mint(address(this));
@@ -112,6 +113,8 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   /// @dev Withdraw underlying
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
+    // don't decompound for cheap withdraw
+    // we will not earn part of profit from withdrew assets
     _redeem(amount);
   }
 
