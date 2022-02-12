@@ -121,14 +121,21 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   function _redeem(uint amount) internal returns (uint){
     uint toRedeem = amount * 1e18 / IBorrowable(pool).exchangeRateLast();
     toRedeem = Math.min(toRedeem, IERC20(pool).balanceOf(address(this)));
-    IERC20(pool).safeTransfer(pool, toRedeem);
-    return IBorrowable(pool).redeem(address(this));
+    if (toRedeem > 1) {
+      IERC20(pool).safeTransfer(pool, toRedeem);
+      return IBorrowable(pool).redeem(address(this));
+    } else {
+      return 0;
+    }
   }
 
   /// @dev Withdraw everything from external pool
   function exitRewardPool() internal override {
-    IERC20(pool).safeTransfer(pool, IERC20(pool).balanceOf(address(this)));
-    IBorrowable(pool).redeem(address(this));
+    uint toRedeem = IERC20(pool).balanceOf(address(this));
+    if (toRedeem > 1) {
+      IERC20(pool).safeTransfer(pool, toRedeem);
+      IBorrowable(pool).redeem(address(this));
+    }
   }
 
   /// @dev Exit from external project without caring about rewards
