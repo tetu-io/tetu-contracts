@@ -34,9 +34,6 @@ abstract contract BeethovenBase is StrategyBase {
   address public pool;
   /// @notice MasterChef rewards pool ID
   uint public poolId;
-
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.BEETHOVEN;
-
   /// @notice Beethoven vault
   IBeethovenVault public beethovenVault;
 
@@ -57,6 +54,7 @@ abstract contract BeethovenBase is StrategyBase {
   IBeethovenVault.FundManagement private fundManagementStruct;
   IBeethovenVault.SwapKind private _defaultSwapKind = IBeethovenVault.SwapKind.GIVEN_IN;
 
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.BEETHOVEN;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
