@@ -115,13 +115,23 @@ contract BeethovenFDBase is BeethovenBase {
   }
 
   /// @notice calculates amount of fBeets which correspondents _amount of beets tokens.
-  function fBeetsForToken(uint _amount) internal view returns (uint) {
-    return _amount * _PRECISION / exchangeRate();
+  function fBeetsForToken(uint amount) internal view returns (uint) {
+    uint result = amount * _PRECISION / exchangeRate();
+    // need to avoid rounding issues
+    if (result > 1) {
+      return result;
+    }
+    return 0;
   }
 
   /// @notice calculates amount of beets tokens which correspondents _amount of fBeets tokens.
-  function underlyingForFBeets(uint _amount) internal view returns (uint) {
-    return _amount * exchangeRate() / _PRECISION;
+  function underlyingForFBeets(uint amount) internal view returns (uint) {
+    uint result = amount * exchangeRate() / _PRECISION;
+    // need to avoid rounding issues
+    if (result > 1) {
+      return result;
+    }
+    return 0;
   }
 
   /// @notice calculates exchange rate beets to fBeets

@@ -315,8 +315,7 @@ export class DoHardWorkLoopBase {
     await this.vault.connect(this.signer).exit();
     await this.strategy.withdrawAllToVault();
 
-    // in some cases 1 can be acceptable because of rounding
-    expect(await this.strategy.investedUnderlyingBalance()).is.lte(1);
+    expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
 
     // need to call hard work for sell a little excess rewards
     await this.strategy.doHardWork();
