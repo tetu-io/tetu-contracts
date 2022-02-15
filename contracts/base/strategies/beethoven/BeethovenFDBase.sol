@@ -95,11 +95,12 @@ contract BeethovenFDBase is BeethovenBase {
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint amount) internal override {
     uint toWithdrawFBits = fBeetsForToken(amount - underlyingBalance());
-    if (toWithdrawFBits > 0) {
-      // withdraw fBeets
-      IBeethovenxChef(pool).withdrawAndHarvest(poolId, toWithdrawFBits, address(this));
-      IFBeets(fBeetsToken).leave(balanceFBits());
+    if (amount == rewardPoolBalance()) {
+      // in case of withdraw all we don't need to convert BTP to fBeets
+      (toWithdrawFBits,) = IBeethovenxChef(pool).userInfo(poolId, address(this));
     }
+    IBeethovenxChef(pool).withdrawAndHarvest(poolId, toWithdrawFBits, address(this));
+    IFBeets(fBeetsToken).leave(balanceFBits());
   }
 
   /// @dev Exit from external project without caring about rewards
@@ -117,21 +118,13 @@ contract BeethovenFDBase is BeethovenBase {
   /// @notice calculates amount of fBeets which correspondents _amount of beets tokens.
   function fBeetsForToken(uint amount) internal view returns (uint) {
     uint result = amount * _PRECISION / exchangeRate();
-    // need to avoid rounding issues
-    if (result > 1) {
-      return result;
-    }
-    return 0;
+    return result;
   }
 
   /// @notice calculates amount of beets tokens which correspondents _amount of fBeets tokens.
   function underlyingForFBeets(uint amount) internal view returns (uint) {
     uint result = amount * exchangeRate() / _PRECISION;
-    // need to avoid rounding issues
-    if (result > 1) {
-      return result;
-    }
-    return 0;
+    return result;
   }
 
   /// @notice calculates exchange rate beets to fBeets
