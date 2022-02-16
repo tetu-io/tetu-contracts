@@ -15,14 +15,14 @@ const splitters = [
 
 let verified = false;
 
-const alreadyDeployed = new Set<string>([]);
+const alreadyDeployed = new Set<string>(['0', '1', '2', '3']);
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
   const tools = await DeployerUtils.getToolsAddresses();
 
-  const infos = readFileSync('scripts/utils/download/data/impermax.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
   const splittersByUnderlying = new Map<string, string>();
 
   const cReader = await DeployerUtils.connectContract(
@@ -40,13 +40,12 @@ async function main() {
 
   for (const info of infos) {
     const strat = info.split(',');
-    const idx = strat[0];
-    const tokenName = strat[2];
-    const tokenAdr = strat[3];
-    const poolAdr = strat[4];
-    const tvl = strat[5];
 
-    if (idx === 'idx' || !tokenAdr) {
+    const idx = strat[0];
+    const tokenAddress = strat[2];
+    const aTokenName = strat[3];
+
+    if (idx === 'idx' || !tokenAddress) {
       console.log('skip', idx);
       continue;
     }
@@ -56,17 +55,17 @@ async function main() {
       continue;
     }
 
-    const splitterAddress = splittersByUnderlying.get(tokenAdr.toLowerCase()) as string;
+    const splitterAddress = splittersByUnderlying.get(tokenAddress.toLowerCase()) as string;
     if (!splitterAddress) {
-      console.log('no splitter for ', tokenName)
+      console.log('no splitter for ', aTokenName)
       continue;
     }
 
-    console.log('strat', idx, tokenName);
+    console.log('strat', idx, aTokenName);
 
     // ** CONFIG
     const controller = core.controller;
-    const underlying = tokenAdr;
+    const underlying = tokenAddress;
     const uName = await TokenUtils.tokenSymbol(underlying);
     const name = 'IMPERMAX_' + uName;
     // *****************************
