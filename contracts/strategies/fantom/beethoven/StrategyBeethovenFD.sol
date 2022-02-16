@@ -11,9 +11,20 @@
 */
 pragma solidity 0.8.4;
 
-import "../../../base/strategies/beethoven/BeethovenBase.sol";
+import "../../../third_party/beethoven/IFBeets.sol";
+import "../../../base/strategies/beethoven/BeethovenFDBase.sol";
 
-contract StrategyBeethoven is BeethovenBase {
+/**
+  @author OlegN
+  @title A strategy for The Fidelio Duetto beethoven pool
+  @dev This strategy is using extra step (fBeets) to obtain extra rewards.
+  It requires to add extra exchange rate logic
+*/
+contract StrategyBeethovenFD is BeethovenFDBase {
+  using SafeMath for uint;
+  using SafeERC20 for IERC20;
+
+  uint private constant _PRECISION = 10 ** 18;
 
   // MASTER_CHEF
   address private constant _MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
@@ -21,6 +32,10 @@ contract StrategyBeethoven is BeethovenBase {
 
   // rewards
   address private constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+
+  // fBeets token
+  address private constant _F_BEETS = address(0xfcef8a994209d6916EB2C86cDD2AFD60Aa6F54b1);
+
   address[] private poolRewards = [BEETS];
 
   constructor(
@@ -31,21 +46,20 @@ contract StrategyBeethoven is BeethovenBase {
     address _depositToken,
     bytes32 _beethovenPoolId,
     bytes32 _rewardToDepositPoolId
-
-  ) BeethovenBase(
+  ) BeethovenFDBase(
     _controller,
-    _vault,
     _underlying,
+    _vault,
     poolRewards,
     _MASTER_CHEF,
     _poolId,
     _BEETHOVEN_VAULT,
     _depositToken,
     _beethovenPoolId,
-    _rewardToDepositPoolId
-  ) {
+    _rewardToDepositPoolId,
+    _F_BEETS
+  ){
     require(_underlying != address(0), "zero underlying");
     require(_depositToken != address(0), "zero _depositToken");
   }
-
 }
