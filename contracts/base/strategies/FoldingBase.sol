@@ -223,7 +223,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override hardWorkers updateSupplyInTheEnd {
+  function doHardWork()  external onlyNotPausedInvesting virtual override hardWorkers updateSupplyInTheEnd {
     // don't invest underlying for reduce cas consumption
     _claimReward();
     if (_isAutocompound()) {
@@ -257,7 +257,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   function exitRewardPool() internal override updateSupplyInTheEnd {
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
-      _claimReward();
+      // _claimReward();
       _redeemMaximumWithLoan();
       // reward liquidation can ruin transaction, do it in hard work process
     }

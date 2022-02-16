@@ -43,7 +43,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   string public constant override STRATEGY_NAME = "AaveFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.3.0";
+  string public constant VERSION = "1.3.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev 2 is Variable
@@ -286,5 +286,20 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
     return IERC20Extended(_underlyingToken).decimals();
   }
 
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers updateSupplyInTheEnd {
+    // don't invest underlying for reduce cas consumption
+    // _claimReward();
+    if (_isAutocompound()) {
+      _autocompound();
+    } else {
+      _compound();
+    }
+    // supply underlying for avoiding liquidation in case of reward is the same as underlying
+    if (underlyingBalance() > 0) {
+      _supply(underlyingBalance());
+    }
+    liquidateReward();
+    // don't rebalance, it should be done as separate tx
+  }
 
 }
