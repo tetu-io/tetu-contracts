@@ -295,10 +295,10 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
       _compound();
     }
     // supply underlying for avoiding liquidation in case of reward is the same as underlying
-    if (underlyingBalance() > 0) {
-      _supply(underlyingBalance());
-    }
-    liquidateReward();
+    // if (underlyingBalance() > 0) {
+    //   _supply(underlyingBalance());
+    // }
+    // liquidateReward();
     // don't rebalance, it should be done as separate tx
   }
 
