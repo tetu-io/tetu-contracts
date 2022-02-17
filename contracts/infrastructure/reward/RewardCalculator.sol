@@ -27,14 +27,14 @@ contract RewardCalculator is Controllable, IRewardCalculator {
   // ************** CONSTANTS *****************************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.5.2";
+  string public constant VERSION = "1.5.3";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant MULTIPLIER_DENOMINATOR = 100;
   uint256 public constant BLOCKS_PER_MINUTE = 2727; // 27.27
   string private constant _CALCULATOR = "calculator";
   uint256 private constant _BUY_BACK_DENOMINATOR = 10000;
   uint256 public constant AVG_REWARDS = 7;
-  uint256 public constant SNAPSHOTS_AVG_TIME = 3 days;
+  uint256 public constant SNAPSHOTS_AVG_TIME = 7 days;
 
   // ************** VARIABLES *****************************
   // !!!!!!!!! DO NOT CHANGE NAMES OR ORDERING!!!!!!!!!!!!!
