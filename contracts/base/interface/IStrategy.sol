@@ -45,7 +45,7 @@ interface IStrategy {
     BEETHOVEN, //27
     IMPERMAX, //28
     TETU_SF, //29
-    SLOT_30, //30
+    ALPACA, //30
     SLOT_31, //31
     SLOT_32, //32
     SLOT_33, //33
