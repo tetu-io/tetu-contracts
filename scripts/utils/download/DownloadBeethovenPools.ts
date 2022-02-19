@@ -58,11 +58,11 @@ async function main() {
         infos += data + '\n';
     }
 
-    // mkdir('./tmp/download', {recursive: true}, (err) => {
-    //   if (err) throw err;
-    // });
+    mkdir('./tmp/download', {recursive: true}, (err) => {
+      if (err) throw err;
+    });
 
-    writeFileSync('/Users/anatseuski/work/tetu-contracts/scripts/utils/download/data/beethoven_pools_raw_new.csv', infos, 'utf8');
+    writeFileSync('./tmp/download/beethoven_pools_raw_new.csv', infos, 'utf8');
     console.log('done');
 }
 

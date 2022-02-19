@@ -259,6 +259,7 @@ export class DeployerUtils {
       MaticAddresses.WBTC_TOKEN,
       MaticAddresses.WMATIC_TOKEN,
       MaticAddresses.QUICK_TOKEN,
+      MaticAddresses.QI_TOKEN,
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(MaticAddresses.USDC_TOKEN), true, wait);
