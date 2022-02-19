@@ -214,6 +214,10 @@ export class MaticAddresses {
   // IMPERMAX
   public static IMPERMAX_FACTORY = "0xBB92270716C8c424849F17cCc12F4F24AD4064D6".toLowerCase();
 
+  // MARKET
+  public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
+  public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
