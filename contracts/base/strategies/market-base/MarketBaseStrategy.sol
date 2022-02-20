@@ -64,19 +64,19 @@ abstract contract MarketBaseStrategy is StrategyBase {
 
   /// @notice Strategy underlying balance in the pool
   /// @return Balance amount in underlying tokens
-  function rewardPoolBalance() public override view returns (uint256) {
+  function rewardPoolBalance() public override view returns (uint) {
     return _rewardPoolBalance();
   }
 
-  function _rewardPoolBalance() internal view returns (uint256) {
-    return IERC20(pool).balanceOf(address(this)) * ICErc20(pool).exchangeRateStored() / exchangeRateDenominator();
+  function _rewardPoolBalance() internal view returns (uint) {
+    return ICErc20(pool).balanceOf(address(this)) * ICErc20(pool).exchangeRateStored() / 1e18;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in the pool
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
-  function readyToClaim() external view override returns (uint256[] memory) {
-    uint256[] memory toClaim = new uint256[](_rewardTokens.length);
+  function readyToClaim() external view override returns (uint[] memory) {
+    uint[] memory toClaim = new uint[](_rewardTokens.length);
     // amount denominated in TETU too hard to calculate
     // 0 token is zero amount
     toClaim[1] = _expectedProfitAmount(ICErc20(pool).exchangeRateStored());
@@ -86,8 +86,8 @@ abstract contract MarketBaseStrategy is StrategyBase {
   /// @notice TVL of the underlying in the pool
   /// @dev Only for statistic
   /// @return Pool TVL
-  function poolTotalAmount() external view override returns (uint256) {
-    return ICErc20(pool).totalSupply() * ICErc20(pool).exchangeRateStored() / exchangeRateDenominator();
+  function poolTotalAmount() external view override returns (uint) {
+    return ICErc20(pool).totalSupply() * ICErc20(pool).exchangeRateStored() / 1e18;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
@@ -103,27 +103,25 @@ abstract contract MarketBaseStrategy is StrategyBase {
 
   /// @dev Deposit underlying
   /// @param amount Deposit amount
-  function depositToPool(uint256 amount) internal override {
+  function depositToPool(uint amount) internal override {
     // decompound and update exchange rate for be sure that new assets will be not decompounded with wrong rate
     _partiallyDecompound();
-    IERC20(_underlyingToken).safeTransfer(pool, amount);
+    ICErc20(_underlyingToken).approve(pool, amount);
     ICErc20(pool).mint(amount);
   }
 
   /// @dev Withdraw underlying
   /// @param amount Withdraw amount
-  function withdrawAndClaimFromPool(uint256 amount) internal override {
+  function withdrawAndClaimFromPool(uint amount) internal override {
     // don't decompound for cheap withdraw
     // we will not earn part of profit from withdrew assets
     _redeem(amount);
   }
 
   function _redeem(uint amount) internal returns (uint){
-    uint toRedeem = amount * exchangeRateDenominator() / ICErc20(pool).exchangeRateStored();
-    toRedeem = Math.min(toRedeem, IERC20(pool).balanceOf(address(this)));
+    uint toRedeem = Math.min(amount, ICErc20(pool).balanceOf(address(this)) * 1e18 / ICErc20(pool).exchangeRateCurrent());
     if (toRedeem > 1) {
-      IERC20(pool).safeTransfer(pool, toRedeem);
-      return ICErc20(pool).redeem(toRedeem);
+      return ICErc20(pool).redeemUnderlying(toRedeem);
     } else {
       return 0;
     }
@@ -133,7 +131,6 @@ abstract contract MarketBaseStrategy is StrategyBase {
   function exitRewardPool() internal override {
     uint toRedeem = IERC20(pool).balanceOf(address(this));
     if (toRedeem > 1) {
-      IERC20(pool).safeTransfer(pool, toRedeem);
       ICErc20(pool).redeem(toRedeem);
     }
   }
@@ -141,7 +138,6 @@ abstract contract MarketBaseStrategy is StrategyBase {
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-    IERC20(pool).safeTransfer(pool, IERC20(pool).balanceOf(address(this)));
     ICErc20(pool).redeem(IERC20(pool).balanceOf(address(this)));
   }
 
@@ -206,9 +202,5 @@ abstract contract MarketBaseStrategy is StrategyBase {
       return 0;
     }
     return profitAmountAdjusted;
-  }
-
-  function exchangeRateDenominator() internal view returns (uint) {
-    return 10**(18 + ICErc20(_underlyingToken).decimals() - ICErc20(pool).decimals());
   }
 }
