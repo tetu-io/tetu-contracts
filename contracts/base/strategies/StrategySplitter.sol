@@ -151,7 +151,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   function strategiesInited() external view override returns (bool) {
     uint sum;
     for (uint i; i < strategies.length; i++) {
-      sum = strategiesRatios[strategies[i]];
+      sum += strategiesRatios[strategies[i]];
     }
     return sum == STRATEGY_RATIO_DENOMINATOR;
   }
