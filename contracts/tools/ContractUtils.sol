@@ -87,6 +87,7 @@ contract ContractUtils {
 
   // ********************* UNISWAP V2 UTILS ************************************
 
+  /// @dev Used for MultiSwap2
   function loadPairsUniswapV2(address factoryAddress, uint skip, uint count )
   external view returns (LpData[] memory pairs) {
     IUniswapV2Factory factory = IUniswapV2Factory(factoryAddress);
@@ -105,6 +106,7 @@ contract ContractUtils {
     }
   }
 
+  /// @dev Used for MultiSwap2
   function loadPairReserves(address[] memory pairs)
   external view returns (ReservesData[] memory data) {
     uint len = pairs.length;
@@ -115,7 +117,7 @@ contract ContractUtils {
       IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
       try pair.getReserves() returns (uint112 reserve0, uint112 reserve1, uint32) {
         data[i] = ReservesData({reserve0:reserve0, reserve1:reserve1});
-      } catch (bytes memory) { // any error interpret as nil reserves
+      } catch { // any error interpret as nil reserves
         data[i] = ReservesData({reserve0:0, reserve1:0});
       }
     }

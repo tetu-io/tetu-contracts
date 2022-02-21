@@ -1,3 +1,9 @@
+// WARNING!:
+// Run this test on Matic network first - to build token swap route data
+// Because it runs too long at forked network
+// Then run at fork - to test swaps itself
+// Do not forget to update fork block to have same state with network
+
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
@@ -11,10 +17,11 @@ import {
   getAllRoutes,
   loadReserves,
   MULTI_SWAP2_MATIC,
+  CONTRACT_UTILS_MATIC,
   findBestRoutes,
   RoutesData,
   encodeRouteData,
-  saveObjectToJsonFile, CONTRACT_UTILS_MATIC
+  saveObjectToJsonFile
 } from "../../scripts/multiswap/MultiSwapLibrary";
 import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
 import {TokenUtils} from "../TokenUtils";
@@ -28,15 +35,19 @@ const pairs = pairsJson as string[][]
 // const {expect} = chai;
 chai.use(chaiAsPromised);
 
-let signer: SignerWithAddress;
-let multiSwap2: MultiSwap2;
-let contractUtils: ContractUtils;
 
 describe("MultiSwap2 base tests", function () {
+
+  let signer: SignerWithAddress;
+  let multiSwap2: MultiSwap2;
+  let contractUtils: ContractUtils;
+  let usdc: string;
 
   before(async function () {
     signer = (await ethers.getSigners())[0];
     console.log('network.name', network.name);
+
+    usdc = await DeployerUtils.getUSDCAddress();
 
     if (network.name === 'matic') {
 
@@ -55,7 +66,6 @@ describe("MultiSwap2 base tests", function () {
       contractUtils = await DeployerUtils.deployContract(signer, 'ContractUtils',
       ) as ContractUtils;
 
-      const usdc = await DeployerUtils.getUSDCAddress();
       await TokenUtils.getToken(usdc, signer.address,
           utils.parseUnits('500000', 6));
 
@@ -66,8 +76,8 @@ describe("MultiSwap2 base tests", function () {
   after(async function () {
   });
 
-  it("generateWays", async () => {
-    const tokenIn = MaticAddresses.USDC_TOKEN;
+  it("generateWays & multiSwap", async () => {
+    const tokenIn = usdc;
     const tokenOut = MaticAddresses.TETU_TOKEN;
     // const tokenOut = MaticAddresses.AAVE_TOKEN; // TODO check outputs
     const amount = ethers.utils.parseUnits('100000', 6);
@@ -103,6 +113,13 @@ describe("MultiSwap2 base tests", function () {
 
 
   })
+
+  it.only("should be able to buy all assets", async () => {
+
+    const fields = Object.keys(MaticAddresses);
+    console.log('fields', fields);
+
+  });
 
 
 })

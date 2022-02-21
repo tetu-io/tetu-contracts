@@ -75,7 +75,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2,  ReentrancyGuard {
     require(amount <= IERC20(tokenIn).balanceOf(address(this)),
       "MS: transfer fees forbidden for input Token");
 
-    (uint[] memory weights, Step[][] memory routes, uint amountOut) = abi.decode(routesData, (uint[], Step[][], uint));
+    (uint[] memory weights, Step[][] memory routes, uint expectedAmountOut) = abi.decode(routesData, (uint[], Step[][], uint));
     require(routes.length > 0, 'MS: empty array');
     require(routes.length == weights.length, 'MS: different arrays lengths');
 
@@ -108,8 +108,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2,  ReentrancyGuard {
     console.log('=> tokenOutBalance', tokenOutBalance);
 
     require(tokenOutBalance != 0, "MS: zero token out amount");
-    uint minAmountOut = amountOut - (amountOut * slippageTolerance / _PRECISION_SLIPPAGE);
-    console.log('--    minAmountOut', minAmountOut);
+    uint minAmountOut = expectedAmountOut - (expectedAmountOut * slippageTolerance / _PRECISION_SLIPPAGE);
+    console.log('--    minAmountOut', minAmountOut); // TODO remove
     require(tokenOutBalance >= minAmountOut, "MS: amount out less than required");
     IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
