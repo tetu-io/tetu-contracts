@@ -116,8 +116,13 @@ describe("MultiSwap2 base tests", function () {
 
   it.only("should be able to buy all assets", async () => {
 
-    const fields = Object.keys(MaticAddresses);
-    console.log('fields', fields);
+    const entries = Object.entries(MaticAddresses);
+    const tokens = entries.filter(key => key[0].endsWith('_TOKEN'));
+
+    for (const token of tokens) {
+      console.log(token[0], token[1]);
+      // TODO call test swap from USDC to token[1]
+    }
 
   });
 
