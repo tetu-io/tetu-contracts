@@ -572,6 +572,7 @@ export class DeployerUtils {
   }
 
   public static async deployAndInitVaultAndStrategy<T>(
+    underlying: string,
     vaultName: string,
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     controller: Controller,
@@ -586,23 +587,18 @@ export class DeployerUtils {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
-
-    const strategy = await strategyDeployer(vault.address);
-
-    const strategyUnderlying = await strategy.underlying();
-
-    const startInit = Date.now();
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       "TETU_" + vaultName,
       "x" + vaultName,
       controller.address,
-      strategyUnderlying,
+      underlying,
       rewardDuration,
       false,
       vaultRewardToken,
       depositFee
     ), true, wait);
-    Misc.printDuration(vaultName + ' vault initialized', startInit);
+    const strategy = await strategyDeployer(vault.address);
+    Misc.printDuration(vaultName + ' vault initialized', start);
 
     await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([vault.address], [strategy.address]), true, wait);
     await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
@@ -686,6 +682,7 @@ export class DeployerUtils {
       rewardToken = netToken;
     }
     return DeployerUtils.deployAndInitVaultAndStrategy(
+      underlying,
       't',
       vaultAddress => DeployerUtils.deployContract(
         signer,

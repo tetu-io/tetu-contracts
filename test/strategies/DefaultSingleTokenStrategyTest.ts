@@ -19,7 +19,8 @@ async function startDefaultSingleTokenStrategyTest(
   strategyName: string,
   underlying: string,
   tokenName: string,
-  deployInfo: DeployInfo
+  deployInfo: DeployInfo,
+  deployer: ((signer: SignerWithAddress) => Promise<[SmartVault, IStrategy, string]>) | null = null
 ) {
   // **********************************************
   // ************** CONFIG*************************
@@ -44,27 +45,29 @@ async function startDefaultSingleTokenStrategyTest(
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
-  const deployer = (signer: SignerWithAddress) => {
-    const core = deployInfo.core as CoreContractsWrapper;
-    return StrategyTestUtils.deploy(
-      signer,
-      core,
-      vaultName,
-      vaultAddress => {
-        const strategyArgs = [
-          core.controller.address,
-          vaultAddress,
-          underlying,
-        ];
-        return DeployerUtils.deployContract(
-          signer,
-          strategyContractName,
-          ...strategyArgs
-        ) as Promise<IStrategy>;
-      },
-      underlying
-    );
-  };
+  if(deployer === null) {
+    deployer = (signer: SignerWithAddress) => {
+      const core = deployInfo.core as CoreContractsWrapper;
+      return StrategyTestUtils.deploy(
+        signer,
+        core,
+        vaultName,
+        vaultAddress => {
+          const strategyArgs = [
+            core.controller.address,
+            vaultAddress,
+            underlying,
+          ];
+          return DeployerUtils.deployContract(
+            signer,
+            strategyContractName,
+            ...strategyArgs
+          ) as Promise<IStrategy>;
+        },
+        underlying
+      );
+    };
+  }
   const hwInitiator = (
     _signer: SignerWithAddress,
     _user: SignerWithAddress,
@@ -91,7 +94,7 @@ async function startDefaultSingleTokenStrategyTest(
   await universalStrategyTest(
     strategyName + vaultName,
     deployInfo,
-    deployer,
+    deployer as (signer: SignerWithAddress) => Promise<[SmartVault, IStrategy, string]>,
     hwInitiator,
     forwarderConfigurator,
     ppfsDecreaseAllowed,
