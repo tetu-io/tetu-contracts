@@ -42,6 +42,7 @@ describe("Notify Helper test", () => {
 
     for (let i = 0; i < 2; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(
+        usdc,
         't',
         vaultAddress => DeployerUtils.deployContract(
           signer,
