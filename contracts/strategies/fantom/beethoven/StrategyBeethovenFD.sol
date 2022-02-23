@@ -24,8 +24,6 @@ contract StrategyBeethovenFD is BeethovenFDBase {
   using SafeMath for uint;
   using SafeERC20 for IERC20;
 
-  uint private constant _PRECISION = 10 ** 18;
-
   // MASTER_CHEF
   address private constant _MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
   address private constant _BEETHOVEN_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
