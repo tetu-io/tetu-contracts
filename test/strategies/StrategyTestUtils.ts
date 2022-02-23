@@ -102,7 +102,7 @@ export class StrategyTestUtils {
   public static async commonTests(strategy: IStrategy, underlying: string) {
     expect(await strategy.unsalvageableTokens(underlying)).is.eq(true);
     expect(await strategy.unsalvageableTokens(MaticAddresses.ZERO_ADDRESS)).is.eq(false);
-    expect((await strategy.buyBackRatio()).toNumber()).is.lessThanOrEqual(100)
+    expect((await strategy.buyBackRatio()).toNumber()).is.lessThanOrEqual(100_00)
     expect(await strategy.platform()).is.not.eq(0);
     expect((await strategy.assets()).length).is.not.eq(0);
     expect(!!(await strategy.poolTotalAmount())).is.eq(true);
