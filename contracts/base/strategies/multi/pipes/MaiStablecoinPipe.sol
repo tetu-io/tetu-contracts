@@ -14,7 +14,8 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../../../openzeppelin/Math.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/IErc20Stablecoin.sol";
 import "../../../interface/strategies/IMaiStablecoinPipe.sol";
@@ -36,20 +37,18 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   }
 
   MaiStablecoinPipeData public pipeData;
-  IErc20Stablecoin private _stablecoin;
-  uint256 private vaultID;
+  IErc20Stablecoin public _stablecoin;
+  uint256 public vaultID;
 
   event Rebalanced(uint256 borrowed, uint256 repaid);
   event Borrowed(uint256 amount);
   event Repaid(uint256 amount);
 
-  constructor(MaiStablecoinPipeData memory _d) Pipe(
-    'MaiStablecoinPipe',
-    _d.sourceToken,
-    _d.borrowToken
-  ) {
+  function initialize(MaiStablecoinPipeData memory _d) public initializer {
     require(_d.stablecoin != address(0), "Zero stablecoin");
     require(_d.rewardToken != address(0), "Zero reward token");
+
+    Pipe._initialize('MaiStablecoinPipe', _d.sourceToken, _d.borrowToken);
 
     pipeData = _d;
     rewardTokens.push(_d.rewardToken);

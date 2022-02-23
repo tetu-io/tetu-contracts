@@ -12,7 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../../../../openzeppelin/SafeERC20.sol";
+import "../../../../openzeppelin/Initializable.sol";
 import "../../../interface/strategies/ILinearPipeline.sol";
 import "../../../interface/strategies/IPipe.sol";
 import "../pipes/PipeLib.sol";
@@ -20,15 +21,16 @@ import "../pipes/PipeLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-contract LinearPipeline is ILinearPipeline {
+contract LinearPipeline is ILinearPipeline, Initializable {
   using SafeERC20 for IERC20;
 
-  address private immutable _pipelineUnderlyingToken;
+  address public _pipelineUnderlyingToken;
   IPipe[] public override pipes;
 
   event RebalancedAllPipes();
 
-  constructor(address _underlyingToken) {
+  function initializeLinearPipeline(address _underlyingToken)
+  public initializer {
     _pipelineUnderlyingToken = _underlyingToken;
   }
 

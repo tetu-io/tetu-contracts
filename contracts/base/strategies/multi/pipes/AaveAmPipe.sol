@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/aave/ILendingPool.sol";
 
@@ -31,13 +32,11 @@ contract AaveAmPipe is Pipe {
 
   AaveAmPipeData public pipeData;
 
-  constructor(AaveAmPipeData memory _d) Pipe(
-    'AaveAmPipe',
-    _d.sourceToken,
-    _d.lpToken
-  ) {
+  function initialize(AaveAmPipeData memory _d) public initializer {
     require(_d.pool != address(0), "Zero pool");
     require(_d.rewardToken != address(0), "Zero reward token");
+
+    Pipe._initialize('AaveAmPipe', _d.sourceToken, _d.lpToken);
 
     pipeData = _d;
     rewardTokens.push(_d.rewardToken);

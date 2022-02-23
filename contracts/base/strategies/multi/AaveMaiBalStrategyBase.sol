@@ -12,23 +12,23 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./../../../openzeppelin/SafeERC20.sol";
 import "./../../../third_party/IERC20Extended.sol";
-import "./../StrategyBase.sol";
+import "./../ProxyStrategyBase.sol";
 import "./pipelines/LinearPipeline.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
-contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline, IAaveMaiBalStrategyBase {
+contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStrategyBase {
   using SafeERC20 for IERC20;
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "2.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 
@@ -36,7 +36,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline, IAaveMaiBalStra
   address[] private _assets;
 
   // cached total amount in underlying tokens, updated after each deposit, withdraw and hardwork
-  uint256 private _totalAmount = 0;
+  uint256 public _totalAmount = 0;
 
   IMaiStablecoinPipe internal _maiStablecoinPipe;
   IPipe internal _maiCamPipe;
@@ -45,43 +45,56 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline, IAaveMaiBalStra
   event SetTargetPercentage(uint256 _targetPercentage);
   event SetMaxImbalance(uint256 _maxImbalance);
 
-  /// @notice Contract constructor
-  constructor(
+  /// @notice Contract initializer
+  function initializeAaveMaiBalStrategyBase(
     address _controller,
     address _underlyingToken,
     address _vault,
     address[] memory __rewardTokens
-  ) StrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO)
-  LinearPipeline(_underlyingToken)
+  ) public initializer
   {
     require(_controller != address(0), "Zero controller");
     require(_underlyingToken != address(0), "Zero underlying");
     require(_vault != address(0), "Zero vault");
 
+    initializeStrategyBase(
+      _controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
+    initializeLinearPipeline(_underlyingToken);
+
     _rewardTokens = __rewardTokens;
     _assets.push(_underlyingToken);
   }
 
+  //************************ MODIFIERS **************************
+
+  /// @dev Only for Governance/Controller.
+  modifier onlyControllerOrGovernance() {
+    require(msg.sender == address(_controller())
+      || IController(_controller()).governance() == msg.sender,
+      "AMB: Not Gov or Controller");
+    _;
+  }
   modifier updateTotalAmount() {
     _;
     _totalAmount = getTotalAmountOut();
   }
 
-
   /// @dev Returns reward pool balance
-  function rewardPoolBalance() public override view returns (uint256 bal) {
+  function _rewardPoolBalance() internal override view returns (uint256 bal) {
     return _totalAmount;
   }
 
   /// @dev HardWork function for Strategy Base implementation
-  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    uint balance = IERC20(_underlyingToken).balanceOf(address(this));
+  function doHardWork()
+  external override onlyNotPausedInvesting hardWorkers updateTotalAmount {
+    // TODO belbix, lets review order of commands
+    uint balance = IERC20(_underlying()).balanceOf(address(this));
     if (balance > 0) {
       _pumpIn(balance);
     }
     _rebalanceAllPipes();
     _claimFromAllPipes();
-    liquidateReward();
+    autocompound();
   }
 
   /// @dev Stub function for Strategy Base implementation
@@ -193,7 +206,7 @@ contract AaveMaiBalStrategyBase is StrategyBase, LinearPipeline, IAaveMaiBalStra
     emit SalvagedFromPipeline(recipient, token);
   }
 
-  function rebalanceAllPipes() external override restricted updateTotalAmount {
+  function rebalanceAllPipes() external override hardWorkers updateTotalAmount {
     _rebalanceAllPipes();
   }
 

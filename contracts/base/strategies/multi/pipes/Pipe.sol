@@ -14,12 +14,13 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../../../interface/strategies/IPipe.sol";
 import "./PipeLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-abstract contract Pipe is IPipe {
+abstract contract Pipe is IPipe, Initializable {
   using SafeERC20 for IERC20;
 
   /// @notice Address of the master pipeline
@@ -31,10 +32,10 @@ abstract contract Pipe is IPipe {
   string public override name;
   /// @notice Source token address type
   /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-  address public immutable override sourceToken;
+  address public override sourceToken;
   /// @notice Output token address type
   /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-  address public immutable override outputToken;
+  address public override outputToken;
 
   /// @notice Reward token address for claiming
   /// @dev initialize it in constructor
@@ -48,11 +49,11 @@ abstract contract Pipe is IPipe {
   event Get(uint256 amount, uint256 output);
   event Put(uint256 amount, uint256 output);
 
-  constructor (
+  function _initialize(
     string memory _name,
     address _sourceToken,
     address _outputToken
-  ) {
+  ) internal initializer {
     require(_sourceToken != address(0), "Zero source token");
     require(_outputToken != address(0), "Zero output token");
 

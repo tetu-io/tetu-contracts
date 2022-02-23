@@ -23,12 +23,14 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
 
   address[] private _rewardTokensArray = [_WMATIC, _QI, _BAL];
 
-  constructor(
+  function initialize(
     address _controller,
     address _vault,
     address _underlying,
     address[] memory _pipes
-  ) AaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray) {
+  ) public initializer {
+    initializeAaveMaiBalStrategyBase(
+      _controller, _underlying, _vault, _rewardTokensArray);
     _initPipes(_pipes);
   }
 

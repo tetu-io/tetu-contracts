@@ -154,6 +154,18 @@ export class DeployerUtils {
     return _factory.attach(receipt.contractAddress);
   }
 
+  public static async deployContractAndInitialize<T extends ContractFactory>(
+      signer: SignerWithAddress,
+      name: string,
+      // tslint:disable-next-line:no-any
+      ...args: any[]
+  ) {
+    const contract = await this.deployContract(signer, name);
+    const initTx = await contract.initialize(...args);
+    await initTx.wait();
+    return contract;
+  }
+
   public static async deployController(signer: SignerWithAddress): Promise<Controller> {
     const logic = await DeployerUtils.deployContract(signer, "Controller");
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);

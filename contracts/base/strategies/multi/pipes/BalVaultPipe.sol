@@ -14,7 +14,8 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../../../openzeppelin/Math.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/balancer/IBVault.sol";
 
@@ -34,13 +35,11 @@ contract BalVaultPipe is Pipe {
 
   BalVaultPipeData public pipeData;
 
-  constructor(BalVaultPipeData memory _d) Pipe(
-    'BalVaultPipe',
-    _d.sourceToken,
-    _d.lpToken
-  ) {
+  function initialize(BalVaultPipeData memory _d) public initializer {
     require(_d.vault != address(0), "Zero vault");
     require(_d.rewardToken != address(0), "Zero reward token");
+
+    Pipe._initialize('BalVaultPipe', _d.sourceToken, _d.lpToken);
 
     pipeData = _d;
     rewardTokens.push(_d.rewardToken);

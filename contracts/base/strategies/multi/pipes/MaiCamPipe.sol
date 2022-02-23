@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/ICamToken.sol";
 
@@ -31,12 +32,10 @@ contract MaiCamPipe is Pipe {
   MaiCamPipeData public pipeData;
 
   /// @dev creates context
-  constructor(MaiCamPipeData memory _d) Pipe(
-    'MaiCamTokenPipe',
-    _d.sourceToken,
-    _d.lpToken
-  ) {
+  function initialize(MaiCamPipeData memory _d) public initializer {
     require(_d.rewardToken != address(0), "Zero reward token");
+
+    Pipe._initialize('MaiCamTokenPipe', _d.sourceToken, _d.lpToken);
 
     pipeData = _d;
     rewardTokens.push(_d.rewardToken);
