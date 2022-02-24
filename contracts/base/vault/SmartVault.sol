@@ -34,7 +34,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.10.1";
+  string public constant VERSION = "1.10.2";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
@@ -625,7 +625,8 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Transfer underlying to the strategy
   function _invest() internal {
     require(_strategy() != address(0));
-    if (_doHardWorkOnInvest()) {
+    // avoid recursive hardworks
+    if (_doHardWorkOnInvest() && msg.sender != _strategy()) {
       _doHardWork();
     }
     uint256 availableAmount = _availableToInvestOut();

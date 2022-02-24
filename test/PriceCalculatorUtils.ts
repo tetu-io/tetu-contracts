@@ -2,7 +2,6 @@ import {PriceCalculator, PriceCalculator__factory} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
 import {expect} from "chai";
-import axios from "axios";
 import {ethers} from "hardhat";
 import {Logger} from "tslog";
 import logSettings from "../log_settings";
@@ -25,23 +24,21 @@ export class PriceCalculatorUtils {
     return price;
   }
 
-  public static async getPriceCached(token: string): Promise<BigNumber> {
-    let network;
+  // keep this method for possible implement caches
+  public static async getPriceCached(token: string, calculator: PriceCalculator | null = null): Promise<BigNumber> {
     const net = await ethers.provider.getNetwork();
-    if (net.chainId === 137) {
-      network = 'MATIC';
+    if (calculator == null) {
       const tools = await DeployerUtils.getToolsAddresses();
-      return PriceCalculator__factory.connect(tools.calculator, ethers.provider).getPriceWithDefaultOutput(token);
-    } else if (net.chainId === 250) {
-      network = 'FANTOM';
-      const tools = await DeployerUtils.getToolsAddresses();
-      return PriceCalculator__factory.connect(tools.calculator, ethers.provider).getPriceWithDefaultOutput(token);
+      calculator = PriceCalculator__factory.connect(tools.calculator, ethers.provider);
+    }
+    if (net.chainId === 137 || net.chainId === 250) {
+      return calculator.getPriceWithDefaultOutput(token);
     } else {
       throw Error('No config for ' + net.chainId);
     }
-    const response = await axios.get(`https://tetu-server-staging.herokuapp.com/api/v1/price/longTTL/?token=${token}&network=${network}`);
-    log.info('price for', token, response?.data?.result);
-    return BigNumber.from(response?.data?.result);
+    // const response = await axios.get(`https://tetu-server-staging.herokuapp.com/api/v1/price/longTTL/?token=${token}&network=${network}`);
+    // log.info('price for', token, response?.data?.result);
+    // return BigNumber.from(response?.data?.result);
   }
 
 }

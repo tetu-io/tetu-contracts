@@ -234,7 +234,10 @@ export class VaultUtils {
         }
       }
       if (bbRatio !== 10000 && !ppfsDecreaseAllowed) {
-        expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
+        // it is a unique case where we send profit to vault instead of AC
+        if (await strategyCtr.STRATEGY_NAME() !== 'QiStakingStrategyBase') {
+          expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
+        }
       }
     }
     Misc.printDuration('doHardWorkAndCheck completed', start);
