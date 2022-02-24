@@ -30,7 +30,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "2.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  uint256 private constant _BUY_BACK_RATIO = 1000;
 
   /// @dev Assets should reflect underlying tokens for investing
   address[] private _assets;
@@ -94,6 +94,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _rebalanceAllPipes();
     _claimFromAllPipes();
     autocompound();
+    liquidateRewardDefault();
   }
 
   /// @dev Stub function for Strategy Base implementation
