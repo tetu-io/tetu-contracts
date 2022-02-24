@@ -12,9 +12,9 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./../../../../openzeppelin/IERC20.sol";
+import "./../../../../openzeppelin/SafeERC20.sol";
+import "./../../../../openzeppelin/Initializable.sol";
 import "../../../../openzeppelin/Math.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/IErc20Stablecoin.sol";
@@ -64,7 +64,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @dev Gets available MAI (miMATIC) to borrow at the Mai Stablecoin contract.
   /// @return miMatic borrow token Stablecoin supply
   function availableMai() external view override returns (uint256) {
-    return IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
+    return _availableMai();
   }
 
   /// @dev Returns price of source token (cam), when vault will be liquidated, based on _minimumCollateralPercentage
@@ -87,10 +87,9 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @dev Returns maximal possible deposit of amToken, based on available mai and target percentage.
   /// @return max camToken maximum deposit
   function maxDeposit() external view override returns (uint256 max) {
-    uint256 _availableMai = IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
     uint256 tokenPriceSource = _stablecoin.getTokenPriceSource();
     uint256 amPrice = _stablecoin.getEthPriceSource();
-    max = _availableMai * tokenPriceSource * pipeData.targetPercentage / (amPrice * 100 * pipeData.collateralNumerator);
+    max = _availableMai() * tokenPriceSource * pipeData.targetPercentage / (amPrice * 100 * pipeData.collateralNumerator);
   }
 
   /// @dev Gets targetPercentage
@@ -213,7 +212,9 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
       uint256 targetBorrow = _canSafelyBorrowTotal();
       uint256 debt = _stablecoin.vaultDebt(vaultID);
       if (debt < targetBorrow) {
-        borrow(targetBorrow - debt);
+        // do not borrow more than supply
+        uint256 borrowAmount = Math.min(targetBorrow - debt, _availableMai());
+        borrow(borrowAmount);
       }
       uint256 excess = _erc20Balance(pipeData.borrowToken);
       _transferERC20toNextPipe(pipeData.borrowToken, excess);
@@ -261,6 +262,13 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     } else {
       return canBorrowTotal - borrowed;
     }
+  }
+
+
+  /// @dev Gets available MAI (miMATIC) to borrow at the Mai Stablecoin contract.
+  /// @return miMatic borrow token Stablecoin supply
+  function _availableMai() private view returns (uint256) {
+    return IERC20(pipeData.borrowToken).balanceOf(address(_stablecoin));
   }
 
   // ***************************************
