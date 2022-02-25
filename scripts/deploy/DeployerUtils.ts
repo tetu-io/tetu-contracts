@@ -571,6 +571,31 @@ export class DeployerUtils {
     );
   }
 
+  public static async deployAllToolsContracts(signer: SignerWithAddress, core: CoreContractsWrapper): Promise<ToolsContractsWrapper> {
+    const net = await ethers.provider.getNetwork();
+    log.info('network ' + net.chainId);
+    const tools = Addresses.TOOLS.get(net.chainId + '');
+    if (!tools) {
+      throw Error('No config for ' + net.chainId);
+    }
+    const calculator = await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
+    const reader = await DeployerUtils.deployContractReader(signer, core.controller.address, calculator[0].address);
+    // ! we will not deploy not important contracts
+    return new ToolsContractsWrapper(
+      calculator[0],
+      reader[0],
+      await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
+      await DeployerUtils.connectInterface(signer, "LiquidityBalancer", tools.rebalancer) as LiquidityBalancer,
+      await DeployerUtils.connectInterface(signer, "PayrollClerk", tools.payrollClerk) as PayrollClerk,
+      await DeployerUtils.connectInterface(signer, "MockFaucet", tools.mockFaucet) as MockFaucet,
+      await DeployerUtils.connectInterface(signer, "MultiSwap", tools.multiSwap) as MultiSwap,
+      await DeployerUtils.connectInterface(signer, "ZapContract", tools.zapContract) as ZapContract,
+      await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
+      await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
+    );
+
+  }
+
   public static async deployAndInitVaultAndStrategy<T>(
     underlying: string,
     vaultName: string,

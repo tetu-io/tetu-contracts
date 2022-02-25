@@ -94,7 +94,9 @@ export class StrategyTestUtils {
     const rts = await strategy.rewardTokens();
     const balances: BigNumber[] = [];
     for (const rt of rts) {
-      balances.push(await TokenUtils.balanceOf(rt, strategy.address));
+      const b = await TokenUtils.balanceOf(rt, strategy.address);
+      console.log('rt balance in strategy', rt, b);
+      balances.push(b);
     }
     return balances;
   }
@@ -148,11 +150,12 @@ export class StrategyTestUtils {
     const signer = await DeployerUtils.impersonate();
     if (deploy) {
       deployInfo.core = await DeployerUtils.deployAllCoreContracts(signer);
+      deployInfo.tools = await DeployerUtils.deployAllToolsContracts(signer, deployInfo.core);
       await StrategyTestUtils.initForwarder(deployInfo.core.feeRewardForwarder);
     } else {
       deployInfo.core = await DeployerUtils.getCoreAddressesWrapper(signer);
+      deployInfo.tools = await DeployerUtils.getToolsAddressesWrapper(signer);
     }
-    deployInfo.tools = await DeployerUtils.getToolsAddressesWrapper(signer);
     Misc.printDuration('Deploy core contracts completed', start);
   }
 
@@ -167,7 +170,7 @@ export class StrategyTestUtils {
     const start = Date.now();
     const uName = await TokenUtils.tokenSymbol(underlying);
     const uDec = await TokenUtils.decimals(underlying);
-    const uPrice = await PriceCalculatorUtils.getPriceCached(underlying);
+    const uPrice = await PriceCalculatorUtils.getPriceCached(underlying, calculator);
     const uPriceN = +utils.formatUnits(uPrice);
     log.info('Underlying price: ', uPriceN);
 

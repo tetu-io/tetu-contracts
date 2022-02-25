@@ -6,7 +6,6 @@ import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {VaultUtils} from "../VaultUtils";
-import {StrategyTestUtils} from "./StrategyTestUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
@@ -322,8 +321,13 @@ export class DoHardWorkLoopBase {
 
 
     // strategy should not contain any tokens in the end
-    const stratRtBalances = await StrategyTestUtils.saveStrategyRtBalances(this.strategy);
-    for (const rtBal of stratRtBalances) {
+    const rts = await this.strategy.rewardTokens();
+    for (const rt of rts) {
+      if (rt.toLowerCase() === this.underlying.toLowerCase()) {
+        continue;
+      }
+      const rtBal = await TokenUtils.balanceOf(rt, this.strategy.address);
+      console.log('rt balance in strategy', rt, rtBal);
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
 
@@ -375,7 +379,7 @@ export class DoHardWorkLoopBase {
       // assume that PS price didn't change dramatically
       price = await this.tools.calculator.getPriceWithDefaultOutput(this.core.rewardToken.address);
     } else {
-      price = await PriceCalculatorUtils.getPriceCached(token);
+      price = await PriceCalculatorUtils.getPriceCached(token, this.tools.calculator);
     }
     this.priceCache.set(token, price);
     console.log('price is', price.toString());
