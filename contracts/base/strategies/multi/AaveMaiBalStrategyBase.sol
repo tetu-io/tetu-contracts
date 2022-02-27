@@ -36,7 +36,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   address[] private _assets;
 
   // cached total amount in underlying tokens, updated after each deposit, withdraw and hardwork
-  uint256 public totalAmount = 0;
+  uint256 public totalAmountOut = 0; // TODO slot
 
   IMaiStablecoinPipe internal _maiStablecoinPipe;
   IPipe internal _maiCamPipe;
@@ -76,12 +76,12 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   }
   modifier updateTotalAmount() {
     _;
-    totalAmount = getTotalAmountOut();
+    totalAmountOut = getTotalAmountOut();
   }
 
   /// @dev Returns reward pool balance
   function _rewardPoolBalance() internal override view returns (uint256 bal) {
-    return totalAmount;
+    return totalAmountOut;
   }
 
   /// @dev HardWork function for Strategy Base implementation
@@ -107,7 +107,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _claimFromAllPipes();
     // update cached _totalAmount, and recalculate amount
     uint256 newTotalAmount = getTotalAmountOut();
-    uint256 amount = underlyingAmount * newTotalAmount / totalAmount;
+    uint256 amount = underlyingAmount * newTotalAmount / totalAmountOut;
     _pumpOutSource(amount, 0);
   }
 
