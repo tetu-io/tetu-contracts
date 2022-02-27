@@ -13,12 +13,13 @@
 pragma solidity 0.8.4;
 
 import "../third_party/uniswap/IUniswapV2Router02.sol";
+import "../third_party/uniswap/IUniswapV2Pair.sol";
+import "../third_party/uniswap/IUniswapV2Factory.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
 import "../openzeppelin/Math.sol";
-
-import "hardhat/console.sol";
+import "../third_party/IERC20Extended.sol";
 
 /// @title Simple contract for safe swap from untrusted EOA
 /// @author belbix
@@ -35,9 +36,19 @@ contract TradeBot is ReentrancyGuard {
     address router;
   }
 
+  struct Trade {
+    Position position;
+    uint tradeTime;
+    uint tradeBlock;
+    uint tokenInAmount;
+    uint tokenOutAmount;
+    uint price;
+  }
+
   string public constant VERSION = "1.0.0";
 
   mapping(address => Position) public positions;
+  mapping(address => Trade[]) public trades;
 
   function open(
     address executor,
@@ -65,8 +76,6 @@ contract TradeBot is ReentrancyGuard {
     Position memory pos = positions[msg.sender];
     require(pos.owner == msg.sender, "Only position owner");
 
-    console.log("pos.tokenInAmount", pos.tokenInAmount);
-    console.log("IERC20(pos.tokenIn).balanceOf(address(this))", IERC20(pos.tokenIn).balanceOf(address(this)));
     if (pos.tokenInAmount != 0) {
       // in case of little fluctuation by the reason of rounding
       uint amountIn = Math.min(pos.tokenInAmount, IERC20(pos.tokenIn).balanceOf(address(this)));
@@ -74,8 +83,6 @@ contract TradeBot is ReentrancyGuard {
       IERC20(pos.tokenIn).safeTransfer(msg.sender, amountIn);
     }
 
-    console.log("pos.tokenOutAmount", pos.tokenOutAmount);
-    console.log("IERC20(pos.tokenOut).balanceOf(address(this))", IERC20(pos.tokenOut).balanceOf(address(this)));
     if (pos.tokenOutAmount != 0) {
       // avoiding rounding errors
       uint amountOut = Math.min(pos.tokenOutAmount, IERC20(pos.tokenOut).balanceOf(address(this)));
@@ -93,9 +100,6 @@ contract TradeBot is ReentrancyGuard {
 
     uint tokenInSnapshotBefore = IERC20(pos.tokenIn).balanceOf(address(this));
     uint tokenOutSnapshotBefore = IERC20(pos.tokenOut).balanceOf(address(this));
-    console.log("pos.tokenInAmount", pos.tokenInAmount);
-    console.log("tokenInSnapshotBefore", tokenInSnapshotBefore);
-    console.log("tokenOutSnapshotBefore", tokenOutSnapshotBefore);
 
     address[] memory path = new address[](2);
     path[0] = pos.tokenIn;
@@ -104,8 +108,6 @@ contract TradeBot is ReentrancyGuard {
 
     uint tokenInSnapshotAfter = IERC20(pos.tokenIn).balanceOf(address(this));
     uint tokenOutSnapshotAfter = IERC20(pos.tokenOut).balanceOf(address(this));
-    console.log("tokenInSnapshotAfter", tokenInSnapshotAfter);
-    console.log("tokenOutSnapshotAfter", tokenOutSnapshotAfter);
 
     require(tokenInSnapshotBefore > tokenInSnapshotAfter, "TokenIn unhealthy");
     require(tokenInSnapshotBefore - tokenInSnapshotAfter == amount, "Swap unhealthy");
@@ -114,6 +116,21 @@ contract TradeBot is ReentrancyGuard {
     pos.tokenInAmount = pos.tokenInAmount - (tokenInSnapshotBefore - tokenInSnapshotAfter);
     pos.tokenOutAmount = pos.tokenOutAmount + (tokenOutSnapshotAfter - tokenOutSnapshotBefore);
     positions[posOwner] = pos;
+
+    uint tokenInAmount = tokenInSnapshotBefore - tokenInSnapshotAfter;
+    uint tokenOutAmount = tokenOutSnapshotAfter - tokenOutSnapshotBefore;
+
+    address pair = IUniswapV2Factory(IUniswapV2Router02(pos.router).factory())
+    .getPair(pos.tokenIn, pos.tokenOut);
+    (,, uint price,) = getLpInfo(pair, pos.tokenOut);
+    trades[posOwner].push(Trade(
+        pos,
+        block.timestamp,
+        block.number,
+        tokenInAmount,
+        tokenOutAmount,
+        price
+      ));
   }
 
   // https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
@@ -131,6 +148,36 @@ contract TradeBot is ReentrancyGuard {
       address(this),
       block.timestamp
     );
+  }
+
+  function getLpInfo(address pairAddress, address targetToken)
+  internal view returns (address oppositeToken, uint256 oppositeTokenStacked, uint256 price, uint256 tokenStacked) {
+    IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
+    address token0 = pair.token0();
+    address token1 = pair.token1();
+    uint256 token0Decimals = IERC20Extended(token0).decimals();
+    uint256 token1Decimals = IERC20Extended(token1).decimals();
+
+    (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+
+    // both reserves should have the same decimals
+    reserve0 = reserve0 * 1e18 / (10 ** token0Decimals);
+    reserve1 = reserve1 * 1e18 / (10 ** token1Decimals);
+
+    tokenStacked = (targetToken == token0) ? reserve0 : reserve1;
+    oppositeTokenStacked = (targetToken == token0) ? reserve1 : reserve0;
+    oppositeToken = (targetToken == token0) ? token1 : token0;
+
+    if (targetToken == token0) {
+      price = reserve1 * 1e18 / reserve0;
+    } else {
+      price = reserve0 * 1e18 / reserve1;
+    }
+    return (oppositeToken, oppositeTokenStacked, price, tokenStacked);
+  }
+
+  function tradesLength(address owner) external view returns (uint) {
+    return trades[owner].length;
   }
 
 }

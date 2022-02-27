@@ -215,6 +215,8 @@ export class MaticAddresses {
   // IMPERMAX
   public static IMPERMAX_FACTORY = "0xBB92270716C8c424849F17cCc12F4F24AD4064D6".toLowerCase();
 
+  public static TRADE_BOT = "0x833D22F5c1B01ad2AD34611bD391c246712b9707".toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
