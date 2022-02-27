@@ -19,7 +19,6 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {XQiDoHardWork} from "./XQiDoHardWork";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {VaultUtils} from "../../../VaultUtils";
-import {utils} from "ethers";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -103,7 +102,7 @@ describe('Qi staking tests', async () => {
 
   const deployer = async (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
-    const data = await StrategyTestUtils.deploy(
+    return StrategyTestUtils.deploy(
       signer,
       core,
       vaultName,
@@ -117,11 +116,6 @@ describe('Qi staking tests', async () => {
       },
       tetuQiVault
     );
-    await SmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
-    await SmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
-    await core.vaultController.addRewardTokens([data[0].address], data[0].address);
-    await core.controller.setRewardDistribution([data[1].address], true);
-    return data;
   };
   const hwInitiator = (
     _signer: SignerWithAddress,

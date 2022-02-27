@@ -128,6 +128,7 @@ export class DeployerUtils {
     if (lib) {
       console.log('DEPLOY LIBRARY', lib, 'for', name);
       const libAddress = (await DeployerUtils.deployContract(signer, lib)).address;
+      await DeployerUtils.wait(1);
       const librariesObj: Libraries = {};
       librariesObj[lib] = libAddress;
       _factory = (await ethers.getContractFactory(
@@ -339,6 +340,7 @@ export class DeployerUtils {
 
   public static async deployStrategyProxy(signer: SignerWithAddress, strategyName: string): Promise<IStrategy> {
     const logic = await DeployerUtils.deployContract(signer, strategyName);
+    await DeployerUtils.wait(1);
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as IStrategy;
   }
@@ -663,6 +665,44 @@ export class DeployerUtils {
       vaultRewardToken,
       depositFee
     ), true, wait);
+    return [vaultLogic, vault, strategy];
+  }
+
+  public static async deployVaultAndStrategyProxy<T>(
+    vaultName: string,
+    underlying: string,
+    strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
+    controllerAddress: string,
+    vaultRewardToken: string,
+    signer: SignerWithAddress,
+    rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
+    wait = false
+  ): Promise<[SmartVault, SmartVault, IStrategy]> {
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+    log.info('vaultLogic ' + vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
+
+    await RunHelper.runAndWait(() => vault.initializeSmartVault(
+      "TETU_" + vaultName,
+      "x" + vaultName,
+      controllerAddress,
+      underlying,
+      rewardDuration,
+      false,
+      vaultRewardToken,
+      depositFee
+    ), true, wait);
+
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+
+    const strategy = await strategyDeployer(vault.address);
     return [vaultLogic, vault, strategy];
   }
 
