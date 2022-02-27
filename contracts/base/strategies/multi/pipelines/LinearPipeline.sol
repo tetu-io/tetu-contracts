@@ -16,6 +16,7 @@ import "../../../../openzeppelin/SafeERC20.sol";
 import "../../../../openzeppelin/Initializable.sol";
 import "../../../interface/strategies/ILinearPipeline.sol";
 import "../../../interface/strategies/IPipe.sol";
+import "../../../SlotsLib.sol";
 import "../pipes/PipeLib.sol";
 
 
@@ -23,15 +24,32 @@ import "../pipes/PipeLib.sol";
 /// @author bogdoslav
 contract LinearPipeline is ILinearPipeline, Initializable {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
-  address public _pipelineUnderlyingToken;
+  bytes32 internal constant _UNDERLYING_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.LinearPipeline.underlyingToken")) - 1);
+
   IPipe[] public override pipes;
+  // !!! add variables before the gap, decreasing gap size !!!
+  uint[32] private ______gap;
 
   event RebalancedAllPipes();
 
-  function initializeLinearPipeline(address _underlyingToken)
+  function initializeLinearPipeline(address pipelineUnderlyingToken)
   public initializer {
-    _pipelineUnderlyingToken = _underlyingToken;
+    _UNDERLYING_TOKEN_SLOT.set(pipelineUnderlyingToken);
+//    Slots.set(_UNDERLYING_TOKEN_SLOT, pipelineUnderlyingToken);
+  }
+
+  // ************* SLOT SETTERS/GETTERS *******************
+
+  /// @dev Returns underlying token address
+  function underlyingToken() external view override returns (address) {
+    return _underlyingToken();
+  }
+
+  /// @dev Returns underlying token address from slot
+  function _underlyingToken() internal view returns (address) {
+    return _UNDERLYING_TOKEN_SLOT.getAddress();
   }
 
   // ***************************************
@@ -134,14 +152,15 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @param sourceAmount in source units
   /// @return outputAmount in most underlying units
   function _pumpIn(uint256 sourceAmount) internal returns (uint256 outputAmount)  {
+    address underlying = _underlyingToken();
     if (sourceAmount == PipeLib.MAX_AMOUNT) {
-      sourceAmount = IERC20(_pipelineUnderlyingToken).balanceOf(address(this));
+      sourceAmount = IERC20(underlying).balanceOf(address(this));
     }
     if (sourceAmount == 0) {
       return 0;
     }
     // send token to first pipe
-    IERC20(_pipelineUnderlyingToken).safeTransfer(address(pipes[0]), sourceAmount);
+    IERC20(underlying).safeTransfer(address(pipes[0]), sourceAmount);
     outputAmount = _pumpIn(PipeLib.MAX_AMOUNT, 0);
   }
 

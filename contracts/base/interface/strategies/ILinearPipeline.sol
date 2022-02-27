@@ -16,6 +16,8 @@ import "./IPipe.sol";
 
 interface ILinearPipeline {
 
+  function underlyingToken() external view  returns (address);
+
   function pipes(uint index) external view returns (IPipe);
 
   function pipesLength() external view returns (uint);

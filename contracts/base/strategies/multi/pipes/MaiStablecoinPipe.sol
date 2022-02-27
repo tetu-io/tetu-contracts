@@ -148,7 +148,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
       uint256 borrowAmount = _canSafelyBorrowMore();
       borrow(borrowAmount);
     }
-    output = _erc20Balance(outputToken);
+    output = _erc20Balance(_outputToken());
     _transferERC20toNextPipe(pipeData.borrowToken, output);
     emit Put(amount, output);
   }
@@ -170,6 +170,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
         : (amount * collateral) / debt;
       withdrawCollateral(withdrawAmount);
     }
+    address sourceToken = _sourceToken();
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
     emit Get(amount, output);

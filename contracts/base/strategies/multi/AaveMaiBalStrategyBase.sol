@@ -16,6 +16,7 @@ import "./../../../openzeppelin/SafeERC20.sol";
 import "./../../../third_party/IERC20Extended.sol";
 import "./../ProxyStrategyBase.sol";
 import "./pipelines/LinearPipeline.sol";
+import "../../SlotsLib.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 
@@ -23,6 +24,7 @@ import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 /// @author belbix, bogdoslav
 contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStrategyBase {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
@@ -32,11 +34,13 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 1000;
 
+  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
+
   /// @dev Assets should reflect underlying tokens for investing
   address[] private _assets;
 
-  // cached total amount in underlying tokens, updated after each deposit, withdraw and hardwork
-  uint256 public totalAmountOut = 0; // TODO slot
+  // !!! add variables before the gap, decreasing gap size !!!
+  uint[32] private ______gap;
 
   IMaiStablecoinPipe internal _maiStablecoinPipe;
   IPipe internal _maiCamPipe;
@@ -74,14 +78,29 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
       "AMB: Not Gov or Controller");
     _;
   }
+
   modifier updateTotalAmount() {
     _;
-    totalAmountOut = getTotalAmountOut();
+    _TOTAL_AMOUNT_OUT_SLOT.set(getTotalAmountOut());
   }
+
+  // ************* SLOT SETTERS/GETTERS *******************
+
+  /// @dev Returns cached total amount out (in underlying units)
+  function totalAmountOut() external view override returns (uint) {
+    return _totalAmountOut();
+  }
+
+  /// @dev Returns cached total amount out from slot (in underlying units)
+  function _totalAmountOut() internal view returns (uint) {
+    return _TOTAL_AMOUNT_OUT_SLOT.getUint();
+  }
+
+  // ********************************************************
 
   /// @dev Returns reward pool balance
   function _rewardPoolBalance() internal override view returns (uint256 bal) {
-    return totalAmountOut;
+    return _totalAmountOut();
   }
 
   /// @dev HardWork function for Strategy Base implementation
@@ -107,7 +126,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _claimFromAllPipes();
     // update cached _totalAmount, and recalculate amount
     uint256 newTotalAmount = getTotalAmountOut();
-    uint256 amount = underlyingAmount * newTotalAmount / totalAmountOut;
+    uint256 amount = underlyingAmount * newTotalAmount / _totalAmountOut();
     _pumpOutSource(amount, 0);
   }
 

@@ -50,9 +50,10 @@ contract BalVaultPipe is Pipe {
   /// @return output in underlying units
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxSourceAmount(amount);
+    address sourceToken = _sourceToken();
     if (amount != 0) {
       (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
-      require(pipeData.sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
+      require(sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
       uint256[] memory maxAmountsIn = new uint256[](4);
       maxAmountsIn[pipeData.tokenIndex] = amount;
 
@@ -69,6 +70,7 @@ contract BalVaultPipe is Pipe {
       IBVault(pipeData.vault).joinPool(pipeData.poolID, address(this), address(this), request);
     }
 
+    address outputToken = _outputToken();
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
     emit Put(amount, output);
@@ -80,6 +82,9 @@ contract BalVaultPipe is Pipe {
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxOutputAmount(amount);
+    address outputToken = _outputToken();
+    address sourceToken = _sourceToken();
+
     if (amount != 0) {
       uint256 lpBalance = _erc20Balance(outputToken);
       amount = Math.min(amount, lpBalance);
