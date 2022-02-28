@@ -15,13 +15,15 @@ pragma solidity 0.8.4;
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
 import "./../../../../openzeppelin/Initializable.sol";
-import "./Pipe.sol";
 import "./../../../../third_party/aave/ILendingPool.sol";
+import "../../../SlotsLib.sol";
+import "./Pipe.sol";
 
 /// @title Aave Pipe Contract
 /// @author bogdoslav
 contract AaveAmPipe is Pipe {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
   struct AaveAmPipeData {
     address pool;
@@ -30,7 +32,7 @@ contract AaveAmPipe is Pipe {
     address rewardToken;
   }
 
-  AaveAmPipeData public pipeData;
+  bytes32 internal constant _POOL_SLOT = bytes32(uint256(keccak256("eip1967.AaveAmPipe.pool")) - 1);
 
   function initialize(AaveAmPipeData memory _d) public initializer {
     require(_d.pool != address(0), "Zero pool");
@@ -38,8 +40,17 @@ contract AaveAmPipe is Pipe {
 
     Pipe._initialize('AaveAmPipe', _d.sourceToken, _d.lpToken);
 
-    pipeData = _d;
+    _POOL_SLOT.set(_d.pool);
     rewardTokens.push(_d.rewardToken);
+  }
+
+  // ************* SLOT SETTERS/GETTERS *******************
+  function pool() external view returns (address) {
+    return _pool();
+  }
+
+  function _pool() internal view returns (address) {
+    return _POOL_SLOT.getAddress();
   }
 
   /// @dev Deposits to Aave
@@ -48,8 +59,9 @@ contract AaveAmPipe is Pipe {
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxSourceAmount(amount);
     address sourceToken = _sourceToken();
-    _erc20Approve(sourceToken, pipeData.pool, amount);
-    ILendingPool(pipeData.pool).deposit(sourceToken, amount, address(this), 0);
+    address __pool = _pool();
+    _erc20Approve(sourceToken, __pool, amount);
+    ILendingPool(__pool).deposit(sourceToken, amount, address(this), 0);
     address outputToken = _outputToken();
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
@@ -61,9 +73,10 @@ contract AaveAmPipe is Pipe {
   /// @return output amount of source token
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxOutputAmount(amount);
-    _erc20Approve(_outputToken(), pipeData.pool, amount);
+    address __pool = _pool();
+    _erc20Approve(_outputToken(), __pool, amount);
     address sourceToken = _sourceToken();
-    ILendingPool(pipeData.pool).withdraw(sourceToken, amount, address(this));
+    ILendingPool(__pool).withdraw(sourceToken, amount, address(this));
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
     emit Get(amount, output);

@@ -22,7 +22,7 @@ library SlotsLib {
     return bytes32(uint256(keccak256(bytes(fullName))) - 1);
   }
 
-  function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+  function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
     bytes memory tempEmptyStringTest = bytes(source);
     if (tempEmptyStringTest.length == 0) {
       return 0x0;
@@ -32,7 +32,7 @@ library SlotsLib {
     }
   }
 
-  function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
+  function bytes32ToString(bytes32 _bytes32) internal pure returns (string memory) {
     bytes memory bytesArray = new bytes(32);
     for (uint256 i; i < 32; i++) {
       bytesArray[i] = _bytes32[i];
@@ -43,7 +43,7 @@ library SlotsLib {
   // ************* GETTERS *******************
 
   /// @dev Gets a slot as bytes32
-  function get(bytes32 slot) internal view returns (bytes32 result) {
+  function getBytes32(bytes32 slot) internal view returns (bytes32 result) {
     assembly {
       result := sload(slot)
     }
@@ -73,6 +73,14 @@ library SlotsLib {
   }
 
   // ************* SETTERS *******************
+
+  /// @dev Sets a slot with bytes32
+  /// @notice Check address for 0 at the setter
+  function set(bytes32 slot, bytes32 value) internal {
+    assembly {
+      sstore(slot, value)
+    }
+  }
 
   /// @dev Sets a slot with address
   /// @notice Check address for 0 at the setter

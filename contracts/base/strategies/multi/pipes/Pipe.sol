@@ -27,35 +27,32 @@ abstract contract Pipe is IPipe, Initializable {
 
   /// @notice Address of the master pipeline
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
-//  address public override pipeline = address(0);
   bytes32 internal constant _PIPELINE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.pipeline")) - 1);
 
   /// @notice Pipe name for statistical purposes only
   /// @dev initialize it in constructor
-//  string public override name;
   bytes32 internal constant _NAME_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.name")) - 1);
 
   /// @notice Source token address type
   /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-//  address public override sourceToken;
   bytes32 internal constant _SOURCE_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.sourceToken")) - 1);
 
   /// @notice Output token address type
   /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-//  address public override outputToken;
   bytes32 internal constant _OUTPUT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.outputToken")) - 1);
 
   /// @notice Next pipe in pipeline
-//  address public override prevPipe;
   bytes32 internal constant _PREV_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.prevPipe")) - 1);
 
   /// @notice Previous pipe in pipeline
-//  address public override nextPipe;
   bytes32 internal constant _NEXT_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.nextPipe")) - 1);
 
   /// @notice Reward token address for claiming
   /// @dev initialize it in constructor
   address[] public override rewardTokens;
+
+  // !!! add variables before the gap, decreasing gap size !!!
+  uint[32] private ______gap;
 
   event Get(uint256 amount, uint256 output);
   event Put(uint256 amount, uint256 output);

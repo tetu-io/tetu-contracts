@@ -61,7 +61,7 @@ export class AMBUtils {
     const strCtr = await DeployerUtils.connectInterface(signer, 'StrategyAaveMaiBal', strategy) as StrategyAaveMaiBal;
     const maiStbPipe = await strCtr.pipes(2);
     const maiStbPipeCtr = await DeployerUtils.connectInterface(signer, 'MaiStablecoinPipe', maiStbPipe) as MaiStablecoinPipe;
-    const pipeData = await maiStbPipeCtr.pipeData()
-    await TokenUtils.getToken(MaticAddresses.miMATIC_TOKEN, pipeData.stablecoin, utils.parseUnits('1000000'));
+    const stablecoin = await maiStbPipeCtr.stablecoin()
+    await TokenUtils.getToken(MaticAddresses.miMATIC_TOKEN, stablecoin, utils.parseUnits('1000000'));
   }
 }

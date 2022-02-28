@@ -16,13 +16,15 @@ import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
 import "./../../../../openzeppelin/Initializable.sol";
 import "../../../../openzeppelin/Math.sol";
-import "./Pipe.sol";
 import "./../../../../third_party/balancer/IBVaultLocalOZ.sol";
+import "../../../SlotsLib.sol";
+import "./Pipe.sol";
 
 /// @title Balancer Vault Pipe Contract
 /// @author bogdoslav
 contract BalVaultPipe is Pipe {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
   struct BalVaultPipeData {
     address sourceToken;
@@ -33,7 +35,9 @@ contract BalVaultPipe is Pipe {
     address rewardToken;
   }
 
-  BalVaultPipeData public pipeData;
+  bytes32 internal constant _VAULT_SLOT       = bytes32(uint256(keccak256("eip1967.BalVaultPipe.vault")) - 1);
+  bytes32 internal constant _POOL_ID_SLOT     = bytes32(uint256(keccak256("eip1967.BalVaultPipe.poolID")) - 1);
+  bytes32 internal constant _TOKEN_INDEX_SLOT = bytes32(uint256(keccak256("eip1967.BalVaultPipe.tokenIndex")) - 1);
 
   function initialize(BalVaultPipeData memory _d) public initializer {
     require(_d.vault != address(0), "Zero vault");
@@ -41,8 +45,36 @@ contract BalVaultPipe is Pipe {
 
     Pipe._initialize('BalVaultPipe', _d.sourceToken, _d.lpToken);
 
-    pipeData = _d;
+    _VAULT_SLOT.set(_d.vault);
+    _POOL_ID_SLOT.set(_d.poolID);
+    _TOKEN_INDEX_SLOT.set(_d.tokenIndex);
+
     rewardTokens.push(_d.rewardToken);
+  }
+
+  // ************* SLOT SETTERS/GETTERS *******************
+  function vault() external view returns (address) {
+    return _vault();
+  }
+
+  function _vault() internal view returns (address) {
+    return _VAULT_SLOT.getAddress();
+  }
+
+  function poolID() external view returns (bytes32) {
+    return _poolID();
+  }
+
+  function _poolID() internal view returns (bytes32) {
+    return _POOL_ID_SLOT.getBytes32();
+  }
+
+  function tokenIndex() external view returns (uint) {
+    return _tokenIndex();
+  }
+
+  function _tokenIndex() internal view returns (uint) {
+    return _TOKEN_INDEX_SLOT.getUint();
   }
 
   /// @dev Joins to the Balancer pool
@@ -52,10 +84,13 @@ contract BalVaultPipe is Pipe {
     amount = maxSourceAmount(amount);
     address sourceToken = _sourceToken();
     if (amount != 0) {
-      (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
-      require(sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
+      uint __tokenIndex = _tokenIndex();
+      address __vault = _vault();
+      bytes32 __poolID = _poolID();
+      (IERC20[] memory tokens,,) = IBVault(__vault).getPoolTokens(__poolID);
+      require(sourceToken == address(tokens[__tokenIndex]), "BVP: Wrong source token");
       uint256[] memory maxAmountsIn = new uint256[](4);
-      maxAmountsIn[pipeData.tokenIndex] = amount;
+      maxAmountsIn[__tokenIndex] = amount;
 
       bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, maxAmountsIn, 1);
 
@@ -66,8 +101,8 @@ contract BalVaultPipe is Pipe {
       fromInternalBalance : false
       });
 
-      _erc20Approve(sourceToken, pipeData.vault, amount);
-      IBVault(pipeData.vault).joinPool(pipeData.poolID, address(this), address(this), request);
+      _erc20Approve(sourceToken, __vault, amount);
+      IBVault(__vault).joinPool(__poolID, address(this), address(this), request);
     }
 
     address outputToken = _outputToken();
@@ -86,15 +121,18 @@ contract BalVaultPipe is Pipe {
     address sourceToken = _sourceToken();
 
     if (amount != 0) {
+      uint __tokenIndex = _tokenIndex();
+      address __vault = _vault();
+      bytes32 __poolID = _poolID();
       uint256 lpBalance = _erc20Balance(outputToken);
       amount = Math.min(amount, lpBalance);
 
-      (IERC20[] memory tokens,,) = IBVault(pipeData.vault).getPoolTokens(pipeData.poolID);
-      require(sourceToken == address(tokens[pipeData.tokenIndex]), "BVP: Wrong source token");
+      (IERC20[] memory tokens,,) = IBVault(__vault).getPoolTokens(__poolID);
+      require(sourceToken == address(tokens[__tokenIndex]), "BVP: Wrong source token");
       uint256[] memory minAmountsOut = new uint256[](4);
-      minAmountsOut[pipeData.tokenIndex] = 1;
+      minAmountsOut[__tokenIndex] = 1;
 
-      bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, pipeData.tokenIndex);
+      bytes memory userData = abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, amount, __tokenIndex);
 
       IBVault.ExitPoolRequest memory request = IBVault.ExitPoolRequest({
       assets : asIAsset(tokens),
@@ -103,8 +141,8 @@ contract BalVaultPipe is Pipe {
       toInternalBalance : false
       });
 
-      _erc20Approve(outputToken, pipeData.vault, amount);
-      IBVault(pipeData.vault).exitPool(pipeData.poolID, address(this), payable(address(this)), request);
+      _erc20Approve(outputToken, __vault, amount);
+      IBVault(__vault).exitPool(__poolID, address(this), payable(address(this)), request);
     }
 
     output = _erc20Balance(sourceToken);
