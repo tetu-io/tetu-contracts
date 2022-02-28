@@ -35,7 +35,6 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   function initializeLinearPipeline(address pipelineUnderlyingToken)
   public initializer {
     _UNDERLYING_TOKEN_SLOT.set(pipelineUnderlyingToken);
-//    Slots.set(_UNDERLYING_TOKEN_SLOT, pipelineUnderlyingToken);
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
