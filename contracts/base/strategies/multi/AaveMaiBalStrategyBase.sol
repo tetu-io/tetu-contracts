@@ -39,9 +39,6 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Assets should reflect underlying tokens for investing
   address[] private _assets;
 
-  // !!! add variables before the gap, decreasing gap size !!!
-  uint[32] private ______gap;
-
   IMaiStablecoinPipe internal _maiStablecoinPipe;
   IPipe internal _maiCamPipe;
 
@@ -248,4 +245,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _rebalanceAllPipes();
   }
 
+  // !!! decrease gap size after adding variables!!!
+  //slither-disable-next-line unused-state
+  uint[32] private ______gap;
 }

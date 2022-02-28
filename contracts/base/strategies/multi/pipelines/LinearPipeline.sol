@@ -29,8 +29,6 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   bytes32 internal constant _UNDERLYING_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.LinearPipeline.underlyingToken")) - 1);
 
   IPipe[] public override pipes;
-  // !!! add variables before the gap, decreasing gap size !!!
-  uint[32] private ______gap;
 
   event RebalancedAllPipes();
 
@@ -271,4 +269,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     return abi.decode(reason, (uint256));
   }
 
+  // !!! decrease gap size after adding variables!!!
+  //slither-disable-next-line unused-state
+  uint[32] private ______gap;
 }

@@ -51,9 +51,6 @@ abstract contract Pipe is IPipe, Initializable {
   /// @dev initialize it in constructor
   address[] public override rewardTokens;
 
-  // !!! add variables before the gap, decreasing gap size !!!
-  uint[32] private ______gap;
-
   event Get(uint256 amount, uint256 output);
   event Put(uint256 amount, uint256 output);
 
@@ -277,4 +274,7 @@ abstract contract Pipe is IPipe, Initializable {
     IERC20(_token).safeApprove(spender, amount);
   }
 
+  // !!! decrease gap size after adding variables!!!
+  //slither-disable-next-line unused-state
+  uint[32] private ______gap;
 }
