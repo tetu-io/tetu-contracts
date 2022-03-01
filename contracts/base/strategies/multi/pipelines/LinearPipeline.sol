@@ -27,8 +27,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   using SlotsLib for bytes32;
 
   bytes32 internal constant _UNDERLYING_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.LinearPipeline.underlyingToken")) - 1);
-
-  IPipe[] public override pipes;
+  bytes32 internal constant _PIPES = bytes32(uint256(keccak256("eip1967.LinearPipeline.pipes")) - 1);
 
   event RebalancedAllPipes();
 
@@ -55,15 +54,28 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
   /// @dev Returns pipes array length
   /// @return pipes array length
-  function pipesLength() external view override returns (uint256){
-    return pipes.length;
+  function pipesLength() external view override returns (uint256) {
+    return _pipesLength();
+  }
+
+  function _pipesLength() internal view returns (uint256) {
+    return _PIPES.arrayLength();
+  }
+
+  function pipes(uint index) external override view returns (IPipe) {
+    return _pipes(index);
+  }
+
+  function _pipes(uint index) internal view returns (IPipe) {
+    return IPipe(_PIPES.addressAt(index));
   }
 
   /// @dev Checks if re-balance need some pipe(s)
   /// @return returns true when re-balance needed
   function isRebalanceNeeded() external view override returns (bool) {
-    for (uint256 i = 0; i < pipes.length; i++) {
-      if (pipes[i].needsRebalance()) {
+    uint __pipesLength = _pipesLength();
+    for (uint256 i = 0; i < __pipesLength; i++) {
+      if (_pipes(i).needsRebalance()) {
         return true;
       }
     }
@@ -77,7 +89,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
   /// @dev Returns balance of output (lp) token of the last pipe
   function _getMostUnderlyingBalance() internal view returns (uint256) {
-    return pipes[pipes.length - 1].outputBalance();
+    return _pipes(_pipesLength() - 1).outputBalance();
   }
 
   // ***************************************
@@ -119,10 +131,11 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     require(newPipe.pipeline() != address(0), "LPL: New pipe not initialized");
     require(newPipe.pipeline() == address(this), "LPL: Wrong pipe owner");
 
-    pipes.push(newPipe);
+    _PIPES.push(address(newPipe));
+    uint __pipesLength = _pipesLength();
 
-    if (pipes.length > 1) {
-      IPipe prevPipe = pipes[pipes.length - 2];
+    if (__pipesLength > 1) {
+      IPipe prevPipe = _pipes(__pipesLength - 2);
       require(prevPipe.outputToken() == newPipe.sourceToken(), 'LPL: Pipe incompatible with previous pipe');
       prevPipe.setNextPipe(address(newPipe));
       newPipe.setPrevPipe(address(prevPipe));
@@ -139,8 +152,10 @@ contract LinearPipeline is ILinearPipeline, Initializable {
       return 0;
     }
     outputAmount = 0;
-    for (uint256 i = fromPipeIndex; i < pipes.length; i++) {
-      outputAmount = pipes[i].put(sourceAmount);
+    uint __pipesLength = _pipesLength();
+
+    for (uint256 i = fromPipeIndex; i < __pipesLength; i++) {
+      outputAmount = _pipes(i).put(sourceAmount);
       sourceAmount = PipeLib.MAX_AMOUNT;
     }
   }
@@ -157,7 +172,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
       return 0;
     }
     // send token to first pipe
-    IERC20(underlying).safeTransfer(address(pipes[0]), sourceAmount);
+    IERC20(underlying).safeTransfer(address(_pipes(0)), sourceAmount);
     outputAmount = _pumpIn(PipeLib.MAX_AMOUNT, 0);
   }
 
@@ -170,8 +185,8 @@ contract LinearPipeline is ILinearPipeline, Initializable {
       return 0;
     }
     amountOut = 0;
-    for (uint256 i = pipes.length; i > toPipeIndex; i--) {
-      amountOut = pipes[i - 1].get(underlyingAmount);
+    for (uint256 i = _pipesLength(); i > toPipeIndex; i--) {
+      amountOut = _pipes(i - 1).get(underlyingAmount);
       underlyingAmount = PipeLib.MAX_AMOUNT;
     }
   }
@@ -191,7 +206,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @dev Re-balance pipe
   /// @param pipeIndex index of the pipe to rebalance
   function _rebalancePipe(uint256 pipeIndex) internal {
-    IPipe pipe = pipes[pipeIndex];
+    IPipe pipe = _pipes(pipeIndex);
     if (!pipe.needsRebalance()) {
       return;
     }
@@ -210,7 +225,8 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
   /// @dev Re-balance all pipes
   function _rebalanceAllPipes() internal {
-    for (uint256 i = 0; i < pipes.length; i++) {
+    uint __pipesLength = _pipesLength();
+    for (uint256 i = 0; i < __pipesLength; i++) {
       _rebalancePipe(i);
     }
     emit RebalancedAllPipes();
@@ -218,8 +234,9 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
   /// @dev Calls claim() for all pipes
   function _claimFromAllPipes() internal {
-    for (uint256 i = 0; i < pipes.length; i++) {
-      pipes[i].claim();
+    uint __pipesLength = _pipesLength();
+    for (uint256 i = 0; i < __pipesLength; i++) {
+      IPipe(_PIPES.addressAt(i)).claim();
     }
   }
 
@@ -227,8 +244,9 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @param recipient Recipient address
   /// @param recipient Token address
   function _salvageFromAllPipes(address recipient, address token) internal {
-    for (uint256 i = 0; i < pipes.length; i++) {
-      pipes[i].salvageFromPipe(recipient, token);
+    uint __pipesLength = _pipesLength();
+    for (uint256 i = 0; i < __pipesLength; i++) {
+      _pipes(i).salvageFromPipe(recipient, token);
     }
   }
 

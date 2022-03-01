@@ -27,20 +27,18 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
+  string private constant _STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "2.0.0";
+  string private constant _VERSION = "2.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 1000;
 
-  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
-
+  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
+  bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
+  bytes32 internal constant _MAI_CAM_PIPE_SLOT        = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiCamPipe")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
-  address[] private _assets;
-
-  IMaiStablecoinPipe internal _maiStablecoinPipe;
-  IPipe internal _maiCamPipe;
+  bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);
@@ -63,7 +61,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     initializeLinearPipeline(_underlyingToken);
 
     _rewardTokens = __rewardTokens;
-    _assets.push(_underlyingToken);
+    _ASSET_SLOT.set(_underlyingToken);
   }
 
   //************************ MODIFIERS **************************
@@ -91,6 +89,14 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Returns cached total amount out from slot (in underlying units)
   function _totalAmountOut() internal view returns (uint) {
     return _TOTAL_AMOUNT_OUT_SLOT.getUint();
+  }
+
+  function _maiStablecoinPipe() internal view returns (IMaiStablecoinPipe) {
+    return IMaiStablecoinPipe(_MAI_STABLECOIN_PIPE_SLOT.getAddress());
+  }
+
+  function _maiCamPipe() internal view returns (IPipe) {
+    return IPipe(_MAI_CAM_PIPE_SLOT.getAddress());
   }
 
   // ********************************************************
@@ -138,6 +144,16 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     liquidateRewardDefault();
   }
 
+  /// ********************** EXTERNAL VIEWS **********************
+
+  function STRATEGY_NAME() external pure override returns (string memory) {
+    return _STRATEGY_NAME;
+  }
+
+  function VERSION() external pure returns (string memory) {
+    return _VERSION;
+  }
+
   /// @dev Returns how much tokens are ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory toClaim = new uint256[](_rewardTokens.length);
@@ -155,7 +171,9 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
 
   /// @dev Returns assets array
   function assets() external view override returns (address[] memory) {
-    return _assets;
+    address[] memory array = new address[](1);
+    array[0] = _ASSET_SLOT.getAddress();
+    return array;
   }
 
   /// @dev Returns platform index
@@ -166,28 +184,29 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Gets targetPercentage of MaiStablecoinPipe
   /// @return target collateral to debt percentage
   function targetPercentage() external view override returns (uint256) {
-    return _maiStablecoinPipe.targetPercentage();
+    return _maiStablecoinPipe().targetPercentage();
   }
 
   /// @dev Gets maxImbalance of MaiStablecoinPipe
   /// @return maximum imbalance (+/-%) to do re-balance
   function maxImbalance() external view override returns (uint256) {
-    return _maiStablecoinPipe.maxImbalance();
+    return _maiStablecoinPipe().maxImbalance();
   }
 
   /// @dev Gets collateralPercentage of MaiStablecoinPipe
   /// @return current collateral to debt percentage
   function collateralPercentage() external view override returns (uint256) {
-    return _maiStablecoinPipe.collateralPercentage();
+    return _maiStablecoinPipe().collateralPercentage();
   }
   /// @dev Gets liquidationPrice of MaiStablecoinPipe
   /// @return price of source (am) token when vault will be liquidated
   function liquidationPrice() external view override returns (uint256 price) {
-    uint256 camLiqPrice = _maiStablecoinPipe.liquidationPrice();
+    uint256 camLiqPrice = _maiStablecoinPipe().liquidationPrice();
     // balance of amToken locked in camToken
-    uint256 amBalance = IERC20(_maiCamPipe.sourceToken()).balanceOf(_maiCamPipe.outputToken());
+    IPipe __maiCamPipe = _maiCamPipe();
+    uint256 amBalance = IERC20(__maiCamPipe.sourceToken()).balanceOf(__maiCamPipe.outputToken());
     // camToken total supply
-    uint256 totalSupply = IERC20Extended(_maiCamPipe.outputToken()).totalSupply();
+    uint256 totalSupply = IERC20Extended(__maiCamPipe.outputToken()).totalSupply();
 
     price = camLiqPrice * totalSupply / amBalance;
   }
@@ -195,15 +214,16 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Gets available MAI to borrow at the Mai Stablecoin contract. Should be checked at UI before deposit
   /// @return amToken maximum deposit
   function availableMai() external view override returns (uint256) {
-    return _maiStablecoinPipe.availableMai();
+    return _maiStablecoinPipe().availableMai();
   }
 
   /// @dev Returns maximal possible amToken deposit. Should be checked at UI before deposit
   /// @return max amToken maximum deposit
   function maxDeposit() external view override returns (uint256 max) {
-    uint256 camMaxDeposit = _maiStablecoinPipe.maxDeposit();
-    uint256 amBalance = IERC20(_maiCamPipe.sourceToken()).balanceOf(_maiCamPipe.outputToken());
-    uint256 totalSupply = IERC20Extended(_maiCamPipe.outputToken()).totalSupply();
+    uint256 camMaxDeposit = _maiStablecoinPipe().maxDeposit();
+    IPipe __maiCamPipe = _maiCamPipe();
+    uint256 amBalance = IERC20(__maiCamPipe.sourceToken()).balanceOf(__maiCamPipe.outputToken());
+    uint256 totalSupply = IERC20Extended(__maiCamPipe.outputToken()).totalSupply();
     max = camMaxDeposit * amBalance / totalSupply;
   }
 
@@ -230,7 +250,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @param _targetPercentage - target collateral to debt percentage
   function setTargetPercentage(uint256 _targetPercentage)
   external override onlyControllerOrGovernance updateTotalAmount {
-    _maiStablecoinPipe.setTargetPercentage(_targetPercentage);
+    _maiStablecoinPipe().setTargetPercentage(_targetPercentage);
     emit SetTargetPercentage(_targetPercentage);
     _rebalanceAllPipes();
   }
@@ -240,7 +260,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @param _maxImbalance - maximum imbalance deviation (+/-%)
   function setMaxImbalance(uint256 _maxImbalance)
   external override onlyControllerOrGovernance updateTotalAmount {
-    _maiStablecoinPipe.setMaxImbalance(_maxImbalance);
+    _maiStablecoinPipe().setMaxImbalance(_maxImbalance);
     emit SetMaxImbalance(_maxImbalance);
     _rebalanceAllPipes();
   }
