@@ -76,7 +76,7 @@ describe('Universal Alpaca tests', async () => {
     const underlying = underlyingAddress;
     const deposit = 100_000;
     const loopValue = 60 * 60 * 24;
-    const advanceBlocks = false;
+    const advanceBlocks = true;
 
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(

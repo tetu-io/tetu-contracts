@@ -18,8 +18,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/alpaca/IAlpacaVault.sol";
 import "../../../third_party/alpaca/IFairLaunch.sol";
-
-import "hardhat/console.sol";
+import "../../../third_party/uniswap/IWETH.sol";
 
 
 /// @title Abstract contract for AlpacaVault strategy implementation
@@ -37,8 +36,8 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint private constant _BUY_BACK_RATIO = 1000;
   IAlpacaVault private alpacaVault;
-  IFairLaunch private fairLaunch;
-  uint private poolId;
+  IFairLaunch private fairLaunchPool;
+  uint private poolID;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -59,48 +58,49 @@ abstract contract AlpacaVaultBase is StrategyBase{
     uint _poolId
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     alpacaVault = IAlpacaVault(_alpacaVault);
-    fairLaunch = IFairLaunch(_fairLaunch);
-    poolId = _poolId;
-    console.log("_alpacaVault %s", _alpacaVault);
-    console.log("_fairLaunch %s", _fairLaunch);
-    console.log("_poolId %s", _poolId);
-    console.log("token %s", _poolId);
+    fairLaunchPool = IFairLaunch(_fairLaunch);
+    poolID = _poolId;
+    require(alpacaVault.token() == _underlyingToken, "CSB: Wrong underlying");
   }
 
   // ************* VIEWS *******************
 
-  /// @notice Strategy balance in the TShareRewardPool pool
+  /// @notice Strategy balance in the fairLaunch pool
   /// @return bal Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint) {
-//    return tShareRewardPool.userInfo(poolID, address(this)).amount;
-    return 42;
+    uint totalSupply = alpacaVault.totalSupply();
+    uint totalToken = alpacaVault.totalToken();
+    (uint amount,) = fairLaunchPool.userInfo(poolID, address(this));
+    uint balance = amount * totalToken / totalSupply;
+    return balance;
   }
 
-  /// @notice Return approximately amount of reward tokens ready to claim in TShareRewardPool pool
+  /// @notice Return approximately amount of reward tokens ready to claim in fairLaunch pool
   /// @dev Don't use it in any internal logic, only for statistical purposes
   /// @return Array with amounts ready to claim
   function readyToClaim() external view override returns (uint[] memory) {
     uint[] memory toClaim = new uint[](1);
-//    toClaim[0] = tShareRewardPool.pendingShare(poolID, address(this));
+    toClaim[0] = fairLaunchPool.pendingAlpaca(poolID, address(this));
     return toClaim;
-
   }
 
-  /// @notice TVL of the underlying in the TShareRewardPool pool
+  /// @notice TVL of the underlying in the fairLaunch pool
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint) {
-//    return IERC20(_underlyingToken).balanceOf(address(tShareRewardPool));
-      return 42;
+    uint totalSupply = alpacaVault.totalSupply();
+    uint totalToken = alpacaVault.totalToken();
+    uint fairLaunchPoolBalance = IERC20(address(alpacaVault)).balanceOf(address(fairLaunchPool));
+    return fairLaunchPoolBalance  * totalToken / totalSupply;
   }
 
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-//    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
-//    withdrawAndClaimFromPool(0);
-//    liquidateReward();
+    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
+    fairLaunchPool.harvest(poolID);
+    liquidateReward();
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
@@ -108,28 +108,64 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @dev Deposit underlying to alpaca vault and stake ib tokens at fairLaunch pool
   /// @param amount Deposit amount
   function depositToPool(uint amount) internal override {
-    IERC20(_underlyingToken).safeApprove(address(alpacaVault), 0);
-    IERC20(_underlyingToken).safeApprove(address(alpacaVault), amount);
-    alpacaVault.deposit(amount);
-    uint ibTokenBalance =  IERC20(address(alpacaVault)).balanceOf(address(this));
-    fairLaunch.deposit(address(this), ibTokenBalance, poolId);
+    if(amount > 0){
+      address alpacaVaultAddress = address(alpacaVault);
+      address fairLaunchAddress = address(fairLaunchPool);
+
+      IERC20(_underlyingToken).safeApprove(alpacaVaultAddress, 0);
+      IERC20(_underlyingToken).safeApprove(alpacaVaultAddress, amount);
+      alpacaVault.deposit(amount);
+
+      uint ibTokenBalance =  IERC20(alpacaVaultAddress).balanceOf(address(this));
+      IERC20(alpacaVaultAddress).safeApprove(fairLaunchAddress, 0);
+      IERC20(alpacaVaultAddress).safeApprove(fairLaunchAddress, ibTokenBalance);
+
+      fairLaunchPool.deposit(address(this), poolID, ibTokenBalance);
+    }
   }
 
   /// @dev Withdraw underlying from TShareRewardPool pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint amount) internal override {
-//    tShareRewardPool.withdraw(poolID, amount);
+    fairLaunchPool.harvest(poolID);
+
+    uint totalSupply = alpacaVault.totalSupply();
+    uint totalToken = alpacaVault.totalToken();
+
+    (uint userBal,) = fairLaunchPool.userInfo(poolID, address(this));
+    uint toWithdraw = amount * totalSupply / totalToken + 1;
+
+    toWithdraw = Math.min(userBal, toWithdraw);
+
+    fairLaunchPool.withdraw(address(this), poolID, toWithdraw);
+    uint ibTokenBalance =  IERC20(address(alpacaVault)).balanceOf(address(this));
+
+    alpacaVault.withdraw(ibTokenBalance);
+    uint ftmBal = address(this).balance;
+
+    if (ftmBal > 0) {
+      IWETH(_underlyingToken).deposit{value: ftmBal}();
+    }
   }
 
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-//    tShareRewardPool.emergencyWithdraw(poolID);
+    fairLaunchPool.emergencyWithdraw(poolID);
+    uint ibTokenBalance =  IERC20(address(alpacaVault)).balanceOf(address(this));
+    alpacaVault.withdraw(ibTokenBalance);
+    uint ftmBal = address(this).balance;
+    if (ftmBal > 0) {
+      IWETH(_underlyingToken).deposit{value: ftmBal}();
+    }
   }
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-//    liquidateRewardDefault();
+    autocompound();
+    liquidateRewardDefault();
   }
 
+  // this is needed as alpacaVault.withdraw returns native tokens for FTM
+  receive() external payable {}
 }
