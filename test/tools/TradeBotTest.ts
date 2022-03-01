@@ -17,6 +17,16 @@ const TOKEN_IN = MaticAddresses.USDC_TOKEN;
 const TOKEN_OUT = MaticAddresses.TETU_TOKEN;
 const ROUTER = MaticAddresses.TETU_SWAP_ROUTER;
 
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+    .env('TETU')
+    .options({
+      hardhatChainId: {
+        type: "number",
+        default: 137
+      },
+    }).argv;
+
 describe("TradeBotTest", function () {
   let snapshot: string;
   let snapshotForEach: string;
@@ -47,6 +57,9 @@ describe("TradeBotTest", function () {
 
 
   it("position test", async () => {
+    if (argv.hardhatChainId !== 137) {
+      return;
+    }
     const tokenInAmount = utils.parseUnits('100000', 6);
     await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
     await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
@@ -86,6 +99,9 @@ describe("TradeBotTest", function () {
   });
 
   it("execute test", async () => {
+    if (argv.hardhatChainId !== 137) {
+      return;
+    }
     const tokenInAmount = utils.parseUnits('100000', 6);
     await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
     await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
@@ -110,6 +126,9 @@ describe("TradeBotTest", function () {
   });
 
   it("partially execute test", async () => {
+    if (argv.hardhatChainId !== 137) {
+      return;
+    }
     const tokenInAmount = utils.parseUnits('100000', 6);
     await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
     await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
