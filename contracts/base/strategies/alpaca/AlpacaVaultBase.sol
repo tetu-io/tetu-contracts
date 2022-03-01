@@ -12,19 +12,16 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../StrategyBase.sol";
 import "../../../third_party/alpaca/IAlpacaVault.sol";
 import "../../../third_party/alpaca/IFairLaunch.sol";
 import "../../../third_party/uniswap/IWETH.sol";
+
+import "../StrategyBase.sol";
 
 
 /// @title Abstract contract for AlpacaVault strategy implementation
 /// @author olegn
 abstract contract AlpacaVaultBase is StrategyBase{
-  using SafeMath for uint;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -33,7 +30,7 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
-  /// @dev Placeholder, for non full buyback need to implement liquidation
+  /// @dev 10% buyback
   uint private constant _BUY_BACK_RATIO = 1000;
   IAlpacaVault private alpacaVault;
   IFairLaunch private fairLaunchPool;
@@ -60,7 +57,7 @@ abstract contract AlpacaVaultBase is StrategyBase{
     alpacaVault = IAlpacaVault(_alpacaVault);
     fairLaunchPool = IFairLaunch(_fairLaunch);
     poolID = _poolId;
-    require(alpacaVault.token() == _underlyingToken, "CSB: Wrong underlying");
+    require(alpacaVault.token() == _underlyingToken, "Wrong underlying");
   }
 
   // ************* VIEWS *******************
@@ -98,7 +95,7 @@ abstract contract AlpacaVaultBase is StrategyBase{
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    depositToPool(IERC20(_underlyingToken).balanceOf(address(this)));
+    investAllUnderlying();
     fairLaunchPool.harvest(poolID);
     liquidateReward();
   }
