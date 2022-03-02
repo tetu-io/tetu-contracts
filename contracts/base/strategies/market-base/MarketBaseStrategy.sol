@@ -158,7 +158,8 @@ abstract contract MarketBaseStrategy is StrategyBase {
       // we can't calculate properly without previous value
       return;
     }
-    uint profit = _expectedProfitAmount(ICErc20(pool).exchangeRateCurrent());
+    uint exchangeRateSnapshot = ICErc20(pool).exchangeRateCurrent();
+    uint profit = _expectedProfitAmount(exchangeRateSnapshot);
     if (profit == 0) {
       return;
     }
@@ -176,7 +177,7 @@ abstract contract MarketBaseStrategy is StrategyBase {
       toLiquidate
     );
 
-    lastPoolExchangeRate = ICErc20(pool).exchangeRateCurrent();
+    lastPoolExchangeRate = exchangeRateSnapshot;
     emit Decompound(_underlyingToken, toLiquidate, result);
   }
 
@@ -195,7 +196,7 @@ abstract contract MarketBaseStrategy is StrategyBase {
       // no actions if profit too low
       return 0;
     }
-    uint profitAmount = _rewardPoolBalance() * rateChange / currentRate;
+    uint profitAmount = ICErc20(pool).balanceOf(address(this)) * rateChange / 1e18;
     uint profitAmountAdjusted = profitAmount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
     if (profitAmountAdjusted < _MIN_PROFIT) {
       // no actions if profit too low

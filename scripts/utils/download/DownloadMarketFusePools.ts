@@ -23,6 +23,8 @@ async function main() {
   for (let i = 0; i < tokens.length; i++) {
     // skip pool with id = 4, as it has only Moo Curve tokens
     if (i === 4) {continue}
+    // skip empty pools
+    if (i === 6 || i === 7) {continue}
     console.log('id', i);
     const pool = tokens[i];
     console.log('pool', pool.name);
