@@ -6,7 +6,6 @@ import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {VaultUtils} from "../VaultUtils";
-import {StrategyTestUtils} from "./StrategyTestUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
@@ -138,7 +137,7 @@ export class DoHardWorkLoopBase {
 
   protected async loopEndCheck() {
     // ** check to claim
-    if (this.totalToClaimInTetuN !== 0) {
+    if (this.totalToClaimInTetuN !== 0 && this.bbRatio !== 0) {
       const earnedN = +utils.formatUnits(this.stratEarned);
       const earnedNAdjusted = earnedN / (this.bbRatio / 10000);
       expect(earnedNAdjusted).is.greaterThanOrEqual(this.totalToClaimInTetuN * this.toClaimCheckTolerance); // very approximately
@@ -322,8 +321,13 @@ export class DoHardWorkLoopBase {
 
 
     // strategy should not contain any tokens in the end
-    const stratRtBalances = await StrategyTestUtils.saveStrategyRtBalances(this.strategy);
-    for (const rtBal of stratRtBalances) {
+    const rts = await this.strategy.rewardTokens();
+    for (const rt of rts) {
+      if (rt.toLowerCase() === this.underlying.toLowerCase()) {
+        continue;
+      }
+      const rtBal = await TokenUtils.balanceOf(rt, this.strategy.address);
+      console.log('rt balance in strategy', rt, rtBal);
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
 
@@ -331,13 +335,15 @@ export class DoHardWorkLoopBase {
     const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
-    // check ps balance
-    const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
-    expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");
+    if (this.bbRatio !== 0) {
+      // check ps balance
+      const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
+      expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");
 
-    // check ps PPFS
-    const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
-    expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq("0", "ps share price should increase");
+      // check ps PPFS
+      const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
+      expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq("0", "ps share price should increase");
+    }
 
     // check reward for user
     const rewardBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.user.address);
@@ -361,6 +367,7 @@ export class DoHardWorkLoopBase {
   }
 
   private async getPrice(token: string): Promise<BigNumber> {
+    console.log('getPrice', token)
     token = token.toLowerCase();
     if (this.priceCache.has(token)) {
       return this.priceCache.get(token) as BigNumber;
@@ -368,10 +375,14 @@ export class DoHardWorkLoopBase {
     let price;
     if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
+    } else if (token === this.core.psVault.address.toLowerCase()) {
+      // assume that PS price didn't change dramatically
+      price = await this.tools.calculator.getPriceWithDefaultOutput(this.core.rewardToken.address);
     } else {
-      price = await PriceCalculatorUtils.getPriceCached(token);
+      price = await PriceCalculatorUtils.getPriceCached(token, this.tools.calculator);
     }
     this.priceCache.set(token, price);
+    console.log('price is', price.toString());
     return price;
   }
 

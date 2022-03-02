@@ -106,7 +106,7 @@ async function main() {
         await DeployerUtils.verifyWithContractName(imx, 'contracts/strategies/matic/impermax/StrategyImpermax.sol:StrategyImpermax', strategyArgs);
         verified = true;
       }
-      const txt = `${name}:     splitter: ${splitterAddress}     strategy: ${imx}\n`;
+      const txt = `${name}:     splitter: ${splitterAddress}     strategy: ${imx}     poolnumber: ${idx}\n`;
       appendFileSync(`./tmp/deployed/IMPERMAX_STRATS_SPLITTER.txt`, txt, 'utf8');
     }
   }

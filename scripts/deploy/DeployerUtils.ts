@@ -128,6 +128,7 @@ export class DeployerUtils {
     if (lib) {
       console.log('DEPLOY LIBRARY', lib, 'for', name);
       const libAddress = (await DeployerUtils.deployContract(signer, lib)).address;
+      await DeployerUtils.wait(1);
       const librariesObj: Libraries = {};
       librariesObj[lib] = libAddress;
       _factory = (await ethers.getContractFactory(
@@ -339,6 +340,7 @@ export class DeployerUtils {
 
   public static async deployStrategyProxy(signer: SignerWithAddress, strategyName: string): Promise<IStrategy> {
     const logic = await DeployerUtils.deployContract(signer, strategyName);
+    await DeployerUtils.wait(1);
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as IStrategy;
   }
@@ -571,7 +573,33 @@ export class DeployerUtils {
     );
   }
 
+  public static async deployAllToolsContracts(signer: SignerWithAddress, core: CoreContractsWrapper): Promise<ToolsContractsWrapper> {
+    const net = await ethers.provider.getNetwork();
+    log.info('network ' + net.chainId);
+    const tools = Addresses.TOOLS.get(net.chainId + '');
+    if (!tools) {
+      throw Error('No config for ' + net.chainId);
+    }
+    const calculator = await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
+    const reader = await DeployerUtils.deployContractReader(signer, core.controller.address, calculator[0].address);
+    // ! we will not deploy not important contracts
+    return new ToolsContractsWrapper(
+      calculator[0],
+      reader[0],
+      await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
+      await DeployerUtils.connectInterface(signer, "LiquidityBalancer", tools.rebalancer) as LiquidityBalancer,
+      await DeployerUtils.connectInterface(signer, "PayrollClerk", tools.payrollClerk) as PayrollClerk,
+      await DeployerUtils.connectInterface(signer, "MockFaucet", tools.mockFaucet) as MockFaucet,
+      await DeployerUtils.connectInterface(signer, "MultiSwap", tools.multiSwap) as MultiSwap,
+      await DeployerUtils.connectInterface(signer, "ZapContract", tools.zapContract) as ZapContract,
+      await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
+      await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
+    );
+
+  }
+
   public static async deployAndInitVaultAndStrategy<T>(
+    underlying: string,
     vaultName: string,
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     controller: Controller,
@@ -586,23 +614,18 @@ export class DeployerUtils {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
-
-    const strategy = await strategyDeployer(vault.address);
-
-    const strategyUnderlying = await strategy.underlying();
-
-    const startInit = Date.now();
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       "TETU_" + vaultName,
       "x" + vaultName,
       controller.address,
-      strategyUnderlying,
+      underlying,
       rewardDuration,
       false,
       vaultRewardToken,
       depositFee
     ), true, wait);
-    Misc.printDuration(vaultName + ' vault initialized', startInit);
+    const strategy = await strategyDeployer(vault.address);
+    Misc.printDuration(vaultName + ' vault initialized', start);
 
     await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([vault.address], [strategy.address]), true, wait);
     await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
@@ -642,6 +665,44 @@ export class DeployerUtils {
       vaultRewardToken,
       depositFee
     ), true, wait);
+    return [vaultLogic, vault, strategy];
+  }
+
+  public static async deployVaultAndStrategyProxy<T>(
+    vaultName: string,
+    underlying: string,
+    strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
+    controllerAddress: string,
+    vaultRewardToken: string,
+    signer: SignerWithAddress,
+    rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
+    wait = false
+  ): Promise<[SmartVault, SmartVault, IStrategy]> {
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+    log.info('vaultLogic ' + vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
+
+    await RunHelper.runAndWait(() => vault.initializeSmartVault(
+      "TETU_" + vaultName,
+      "x" + vaultName,
+      controllerAddress,
+      underlying,
+      rewardDuration,
+      false,
+      vaultRewardToken,
+      depositFee
+    ), true, wait);
+
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+
+    const strategy = await strategyDeployer(vault.address);
     return [vaultLogic, vault, strategy];
   }
 
@@ -686,6 +747,7 @@ export class DeployerUtils {
       rewardToken = netToken;
     }
     return DeployerUtils.deployAndInitVaultAndStrategy(
+      underlying,
       't',
       vaultAddress => DeployerUtils.deployContract(
         signer,

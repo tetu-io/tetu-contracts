@@ -4,15 +4,15 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {config as dotEnvConfig} from "dotenv";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {DeployInfo} from "../../DeployInfo";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {IStrategy, SmartVault, SmartVault__factory, StrategyQiStaking} from "../../../../typechain";
+import {IStrategy, SmartVault, StrategyTetuSelfFarm} from "../../../../typechain";
+import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {QiStakeStrategyTest} from "./QiStakingDoHardWork";
-import {utils} from "ethers";
+import {SelfFarmDoHardWork} from "./SelfFarmDoHardWork";
+import {VaultUtils} from "../../../VaultUtils";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -36,24 +36,71 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Qi staking tests', async () => {
+describe('Dino pool tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-  const strategyName = 'StrategyQiStaking';
-  const underlying = MaticAddresses.QI_TOKEN;
 
   const deployInfo: DeployInfo = new DeployInfo();
+  const underlying = MaticAddresses.USDC_TOKEN;
+  const strategyName = 'StrategyTetuSelfFarm';
+  const tokenName = 'USDC';
+  let farmableVault: string;
+
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+
+    // ----------
+    const _signer = await DeployerUtils.impersonate();
+    const core = deployInfo.core as CoreContractsWrapper;
+
+    const [vaultLogic, vault, strategy] = await DeployerUtils.deployDefaultNoopStrategyAndVault(
+      _signer,
+      core.controller,
+      core.vaultController,
+      underlying,
+      core.psVault.address
+    );
+    farmableVault = vault.address;
+    await VaultUtils.addRewardsXTetu(
+      _signer,
+      vault,
+      core,
+      100_000
+    )
+    // ----------
   });
 
-  // **********************************************
+  const deployer = (signer: SignerWithAddress) => {
+    const core = deployInfo.core as CoreContractsWrapper;
+    return StrategyTestUtils.deploy(
+      signer,
+      core,
+      'SF_' + tokenName,
+      async vaultAddress => {
+        const strat = await DeployerUtils.deployStrategyProxy(
+          signer,
+          strategyName,
+        ) as StrategyTetuSelfFarm;
+        await strat.initialize(
+          core.controller.address,
+          vaultAddress,
+          farmableVault,
+        );
+        return strat;
+      },
+      underlying
+    );
+  };
+
+// **********************************************
   // ************** CONFIG*************************
   // **********************************************
   const strategyContractName = strategyName;
-  const vaultName = 'tetuQi';
-
+  const vaultName = tokenName;
+  // const underlying = token;
+  // add custom liquidation path if necessary
+  const forwarderConfigurator = null;
   // only for strategies where we expect PPFS fluctuations
   const ppfsDecreaseAllowed = false;
   // only for strategies where we expect PPFS fluctuations
@@ -68,29 +115,6 @@ describe('Qi staking tests', async () => {
   const advanceBlocks = true;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
-
-  const deployer = async (signer: SignerWithAddress) => {
-    const core = deployInfo.core as CoreContractsWrapper;
-    const data = await StrategyTestUtils.deploy(
-      signer,
-      core,
-      vaultName,
-      async vaultAddress => {
-        const strategy = await DeployerUtils.deployStrategyProxy(
-          signer,
-          strategyContractName,
-        ) as StrategyQiStaking;
-        await strategy.initialize(core.controller.address, vaultAddress);
-        return strategy;
-      },
-      underlying
-    );
-    await SmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
-    await SmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
-    await core.vaultController.addRewardTokens([data[0].address], data[0].address);
-    await core.controller.setRewardDistribution([data[1].address], true);
-    return data;
-  };
   const hwInitiator = (
     _signer: SignerWithAddress,
     _user: SignerWithAddress,
@@ -101,7 +125,7 @@ describe('Qi staking tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new QiStakeStrategyTest(
+    return new SelfFarmDoHardWork(
       _signer,
       _user,
       _core,
@@ -117,9 +141,9 @@ describe('Qi staking tests', async () => {
   await universalStrategyTest(
     strategyName + vaultName,
     deployInfo,
-    deployer,
+    deployer as (signer: SignerWithAddress) => Promise<[SmartVault, IStrategy, string]>,
     hwInitiator,
-    null,
+    forwarderConfigurator,
     ppfsDecreaseAllowed,
     balanceTolerance,
     deposit,

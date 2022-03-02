@@ -3,7 +3,13 @@ import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {StrategyTestUtils} from "./StrategyTestUtils";
-import {ForwarderV2, IStrategy, PriceCalculator, SmartVault} from "../../typechain";
+import {
+  ForwarderV2,
+  IStrategy,
+  PriceCalculator,
+  SmartVault,
+  SmartVault__factory
+} from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -13,6 +19,7 @@ import {DeployInfo} from "./DeployInfo";
 import {SpecificStrategyTest} from "./SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
+import {TokenUtils} from "../TokenUtils";
 
 async function universalStrategyTest(
   name: string,
@@ -76,13 +83,30 @@ async function universalStrategyTest(
       deployInfo.strategy = strategy;
 
       // get underlying
-      userBalance = await StrategyTestUtils.getUnderlying(
-        underlying,
-        deposit,
-        user,
-        deployInfo?.tools?.calculator as PriceCalculator,
-        [signer.address],
-      );
+      if (await core.controller.isValidVault(underlying)) {
+        console.log('underlying is a vault, need to wrap into xToken');
+        const svUnd = SmartVault__factory.connect(underlying, signer);
+        const svUndToken = await svUnd.underlying();
+        const svUndTokenBal = await StrategyTestUtils.getUnderlying(
+          svUndToken,
+          deposit,
+          user,
+          deployInfo?.tools?.calculator as PriceCalculator,
+          [signer.address],
+        );
+        console.log('svUndTokenBal', svUndTokenBal.toString());
+        await VaultUtils.deposit(signer, svUnd, svUndTokenBal);
+        await VaultUtils.deposit(user, svUnd, svUndTokenBal);
+        userBalance = await TokenUtils.balanceOf(underlying, signer.address);
+      } else {
+        userBalance = await StrategyTestUtils.getUnderlying(
+          underlying,
+          deposit,
+          user,
+          deployInfo?.tools?.calculator as PriceCalculator,
+          [signer.address],
+        );
+      }
       await UniswapUtils.wrapNetworkToken(this.signer);
       Misc.printDuration('Test Preparations completed', start);
     });
