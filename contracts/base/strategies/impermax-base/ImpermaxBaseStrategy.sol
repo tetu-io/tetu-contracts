@@ -26,7 +26,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   string public constant override STRATEGY_NAME = "ImpermaxBaseStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
   /// @dev No reward tokens
   address[] private _REWARD_TOKENS;
   /// @dev Threshold for partially decompound
@@ -119,7 +119,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
   }
 
   function _redeem(uint amount) internal returns (uint){
-    uint toRedeem = amount * 1e18 / IBorrowable(pool).exchangeRateLast();
+    uint toRedeem = amount * 1e18 / IBorrowable(pool).exchangeRate();
     toRedeem = Math.min(toRedeem, IERC20(pool).balanceOf(address(this)));
     if (toRedeem > 1) {
       IERC20(pool).safeTransfer(pool, toRedeem);
@@ -162,7 +162,8 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
       // we can't calculate properly without previous value
       return;
     }
-    uint profit = _expectedProfitAmount(IBorrowable(pool).exchangeRate());
+    uint exchangeRateSnapshot = IBorrowable(pool).exchangeRate();
+    uint profit = _expectedProfitAmount(exchangeRateSnapshot);
     if (profit == 0) {
       return;
     }
@@ -180,7 +181,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
       toLiquidate
     );
 
-    lastPoolExchangeRate = IBorrowable(pool).exchangeRate();
+    lastPoolExchangeRate = exchangeRateSnapshot;
     emit Decompound(_underlyingToken, toLiquidate, result);
   }
 
@@ -199,7 +200,7 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
       // no actions if profit too low
       return 0;
     }
-    uint profitAmount = _rewardPoolBalance() * rateChange / currentRate;
+    uint profitAmount = IERC20(pool).balanceOf(address(this)) * rateChange / 1e18;
     uint profitAmountAdjusted = profitAmount * _buyBackRatio / _BUY_BACK_DENOMINATOR;
     if (profitAmountAdjusted < _MIN_PROFIT) {
       // no actions if profit too low
