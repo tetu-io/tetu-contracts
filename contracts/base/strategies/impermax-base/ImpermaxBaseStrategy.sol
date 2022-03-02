@@ -208,5 +208,4 @@ abstract contract ImpermaxBaseStrategy is StrategyBase {
     }
     return profitAmountAdjusted;
   }
-
 }
