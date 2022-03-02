@@ -17,6 +17,7 @@ import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
+import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 
 export class VaultUtils {
 
@@ -161,9 +162,15 @@ export class VaultUtils {
     period = 60 * 60 * 24 * 7 + 1
   ) {
     const start = Date.now();
+    const net = await ethers.provider.getNetwork();
+
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+    let tetuTokenAddress = MaticAddresses.TETU_TOKEN;
+    if (net.chainId === 250) {
+      tetuTokenAddress = FtmAddresses.TETU_TOKEN;
+    }
+    if (core.rewardToken.address.toLowerCase() === tetuTokenAddress) {
       await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
     } else {
       await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, false, period)
