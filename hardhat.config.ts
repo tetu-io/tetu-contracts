@@ -12,7 +12,6 @@ import "hardhat-gas-reporter";
 import "hardhat-tracer";
 import "hardhat-etherscan-abi";
 import "solidity-coverage"
-import "@tenderly/hardhat-tenderly"
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -45,11 +44,11 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 23238072
+      default: 23945980
     },
     ftmForkBlock: {
       type: "number",
-      default: 27468274
+      default: 32100000
     },
   }).argv;
 
@@ -93,8 +92,8 @@ export default {
       url: argv.maticRpcUrl,
       timeout: 99999,
       chainId: 137,
-      // gas: 19_000_000,
-      // gasPrice: 100_000_000_000,
+      gas: 12_000_000,
+      gasPrice: 50_000_000_000,
       gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
@@ -164,8 +163,7 @@ export default {
     currency: 'USD',
     gasPrice: 21
   },
-  tenderly: {
-    project: "https://dashboard.tenderly.co/tetu/tetu-contracts",
-    username: "belbix",
+  typechain: {
+    outDir: "typechain",
   },
 };

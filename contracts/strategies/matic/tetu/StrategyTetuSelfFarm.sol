@@ -9,15 +9,18 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
-
 pragma solidity 0.8.4;
 
-import "../../third_party/cafe/ICafeMasterChef.sol";
+import "../../../base/strategies/tetu/TetuSelfFarmBase.sol";
 
-interface IMasterChefStrategyCafe {
+contract StrategyTetuSelfFarm is TetuSelfFarmBase {
 
-  function masterChefPool() external view returns (ICafeMasterChef);
-
-  function poolID() external view returns (uint256);
+  function initialize(
+    address _controller,
+    address _vault,
+    address _farmableVault
+  ) external initializer {
+    TetuSelfFarmBase.initializeStrategy(_controller, _vault, _farmableVault);
+  }
 
 }

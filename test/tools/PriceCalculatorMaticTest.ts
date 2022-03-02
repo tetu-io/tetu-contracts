@@ -273,8 +273,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.DFYN_USDC_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(94116);
-    expect(price).is.lessThan(9411690);
+    expect(price).is.greaterThan(50000);
+    expect(price).is.lessThan(500000);
   });
 
   it("calculate IRON_IRON_IS3USD, price and check", async () => {
@@ -295,6 +295,16 @@ describe("Price calculator matic tests", function () {
       '0xBe527f95815f906625F29fc084bFd783F4d00787', MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(1);
+  });
+
+  it("calculate VAULT tetu-swap-qi-tetuQi price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x2F45a8A14237CA2d965405957f8C2A1082558890', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(100);
   });
 
 });

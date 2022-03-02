@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./StrategyBase.sol";
 import "../interface/ISmartVault.sol";
 import "../../third_party/IERC20Extended.sol";
-import "../interface/IFoldStrategy.sol";
+import "../interface/strategies/IFoldStrategy.sol";
 
 /// @title Abstract contract for folding strategy
 /// @author JasperS13
@@ -27,7 +27,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
 
   // ************ VARIABLES **********************
   /// @dev Maximum folding loops
-  uint256 public constant MAX_DEPTH = 20;
+  uint256 public constant MAX_DEPTH = 3;
   /// @notice Denominator value for the both above mentioned ratios
   uint256 public _FACTOR_DENOMINATOR = 10000;
   uint256 public _BORROW_FACTOR = 9900;
@@ -116,7 +116,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @dev Liquidate rewards and do underlying compound
-  function compound() external hardWorkers {
+  function compound() external hardWorkers updateSupplyInTheEnd {
     if (_isAutocompound()) {
       _autocompound();
     } else {
@@ -191,6 +191,27 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
     _buyBackRatio = _value;
   }
 
+  function manualRedeem(uint amount) external restricted updateSupplyInTheEnd {
+    _redeemUnderlying(amount);
+  }
+
+  function manualRepay(uint amount) external restricted updateSupplyInTheEnd {
+    _repay(amount);
+  }
+
+  function manualSupply(uint amount) external restricted updateSupplyInTheEnd {
+    _supply(amount);
+  }
+
+  function manualBorrow(uint amount) external restricted updateSupplyInTheEnd {
+    _borrow(amount);
+  }
+
+  /// @dev This function should be used in emergency case when not enough gas for redeem all in one tx
+  function manualRedeemMax() external hardWorkers updateSupplyInTheEnd {
+    _redeemMaxPossible();
+  }
+
   //////////////////////////////////////////////////////
   //////////// STRATEGY FUNCTIONS IMPLEMENTATIONS //////
   //////////////////////////////////////////////////////
@@ -202,8 +223,8 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   }
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    investAllUnderlying();
+  function doHardWork()  external onlyNotPausedInvesting virtual override hardWorkers updateSupplyInTheEnd {
+    // don't invest underlying for reduce cas consumption
     _claimReward();
     if (_isAutocompound()) {
       _autocompound();
@@ -215,24 +236,14 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       _supply(underlyingBalance());
     }
     liquidateReward();
-    if (foldState == 0) {
-      if (!isFoldingProfitable() && fold) {
-        _stopFolding();
-      } else if (isFoldingProfitable() && !fold) {
-        _startFolding();
-      } else {
-        _rebalance();
-      }
-    } else {
-      _rebalance();
-    }
+    // don't rebalance, it should be done as separate tx
   }
 
   /// @dev Withdraw underlying from Iron MasterChef finance
   /// @param amount Withdraw amount
   function withdrawAndClaimFromPool(uint256 amount) internal override updateSupplyInTheEnd {
     // don't claim rewards on withdraw action for reducing gas usage
-//    _claimReward();
+    //    _claimReward();
     _redeemPartialWithLoan(amount);
   }
 
@@ -246,7 +257,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
   function exitRewardPool() internal override updateSupplyInTheEnd {
     uint256 bal = rewardPoolBalance();
     if (bal != 0) {
-      _claimReward();
+      // _claimReward();
       _redeemMaximumWithLoan();
       // reward liquidation can ruin transaction, do it in hard work process
     }
@@ -337,12 +348,22 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       // need to reduce max borrow for keep a gap for negative balance fluctuation
       maxBorrow = maxBorrow * _BORROW_FACTOR / _FACTOR_DENOMINATOR;
       _borrow(Math.min(wantBorrow, maxBorrow));
-      uint256 underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      if (underlyingBalance > 0) {
-        _supply(underlyingBalance);
+      uint256 _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      if (_underlyingBalance > 0) {
+        _supply(_underlyingBalance);
       }
       // need to update local balances
       (supplied, borrowed) = _getInvestmentData();
+
+      // we can move the market and make folding unprofitable
+      if (!_isFoldingProfitable()) {
+        // rollback the last action
+        _redeemUnderlying(_underlyingBalance);
+        _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+        _repay(_underlyingBalance);
+        break;
+      }
+
       i++;
       if (i == MAX_DEPTH) {
         emit MaxDepthReached();
@@ -361,7 +382,7 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       newBalance = oldBalance - amount;
     }
     uint256 newBorrowTarget = newBalance * borrowTargetFactorNumerator / (_FACTOR_DENOMINATOR - borrowTargetFactorNumerator);
-    uint256 underlyingBalance = 0;
+    uint256 _underlyingBalance = 0;
     uint256 i = 0;
     while (borrowed > newBorrowTarget) {
       uint256 requiredCollateral = borrowed * _FACTOR_DENOMINATOR / collateralFactorNumerator;
@@ -374,8 +395,8 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       uint256 toRedeem = Math.min(supplied - requiredCollateral, amount + toRepay);
       _redeemUnderlying(toRedeem);
       // now we can repay our borrowed amount
-      underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-      toRepay = Math.min(toRepay, underlyingBalance);
+      _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+      toRepay = Math.min(toRepay, _underlyingBalance);
       if (toRepay == 0) {
         // in case of we don't have money for repaying we can't do anything
         break;
@@ -384,24 +405,30 @@ abstract contract FoldingBase is StrategyBase, IFoldStrategy {
       // update the parameters
       (supplied, borrowed) = _getInvestmentData();
       i++;
-      if (i == MAX_DEPTH) {
-        emit MaxDepthReached();
-        break;
-      }
+      // don't check MAX_DEPTH
+      // we should able to withdraw as much as possible
     }
-    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-    if (underlyingBalance < amount) {
-      uint toRedeem = amount - underlyingBalance;
+    _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (_underlyingBalance < amount) {
+      uint toRedeem = amount - _underlyingBalance;
       if (toRedeem != 0) {
         // redeem the most we can redeem
         _redeemUnderlying(toRedeem);
       }
     }
     // supply excess underlying balance in the end
-    underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
-    if (underlyingBalance > amount) {
-      _supply(underlyingBalance - amount);
+    _underlyingBalance = IERC20(_underlyingToken).balanceOf(address(this));
+    if (_underlyingBalance > amount) {
+      _supply(_underlyingBalance - amount);
     }
+  }
+
+  function _redeemMaxPossible() internal updateSupplyInTheEnd {
+    // assume that _maxRedeem() will be called inside _redeemUnderlying()
+    _redeemUnderlying(type(uint256).max);
+    (,uint borrowed) = _getInvestmentData();
+    uint toRepay = Math.min(borrowed, IERC20(_underlyingToken).balanceOf(address(this)));
+    _repay(toRepay);
   }
 
   //////////////////////////////////////////////////////

@@ -255,23 +255,30 @@ describe("SmartVaultNoopStrat", () => {
     });
 
     it("should not doHardWork from users", async () => {
-      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Not controller or gov");
+      await expect(core.psVault.connect((await ethers.getSigners())[1]).doHardWork()).is.rejectedWith("SV: Forbidden");
     });
 
     it("should not deposit from contract", async () => {
       const extUser = (await ethers.getSigners())[1];
       const contract = await DeployerUtils.deployContract(extUser, 'EvilHackerContract') as EvilHackerContract;
-      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Not allowed');
+      await expect(contract.tryDeposit(vault.address, '1000000')).is.rejectedWith('SV: Forbidden');
     });
 
     it("should not notify from ext user", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Only distributor');
+      await expect(vault.connect(extUser).notifyTargetRewardAmount(vaultRewardToken0, '1111111')).is.rejectedWith('SV: Forbidden');
     });
 
-    it("should not doHardWork on strat from ext user", async () => {
+    it("should doHardWork on strat for hardworker", async () => {
       const extUser = (await ethers.getSigners())[1];
-      await expect(strategy.connect(extUser).doHardWork()).is.rejectedWith('SB: Not Gov or Vault');
+      console.log('extUser', extUser.address)
+      await core.controller.addHardWorker(extUser.address)
+      expect(
+        await core.controller.isHardWorker(extUser.address)
+        || await core.controller.isGovernance(extUser.address)
+        || await core.controller.isController(extUser.address)
+      ).is.eq(true);
+      await strategy.connect(extUser).doHardWork();
     });
 
     it("should not doHardWork for paused strat", async () => {
@@ -394,6 +401,15 @@ describe("SmartVaultNoopStrat", () => {
       const userBalAfter = await TokenUtils.balanceOf(usdc, user.address);
       expect(signerBalBefore.sub(50)).is.eq(signerBalAfter);
       expect(userBalBefore.sub(50)).is.eq(userBalAfter);
+    });
+
+    it("should override name and symbol", async () => {
+      expect(await vault.name()).is.eq('NOOP');
+      expect(await vault.symbol()).is.eq('tNOOP');
+      await vault.overrideName('ovName')
+      await vault.overrideSymbol('ovSymbol')
+      expect(await vault.name()).is.eq('ovName');
+      expect(await vault.symbol()).is.eq('ovSymbol');
     });
 
   });

@@ -12,8 +12,10 @@
 
 pragma solidity 0.8.4;
 
-interface IStrategyWithPool {
+interface IDelegation {
+  function clearDelegate(bytes32 _id) external;
 
-  function pool() external view returns (address);
+  function setDelegate(bytes32 _id, address _delegate) external;
 
+  function delegation(address _address, bytes32 _id) external view returns (address);
 }

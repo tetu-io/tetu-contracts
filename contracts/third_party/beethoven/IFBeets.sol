@@ -12,10 +12,7 @@
 
 pragma solidity 0.8.4;
 
-interface IMasterChefStrategyV3 {
-
-  function mcRewardPool() external view returns (address);
-
-  function poolID() external view returns (uint256);
-
+interface IFBeets {
+  function enter(uint256 _amount) external;
+  function leave(uint256 _share) external;
 }

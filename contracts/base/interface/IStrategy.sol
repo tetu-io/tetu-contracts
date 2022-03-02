@@ -37,7 +37,35 @@ interface IStrategy {
     KLIMA, //19
     VESQ, //20
     QIDAO, //21
-    SUNFLOWER //22
+    SUNFLOWER, //22
+    NACHO, //23
+    STRATEGY_SPLITTER, //24
+    TOMB, //25
+    TAROT, //26
+    BEETHOVEN, //27
+    IMPERMAX, //28
+    TETU_SF, //29
+    ALPACA, //30
+    SLOT_31, //31
+    SLOT_32, //32
+    SLOT_33, //33
+    SLOT_34, //34
+    SLOT_35, //35
+    SLOT_36, //36
+    SLOT_37, //37
+    SLOT_38, //38
+    SLOT_39, //39
+    SLOT_40, //40
+    SLOT_41, //41
+    SLOT_42, //42
+    SLOT_43, //43
+    SLOT_44, //44
+    SLOT_45, //45
+    SLOT_46, //46
+    SLOT_47, //47
+    SLOT_48, //48
+    SLOT_49, //49
+    SLOT_50 //50
   }
 
   // *************** GOVERNANCE ACTIONS **************

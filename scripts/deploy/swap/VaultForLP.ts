@@ -100,12 +100,15 @@ async function main() {
     appendFileSync(`./tmp/deployed/TETU_SWAP_VAULTS.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
-    await DeployerUtils.verify(vaultLogic.address);
-    await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
-    await DeployerUtils.verifyProxy(vaultProxy.address);
+
     await DeployerUtils.verifyWithContractName(strategy.address, strategyPath, [
       ...strategyArgs
     ]);
+
+    await DeployerUtils.verify(vaultLogic.address);
+    await DeployerUtils.verifyWithArgs(vaultProxy.address, [vaultLogic.address]);
+    await DeployerUtils.verifyProxy(vaultProxy.address);
+
   }
 
 

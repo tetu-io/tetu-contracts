@@ -28,15 +28,15 @@ abstract contract StrategyBase is IStrategy, Controllable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  uint256 internal constant _BUY_BACK_DENOMINATOR = 10000;
+  uint256 internal constant _BUY_BACK_DENOMINATOR = 100_00;
   uint256 internal constant _TOLERANCE_DENOMINATOR = 1000;
-  uint256 internal constant _TOLERANCE_NOMINATOR = 999;
+  uint256 internal constant _TOLERANCE_NUMERATOR = 999;
 
   //************************ VARIABLES **************************
   address internal _underlyingToken;
   address internal _smartVault;
   mapping(address => bool) internal _unsalvageableTokens;
-  /// @dev Buyback nominator - reflects but does not guarantee that this percent of the profit will go to distribution
+  /// @dev Buyback numerator - reflects but does not guarantee that this percent of the profit will go to distribution
   uint256 internal _buyBackRatio;
   /// @dev When this flag is true, the strategy will not be able to invest. But users should be able to withdraw.
   bool public override pausedInvesting = false;
@@ -90,6 +90,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     _underlyingToken = _underlying;
     _smartVault = _vault;
     _rewardTokens = __rewardTokens;
+    require(_bbRatio <= _BUY_BACK_DENOMINATOR, "SB: Too high buyback ratio");
     _buyBackRatio = _bbRatio;
 
     // prohibit the movement of tokens that are used in the main logic
@@ -206,7 +207,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
       withdrawAndClaimFromPool(toWithdraw);
     }
     uint amountAdjusted = Math.min(amount, underlyingBalance());
-    require(amountAdjusted > amount * toleranceNominator() / _TOLERANCE_DENOMINATOR, "SB: Withdrew too low");
+    require(amountAdjusted > amount * toleranceNumerator() / _TOLERANCE_DENOMINATOR, "SB: Withdrew too low");
     IERC20(_underlyingToken).safeTransfer(_smartVault, amountAdjusted);
   }
 
@@ -223,8 +224,8 @@ abstract contract StrategyBase is IStrategy, Controllable {
 
   /// @dev Tolerance to difference between asked and received values on user withdraw action
   ///      Where 0 is full tolerance, and range of 1-999 means how many % of tokens do you expect as minimum
-  function toleranceNominator() internal pure virtual returns (uint){
-    return _TOLERANCE_NOMINATOR;
+  function toleranceNumerator() internal pure virtual returns (uint){
+    return _TOLERANCE_NUMERATOR;
   }
 
   /// @dev Withdraw everything from external pool

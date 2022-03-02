@@ -1,4 +1,11 @@
-import {ContractReader, Controller, IStrategy, SmartVault} from "../typechain";
+import {
+  ContractReader,
+  Controller,
+  IStrategy,
+  IStrategy__factory,
+  IStrategySplitter__factory,
+  SmartVault
+} from "../typechain";
 import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TokenUtils} from "./TokenUtils";
@@ -10,6 +17,7 @@ import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
+import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 
 export class VaultUtils {
 
@@ -154,9 +162,15 @@ export class VaultUtils {
     period = 60 * 60 * 24 * 7 + 1
   ) {
     const start = Date.now();
+    const net = await ethers.provider.getNetwork();
+
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+    let tetuTokenAddress = MaticAddresses.TETU_TOKEN;
+    if (net.chainId === 250) {
+      tetuTokenAddress = FtmAddresses.TETU_TOKEN;
+    }
+    if (core.rewardToken.address.toLowerCase() === tetuTokenAddress) {
       await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
     } else {
       await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, false, period)
@@ -181,13 +195,25 @@ export class VaultUtils {
     const psRatio = (await controllerCtr.psNumerator()).toNumber() / (await controllerCtr.psDenominator()).toNumber()
     const strategy = await vault.strategy();
     const strategyCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'IStrategy', strategy) as IStrategy
+    const ppfsDecreaseAllowed = await vault.ppfsDecreaseAllowed();
 
     const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBal = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
     const psPpfs = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
     const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
 
-    await vault.doHardWork();
+    const strategyPlatform = (await strategyCtr.platform());
+    if (strategyPlatform === 24) {
+      console.log('splitter dohardworks');
+      const splitter = IStrategySplitter__factory.connect(strategy, vault.signer);
+      const subStrategies = await splitter.allStrategies();
+      for (const subStrategy of subStrategies) {
+        console.log('Call substrategy dohardwork', await IStrategy__factory.connect(subStrategy, vault.signer).STRATEGY_NAME())
+        await IStrategy__factory.connect(subStrategy, vault.signer).doHardWork();
+      }
+    } else {
+      await vault.doHardWork();
+    }
 
     const ppfsAfter = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
@@ -214,8 +240,11 @@ export class VaultUtils {
           expect(rtBalAfter).is.greaterThan(rtBal, 'With ps ratio less than 1 we should send a part of buybacks to vaults as rewards.');
         }
       }
-      if (bbRatio !== 10000) {
-        expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
+      if (bbRatio !== 10000 && !ppfsDecreaseAllowed) {
+        // it is a unique case where we send profit to vault instead of AC
+        if (await strategyCtr.STRATEGY_NAME() !== 'QiStakingStrategyBase') {
+          expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
+        }
       }
     }
     Misc.printDuration('doHardWorkAndCheck completed', start);

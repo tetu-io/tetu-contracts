@@ -16,7 +16,7 @@ import "../../../third_party/curve/IGauge.sol";
 import "../../../third_party/curve/ICurveMinter.sol";
 import "../../../third_party/curve/ICurveLpToken.sol";
 import "../../../base/strategies/StrategyBase.sol";
-import "../../interface/ICurveStrategy.sol";
+import "../../interface/strategies/ICurveStrategy.sol";
 
 
 /// @title Contract for Curve strategy implementation
@@ -85,7 +85,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
   // ************ GOVERNANCE ACTIONS **************************
 
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
     IGauge(gauge).claim_rewards(address(this));
     liquidateReward();

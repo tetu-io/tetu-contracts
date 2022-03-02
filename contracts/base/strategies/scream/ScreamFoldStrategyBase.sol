@@ -32,7 +32,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
   string public constant override STRATEGY_NAME = "ScreamFoldStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.3.0";
   /// @dev How much rewards will be used for distribution process
   uint256 private constant _BUY_BACK_RATIO = _BUY_BACK_DENOMINATOR / 10;
   /// @dev precision for the folding profitability calculation
@@ -145,19 +145,19 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
     IScreamController(screamController).claimComp(address(this), markets);
   }
 
-  function _supply(uint256 amount) internal override updateSupplyInTheEnd {
+  function _supply(uint256 amount) internal override {
     amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
     IERC20(_underlyingToken).safeApprove(scToken, 0);
     IERC20(_underlyingToken).safeApprove(scToken, amount);
     require(CompleteCToken(scToken).mint(amount) == 0, "SFS: Supplying failed");
   }
 
-  function _borrow(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _borrow(uint256 amountUnderlying) internal override {
     // Borrow, check the balance for this contract's address
     require(CompleteCToken(scToken).borrow(amountUnderlying) == 0, "SFS: Borrow failed");
   }
 
-  function _redeemUnderlying(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _redeemUnderlying(uint256 amountUnderlying) internal override {
     amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
     if (amountUnderlying > 0) {
       uint256 redeemCode = 999;
@@ -175,14 +175,14 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
     }
   }
 
-  function _redeemLoanToken(uint256 amount) internal updateSupplyInTheEnd {
+  function _redeemLoanToken(uint256 amount) internal {
     if (amount > 0) {
       uint256 res = CompleteCToken(scToken).redeem(amount);
       require(res == 0, "SFS: Redeem failed");
     }
   }
 
-  function _repay(uint256 amountUnderlying) internal override updateSupplyInTheEnd {
+  function _repay(uint256 amountUnderlying) internal override {
     if (amountUnderlying != 0) {
       IERC20(_underlyingToken).safeApprove(scToken, 0);
       IERC20(_underlyingToken).safeApprove(scToken, amountUnderlying);
@@ -191,7 +191,7 @@ abstract contract ScreamFoldStrategyBase is FoldingBase {
   }
 
   /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
-  function _redeemMaximumWithLoan() internal override updateSupplyInTheEnd {
+  function _redeemMaximumWithLoan() internal override {
     uint256 supplied = CompleteCToken(scToken).balanceOfUnderlying(address(this));
     uint256 borrowed = CompleteCToken(scToken).borrowBalanceCurrent(address(this));
     uint256 balance = supplied.sub(borrowed);

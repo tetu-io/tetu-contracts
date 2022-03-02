@@ -1,12 +1,11 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {IStrategy, SmartVault} from "../../typechain";
+import {IStrategy, SmartVault, StrategySplitter__factory} from "../../typechain";
 import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {VaultUtils} from "../VaultUtils";
-import {StrategyTestUtils} from "./StrategyTestUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
@@ -133,12 +132,12 @@ export class DoHardWorkLoopBase {
   protected async loopStartSnapshot() {
     this.loopStartTs = await Misc.getBlockTsFromChain();
     this.vaultPPFS = await this.vault.getPricePerFullShare();
-    this.stratEarnedTotal = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
+    this.stratEarnedTotal = await this.strategyEarned();
   }
 
   protected async loopEndCheck() {
     // ** check to claim
-    if (this.totalToClaimInTetuN !== 0) {
+    if (this.totalToClaimInTetuN !== 0 && this.bbRatio !== 0) {
       const earnedN = +utils.formatUnits(this.stratEarned);
       const earnedNAdjusted = earnedN / (this.bbRatio / 10000);
       expect(earnedNAdjusted).is.greaterThanOrEqual(this.totalToClaimInTetuN * this.toClaimCheckTolerance); // very approximately
@@ -227,7 +226,7 @@ export class DoHardWorkLoopBase {
 
   protected async loopPrintROIAndSaveEarned(i: number) {
     const start = Date.now();
-    const stratEarnedTotal = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
+    const stratEarnedTotal = await this.strategyEarned();
     const stratEarnedTotalN = +utils.formatUnits(stratEarnedTotal);
     this.stratEarned = stratEarnedTotal.sub(this.stratEarnedTotal);
     const stratEarnedN = +utils.formatUnits(this.stratEarned);
@@ -259,14 +258,20 @@ export class DoHardWorkLoopBase {
     Misc.printDuration('fLoopPrintROIAndSaveEarned completed', start);
   }
 
-  protected async afterBlocAdvance() {
+  protected async afterBlockAdvance() {
     const start = Date.now();
     // ** calculate to claim
     this.totalToClaimInTetuN = 0;
     const toClaim = await this.strategy.readyToClaim();
     if (toClaim.length !== 0) {
+      const platform = await this.strategy.platform();
       const tetuPriceN = +utils.formatUnits(await this.getPrice(this.core.rewardToken.address));
-      const rts = await this.strategy.rewardTokens();
+      let rts;
+      if (platform === 24) {
+        rts = await StrategySplitter__factory.connect(this.strategy.address, this.signer).strategyRewardTokens();
+      } else {
+        rts = await this.strategy.rewardTokens();
+      }
       for (let i = 0; i < rts.length; i++) {
         const rt = rts[i];
         const rtDec = await TokenUtils.decimals(rt);
@@ -291,7 +296,7 @@ export class DoHardWorkLoopBase {
       } else {
         await TimeUtils.advanceBlocksOnTs(loopValue);
       }
-      await this.afterBlocAdvance();
+      await this.afterBlockAdvance();
       await VaultUtils.doHardWorkAndCheck(this.vault);
       await this.loopPrintROIAndSaveEarned(i);
       await this.loopEndCheck();
@@ -307,12 +312,22 @@ export class DoHardWorkLoopBase {
     await this.withdraw(true, BigNumber.from(0));
     // exit for signer
     await this.vault.connect(this.signer).exit();
+    await this.strategy.withdrawAllToVault();
+
+    expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
+
     // need to call hard work for sell a little excess rewards
-    await this.vault.doHardWork();
+    await this.strategy.doHardWork();
+
 
     // strategy should not contain any tokens in the end
-    const stratRtBalances = await StrategyTestUtils.saveStrategyRtBalances(this.strategy);
-    for (const rtBal of stratRtBalances) {
+    const rts = await this.strategy.rewardTokens();
+    for (const rt of rts) {
+      if (rt.toLowerCase() === this.underlying.toLowerCase()) {
+        continue;
+      }
+      const rtBal = await TokenUtils.balanceOf(rt, this.strategy.address);
+      console.log('rt balance in strategy', rt, rtBal);
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
 
@@ -320,13 +335,15 @@ export class DoHardWorkLoopBase {
     const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
-    // check ps balance
-    const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
-    expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");
+    if (this.bbRatio !== 0) {
+      // check ps balance
+      const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
+      expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");
 
-    // check ps PPFS
-    const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
-    expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq("0", "ps share price should increase");
+      // check ps PPFS
+      const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
+      expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq("0", "ps share price should increase");
+    }
 
     // check reward for user
     const rewardBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.user.address);
@@ -350,6 +367,7 @@ export class DoHardWorkLoopBase {
   }
 
   private async getPrice(token: string): Promise<BigNumber> {
+    console.log('getPrice', token)
     token = token.toLowerCase();
     if (this.priceCache.has(token)) {
       return this.priceCache.get(token) as BigNumber;
@@ -357,11 +375,30 @@ export class DoHardWorkLoopBase {
     let price;
     if (token === this.core.rewardToken.address.toLowerCase()) {
       price = await this.tools.calculator.getPriceWithDefaultOutput(token);
+    } else if (token === this.core.psVault.address.toLowerCase()) {
+      // assume that PS price didn't change dramatically
+      price = await this.tools.calculator.getPriceWithDefaultOutput(this.core.rewardToken.address);
     } else {
-      price = await PriceCalculatorUtils.getPriceCached(token);
+      price = await PriceCalculatorUtils.getPriceCached(token, this.tools.calculator);
     }
     this.priceCache.set(token, price);
+    console.log('price is', price.toString());
     return price;
+  }
+
+  private async strategyEarned() {
+    let result = BigNumber.from(0);
+    const platform = await this.strategy.platform();
+    if (platform === 24) {
+      const splitter = StrategySplitter__factory.connect(this.strategy.address, this.signer);
+      const strategies = await splitter.allStrategies();
+      for (const s of strategies) {
+        result = result.add(await this.core.bookkeeper.targetTokenEarned(s));
+      }
+    } else {
+      result = await this.core.bookkeeper.targetTokenEarned(this.strategy.address);
+    }
+    return result;
   }
 
   private static toPercent(actual: number, expected: number): string {

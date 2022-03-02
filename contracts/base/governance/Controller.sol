@@ -15,6 +15,7 @@ pragma solidity 0.8.4;
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/IERC20.sol";
 import "../interface/IStrategy.sol";
+import "../interface/IStrategySplitter.sol";
 import "../interface/ISmartVault.sol";
 import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
@@ -23,12 +24,12 @@ import "../interface/IFundKeeper.sol";
 import "../interface/ITetuProxy.sol";
 import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
-import "../interface/IBalancingStrategy.sol";
+import "../interface/strategies/IBalancingStrategy.sol";
 import "./ControllerStorage.sol";
 import "./Controllable.sol";
 
 /// @title A central contract for control everything.
-///        Governance should be a Multi-Sig Wallet
+///        Governance is a Multi-Sig Wallet
 /// @dev Use with TetuProxy
 /// @author belbix
 contract Controller is Initializable, Controllable, ControllerStorage {
@@ -37,16 +38,16 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.3.0";
+  /// @dev Should be incremented when contract is changed
+  string public constant VERSION = "1.4.1";
 
-  /// @dev Allowed contracts for deposit to vaults
+  /// @dev Allowed contracts to deposit in the vaults
   mapping(address => bool) public override whiteList;
   /// @dev Registered vaults
   mapping(address => bool) public override vaults;
   /// @dev Registered strategies
   mapping(address => bool) public override strategies;
-  /// @dev Allowed address for do maintenance work
+  /// @dev Allowed addresses for maintenance work
   mapping(address => bool) public hardWorkers;
   /// @dev Allowed address for reward distributing
   mapping(address => bool) public rewardDistribution;
@@ -116,16 +117,17 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @dev Operation should be announced (exist in timeLockSchedule map) or new value
-  modifier timeLock(bytes32 opHash, IAnnouncer.TimeLockOpCodes opCode, bool isEmptyValue, address target) {
+  function timeLock(
+    bytes32 opHash,
+    IAnnouncer.TimeLockOpCodes opCode,
+    bool isEmptyValue,
+    address target
+  ) private {
     // empty values setup without time-lock
     if (!isEmptyValue) {
       require(_announcer() != address(0), "C: Zero announcer");
       require(IAnnouncer(_announcer()).timeLockSchedule(opHash) > 0, "C: Not announced");
       require(IAnnouncer(_announcer()).timeLockSchedule(opHash) < block.timestamp, "C: Too early");
-    }
-    _;
-    // clear announce after update
-    if (!isEmptyValue) {
       IAnnouncer(_announcer()).clearAnnounce(opHash, opCode, target);
     }
   }
@@ -149,15 +151,38 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Only Governance can do it. Set announced strategy for given vault
   /// @param _target Vault address
   /// @param _strategy Strategy address
-  function _setVaultStrategy(address _target, address _strategy) private
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyUpgrade, _target, _strategy)),
-    IAnnouncer.TimeLockOpCodes.StrategyUpgrade,
-    ISmartVault(_target).strategy() == address(0),
-    _target
-  ) {
+  function _setVaultStrategy(address _target, address _strategy) private {
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyUpgrade, _target, _strategy)),
+      IAnnouncer.TimeLockOpCodes.StrategyUpgrade,
+      ISmartVault(_target).strategy() == address(0),
+      _target
+    );
     emit VaultStrategyChanged(_target, ISmartVault(_target).strategy(), _strategy);
     ISmartVault(_target).setStrategy(_strategy);
+  }
+
+  function addStrategiesToSplitter(address _splitter, address[] calldata _strategies) external {
+    onlyGovernance();
+    for (uint256 i = 0; i < _strategies.length; i++) {
+      _addStrategyToSplitter(_splitter, _strategies[i]);
+    }
+  }
+
+  /// @notice Only Governance can do it. Add new strategy to given splitter
+  function _addStrategyToSplitter(address _splitter, address _strategy) internal {
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyUpgrade, _splitter, _strategy)),
+      IAnnouncer.TimeLockOpCodes.StrategyUpgrade,
+      !IStrategySplitter(_splitter).strategiesInited(),
+      _splitter
+    );
+    IStrategySplitter(_splitter).addStrategy(_strategy);
+    rewardDistribution[_strategy] = true;
+    if (!strategies[_strategy]) {
+      strategies[_strategy] = true;
+      IBookkeeper(_bookkeeper()).addStrategy(_strategy);
+    }
   }
 
   /// @notice Only Governance can do it. Upgrade batch announced proxies
@@ -177,13 +202,13 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Only Governance can do it. Upgrade announced proxy
   /// @param _contract Proxy contract address for upgrade
   /// @param _implementation New implementation address
-  function _upgradeTetuProxy(address _contract, address _implementation) private
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.TetuProxyUpdate, _contract, _implementation)),
-    IAnnouncer.TimeLockOpCodes.TetuProxyUpdate,
-    false,
-    _contract
-  ) {
+  function _upgradeTetuProxy(address _contract, address _implementation) private {
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.TetuProxyUpdate, _contract, _implementation)),
+      IAnnouncer.TimeLockOpCodes.TetuProxyUpdate,
+      false,
+      _contract
+    );
     emit ProxyUpgraded(_contract, ITetuProxy(_contract).implementation(), _implementation);
     ITetuProxy(_contract).upgrade(_implementation);
   }
@@ -195,14 +220,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   function mintAndDistribute(
     uint256 totalAmount,
     bool mintAllAvailable
-  ) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Mint, totalAmount, distributor(), fund(), mintAllAvailable)),
-    IAnnouncer.TimeLockOpCodes.Mint,
-    false,
-    address(0)
-  ) {
+  ) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Mint, totalAmount, distributor(), fund(), mintAllAvailable)),
+      IAnnouncer.TimeLockOpCodes.Mint,
+      false,
+      address(0)
+    );
     require(distributor() != address(0), "C: Zero distributor");
     require(fund() != address(0), "C: Zero fund");
     IMintHelper(mintHelper()).mintAndDistribute(totalAmount, distributor(), fund(), mintAllAvailable);
@@ -213,40 +238,40 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Change governance address.
   /// @param newValue New governance address
-  function setGovernance(address newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Governance, newValue)),
-    IAnnouncer.TimeLockOpCodes.Governance,
-    _governance() == address(0),
-    address(0)
-  ) {
+  function setGovernance(address newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Governance, newValue)),
+      IAnnouncer.TimeLockOpCodes.Governance,
+      _governance() == address(0),
+      address(0)
+    );
     _setGovernance(newValue);
   }
 
   /// @notice Only Governance can do it. Change DAO address.
   /// @param newValue New DAO address
-  function setDao(address newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Dao, newValue)),
-    IAnnouncer.TimeLockOpCodes.Dao,
-    _dao() == address(0),
-    address(0)
-  ) {
+  function setDao(address newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Dao, newValue)),
+      IAnnouncer.TimeLockOpCodes.Dao,
+      _dao() == address(0),
+      address(0)
+    );
     _setDao(newValue);
   }
 
   /// @notice Only Governance can do it. Change FeeRewardForwarder address.
   /// @param _feeRewardForwarder New FeeRewardForwarder address
-  function setFeeRewardForwarder(address _feeRewardForwarder) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FeeRewardForwarder, _feeRewardForwarder)),
-    IAnnouncer.TimeLockOpCodes.FeeRewardForwarder,
-    feeRewardForwarder() == address(0),
-    address(0)
-  ) {
+  function setFeeRewardForwarder(address _feeRewardForwarder) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FeeRewardForwarder, _feeRewardForwarder)),
+      IAnnouncer.TimeLockOpCodes.FeeRewardForwarder,
+      feeRewardForwarder() == address(0),
+      address(0)
+    );
     rewardDistribution[feeRewardForwarder()] = false;
     _setFeeRewardForwarder(_feeRewardForwarder);
     rewardDistribution[feeRewardForwarder()] = true;
@@ -254,27 +279,27 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Change Bookkeeper address.
   /// @param newValue New Bookkeeper address
-  function setBookkeeper(address newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Bookkeeper, newValue)),
-    IAnnouncer.TimeLockOpCodes.Bookkeeper,
-    _bookkeeper() == address(0),
-    address(0)
-  ) {
+  function setBookkeeper(address newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Bookkeeper, newValue)),
+      IAnnouncer.TimeLockOpCodes.Bookkeeper,
+      _bookkeeper() == address(0),
+      address(0)
+    );
     _setBookkeeper(newValue);
   }
 
   /// @notice Only Governance can do it. Change MintHelper address.
   /// @param _newValue New MintHelper address
-  function setMintHelper(address _newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.MintHelper, _newValue)),
-    IAnnouncer.TimeLockOpCodes.MintHelper,
-    mintHelper() == address(0),
-    address(0)
-  ) {
+  function setMintHelper(address _newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.MintHelper, _newValue)),
+      IAnnouncer.TimeLockOpCodes.MintHelper,
+      mintHelper() == address(0),
+      address(0)
+    );
     _setMintHelper(_newValue);
     // for reduce the chance of DoS check new implementation
     require(IMintHelper(mintHelper()).devFundsList(0) != address(0), "C: Wrong");
@@ -282,53 +307,53 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Change RewardToken(TETU) address.
   /// @param _newValue New RewardToken address
-  function setRewardToken(address _newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.RewardToken, _newValue)),
-    IAnnouncer.TimeLockOpCodes.RewardToken,
-    rewardToken() == address(0),
-    address(0)
-  ) {
+  function setRewardToken(address _newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.RewardToken, _newValue)),
+      IAnnouncer.TimeLockOpCodes.RewardToken,
+      rewardToken() == address(0),
+      address(0)
+    );
     _setRewardToken(_newValue);
   }
 
   /// @notice Only Governance can do it. Change FundToken(USDC by default) address.
   /// @param _newValue New FundToken address
-  function setFundToken(address _newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundToken, _newValue)),
-    IAnnouncer.TimeLockOpCodes.FundToken,
-    fundToken() == address(0),
-    address(0)
-  ) {
+  function setFundToken(address _newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundToken, _newValue)),
+      IAnnouncer.TimeLockOpCodes.FundToken,
+      fundToken() == address(0),
+      address(0)
+    );
     _setFundToken(_newValue);
   }
 
   /// @notice Only Governance can do it. Change ProfitSharing vault address.
   /// @param _newValue New ProfitSharing vault address
-  function setPsVault(address _newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.PsVault, _newValue)),
-    IAnnouncer.TimeLockOpCodes.PsVault,
-    psVault() == address(0),
-    address(0)
-  ) {
+  function setPsVault(address _newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.PsVault, _newValue)),
+      IAnnouncer.TimeLockOpCodes.PsVault,
+      psVault() == address(0),
+      address(0)
+    );
     _setPsVault(_newValue);
   }
 
   /// @notice Only Governance can do it. Change FundKeeper address.
   /// @param _newValue New FundKeeper address
-  function setFund(address _newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Fund, _newValue)),
-    IAnnouncer.TimeLockOpCodes.Fund,
-    fund() == address(0),
-    address(0)
-  ) {
+  function setFund(address _newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.Fund, _newValue)),
+      IAnnouncer.TimeLockOpCodes.Fund,
+      fund() == address(0),
+      address(0)
+    );
     _setFund(_newValue);
   }
 
@@ -353,14 +378,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
 
   /// @notice Only Governance can do it. Change FundKeeper address.
   /// @param _newValue New FundKeeper address
-  function setVaultController(address _newValue) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.VaultController, _newValue)),
-    IAnnouncer.TimeLockOpCodes.VaultController,
-    vaultController() == address(0),
-    address(0)
-  ) {
+  function setVaultController(address _newValue) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.VaultController, _newValue)),
+      IAnnouncer.TimeLockOpCodes.VaultController,
+      vaultController() == address(0),
+      address(0)
+    );
     _setVaultController(_newValue);
   }
 
@@ -370,14 +395,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ///         numerator/denominator = ratio
   /// @param numerator Ratio numerator. Should be less than denominator
   /// @param denominator Ratio denominator. Should be greater than zero
-  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public override
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.PsRatio, numerator, denominator)),
-    IAnnouncer.TimeLockOpCodes.PsRatio,
-    psNumerator() == 0 && psDenominator() == 0,
-    address(0)
-  ) {
+  function setPSNumeratorDenominator(uint256 numerator, uint256 denominator) public override {
     onlyGovernanceOrDao();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.PsRatio, numerator, denominator)),
+      IAnnouncer.TimeLockOpCodes.PsRatio,
+      psNumerator() == 0 && psDenominator() == 0,
+      address(0)
+    );
     _setPsNumerator(numerator);
     _setPsDenominator(denominator);
   }
@@ -386,32 +411,32 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ///         numerator/denominator = ratio
   /// @param numerator Ratio numerator. Should be less than denominator
   /// @param denominator Ratio denominator. Should be greater than zero
-  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public override
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundRatio, numerator, denominator)),
-    IAnnouncer.TimeLockOpCodes.FundRatio,
-    fundNumerator() == 0 && fundDenominator() == 0,
-    address(0)
-  ) {
+  function setFundNumeratorDenominator(uint256 numerator, uint256 denominator) public override {
     onlyGovernanceOrDao();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundRatio, numerator, denominator)),
+      IAnnouncer.TimeLockOpCodes.FundRatio,
+      fundNumerator() == 0 && fundDenominator() == 0,
+      address(0)
+    );
     _setFundNumerator(numerator);
     _setFundDenominator(denominator);
   }
 
-  // ------------------ TIME-LOCK SALVAGE -------------------
+  // ------------------ TIME-LOCK TOKEN MOVEMENTS -------------------
 
   /// @notice Only Governance can do it. Transfer token from this contract to governance address
   /// @param _recipient Recipient address
   /// @param _token Token address
   /// @param _amount Token amount
-  function controllerTokenMove(address _recipient, address _token, uint256 _amount) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.ControllerTokenMove, _recipient, _token, _amount)),
-    IAnnouncer.TimeLockOpCodes.ControllerTokenMove,
-    false,
-    address(0)
-  ) {
+  function controllerTokenMove(address _recipient, address _token, uint256 _amount) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.ControllerTokenMove, _recipient, _token, _amount)),
+      IAnnouncer.TimeLockOpCodes.ControllerTokenMove,
+      false,
+      address(0)
+    );
     IERC20(_token).safeTransfer(_recipient, _amount);
     emit ControllerTokenMoved(_recipient, _token, _amount);
   }
@@ -420,16 +445,16 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @param _strategy Strategy address
   /// @param _token Token address
   /// @param _amount Token amount
-  function strategyTokenMove(address _strategy, address _token, uint256 _amount) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyTokenMove, _strategy, _token, _amount)),
-    IAnnouncer.TimeLockOpCodes.StrategyTokenMove,
-    false,
-    address(0)
-  ) {
+  function strategyTokenMove(address _strategy, address _token, uint256 _amount) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.StrategyTokenMove, _strategy, _token, _amount)),
+      IAnnouncer.TimeLockOpCodes.StrategyTokenMove,
+      false,
+      address(0)
+    );
     // the strategy is responsible for maintaining the list of
-    // salvagable tokens, to make sure that governance cannot come
+    // salvageable tokens, to make sure that governance cannot come
     // in and take away the coins
     IStrategy(_strategy).salvage(_governance(), _token, _amount);
     emit StrategyTokenMoved(_strategy, _token, _amount);
@@ -439,14 +464,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @param _fund FundKeeper address
   /// @param _token Token address
   /// @param _amount Token amount
-  function fundKeeperTokenMove(address _fund, address _token, uint256 _amount) external
-  timeLock(
-    keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundTokenMove, _fund, _token, _amount)),
-    IAnnouncer.TimeLockOpCodes.FundTokenMove,
-    false,
-    address(0)
-  ) {
+  function fundKeeperTokenMove(address _fund, address _token, uint256 _amount) external {
     onlyGovernance();
+    timeLock(
+      keccak256(abi.encode(IAnnouncer.TimeLockOpCodes.FundTokenMove, _fund, _token, _amount)),
+      IAnnouncer.TimeLockOpCodes.FundTokenMove,
+      false,
+      address(0)
+    );
     IFundKeeper(_fund).withdrawToController(_token, _amount);
     emit FundKeeperTokenMoved(_fund, _token, _amount);
   }
@@ -538,7 +563,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     emit VaultAndStrategyAdded(_vault, _strategy);
   }
 
-  /// @notice Only Vault can do it. Register Strategy. Vault call it when gov set a strategy
+  /// @notice Only Vault can do it. Register Strategy. Vault call it when governance set a strategy
   /// @param _strategy Strategy addresses
   function addStrategy(address _strategy) external override {
     require(vaults[msg.sender], "C: Not vault");
@@ -601,7 +626,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   }
 
   /// @notice Return true if the given address:
-  ///         - not smart contract
+  ///         - is not smart contract
   ///         - added to whitelist
   ///         - governance address
   ///         - hardworker
@@ -621,7 +646,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     || strategies[_adr];
   }
 
-  /// @notice Return true if given address is not smart contract but wallet address
+  /// @notice Return true if given address is not a smart contract but a wallet address
   /// @dev it is not 100% guarantee after EIP-3074 implementation
   ///       use it as an additional check
   /// @param _adr Address for check
@@ -630,14 +655,14 @@ contract Controller is Initializable, Controllable, ControllerStorage {
     return _adr == tx.origin;
   }
 
-  /// @notice Return true if the given address is registered vault
+  /// @notice Return true if the given address is a registered vault
   /// @param _vault Address for check
   /// @return true if it is a registered vault
   function isValidVault(address _vault) external override view returns (bool) {
     return vaults[_vault];
   }
 
-  /// @notice Return true if the given address is registered strategy
+  /// @notice Return true if the given address is a registered strategy
   /// @param _strategy Address for check
   /// @return true if it is a registered strategy
   function isValidStrategy(address _strategy) external override view returns (bool) {

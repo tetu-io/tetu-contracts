@@ -49,7 +49,7 @@ contract MockStrategySelfFarm is StrategyBase {
     bal = ISmartVault(pool).underlyingBalanceWithInvestmentForHolder(address(this));
   }
 
-  function doHardWork() external onlyNotPausedInvesting override restricted {
+  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     exitRewardPool();
     liquidateReward();
     investAllUnderlying();

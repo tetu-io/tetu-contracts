@@ -62,6 +62,9 @@ export class MaticAddresses {
   public static PSP_TOKEN = "0x42d61D766B85431666B39B89C43011f24451bFf6".toLowerCase();
   public static VSQ_TOKEN = "0x29F1e986FCa02B7E54138c04C4F503DdDD250558".toLowerCase();
   public static SFF_TOKEN = "0xdf9B4b57865B403e08c85568442f95c26b7896b0".toLowerCase();
+  public static NACHO_TOKEN = '0xcD86152047e800d67BDf00A4c635A8B6C0e5C4c2'.toLowerCase();
+  public static NSHARE_TOKEN = '0x948D0a28b600BDBd77AF4ea30E6F338167034181'.toLowerCase();
+  public static NBOND_NOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -168,7 +171,7 @@ export class MaticAddresses {
 
   // TetuSwap
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
-  public static TETU_SWAP_ROUTER = "0x121d1D47aC63fAF123b29E3267fa8feb1fADc65c".toLowerCase();
+  public static TETU_SWAP_ROUTER = "0x736FD9EabB15776A3adfea1B975c868F72A29d14".toLowerCase();
 
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
@@ -190,6 +193,7 @@ export class MaticAddresses {
   public static camWETH_TOKEN = "0x0470CD31C8FcC42671465880BA81D631F0B76C1D".toLowerCase();
   public static camWBTCVault = "0x7dDA5e1A389E0C1892CaF55940F5fcE6588a9ae0".toLowerCase();
   public static camWBTC_TOKEN = "0xBa6273A78a23169e01317bd0f6338547F869E8Df".toLowerCase();
+  public static QI_DelegateRegistry = "0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446".toLowerCase();
 
   // BALANCER
   public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
@@ -207,6 +211,11 @@ export class MaticAddresses {
   public static sVESQ = '0xbb0FDc2Fe6D3cEB6Bf76Cc955173a07EDbF57494'.toLowerCase();
   public static VESQ_DISTRIBUTOR = '0xabE372DCFB8800B3cDE30f1d6666401C765f2F3B'.toLowerCase();
   public static VESQ_TREASURY = '0x8c7290399cECbBBf31E471951Cc4C2ce91F5073c'.toLowerCase();
+
+  // IMPERMAX
+  public static IMPERMAX_FACTORY = "0xBB92270716C8c424849F17cCc12F4F24AD4064D6".toLowerCase();
+
+  public static TRADE_BOT = "0x833D22F5c1B01ad2AD34611bD391c246712b9707".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
