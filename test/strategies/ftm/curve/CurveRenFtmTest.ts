@@ -27,7 +27,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe.skip('Curve ren ftm tests', async () => {
+describe('Curve ren ftm tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 250) {
     return;
   }
