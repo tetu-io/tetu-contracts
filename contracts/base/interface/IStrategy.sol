@@ -46,8 +46,8 @@ interface IStrategy {
     IMPERMAX, //28
     TETU_SF, //29
     ALPACA, //30
-    SLOT_31, //31
-    SLOT_32, //32
+    MARKET, //31
+    UNIVERSE, //32
     SLOT_33, //33
     SLOT_34, //34
     SLOT_35, //35
