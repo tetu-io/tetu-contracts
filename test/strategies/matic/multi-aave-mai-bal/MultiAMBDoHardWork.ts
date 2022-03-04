@@ -50,9 +50,9 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     const strategyAaveMaiBal: StrategyAaveMaiBal = this.strategy as StrategyAaveMaiBal;
 
     // claim aave rewards on mai
-    console.log('claimAaveRewards');
-    const cam = await DeployerUtils.connectInterface(this.signer, 'ICamToken', this.camToken) as ICamToken;
-    await cam.claimAaveRewards();
+    // console.log('claimAaveRewards');
+    // const cam = await DeployerUtils.connectInterface(this.signer, 'ICamToken', this.camToken) as ICamToken;
+    // await cam.claimAaveRewards(); // TODO !!! Warning: for some reason this not work now (after ICamToken contract upgrade or another reason)
 
     // air drop reward token
     await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, this.airDropper.address, this.airDropAmount);

@@ -17,7 +17,7 @@ export class AMBPipeDeployer {
       amToken,
       MaticAddresses.WMATIC_TOKEN
     ];
-    return [(await DeployerUtils.deployContract(signer, "AaveAmPipe", args) as AaveAmPipe), args];
+    return [(await DeployerUtils.deployContractAndInitialize(signer, "AaveAmPipe", args) as AaveAmPipe), args];
   }
 
   public static async deployMaiCamPipe(
@@ -30,7 +30,7 @@ export class AMBPipeDeployer {
       camToken,
       MaticAddresses.QI_TOKEN
     ];
-    return [(await DeployerUtils.deployContract(signer, "MaiCamPipe", args) as MaiCamPipe), args];
+    return [(await DeployerUtils.deployContractAndInitialize(signer, "MaiCamPipe", args) as MaiCamPipe), args];
   }
 
   // targetPercentage: default is 200
@@ -54,7 +54,7 @@ export class AMBPipeDeployer {
       MaticAddresses.QI_TOKEN,
       collateralNumerator,
     ];
-    return [(await DeployerUtils.deployContract(signer, "MaiStablecoinPipe", args) as MaiStablecoinPipe), args];
+    return [(await DeployerUtils.deployContractAndInitialize(signer, "MaiStablecoinPipe", args) as MaiStablecoinPipe), args];
   }
 
   public static async deployBalVaultPipe(
@@ -68,7 +68,7 @@ export class AMBPipeDeployer {
       MaticAddresses.BALANCER_STABLE_POOL, // Balancer Polygon Stable Pool (BPSP)
       MaticAddresses.BAL_TOKEN,
     ];
-    return [(await DeployerUtils.deployContract(signer, "BalVaultPipe", args) as BalVaultPipe), args];
+    return [(await DeployerUtils.deployContractAndInitialize(signer, "BalVaultPipe", args) as BalVaultPipe), args];
   }
 
 }

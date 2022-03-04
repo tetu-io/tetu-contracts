@@ -164,7 +164,7 @@ describe('Universal AMB tests', async () => {
             pipes
           ];
 
-          return await DeployerUtils.deployContract(
+          return await DeployerUtils.deployContractAndInitialize(
             signer,
             strategyContractName,
             ...strategyArgs

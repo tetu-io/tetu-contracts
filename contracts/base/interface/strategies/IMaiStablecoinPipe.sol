@@ -22,6 +22,14 @@ interface IMaiStablecoinPipe {
 
   function targetPercentage() external view returns (uint256);
 
+  function vaultID() external view returns (uint256);
+
+  function borrowToken() external view returns (address);
+
+  function stablecoin() external view returns (address);
+
+  function collateralNumerator() external view returns (uint);
+
   function collateralPercentage() external view returns (uint256);
 
   function liquidationPrice() external view returns (uint256);
