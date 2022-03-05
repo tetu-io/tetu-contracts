@@ -27,10 +27,10 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
-  string private constant _STRATEGY_NAME = "AaveMaiBalStrategyBase";
+  string public constant STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string private constant _VERSION = "2.0.0";
+  string public constant VERSION = "2.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 1000;
 
@@ -145,14 +145,6 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   }
 
   /// ********************** EXTERNAL VIEWS **********************
-
-  function STRATEGY_NAME() external pure override returns (string memory) {
-    return _STRATEGY_NAME;
-  }
-
-  function VERSION() external pure returns (string memory) {
-    return _VERSION;
-  }
 
   /// @dev Returns how much tokens are ready to claim
   function readyToClaim() external view override returns (uint256[] memory) {
