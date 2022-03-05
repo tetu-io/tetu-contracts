@@ -50,16 +50,14 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     const strategyAaveMaiBal: StrategyAaveMaiBal = this.strategy as StrategyAaveMaiBal;
 
     // claim aave rewards on mai
+    // doesn't work after wmatic rewards stopped
     // console.log('claimAaveRewards');
     // const cam = await DeployerUtils.connectInterface(this.signer, 'ICamToken', this.camToken) as ICamToken;
-    // await cam.claimAaveRewards(); // TODO !!! Warning: for some reason this not work now (after ICamToken contract upgrade or another reason)
+    // await cam.claimAaveRewards();
 
     // air drop reward token
-    await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, this.airDropper.address, this.airDropAmount);
-    await TokenUtils.getToken(this.airDropToken, this.airDropper.address, this.airDropAmount);
-    const bal = await TokenUtils.balanceOf(this.airDropToken, this.airDropper.address);
     const pipeAddress = await strategyAaveMaiBal.pipes(this.airDropPipeIndex);
-    await TokenUtils.transfer(this.airDropToken, this.airDropper, pipeAddress, bal.toString());
+    await TokenUtils.getToken(this.airDropToken, pipeAddress, this.airDropAmount);
 
     // *** mock price ***
 

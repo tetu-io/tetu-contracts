@@ -31,8 +31,8 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string private constant _VERSION = "2.0.0";
-  /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 1000;
+  /// @dev 10% buyback
+  uint256 private constant _BUY_BACK_RATIO = 10_00;
 
   bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
   bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
@@ -56,11 +56,9 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     require(_underlyingToken != address(0), "Zero underlying");
     require(_vault != address(0), "Zero vault");
 
-    initializeStrategyBase(
-      _controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
+    initializeStrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
     initializeLinearPipeline(_underlyingToken);
 
-    _rewardTokens = __rewardTokens;
     _ASSET_SLOT.set(_underlyingToken);
   }
 
