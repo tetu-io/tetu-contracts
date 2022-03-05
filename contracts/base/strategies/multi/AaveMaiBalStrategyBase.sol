@@ -27,7 +27,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
-  string public constant STRATEGY_NAME = "AaveMaiBalStrategyBase";
+  string public constant override STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "2.0.0";
