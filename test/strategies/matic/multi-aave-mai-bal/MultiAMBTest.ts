@@ -6,7 +6,13 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {ForwarderV2, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {
+  ForwarderV2,
+  IStrategy,
+  SmartVault,
+  StrategyAaveMaiBal,
+  StrategyAaveMaiBal__factory
+} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
@@ -85,10 +91,10 @@ describe('Universal AMB tests', async () => {
       );
     };
     // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = true;
+    const ppfsDecreaseAllowed = false;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.021;
-    const finalBalanceTolerance = balanceTolerance * 4;
+    const finalBalanceTolerance = 0;
     const deposit = 100_000;
     // at least 3
     const loops = 9;
@@ -108,13 +114,11 @@ describe('Universal AMB tests', async () => {
       new LiquidationPriceTest(),
       new MaxDepositTest(),
     ];
-    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10');
+    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10000');
     const BAL_PIPE_INDEX = 3;
     // **********************************************
 
     const pipes: string[] = [];
-    // tslint:disable-next-line
-    const pipesArgs: any[][] = [];
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
@@ -128,16 +132,14 @@ describe('Universal AMB tests', async () => {
             underlying,
             info.amToken
           );
-          pipes.push(aaveAmPipeData[0].address);
-          pipesArgs.push(aaveAmPipeData[1]);
+          pipes.push(aaveAmPipeData.address);
           // -----------------
           const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
             signer,
             info.amToken,
             info.camToken
           );
-          pipes.push(maiCamPipeData[0].address);
-          pipesArgs.push(maiCamPipeData[1]);
+          pipes.push(maiCamPipeData.address);
           // -----------------
           const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
             signer,
@@ -147,28 +149,25 @@ describe('Universal AMB tests', async () => {
             info.targetPercentage,
             info.collateralNumerator || '1'
           );
-          pipes.push(maiStablecoinPipeData[0].address);
-          pipesArgs.push(maiStablecoinPipeData[1]);
+          pipes.push(maiStablecoinPipeData.address);
           // -----------------
           const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
             signer
           );
-          pipes.push(balVaultPipeData[0].address);
-          pipesArgs.push(balVaultPipeData[1]);
+          pipes.push(balVaultPipeData.address);
           // -----------------
 
-          const strategyArgs = [
+          const strategyData = await DeployerUtils.deployTetuProxyControlled(
+            signer,
+            strategyContractName
+          );
+          await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
             core.controller.address,
             vaultAddress,
-            underlying,
+            info.underlying,
             pipes
-          ];
-
-          return await DeployerUtils.deployContractAndInitialize(
-            signer,
-            strategyContractName,
-            ...strategyArgs
-          ) as StrategyAaveMaiBal
+          );
+          return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
         },
         underlying,
         25

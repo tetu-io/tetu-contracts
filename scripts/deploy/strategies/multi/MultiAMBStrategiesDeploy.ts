@@ -1,6 +1,11 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, IStrategy} from "../../../../typechain";
+import {
+  ContractReader,
+  IStrategy,
+  StrategyAaveMaiBal,
+  StrategyAaveMaiBal__factory
+} from "../../../../typechain";
 import {appendFileSync, mkdir} from "fs";
 import {infos} from "./MultiAMBInfos";
 import {AMBPipeDeployer} from "./AMBPipeDeployer";
@@ -42,8 +47,6 @@ async function main() {
 
     console.log('strat', info.underlyingName);
     const pipes: string[] = [];
-    // tslint:disable-next-line
-    const pipesArgs: any[][] = [];
     let strategyArgs;
     // tslint:disable-next-line:no-any
     const data: any[] = [];
@@ -56,16 +59,14 @@ async function main() {
           info.underlying,
           info.amToken
         );
-        pipes.push(aaveAmPipeData[0].address);
-        pipesArgs.push(aaveAmPipeData[1]);
+        pipes.push(aaveAmPipeData.address);
         // -----------------
         const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
           signer,
           info.amToken,
           info.camToken
         );
-        pipes.push(maiCamPipeData[0].address);
-        pipesArgs.push(maiCamPipeData[1]);
+        pipes.push(maiCamPipeData.address);
         // -----------------
         const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
           signer,
@@ -75,14 +76,12 @@ async function main() {
           info.targetPercentage,
           info.collateralNumerator || '1'
         );
-        pipes.push(maiStablecoinPipeData[0].address);
-        pipesArgs.push(maiStablecoinPipeData[1]);
+        pipes.push(maiStablecoinPipeData.address);
         // -----------------
         const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
           signer
         );
-        pipes.push(balVaultPipeData[0].address);
-        pipesArgs.push(balVaultPipeData[1]);
+        pipes.push(balVaultPipeData.address);
         // -----------------
 
         strategyArgs = [
@@ -91,12 +90,17 @@ async function main() {
           info.underlying,
           pipes
         ];
-
-        return DeployerUtils.deployContract(
+        const strategyData = await DeployerUtils.deployTetuProxyControlled(
           signer,
-          strategyContractName,
-          ...strategyArgs
-        ) as Promise<IStrategy>;
+          strategyContractName
+        );
+        await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
+          core.controller,
+          vaultAddress,
+          info.underlying,
+          pipes
+        )
+        return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
       },
       core.controller,
       core.psVault,
@@ -113,10 +117,10 @@ async function main() {
     appendFileSync(`./tmp/deployed/multiAMB.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
+    // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < pipes.length; i++) {
       const pipeAdr = pipes[i];
-      const pipeArg = pipesArgs[i];
-      await DeployerUtils.verifyWithArgs(pipeAdr, [pipeArg]);
+      await DeployerUtils.verify(pipeAdr);
     }
   }
   await DeployerUtils.wait(5);
