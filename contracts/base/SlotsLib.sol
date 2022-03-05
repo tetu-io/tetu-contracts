@@ -85,7 +85,7 @@ library SlotsLib {
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
   function addressAt(bytes32 slot, uint index) internal view returns (address result) {
-    bytes32 pointer = bytes32(uint(slot) - 1 - index * 32);
+    bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       result := sload(pointer)
     }
@@ -130,7 +130,7 @@ library SlotsLib {
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
   function setAt(bytes32 slot, uint index, address value) internal {
-    bytes32 pointer = bytes32(uint(slot) - 1 - index * 32);
+    bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       sstore(pointer, value)
     }
