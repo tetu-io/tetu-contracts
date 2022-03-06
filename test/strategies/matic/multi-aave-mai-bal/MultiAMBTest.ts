@@ -43,7 +43,7 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneAMBStrategyTest: {
+    onlyOneAmbStrategyTest: {
       type: "number",
       default: -1,
     },
@@ -74,7 +74,7 @@ describe('Universal AMB tests', async () => {
 
   infos.forEach((info, i) => {
 
-    if (argv.onlyOneAMBStrategyTest !== -1 && i !== argv.onlyOneAMBStrategyTest) {
+    if (argv.onlyOneAmbStrategyTest !== -1 && i !== argv.onlyOneAmbStrategyTest) {
       return;
     }
     console.log('Start test strategy', i, info.underlyingName);

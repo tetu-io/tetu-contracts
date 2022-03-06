@@ -223,11 +223,11 @@ export class VaultUtils {
 
     console.log('-------- HARDWORK --------');
     console.log('- BB ratio:', bbRatio);
-    console.log('- PPFS:', ppfsAfter);
-    console.log('- PPFS change:', ppfsAfter - ppfs);
-    console.log('- BALANCE change:', undBalAfter - undBal);
-    console.log('- RT change:', rtBalAfter - rtBal);
-    console.log('- PS change:', psPpfsAfter - psPpfs);
+    console.log('- Vault Share price:', ppfsAfter);
+    console.log('- Vault Share price change:', ppfsAfter - ppfs);
+    console.log('- Vault und balance change:', undBalAfter - undBal);
+    console.log('- Vault first RT change:', rtBalAfter - rtBal);
+    console.log('- xTETU share price change:', psPpfsAfter - psPpfs);
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 

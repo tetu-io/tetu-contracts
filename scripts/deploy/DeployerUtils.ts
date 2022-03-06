@@ -271,6 +271,7 @@ export class DeployerUtils {
       MaticAddresses.WMATIC_TOKEN,
       MaticAddresses.QUICK_TOKEN,
       MaticAddresses.QI_TOKEN,
+      MaticAddresses.TETU_TOKEN,
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(MaticAddresses.USDC_TOKEN), true, wait);
