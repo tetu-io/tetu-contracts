@@ -37,7 +37,7 @@ export class EmergencyWithdrawFromPoolTest extends SpecificStrategyTest {
       console.log('>>>afterDeposit', afterDeposit.toString());
 
       const strategyGov = strategyAaveMaiBal.connect(signer);
-      await strategyGov.emergencyExit();
+      await strategyGov.emergencyExit({gasLimit: 19_000_000});
 
       const afterExit = await strategyAaveMaiBal.getMostUnderlyingBalance()
       console.log('>>>afterExit   ', afterExit.toString());
