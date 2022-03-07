@@ -2,6 +2,7 @@ import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Contract, ContractFactory, utils} from "ethers";
 import {
+  AaveAmPipe,
   Announcer,
   AutoRewarder,
   Bookkeeper,
@@ -153,6 +154,15 @@ export class DeployerUtils {
 
     Misc.printDuration(name + ' deployed ' + receipt.contractAddress, start);
     return _factory.attach(receipt.contractAddress);
+  }
+
+  public static async deployTetuProxyControlled<T extends ContractFactory>(
+      signer: SignerWithAddress,
+      logicContractName: string,
+  ) {
+    const logic = await DeployerUtils.deployContract(signer, logicContractName);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
+    return [proxy, logic];
   }
 
   public static async deployController(signer: SignerWithAddress): Promise<Controller> {

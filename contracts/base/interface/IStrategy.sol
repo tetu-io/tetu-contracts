@@ -47,7 +47,7 @@ interface IStrategy {
     TETU_SF, //29
     ALPACA, //30
     MARKET, //31
-    SLOT_32, //32
+    UNIVERSE, //32
     SLOT_33, //33
     SLOT_34, //34
     SLOT_35, //35

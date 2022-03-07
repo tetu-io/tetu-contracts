@@ -1,6 +1,11 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
-import {ContractReader, IStrategy} from "../../../../typechain";
+import {
+  ContractReader,
+  IStrategy,
+  StrategyAaveMaiBal,
+  StrategyAaveMaiBal__factory
+} from "../../../../typechain";
 import {appendFileSync, mkdir} from "fs";
 import {infos} from "./MultiAMBInfos";
 import {AMBPipeDeployer} from "./AMBPipeDeployer";
@@ -45,24 +50,20 @@ async function main() {
     console.log('strat', info.underlyingName);
 
     const pipes: string[] = [];
-    // tslint:disable-next-line
-    const pipesArgs: any[][] = [];
 
     const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
       signer,
       info.underlying,
       info.amToken
     );
-    pipes.push(aaveAmPipeData[0].address);
-    pipesArgs.push(aaveAmPipeData[1]);
+    pipes.push(aaveAmPipeData.address);
     // -----------------
     const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
       signer,
       info.amToken,
       info.camToken
     );
-    pipes.push(maiCamPipeData[0].address);
-    pipesArgs.push(maiCamPipeData[1]);
+    pipes.push(maiCamPipeData.address);
     // -----------------
     const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
       signer,
@@ -72,41 +73,36 @@ async function main() {
       info.targetPercentage,
       info.collateralNumerator || '1'
     );
-    pipes.push(maiStablecoinPipeData[0].address);
-    pipesArgs.push(maiStablecoinPipeData[1]);
+    pipes.push(maiStablecoinPipeData.address);
     // -----------------
     const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
       signer
     );
-    pipes.push(balVaultPipeData[0].address);
-    pipesArgs.push(balVaultPipeData[1]);
+    pipes.push(balVaultPipeData.address);
     // -----------------
 
-    const strategyArgs = [
+    const strategyData = await DeployerUtils.deployTetuProxyControlled(
+      signer,
+      strategyContractName
+    );
+    await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
       core.controller,
       vaultAddress,
       info.underlying,
       pipes
-    ];
+    )
 
-    const strategy = await DeployerUtils.deployContract(
-      signer,
-      strategyContractName,
-      ...strategyArgs
-    ) as IStrategy;
+    const txt = `${vaultNameWithoutPrefix}:     vault: ${vaultAddress}     strategy: ${strategyData[0].address}\n`;
+    appendFileSync(`./tmp/update/multiAMB_v2.txt`, txt, 'utf8');
 
-
-    const txt = `${vaultNameWithoutPrefix}:     vault: ${vaultAddress}     strategy: ${strategy.address}\n`;
-    appendFileSync(`./tmp/update/multiAMB_120.txt`, txt, 'utf8');
-
-    await DeployerUtils.wait(5);
-    for (let i = 0; i < pipes.length; i++) {
-      const pipeAdr = pipes[i];
-      const pipeArg = pipesArgs[i];
-      await DeployerUtils.verifyWithArgs(pipeAdr, [pipeArg]);
-    }
-
-    await DeployerUtils.verifyWithContractName(strategy.address, 'contracts/strategies/matic/multi/StrategyAaveMaiBal.sol:StrategyAaveMaiBal', strategyArgs);
+    // await DeployerUtils.wait(5);
+    // // tslint:disable-next-line:prefer-for-of
+    // for (let i = 0; i < pipes.length; i++) {
+    //   const pipeAdr = pipes[i];
+    //   await DeployerUtils.verify(pipeAdr);
+    // }
+    //
+    // await DeployerUtils.verifyWithContractName(strategyData[0].address, 'contracts/strategies/matic/multi/StrategyAaveMaiBal.sol:StrategyAaveMaiBal');
   }
 }
 
