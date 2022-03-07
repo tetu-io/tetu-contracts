@@ -4,7 +4,7 @@ import {TokenUtils} from "../../../TokenUtils";
 import {
   IErc20Stablecoin,
   IStrategy,
-  PriceSource,
+  IPriceSourceAll,
   SmartVault,
   StrategyAaveMaiBal
 } from "../../../../typechain";
@@ -67,16 +67,16 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
 
       const priceSourceAddress = await stablecoin.ethPriceSource()
-      const priceSource = (await ethers.getContractAt('PriceSource', priceSourceAddress)) as PriceSource;
-      const [, priceSourcePrice, ,] = await priceSource.latestRoundData()
+      const priceSource = (await ethers.getContractAt('IPriceSourceAll', priceSourceAddress)) as IPriceSourceAll;
+      const priceSourcePrice = await priceSource.latestRoundData()
       console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
 
       const mockPriceSource = await DeployerUtils.deployContract(
-        signer, 'MockPriceSource', 0);
+        signer, 'MockPriceSourceAll', 0);
       const mockPricePercents = 200;
       const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
       await mockPriceSource.setPrice(mockPrice);
-      const [, mockSourcePrice, ,] = await mockPriceSource.latestRoundData();
+      const mockSourcePrice = await mockPriceSource.latestRoundData();
       console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
       const ethPriceSourceSlotIndex = priceSlotIndex;
