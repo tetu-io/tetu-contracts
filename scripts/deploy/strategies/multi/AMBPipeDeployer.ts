@@ -56,9 +56,8 @@ export class AMBPipeDeployer {
   // 135+270=405 max percentage for incentives
   public static async deployMaiStablecoinPipe(
     signer: SignerWithAddress,
-    camToken: string,
+    sourceToken: string,
     stablecoin: string,
-    amToken: string,
     targetPercentage: string,
     collateralNumerator: string,
   ): Promise<MaiStablecoinPipe> {
@@ -66,7 +65,7 @@ export class AMBPipeDeployer {
     const p = MaiStablecoinPipe__factory.connect(pipe[0].address, signer);
     await p.initialize(
       {
-        sourceToken: camToken,
+        sourceToken,
         stablecoin,
         borrowToken: MaticAddresses.miMATIC_TOKEN,
         targetPercentage,

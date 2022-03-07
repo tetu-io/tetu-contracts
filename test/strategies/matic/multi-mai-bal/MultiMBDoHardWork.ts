@@ -16,7 +16,7 @@ import {BigNumber} from "ethers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {AMBUtils} from "./AMBUtils";
+import {MBUtils} from "./MBUtils";
 import {ethers} from "hardhat";
 
 chai.use(chaiAsPromised);
@@ -41,7 +41,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
 
   protected async init() {
     await super.init();
-    await AMBUtils.refuelMAI(this.signer, this.strategy.address);
+    await MBUtils.refuelMAI(this.signer, this.strategy.address);
   }
 
   public async afterBlockAdvance() {
@@ -63,7 +63,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
 
     // *** mock price ***
 
-    const {stablecoinAddress, priceSlotIndex,} = AMBUtils.getSlotsInfo(this.underlying);
+    const {stablecoinAddress, priceSlotIndex,} = MBUtils.getSlotsInfo(this.underlying);
     const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', stablecoinAddress)) as IErc20Stablecoin;
 
     const priceSourceAddress = await stablecoin.ethPriceSource()
