@@ -218,6 +218,10 @@ export class MaticAddresses {
 
   public static TRADE_BOT = "0x833D22F5c1B01ad2AD34611bD391c246712b9707".toLowerCase();
 
+  // MARKET
+  public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
+  public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,

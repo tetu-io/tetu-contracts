@@ -100,6 +100,9 @@ export class FtmAddresses {
   public static BPT_STABEET = "0xeCAa1cBd28459d34B766F9195413Cb20122Fb942".toLowerCase();
   public static BPT_asUSDC = "0x8Bb1839393359895836688165f7c5878f8C81C5e".toLowerCase();
 
+  // IMPERMAX
+  public static IMPERMAX_FACTORY = "0x60aE5F446AE1575534A5F234D6EC743215624556".toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
     FtmAddresses.fUSDT_TOKEN,
