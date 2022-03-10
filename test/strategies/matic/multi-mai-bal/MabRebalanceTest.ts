@@ -67,8 +67,9 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>stablecoinEthPrice ', stablecoinEthPrice.toString())
 
       const priceSourceAddress = await stablecoin.ethPriceSource()
+      console.log('>>>!!! priceSourceAddress', priceSourceAddress);
       const priceSource = (await ethers.getContractAt('IPriceSourceAll', priceSourceAddress)) as IPriceSourceAll;
-      const priceSourcePrice = await priceSource.latestRoundData()
+      const priceSourcePrice = await priceSource.latestAnswer()
       console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
 
       const mockPriceSource = await DeployerUtils.deployContract(
@@ -76,7 +77,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const mockPricePercents = 200;
       const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
       await mockPriceSource.setPrice(mockPrice);
-      const mockSourcePrice = await mockPriceSource.latestRoundData();
+      const mockSourcePrice = await mockPriceSource.latestAnswer();
       console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
       const ethPriceSourceSlotIndex = priceSlotIndex;

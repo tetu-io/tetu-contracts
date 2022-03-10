@@ -39,7 +39,9 @@ export class MaxDepositTest extends SpecificStrategyTest {
       if (maxDeposit.eq(0)) return;
 
       const maxDeposit99 = maxDeposit.mul(99).div(100);
+      console.log('maxDeposit99', maxDeposit99);
       const maxDeposit101 = maxDeposit.mul(101).div(100);
+      console.log('maxDeposit101', maxDeposit101);
       await TokenUtils.getToken(underlying, user.address, maxDeposit101)
 
       await expect(VaultUtils.deposit(user, vault, BigNumber.from(maxDeposit101))).to.be.reverted;
@@ -48,8 +50,6 @@ export class MaxDepositTest extends SpecificStrategyTest {
 
       await VaultUtils.deposit(user, vault, BigNumber.from(maxDeposit99))
       console.log('>>>deposited 99% of maxDeposit');
-
-
 
     });
 

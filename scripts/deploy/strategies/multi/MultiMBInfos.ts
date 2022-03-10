@@ -15,7 +15,7 @@ const infos: {
     stablecoin: MaticAddresses.cxDOGE_MAI_VAULT,
     targetPercentage: '300',
   },
-/*  { // TODO remove comment
+  { // TODO remove comment
     underlyingName: 'cxADA',
     underlying: MaticAddresses.cxADA_TOKEN,
     stablecoin: MaticAddresses.cxADA_MAI_VAULT,
@@ -26,7 +26,7 @@ const infos: {
     underlying: MaticAddresses.cxETH_TOKEN,
     stablecoin: MaticAddresses.cxETH_MAI_VAULT,
     targetPercentage: '250',
-  },*/
+  },
 ]
 
 export {infos}

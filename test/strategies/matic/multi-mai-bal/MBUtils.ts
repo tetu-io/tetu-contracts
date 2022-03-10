@@ -10,19 +10,17 @@ export class MBUtils {
     underlying = underlying.toLowerCase();
     let stablecoinAddress: string;
     /* How to find slot index? go to https://web3playground.io/ , use code below and set contractAddress to stablecoinAddress
-          find ethPriceSource() address at the list, and use its index.
-          !Do not forget to convert decimal index to hexadecimal
+          find ethPriceSource() address at the list, and use its hexadecimal index.
           !Index must have no leading zeros (0xf, but no 0x0f) https://github.com/nomiclabs/hardhat/issues/1700
 
-          async function main() {
-            let contractAddress = '0x578375c3af7d61586c2C3A7BA87d2eEd640EFA40'
-            for (let index = 0; index < 40; index++){
-            console.log(`[${index}]` +
-              await web3.eth.getStorageAt(contractAddress, index))
-            }
-          }
+      async function main() {
+        let contractAddress = '0x7CbF49E4214C7200AF986bc4aACF7bc79dd9C19a'
+      for (let index = 0; index < 40; index++){
+       console.log(`0x${index.toString(16)} /t` +
+         await web3.eth.getStorageAt(contractAddress, index))
+      }
       */
-    const priceSlotIndex = '0x10';  // default slot for almost all tokens
+    const priceSlotIndex = '0xf';  // default slot for almost all tokens used crosschainQiStablecoinSlim
     if (underlying === MaticAddresses.cxDOGE_TOKEN) {
       stablecoinAddress = MaticAddresses.cxDOGE_MAI_VAULT;
 

@@ -105,9 +105,9 @@ export class TokenUtils {
     [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [MaticAddresses.QI_TOKEN,'0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'.toLowerCase()], // qidao gov
     [MaticAddresses.UNT_NOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
-    [MaticAddresses.cxDOGE_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
+    [MaticAddresses.cxDOGE_TOKEN,'0x96a523d3576b9b1dfee49aa73723f64a5b553720'.toLowerCase()],
     [MaticAddresses.cxADA_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
-    [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
+    [MaticAddresses.cxETH_TOKEN,'0x96a523d3576b9b1dfee49aa73723f64a5b553720'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
