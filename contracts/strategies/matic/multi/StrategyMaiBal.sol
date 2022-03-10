@@ -21,6 +21,7 @@ contract StrategyMaiBal is MaiBalStrategyBase {
 
   address private constant _QI = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4;
   address private constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
+  address private constant _WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 
   function initialize(
     address _controller,
@@ -28,10 +29,11 @@ contract StrategyMaiBal is MaiBalStrategyBase {
     address _underlying,
     address[] memory __pipes
   ) public initializer {
-    address[] memory _rewardTokensArray = new address[](2);
-    _rewardTokensArray[0] = _QI;
-    _rewardTokensArray[1] = _BAL;
-    initializeAaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray);
+    address[] memory _rewardTokensArray = new address[](3);
+    _rewardTokensArray[0] = _WETH; // Interim Token to compound rewards with long route
+    _rewardTokensArray[1] = _QI;
+    _rewardTokensArray[2] = _BAL;
+    initializeAaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray, _WETH);
     _initPipes(__pipes);
   }
 

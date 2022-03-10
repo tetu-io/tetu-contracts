@@ -22,6 +22,7 @@ import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "./ForwarderV2Storage.sol";
+import "hardhat/console.sol";// TODO remove
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
@@ -238,6 +239,9 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     }
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
     uint256 resultAmount = _liquidate(tokenIn, tokenOut, amount);
+    console.log('===resultAmount', resultAmount); // TODO remove
+    uint outBalance = IERC20(tokenOut).balanceOf(address(this)); // TODO remove
+    console.log('===outBalance', outBalance);// TODO remove
     require(resultAmount > 0, "F2: Liquidated with zero result");
     IERC20(tokenOut).safeTransfer(msg.sender, resultAmount);
     emit Liquidated(tokenIn, tokenOut, amount);
@@ -410,6 +414,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       return _amount;
     }
     (LpData[] memory route, uint count) = _createLiquidationRoute(_tokenIn, _tokenOut);
+    console.log('===count', count); // TODO remove
 
     uint outBalance = _amount;
     for (uint i = 0; i < count; i++) {

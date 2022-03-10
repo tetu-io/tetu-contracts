@@ -19,6 +19,8 @@ import "./pipelines/LinearPipeline.sol";
 import "../../SlotsLib.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
+import "hardhat/console.sol";// TODO remove
+
 
 /// @title MAI->BAL Multi Strategy
 /// @author belbix, bogdoslav
@@ -36,6 +38,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
 
   bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
   bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
+  bytes32 internal constant _INTERIM_SWAP_TOKEN_SLOT  = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._interimSwapToken")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
   bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
 
@@ -48,16 +51,19 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     address _controller,
     address _underlyingToken,
     address _vault,
-    address[] memory __rewardTokens
+    address[] memory __rewardTokens,
+    address __interimSwapToken
   ) public initializer
   {
     require(_controller != address(0), "Zero controller");
     require(_underlyingToken != address(0), "Zero underlying");
     require(_vault != address(0), "Zero vault");
 
+
     initializeStrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
     initializeLinearPipeline(_underlyingToken);
 
+    _INTERIM_SWAP_TOKEN_SLOT.set(__interimSwapToken);
     _ASSET_SLOT.set(_underlyingToken);
   }
 
@@ -92,6 +98,14 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     return IMaiStablecoinPipe(_MAI_STABLECOIN_PIPE_SLOT.getAddress());
   }
 
+  function interimSwapToken() external view returns (address) {
+    return _interimSwapToken();
+  }
+
+  function _interimSwapToken() internal view returns (address) {
+    return _INTERIM_SWAP_TOKEN_SLOT.getAddress();
+  }
+
   // ********************************************************
 
   /// @dev Returns reward pool balance
@@ -102,15 +116,32 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   /// @dev HardWork function for Strategy Base implementation
   function doHardWork()
   external override onlyNotPausedInvesting hardWorkers updateTotalAmount {
-    uint balance = IERC20(_underlying()).balanceOf(address(this));
+    IERC20 __underlying = IERC20(_underlying());
+    uint balance = __underlying.balanceOf(address(this));
     if (balance > 0) {
       _pumpIn(balance);
     }
     _rebalanceAllPipes();
     _claimFromAllPipes();
-    uint claimedUnderlying = IERC20(_underlying()).balanceOf(address(this));
+    uint claimedUnderlying = __underlying.balanceOf(address(this));
+
+    // --- swap rewards to intermediate token (for tokens with too long route)
+    IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(_controller()).feeRewardForwarder());
+    address interimToken = _interimSwapToken();
+    for (uint i = 0; i < _rewardTokens.length; i++) {
+      address rt = _rewardTokens[i];
+      if (rt == address(__underlying) || rt == interimToken) continue;
+      uint amount = IERC20(rt).balanceOf(address(this));
+      console.log('===rt', rt); // TODO remove
+      console.log('===amount', amount);// TODO remove
+      if (amount != 0) {
+        IERC20(rt).safeApprove(address(forwarder), 0);
+        IERC20(rt).safeApprove(address(forwarder), amount);
+        forwarder.liquidate(rt, interimToken, amount);
+      }
+    } // ---- interim swap end
     autocompound();
-    uint acAndClaimedUnderlying = IERC20(_underlying()).balanceOf(address(this));
+    uint acAndClaimedUnderlying = __underlying.balanceOf(address(this));
     uint toSupply = acAndClaimedUnderlying - claimedUnderlying;
     if (toSupply > 0) {
       _pumpIn(toSupply);

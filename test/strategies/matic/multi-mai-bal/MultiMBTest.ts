@@ -86,8 +86,18 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
     // add custom liquidation path if necessary
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
-        [MaticAddresses.BAL_TOKEN],
-        ['0xc67136e235785727a0d3B5Cfd08325327b81d373']
+        [
+            MaticAddresses.BAL_TOKEN,
+            // MaticAddresses.cxETH_TOKEN,
+            // MaticAddresses.cxADA_TOKEN,
+            // MaticAddresses.cxDOGE_TOKEN
+        ],
+        [
+            '0xc67136e235785727a0d3B5Cfd08325327b81d373',
+            // '0xda7cd765df426fca6fb5e1438c78581e4e66bfe7',
+            // '0xfec2385b26a4446a7813d16263348fde7e99fee4',
+            // '0x96a523d3576b9b1dfee49aa73723f64a5b553720',
+        ]
       );
     };
     // only for strategies where we expect PPFS fluctuations
