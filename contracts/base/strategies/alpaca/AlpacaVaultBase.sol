@@ -32,7 +32,7 @@ abstract contract AlpacaVaultBase is StrategyBase{
   string public constant VERSION = "1.0.0";
   /// @dev 10% buyback
   uint private constant _BUY_BACK_RATIO = 1000;
-  IAlpacaVault private alpacaVault;
+  address public alpacaVault;
   IFairLaunch private fairLaunchPool;
   uint private poolID;
 
@@ -54,10 +54,10 @@ abstract contract AlpacaVaultBase is StrategyBase{
     address _fairLaunch,
     uint _poolId
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
-    alpacaVault = IAlpacaVault(_alpacaVault);
+    alpacaVault = _alpacaVault;
     fairLaunchPool = IFairLaunch(_fairLaunch);
     poolID = _poolId;
-    require(alpacaVault.token() == _underlyingToken, "Wrong underlying");
+    require(IAlpacaVault(alpacaVault).token() == _underlyingToken, "Wrong underlying");
   }
 
   // ************* VIEWS *******************
@@ -65,8 +65,8 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @notice Strategy balance in the fairLaunch pool
   /// @return bal Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint) {
-    uint totalSupply = alpacaVault.totalSupply();
-    uint totalToken = alpacaVault.totalToken();
+    uint totalSupply = IAlpacaVault(alpacaVault).totalSupply();
+    uint totalToken = IAlpacaVault(alpacaVault).totalToken();
     (uint amount,) = fairLaunchPool.userInfo(poolID, address(this));
     uint balance = amount * totalToken / totalSupply;
     return balance;
@@ -85,9 +85,9 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint) {
-    uint totalSupply = alpacaVault.totalSupply();
-    uint totalToken = alpacaVault.totalToken();
-    uint fairLaunchPoolBalance = IERC20(address(alpacaVault)).balanceOf(address(fairLaunchPool));
+    uint totalSupply = IAlpacaVault(alpacaVault).totalSupply();
+    uint totalToken = IAlpacaVault(alpacaVault).totalToken();
+    uint fairLaunchPoolBalance = IERC20(alpacaVault).balanceOf(address(fairLaunchPool));
     return fairLaunchPoolBalance  * totalToken / totalSupply;
   }
 
@@ -106,16 +106,15 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @param amount Deposit amount
   function depositToPool(uint amount) internal override {
     if(amount > 0){
-      address alpacaVaultAddress = address(alpacaVault);
       address fairLaunchAddress = address(fairLaunchPool);
 
-      IERC20(_underlyingToken).safeApprove(alpacaVaultAddress, 0);
-      IERC20(_underlyingToken).safeApprove(alpacaVaultAddress, amount);
-      alpacaVault.deposit(amount);
+      IERC20(_underlyingToken).safeApprove(alpacaVault, 0);
+      IERC20(_underlyingToken).safeApprove(alpacaVault, amount);
+      IAlpacaVault(alpacaVault).deposit(amount);
 
-      uint ibTokenBalance =  IERC20(alpacaVaultAddress).balanceOf(address(this));
-      IERC20(alpacaVaultAddress).safeApprove(fairLaunchAddress, 0);
-      IERC20(alpacaVaultAddress).safeApprove(fairLaunchAddress, ibTokenBalance);
+      uint ibTokenBalance =  IERC20(alpacaVault).balanceOf(address(this));
+      IERC20(alpacaVault).safeApprove(fairLaunchAddress, 0);
+      IERC20(alpacaVault).safeApprove(fairLaunchAddress, ibTokenBalance);
 
       fairLaunchPool.deposit(address(this), poolID, ibTokenBalance);
     }
@@ -126,8 +125,8 @@ abstract contract AlpacaVaultBase is StrategyBase{
   function withdrawAndClaimFromPool(uint amount) internal override {
     fairLaunchPool.harvest(poolID);
 
-    uint totalSupply = alpacaVault.totalSupply();
-    uint totalToken = alpacaVault.totalToken();
+    uint totalSupply = IAlpacaVault(alpacaVault).totalSupply();
+    uint totalToken = IAlpacaVault(alpacaVault).totalToken();
 
     (uint userBal,) = fairLaunchPool.userInfo(poolID, address(this));
     uint toWithdraw = amount * totalSupply / totalToken + 1;
@@ -135,9 +134,9 @@ abstract contract AlpacaVaultBase is StrategyBase{
     toWithdraw = Math.min(userBal, toWithdraw);
 
     fairLaunchPool.withdraw(address(this), poolID, toWithdraw);
-    uint ibTokenBalance =  IERC20(address(alpacaVault)).balanceOf(address(this));
+    uint ibTokenBalance =  IERC20(alpacaVault).balanceOf(address(this));
 
-    alpacaVault.withdraw(ibTokenBalance);
+    IAlpacaVault(alpacaVault).withdraw(ibTokenBalance);
     uint ftmBal = address(this).balance;
 
     if (ftmBal > 0) {
@@ -149,8 +148,8 @@ abstract contract AlpacaVaultBase is StrategyBase{
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
     fairLaunchPool.emergencyWithdraw(poolID);
-    uint ibTokenBalance =  IERC20(address(alpacaVault)).balanceOf(address(this));
-    alpacaVault.withdraw(ibTokenBalance);
+    uint ibTokenBalance =  IERC20(alpacaVault).balanceOf(address(this));
+    IAlpacaVault(alpacaVault).withdraw(ibTokenBalance);
     uint ftmBal = address(this).balance;
     if (ftmBal > 0) {
       IWETH(_underlyingToken).deposit{value: ftmBal}();
@@ -163,6 +162,6 @@ abstract contract AlpacaVaultBase is StrategyBase{
     liquidateRewardDefault();
   }
 
-  // this is needed as alpacaVault.withdraw returns native tokens for FTM
+  // this is needed as IAlpacaVault(alpacaVault).withdraw returns native tokens for FTM
   receive() external payable {}
 }
