@@ -225,6 +225,11 @@ abstract contract ProxyStrategyBase is IStrategy, ControllableV2, StrategyStorag
     _setToleranceNumerator(numerator);
   }
 
+  function setBuyBackRatio(uint value) external restricted {
+    require(value <= _BUY_BACK_DENOMINATOR, "SB: Too high buyback ratio");
+    _setBuyBackRatio(value);
+  }
+
   // ***************** INTERNAL ************************
 
   /// @notice Balance of given reward token on this contract

@@ -161,7 +161,9 @@ export class DeployerUtils {
       logicContractName: string,
   ) {
     const logic = await DeployerUtils.deployContract(signer, logicContractName);
+    await DeployerUtils.wait(5);
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
+    await DeployerUtils.wait(5);
     return [proxy, logic];
   }
 
@@ -1130,13 +1132,13 @@ export class DeployerUtils {
   }
 
   public static async wait(blocks: number) {
+    if (hre.network.name === 'hardhat') {
+      return;
+    }
     const start = ethers.provider.blockNumber;
     while (true) {
       log.info('wait 10sec');
       await DeployerUtils.delay(10000);
-      if (hre.network.name === 'hardhat') {
-        await TimeUtils.advanceNBlocks(1);
-      }
       if (ethers.provider.blockNumber >= start + blocks) {
         break;
       }
