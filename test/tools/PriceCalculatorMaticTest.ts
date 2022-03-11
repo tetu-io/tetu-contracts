@@ -307,4 +307,14 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(100);
   });
 
+  it("calculate VAULT tetu-swap-tetu-unt price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.UNT_NOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.0001);
+    expect(price).is.lessThan(100);
+  });
+
 });

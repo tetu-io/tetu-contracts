@@ -113,7 +113,13 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     }
     _rebalanceAllPipes();
     _claimFromAllPipes();
+    uint claimedUnderlying = IERC20(_underlying()).balanceOf(address(this));
     autocompound();
+    uint acAndClaimedUnderlying = IERC20(_underlying()).balanceOf(address(this));
+    uint toSupply = acAndClaimedUnderlying - claimedUnderlying;
+    if (toSupply > 0) {
+      _pumpIn(toSupply);
+    }
     liquidateRewardDefault();
   }
 
@@ -124,7 +130,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
 
   /// @dev Function to withdraw from pool
   function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override updateTotalAmount {
-    _claimFromAllPipes();
+    // don't claim on withdraw
     // update cached _totalAmount, and recalculate amount
     uint256 newTotalAmount = getTotalAmountOut();
     uint256 amount = underlyingAmount * newTotalAmount / _totalAmountOut();
