@@ -5,7 +5,7 @@ import {appendFileSync} from "fs";
 import {TokenUtils} from "../../../../test/TokenUtils";
 
 const splitters = [
-  "0x26030c3e3790fF4e1236585f2650AE7da56a752C", // polygon usdc
+  "", // ftm mai
 ];
 
 let verified = false;
@@ -20,7 +20,7 @@ async function main() {
   const cReader = await DeployerUtils.connectContract(
       signer, "ContractReader", tools.reader) as ContractReader;
 
-  appendFileSync(`./tmp/deployed/MARKET_STRATS_SPLITTER.txt`, '-------------------\n', 'utf8');
+  appendFileSync(`./tmp/deployed/MARKET_STRATS_SPLITTER_FTM.txt`, '-------------------\n', 'utf8');
 
   for (const sAdr of splitters) {
 
@@ -54,7 +54,7 @@ async function main() {
         sAdr,
         underlying,
         'StrategyMarket',
-        'scripts/utils/download/data/market.csv',
+        'scripts/utils/download/data/market_ftm.csv',
         minTvl,
         100_00
     );
@@ -64,7 +64,7 @@ async function main() {
       continue
     }
 
-    appendFileSync(`./tmp/deployed/MARKET_STRATS_SPLITTER.txt`, '---\n', 'utf8');
+    appendFileSync(`./tmp/deployed/MARKET_STRATS_SPLITTER_FTM.txt`, '---\n', 'utf8');
 
     for (const pool of pools) {
       const tCtr = StrategyMarket__factory.connect(pool, signer);
@@ -79,11 +79,11 @@ async function main() {
         buyBackRatio
       ];
       if (!verified && (await ethers.provider.getNetwork()).name !== "hardhat") {
-        await DeployerUtils.verifyWithContractName(pool, 'contracts/strategies/matic/market/MarketStrategy.sol:StrategyMarket', strategyArgs);
+        await DeployerUtils.verifyWithContractName(pool, 'contracts/strategies/fantom/market/MarketStrategy.sol:StrategyMarket', strategyArgs);
         verified = true;
       }
       const txt = `${name}:     splitter: ${sAdr}     strategy: ${pool}\n`;
-      appendFileSync(`./tmp/deployed/MARKET_STRATS_SPLITTER.txt`, txt, 'utf8');
+      appendFileSync(`./tmp/deployed/MARKET_STRATS_SPLITTER_FTM.txt`, txt, 'utf8');
     }
   }
 }

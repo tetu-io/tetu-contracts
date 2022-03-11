@@ -103,6 +103,10 @@ export class FtmAddresses {
   // IMPERMAX
   public static IMPERMAX_FACTORY = "0x60aE5F446AE1575534A5F234D6EC743215624556".toLowerCase();
 
+  // MARKET
+  public static MARKET_POOLDIRECTORY = "0x0E7d754A8d1a82220432148C10715497a0569BD7".toLowerCase();
+  public static MARKET_POOLLENS = "0x5aB6215AB8344C28B899efdE93BEe47B124200Fb".toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,
     FtmAddresses.fUSDT_TOKEN,
