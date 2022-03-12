@@ -30,7 +30,7 @@ contract StrategyMaiBal is MaiBalStrategyBase {
     address[] memory __pipes
   ) public initializer {
     address[] memory _rewardTokensArray = new address[](3);
-    _rewardTokensArray[0] = _WETH; // Interim Token to compound rewards with long route
+    _rewardTokensArray[0] = _WETH; // Interim Token to auto compound rewards with long route
     _rewardTokensArray[1] = _QI;
     _rewardTokensArray[2] = _BAL;
     initializeAaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray, _WETH);

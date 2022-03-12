@@ -124,22 +124,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     _rebalanceAllPipes();
     _claimFromAllPipes();
     uint claimedUnderlying = __underlying.balanceOf(address(this));
-
-    // --- swap rewards to intermediate token (for tokens with too long route)
-    IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(_controller()).feeRewardForwarder());
-    address interimToken = _interimSwapToken();
-    for (uint i = 0; i < _rewardTokens.length; i++) {
-      address rt = _rewardTokens[i];
-      if (rt == address(__underlying) || rt == interimToken) continue;
-      uint amount = IERC20(rt).balanceOf(address(this));
-      console.log('===rt', rt); // TODO remove
-      console.log('===amount', amount);// TODO remove
-      if (amount != 0) {
-        IERC20(rt).safeApprove(address(forwarder), 0);
-        IERC20(rt).safeApprove(address(forwarder), amount);
-        forwarder.liquidate(rt, interimToken, amount);
-      }
-    } // ---- interim swap end
+//    _swapRewardsToInterimToken();
     autocompound();
     uint acAndClaimedUnderlying = __underlying.balanceOf(address(this));
     uint toSupply = acAndClaimedUnderlying - claimedUnderlying;
@@ -148,6 +133,27 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     }
     liquidateRewardDefault();
   }
+
+  /// @dev Swaps rewards to intermediate token (designed for tokens with too long route)
+  function _swapRewardsToInterimToken() internal {
+    IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(_controller()).feeRewardForwarder());
+    address __underlying = _underlying();
+    address interimToken = _interimSwapToken();
+    uint len = _rewardTokens.length;
+    for (uint i = 0; i < len; ++i) {
+      address rt = _rewardTokens[i];
+      if (rt == __underlying || rt == interimToken) continue;
+      uint amount = IERC20(rt).balanceOf(address(this));
+      console.log('===rt', rt); // TODO remove
+      console.log('===amount', amount);// TODO remove
+      if (amount != 0) {
+        IERC20(rt).safeApprove(address(forwarder), 0);
+        IERC20(rt).safeApprove(address(forwarder), amount);
+        forwarder.liquidate(rt, interimToken, amount);
+      }
+    }
+  }
+
 
   /// @dev Stub function for Strategy Base implementation
   function depositToPool(uint256 underlyingAmount) internal override updateTotalAmount {

@@ -230,6 +230,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @dev Simple function for liquidate and send back the given token
   ///      No strict access
   function liquidate(address tokenIn, address tokenOut, uint256 amount) external override returns (uint256) {
+    console.log('liquidate tokenIn tokenOut', tokenIn, tokenOut);
     if (tokenIn == tokenOut) {
       // no action required if the same token;
       return amount;
@@ -241,9 +242,11 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint256 resultAmount = _liquidate(tokenIn, tokenOut, amount);
     console.log('===resultAmount', resultAmount); // TODO remove
     uint outBalance = IERC20(tokenOut).balanceOf(address(this)); // TODO remove
+    console.log('===tokenOut', tokenOut);
     console.log('===outBalance', outBalance);// TODO remove
     require(resultAmount > 0, "F2: Liquidated with zero result");
     IERC20(tokenOut).safeTransfer(msg.sender, resultAmount);
+    console.log('===transferred', resultAmount); // TODO remove
     emit Liquidated(tokenIn, tokenOut, amount);
     return resultAmount;
   }
@@ -419,9 +422,13 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint outBalance = _amount;
     for (uint i = 0; i < count; i++) {
       LpData memory lpData = route[i];
+      console.log('===lpData', lpData.lp, lpData.token, lpData.oppositeToken);
       uint outBalanceBefore = IERC20(lpData.oppositeToken).balanceOf(address(this));
+      console.log('==outBalanceBefore', outBalanceBefore);
+      console.log('==> outBalance', outBalance);
       _swap(lpData.token, lpData.oppositeToken, IUniswapV2Pair(lpData.lp), outBalance);
       outBalance = IERC20(lpData.oppositeToken).balanceOf(address(this)) - outBalanceBefore;
+      console.log('==< outBalance      ', outBalance);
     }
     return outBalance;
   }
@@ -445,6 +452,18 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     if (lpDataIn.oppositeToken == _tokenOut) {
       return (route, 1);
     }
+/*  // TODO remove
+    // find the best LP for token OUT reverse
+    LpData memory lpDataReverse = largestLps[_tokenOut];
+    // if the best LP for token IN a pair with token OUT token we complete the route
+    if (lpDataReverse.lp != address(0)
+      && lpDataReverse.token == _tokenOut
+      && lpDataReverse.oppositeToken == _tokenIn) {
+      route[0].lp = lpDataReverse.lp;
+      route[0].token = lpDataReverse.oppositeToken;
+      route[0].oppositeToken = lpDataReverse.token;
+      return (route, 1);
+    }*/
 
     // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
     lpDataBC = blueChipsLps[lpDataIn.oppositeToken][_tokenOut];
@@ -569,6 +588,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
       fee = UniFee(DEFAULT_UNI_FEE_NUMERATOR, DEFAULT_UNI_FEE_DENOMINATOR);
     }
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
+    console.log('amountOut', amountOut);// TODO remove
     IERC20(tokenIn).safeTransfer(address(lp), amount);
     if (amountOut != 0) {
       _swapCall(lp, tokenIn, tokenOut, amountOut);

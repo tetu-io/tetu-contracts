@@ -106,7 +106,7 @@ export class TokenUtils {
     [MaticAddresses.QI_TOKEN,'0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'.toLowerCase()], // qidao gov
     [MaticAddresses.UNT_NOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
     [MaticAddresses.cxDOGE_TOKEN,'0x96a523d3576b9b1dfee49aa73723f64a5b553720'.toLowerCase()],
-    [MaticAddresses.cxADA_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
+    [MaticAddresses.cxADA_TOKEN,'0xfec2385b26a4446a7813d16263348fde7e99fee4'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN,'0x96a523d3576b9b1dfee49aa73723f64a5b553720'.toLowerCase()],
   ]);
 
