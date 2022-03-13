@@ -10,9 +10,9 @@ async function main() {
     if (err) throw err;
   });
   const signer = (await ethers.getSigners())[0];
-  const vaultName = 'TETU_MAI';
+  const vaultName = 'MAI';
   const underlying = FtmAddresses.miMATIC_TOKEN;
-  const vaultRt = FtmAddresses.xTETU_TOKEN;
+  const vaultRt = FtmAddresses.TETU_TOKEN;
 
   const [vaultLogic, vault, strategy] = await DeployerUtils.deployVaultWithSplitter(vaultName,
       signer,

@@ -35,7 +35,6 @@ export class FtmAddresses {
   public static TBOND_TOKEN = "0x24248CD1747348bDC971a5395f4b3cd7feE94ea0".toLowerCase();
   public static ALPACA_TOKEN = "0xaD996A45fd2373ed0B10Efa4A8eCB9de445A4302".toLowerCase();
   public static miMATIC_TOKEN = "0xfB98B335551a418cD0737375a2ea0ded62Ea213b".toLowerCase();
-  public static xTETU_TOKEN = "0xf239F89992688cE2539cf637614Cc3f8866Ea433".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
