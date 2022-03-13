@@ -19,6 +19,7 @@ import "./pipelines/LinearPipeline.sol";
 import "../../SlotsLib.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
+import "../../../third_party/uniswap/IUniswapV2Router02.sol";
 import "hardhat/console.sol";// TODO remove
 
 
@@ -124,8 +125,8 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     _rebalanceAllPipes();
     _claimFromAllPipes();
     uint claimedUnderlying = __underlying.balanceOf(address(this));
-//    _swapRewardsToInterimToken();
-    autocompound();
+    _autocompoundToInterimToken();
+    _swapInterimTokenToUnderlying();
     uint acAndClaimedUnderlying = __underlying.balanceOf(address(this));
     uint toSupply = acAndClaimedUnderlying - claimedUnderlying;
     if (toSupply > 0) {
@@ -134,22 +135,34 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     liquidateRewardDefault();
   }
 
-  /// @dev Swaps rewards to intermediate token (designed for tokens with too long route)
-  function _swapRewardsToInterimToken() internal {
-    IFeeRewardForwarder forwarder = IFeeRewardForwarder(IController(_controller()).feeRewardForwarder());
+  /// @dev Swaps intermediate token to underlying (designed for cx tokens)
+  function _swapInterimTokenToUnderlying() internal {
+    address __interimToken = _interimSwapToken();
     address __underlying = _underlying();
+    if (_interimSwapToken() == _underlying()) return;
+    // TODO move router to slots
+    IUniswapV2Router02 router = IUniswapV2Router02(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff);
+    uint amountIn = IERC20(__interimToken).balanceOf(address(this));
+    address[] memory path = new address[](2);
+    path[0] = __interimToken;
+    path[1] = __underlying;
+    IERC20(__interimToken).safeApprove(address(router), 0);
+    IERC20(__interimToken).safeApprove(address(router), amountIn);
+    router.swapExactTokensForTokens(amountIn, 1, path, address(this), block.timestamp);
+  }
+
+  /// @dev Liquidate rewards and buy underlying asset
+  function _autocompoundToInterimToken() internal {
+    address forwarder = IController(_controller()).feeRewardForwarder();
     address interimToken = _interimSwapToken();
-    uint len = _rewardTokens.length;
-    for (uint i = 0; i < len; ++i) {
+    for (uint i = 0; i < _rewardTokens.length; i++) {
       address rt = _rewardTokens[i];
-      if (rt == __underlying || rt == interimToken) continue;
       uint amount = IERC20(rt).balanceOf(address(this));
-      console.log('===rt', rt); // TODO remove
-      console.log('===amount', amount);// TODO remove
       if (amount != 0) {
-        IERC20(rt).safeApprove(address(forwarder), 0);
-        IERC20(rt).safeApprove(address(forwarder), amount);
-        forwarder.liquidate(rt, interimToken, amount);
+        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio()) / _BUY_BACK_DENOMINATOR;
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, toCompound);
+        IFeeRewardForwarder(forwarder).liquidate(rt, interimToken, toCompound);
       }
     }
   }
