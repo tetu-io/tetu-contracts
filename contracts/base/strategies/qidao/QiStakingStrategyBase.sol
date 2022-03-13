@@ -27,7 +27,7 @@ abstract contract QiStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "QiStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   /// @dev 10% buybacks, 90% of vested Qi should go to the vault rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 1000;
 
