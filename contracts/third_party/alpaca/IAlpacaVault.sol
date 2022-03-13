@@ -8,4 +8,5 @@ interface IAlpacaVault {
   function totalSupply() external view returns(uint256);
   function deposit(uint256 amountToken) external payable;
   function withdraw(uint256 share) external;
+  function vaultDebtVal() external view returns (uint256);
 }

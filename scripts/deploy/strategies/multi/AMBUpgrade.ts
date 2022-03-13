@@ -2,13 +2,13 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {
   ContractReader,
-  IStrategy,
   StrategyAaveMaiBal,
   StrategyAaveMaiBal__factory
 } from "../../../../typechain";
 import {appendFileSync, mkdir} from "fs";
 import {infos} from "./MultiAMBInfos";
 import {AMBPipeDeployer} from "./AMBPipeDeployer";
+import {RunHelper} from "../../../utils/tools/RunHelper";
 
 
 async function main() {
@@ -36,8 +36,8 @@ async function main() {
     if (err) throw err;
   });
 
-  for (const info of infos) {
-
+  for (let i = 5; i < infos.length; i++) {
+    const info = infos[i];
     const vaultNameWithoutPrefix = `MULTI_${info.underlyingName}`;
     const vaultAddress = vaultMap.get('TETU_' + vaultNameWithoutPrefix)
 
@@ -81,20 +81,24 @@ async function main() {
     pipes.push(balVaultPipeData.address);
     // -----------------
 
+    await DeployerUtils.wait(5);
+
     const strategyData = await DeployerUtils.deployTetuProxyControlled(
       signer,
       strategyContractName
     );
-    await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
+    await RunHelper.runAndWait(() => StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
       core.controller,
       vaultAddress,
       info.underlying,
-      pipes
-    )
+      pipes,
+      {gasLimit: 12_000_000}
+    ));
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vaultAddress}     strategy: ${strategyData[0].address}\n`;
     appendFileSync(`./tmp/update/multiAMB_v2.txt`, txt, 'utf8');
 
+    return;
     // await DeployerUtils.wait(5);
     // // tslint:disable-next-line:prefer-for-of
     // for (let i = 0; i < pipes.length; i++) {
@@ -103,6 +107,9 @@ async function main() {
     // }
     //
     // await DeployerUtils.verifyWithContractName(strategyData[0].address, 'contracts/strategies/matic/multi/StrategyAaveMaiBal.sol:StrategyAaveMaiBal');
+
+
+    console.log('----------------------------------------------- DEPLOYED', vaultNameWithoutPrefix);
   }
 }
 
