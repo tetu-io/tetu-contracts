@@ -116,7 +116,7 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [
-/*      new MBTargetPercentageTest(), // TODO remove
+      new MBTargetPercentageTest(),
       new MabRebalanceTest(),
       new SalvageFromPipelineTest(),
       new PumpInOnHardWorkTest(),
@@ -125,7 +125,7 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
       new CoverageCallsTest(),
       new MoreMaiFromBalTest(),
       new LiquidationPriceTest(),
-      new MaxDepositTest(),*/
+      new MaxDepositTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('1000'); // ~$11K. Too big BAL amount cause an 'UniswapV2: K' error
     const BAL_PIPE_INDEX = 1;
