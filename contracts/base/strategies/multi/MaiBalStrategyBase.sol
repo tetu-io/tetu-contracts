@@ -20,7 +20,6 @@ import "../../SlotsLib.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 import "../../../third_party/uniswap/IUniswapV2Router02.sol";
-import "hardhat/console.sol";// TODO remove
 
 
 /// @title MAI->BAL Multi Strategy
@@ -39,7 +38,6 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
 
   bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
   bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
-  bytes32 internal constant _INTERIM_SWAP_TOKEN_SLOT  = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._interimSwapToken")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
   bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
 
@@ -53,7 +51,6 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     address _underlyingToken,
     address _vault,
     address[] memory __rewardTokens,
-    address __interimSwapToken
   ) public initializer
   {
     require(_controller != address(0), "Zero controller");
@@ -64,7 +61,6 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     initializeStrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
     initializeLinearPipeline(_underlyingToken);
 
-    _INTERIM_SWAP_TOKEN_SLOT.set(__interimSwapToken);
     _ASSET_SLOT.set(_underlyingToken);
   }
 
@@ -99,14 +95,6 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     return IMaiStablecoinPipe(_MAI_STABLECOIN_PIPE_SLOT.getAddress());
   }
 
-  function interimSwapToken() external view returns (address) {
-    return _interimSwapToken();
-  }
-
-  function _interimSwapToken() internal view returns (address) {
-    return _INTERIM_SWAP_TOKEN_SLOT.getAddress();
-  }
-
   // ********************************************************
 
   /// @dev Returns reward pool balance
@@ -125,46 +113,13 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     _rebalanceAllPipes();
     _claimFromAllPipes();
     uint claimedUnderlying = __underlying.balanceOf(address(this));
-    _autocompoundToInterimToken();
-    _swapInterimTokenToUnderlying();
+    autocompound();
     uint acAndClaimedUnderlying = __underlying.balanceOf(address(this));
     uint toSupply = acAndClaimedUnderlying - claimedUnderlying;
     if (toSupply > 0) {
       _pumpIn(toSupply);
     }
     liquidateRewardDefault();
-  }
-
-  /// @dev Swaps intermediate token to underlying (designed for cx tokens)
-  function _swapInterimTokenToUnderlying() internal {
-    address __interimToken = _interimSwapToken();
-    address __underlying = _underlying();
-    if (_interimSwapToken() == _underlying()) return;
-    // TODO move router to slots
-    IUniswapV2Router02 router = IUniswapV2Router02(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff);
-    uint amountIn = IERC20(__interimToken).balanceOf(address(this));
-    address[] memory path = new address[](2);
-    path[0] = __interimToken;
-    path[1] = __underlying;
-    IERC20(__interimToken).safeApprove(address(router), 0);
-    IERC20(__interimToken).safeApprove(address(router), amountIn);
-    router.swapExactTokensForTokens(amountIn, 1, path, address(this), block.timestamp);
-  }
-
-  /// @dev Liquidate rewards and buy underlying asset
-  function _autocompoundToInterimToken() internal {
-    address forwarder = IController(_controller()).feeRewardForwarder();
-    address interimToken = _interimSwapToken();
-    for (uint i = 0; i < _rewardTokens.length; i++) {
-      address rt = _rewardTokens[i];
-      uint amount = IERC20(rt).balanceOf(address(this));
-      if (amount != 0) {
-        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio()) / _BUY_BACK_DENOMINATOR;
-        IERC20(rt).safeApprove(forwarder, 0);
-        IERC20(rt).safeApprove(forwarder, toCompound);
-        IFeeRewardForwarder(forwarder).liquidate(rt, interimToken, toCompound);
-      }
-    }
   }
 
 

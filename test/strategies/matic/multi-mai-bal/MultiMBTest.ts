@@ -99,6 +99,7 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
             '0xda7cd765df426fca6fb5e1438c78581e4e66bfe7',
         ]
       );
+      // it helps to create routes like WETH -> cxETH -> cxDOGE
       await forwarder.addBlueChipsLps(
           ['0xda7cd765df426fca6fb5e1438c78581e4e66bfe7']);
     };
