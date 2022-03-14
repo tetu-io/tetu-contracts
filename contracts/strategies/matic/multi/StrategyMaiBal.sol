@@ -31,7 +31,7 @@ contract StrategyMaiBal is MaiBalStrategyBase {
     address[] memory _rewardTokensArray = new address[](2);
     _rewardTokensArray[0] = _QI;
     _rewardTokensArray[1] = _BAL;
-    initializeAaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray);
+    initializeMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray);
     _initPipes(__pipes);
   }
 

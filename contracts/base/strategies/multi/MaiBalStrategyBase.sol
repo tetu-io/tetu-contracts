@@ -32,7 +32,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   string private constant _STRATEGY_NAME = "MaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string private constant _VERSION = "2.0.0";
+  string private constant _VERSION = "1.0.0";
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
 
@@ -46,7 +46,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   event SetMaxImbalance(uint256 _maxImbalance);
 
   /// @notice Contract initializer
-  function initializeAaveMaiBalStrategyBase(
+  function initializeMaiBalStrategyBase(
     address _controller,
     address _underlyingToken,
     address _vault,
@@ -56,7 +56,6 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     require(_controller != address(0), "Zero controller");
     require(_underlyingToken != address(0), "Zero underlying");
     require(_vault != address(0), "Zero vault");
-
 
     initializeStrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
     initializeLinearPipeline(_underlyingToken);
