@@ -48,7 +48,7 @@ interface IStrategy {
     ALPACA, //30
     MARKET, //31
     UNIVERSE, //32
-    SLOT_33, //33
+    MAI_BAL, //33
     SLOT_34, //34
     SLOT_35, //35
     SLOT_36, //36

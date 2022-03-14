@@ -218,6 +218,15 @@ export class MaticAddresses {
 
   public static TRADE_BOT = "0x833D22F5c1B01ad2AD34611bD391c246712b9707".toLowerCase();
 
+  // CELSIUS X
+  public static cxDOGE_TOKEN = "0x9Bd9aD490dD3a52f096D229af4483b94D63BE618".toLowerCase();
+  public static cxADA_TOKEN = "0x64875Aaa68d1d5521666C67d692Ee0B926b08b2F".toLowerCase();
+  public static cxETH_TOKEN = "0xfe4546feFe124F30788c4Cc1BB9AA6907A7987F9".toLowerCase();
+
+  public static cxDOGE_MAI_VAULT = "0x7CbF49E4214C7200AF986bc4aACF7bc79dd9C19a".toLowerCase();
+  public static cxADA_MAI_VAULT = "0x506533B9C16eE2472A6BF37cc320aE45a0a24F11".toLowerCase();
+  public static cxETH_MAI_VAULT = "0xF1fb97d02fa3928802EC081BD1Ca939278529672".toLowerCase();
+
   // MARKET
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
   public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();

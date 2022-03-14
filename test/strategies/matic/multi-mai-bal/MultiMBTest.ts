@@ -10,23 +10,23 @@ import {
   ForwarderV2,
   IStrategy,
   SmartVault,
-  StrategyAaveMaiBal,
-  StrategyAaveMaiBal__factory
+  StrategyMaiBal,
+  StrategyMaiBal__factory
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {MultiAaveMaiBalTest} from "./MultiAMBDoHardWork";
+import {MultiAaveMaiBalTest} from "./MultiMBDoHardWork";
 import {utils} from "ethers";
-import {AMBTargetPercentageTest} from "./AMBTargetPercentageTest";
+import {MBTargetPercentageTest} from "./MBTargetPercentageTest";
 import {MabRebalanceTest} from "./MabRebalanceTest";
 import {SalvageFromPipelineTest} from "./SalvageFromPipelineTest";
 import {PumpInOnHardWorkTest} from "./PumpInOnHardWorkTest";
 import {WithdrawAndClaimTest} from "./WithdrawAndClaimTest";
 import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
-import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
+import {infos} from "../../../../scripts/deploy/strategies/multi/MultiMBInfos";
 import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
@@ -59,7 +59,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe('Universal AMB tests', async () => {
+describe('Universal (CelsiusX) MaiBal tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
@@ -81,14 +81,26 @@ describe('Universal AMB tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyAaveMaiBal';
+    const strategyContractName = 'StrategyMaiBal';
     const underlying = info.underlying;
     // add custom liquidation path if necessary
     const forwarderConfigurator = async (forwarder: ForwarderV2) => {
       await forwarder.addLargestLps(
-        [MaticAddresses.BAL_TOKEN],
-        ['0xc67136e235785727a0d3B5Cfd08325327b81d373']
+        [
+            MaticAddresses.BAL_TOKEN,
+            MaticAddresses.cxADA_TOKEN,
+            MaticAddresses.cxDOGE_TOKEN,
+            MaticAddresses.cxETH_TOKEN,
+        ],
+        [
+            '0xc67136e235785727a0d3B5Cfd08325327b81d373',
+            '0xfec2385b26a4446a7813d16263348fde7e99fee4',
+            '0x96a523d3576b9b1dfee49aa73723f64a5b553720',
+            '0xda7cd765df426fca6fb5e1438c78581e4e66bfe7',
+        ]
       );
+      await forwarder.addBlueChipsLps(
+          ['0xda7cd765df426fca6fb5e1438c78581e4e66bfe7']);
     };
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = false;
@@ -103,7 +115,7 @@ describe('Universal AMB tests', async () => {
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [
-      new AMBTargetPercentageTest(),
+      new MBTargetPercentageTest(),
       new MabRebalanceTest(),
       new SalvageFromPipelineTest(),
       new PumpInOnHardWorkTest(),
@@ -114,8 +126,8 @@ describe('Universal AMB tests', async () => {
       new LiquidationPriceTest(),
       new MaxDepositTest(),
     ];
-    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10000');
-    const BAL_PIPE_INDEX = 3;
+    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('1000'); // ~$11K. Too big BAL amount cause an 'UniswapV2: K' error
+    const BAL_PIPE_INDEX = 1;
     // **********************************************
 
     const pipes: string[] = [];
@@ -127,23 +139,9 @@ describe('Universal AMB tests', async () => {
         info.underlyingName,
         async vaultAddress => {
           // -----------------
-          const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
-            signer,
-            underlying,
-            info.amToken
-          );
-          pipes.push(aaveAmPipeData.address);
-          // -----------------
-          const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
-            signer,
-            info.amToken,
-            info.camToken
-          );
-          pipes.push(maiCamPipeData.address);
-          // -----------------
           const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
             signer,
-            info.camToken,
+            info.underlying,
             info.stablecoin,
             info.targetPercentage,
             info.collateralNumerator || '1'
@@ -160,13 +158,13 @@ describe('Universal AMB tests', async () => {
             signer,
             strategyContractName
           );
-          await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
+          await StrategyMaiBal__factory.connect(strategyData[0].address, signer).initialize(
             core.controller.address,
             vaultAddress,
             info.underlying,
             pipes
           );
-          return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
+          return StrategyMaiBal__factory.connect(strategyData[0].address, signer);
         },
         underlying,
         25
@@ -192,7 +190,7 @@ describe('Universal AMB tests', async () => {
         _strategy,
         _balanceTolerance,
         finalBalanceTolerance,
-        info.camToken,
+        '',
         airdroper,
         MaticAddresses.BAL_TOKEN,
         AIRDROP_REWARDS_AMOUNT,
@@ -201,7 +199,7 @@ describe('Universal AMB tests', async () => {
     };
 
     universalStrategyTest(
-      'AMBTest_' + info.underlyingName,
+      'MBTest_' + info.underlyingName,
       deployInfo,
       deployer,
       hwInitiator,
