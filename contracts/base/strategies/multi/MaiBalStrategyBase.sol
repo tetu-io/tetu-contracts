@@ -20,7 +20,6 @@ import "../../SlotsLib.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 import "../../../third_party/uniswap/IUniswapV2Router02.sol";
-import "hardhat/console.sol";// TODO remove
 
 
 /// @title MAI->BAL Multi Strategy
@@ -30,17 +29,17 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
-  string private constant _STRATEGY_NAME = "AaveMaiBalStrategyBase";
+  string private constant _STRATEGY_NAME = "MaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string private constant _VERSION = "2.0.0";
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
 
-  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
-  bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
+  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.MaiBalStrategyBase.totalAmountOut")) - 1);
+  bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.MaiBalStrategyBase._maiStablecoinPipe")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
-  bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
+  bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.MaiBalStrategyBase._asset")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);
@@ -71,7 +70,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   modifier onlyControllerOrGovernance() {
     require(msg.sender == address(_controller())
       || IController(_controller()).governance() == msg.sender,
-      "AMB: Not Gov or Controller");
+      "MB: Not Gov or Controller");
     _;
   }
 
@@ -182,7 +181,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
 
   /// @dev Returns platform index
   function platform() external pure override returns (Platform) {
-    return Platform.AAVE_MAI_BAL;
+    return Platform.MAI_BAL;
   }
 
   /// @dev Gets targetPercentage of MaiStablecoinPipe
