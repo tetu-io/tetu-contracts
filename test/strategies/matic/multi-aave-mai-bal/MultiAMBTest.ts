@@ -43,7 +43,7 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneAMbStrategyTest: {
+    onlyOneAmbStrategyTest: {
       type: "number",
       default: -1,
     },
