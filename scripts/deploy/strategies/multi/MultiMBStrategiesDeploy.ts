@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {
   ContractReader,
-  IStrategy,
+  IStrategy, SmartVault,
   StrategyMaiBal,
   StrategyMaiBal__factory
 } from "../../../../typechain";
@@ -49,8 +49,10 @@ async function main() {
     let strategyArgs;
     // tslint:disable-next-line:no-any
     const data: any[] = [];
-    data.push(...await DeployerUtils.deployVaultAndStrategy(
+
+    data.push(...await DeployerUtils.deployVaultAndStrategyProxy(
             vaultNameWithoutPrefix,
+            info.underlying,
             async vaultAddress => {
               // -----------------
               const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
