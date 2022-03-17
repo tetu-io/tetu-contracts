@@ -37,7 +37,7 @@ async function main() {
 
   for (const info of infos) {
 
-    const vaultNameWithoutPrefix = `MULTI-MB_${info.underlyingName}`;
+    const vaultNameWithoutPrefix = `MULTI_${info.underlyingName}`;
 
     if (vaultNames.has('TETU_' + vaultNameWithoutPrefix)) {
       console.error('Strategy already exist!!!', vaultNameWithoutPrefix);
