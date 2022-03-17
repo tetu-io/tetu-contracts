@@ -43,7 +43,7 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneAmbStrategyTest: {
+    onlyOneMbStrategyTest: {
       type: "number",
       default: -1,
     },
@@ -74,7 +74,7 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
 
   infos.forEach((info, i) => {
 
-    if (argv.onlyOneAmbStrategyTest !== -1 && i !== argv.onlyOneAmbStrategyTest) {
+    if (argv.onlyOneMbStrategyTest !== -1 && i !== argv.onlyOneAmbStrategyTest) {
       return;
     }
     console.log('Start test strategy', i, info.underlyingName);
