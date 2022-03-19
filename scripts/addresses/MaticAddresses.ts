@@ -225,7 +225,7 @@ export class MaticAddresses {
 
   public static cxDOGE_MAI_VAULT = "0x7CbF49E4214C7200AF986bc4aACF7bc79dd9C19a".toLowerCase();
   public static cxADA_MAI_VAULT = "0x506533B9C16eE2472A6BF37cc320aE45a0a24F11".toLowerCase();
-  public static cxETH_MAI_VAULT = "0xF1fb97d02fa3928802EC081BD1Ca939278529672".toLowerCase();
+  public static cxETH_MAI_VAULT = "0x7d36999a69f2B99BF3FB98866cBbE47aF43696C8".toLowerCase();
 
   // MARKET
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();

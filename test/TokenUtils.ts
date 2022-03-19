@@ -107,7 +107,7 @@ export class TokenUtils {
     [MaticAddresses.UNT_NOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
     [MaticAddresses.cxDOGE_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
-    [MaticAddresses.cxETH_TOKEN,'0x5a8c2d949b3f6bcaec7d20c8b6e57c1619a97504'.toLowerCase()],
+    [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
