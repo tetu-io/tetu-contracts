@@ -13,6 +13,7 @@
 pragma solidity 0.8.4;
 
 import "./StrategyBase.sol";
+import "../../third_party/IDelegation.sol";
 
 /// @title Stubbing implementation of Base Strategy.
 ///        Use with Vaults that do nothing with underlying (like Profit Sharing)
@@ -23,7 +24,7 @@ contract NoopStrategy is StrategyBase {
   string public constant override STRATEGY_NAME = "NoopStrategy";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
   /// @dev Assets should reflect underlying tokens for investing
@@ -46,6 +47,14 @@ contract NoopStrategy is StrategyBase {
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     _assets = __assets;
     _platform = Platform(__platform);
+  }
+
+  function delegateVotes(address _delegateContract, address _delegate, bytes32 id) external restricted {
+    IDelegation(_delegateContract).setDelegate(id, _delegate);
+  }
+
+  function clearDelegatedVotes(address _delegateContract, bytes32 id) external restricted {
+    IDelegation(_delegateContract).clearDelegate(id);
   }
 
   /// @dev Stub function for Strategy Base implementation
