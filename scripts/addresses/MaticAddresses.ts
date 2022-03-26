@@ -66,6 +66,7 @@ export class MaticAddresses {
   public static NSHARE_TOKEN = '0x948D0a28b600BDBd77AF4ea30E6F338167034181'.toLowerCase();
   public static NBOND_NOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
   public static UNT_NOKEN = '0xc46DB78Be28B5F2461097ed9e3Fcc92E9FF8676d'.toLowerCase();
+  public static UMA_NOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
