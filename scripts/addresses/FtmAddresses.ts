@@ -34,6 +34,7 @@ export class FtmAddresses {
   public static TSHARE_TOKEN = "0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37".toLowerCase();
   public static TBOND_TOKEN = "0x24248CD1747348bDC971a5395f4b3cd7feE94ea0".toLowerCase();
   public static ALPACA_TOKEN = "0xaD996A45fd2373ed0B10Efa4A8eCB9de445A4302".toLowerCase();
+  public static miMATIC_TOKEN = "0xfB98B335551a418cD0737375a2ea0ded62Ea213b".toLowerCase();
 
   // SpookySwap
   public static SPOOKY_SWAP_FACTORY = "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3".toLowerCase();
@@ -99,6 +100,13 @@ export class FtmAddresses {
   public static BPT_BNBARON_TOKEN = "0x5E65474c8400d0BB76eDBBE066B2D2E7b0b6e7fb".toLowerCase();
   public static BPT_STABEET = "0xeCAa1cBd28459d34B766F9195413Cb20122Fb942".toLowerCase();
   public static BPT_asUSDC = "0x8Bb1839393359895836688165f7c5878f8C81C5e".toLowerCase();
+
+  // IMPERMAX
+  public static IMPERMAX_FACTORY = "0x60aE5F446AE1575534A5F234D6EC743215624556".toLowerCase();
+
+  // MARKET
+  public static MARKET_POOLDIRECTORY = "0x0E7d754A8d1a82220432148C10715497a0569BD7".toLowerCase();
+  public static MARKET_POOLLENS = "0x5aB6215AB8344C28B899efdE93BEe47B124200Fb".toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     FtmAddresses.USDC_TOKEN,

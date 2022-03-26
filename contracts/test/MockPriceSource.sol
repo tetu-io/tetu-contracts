@@ -15,7 +15,7 @@ contract MockPriceSource is PriceSource {
     }
 
     /// @dev Sets mock price
-    /// @param _price - target collateral to debt percentage
+    /// @param _price - mock price
     function setPrice(int256 _price) public {
         price = _price;
     }

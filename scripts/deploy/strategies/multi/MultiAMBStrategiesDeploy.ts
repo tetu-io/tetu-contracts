@@ -72,7 +72,6 @@ async function main() {
           signer,
           info.camToken,
           info.stablecoin,
-          info.amToken,
           info.targetPercentage,
           info.collateralNumerator || '1'
         );
@@ -138,4 +137,4 @@ main()
   .catch(error => {
     console.error(error);
     process.exit(1);
-  });
+});
