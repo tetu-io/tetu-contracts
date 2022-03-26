@@ -19,7 +19,7 @@ export class TokenUtils {
   public static TOKEN_HOLDERS = new Map<string, string>([
     [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
     [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
-    [MaticAddresses.WBTC_TOKEN, '0x070f5A78963a658d3b8700BAF8e3C08984514eA2'.toLowerCase()],
+    [MaticAddresses.WBTC_TOKEN, '0x5c2ed810328349100a66b82b78a1791b101c9d61'.toLowerCase()], // aave v2
     // [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
     // [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
     [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave

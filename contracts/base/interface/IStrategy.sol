@@ -49,7 +49,7 @@ interface IStrategy {
     MARKET, //31
     UNIVERSE, //32
     MAI_BAL, //33
-    SLOT_34, //34
+    UMA, //34
     SLOT_35, //35
     SLOT_36, //36
     SLOT_37, //37
