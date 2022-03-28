@@ -197,7 +197,8 @@ function getAmountOut(amountIn: BigNumber, reserveIn: BigNumber, reserveOut: Big
   const amountInWithFee = amountIn.mul(997);
   const numerator = amountInWithFee.mul(reserveOut);
   const denominator = reserveIn.mul(1000).add(amountInWithFee);
-  return numerator.div(denominator);
+  const amountOut = numerator.div(denominator);
+  return (reserveOut.lt(amountOut)) ? BIGNUMBER0 : amountOut;
 }
 
 function calculateRouteAmountOut(route: Route, amountIn: BigNumber): BigNumber {

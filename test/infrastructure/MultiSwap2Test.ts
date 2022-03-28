@@ -27,9 +27,11 @@ import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
 import {TokenUtils} from "../TokenUtils";
 import {/*BigNumber,*/ utils} from "ethers";
 
-import savedRoutesData from './json/USDC_TETU.json';
+// import savedRoutesData from './json/USDC_TETU.json';
+import savedRoutesData from './json/USDC_AAVE.json';
 
-const encodedRouteDataFileName = 'test/multiswap/json/USDC_TETU.json';
+// const encodedRouteDataFileName = 'test/infrastructure/json/USDC_TETU.json';
+const encodedRouteDataFileName = 'test/infrastructure/json/USDC_AAVE.json';
 const pairs = pairsJson as string[][]
 
 // const {expect} = chai;
@@ -78,8 +80,8 @@ describe("MultiSwap2 base tests", function () {
 
   it("generateWays & multiSwap", async () => {
     const tokenIn = usdc;
-    const tokenOut = MaticAddresses.TETU_TOKEN;
-    // const tokenOut = MaticAddresses.AAVE_TOKEN; // TODO check outputs
+    // const tokenOut = MaticAddresses.TETU_TOKEN;
+    const tokenOut = MaticAddresses.AAVE_TOKEN; // TODO check outputs
     const amount = ethers.utils.parseUnits('100000', 6);
 
     if (network.name === 'matic') {
@@ -107,14 +109,14 @@ describe("MultiSwap2 base tests", function () {
       console.log('encodedRoutesData', encodedRoutesData);
 
       await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString())
-      const slippage = 10; // 1%
+      const slippage = 30; // 3%
       await multiSwap2.multiSwap(tokenIn, tokenOut, amount,  slippage, encodedRoutesData);
     }
 
 
   })
 
-  it.only("should be able to buy all assets", async () => {
+  it.skip("should be able to buy all assets", async () => {
 
     const entries = Object.entries(MaticAddresses);
     const tokens = entries.filter(key => key[0].endsWith('_TOKEN'));

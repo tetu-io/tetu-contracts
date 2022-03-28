@@ -110,6 +110,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2,  ReentrancyGuard {
     require(tokenOutBalance != 0, "MS: zero token out amount");
     uint minAmountOut = expectedAmountOut - (expectedAmountOut * slippageTolerance / _PRECISION_SLIPPAGE);
     console.log('--    minAmountOut', minAmountOut); // TODO remove
+    console.log('--          diff %', tokenOutBalance * 100 / minAmountOut); // TODO remove
     require(tokenOutBalance >= minAmountOut, "MS: amount out less than required");
     IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed

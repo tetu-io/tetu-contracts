@@ -1,8 +1,8 @@
 {
  "weights": [
-  80,
-  10,
-  10,
+  90,
+  5,
+  5,
   0,
   0
  ],
@@ -17,11 +17,11 @@
      "stepNumber": 1,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x0134e8b89cc5"
+      "hex": "0x012ff5e76463"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x041f24a03a"
+      "hex": "0x03597d8866"
      }
     },
     {
@@ -32,18 +32,18 @@
      "stepNumber": 2,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0xc22b8dcc"
+      "hex": "0xb9fe0e75"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x50dfd7c897f60fd580"
+      "hex": "0x59649f244c69702e13"
      }
     }
    ],
    "finished": true,
    "amountOut": {
     "type": "BigNumber",
-    "hex": "0x163696e725c1fdd49e"
+    "hex": "0x15fbe1320a0058c6da"
    }
   },
   {
@@ -56,50 +56,11 @@
      "stepNumber": 1,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x051aa413fa"
+      "hex": "0x036c38e21a"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x6845a0ef10e367cf"
-     }
-    },
-    {
-     "lp": "0x90bc3E68Ba8393a3Bf2D79309365089975341a43",
-     "tokenIn": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-     "tokenOut": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
-     "reverse": false,
-     "stepNumber": 2,
-     "reserve0": {
-      "type": "BigNumber",
-      "hex": "0x40e76ec3461522270b"
-     },
-     "reserve1": {
-      "type": "BigNumber",
-      "hex": "0x047f65099cdd31a10ce7"
-     }
-    }
-   ],
-   "finished": true,
-   "amountOut": {
-    "type": "BigNumber",
-    "hex": "0x05e01a16cef86eb2cb"
-   }
-  },
-  {
-   "steps": [
-    {
-     "lp": "0xad13Ad855FcAc6ffe6dbBa9362873228937Fba53",
-     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-     "tokenOut": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-     "reverse": false,
-     "stepNumber": 1,
-     "reserve0": {
-      "type": "BigNumber",
-      "hex": "0x051aa413fa"
-     },
-     "reserve1": {
-      "type": "BigNumber",
-      "hex": "0x6845a0ef10e367cf"
+      "hex": "0x3d02806a1be3bf20"
      }
     },
     {
@@ -110,57 +71,57 @@
      "stepNumber": 2,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x37a0654d6587f3755e"
+      "hex": "0x325b5a585c4b1540c4"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x03db48829c1bc6c86f05"
+      "hex": "0x03d83c32d4930ec92c58"
      }
     }
    ],
    "finished": true,
    "amountOut": {
     "type": "BigNumber",
-    "hex": "0x05df8a3600af3ddc82"
+    "hex": "0x0407db7d2c6a534022"
    }
   },
   {
    "steps": [
     {
-     "lp": "0xF85aC8afF5aD22C745Bfca07d65FbCdE67A04C90",
+     "lp": "0xad13Ad855FcAc6ffe6dbBa9362873228937Fba53",
      "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-     "tokenOut": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-     "reverse": true,
+     "tokenOut": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+     "reverse": false,
      "stepNumber": 1,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x061767a879"
+      "hex": "0x036c38e21a"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x034835857bc8bb80271d"
+      "hex": "0x3d02806a1be3bf20"
      }
     },
     {
-     "lp": "0x7d88D931504D04BFBEE6F9745297A93063CAb24c",
-     "tokenIn": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+     "lp": "0x90bc3E68Ba8393a3Bf2D79309365089975341a43",
+     "tokenIn": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
      "tokenOut": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
      "reverse": false,
      "stepNumber": 2,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x82ea1b36686dab9650"
+      "hex": "0x3098f51c93435f8ddd"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x0157f4b40adc0812c9"
+      "hex": "0x03b4a023c101b1216cc3"
      }
     }
    ],
    "finished": true,
    "amountOut": {
     "type": "BigNumber",
-    "hex": "0x011f474e1846db7080"
+    "hex": "0x0406605f96478827ba"
    }
   },
   {
@@ -173,11 +134,11 @@
      "stepNumber": 1,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x02dfc6e2d9ec"
+      "hex": "0x02b47bccdea2"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0x0146dbc423f008730bc75d"
+      "hex": "0x0132dd254bf1c6a273b7f3"
      }
     },
     {
@@ -188,23 +149,62 @@
      "stepNumber": 2,
      "reserve0": {
       "type": "BigNumber",
-      "hex": "0x42054466883240f177"
+      "hex": "0x434dd9c24109344200"
      },
      "reserve1": {
       "type": "BigNumber",
-      "hex": "0xd17a30bdc5a49beb"
+      "hex": "0xcf12182326690204"
      }
     }
    ],
    "finished": true,
    "amountOut": {
     "type": "BigNumber",
-    "hex": "0xcc3198872772342e"
+    "hex": "0xc9b9df64beea2464"
+   }
+  },
+  {
+   "steps": [
+    {
+     "lp": "0xF85aC8afF5aD22C745Bfca07d65FbCdE67A04C90",
+     "tokenIn": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+     "tokenOut": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+     "reverse": true,
+     "stepNumber": 1,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x07ad22c04b"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0x041db0bddf15157160b7"
+     }
+    },
+    {
+     "lp": "0x7d88D931504D04BFBEE6F9745297A93063CAb24c",
+     "tokenIn": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+     "tokenOut": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
+     "reverse": false,
+     "stepNumber": 2,
+     "reserve0": {
+      "type": "BigNumber",
+      "hex": "0x4d5d6270287b336091"
+     },
+     "reserve1": {
+      "type": "BigNumber",
+      "hex": "0xc6247a064acd6d6b"
+     }
+    }
+   ],
+   "finished": true,
+   "amountOut": {
+    "type": "BigNumber",
+    "hex": "0xb4754c365e9e4ab6"
    }
   }
  ],
  "amountOut": {
   "type": "BigNumber",
-  "hex": "0x1780d3c450abef9b49"
+  "hex": "0x16be6f6d3f428256fd"
  }
 }
