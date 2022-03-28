@@ -19,7 +19,7 @@ export class TokenUtils {
   public static TOKEN_HOLDERS = new Map<string, string>([
     [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
     [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
-    [MaticAddresses.WBTC_TOKEN, '0x070f5A78963a658d3b8700BAF8e3C08984514eA2'.toLowerCase()],
+    [MaticAddresses.WBTC_TOKEN, '0x5c2ed810328349100a66b82b78a1791b101c9d61'.toLowerCase()], // aave v2
     // [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
     // [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
     [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave
@@ -104,6 +104,10 @@ export class TokenUtils {
     [FtmAddresses.BPT_STABEET,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [MaticAddresses.QI_TOKEN,'0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'.toLowerCase()], // qidao gov
+    [MaticAddresses.UNT_NOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
+    [MaticAddresses.cxDOGE_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
+    [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
+    [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

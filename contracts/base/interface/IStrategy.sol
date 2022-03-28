@@ -44,12 +44,12 @@ interface IStrategy {
     TAROT, //26
     BEETHOVEN, //27
     IMPERMAX, //28
-    SLOT_29, //29
-    SLOT_30, //30
-    SLOT_31, //31
-    SLOT_32, //32
-    SLOT_33, //33
-    SLOT_34, //34
+    TETU_SF, //29
+    ALPACA, //30
+    MARKET, //31
+    UNIVERSE, //32
+    MAI_BAL, //33
+    UMA, //34
     SLOT_35, //35
     SLOT_36, //36
     SLOT_37, //37

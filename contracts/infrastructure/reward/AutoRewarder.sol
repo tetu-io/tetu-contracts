@@ -29,8 +29,8 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.1.3";
-  uint256 public constant PERIOD = 22 hours;
+  string public constant VERSION = "1.1.4";
+  uint256 public constant PERIOD = 7 days - 4 hours;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
 

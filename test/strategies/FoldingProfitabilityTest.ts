@@ -29,8 +29,8 @@ export class FoldingProfitabilityTest extends SpecificStrategyTest {
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
 
-      const underlyingUSDPrice = +utils.formatUnits(await PriceCalculatorUtils.getPriceCached(underlying));
-      let tetuUSDCPrice = +utils.formatUnits(await PriceCalculatorUtils.getPriceCached(tetu.address));
+      const underlyingUSDPrice = +utils.formatUnits(await PriceCalculatorUtils.getPriceCached(underlying, calculator));
+      let tetuUSDCPrice = +utils.formatUnits(await PriceCalculatorUtils.getPriceCached(tetu.address, calculator));
       // in case of new network
       if (tetuUSDCPrice === 0) {
         tetuUSDCPrice = +utils.formatUnits(await calculator.getPriceWithDefaultOutput(tetu.address));

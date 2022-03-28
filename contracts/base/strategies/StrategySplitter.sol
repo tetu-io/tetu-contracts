@@ -33,7 +33,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   string public constant override STRATEGY_NAME = "StrategySplitter";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint internal constant _PRECISION = 1e18;
   uint public constant STRATEGY_RATIO_DENOMINATOR = 100;
   uint public constant WITHDRAW_REQUEST_TIMEOUT = 1 hours;
@@ -151,7 +151,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   function strategiesInited() external view override returns (bool) {
     uint sum;
     for (uint i; i < strategies.length; i++) {
-      sum = strategiesRatios[strategies[i]];
+      sum += strategiesRatios[strategies[i]];
     }
     return sum == STRATEGY_RATIO_DENOMINATOR;
   }

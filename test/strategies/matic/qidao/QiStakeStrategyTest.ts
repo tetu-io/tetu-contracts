@@ -12,6 +12,7 @@ import {IStrategy, SmartVault, SmartVault__factory, StrategyQiStaking} from "../
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {QiStakeStrategyTest} from "./QiStakingDoHardWork";
+import {utils} from "ethers";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -86,6 +87,8 @@ describe('Qi staking tests', async () => {
     );
     await SmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
     await SmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
+    await core.vaultController.addRewardTokens([data[0].address], data[0].address);
+    await core.controller.setRewardDistribution([data[1].address], true);
     return data;
   };
   const hwInitiator = (

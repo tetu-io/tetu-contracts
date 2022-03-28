@@ -35,7 +35,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.2.3";
+  string public constant VERSION = "1.2.4";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
@@ -558,10 +558,14 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   function _swap(address tokenIn, address tokenOut, IUniswapV2Pair lp, uint amount) internal {
     require(amount != 0, "F2: Zero swap amount");
     (uint reserveIn, uint reserveOut) = getReserves(lp, tokenIn, tokenOut);
-
-    UniFee memory fee = uniPlatformFee[lp.factory()];
+    address factory = lp.factory();
+    UniFee memory fee = uniPlatformFee[factory];
     if (fee.numerator == 0) {
       fee = UniFee(DEFAULT_UNI_FEE_NUMERATOR, DEFAULT_UNI_FEE_DENOMINATOR);
+    }
+    // hardcode for TetuSwap sync
+    if(factory == 0x684d8c187be836171a1Af8D533e4724893031828) {
+      lp.sync();
     }
     uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
     IERC20(tokenIn).safeTransfer(address(lp), amount);

@@ -15,6 +15,8 @@ pragma solidity 0.8.4;
 /// @title AAVE->MAI->BAL Multi Strategy Interface
 /// @author belbix, bogdoslav
 interface IAaveMaiBalStrategyBase {
+  function totalAmountOut() external view returns (uint256);
+
   function targetPercentage() external view returns (uint256);
 
   function maxImbalance() external view returns (uint256);

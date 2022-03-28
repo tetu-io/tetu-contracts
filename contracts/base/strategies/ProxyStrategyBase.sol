@@ -82,6 +82,8 @@ abstract contract ProxyStrategyBase is IStrategy, ControllableV2, StrategyStorag
     uint _bbRatio
   ) public initializer {
     ControllableV2.initializeControllable(_controller);
+    require(ISmartVault(_vault).underlying() == _underlying, "SB: Wrong underlying");
+    require(IControllable(_vault).isController(_controller), "SB: Wrong controller");
     _setUnderlying(_underlying);
     _setVault(_vault);
     require(_bbRatio <= _BUY_BACK_DENOMINATOR, "SB: Too high buyback ratio");
@@ -221,6 +223,11 @@ abstract contract ProxyStrategyBase is IStrategy, ControllableV2, StrategyStorag
   function setToleranceNumerator(uint numerator) external restricted {
     require(numerator <= _TOLERANCE_DENOMINATOR, "SB: Too high");
     _setToleranceNumerator(numerator);
+  }
+
+  function setBuyBackRatio(uint value) external restricted {
+    require(value <= _BUY_BACK_DENOMINATOR, "SB: Too high buyback ratio");
+    _setBuyBackRatio(value);
   }
 
   // ***************** INTERNAL ************************

@@ -56,6 +56,7 @@ async function main() {
     // tslint:disable-next-line:no-any
     const data: any[] = []
     data.push(await DeployerUtils.deployAndInitVaultAndStrategy(
+      lpAddress,
         vaultNameWithoutPrefix,
         async vaultAddress => DeployerUtils.deployContract(
             signer,

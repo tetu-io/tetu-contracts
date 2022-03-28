@@ -18,7 +18,7 @@ async function main() {
   const vaultNames = new Set<string>();
 
   const cReader = await DeployerUtils.connectContract(
-      signer, "ContractReader", tools.reader) as ContractReader;
+    signer, "ContractReader", tools.reader) as ContractReader;
 
   const deployedVaultAddresses = await cReader.vaults();
   console.log('all vaults size', deployedVaultAddresses.length);
@@ -63,23 +63,25 @@ async function main() {
     let data: any[];
     if (token1) {
       data = await DeployerUtils.deployAndInitVaultAndStrategy(
-          vaultNameWithoutPrefix,
-          async vaultAddress => DeployerUtils.deployContract(
-              signer,
-              'StrategyWaultLp',
-              core.controller,
-              vaultAddress,
-              lpAddress,
-              token0,
-              token1,
-              idx
-          ) as Promise<IStrategy>,
-          controller,
-          vaultController,
-          core.psVault,
+        lpAddress,
+        vaultNameWithoutPrefix,
+        async vaultAddress => DeployerUtils.deployContract(
           signer,
-          60 * 60 * 24 * 28,
-          true
+          'StrategyWaultLp',
+          core.controller,
+          vaultAddress,
+          lpAddress,
+          token0,
+          token1,
+          idx
+        ) as Promise<IStrategy>,
+        controller,
+        vaultController,
+        core.psVault,
+        signer,
+        60 * 60 * 24 * 28,
+        0,
+        true
       );
       data.push([
         core.controller,
@@ -91,21 +93,23 @@ async function main() {
       ]);
     } else {
       data = await DeployerUtils.deployAndInitVaultAndStrategy(
-          vaultNameWithoutPrefix,
-          async vaultAddress => DeployerUtils.deployContract(
-              signer,
-              'StrategyWaultSingle',
-              core.controller,
-              vaultAddress,
-              lpAddress,
-              idx
-          ) as Promise<IStrategy>,
-          controller,
-          vaultController,
-          core.psVault,
+        lpAddress,
+        vaultNameWithoutPrefix,
+        async vaultAddress => DeployerUtils.deployContract(
           signer,
-          60 * 60 * 24 * 28,
-          true
+          'StrategyWaultSingle',
+          core.controller,
+          vaultAddress,
+          lpAddress,
+          idx
+        ) as Promise<IStrategy>,
+        controller,
+        vaultController,
+        core.psVault,
+        signer,
+        60 * 60 * 24 * 28,
+        0,
+        true
       );
       data.push([
         core.controller,
@@ -133,8 +137,8 @@ async function main() {
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

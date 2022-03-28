@@ -17,6 +17,7 @@ import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
+import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 
 export class VaultUtils {
 
@@ -161,9 +162,15 @@ export class VaultUtils {
     period = 60 * 60 * 24 * 7 + 1
   ) {
     const start = Date.now();
+    const net = await ethers.provider.getNetwork();
+
     console.log("Add xTETU as reward to vault: ", amount.toString())
     const rtAdr = core.psVault.address;
-    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+    let tetuTokenAddress = MaticAddresses.TETU_TOKEN;
+    if (net.chainId === 250) {
+      tetuTokenAddress = FtmAddresses.TETU_TOKEN;
+    }
+    if (core.rewardToken.address.toLowerCase() === tetuTokenAddress) {
       await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount + ''));
     } else {
       await MintHelperUtils.mint(core.controller, core.announcer, amount * 2 + '', signer.address, false, period)
@@ -216,11 +223,11 @@ export class VaultUtils {
 
     console.log('-------- HARDWORK --------');
     console.log('- BB ratio:', bbRatio);
-    console.log('- PPFS:', ppfsAfter);
-    console.log('- PPFS change:', ppfsAfter - ppfs);
-    console.log('- BALANCE change:', undBalAfter - undBal);
-    console.log('- RT change:', rtBalAfter - rtBal);
-    console.log('- PS change:', psPpfsAfter - psPpfs);
+    console.log('- Vault Share price:', ppfsAfter);
+    console.log('- Vault Share price change:', ppfsAfter - ppfs);
+    console.log('- Vault und balance change:', undBalAfter - undBal);
+    console.log('- Vault first RT change:', rtBalAfter - rtBal);
+    console.log('- xTETU share price change:', psPpfsAfter - psPpfs);
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 
@@ -234,7 +241,10 @@ export class VaultUtils {
         }
       }
       if (bbRatio !== 10000 && !ppfsDecreaseAllowed) {
-        expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
+        // it is a unique case where we send profit to vault instead of AC
+        if (await strategyCtr.STRATEGY_NAME() !== 'QiStakingStrategyBase') {
+          expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
+        }
       }
     }
     Misc.printDuration('doHardWorkAndCheck completed', start);

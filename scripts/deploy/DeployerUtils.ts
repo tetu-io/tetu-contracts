@@ -2,6 +2,7 @@ import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Contract, ContractFactory, utils} from "ethers";
 import {
+  AaveAmPipe,
   Announcer,
   AutoRewarder,
   Bookkeeper,
@@ -128,6 +129,7 @@ export class DeployerUtils {
     if (lib) {
       console.log('DEPLOY LIBRARY', lib, 'for', name);
       const libAddress = (await DeployerUtils.deployContract(signer, lib)).address;
+      await DeployerUtils.wait(1);
       const librariesObj: Libraries = {};
       librariesObj[lib] = libAddress;
       _factory = (await ethers.getContractFactory(
@@ -152,6 +154,17 @@ export class DeployerUtils {
 
     Misc.printDuration(name + ' deployed ' + receipt.contractAddress, start);
     return _factory.attach(receipt.contractAddress);
+  }
+
+  public static async deployTetuProxyControlled<T extends ContractFactory>(
+      signer: SignerWithAddress,
+      logicContractName: string,
+  ) {
+    const logic = await DeployerUtils.deployContract(signer, logicContractName);
+    await DeployerUtils.wait(5);
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
+    await DeployerUtils.wait(5);
+    return [proxy, logic];
   }
 
   public static async deployController(signer: SignerWithAddress): Promise<Controller> {
@@ -259,6 +272,8 @@ export class DeployerUtils {
       MaticAddresses.WBTC_TOKEN,
       MaticAddresses.WMATIC_TOKEN,
       MaticAddresses.QUICK_TOKEN,
+      MaticAddresses.QI_TOKEN,
+      MaticAddresses.TETU_TOKEN,
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(MaticAddresses.USDC_TOKEN), true, wait);
@@ -338,6 +353,7 @@ export class DeployerUtils {
 
   public static async deployStrategyProxy(signer: SignerWithAddress, strategyName: string): Promise<IStrategy> {
     const logic = await DeployerUtils.deployContract(signer, strategyName);
+    await DeployerUtils.wait(1);
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as IStrategy;
   }
@@ -570,7 +586,33 @@ export class DeployerUtils {
     );
   }
 
+  public static async deployAllToolsContracts(signer: SignerWithAddress, core: CoreContractsWrapper): Promise<ToolsContractsWrapper> {
+    const net = await ethers.provider.getNetwork();
+    log.info('network ' + net.chainId);
+    const tools = Addresses.TOOLS.get(net.chainId + '');
+    if (!tools) {
+      throw Error('No config for ' + net.chainId);
+    }
+    const calculator = await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
+    const reader = await DeployerUtils.deployContractReader(signer, core.controller.address, calculator[0].address);
+    // ! we will not deploy not important contracts
+    return new ToolsContractsWrapper(
+      calculator[0],
+      reader[0],
+      await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
+      await DeployerUtils.connectInterface(signer, "LiquidityBalancer", tools.rebalancer) as LiquidityBalancer,
+      await DeployerUtils.connectInterface(signer, "PayrollClerk", tools.payrollClerk) as PayrollClerk,
+      await DeployerUtils.connectInterface(signer, "MockFaucet", tools.mockFaucet) as MockFaucet,
+      await DeployerUtils.connectInterface(signer, "MultiSwap", tools.multiSwap) as MultiSwap,
+      await DeployerUtils.connectInterface(signer, "ZapContract", tools.zapContract) as ZapContract,
+      await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
+      await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
+    );
+
+  }
+
   public static async deployAndInitVaultAndStrategy<T>(
+    underlying: string,
     vaultName: string,
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     controller: Controller,
@@ -585,23 +627,18 @@ export class DeployerUtils {
     const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
     const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
     const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
-
-    const strategy = await strategyDeployer(vault.address);
-
-    const strategyUnderlying = await strategy.underlying();
-
-    const startInit = Date.now();
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       "TETU_" + vaultName,
       "x" + vaultName,
       controller.address,
-      strategyUnderlying,
+      underlying,
       rewardDuration,
       false,
       vaultRewardToken,
       depositFee
     ), true, wait);
-    Misc.printDuration(vaultName + ' vault initialized', startInit);
+    const strategy = await strategyDeployer(vault.address);
+    Misc.printDuration(vaultName + ' vault initialized', start);
 
     await RunHelper.runAndWait(() => controller.addVaultsAndStrategies([vault.address], [strategy.address]), true, wait);
     await RunHelper.runAndWait(() => vaultController.setToInvest([vault.address], 1000), true, wait);
@@ -641,6 +678,44 @@ export class DeployerUtils {
       vaultRewardToken,
       depositFee
     ), true, wait);
+    return [vaultLogic, vault, strategy];
+  }
+
+  public static async deployVaultAndStrategyProxy<T>(
+    vaultName: string,
+    underlying: string,
+    strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
+    controllerAddress: string,
+    vaultRewardToken: string,
+    signer: SignerWithAddress,
+    rewardDuration: number = 60 * 60 * 24 * 28, // 4 weeks
+    depositFee = 0,
+    wait = false
+  ): Promise<[SmartVault, SmartVault, IStrategy]> {
+    const vaultLogic = await DeployerUtils.deployContract(signer, "SmartVault") as SmartVault;
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+    log.info('vaultLogic ' + vaultLogic.address);
+    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vault = vaultLogic.attach(vaultProxy.address) as SmartVault;
+
+    await RunHelper.runAndWait(() => vault.initializeSmartVault(
+      "TETU_" + vaultName,
+      "x" + vaultName,
+      controllerAddress,
+      underlying,
+      rewardDuration,
+      false,
+      vaultRewardToken,
+      depositFee
+    ), true, wait);
+
+    if (wait) {
+      await DeployerUtils.wait(1);
+    }
+
+    const strategy = await strategyDeployer(vault.address);
     return [vaultLogic, vault, strategy];
   }
 
@@ -685,6 +760,7 @@ export class DeployerUtils {
       rewardToken = netToken;
     }
     return DeployerUtils.deployAndInitVaultAndStrategy(
+      underlying,
       't',
       vaultAddress => DeployerUtils.deployContract(
         signer,
@@ -1056,13 +1132,13 @@ export class DeployerUtils {
   }
 
   public static async wait(blocks: number) {
+    if (hre.network.name === 'hardhat') {
+      return;
+    }
     const start = ethers.provider.blockNumber;
     while (true) {
       log.info('wait 10sec');
       await DeployerUtils.delay(10000);
-      if (hre.network.name === 'hardhat') {
-        await TimeUtils.advanceNBlocks(1);
-      }
       if (ethers.provider.blockNumber >= start + blocks) {
         break;
       }
