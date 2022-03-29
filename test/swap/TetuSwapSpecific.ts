@@ -57,7 +57,7 @@ describe("Tetu Swap specific tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it('swap sphere - usdc', async () => {
+  it.skip('swap sphere - usdc', async () => {
     const sphereOwner = await DeployerUtils.impersonate('0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe');
     const sphere = MaticAddresses.SPHERE_TOKEN;
     const usdc = MaticAddresses.USDC_TOKEN;
