@@ -5,6 +5,7 @@ const { MerkleTree, loadTree } = require("./merkle.js");
 const { keccak256, keccakFromString, bufferToHex } = require('ethereumjs-util');
 const { hexToBytes, toWei, soliditySha3 } = require('web3-utils');
 const { type2Transaction } = require('./utils.js');
+const {ethers} = require("hardhat");
 
 // type Snapshot = Record<number, string>;
 
@@ -32,7 +33,7 @@ async function ipfsGet(
 
 async function getSnapshot(network, token) {
   let snapshot
-  if (network == 'polygon') {
+  if (network == 'matic') {
     if (token == '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3'){
       snapshot = constants.snapshotBalPoly
     } else if (token == '0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756') {
@@ -40,9 +41,9 @@ async function getSnapshot(network, token) {
     } else if (token == '0x580A84C73811E1839F75d86d75d88cCa0c241fF4') {
       snapshot = constants.snapshotQiPoly
     }
-  } else {
+  } else if (network == 'eth') {
     snapshot = constants.snapshotBalEth
-  }
+  } else throw new Error('unsupported network')
   if (snapshot) {
     return (await fetch(snapshot).then(res => res.json())) || {};
   }
@@ -56,14 +57,8 @@ async function getClaimStatus(
   token,
   distributor
 ) {
-  const MerkleOrchard = artifacts.require("MerkleOrchard");
-  let merkleAddress;
-  if (network == 'polygon') {
-    merkleAddress = constants.merkleOrchardPoly;
-  } else {
-    merkleAddress = constants.merkleOrchardEth;
-  }
-  merkleContract = await MerkleOrchard.at(merkleAddress);
+  const merkleAddress = constants.merkleOrchardPoly;
+  const merkleContract = await ethers.getContractAt("IMerkleOrchard", merkleAddress);
   return await merkleContract.isClaimed(token, distributor, week, account);
 }
 

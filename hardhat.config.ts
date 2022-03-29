@@ -6,7 +6,7 @@ import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-solhint";
 import '@openzeppelin/hardhat-upgrades';
 import "@typechain/hardhat";
-import "hardhat-docgen";
+// import "hardhat-docgen";
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "hardhat-tracer";
