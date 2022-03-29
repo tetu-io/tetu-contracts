@@ -4,7 +4,7 @@ import {DeployStubVault} from "../DeployStubVault";
 async function main() {
   await DeployStubVault.deploy(
     'UNT',
-    MaticAddresses.UNT_NOKEN,
+    MaticAddresses.UNT_TOKEN,
     31
   )
 }
