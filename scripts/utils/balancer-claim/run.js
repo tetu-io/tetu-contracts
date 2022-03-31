@@ -68,9 +68,8 @@ async function claimBal() {
       console.log("Making claims");
       let balanceBefore = await tokenContract.balanceOf(account);
       let balanceBeforePretty = new BigNumber(balanceBefore).div(new BigNumber(Math.pow(10, 18)));
-      // TODO remove comment
-      // let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
-      // console.log("tx:", claim.hash);
+      let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
+      console.log("tx:", claim.hash);
       let balanceAfter = await tokenContract.balanceOf(account);
       let balanceAfterPretty = new BigNumber(balanceAfter).div(new BigNumber(Math.pow(10, 18)));
       console.log("Claimed:", balanceAfterPretty.toFixed() - balanceBeforePretty.toFixed());
@@ -79,5 +78,5 @@ async function claimBal() {
   console.log('totalRewards for all accounts', totalRewards);
 }
 
-claimBal().then();
-// module.exports = {claimBal}
+// claimBal().then();
+module.exports = {claimBal}

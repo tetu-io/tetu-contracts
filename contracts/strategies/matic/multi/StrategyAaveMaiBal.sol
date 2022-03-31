@@ -42,7 +42,7 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
   ///      2 - MaiStablecoinPipe
   ///      3 - BalVaultPipe
   function _initPipes(address[] memory __pipes) private {
-    require(__pipes.length == 4, "Wrong pipes");
+    require(__pipes.length == 4);
 
     for (uint i; i < __pipes.length; i++) {
       IPipe(__pipes[i]).setPipeline(address(this));

@@ -33,16 +33,20 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   string private constant _VERSION = "2.0.0";
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
+  uint256 private constant _TIME_LOCK = 48 hours;
+  uint256 private constant _TIMELOCK_ADDRESSES_SHIFT = 1000;
 
   bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
   bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
   bytes32 internal constant _MAI_CAM_PIPE_SLOT        = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._maiCamPipe")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
   bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
+  bytes32 internal constant _TIMELOCKS                = bytes32(uint256(keccak256("eip1967.AaveMaiBalStrategyBase.timelocks")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);
   event SetMaxImbalance(uint256 _maxImbalance);
+  event PipeReplaceAnnounced(uint pipeIndex, address newPipe);
 
   /// @notice Contract initializer
   function initializeAaveMaiBalStrategyBase(
@@ -259,7 +263,6 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _rebalanceAllPipes();
   }
 
-
   /// @dev Sets maxImbalance for maiStablecoinPipe and re-balances all pipes
   /// @param _maxImbalance - maximum imbalance deviation (+/-%)
   function setMaxImbalance(uint256 _maxImbalance)
@@ -267,6 +270,34 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _maiStablecoinPipe().setMaxImbalance(_maxImbalance);
     emit SetMaxImbalance(_maxImbalance);
     _rebalanceAllPipes();
+  }
+
+  /// @dev Announce a pipe replacement
+  function announcePipeReplacement(uint pipeIndex, address newPipe)
+  external onlyControllerOrGovernance {
+//    require(_TIMELOCKS.uintAt(pipeIndex) == 0, "AMB: Already defined");
+    _TIMELOCKS.setAt(pipeIndex, block.timestamp + _TIME_LOCK);
+    _TIMELOCKS.setAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT, newPipe);
+    emit PipeReplaceAnnounced(pipeIndex, newPipe);
+  }
+
+  /// @dev Replaces a pipe with index
+  /// @param pipeIndex - index of the pipe to replace
+  /// @param newPipe - address of the new pipe
+  function replacePipe(uint pipeIndex, address newPipe)
+  external onlyControllerOrGovernance updateTotalAmount {
+    uint timelock = _TIMELOCKS.uintAt(pipeIndex);
+//    require(timelock != 0 && timelock < block.timestamp, "AMB: Too early");
+//    require(_TIMELOCK_PIPES.addressAt(pipeIndex) == newPipe, "AMB: Wrong address");
+    require(
+      (timelock != 0 && timelock < block.timestamp) &&
+      (_TIMELOCKS.addressAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT) == newPipe)
+    );
+
+    _replacePipe(pipeIndex, IPipe(newPipe));
+
+    _TIMELOCKS.setAt(pipeIndex, 0);
+//    _TIMELOCKS.setAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT, 0);
   }
 
   // !!! decrease gap size after adding variables!!!

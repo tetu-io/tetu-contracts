@@ -15,13 +15,15 @@ pragma solidity 0.8.4;
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
 import "./../../../../openzeppelin/Initializable.sol";
+import "../../../governance/ControllableV2.sol";
 import "../../../interface/strategies/IPipe.sol";
+import "../../../interface/IControllable.sol";
 import "../../../SlotsLib.sol";
 import "./PipeLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-abstract contract Pipe is IPipe, Initializable {
+abstract contract Pipe is IPipe, Initializable, ControllableV2 {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
@@ -30,15 +32,15 @@ abstract contract Pipe is IPipe, Initializable {
   bytes32 internal constant _PIPELINE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.pipeline")) - 1);
 
   /// @notice Pipe name for statistical purposes only
-  /// @dev initialize it in constructor
+  /// @dev initialize it in initializer
   bytes32 internal constant _NAME_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.name")) - 1);
 
   /// @notice Source token address type
-  /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
+  /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
   bytes32 internal constant _SOURCE_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.sourceToken")) - 1);
 
   /// @notice Output token address type
-  /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
+  /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
   bytes32 internal constant _OUTPUT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.outputToken")) - 1);
 
   /// @notice Next pipe in pipeline
@@ -48,7 +50,7 @@ abstract contract Pipe is IPipe, Initializable {
   bytes32 internal constant _NEXT_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.nextPipe")) - 1);
 
   /// @notice Reward token address for claiming
-  /// @dev initialize it in constructor
+  /// @dev initialize it in initializer
   address[] public override rewardTokens;
 
   event Get(uint256 amount, uint256 output);
@@ -68,9 +70,9 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   modifier onlyPipeline() {
-    address _pipeline = _PIPELINE_SLOT.getAddress();
+    address __pipeline = _pipeline();
     require(
-      _pipeline == msg.sender || _pipeline == address(this),
+      __pipeline == msg.sender || __pipeline == address(this),
       "PIPE: caller is not the pipeline"
     );
     _;
@@ -98,6 +100,10 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   function pipeline() external view override returns (address) {
+    return _pipeline();
+  }
+
+  function _pipeline() internal view returns (address) {
     return _PIPELINE_SLOT.getAddress();
   }
 
@@ -130,9 +136,11 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
-  function setPipeline(address _pipeline) external override {
-    require(_PIPELINE_SLOT.getAddress() == address(0), "PIPE: Already init");
-    _PIPELINE_SLOT.set(_pipeline);
+  /// @notice ! Pipeline must be Controllable
+  function setPipeline(address __pipeline) external override {
+    require(_pipeline() == address(0), "PIPE: Already init");
+    _PIPELINE_SLOT.set(__pipeline);
+    initializeControllable(IControllableExtended(__pipeline).controller());
   }
 
   /// @dev Size of reward tokens array
@@ -180,17 +188,17 @@ abstract contract Pipe is IPipe, Initializable {
 
   /// @dev function for claiming rewards
   function claim() onlyPipeline virtual override external {
-    address _pipeline = _PIPELINE_SLOT.getAddress();
+    address __pipeline = _pipeline();
     for (uint i = 0; i < rewardTokens.length; i++) {
       address rewardToken = rewardTokens[i];
       if (rewardToken == address(0)) {
         return;
       }
-      require(_pipeline != address(0));
+      require(__pipeline != address(0));
 
       uint256 amount = _erc20Balance(rewardToken);
       if (amount > 0) {
-        IERC20(rewardToken).safeTransfer(_pipeline, amount);
+        IERC20(rewardToken).safeTransfer(__pipeline, amount);
       }
     }
   }

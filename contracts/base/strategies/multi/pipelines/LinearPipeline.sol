@@ -30,6 +30,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   bytes32 internal constant _PIPES = bytes32(uint256(keccak256("eip1967.LinearPipeline.pipes")) - 1);
 
   event RebalancedAllPipes();
+  event PipeReplaced(uint pipeIndex, address fromPipe, address toPipe);
 
   function initializeLinearPipeline(address pipelineUnderlyingToken)
   public initializer {
@@ -128,20 +129,65 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @dev Adds pipe to the end of pipeline and connects it
   /// @param newPipe to be added
   function _addPipe(IPipe newPipe) internal {
-    require(newPipe.pipeline() != address(0), "LPL: New pipe not initialized");
-    require(newPipe.pipeline() == address(this), "LPL: Wrong pipe owner");
+    require(newPipe.pipeline() == address(this), "LPL: Wrong owner");
 
     _PIPES.push(address(newPipe));
     uint __pipesLength = _pipesLength();
 
     if (__pipesLength > 1) {
       IPipe prevPipe = _pipes(__pipesLength - 2);
-      require(prevPipe.outputToken() == newPipe.sourceToken(), 'LPL: Pipe incompatible with previous pipe');
+      require(prevPipe.outputToken() == newPipe.sourceToken(), 'LPL: Incompatible');
       prevPipe.setNextPipe(address(newPipe));
       newPipe.setPrevPipe(address(prevPipe));
     } else {// first pipe should have pipeline as prev pipe to send tokens on get()
       newPipe.setPrevPipe(address(this));
     }
+  }
+
+  /// @dev Replaces pipe in the pipeline
+  /// @param pipeIndex index of pipe to change
+  /// @param newPipe to be changed
+  function _replacePipe(uint pipeIndex, IPipe newPipe) internal {
+//    uint __pipesLength = _pipesLength();
+//    require(pipeIndex < __pipesLength, "LPL: Index");
+
+    IPipe currPipe = IPipe(_pipes(pipeIndex));
+    require(
+      newPipe.pipeline() == address(this) &&
+      currPipe.sourceToken() == newPipe.sourceToken() &&
+      currPipe.outputToken() == newPipe.outputToken(),
+      'LPL: Incompatible'
+    );
+
+    _pumpOut(PipeLib.MAX_AMOUNT, pipeIndex);
+
+//    IPipe lastPipe = _pipes(__pipesLength - 1);
+//    require(IERC20(lastPipe.outputToken()).balanceOf(address(lastPipe)) == 0, 'LPL: Liquidity detected' );
+
+    address prevPipe = currPipe.prevPipe();
+    newPipe.setPrevPipe(prevPipe);
+    if (prevPipe != address(0)) {
+      if (pipeIndex > 0) {
+        IPipe(prevPipe).setNextPipe(address(newPipe));
+      }
+    }
+
+    address nextPipe = currPipe.nextPipe();
+    newPipe.setNextPipe(nextPipe);
+    if (nextPipe != address(0)) {
+      IPipe(nextPipe).setPrevPipe(address(newPipe));
+    }
+
+    // pump in liquidity back from prev pipe
+    if (pipeIndex == 0) {
+      _pumpIn(PipeLib.MAX_AMOUNT);
+    } else {
+      _pumpIn(PipeLib.MAX_AMOUNT, pipeIndex - 1);
+    }
+
+//    require(IERC20(lastPipe.outputToken()).balanceOf(address(lastPipe)) > 0, 'LPL: No liquidity' );
+
+    emit PipeReplaced(pipeIndex, address(currPipe), address(newPipe));
   }
 
   /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
@@ -178,7 +224,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
   /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
   /// @param underlyingAmount in most underlying units
-  /// @param toPipeIndex pump out to pipe with this index
+  /// @param toPipeIndex pump out to previous pipe from pipe with this index (0 index pumps out to the pipeline)
   /// @return amountOut in source units
   function _pumpOut(uint256 underlyingAmount, uint256 toPipeIndex) internal returns (uint256 amountOut) {
     if (underlyingAmount == 0) {
@@ -193,7 +239,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
   /// @dev function for de-vesting, withdrawals, leaves, paybacks, from the end to PipeIndex
   /// @param sourceAmount in source units
-  /// @param toPipeIndex pump out to pipe with this index
+  /// @param toPipeIndex pump out to prev pipe of the pipe with this index
   /// @return amountOut in source units of pipe with toPipeIndex
   function _pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex) internal returns (uint256 amountOut) {
     if (sourceAmount == 0) {
@@ -276,7 +322,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   function parseRevertReason(bytes memory reason) private pure returns (uint256) {
     if (reason.length != 32) {
       if (reason.length < 68) {
-        revert('LPL: Unexpected revert');
+        revert('LPL: Unexpected');
       }
       assembly {
         reason := add(reason, 0x04)

@@ -91,6 +91,16 @@ library SlotsLib {
     }
   }
 
+  /// @dev Gets a slot array by index as uint
+  /// @notice First slot is array length, elements ordered backward in memory
+  /// @notice This is unsafe, without checking array length.
+  function uintAt(bytes32 slot, uint index) internal view returns (uint result) {
+    bytes32 pointer = bytes32(uint(slot) - 1 - index);
+    assembly {
+      result := sload(pointer)
+    }
+  }
+
   // ************* SETTERS *******************
 
   /// @dev Sets a slot with bytes32
@@ -130,6 +140,16 @@ library SlotsLib {
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
   function setAt(bytes32 slot, uint index, address value) internal {
+    bytes32 pointer = bytes32(uint(slot) - 1 - index);
+    assembly {
+      sstore(pointer, value)
+    }
+  }
+
+  /// @dev Sets a slot array at index with uint
+  /// @notice First slot is array length, elements ordered backward in memory
+  /// @notice This is unsafe, without checking array length.
+  function setAt(bytes32 slot, uint index, uint value) internal {
     bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       sstore(pointer, value)

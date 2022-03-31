@@ -17,6 +17,9 @@ import "./../../../../openzeppelin/SafeERC20.sol";
 import "./../../../../openzeppelin/Initializable.sol";
 import "../../../../openzeppelin/Math.sol";
 import "./../../../../third_party/balancer/IBVaultLocalOZ.sol";
+import "./../../../../third_party/balancer/IMerkleOrchard.sol";
+import "../../../interface/IControllableExtended.sol";
+import "../../../interface/IController.sol";
 import "../../../SlotsLib.sol";
 import "./Pipe.sol";
 
@@ -158,6 +161,21 @@ contract BalVaultPipe is Pipe {
     assembly {
       assets := tokens
     }
+  }
+
+  /// @dev Proxy function to claim balancer rewards (see https://docs.balancer.fi/products/merkle-orchard/claiming-tokens)
+  /// @param merkleOrchard IERC20 array
+  /// @param claims Claims array
+  /// @param tokens Reward tokens array
+  function claimDistributions(
+    address merkleOrchard,
+    IMerkleOrchard.Claim[] memory claims,
+    address[] memory tokens
+  ) external {
+    IController controller = IController(IControllableExtended(_pipeline()).controller());
+    require(controller.isHardWorker(msg.sender) || controller.governance() == msg.sender, 'BVP: Not HW or Gov');
+
+    IMerkleOrchard(merkleOrchard).claimDistributions(address(this), claims, tokens);
   }
 
 }

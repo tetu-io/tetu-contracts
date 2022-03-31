@@ -134,14 +134,13 @@ async function claimRewards(
       );
       return [parseInt(week.id), toWei(claimBalance), distributor, 0, proof];
     });
-    const MerkleOrchard = artifacts.require("MerkleOrchard");
     let merkleAddress, balToken, priorityFee;
-    if (network == 'polygon') {
+    if (network == 'matic') {
       merkleAddress = constants.merkleOrchardPoly;
     } else {
       merkleAddress = constants.merkleOrchardEth;
     }
-    const merkleContract = await MerkleOrchard.at(merkleAddress);
+    const merkleContract = await ethers.getContractAt("IMerkleOrchard", merkleAddress);
     const result = await type2Transaction(network, merkleContract.claimDistributions, account, claims, [token]);
     return result;
   } catch (e) {
