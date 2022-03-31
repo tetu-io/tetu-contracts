@@ -66,18 +66,16 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _ASSET_SLOT.set(_underlyingToken);
   }
 
-  //************************ MODIFIERS **************************
+  //************************ CHECK FUNCTIONS / MODIFIERS **************************
 
   /// @dev Only for Governance/Controller.
-  modifier onlyControllerOrGovernance() {
+  function _onlyControllerOrGovernance() internal view {
     require(msg.sender == address(_controller())
       || IController(_controller()).governance() == msg.sender,
       "AMB: Not Gov or Controller");
-    _;
   }
 
-  modifier updateTotalAmount() {
-    _;
+  function _updateTotalAmount() internal{
     _TOTAL_AMOUNT_OUT_SLOT.set(getTotalAmountOut());
   }
 
@@ -110,7 +108,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
 
   /// @dev HardWork function for Strategy Base implementation
   function doHardWork()
-  external override onlyNotPausedInvesting hardWorkers updateTotalAmount {
+  external override onlyNotPausedInvesting hardWorkers {
     uint balance = IERC20(_underlying()).balanceOf(address(this));
     if (balance > 0) {
       _pumpIn(balance);
@@ -125,25 +123,29 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
       _pumpIn(toSupply);
     }
     liquidateRewardDefault();
+    _updateTotalAmount();
   }
 
   /// @dev Stub function for Strategy Base implementation
-  function depositToPool(uint256 underlyingAmount) internal override updateTotalAmount {
+  function depositToPool(uint256 underlyingAmount) internal override {
     _pumpIn(underlyingAmount);
+    _updateTotalAmount();
   }
 
   /// @dev Function to withdraw from pool
-  function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override updateTotalAmount {
+  function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
     // don't claim on withdraw
     // update cached _totalAmount, and recalculate amount
     uint256 newTotalAmount = getTotalAmountOut();
     uint256 amount = underlyingAmount * newTotalAmount / _totalAmountOut();
     _pumpOutSource(amount, 0);
+    _updateTotalAmount();
   }
 
   /// @dev Emergency withdraws all most underlying from the pool
-  function emergencyWithdrawFromPool() internal override updateTotalAmount {
+  function emergencyWithdrawFromPool() internal override {
     _pumpOut(_getMostUnderlyingBalance(), 0);
+    _updateTotalAmount();
   }
 
   /// @dev Liquidate all reward tokens
@@ -244,38 +246,46 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @param recipient Recipient address
   /// @param token Token address
   function salvageFromPipeline(address recipient, address token)
-  external override onlyControllerOrGovernance updateTotalAmount {
+  external override {
+    _onlyControllerOrGovernance();
     // transfers token to this contract
     _salvageFromAllPipes(recipient, token);
     emit SalvagedFromPipeline(recipient, token);
+    _updateTotalAmount();
   }
 
-  function rebalanceAllPipes() external override hardWorkers updateTotalAmount {
+  function rebalanceAllPipes() external override hardWorkers {
     _rebalanceAllPipes();
+    _updateTotalAmount();
   }
 
   /// @dev Sets targetPercentage for MaiStablecoinPipe and re-balances all pipes
   /// @param _targetPercentage - target collateral to debt percentage
   function setTargetPercentage(uint256 _targetPercentage)
-  external override onlyControllerOrGovernance updateTotalAmount {
+  external override {
+    _onlyControllerOrGovernance();
     _maiStablecoinPipe().setTargetPercentage(_targetPercentage);
     emit SetTargetPercentage(_targetPercentage);
     _rebalanceAllPipes();
+    _updateTotalAmount();
   }
 
   /// @dev Sets maxImbalance for maiStablecoinPipe and re-balances all pipes
   /// @param _maxImbalance - maximum imbalance deviation (+/-%)
   function setMaxImbalance(uint256 _maxImbalance)
-  external override onlyControllerOrGovernance updateTotalAmount {
+  external override {
+    _onlyControllerOrGovernance();
     _maiStablecoinPipe().setMaxImbalance(_maxImbalance);
     emit SetMaxImbalance(_maxImbalance);
     _rebalanceAllPipes();
+    _updateTotalAmount();
   }
 
   /// @dev Announce a pipe replacement
   function announcePipeReplacement(uint pipeIndex, address newPipe)
-  external onlyControllerOrGovernance {
-//    require(_TIMELOCKS.uintAt(pipeIndex) == 0, "AMB: Already defined");
+  external {
+    _onlyControllerOrGovernance();
+    require(_TIMELOCKS.uintAt(pipeIndex) == 0, "AMB: Already defined");
     _TIMELOCKS.setAt(pipeIndex, block.timestamp + _TIME_LOCK);
     _TIMELOCKS.setAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT, newPipe);
     emit PipeReplaceAnnounced(pipeIndex, newPipe);
@@ -285,19 +295,17 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @param pipeIndex - index of the pipe to replace
   /// @param newPipe - address of the new pipe
   function replacePipe(uint pipeIndex, address newPipe)
-  external onlyControllerOrGovernance updateTotalAmount {
+  external {
+    _onlyControllerOrGovernance();
     uint timelock = _TIMELOCKS.uintAt(pipeIndex);
-//    require(timelock != 0 && timelock < block.timestamp, "AMB: Too early");
-//    require(_TIMELOCK_PIPES.addressAt(pipeIndex) == newPipe, "AMB: Wrong address");
-    require(
-      (timelock != 0 && timelock < block.timestamp) &&
-      (_TIMELOCKS.addressAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT) == newPipe)
-    );
+    require(timelock != 0 && timelock < block.timestamp, "AMB: Too early");
+    require(_TIMELOCKS.addressAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT) == newPipe, "AMB: Wrong address");
 
     _replacePipe(pipeIndex, IPipe(newPipe));
 
     _TIMELOCKS.setAt(pipeIndex, 0);
 //    _TIMELOCKS.setAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT, 0);
+    _updateTotalAmount();
   }
 
   // !!! decrease gap size after adding variables!!!
