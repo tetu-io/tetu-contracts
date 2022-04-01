@@ -12,46 +12,43 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interface/ISmartVault.sol";
-import "./Controllable.sol";
+import "./ControllableV2.sol";
 import "./VaultControllerStorage.sol";
 import "../interface/IAnnouncer.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/IERC20.sol";
 
 /// @title Keep vaults settings and provide interface for vault actions
 ///        Governance should be a Multi-Sig Wallet
 /// @dev Use with TetuProxy
 /// @author belbix
-contract VaultController is Initializable, Controllable, VaultControllerStorage {
+contract VaultController is Initializable, ControllableV2, VaultControllerStorage {
   using SafeERC20 for IERC20;
-  using SafeMath for uint256;
 
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.3.0";
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
   ///      Initialize Controllable with sender address
   function initialize(address _controller) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
     VaultControllerStorage.initializeVaultControllerStorage();
   }
 
   /// @dev Operations allowed only for Governance address
   modifier onlyGovernance() {
-    require(isGovernance(msg.sender), "not governance");
+    require(_isGovernance(msg.sender), "not governance");
     _;
   }
 
 
   /// @dev Operation should be announced (exist in timeLockSchedule map) or new value
   modifier timeLock(bytes32 opHash, IAnnouncer.TimeLockOpCodes opCode, bool isEmptyValue, address target) {
-    address announcer = IController(controller()).announcer();
+    address announcer = IController(_controller()).announcer();
     // empty values setup without time-lock
     if (!isEmptyValue) {
       require(announcer != address(0), "zero announcer");

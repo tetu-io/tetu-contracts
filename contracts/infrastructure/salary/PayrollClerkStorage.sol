@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import "../../base/governance/Controllable.sol";
 
 /// @title Storage for any PayrollClerk variables

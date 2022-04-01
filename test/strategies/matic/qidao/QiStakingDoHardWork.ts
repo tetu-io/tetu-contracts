@@ -10,7 +10,7 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 
-export class QiStakeStrategyTest extends DoHardWorkLoopBase {
+export class QiStakingDoHardWork extends DoHardWorkLoopBase {
 
   public async loopStartActions(i: number) {
     await super.loopStartActions(i);

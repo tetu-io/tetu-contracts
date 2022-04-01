@@ -12,9 +12,6 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/quick/IDragonLair.sol";
 import "../../../third_party/quick/IStakingDualRewards.sol";
@@ -22,7 +19,6 @@ import "../../../third_party/quick/IStakingDualRewards.sol";
 /// @title Abstract contract for Quick Swap strategy implementation
 /// @author belbix
 abstract contract QuickStrategyDualBase is StrategyBase {
-  using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************

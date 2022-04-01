@@ -11,8 +11,7 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {IStrategy, SmartVault, SmartVault__factory, StrategyQiStaking} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {QiStakeStrategyTest} from "./QiStakingDoHardWork";
-import {utils} from "ethers";
+import {QiStakingDoHardWork} from "./QiStakingDoHardWork";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -101,7 +100,7 @@ describe('Qi staking tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new QiStakeStrategyTest(
+    return new QiStakingDoHardWork(
       _signer,
       _user,
       _core,

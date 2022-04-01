@@ -21,7 +21,6 @@ import "../../../base/strategies/beethoven/BeethovenFDBase.sol";
   It requires to add extra exchange rate logic
 */
 contract StrategyBeethovenFD is BeethovenFDBase {
-  using SafeMath for uint;
   using SafeERC20 for IERC20;
 
   // MASTER_CHEF

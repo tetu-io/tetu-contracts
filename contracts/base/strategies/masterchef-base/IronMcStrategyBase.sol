@@ -12,16 +12,12 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/iron/IIronChef.sol";
 
 /// @title Abstract contract for Iron strategy implementation
 /// @author belbix
 abstract contract IronMcStrategyBase is StrategyBase {
-  using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -29,7 +25,7 @@ abstract contract IronMcStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "IronStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   uint256 private constant _BUY_BACK_RATIO = 10000;
 

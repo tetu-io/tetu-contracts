@@ -2,7 +2,6 @@ import {ethers, web3} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Contract, ContractFactory, utils} from "ethers";
 import {
-  AaveAmPipe,
   Announcer,
   AutoRewarder,
   Bookkeeper,
@@ -48,9 +47,9 @@ import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
-import {TimeUtils} from "../../test/TimeUtils";
 import {readFileSync} from "fs";
 import {Libraries} from "hardhat-deploy/dist/types";
+import {EthAddresses} from "../addresses/EthAddresses";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -150,15 +149,14 @@ export class DeployerUtils {
     await instance.deployed();
 
     const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
-    console.log('Receipt', receipt.contractAddress)
 
-    Misc.printDuration(name + ' deployed ' + receipt.contractAddress, start);
+    Misc.printDuration(`${name} deployed ${receipt.contractAddress}, gas used: ${receipt.gasUsed.toString()}`, start);
     return _factory.attach(receipt.contractAddress);
   }
 
   public static async deployTetuProxyControlled<T extends ContractFactory>(
-      signer: SignerWithAddress,
-      logicContractName: string,
+    signer: SignerWithAddress,
+    logicContractName: string,
   ) {
     const logic = await DeployerUtils.deployContract(signer, logicContractName);
     await DeployerUtils.wait(5);
@@ -253,6 +251,8 @@ export class DeployerUtils {
       return DeployerUtils.deployPriceCalculatorMatic(signer, controller, wait);
     } else if (net.chainId === 250) {
       return DeployerUtils.deployPriceCalculatorFantom(signer, controller, wait);
+    } else if (net.chainId === 1) {
+      return DeployerUtils.deployPriceCalculatorEthereum(signer, controller, wait);
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -317,6 +317,27 @@ export class DeployerUtils {
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.setReplacementTokens(FtmAddresses.renCRV_TOKEN, FtmAddresses.WBTC_TOKEN);
     await calculator.setReplacementTokens(FtmAddresses.g3CRV_TOKEN, FtmAddresses.USDC_TOKEN);
+
+    expect(await calculator.keyTokensSize()).is.not.eq(0);
+    return [calculator, proxy, logic];
+  }
+
+  public static async deployPriceCalculatorEthereum(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const calculator = logic.attach(proxy.address) as PriceCalculator;
+    await calculator.initialize(controller);
+
+    await RunHelper.runAndWait(() => calculator.addKeyTokens([
+      EthAddresses.USDC_TOKEN,
+      EthAddresses.WETH_TOKEN,
+      EthAddresses.DAI_TOKEN,
+      EthAddresses.USDT_TOKEN,
+      EthAddresses.WBTC_TOKEN,
+    ]), true, wait);
+
+    await RunHelper.runAndWait(() => calculator.setDefaultToken(EthAddresses.USDC_TOKEN), true, wait);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(EthAddresses.UNISWAP_FACTORY, "Uniswap V2"), true, wait);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -1019,6 +1040,8 @@ export class DeployerUtils {
       return MaticAddresses.QUICK_FACTORY;
     } else if (net.chainId === 250) {
       return FtmAddresses.SPOOKY_SWAP_FACTORY;
+    } else if (net.chainId === 1) {
+      return EthAddresses.UNISWAP_FACTORY;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1030,6 +1053,8 @@ export class DeployerUtils {
       return MaticAddresses.USDC_TOKEN;
     } else if (net.chainId === 250) {
       return FtmAddresses.USDC_TOKEN;
+    } else if (net.chainId === 1) {
+      return EthAddresses.USDC_TOKEN;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1041,6 +1066,8 @@ export class DeployerUtils {
       return MaticAddresses.WMATIC_TOKEN;
     } else if (net.chainId === 250) {
       return FtmAddresses.WFTM_TOKEN;
+    } else if (net.chainId === 1) {
+      return EthAddresses.WETH_TOKEN;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1052,6 +1079,8 @@ export class DeployerUtils {
       return MaticAddresses.TETU_TOKEN;
     } else if (net.chainId === 250) {
       return FtmAddresses.TETU_TOKEN;
+    } else if (net.chainId === 1) {
+      return EthAddresses.TETU_TOKEN;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1063,6 +1092,8 @@ export class DeployerUtils {
       return MaticAddresses.BLUE_CHIPS;
     } else if (net.chainId === 250) {
       return FtmAddresses.BLUE_CHIPS;
+    } else if (net.chainId === 1) {
+      return EthAddresses.BLUE_CHIPS;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1074,6 +1105,8 @@ export class DeployerUtils {
       return MaticAddresses.GOV_ADDRESS;
     } else if (net.chainId === 250) {
       return FtmAddresses.GOV_ADDRESS;
+    } else if (net.chainId === 1) {
+      return EthAddresses.GOV_ADDRESS;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1085,6 +1118,8 @@ export class DeployerUtils {
       return MaticAddresses.BLUE_CHIPS.has(address.toLowerCase())
     } else if (net.chainId === 250) {
       return FtmAddresses.BLUE_CHIPS.has(address.toLowerCase())
+    } else if (net.chainId === 1) {
+      return EthAddresses.BLUE_CHIPS.has(address.toLowerCase())
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1096,17 +1131,8 @@ export class DeployerUtils {
       return MaticAddresses.getRouterByFactory(_factory);
     } else if (net.chainId === 250) {
       return FtmAddresses.getRouterByFactory(_factory);
-    } else {
-      throw Error('No config for ' + net.chainId);
-    }
-  }
-
-  public static async getRouterName(_factory: string) {
-    const net = await ethers.provider.getNetwork();
-    if (net.chainId === 137) {
-      return MaticAddresses.getRouterName(_factory);
-    } else if (net.chainId === 250) {
-      return FtmAddresses.getRouterName(_factory);
+    } else if (net.chainId === 1) {
+      return EthAddresses.getRouterByFactory(_factory);
     } else {
       throw Error('No config for ' + net.chainId);
     }

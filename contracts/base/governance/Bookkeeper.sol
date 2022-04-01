@@ -12,10 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "./ControllableV2.sol";
 import "../interface/IBookkeeper.sol";
-import "./Controllable.sol";
 import "../interface/ISmartVault.sol";
 import "../interface/IStrategy.sol";
 import "../interface/IStrategySplitter.sol";
@@ -23,12 +21,11 @@ import "../interface/IStrategySplitter.sol";
 /// @title Contract for holding statistical info and doesn't affect any funds.
 /// @dev Only non critical functions. Use with TetuProxy
 /// @author belbix
-contract Bookkeeper is IBookkeeper, Initializable, Controllable {
-  using SafeMathUpgradeable for uint256;
+contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.1.5";
+  string public constant VERSION = "1.2.0";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault
@@ -84,25 +81,38 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @dev Use it only once after first logic setup
   /// @param _controller Controller address
   function initialize(address _controller) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
   }
 
   /// @dev Only registered strategy allowed
   modifier onlyStrategy() {
-    require(IController(controller()).strategies(msg.sender), "B: Only exist strategy");
+    require(IController(_controller()).strategies(msg.sender), "B: Only exist strategy");
+    _;
+  }
+
+  /// @dev Allow operation only for Controller
+  modifier onlyController() {
+    require(_controller() == msg.sender, "B: Not controller");
+    _;
+  }
+
+
+  /// @dev Allow operation only for Controller or Governance
+  modifier onlyControllerOrGovernance() {
+    require(_isController(msg.sender) || _isGovernance(msg.sender), "B: Not controller or gov");
     _;
   }
 
   /// @dev Only FeeRewardForwarder contract allowed
   modifier onlyFeeRewardForwarderOrStrategy() {
-    require(IController(controller()).feeRewardForwarder() == msg.sender
-      || IController(controller()).strategies(msg.sender), "B: Only exist forwarder or strategy");
+    require(IController(_controller()).feeRewardForwarder() == msg.sender
+      || IController(_controller()).strategies(msg.sender), "B: Only exist forwarder or strategy");
     _;
   }
 
   /// @dev Only registered vault allowed
   modifier onlyVault() {
-    require(IController(controller()).vaults(msg.sender), "B: Only exist vault");
+    require(IController(_controller()).vaults(msg.sender), "B: Only exist vault");
     _;
   }
 
@@ -126,7 +136,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @dev It should represent 100% of earned rewards including all fees.
   /// @param _targetTokenAmount Earned amount
   function registerStrategyEarned(uint256 _targetTokenAmount) external override onlyStrategy {
-    targetTokenEarned[msg.sender] = targetTokenEarned[msg.sender].add(_targetTokenAmount);
+    targetTokenEarned[msg.sender] = targetTokenEarned[msg.sender] + _targetTokenAmount;
 
     _lastHardWork[msg.sender] = HardWork(
       msg.sender,
@@ -140,7 +150,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @notice Only FeeRewardForwarder action. Save Fund Token earned value for given token
   /// @param _fundTokenAmount Earned amount
   function registerFundKeeperEarned(address _token, uint256 _fundTokenAmount) external override onlyFeeRewardForwarderOrStrategy {
-    fundKeeperEarned[_token] = fundKeeperEarned[_token].add(_fundTokenAmount);
+    fundKeeperEarned[_token] = fundKeeperEarned[_token] + _fundTokenAmount;
     emit RegisterFundKeeperEarned(_token, _fundTokenAmount);
   }
 
@@ -218,19 +228,19 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   function registerUserAction(address _user, uint256 _amount, bool _deposit)
   external override onlyVault {
     if (vaultUsersBalances[msg.sender][_user] == 0) {
-      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].add(1);
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender] + 1;
     }
     if (_deposit) {
-      vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].add(_amount);
+      vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user] + _amount;
     } else {
       // avoid overflow if we missed something
       // in this unreal case better do nothing
       if (vaultUsersBalances[msg.sender][_user] >= _amount) {
-        vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user].sub(_amount);
+        vaultUsersBalances[msg.sender][_user] = vaultUsersBalances[msg.sender][_user] - _amount;
       }
     }
     if (vaultUsersBalances[msg.sender][_user] == 0) {
-      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].sub(1);
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender] - 1;
     }
     emit RegisterUserAction(_user, _amount, _deposit);
   }
@@ -252,18 +262,18 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
     }
 
     // decrease sender balance
-    vaultUsersBalances[msg.sender][from] = vaultUsersBalances[msg.sender][from].sub(amount);
+    vaultUsersBalances[msg.sender][from] = vaultUsersBalances[msg.sender][from] - amount;
 
     // if recipient didn't have balance - increase user quantity
     if (vaultUsersBalances[msg.sender][to] == 0) {
-      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].add(1);
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender] + 1;
     }
     // increase recipient balance
-    vaultUsersBalances[msg.sender][to] = vaultUsersBalances[msg.sender][to].add(amount);
+    vaultUsersBalances[msg.sender][to] = vaultUsersBalances[msg.sender][to] + amount;
 
     // if sender sent all amount decrease user quantity
     if (vaultUsersBalances[msg.sender][from] == 0) {
-      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender].sub(1);
+      vaultUsersQuantity[msg.sender] = vaultUsersQuantity[msg.sender] - 1;
     }
   }
 
@@ -274,7 +284,7 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @param _amount Claimed amount
   function registerUserEarned(address _user, address _vault, address _rt, uint256 _amount)
   external override onlyVault {
-    userEarned[_user][_vault][_rt] = userEarned[_user][_vault][_rt].add(_amount);
+    userEarned[_user][_vault][_rt] = userEarned[_user][_vault][_rt] + _amount;
     emit RegisterUserEarned(_user, _vault, _rt, _amount);
   }
 
@@ -322,14 +332,14 @@ contract Bookkeeper is IBookkeeper, Initializable, Controllable {
   /// @param _value Vault address
   /// @return true if Vault registered
   function isVaultExist(address _value) internal view returns (bool) {
-    return IController(controller()).isValidVault(_value);
+    return IController(_controller()).isValidVault(_value);
   }
 
   /// @notice Return true for registered Strategy
   /// @param _value Strategy address
   /// @return true if Strategy registered
   function isStrategyExist(address _value) internal view returns (bool) {
-    return IController(controller()).isValidStrategy(_value);
+    return IController(_controller()).isValidStrategy(_value);
   }
 
   /// @notice Governance action. Remove given Vault from vaults array

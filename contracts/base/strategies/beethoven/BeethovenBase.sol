@@ -19,7 +19,6 @@ import "../../../third_party/beethoven/IBeethovenVault.sol";
 /// @title Abstract contract for Beethoven strategy implementation
 /// @author OlegN
 abstract contract BeethovenBase is StrategyBase {
-  using SafeMath for uint;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************

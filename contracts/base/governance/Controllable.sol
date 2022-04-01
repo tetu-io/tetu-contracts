@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../openzeppelin/Initializable.sol";
 import "../interface/IController.sol";
 import "../interface/IControllable.sol";
 
