@@ -86,6 +86,7 @@ describe('BAL staking tests', async () => {
         await depositor.initialize(core.controller.address);
         await depositor.setDestinationVault(vaultAddress);
         await depositor.setAnotherChainRecipient(signer.address);
+        await core.controller.setPureRewardConsumers([depositor.address], true);
 
         const strategy = await DeployerUtils.deployStrategyProxy(
           signer,
