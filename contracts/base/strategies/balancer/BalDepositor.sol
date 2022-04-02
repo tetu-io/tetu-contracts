@@ -28,6 +28,9 @@ contract BalDepositor is ControllableV2 {
 
   // ----- CONSTANTS -------
 
+  /// @notice Version of the contract
+  /// @dev Should be incremented when contract changed
+  string public constant VERSION = "1.0.0";
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   address public constant BAL = 0xba100000625a3754423978a60c9317c58a424e3D;
   address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
@@ -38,12 +41,17 @@ contract BalDepositor is ControllableV2 {
   bytes32 internal constant _DESTINATION_VAULT_KEY = bytes32(uint256(keccak256("depositor.destination_vault")) - 1);
   bytes32 internal constant _ANOTHER_CHAIN_RECIPIENT_KEY = bytes32(uint256(keccak256("depositor.another_chain_recipient")) - 1);
 
+  // ----- VARIABLES -----
+
   IAsset[] private _assets;
 
   // ----- EVENTS -------
 
   event DestinationVaultChanged(address oldValue, address newValue);
   event AnotherChainRecipientChanged(address oldValue, address newValue);
+  event Deposited(uint balAmount, uint wethAmount, uint bptAmount);
+  event Claimed(uint balAmount);
+  event EthReceived(address sender, uint amount);
 
   // ----- INITIALIZER -------
 
@@ -60,11 +68,20 @@ contract BalDepositor is ControllableV2 {
     _assets.push(IAsset(WETH));
   }
 
+  modifier onlyHardworkerOrGov() {
+    require(IController(_controller()).isHardWorker(msg.sender)
+      || _isGovernance(msg.sender), "Not hardworker or gov");
+    _;
+  }
+
+  modifier onlyGov() {
+    require(_isGovernance(msg.sender), "Not gov");
+    _;
+  }
 
   // ----- GOV ACTIONS -------
 
-  function setDestinationVault(address value_) external {
-    require(_isGovernance(msg.sender), "Not gov");
+  function setDestinationVault(address value_) external onlyGov {
     address oldValue = _DESTINATION_VAULT_KEY.getAddress();
     IERC20(BPT_BAL_WETH).safeApprove(oldValue, 0);
     emit DestinationVaultChanged(oldValue, value_);
@@ -73,8 +90,7 @@ contract BalDepositor is ControllableV2 {
     IERC20(BPT_BAL_WETH).safeApprove(value_, type(uint).max);
   }
 
-  function setAnotherChainRecipient(address value_) external {
-    require(_isGovernance(msg.sender), "Not gov");
+  function setAnotherChainRecipient(address value_) external onlyGov {
     address oldValue = _ANOTHER_CHAIN_RECIPIENT_KEY.getAddress();
     emit AnotherChainRecipientChanged(oldValue, value_);
     _ANOTHER_CHAIN_RECIPIENT_KEY.set(value_);
@@ -82,8 +98,9 @@ contract BalDepositor is ControllableV2 {
 
   // ----- HARDWORKER ACTIONS -------
 
-  function depositBridgedAssets() external {
-    require(IController(_controller()).isHardWorker(msg.sender), "Not hardworker");
+  function depositBridgedAssets(bytes calldata bridgeData) external onlyHardworkerOrGov {
+
+    IRootChainManager(POLYGON_BRIDGE).exit(bridgeData);
 
     uint balBalance = IERC20(BAL).balanceOf(address(this));
     uint wethBalance = IERC20(WETH).balanceOf(address(this));
@@ -118,10 +135,10 @@ contract BalDepositor is ControllableV2 {
     uint bptBalance = IERC20(BPT_BAL_WETH).balanceOf(address(this));
 
     ISmartVault(_DESTINATION_VAULT_KEY.getAddress()).depositAndInvest(bptBalance);
+    emit Deposited(balBalance, wethBalance, bptBalance);
   }
 
-  function claimAndMoveToAnotherChain() external {
-    require(IController(_controller()).isHardWorker(msg.sender) || _isGovernance(msg.sender), "Not hardworker or gov");
+  function claimAndMoveToAnotherChain() external onlyHardworkerOrGov {
 
     address strategy = ISmartVault(_DESTINATION_VAULT_KEY.getAddress()).strategy();
     uint balBalanceBefore = IERC20(BAL).balanceOf(address(this));
@@ -138,6 +155,11 @@ contract BalDepositor is ControllableV2 {
       BAL,
       depositData
     );
+    emit Claimed(balBalance);
+  }
+
+  receive() external payable {
+    emit EthReceived(msg.sender, msg.value);
   }
 
 }

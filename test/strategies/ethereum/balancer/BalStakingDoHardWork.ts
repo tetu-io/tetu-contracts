@@ -58,7 +58,7 @@ export class BalStakingDoHardWork extends DoHardWorkLoopBase {
     await TokenUtils.transfer(EthAddresses.BAL_TOKEN, this.signer, depositorAdr, balBalance.toString());
     await TokenUtils.transfer(EthAddresses.WETH_TOKEN, this.signer, depositorAdr, ethBalance.toString());
 
-    await depositor.depositBridgedAssets();
+    await depositor.depositBridgedAssets('');
 
     const depositorBalance = await this.vault.underlyingBalanceWithInvestmentForHolder(depositor.address);
     expect(+utils.formatUnits(depositorBalance)).is.approximately(+utils.formatUnits(this.userDeposited.div(2)), +utils.formatUnits(this.userDeposited.div(2)) * 0.00001);

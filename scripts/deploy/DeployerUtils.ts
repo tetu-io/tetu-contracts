@@ -67,7 +67,8 @@ const argv = require('yargs/yargs')()
   }).argv;
 
 const libraries = new Map<string, string>([
-  ['SmartVault', 'VaultLibrary']
+  ['SmartVault', 'VaultLibrary'],
+  ['SmartVaultV110', 'VaultLibrary']
 ]);
 
 export class DeployerUtils {

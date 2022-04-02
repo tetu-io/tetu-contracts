@@ -13,6 +13,7 @@
 pragma solidity 0.8.4;
 
 import "../base/interface/IControllable.sol";
+import "../base/interface/IControllableExtended.sol";
 import "./UpgradeableProxy.sol";
 import "./interface/ITetuProxy.sol";
 
@@ -22,6 +23,8 @@ import "./interface/ITetuProxy.sol";
 contract TetuProxyControlled is UpgradeableProxy, ITetuProxy {
 
   constructor(address _logic) UpgradeableProxy(_logic) {
+    //make sure that given logic is controllable and not inited
+    require(IControllableExtended(_logic).created() == 0);
   }
 
   /// @notice Upgrade contract logic
