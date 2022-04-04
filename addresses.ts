@@ -7,13 +7,15 @@ import {RinkebyToolsAddresses} from "./addresses_tools_rinkeby";
 import {FtmCoreAddresses} from "./addresses_core_ftm";
 import {FtmToolsAddresses} from "./addresses_tools_ftm";
 import {EthereumToolsAddresses} from "./addresses_tools_ethereum";
+import {EthereumCoreAddresses} from "./addresses_core_ethereum";
 
 export class Addresses {
 
   public static CORE = new Map<string, CoreAddresses>([
     ['137', MaticCoreAddresses.ADDRESSES],
     ['250', FtmCoreAddresses.ADDRESSES],
-    ['4', RinkebyCoreAddress.ADDRESSES]
+    ['4', RinkebyCoreAddress.ADDRESSES],
+    ['1', EthereumCoreAddresses.ADDRESSES],
   ]);
 
   public static TOOLS = new Map<string, ToolsAddresses>([

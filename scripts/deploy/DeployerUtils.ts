@@ -151,7 +151,7 @@ export class DeployerUtils {
 
     const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
 
-    Misc.printDuration(`${name} deployed ${receipt.contractAddress}, gas used: ${receipt.gasUsed.toString()}`, start);
+    Misc.printDuration(`${name} deployed ${receipt.contractAddress} gas used: ${receipt.gasUsed.toString()}`, start);
     return _factory.attach(receipt.contractAddress);
   }
 

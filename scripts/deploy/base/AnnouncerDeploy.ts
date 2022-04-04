@@ -6,7 +6,8 @@ async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
-  const data = await DeployerUtils.deployForwarderV2(signer, core.controller);
+  const data = await DeployerUtils.deployAnnouncer(signer, core.controller, 60 * 60 * 48);
+
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(data[2].address);

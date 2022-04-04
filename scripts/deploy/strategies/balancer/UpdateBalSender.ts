@@ -1,17 +1,15 @@
-import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-
+import {DeployerUtils} from "../../DeployerUtils";
+import {BalSender} from "../../../../typechain";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
 
-  const data = await DeployerUtils.deployForwarderV2(signer, core.controller);
+  const logic = await DeployerUtils.deployContract(signer, "BalSender");
 
   await DeployerUtils.wait(5);
-  await DeployerUtils.verify(data[2].address);
-  await DeployerUtils.verifyWithArgs(data[0].address, [data[2].address]);
-  await DeployerUtils.verifyProxy(data[0].address);
+  await DeployerUtils.verify(logic.address);
 }
 
 main()

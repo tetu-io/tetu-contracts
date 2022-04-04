@@ -49,8 +49,8 @@ contract BalSender is ControllableV2 {
   ) external initializer {
     ControllableV2.initializeControllable(controller_);
 
-    _assets.push(IAsset(BAL));
     _assets.push(IAsset(WETH));
+    _assets.push(IAsset(BAL));
   }
 
   modifier onlyHardworkerOrGov() {
@@ -75,6 +75,9 @@ contract BalSender is ControllableV2 {
     // empty array, no checking slippage
     uint[] memory minAmountsOut = new uint[](2);
     bytes memory userData = abi.encode(1, bptBalance);
+
+    IERC20(BAL_ETH_POOL).safeApprove(BALANCER_VAULT, 0);
+    IERC20(BAL_ETH_POOL).safeApprove(BALANCER_VAULT, bptBalance);
 
     IBVault(BALANCER_VAULT).exitPool(
       BAL_ETH_POOL_ID,

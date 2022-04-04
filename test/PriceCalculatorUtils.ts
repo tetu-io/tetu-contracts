@@ -38,13 +38,13 @@ export class PriceCalculatorUtils {
     } else {
       throw Error('Wrong network ' + net.chainId);
     }
-    if (network !== '') {
-      const response = await axios.get(`https://api.tetu.io/api/v1/price/longTTL/?token=${token}&network=${network}`);
-      log.info('price for', token, response?.data?.result);
-      if (response?.data?.result) {
-        return BigNumber.from(response?.data?.result);
-      }
-    }
+    // if (network !== '') {
+    //   const response = await axios.get(`https://api.tetu.io/api/v1/price/longTTL/?token=${token}&network=${network}`);
+    //   log.info('price for', token, response?.data?.result);
+    //   if (response?.data?.result) {
+    //     return BigNumber.from(response?.data?.result);
+    //   }
+    // }
     if (calculator == null) {
       const tools = await DeployerUtils.getToolsAddresses();
       calculator = PriceCalculator__factory.connect(tools.calculator, ethers.provider);
