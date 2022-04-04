@@ -14,7 +14,6 @@ pragma solidity 0.8.4;
 
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
-import "./../../../../openzeppelin/Initializable.sol";
 import "../../../../openzeppelin/Math.sol";
 import "./../../../../third_party/balancer/IBVaultLocalOZ.sol";
 import "./../../../../third_party/balancer/IMerkleOrchard.sol";
@@ -27,7 +26,7 @@ import "./Pipe.sol";
 /// @author bogdoslav
 contract BalVaultPipe is Pipe {
   using SafeERC20 for IERC20;
-  using SlotsLib for bytes32;
+  using SlotsLib for uint;
 
   struct BalVaultPipeData {
     address sourceToken;
@@ -38,11 +37,11 @@ contract BalVaultPipe is Pipe {
     address rewardToken;
   }
 
-  bytes32 internal constant _VAULT_SLOT       = bytes32(uint256(keccak256("eip1967.BalVaultPipe.vault")) - 1);
-  bytes32 internal constant _POOL_ID_SLOT     = bytes32(uint256(keccak256("eip1967.BalVaultPipe.poolID")) - 1);
-  bytes32 internal constant _TOKEN_INDEX_SLOT = bytes32(uint256(keccak256("eip1967.BalVaultPipe.tokenIndex")) - 1);
+  uint internal constant _VAULT_SLOT       = uint(keccak256("eip1967.BalVaultPipe.vault")) - 1;
+  uint internal constant _POOL_ID_SLOT     = uint(keccak256("eip1967.BalVaultPipe.poolID")) - 1;
+  uint internal constant _TOKEN_INDEX_SLOT = uint(keccak256("eip1967.BalVaultPipe.tokenIndex")) - 1;
 
-  function initialize(BalVaultPipeData memory _d) public initializer {
+  function initialize(BalVaultPipeData memory _d) public {
     require(_d.vault != address(0), "Zero vault");
     require(_d.rewardToken != address(0), "Zero reward token");
 

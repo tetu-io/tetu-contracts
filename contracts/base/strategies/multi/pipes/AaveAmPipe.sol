@@ -14,7 +14,6 @@ pragma solidity 0.8.4;
 
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
-import "./../../../../openzeppelin/Initializable.sol";
 import "./../../../../third_party/aave/ILendingPool.sol";
 import "../../../SlotsLib.sol";
 import "./Pipe.sol";
@@ -23,7 +22,7 @@ import "./Pipe.sol";
 /// @author bogdoslav
 contract AaveAmPipe is Pipe {
   using SafeERC20 for IERC20;
-  using SlotsLib for bytes32;
+  using SlotsLib for uint;
 
   struct AaveAmPipeData {
     address pool;
@@ -32,9 +31,9 @@ contract AaveAmPipe is Pipe {
     address rewardToken;
   }
 
-  bytes32 internal constant _POOL_SLOT = bytes32(uint256(keccak256("eip1967.AaveAmPipe.pool")) - 1);
+  uint internal constant _POOL_SLOT = uint(keccak256("eip1967.AaveAmPipe.pool")) - 1;
 
-  function initialize(AaveAmPipeData memory _d) public initializer {
+  function initialize(AaveAmPipeData memory _d) public {
     require(_d.pool != address(0), "Zero pool");
     require(_d.rewardToken != address(0), "Zero reward token");
 

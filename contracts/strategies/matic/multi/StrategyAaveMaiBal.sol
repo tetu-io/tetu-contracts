@@ -17,7 +17,7 @@ import "../../../base/SlotsLib.sol";
 /// @title AAVE->MAI->BAL Multi Strategy Polygon Implementation
 /// @author belbix, bogdoslav
 contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
-  using SlotsLib for bytes32;
+  using SlotsLib for uint;
 
   address private constant _WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address private constant _QI = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4;

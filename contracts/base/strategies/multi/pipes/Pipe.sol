@@ -23,31 +23,31 @@ import "./PipeLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-abstract contract Pipe is IPipe, Initializable, ControllableV2 {
+abstract contract Pipe is IPipe, ControllableV2 {
   using SafeERC20 for IERC20;
-  using SlotsLib for bytes32;
+  using SlotsLib for uint;
 
   /// @notice Address of the master pipeline
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
-  bytes32 internal constant _PIPELINE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.pipeline")) - 1);
+  uint internal constant _PIPELINE_SLOT = uint256(keccak256("eip1967.Pipe.pipeline")) - 1;
 
   /// @notice Pipe name for statistical purposes only
   /// @dev initialize it in initializer
-  bytes32 internal constant _NAME_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.name")) - 1);
+  uint internal constant _NAME_SLOT = uint256(keccak256("eip1967.Pipe.name")) - 1;
 
   /// @notice Source token address type
   /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
-  bytes32 internal constant _SOURCE_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.sourceToken")) - 1);
+  uint internal constant _SOURCE_TOKEN_SLOT = uint256(keccak256("eip1967.Pipe.sourceToken")) - 1;
 
   /// @notice Output token address type
   /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
-  bytes32 internal constant _OUTPUT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.outputToken")) - 1);
+  uint internal constant _OUTPUT_TOKEN_SLOT = uint256(keccak256("eip1967.Pipe.outputToken")) - 1;
 
   /// @notice Next pipe in pipeline
-  bytes32 internal constant _PREV_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.prevPipe")) - 1);
+  uint internal constant _PREV_PIPE_SLOT = uint256(keccak256("eip1967.Pipe.prevPipe")) - 1;
 
   /// @notice Previous pipe in pipeline
-  bytes32 internal constant _NEXT_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.nextPipe")) - 1);
+  uint internal constant _NEXT_PIPE_SLOT = uint256(keccak256("eip1967.Pipe.nextPipe")) - 1;
 
   /// @notice Reward token address for claiming
   /// @dev initialize it in initializer
@@ -60,7 +60,13 @@ abstract contract Pipe is IPipe, Initializable, ControllableV2 {
     string memory __name,
     address __sourceToken,
     address __outputToken
-  ) internal initializer {
+  ) internal  {
+    require(
+      _SOURCE_TOKEN_SLOT.getUint() == 0 &&
+      _OUTPUT_TOKEN_SLOT.getUint() == 0,
+      'Pipe: Already initialized'
+    );
+
     require(__sourceToken != address(0), "Zero source token");
     require(__outputToken != address(0), "Zero output token");
 
