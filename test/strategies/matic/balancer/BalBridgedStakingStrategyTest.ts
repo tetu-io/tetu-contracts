@@ -8,8 +8,8 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {
-  BalDepositor__factory, BalSender__factory,
-  IStrategy, IVotingEscrow__factory,
+  BalSender__factory,
+  IStrategy,
   SmartVault,
   SmartVault__factory,
   StrategyBalStaking
