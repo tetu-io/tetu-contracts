@@ -35,7 +35,7 @@ contract SmartVaultV110 is Initializable, ERC20Upgradeable, VaultStorageV110, Co
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.10.2";
+  string public constant VERSION = "1.10.1";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;

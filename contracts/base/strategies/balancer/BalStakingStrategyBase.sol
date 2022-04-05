@@ -17,7 +17,7 @@ import "../../../third_party/IERC20Extended.sol";
 import "../../../third_party/IDelegation.sol";
 import "../../SlotsLib.sol";
 import "../../../third_party/curve/IVotingEscrow.sol";
-import "../../../third_party/curve/IVotingEscrowDelegation.sol";
+import "../../../third_party/curve/IGaugeController.sol";
 
 /// @title Base contract for BAL stake into veBAL pool
 /// @author belbix
@@ -35,6 +35,8 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
   ///      Probably we will change it later
   uint256 private constant _BUY_BACK_RATIO = 0;
 
+  address public constant GAUGE_CONTROLLER = 0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD;
+  address public constant VE_DELEGATION = 0x2E96068b3D5B5BAE3D7515da4A1D2E52d08A2647;
   uint256 private constant _MAX_LOCK = 365 * 86400;
   uint256 private constant _WEEK = 7 * 86400;
   bytes32 internal constant _VE_BAL_KEY = bytes32(uint256(keccak256("s.ve_bal")) - 1);
@@ -66,6 +68,7 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
 
   // --------------------------------------------
 
+  /// @dev Contract for bridge assets between networks
   function depositor() external view returns (address){
     return _DEPOSITOR_KEY.getAddress();
   }
@@ -81,7 +84,19 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
   }
 
 
-  // todo delegate
+  /// @notice Allocate voting power for changing pool weights
+  /// @param _gauges Gauges which _users votes for
+  /// @param _userWeights Weights for gauges in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
+  function voteForManyGaugeWeights(address[] _gauges, uint[] _userWeights) external {
+    require(_isGovernance(msg.sender), "Not gov");
+    require(_gauges.length == _userWeights, "Wrong input");
+    IGaugeController(GAUGE_CONTROLLER).vote_for_many_gauge_weights(_gauges, _userWeights);
+  }
+
+  //***********************************************************
+  // We assume extend control logic in future.
+  // At the current stage only voting implemented.
+  //***********************************************************
 
   // --------------------------------------------
 
