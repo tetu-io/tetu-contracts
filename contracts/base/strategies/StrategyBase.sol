@@ -11,9 +11,8 @@
 */
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/Math.sol";
 import "../interface/IStrategy.sol";
 import "../governance/Controllable.sol";
 import "../interface/IFeeRewardForwarder.sol";
@@ -25,7 +24,6 @@ import "../interface/ISmartVault.sol";
 /// @title Abstract contract for base strategy functionality
 /// @author belbix
 abstract contract StrategyBase is IStrategy, Controllable {
-  using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   uint256 internal constant _BUY_BACK_DENOMINATOR = 100_00;
@@ -151,7 +149,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     // both are in the units of "underlying"
     // The second part is needed because there is the emergency exit mechanism
     // which would break the assumption that all the funds are always inside of the reward pool
-    return rewardPoolBalance().add(underlyingBalance());
+    return rewardPoolBalance() + underlyingBalance();
   }
 
   //******************** GOVERNANCE *******************
@@ -202,7 +200,7 @@ abstract contract StrategyBase is IStrategy, Controllable {
     if (amount > underlyingBalance()) {
       // While we have the check above, we still using SafeMath below
       // for the peace of mind (in case something gets changed in between)
-      uint256 needToWithdraw = amount.sub(underlyingBalance());
+      uint256 needToWithdraw = amount - underlyingBalance();
       uint256 toWithdraw = Math.min(rewardPoolBalance(), needToWithdraw);
       withdrawAndClaimFromPool(toWithdraw);
     }

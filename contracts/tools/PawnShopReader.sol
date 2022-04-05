@@ -12,16 +12,14 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../base/governance/Controllable.sol";
+import "../base/governance/ControllableV2.sol";
 import "../infrastructure/price/IPriceCalculator.sol";
 import "../loan/ITetuPawnShop.sol";
+import "../openzeppelin/Math.sol";
 
 /// @title View data reader for using on website UI and other integrations
 /// @author belbix
-contract PawnShopReader is Initializable, Controllable {
+contract PawnShopReader is Initializable, ControllableV2 {
 
   string public constant VERSION = "1.0.1";
   uint256 constant public PRECISION = 1e18;
@@ -32,9 +30,15 @@ contract PawnShopReader is Initializable, Controllable {
   mapping(bytes32 => address) internal tools;
 
   function initialize(address _controller, address _calculator, address _pawnshop) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
     tools[keccak256(abi.encodePacked(_CALCULATOR))] = _calculator;
     tools[keccak256(abi.encodePacked(_SHOP))] = _pawnshop;
+  }
+
+  /// @dev Allow operation only for Controller or Governance
+  modifier onlyControllerOrGovernance() {
+    require(_isController(msg.sender) || _isGovernance(msg.sender), "Not controller or gov");
+    _;
   }
 
   event ToolAddressUpdated(string name, address newValue);

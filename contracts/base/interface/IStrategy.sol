@@ -51,7 +51,7 @@ interface IStrategy {
     MAI_BAL, //33
     UMA, //34
     SPHERE, //35
-    SLOT_36, //36
+    BALANCER, //36
     SLOT_37, //37
     SLOT_38, //38
     SLOT_39, //39

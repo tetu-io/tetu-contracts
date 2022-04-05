@@ -9,6 +9,7 @@ import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {StrategyTestUtils} from "./strategies/StrategyTestUtils";
+import {EthAddresses} from "../scripts/addresses/EthAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -109,6 +110,11 @@ export class TokenUtils {
     [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN,'0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
+    [EthAddresses.USDC_TOKEN,'0x0a59649758aa4d66e25f08dd01271e891fe52199'.toLowerCase()], // maker
+    [EthAddresses.TETU_TOKEN,'0x8f5adc58b32d4e5ca02eac0e293d35855999436c'.toLowerCase()], // todo temporally farm!
+    [EthAddresses.BAL_TOKEN,'0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // balancer vault
+    [EthAddresses.BALANCER_BAL_WETH,'0x849d52316331967b6ff1198e5e32a0eb168d039d'.toLowerCase()], // gnosis
+    [MaticAddresses.BALANCER_BAL_ETH_POOL,'0xe67b7a560da673776d80a8da5469fff06eb1683c'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

@@ -18,9 +18,25 @@ interface ISmartVaultV110 {
 
   function changeActivityStatus(bool _active) external;
 
+  function changeProtectionMode(bool _active) external;
+
+  function changePpfsDecreaseAllowed(bool _value) external;
+
+  function setLockPeriod(uint256 _value) external;
+
+  function setLockPenalty(uint256 _value) external;
+
+  function setToInvest(uint256 _value) external;
+
   function doHardWork() external;
 
+  function rebalance() external;
+
+  function disableLock() external;
+
   function notifyTargetRewardAmount(address _rewardToken, uint256 reward) external;
+
+  function notifyRewardWithoutPeriodChange(address _rewardToken, uint256 reward) external;
 
   function deposit(uint256 amount) external;
 
@@ -82,13 +98,31 @@ interface ISmartVaultV110 {
 
   function rewardsForToken(address _rt, address account) external view returns (uint256);
 
-  function userLastWithdrawTs(address _user) external returns (uint256);
+  function userLastWithdrawTs(address _user) external view returns (uint256);
 
-  function userBoostTs(address _user) external returns (uint256);
+  function userLastDepositTs(address _user) external view returns (uint256);
+
+  function userBoostTs(address _user) external view returns (uint256);
+
+  function userLockTs(address _user) external view returns (uint256);
 
   function addRewardToken(address rt) external;
 
   function removeRewardToken(address rt) external;
 
   function stop() external;
+
+  function ppfsDecreaseAllowed() external view returns (bool);
+
+  function lockPeriod() external view returns (uint256);
+
+  function lockPenalty() external view returns (uint256);
+
+  function toInvest() external view returns (uint256);
+
+  function depositFeeNumerator() external view returns (uint256);
+
+  function lockAllowed() external view returns (bool);
+
+  function protectionMode() external view returns (bool);
 }

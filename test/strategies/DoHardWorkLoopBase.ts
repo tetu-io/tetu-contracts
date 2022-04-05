@@ -103,6 +103,7 @@ export class DoHardWorkLoopBase {
   // signer and user enter to the vault
   // we should have not zero balance if user exit the vault for properly check
   protected async enterToVault() {
+    console.log('--- Enter to vault')
     // initial deposit from signer
     await VaultUtils.deposit(this.signer, this.vault, this.userDeposited.div(2));
     this.signerDeposited = this.userDeposited.div(2);
@@ -111,9 +112,14 @@ export class DoHardWorkLoopBase {
 
     // remove excess tokens
     const excessBalUser = await TokenUtils.balanceOf(this.underlying, this.user.address);
-    await TokenUtils.transfer(this.underlying, this.user, this.tools.utils.address, excessBalUser.toString());
+    if (!excessBalUser.isZero()) {
+      await TokenUtils.transfer(this.underlying, this.user, this.tools.calculator.address, excessBalUser.toString());
+    }
     const excessBalSigner = await TokenUtils.balanceOf(this.underlying, this.signer.address);
-    await TokenUtils.transfer(this.underlying, this.signer, this.tools.utils.address, excessBalSigner.toString());
+    if (!excessBalSigner.isZero()) {
+      await TokenUtils.transfer(this.underlying, this.signer, this.tools.calculator.address, excessBalSigner.toString());
+    }
+    console.log('--- Enter to vault end')
   }
 
   protected async loopStartActions(i: number) {
@@ -284,6 +290,10 @@ export class DoHardWorkLoopBase {
     Misc.printDuration('fAfterBlocAdvance completed', start);
   }
 
+  protected async doHardWork() {
+    await VaultUtils.doHardWorkAndCheck(this.vault);
+  }
+
   protected async loop(loops: number, loopValue: number, advanceBlocks: boolean) {
     for (let i = 0; i < loops; i++) {
       const start = Date.now();
@@ -297,7 +307,7 @@ export class DoHardWorkLoopBase {
         await TimeUtils.advanceBlocksOnTs(loopValue);
       }
       await this.afterBlockAdvance();
-      await VaultUtils.doHardWorkAndCheck(this.vault);
+      await this.doHardWork();
       await this.loopPrintROIAndSaveEarned(i);
       await this.loopEndCheck();
       await this.loopEndActions(i);

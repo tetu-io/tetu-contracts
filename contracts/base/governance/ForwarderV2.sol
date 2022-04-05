@@ -12,16 +12,16 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./ControllableV2.sol";
+import "./ForwarderV2Storage.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
 import "../interface/ISmartVault.sol";
 import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
-import "./Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
-import "./ForwarderV2Storage.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
@@ -30,12 +30,12 @@ import "./ForwarderV2Storage.sol";
 ///        If external rewards have a destination Profit Share pool
 ///        it is just sent to the contract as TETU tokens increasing share price.
 /// @author belbix
-contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
+contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage {
   using SafeERC20 for IERC20;
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.2.4";
+  string public constant VERSION = "1.3.0";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
@@ -64,7 +64,19 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @dev Use it only once after first logic setup
   ///      Initialize Controllable with sender address
   function initialize(address _controller) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
+  }
+
+  /// @dev Allow operation only for Controller or Governance
+  modifier onlyControllerOrGovernance() {
+    require(_isController(msg.sender) || _isGovernance(msg.sender), "F2: Not controller or gov");
+    _;
+  }
+
+  /// @dev Only Reward Distributor allowed. Governance is Reward Distributor by default.
+  modifier onlyRewardDistribution() {
+    require(IController(_controller()).isRewardDistributor(msg.sender), "F2: Only distributor");
+    _;
   }
 
   // ***************** VIEW ************************
@@ -72,25 +84,25 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @notice Return Profit Sharing pool address
   /// @return Profit Sharing pool address
   function psVault() public view returns (address) {
-    return IController(controller()).psVault();
+    return IController(_controller()).psVault();
   }
 
   /// @notice Return FundKeeper address
   /// @return FundKeeper address
   function fund() public view returns (address) {
-    return IController(controller()).fund();
+    return IController(_controller()).fund();
   }
 
   /// @notice Return Target token (TETU) address
   /// @return Target token (TETU) address
   function tetu() public view returns (address) {
-    return IController(controller()).rewardToken();
+    return IController(_controller()).rewardToken();
   }
 
   /// @notice Return a token address used for FundKeeper (USDC by default)
   /// @return FundKeeper's main token address (USDC by default)
   function fundToken() public view returns (address) {
-    return IController(controller()).fundToken();
+    return IController(_controller()).fundToken();
   }
 
   /// @notice Return slippage numerator
@@ -261,7 +273,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
     uint excessFundToken = IERC20(fundToken()).balanceOf(address(this));
     if (excessFundToken > MINIMUM_AMOUNT && fund() != address(0)) {
       IERC20(fundToken()).safeTransfer(fund(), excessFundToken);
-      IBookkeeper(IController(controller()).bookkeeper())
+      IBookkeeper(IController(_controller()).bookkeeper())
       .registerFundKeeperEarned(fundToken(), excessFundToken);
       emit FeeMovedToFund(fund(), fundToken(), excessFundToken);
     }
@@ -342,7 +354,7 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
 
     IERC20(fundToken()).safeTransfer(fund(), toFund);
 
-    IBookkeeper(IController(controller()).bookkeeper())
+    IBookkeeper(IController(_controller()).bookkeeper())
     .registerFundKeeperEarned(fundToken(), toFund);
     emit FeeMovedToFund(fund(), fundToken(), toFund);
     return toFund;
@@ -375,8 +387,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @param _amount 100% Amount
   /// @return Percent of total amount
   function _toFundAmount(uint256 _amount) internal view returns (uint256) {
-    uint256 fundNumerator = IController(controller()).fundNumerator();
-    uint256 fundDenominator = IController(controller()).fundDenominator();
+    uint256 fundNumerator = IController(_controller()).fundNumerator();
+    uint256 fundDenominator = IController(_controller()).fundDenominator();
     return _amount * fundNumerator / fundDenominator;
   }
 
@@ -384,8 +396,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @param _amount 100% Amount
   /// @return Percent of total amount
   function _toPsAndLiqAmount(uint _amount) internal view returns (uint) {
-    uint256 psNumerator = IController(controller()).psNumerator();
-    uint256 psDenominator = IController(controller()).psDenominator();
+    uint256 psNumerator = IController(_controller()).psNumerator();
+    uint256 psDenominator = IController(_controller()).psDenominator();
     return _amount * psNumerator / psDenominator;
   }
 
@@ -398,8 +410,8 @@ contract ForwarderV2 is Controllable, IFeeRewardForwarder, ForwarderV2Storage {
   /// @param _amount Amount of TETU token distributed to PS and Vault
   /// @return Approximate Total amount normalized to TETU token
   function _plusFundAmountToDistributedAmount(uint256 _amount) internal view returns (uint256) {
-    uint256 fundNumerator = IController(controller()).fundNumerator();
-    uint256 fundDenominator = IController(controller()).fundDenominator();
+    uint256 fundNumerator = IController(_controller()).fundNumerator();
+    uint256 fundDenominator = IController(_controller()).fundDenominator();
     return _amount * fundDenominator / (fundDenominator - fundNumerator);
   }
 
