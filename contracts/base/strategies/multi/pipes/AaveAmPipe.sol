@@ -40,7 +40,7 @@ contract AaveAmPipe is Pipe {
     Pipe._initialize('AaveAmPipe', _d.sourceToken, _d.lpToken);
 
     _POOL_SLOT.set(_d.pool);
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -57,10 +57,12 @@ contract AaveAmPipe is Pipe {
   /// @return output amount of output units (amTOKEN)
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxSourceAmount(amount);
-    address sourceToken = _sourceToken();
-    address __pool = _pool();
-    _erc20Approve(sourceToken, __pool, amount);
-    ILendingPool(__pool).deposit(sourceToken, amount, address(this), 0);
+    if (amount > 0) {
+      address sourceToken = _sourceToken();
+      address __pool = _pool();
+      _erc20Approve(sourceToken, __pool, amount);
+      ILendingPool(__pool).deposit(sourceToken, amount, address(this), 0);
+    }
     address outputToken = _outputToken();
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
@@ -71,11 +73,13 @@ contract AaveAmPipe is Pipe {
   /// @param amount to withdraw
   /// @return output amount of source token
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    amount = maxOutputAmount(amount);
-    address __pool = _pool();
-    _erc20Approve(_outputToken(), __pool, amount);
+    amount = _maxOutputAmount(amount);
     address sourceToken = _sourceToken();
-    ILendingPool(__pool).withdraw(sourceToken, amount, address(this));
+    if (amount > 0) {
+      address __pool = _pool();
+      _erc20Approve(_outputToken(), __pool, amount);
+      ILendingPool(__pool).withdraw(sourceToken, amount, address(this));
+    }
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
     emit Get(amount, output);

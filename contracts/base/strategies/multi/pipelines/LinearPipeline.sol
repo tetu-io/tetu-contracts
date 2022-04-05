@@ -147,9 +147,11 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @dev Replaces pipe in the pipeline
   /// @param pipeIndex index of pipe to change
   /// @param newPipe to be changed
-  function _replacePipe(uint pipeIndex, IPipe newPipe) internal {
-//    uint __pipesLength = _pipesLength();
-//    require(pipeIndex < __pipesLength, "LPL: Index");
+  /// @param maxDecrease1000 maximum decrease ot totalAmountOut (in 0,1%)
+  function _replacePipe(uint pipeIndex, IPipe newPipe, uint maxDecrease1000) internal {
+    newPipe.setPipeline(address(this));
+
+    uint totalAmountOutBefore = _getTotalAmountOut();
 
     IPipe currPipe = IPipe(_pipes(pipeIndex));
     require(
@@ -159,10 +161,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
       'LPL: Incompatible'
     );
 
-    _pumpOut(PipeLib.MAX_AMOUNT, pipeIndex);
-
-//    IPipe lastPipe = _pipes(__pipesLength - 1);
-//    require(IERC20(lastPipe.outputToken()).balanceOf(address(lastPipe)) == 0, 'LPL: Liquidity detected' );
+    uint pumpedOut = _pumpOut(PipeLib.MAX_AMOUNT, pipeIndex);
 
     address prevPipe = currPipe.prevPipe();
     newPipe.setPrevPipe(prevPipe);
@@ -178,14 +177,15 @@ contract LinearPipeline is ILinearPipeline, Initializable {
       IPipe(nextPipe).setPrevPipe(address(newPipe));
     }
 
-    // pump in liquidity back from prev pipe
-    if (pipeIndex == 0) {
-      _pumpIn(PipeLib.MAX_AMOUNT);
-    } else {
-      _pumpIn(PipeLib.MAX_AMOUNT, pipeIndex - 1);
-    }
+    _PIPES.setAt(pipeIndex, address(newPipe));
 
-//    require(IERC20(lastPipe.outputToken()).balanceOf(address(lastPipe)) > 0, 'LPL: No liquidity' );
+    // pump in liquidity back from prev pipe or pipeline itself
+    uint pumpedIn = _pumpIn(PipeLib.MAX_AMOUNT);
+
+    uint totalAmountOutAfter = _getTotalAmountOut();
+    uint minTotalAmountOut = totalAmountOutBefore - (totalAmountOutBefore * maxDecrease1000 / 1000);
+    // Let's do not replace pipe when we have unexpected loss
+    require(totalAmountOutAfter > minTotalAmountOut, 'LP: Loss more than maxDecrease');
 
     emit PipeReplaced(pipeIndex, address(currPipe), address(newPipe));
   }
@@ -194,9 +194,6 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @param sourceAmount in source units
   /// @return outputAmount in most underlying units
   function _pumpIn(uint256 sourceAmount, uint256 fromPipeIndex) internal returns (uint256 outputAmount)  {
-    if (sourceAmount == 0) {
-      return 0;
-    }
     outputAmount = 0;
     uint __pipesLength = _pipesLength();
 
@@ -214,9 +211,6 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     if (sourceAmount == PipeLib.MAX_AMOUNT) {
       sourceAmount = IERC20(underlying).balanceOf(address(this));
     }
-    if (sourceAmount == 0) {
-      return 0;
-    }
     // send token to first pipe
     IERC20(underlying).safeTransfer(address(_pipes(0)), sourceAmount);
     outputAmount = _pumpIn(PipeLib.MAX_AMOUNT, 0);
@@ -227,9 +221,6 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @param toPipeIndex pump out to previous pipe from pipe with this index (0 index pumps out to the pipeline)
   /// @return amountOut in source units
   function _pumpOut(uint256 underlyingAmount, uint256 toPipeIndex) internal returns (uint256 amountOut) {
-    if (underlyingAmount == 0) {
-      return 0;
-    }
     amountOut = 0;
     for (uint256 i = _pipesLength(); i > toPipeIndex; i--) {
       amountOut = _pipes(i - 1).get(underlyingAmount);
@@ -242,9 +233,9 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @param toPipeIndex pump out to prev pipe of the pipe with this index
   /// @return amountOut in source units of pipe with toPipeIndex
   function _pumpOutSource(uint256 sourceAmount, uint256 toPipeIndex) internal returns (uint256 amountOut) {
-    if (sourceAmount == 0) {
-      return 0;
-    }
+//    if (sourceAmount == 0) {
+//      return 0;
+//    }
     uint256 underlyingAmount = getAmountInForAmountOut(sourceAmount, toPipeIndex);
     return _pumpOut(underlyingAmount, toPipeIndex);
   }
@@ -297,7 +288,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   }
 
   /// @dev Returns total amount out (when we withdraw all most underlying tokens)
-  function getTotalAmountOut() internal returns (uint256) {
+  function _getTotalAmountOut() internal returns (uint256) {
     return _getAmountOut(_getMostUnderlyingBalance(), 0);
   }
 

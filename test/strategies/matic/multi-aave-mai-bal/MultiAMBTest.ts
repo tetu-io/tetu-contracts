@@ -32,6 +32,7 @@ import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
 import {LiquidationPriceTest} from "./LiquidationPriceTest";
 import {MaxDepositTest} from "./MaxDepositTest";
+import {ReplacePipeTest} from "./ReplacePipeTest";
 
 
 dotEnvConfig();
@@ -113,6 +114,7 @@ describe('Universal AMB tests', async () => {
       new MoreMaiFromBalTest(),
       new LiquidationPriceTest(),
       new MaxDepositTest(),
+      new ReplacePipeTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10000');
     const BAL_PIPE_INDEX = 3;
@@ -125,49 +127,7 @@ describe('Universal AMB tests', async () => {
         signer,
         core,
         info.underlyingName,
-        async vaultAddress => {
-          // -----------------
-          const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
-            signer,
-            underlying,
-            info.amToken
-          );
-          pipes.push(aaveAmPipeData.address);
-          // -----------------
-          const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
-            signer,
-            info.amToken,
-            info.camToken
-          );
-          pipes.push(maiCamPipeData.address);
-          // -----------------
-          const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
-            signer,
-            info.camToken,
-            info.stablecoin,
-            info.targetPercentage,
-            info.collateralNumerator || '1'
-          );
-          pipes.push(maiStablecoinPipeData.address);
-          // -----------------
-          const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-            signer
-          );
-          pipes.push(balVaultPipeData.address);
-          // -----------------
-
-          const strategyData = await DeployerUtils.deployTetuProxyControlled(
-            signer,
-            strategyContractName
-          );
-          await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
-            core.controller.address,
-            vaultAddress,
-            info.underlying,
-            pipes
-          );
-          return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
-        },
+        AMBPipeDeployer.strategyDeployer(strategyContractName, core, signer, underlying, info, pipes),
         underlying,
         25
       );

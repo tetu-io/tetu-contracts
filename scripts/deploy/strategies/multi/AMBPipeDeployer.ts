@@ -8,10 +8,13 @@ import {
   MaiCamPipe,
   MaiCamPipe__factory,
   MaiStablecoinPipe,
-  MaiStablecoinPipe__factory
+  MaiStablecoinPipe__factory, StrategyAaveMaiBal__factory
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 import {RunHelper} from "../../../utils/tools/RunHelper";
+import {StrategyTestUtils} from "../../../../test/strategies/StrategyTestUtils";
+import {CoreContractsWrapper} from "../../../../test/CoreContractsWrapper";
+import {IAMBInfo} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
 
 export class AMBPipeDeployer {
 
@@ -102,6 +105,59 @@ export class AMBPipeDeployer {
       {gasLimit: 12_000_000}
     ));
     return p;
+  }
+
+  public static strategyDeployer(
+      strategyContractName: string,
+      core: CoreContractsWrapper,
+      signer: SignerWithAddress,
+      underlying: string,
+      info: IAMBInfo,
+      pipes: string[]
+  ) {
+    return async (vaultAddress: string) => {
+      // -----------------
+      const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
+          signer,
+          underlying,
+          info.amToken
+      );
+      pipes.push(aaveAmPipeData.address);
+      // -----------------
+      const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
+          signer,
+          info.amToken,
+          info.camToken
+      );
+      pipes.push(maiCamPipeData.address);
+      // -----------------
+      const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
+          signer,
+          info.camToken,
+          info.stablecoin,
+          info.targetPercentage,
+          info.collateralNumerator || '1'
+      );
+      pipes.push(maiStablecoinPipeData.address);
+      // -----------------
+      const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
+          signer
+      );
+      pipes.push(balVaultPipeData.address);
+      // -----------------
+
+      const strategyData = await DeployerUtils.deployTetuProxyControlled(
+          signer,
+          strategyContractName
+      );
+      await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
+          core.controller.address,
+          vaultAddress,
+          info.underlying,
+          pipes
+      );
+      return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
+    }
   }
 
 }

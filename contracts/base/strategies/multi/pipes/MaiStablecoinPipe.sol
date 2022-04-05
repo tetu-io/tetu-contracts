@@ -54,7 +54,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
 
     Pipe._initialize('MaiStablecoinPipe', _d.sourceToken, _d.borrowToken);
 
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
 
     _STABLECOIN_SLOT.set(_d.stablecoin);
     _BORROW_TOKEN_SLOT.set(_d.borrowToken);
@@ -212,7 +212,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    amount = maxOutputAmount(amount);
+    amount = _maxOutputAmount(amount);
     if (amount != 0) {
       IErc20Stablecoin __stablecoin = _stablecoin();
       uint __vaultID = _vaultID();

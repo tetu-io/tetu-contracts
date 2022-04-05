@@ -51,7 +51,7 @@ abstract contract Pipe is IPipe, ControllableV2 {
 
   /// @notice Reward token address for claiming
   /// @dev initialize it in initializer
-  address[] public override rewardTokens;
+  uint internal constant _REWARD_TOKENS = uint256(keccak256("eip1967.Pipe.rewardTokens")) - 1;
 
   event Get(uint256 amount, uint256 output);
   event Put(uint256 amount, uint256 output);
@@ -133,7 +133,7 @@ abstract contract Pipe is IPipe, ControllableV2 {
   }
 
   /// @dev Replaces MAX constant to output token balance. Should be used at get() function start
-  function maxOutputAmount(uint256 amount) internal view returns (uint256) {
+  function _maxOutputAmount(uint256 amount) internal view returns (uint256) {
     if (amount == PipeLib.MAX_AMOUNT) {
       return outputBalance();
     } else {
@@ -151,7 +151,13 @@ abstract contract Pipe is IPipe, ControllableV2 {
 
   /// @dev Size of reward tokens array
   function rewardTokensLength() external view override returns (uint) {
-    return rewardTokens.length;
+    return _REWARD_TOKENS.length();
+  }
+
+  /// @dev Returns reward token
+  /// @param index - token index in array
+  function rewardTokens(uint index) external view override returns (address) {
+    return _REWARD_TOKENS.addressAt(index);
   }
 
   /// @dev function for investing, deposits, entering, borrowing
@@ -195,13 +201,14 @@ abstract contract Pipe is IPipe, ControllableV2 {
   /// @dev function for claiming rewards
   function claim() onlyPipeline virtual override external {
     address __pipeline = _pipeline();
-    for (uint i = 0; i < rewardTokens.length; i++) {
-      address rewardToken = rewardTokens[i];
+    require(__pipeline != address(0));
+
+    uint len = _REWARD_TOKENS.length();
+    for (uint i = 0; i < len; i++) {
+      address rewardToken = _REWARD_TOKENS.addressAt(i);
       if (rewardToken == address(0)) {
         return;
       }
-      require(__pipeline != address(0));
-
       uint256 amount = _erc20Balance(rewardToken);
       if (amount > 0) {
         IERC20(rewardToken).safeTransfer(__pipeline, amount);

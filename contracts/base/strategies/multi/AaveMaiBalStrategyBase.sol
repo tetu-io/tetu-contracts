@@ -34,7 +34,6 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
   uint256 private constant _TIME_LOCK = 48 hours;
-  uint256 private constant _TIMELOCK_ADDRESSES_SHIFT = 1000;
 
   uint internal constant _TOTAL_AMOUNT_OUT_SLOT    = uint(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1;
   uint internal constant _MAI_STABLECOIN_PIPE_SLOT = uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1;
@@ -42,6 +41,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Assets should reflect underlying tokens for investing
   uint internal constant _ASSET_SLOT               = uint(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1;
   uint internal constant _TIMELOCKS                = uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelocks")) - 1;
+  uint internal constant _TIMELOCK_ADDRESSES       = uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelockAddresses")) - 1;
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);
@@ -75,8 +75,8 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
       "AMB: Not Gov or Controller");
   }
 
-  function _updateTotalAmount() internal{
-    _TOTAL_AMOUNT_OUT_SLOT.set(getTotalAmountOut());
+  function _updateTotalAmount() internal {
+    _TOTAL_AMOUNT_OUT_SLOT.set(_getTotalAmountOut());
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -136,7 +136,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
     // don't claim on withdraw
     // update cached _totalAmount, and recalculate amount
-    uint256 newTotalAmount = getTotalAmountOut();
+    uint256 newTotalAmount = _getTotalAmountOut();
     uint256 amount = underlyingAmount * newTotalAmount / _totalAmountOut();
     _pumpOutSource(amount, 0);
     _updateTotalAmount();
@@ -287,24 +287,24 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     _onlyControllerOrGovernance();
     require(_TIMELOCKS.uintAt(pipeIndex) == 0, "AMB: Already defined");
     _TIMELOCKS.setAt(pipeIndex, block.timestamp + _TIME_LOCK);
-    _TIMELOCKS.setAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT, newPipe);
+    _TIMELOCK_ADDRESSES.setAt(pipeIndex, newPipe);
     emit PipeReplaceAnnounced(pipeIndex, newPipe);
   }
 
   /// @dev Replaces a pipe with index
   /// @param pipeIndex - index of the pipe to replace
   /// @param newPipe - address of the new pipe
-  function replacePipe(uint pipeIndex, address newPipe)
+  function replacePipe(uint pipeIndex, address newPipe, uint maxDecrease1000)
   external {
     _onlyControllerOrGovernance();
     uint timelock = _TIMELOCKS.uintAt(pipeIndex);
     require(timelock != 0 && timelock < block.timestamp, "AMB: Too early");
-    require(_TIMELOCKS.addressAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT) == newPipe, "AMB: Wrong address");
+    require(_TIMELOCK_ADDRESSES.addressAt(pipeIndex) == newPipe, "AMB: Wrong address");
 
-    _replacePipe(pipeIndex, IPipe(newPipe));
+    _replacePipe(pipeIndex, IPipe(newPipe), maxDecrease1000);
 
     _TIMELOCKS.setAt(pipeIndex, 0);
-//    _TIMELOCKS.setAt(pipeIndex+_TIMELOCK_ADDRESSES_SHIFT, 0);
+    _TIMELOCK_ADDRESSES.setAt(pipeIndex, 0);
     _updateTotalAmount();
   }
 

@@ -75,7 +75,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
 
   modifier updateTotalAmount() {
     _;
-    _TOTAL_AMOUNT_OUT_SLOT.set(getTotalAmountOut());
+    _TOTAL_AMOUNT_OUT_SLOT.set(_getTotalAmountOut());
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -130,7 +130,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override updateTotalAmount {
     // don't claim on withdraw
     // update cached _totalAmount, and recalculate amount
-    uint256 newTotalAmount = getTotalAmountOut();
+    uint256 newTotalAmount = _getTotalAmountOut();
     uint256 amount = underlyingAmount * newTotalAmount / _totalAmountOut();
     _pumpOutSource(amount, 0);
   }

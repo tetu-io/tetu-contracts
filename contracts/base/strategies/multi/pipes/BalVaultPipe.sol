@@ -51,7 +51,7 @@ contract BalVaultPipe is Pipe {
     _POOL_ID_SLOT.set(_d.poolID);
     _TOKEN_INDEX_SLOT.set(_d.tokenIndex);
 
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -118,7 +118,7 @@ contract BalVaultPipe is Pipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    amount = maxOutputAmount(amount);
+    amount = _maxOutputAmount(amount);
     address outputToken = _outputToken();
     address sourceToken = _sourceToken();
 

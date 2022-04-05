@@ -41,10 +41,12 @@ export class AMBTargetPercentageTest extends SpecificStrategyTest {
 
       // increase collateral to debt percentage twice, so debt should be decreased twice
       const targetPercentage1 = targetPercentageInitial.mul(2)
+      console.log('>>>before setTargetPercentage');
       await expect(strategyGov.setTargetPercentage(targetPercentage1))
         .to.emit(strategyGov, 'SetTargetPercentage')
         .withArgs(targetPercentage1)
 
+      console.log('>>>before targetPercentage2');
       const targetPercentage2 = await strategyGov.targetPercentage()
       console.log('>>>targetPercentage2', targetPercentage2.toString())
 
