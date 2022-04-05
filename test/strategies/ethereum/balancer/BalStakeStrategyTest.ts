@@ -9,7 +9,8 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {
   BalDepositor__factory,
-  IStrategy, IVotingEscrow__factory,
+  IStrategy,
+  IVotingEscrow__factory,
   SmartVault,
   SmartVault__factory,
   StrategyBalStaking

@@ -34,10 +34,6 @@ contract BalSender is ControllableV2 {
   bytes32 public constant BAL_ETH_POOL_ID = 0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426;
   address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
-  // ----- VARIABLES -----
-
-  IAsset[] private _assets;
-
   // ----- EVENTS -------
 
   event Withdrew(uint bptAmount, uint balAmount, uint wethAmount);
@@ -48,9 +44,6 @@ contract BalSender is ControllableV2 {
     address controller_
   ) external initializer {
     ControllableV2.initializeControllable(controller_);
-
-    _assets.push(IAsset(WETH));
-    _assets.push(IAsset(BAL));
   }
 
   modifier onlyHardworkerOrGov() {
@@ -59,45 +52,47 @@ contract BalSender is ControllableV2 {
     _;
   }
 
-  // ----- GOV ACTIONS -------
-
-
-
   // ----- HARDWORKER ACTIONS -------
 
   function withdrawAll() external onlyHardworkerOrGov {
     uint bptBalance = IERC20(BAL_ETH_POOL).balanceOf(address(this));
 
-    if (bptBalance == 0) {
-      // no actions
-      return;
+    // -------------- UNWRAP BPT -----------------------
+
+    if (bptBalance != 0) {
+      // empty array, no checking slippage
+      uint[] memory minAmountsOut = new uint[](2);
+      bytes memory userData = abi.encode(1, bptBalance);
+
+      IAsset[] memory _assets = new IAsset[](2);
+      _assets[0] = IAsset(WETH);
+      _assets[1] = IAsset(BAL);
+
+      IERC20(BAL_ETH_POOL).safeApprove(BALANCER_VAULT, 0);
+      IERC20(BAL_ETH_POOL).safeApprove(BALANCER_VAULT, bptBalance);
+
+      IBVault(BALANCER_VAULT).exitPool(
+        BAL_ETH_POOL_ID,
+        address(this),
+        payable(address(this)),
+        IBVault.ExitPoolRequest(
+          _assets,
+          minAmountsOut,
+          userData,
+          false
+        )
+      );
     }
-    // empty array, no checking slippage
-    uint[] memory minAmountsOut = new uint[](2);
-    bytes memory userData = abi.encode(1, bptBalance);
 
-    IERC20(BAL_ETH_POOL).safeApprove(BALANCER_VAULT, 0);
-    IERC20(BAL_ETH_POOL).safeApprove(BALANCER_VAULT, bptBalance);
-
-    IBVault(BALANCER_VAULT).exitPool(
-      BAL_ETH_POOL_ID,
-      address(this),
-      payable(address(this)),
-      IBVault.ExitPoolRequest(
-        _assets,
-        minAmountsOut,
-        userData,
-        false
-      )
-    );
-
+    // ----------- WITHDRAW ---------------------------
 
     uint wethBalance = IERC20(WETH).balanceOf(address(this));
     uint balBalance = IERC20(BAL).balanceOf(address(this));
+
+    // withdraw only one token per once!
     if (wethBalance != 0) {
       IChildERC20(WETH).withdraw(wethBalance);
-    }
-    if (balBalance != 0) {
+    } else if (balBalance != 0) {
       IChildERC20(BAL).withdraw(balBalance);
     }
 

@@ -30,6 +30,11 @@ export class BalBridgedStakingDoHardWork extends DoHardWorkLoopBase {
     const senderAdr = await StrategyBalBridgedStaking__factory.connect(this.strategy.address, this.signer).balSender();
     const sender = BalSender__factory.connect(senderAdr, this.signer);
     await sender.withdrawAll();
+    // need to call again coz only one token per tx
+    await sender.withdrawAll();
+    expect(await TokenUtils.balanceOf(MaticAddresses.BALANCER_BAL_ETH_POOL, senderAdr)).is.eq(0);
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, senderAdr)).is.eq(0);
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, senderAdr)).is.eq(0);
   }
 
   protected async postLoopCheck() {

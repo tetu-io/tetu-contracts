@@ -19,6 +19,7 @@ import "../../../third_party/balancer/IBVault.sol";
 import "../../../third_party/polygon/IRootChainManager.sol";
 import "../../interface/ISmartVault.sol";
 import "../../interface/IStrategy.sol";
+import "../../../third_party/uniswap/IWETH.sol";
 
 /// @title Cross chain depositor for BAL and WETH tokens to tetuBAL vault
 /// @author belbix
@@ -41,10 +42,6 @@ contract BalDepositor is ControllableV2 {
   bytes32 internal constant _DESTINATION_VAULT_KEY = bytes32(uint256(keccak256("depositor.destination_vault")) - 1);
   bytes32 internal constant _ANOTHER_CHAIN_RECIPIENT_KEY = bytes32(uint256(keccak256("depositor.another_chain_recipient")) - 1);
 
-  // ----- VARIABLES -----
-
-  IAsset[] private _assets;
-
   // ----- EVENTS -------
 
   event DestinationVaultChanged(address oldValue, address newValue);
@@ -63,9 +60,6 @@ contract BalDepositor is ControllableV2 {
     IERC20(WETH).safeApprove(BALANCER_VAULT, type(uint).max);
     IERC20(BAL).safeApprove(BALANCER_VAULT, type(uint).max);
     IERC20(BAL).safeApprove(POLYGON_BRIDGE_PREDICATE, type(uint).max);
-
-    _assets.push(IAsset(BAL));
-    _assets.push(IAsset(WETH));
   }
 
   modifier onlyHardworkerOrGov() {
@@ -100,7 +94,13 @@ contract BalDepositor is ControllableV2 {
 
   function depositBridgedAssets(bytes calldata bridgeData) external onlyHardworkerOrGov {
 
-    IRootChainManager(POLYGON_BRIDGE).exit(bridgeData);
+    if (bridgeData.length != 0) {
+      IRootChainManager(POLYGON_BRIDGE).exit(bridgeData);
+    }
+
+    if (address(this).balance != 0) {
+      IWETH(WETH).deposit{value : address(this).balance}();
+    }
 
     uint balBalance = IERC20(BAL).balanceOf(address(this));
     uint wethBalance = IERC20(WETH).balanceOf(address(this));
@@ -117,6 +117,10 @@ contract BalDepositor is ControllableV2 {
     uint[] memory amounts = new uint[](2);
     amounts[0] = balBalance;
     amounts[1] = wethBalance;
+
+    IAsset[] memory _assets = new IAsset[](2);
+    _assets[0] = IAsset(BAL);
+    _assets[1] = IAsset(WETH);
 
     bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, amounts, 0);
 

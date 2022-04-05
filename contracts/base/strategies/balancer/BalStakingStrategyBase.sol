@@ -99,7 +99,7 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
   /// @dev Collect profit and do something useful with them
   function doHardWork() external override {
 
-    // claim
+    // todo claim
 
     address _depositor = _DEPOSITOR_KEY.getAddress();
     require(msg.sender == _depositor, "Not depositor");
