@@ -87,9 +87,9 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
   /// @notice Allocate voting power for changing pool weights
   /// @param _gauges Gauges which _users votes for
   /// @param _userWeights Weights for gauges in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
-  function voteForManyGaugeWeights(address[] _gauges, uint[] _userWeights) external {
+  function voteForManyGaugeWeights(address[] memory _gauges, uint[] memory _userWeights) external {
     require(_isGovernance(msg.sender), "Not gov");
-    require(_gauges.length == _userWeights, "Wrong input");
+    require(_gauges.length == _userWeights.length, "Wrong input");
     IGaugeController(GAUGE_CONTROLLER).vote_for_many_gauge_weights(_gauges, _userWeights);
   }
 

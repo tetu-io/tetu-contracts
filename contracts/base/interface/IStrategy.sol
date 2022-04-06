@@ -52,7 +52,7 @@ interface IStrategy {
     UMA, //34
     SPHERE, //35
     BALANCER, //36
-    SLOT_37, //37
+    OTTERCLAM, //37
     SLOT_38, //38
     SLOT_39, //39
     SLOT_40, //40
