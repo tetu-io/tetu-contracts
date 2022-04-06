@@ -155,13 +155,10 @@ contract LinearPipeline is ILinearPipeline, Initializable {
 
     IPipe currPipe = IPipe(_pipes(pipeIndex));
     require(
-      newPipe.pipeline() == address(this) &&
       currPipe.sourceToken() == newPipe.sourceToken() &&
       currPipe.outputToken() == newPipe.outputToken(),
       'LPL: Incompatible'
     );
-
-    uint pumpedOut = _pumpOut(PipeLib.MAX_AMOUNT, pipeIndex);
 
     address prevPipe = currPipe.prevPipe();
     newPipe.setPrevPipe(prevPipe);
@@ -180,8 +177,6 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     _PIPES.setAt(pipeIndex, address(newPipe));
 
     // pump in liquidity back from prev pipe or pipeline itself
-    uint pumpedIn = _pumpIn(PipeLib.MAX_AMOUNT);
-
     uint totalAmountOutAfter = _getTotalAmountOut();
     uint minTotalAmountOut = totalAmountOutBefore - (totalAmountOutBefore * maxDecrease1000 / 1000);
     // Let's do not replace pipe when we have unexpected loss

@@ -30,7 +30,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   string private constant _STRATEGY_NAME = "AaveMaiBalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string private constant _VERSION = "2.0.0";
+  string private constant _VERSION = "3.0.0";
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
   uint256 private constant _TIME_LOCK = 48 hours;
@@ -285,6 +285,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   function announcePipeReplacement(uint pipeIndex, address newPipe)
   external {
     _onlyControllerOrGovernance();
+    require(newPipe != address(0), "AMB: newPipe is 0");
     require(_TIMELOCKS.uintAt(pipeIndex) == 0, "AMB: Already defined");
     _TIMELOCKS.setAt(pipeIndex, block.timestamp + _TIME_LOCK);
     _TIMELOCK_ADDRESSES.setAt(pipeIndex, newPipe);
@@ -294,6 +295,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   /// @dev Replaces a pipe with index
   /// @param pipeIndex - index of the pipe to replace
   /// @param newPipe - address of the new pipe
+  /// @param maxDecrease1000 - maximum total amount decrease in 0,1%
   function replacePipe(uint pipeIndex, address newPipe, uint maxDecrease1000)
   external {
     _onlyControllerOrGovernance();

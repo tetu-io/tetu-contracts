@@ -2,7 +2,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+// import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
@@ -10,8 +10,7 @@ import {
   ForwarderV2,
   IStrategy,
   SmartVault,
-  StrategyAaveMaiBal,
-  StrategyAaveMaiBal__factory
+  StrategyAaveMaiBal
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -33,6 +32,7 @@ import {ethers} from "hardhat";
 import {LiquidationPriceTest} from "./LiquidationPriceTest";
 import {MaxDepositTest} from "./MaxDepositTest";
 import {ReplacePipeTest} from "./ReplacePipeTest";
+import {UpdatePipeProxyTest} from "./UpdatePipeProxyTest";
 
 
 dotEnvConfig();
@@ -110,11 +110,12 @@ describe('Universal AMB tests', async () => {
       new PumpInOnHardWorkTest(),
       new WithdrawAndClaimTest(),
       new EmergencyWithdrawFromPoolTest(),
-      new CoverageCallsTest(),
       new MoreMaiFromBalTest(),
       new LiquidationPriceTest(),
       new MaxDepositTest(),
       new ReplacePipeTest(),
+      new UpdatePipeProxyTest(),
+      new CoverageCallsTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10000');
     const BAL_PIPE_INDEX = 3;

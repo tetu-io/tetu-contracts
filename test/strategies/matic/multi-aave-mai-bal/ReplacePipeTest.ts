@@ -5,14 +5,13 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
 import {network} from "hardhat";
 import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
 import {BigNumber} from "ethers";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -27,46 +26,20 @@ export class ReplacePipeTest extends SpecificStrategyTest {
       const signer = deployInfo?.signer as SignerWithAddress;
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
+      const core = deployInfo?.core as CoreContractsWrapper;
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
       const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
 
-      console.log('infos', infos);
       const info = infos.filter(i => i.underlying === underlying.toLowerCase())[0];
       console.log('info', info);
       expect(info).to.be.an('object', 'Unknown underlying');
 
       // ----- Deploy new pipes
-      const pipes: string[] = [];
-      // -----------------
-      const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
-          signer,
-          underlying,
-          info.amToken
-      );
-      pipes.push(aaveAmPipeData.address);
-      // -----------------
-      const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
-          signer,
-          info.amToken,
-          info.camToken
-      );
-      pipes.push(maiCamPipeData.address);
-      // -----------------
-      const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
-          signer,
-          info.camToken,
-          info.stablecoin,
-          info.targetPercentage,
-          info.collateralNumerator || '1'
-      );
-      pipes.push(maiStablecoinPipeData.address);
-      // -----------------
-      const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-          signer
-      );
-      pipes.push(balVaultPipeData.address);
-      // -----------------
-      console.log('new pipes', pipes);
+      const newPipes: string[] = [];
+      const strategyDeployer = AMBPipeDeployer.strategyDeployer(
+          'AMB-for-Replace', core, signer, underlying, info, newPipes);
+      await strategyDeployer(vault.address);
+      console.log('new pipes', newPipes);
 
       // --------- deposit
       const maxDeposit = await strategyAaveMaiBal.maxDeposit();
@@ -81,18 +54,40 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
       // test pipes replacement
 
-      for (let i = pipes.length - 1; i >= 0; i--) {
+      for (let i = newPipes.length - 1; i >= 0; i--) {
         const totalAmountOutBefore = await strategyGov.totalAmountOut();
 
-        await strategyGov.announcePipeReplacement(i, pipes[i]);
+        await expect(
+            strategyGov.announcePipeReplacement(0, MaticAddresses.ZERO_ADDRESS)
+        ).to.be.revertedWith('AMB: newPipe is 0');
+
+        await strategyGov.announcePipeReplacement(i, newPipes[i]);
+
+        await expect(
+            strategyGov.announcePipeReplacement(i, newPipes[i])
+        ).to.be.revertedWith('AMB: Already defined');
+
+        await expect(
+            strategyGov.replacePipe(i, newPipes[i], 10)
+        ).to.be.revertedWith('AMB: Too early');
+
+        await expect(
+            strategyGov.replacePipe(i, MaticAddresses.ZERO_ADDRESS, 10)
+        ).to.be.revertedWith('AMB: Wrong address');
+
         const timeLockSec = 48 * 60 * 60;
         console.log('timeLockSec', timeLockSec);
         await network.provider.send("evm_increaseTime", [timeLockSec+1])
         await network.provider.send("evm_mine")
-        await strategyGov.replacePipe(i, pipes[i], 10);
+
+        await expect(
+            strategyGov.replacePipe(i, newPipes[i], 0)
+        ).to.be.revertedWith('LP: Loss more than maxDecrease');
+
+        await strategyGov.replacePipe(i, newPipes[i], 10);
 
         const totalAmountOutAfter = await strategyGov.totalAmountOut();
-        const totalAmountOutChangePercents = (totalAmountOutAfter.mul(100_000).div(totalAmountOutBefore).toNumber()/1000).toFixed(3);
+        const totalAmountOutChangePercents = (totalAmountOutAfter.mul(100_000).div(totalAmountOutBefore).toNumber()/1000 - 100).toFixed(3);
         console.log(i, 'ReplacePipe totalAmountOutChangePercents', totalAmountOutChangePercents);
       }
 

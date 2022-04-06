@@ -14,16 +14,19 @@ pragma solidity 0.8.4;
 
 /// @title Library for setting / getting slot variables (used in upgradable proxy contracts)
 /// @author bogdoslav
+/// @notice Example usage. Declare a slot variable. Change contract name and var name at string
+/// @notice uint internal constant _MY_VAR = uint(keccak256("eip1967.MyContract.myVar")) - 1;
+/// @notice use SlotsLib:
+/// @notice using SlotsLib for uint;
+/// @notice write value:
+/// @notice _MY_VAR.set(100);
+/// @notice read value:
+/// @notice uint myVar = _MY_VAR.getUint();
 library SlotsLib {
-
-  /// @dev Generates 'unique' slot address from its name
-  /// @param fullName full slot name in format "eip1967.<contract>.<variable>". For example: "eip1967.controllable.created"
-  function generateSlot(string memory fullName) internal pure returns (uint) {
-    return uint(keccak256(bytes(fullName))) - 1;
-  }
 
   function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
     bytes memory tempEmptyStringTest = bytes(source);
+    require(tempEmptyStringTest.length <= 32, 'SL: String too long');
     if (tempEmptyStringTest.length == 0) {
       return 0x0;
     }
@@ -33,9 +36,13 @@ library SlotsLib {
   }
 
   function bytes32ToString(bytes32 _bytes32) internal pure returns (string memory) {
-    bytes memory bytesArray = new bytes(32);
-    for (uint256 i; i < 32; i++) {
-      bytesArray[i] = _bytes32[i];
+    uint8 i = 0;
+    while(i < 32 && _bytes32[i] != 0) {
+      i++;
+    }
+    bytes memory bytesArray = new bytes(i);
+    for (uint8 j = 0; j < i; j++) {
+      bytesArray[j] = _bytes32[j];
     }
     return string(bytesArray);
   }
