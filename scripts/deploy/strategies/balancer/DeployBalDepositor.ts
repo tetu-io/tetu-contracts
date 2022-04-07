@@ -3,7 +3,7 @@ import {DeployerUtils} from "../../DeployerUtils";
 import {BalDepositor__factory} from "../../../../typechain";
 import {RunHelper} from "../../../utils/tools/RunHelper";
 
-// from 3333 - 0xff2FD65228774Ad878dACe3D93f67DCE4e8Cb3f9
+// from 4444 - 0xBb84098e47d217f51cB014f692eada1F2280a179
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
@@ -15,7 +15,7 @@ async function main() {
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(data[1].address);
-  await DeployerUtils.verifyWithArgs(data[0].address, [data[1].address]);
+  // await DeployerUtils.verifyWithArgs(data[0].address, [data[1].address]);
 }
 
 main()
