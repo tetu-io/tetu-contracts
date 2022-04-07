@@ -26,7 +26,7 @@ import {WithdrawAndClaimTest} from "./WithdrawAndClaimTest";
 import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
-import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
+import {MultiPipeDeployer} from "../../../../scripts/deploy/strategies/multi/MultiPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
 import {LiquidationPriceTest} from "./LiquidationPriceTest";
@@ -128,7 +128,7 @@ describe('Universal AMB tests', async () => {
         signer,
         core,
         info.underlyingName,
-        AMBPipeDeployer.strategyDeployer(strategyContractName, core, signer, underlying, info, pipes),
+        MultiPipeDeployer.AMBStrategyDeployer(strategyContractName, core, signer, underlying, info, pipes),
         underlying,
         25
       );

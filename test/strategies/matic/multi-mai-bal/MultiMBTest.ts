@@ -2,7 +2,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+// import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
@@ -11,7 +11,7 @@ import {
   IStrategy,
   SmartVault,
   StrategyMaiBal,
-  StrategyMaiBal__factory
+  // StrategyMaiBal__factory
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -21,13 +21,15 @@ import {MultiAaveMaiBalTest} from "./MultiMBDoHardWork";
 import {utils} from "ethers";
 import {MBTargetPercentageTest} from "./MBTargetPercentageTest";
 import {MabRebalanceTest} from "./MabRebalanceTest";
+import {UpdatePipeProxyTest} from "./UpdatePipeProxyTest";
+import {ReplacePipeTest} from "./ReplacePipeTest";
 import {SalvageFromPipelineTest} from "./SalvageFromPipelineTest";
 import {PumpInOnHardWorkTest} from "./PumpInOnHardWorkTest";
 import {WithdrawAndClaimTest} from "./WithdrawAndClaimTest";
 import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiMBInfos";
-import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
+import {MultiPipeDeployer} from "../../../../scripts/deploy/strategies/multi/MultiPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
 import {LiquidationPriceTest} from "./LiquidationPriceTest";
@@ -121,10 +123,12 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
       new PumpInOnHardWorkTest(),
       new WithdrawAndClaimTest(),
       new EmergencyWithdrawFromPoolTest(),
-      new CoverageCallsTest(),
       new MoreMaiFromBalTest(),
       new LiquidationPriceTest(),
       new MaxDepositTest(),
+      new ReplacePipeTest(),
+      new UpdatePipeProxyTest(),
+      new CoverageCallsTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('1000'); // ~$11K. Too big BAL amount cause an 'UniswapV2: K' error
     const BAL_PIPE_INDEX = 1;
@@ -137,35 +141,7 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
         signer,
         core,
         info.underlyingName,
-        async vaultAddress => {
-          // -----------------
-          const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
-            signer,
-            info.underlying,
-            info.stablecoin,
-            info.targetPercentage,
-            info.collateralNumerator || '1'
-          );
-          pipes.push(maiStablecoinPipeData.address);
-          // -----------------
-          const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-            signer
-          );
-          pipes.push(balVaultPipeData.address);
-          // -----------------
-
-          const strategyData = await DeployerUtils.deployTetuProxyControlled(
-            signer,
-            strategyContractName
-          );
-          await StrategyMaiBal__factory.connect(strategyData[0].address, signer).initialize(
-            core.controller.address,
-            vaultAddress,
-            info.underlying,
-            pipes
-          );
-          return StrategyMaiBal__factory.connect(strategyData[0].address, signer);
-        },
+        MultiPipeDeployer.MBStrategyDeployer(strategyContractName, core, signer, underlying, info, pipes),
         underlying,
         25
       );

@@ -17,6 +17,7 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 export class ReplacePipeTest extends SpecificStrategyTest {
+
   public async do(
       deployInfo: DeployInfo
   ): Promise<void> {
@@ -35,8 +36,8 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
       // ----- Deploy new pipes
       const newPipes: string[] = [];
-      const strategyDeployer = MultiPipeDeployer.AMBStrategyDeployer(
-          'StrategyAaveMaiBal', core, signer, underlying, info, newPipes, false);
+      const strategyDeployer = MultiPipeDeployer.MBStrategyDeployer(
+          'StrategyMaiBal', core, signer, underlying, info, newPipes, false);
       await strategyDeployer(vault.address);
       console.log('new pipes', newPipes);
 
@@ -55,7 +56,6 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
       for (let i = newPipes.length - 1; i >= 0; i--) {
         const totalAmountOutBefore = await strategyGov.totalAmountOut();
-        console.log('totalAmountOutBefore', totalAmountOutBefore);
 
         await expect(
             strategyGov.announcePipeReplacement(0, MaticAddresses.ZERO_ADDRESS)
@@ -84,12 +84,11 @@ export class ReplacePipeTest extends SpecificStrategyTest {
             strategyGov.replacePipe(i, newPipes[i], 0)
         ).to.be.revertedWith('LP: Loss more than maxDecrease');
 
-        await strategyGov.replacePipe(i, newPipes[i], 5); // 0,5%
+        await strategyGov.replacePipe(i, newPipes[i], 10);
 
         const totalAmountOutAfter = await strategyGov.totalAmountOut();
-        console.log('totalAmountOutAfter', totalAmountOutAfter);
         const totalAmountOutChangePercents = (totalAmountOutAfter.mul(100_000).div(totalAmountOutBefore).toNumber()/1000 - 100).toFixed(3);
-        console.log(i, '=== ReplacePipe totalAmountOutChangePercents', totalAmountOutChangePercents, '%');
+        console.log(i, 'ReplacePipe totalAmountOutChangePercents', totalAmountOutChangePercents);
       }
 
     });
