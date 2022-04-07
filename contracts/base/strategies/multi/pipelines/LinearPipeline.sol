@@ -182,7 +182,11 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     _PIPES.setAt(pipeIndex, address(newPipe));
 
     // pump in liquidity back from prev pipe or pipeline itself
-    _pumpIn(PipeLib.MAX_AMOUNT);
+    if (pipeIndex == 0) {
+      _pumpIn(PipeLib.MAX_AMOUNT);
+    } else {
+      _pumpIn(PipeLib.MAX_AMOUNT, pipeIndex - 1);
+    }
 
     uint totalAmountOutAfter = _getTotalAmountOut();
     uint minTotalAmountOut = totalAmountOutBefore - (totalAmountOutBefore * maxDecrease1000 / 1000);
@@ -205,7 +209,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     }
   }
 
-  /// @dev function for investing, deposits, entering, borrowing, from PipeIndex to the end
+  /// @dev function for investing, deposits, entering, borrowing, from the pipeline to the end of pipe
   /// @param sourceAmount in source units
   /// @return outputAmount in most underlying units
   function _pumpIn(uint256 sourceAmount) internal returns (uint256 outputAmount)  {
