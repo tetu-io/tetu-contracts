@@ -25,33 +25,33 @@ import "./PipeLib.sol";
 /// @author bogdoslav
 abstract contract Pipe is IPipe, ControllableV2 {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   /// @notice Address of the master pipeline
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
-  uint internal constant _PIPELINE_SLOT = uint256(keccak256("eip1967.Pipe.pipeline")) - 1;
+ bytes32 internal constant _PIPELINE_SLOT = bytes32(uint(keccak256("eip1967.Pipe.pipeline")) - 1);
 
   /// @notice Pipe name for statistical purposes only
   /// @dev initialize it in initializer
-  uint internal constant _NAME_SLOT = uint256(keccak256("eip1967.Pipe.name")) - 1;
+ bytes32 internal constant _NAME_SLOT = bytes32(uint(keccak256("eip1967.Pipe.name")) - 1);
 
   /// @notice Source token address type
   /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
-  uint internal constant _SOURCE_TOKEN_SLOT = uint256(keccak256("eip1967.Pipe.sourceToken")) - 1;
+ bytes32 internal constant _SOURCE_TOKEN_SLOT = bytes32(uint(keccak256("eip1967.Pipe.sourceToken")) - 1);
 
   /// @notice Output token address type
   /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
-  uint internal constant _OUTPUT_TOKEN_SLOT = uint256(keccak256("eip1967.Pipe.outputToken")) - 1;
+ bytes32 internal constant _OUTPUT_TOKEN_SLOT = bytes32(uint(keccak256("eip1967.Pipe.outputToken")) - 1);
 
   /// @notice Next pipe in pipeline
-  uint internal constant _PREV_PIPE_SLOT = uint256(keccak256("eip1967.Pipe.prevPipe")) - 1;
+ bytes32 internal constant _PREV_PIPE_SLOT = bytes32(uint(keccak256("eip1967.Pipe.prevPipe")) - 1);
 
   /// @notice Previous pipe in pipeline
-  uint internal constant _NEXT_PIPE_SLOT = uint256(keccak256("eip1967.Pipe.nextPipe")) - 1;
+ bytes32 internal constant _NEXT_PIPE_SLOT = bytes32(uint(keccak256("eip1967.Pipe.nextPipe")) - 1);
 
   /// @notice Reward token address for claiming
   /// @dev initialize it in initializer
-  uint internal constant _REWARD_TOKENS = uint256(keccak256("eip1967.Pipe.rewardTokens")) - 1;
+ bytes32 internal constant _REWARD_TOKENS = bytes32(uint(keccak256("eip1967.Pipe.rewardTokens")) - 1);
 
   event Get(uint256 amount, uint256 output);
   event Put(uint256 amount, uint256 output);
@@ -151,7 +151,7 @@ abstract contract Pipe is IPipe, ControllableV2 {
 
   /// @dev Size of reward tokens array
   function rewardTokensLength() external view override returns (uint) {
-    return _REWARD_TOKENS.length();
+    return _REWARD_TOKENS.arrayLength();
   }
 
   /// @dev Returns reward token
@@ -203,7 +203,7 @@ abstract contract Pipe is IPipe, ControllableV2 {
     address __pipeline = _pipeline();
     require(__pipeline != address(0));
 
-    uint len = _REWARD_TOKENS.length();
+    uint len = _REWARD_TOKENS.arrayLength();
     for (uint i = 0; i < len; i++) {
       address rewardToken = _REWARD_TOKENS.addressAt(i);
       if (rewardToken == address(0)) {

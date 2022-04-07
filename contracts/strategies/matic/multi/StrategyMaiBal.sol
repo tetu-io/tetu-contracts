@@ -17,7 +17,7 @@ import "../../../base/SlotsLib.sol";
 /// @title MAI->BAL Multi Strategy Polygon Implementation
 /// @author belbix, bogdoslav
 contract StrategyMaiBal is MaiBalStrategyBase {
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   address private constant _QI = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4;
   address private constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;

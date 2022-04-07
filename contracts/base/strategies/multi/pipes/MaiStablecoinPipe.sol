@@ -24,7 +24,7 @@ import "../../../interface/strategies/IMaiStablecoinPipe.sol";
 /// @author bogdoslav
 contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   struct MaiStablecoinPipeData {
     address sourceToken;
@@ -37,12 +37,12 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     uint256 collateralNumerator; // 1 for all tokens except 10*10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao as it have only 8 decimals
   }
 
-  uint internal constant _STABLECOIN_SLOT           = uint(keccak256("eip1967.MaiStablecoinPipe.stablecoin")) - 1;
-  uint internal constant _BORROW_TOKEN_SLOT         = uint(keccak256("eip1967.MaiStablecoinPipe.borrowToken")) - 1;
-  uint internal constant _TARGET_PERCENTAGE_SLOT    = uint(keccak256("eip1967.MaiStablecoinPipe.targetPercentage")) - 1;
-  uint internal constant _MAX_IMBALANCE_SLOT        = uint(keccak256("eip1967.MaiStablecoinPipe.maxImbalance")) - 1;
-  uint internal constant _COLLATERAL_NUMERATOR_SLOT = uint(keccak256("eip1967.MaiStablecoinPipe.collateralNumerator")) - 1;
-  uint internal constant _VAULT_ID_SLOT             = uint(keccak256("eip1967.MaiStablecoinPipe.vaultID")) - 1;
+ bytes32 internal constant _STABLECOIN_SLOT           = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.stablecoin")) - 1);
+ bytes32 internal constant _BORROW_TOKEN_SLOT         = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.borrowToken")) - 1);
+ bytes32 internal constant _TARGET_PERCENTAGE_SLOT    = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.targetPercentage")) - 1);
+ bytes32 internal constant _MAX_IMBALANCE_SLOT        = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.maxImbalance")) - 1);
+ bytes32 internal constant _COLLATERAL_NUMERATOR_SLOT = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.collateralNumerator")) - 1);
+ bytes32 internal constant _VAULT_ID_SLOT             = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.vaultID")) - 1);
 
   event Rebalanced(uint256 borrowed, uint256 repaid);
   event Borrowed(uint256 amount);

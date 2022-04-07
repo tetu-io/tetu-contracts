@@ -26,7 +26,7 @@ import "../../../third_party/uniswap/IUniswapV2Router02.sol";
 /// @author belbix, bogdoslav
 contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStrategyBase {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
   string private constant _STRATEGY_NAME = "MaiBalStrategyBase";
@@ -36,10 +36,10 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
 
-  uint internal constant _TOTAL_AMOUNT_OUT_SLOT    = uint(keccak256("eip1967.MaiBalStrategyBase.totalAmountOut")) - 1;
-  uint internal constant _MAI_STABLECOIN_PIPE_SLOT = uint(keccak256("eip1967.MaiBalStrategyBase._maiStablecoinPipe")) - 1;
+ bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase.totalAmountOut")) - 1);
+ bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase._maiStablecoinPipe")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
-  uint internal constant _ASSET_SLOT               = uint(keccak256("eip1967.MaiBalStrategyBase._asset")) - 1;
+ bytes32 internal constant _ASSET_SLOT               = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase._asset")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);

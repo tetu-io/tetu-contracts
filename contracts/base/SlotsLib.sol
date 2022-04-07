@@ -15,7 +15,7 @@ pragma solidity 0.8.4;
 /// @title Library for setting / getting slot variables (used in upgradable proxy contracts)
 /// @author bogdoslav
 /// @notice Example usage. Declare a slot variable. Change contract name and var name at string
-/// @notice uint internal constant _MY_VAR = uint(keccak256("eip1967.MyContract.myVar")) - 1;
+/// @notice uint internal constant _MY_VAR = bytes32(uint(keccak256("eip1967.MyContract.myVar"))) - 1;
 /// @notice use SlotsLib:
 /// @notice using SlotsLib for uint;
 /// @notice write value:
@@ -26,7 +26,6 @@ library SlotsLib {
 
   function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
     bytes memory tempEmptyStringTest = bytes(source);
-    require(tempEmptyStringTest.length <= 32, 'SL: String too long');
     if (tempEmptyStringTest.length == 0) {
       return 0x0;
     }
@@ -50,28 +49,28 @@ library SlotsLib {
   // ************* GETTERS *******************
 
   /// @dev Gets a slot as bytes32
-  function getBytes32(uint slot) internal view returns (bytes32 result) {
+  function getBytes32(bytes32 slot) internal view returns (bytes32 result) {
     assembly {
       result := sload(slot)
     }
   }
 
   /// @dev Gets a slot as an address
-  function getAddress(uint slot) internal view returns (address result) {
+  function getAddress(bytes32 slot) internal view returns (address result) {
     assembly {
       result := sload(slot)
     }
   }
 
   /// @dev Gets a slot as uint256
-  function getUint(uint slot) internal view returns (uint result) {
+  function getUint(bytes32 slot) internal view returns (uint result) {
     assembly {
       result := sload(slot)
     }
   }
 
   /// @dev Gets a slot as string
-  function getString(uint slot) internal view returns (string memory result) {
+  function getString(bytes32 slot) internal view returns (string memory result) {
     bytes32 data;
     assembly {
       data := sload(slot)
@@ -82,7 +81,7 @@ library SlotsLib {
   // ************* ARRAY GETTERS *******************
 
   /// @dev Gets an array length
-  function length(uint slot) internal view returns (uint result) {
+  function arrayLength(bytes32 slot) internal view returns (uint result) {
     assembly {
       result := sload(slot)
     }
@@ -91,7 +90,7 @@ library SlotsLib {
   /// @dev Gets a slot array by index as address
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
-  function addressAt(uint slot, uint index) internal view returns (address result) {
+  function addressAt(bytes32 slot, uint index) internal view returns (address result) {
     bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       result := sload(pointer)
@@ -101,7 +100,7 @@ library SlotsLib {
   /// @dev Gets a slot array by index as uint
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
-  function uintAt(uint slot, uint index) internal view returns (uint result) {
+  function uintAt(bytes32 slot, uint index) internal view returns (uint result) {
     bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       result := sload(pointer)
@@ -112,7 +111,7 @@ library SlotsLib {
 
   /// @dev Sets a slot with bytes32
   /// @notice Check address for 0 at the setter
-  function set(uint slot, bytes32 value) internal {
+  function set(bytes32 slot, bytes32 value) internal {
     assembly {
       sstore(slot, value)
     }
@@ -120,21 +119,21 @@ library SlotsLib {
 
   /// @dev Sets a slot with address
   /// @notice Check address for 0 at the setter
-  function set(uint slot, address value) internal {
+  function set(bytes32 slot, address value) internal {
     assembly {
       sstore(slot, value)
     }
   }
 
   /// @dev Sets a slot with uint
-  function set(uint slot, uint value) internal {
+  function set(bytes32 slot, uint value) internal {
     assembly {
       sstore(slot, value)
     }
   }
 
   /// @dev Sets a slot with string (WARNING!!! truncated to 32 bytes)
-  function set(uint slot, string memory str) internal {
+  function set(bytes32 slot, string memory str) internal {
     bytes32 value = stringToBytes32(str);
     assembly {
       sstore(slot, value)
@@ -146,7 +145,7 @@ library SlotsLib {
   /// @dev Sets a slot array at index with address
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
-  function setAt(uint slot, uint index, address value) internal {
+  function setAt(bytes32 slot, uint index, address value) internal {
     bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       sstore(pointer, value)
@@ -156,7 +155,7 @@ library SlotsLib {
   /// @dev Sets a slot array at index with uint
   /// @notice First slot is array length, elements ordered backward in memory
   /// @notice This is unsafe, without checking array length.
-  function setAt(uint slot, uint index, uint value) internal {
+  function setAt(bytes32 slot, uint index, uint value) internal {
     bytes32 pointer = bytes32(uint(slot) - 1 - index);
     assembly {
       sstore(pointer, value)
@@ -164,17 +163,17 @@ library SlotsLib {
   }
 
   /// @dev Sets an array length
-  function setLength(uint slot, uint length_) internal {
+  function setLength(bytes32 slot, uint length) internal {
     assembly {
-      sstore(slot, length_)
+      sstore(slot, length)
     }
   }
 
   /// @dev Pushes an address to the array
-  function push(uint slot, address value) internal {
-    uint _length = length(slot);
-    setAt(slot, _length, value);
-    setLength(slot, _length + 1);
+  function push(bytes32 slot, address value) internal {
+    uint length = arrayLength(slot);
+    setAt(slot, length, value);
+    setLength(slot, length + 1);
   }
 
 

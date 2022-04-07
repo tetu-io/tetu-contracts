@@ -24,10 +24,10 @@ import "../pipes/PipeLib.sol";
 /// @author bogdoslav
 contract LinearPipeline is ILinearPipeline, Initializable {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
-  uint internal constant _UNDERLYING_TOKEN_SLOT = uint(keccak256("eip1967.LinearPipeline.underlyingToken")) - 1;
-  uint internal constant _PIPES                 = uint(keccak256("eip1967.LinearPipeline.pipes")) - 1;
+ bytes32 internal constant _UNDERLYING_TOKEN_SLOT = bytes32(uint(keccak256("eip1967.LinearPipeline.underlyingToken")) - 1);
+ bytes32 internal constant _PIPES                 = bytes32(uint(keccak256("eip1967.LinearPipeline.pipes")) - 1);
 
   event RebalancedAllPipes();
   event PipeReplaced(uint pipeIndex, address fromPipe, address toPipe);
@@ -60,7 +60,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   }
 
   function _pipesLength() internal view returns (uint256) {
-    return _PIPES.length();
+    return _PIPES.arrayLength();
   }
 
   function pipes(uint index) external override view returns (IPipe) {

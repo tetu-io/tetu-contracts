@@ -24,7 +24,7 @@ import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
 /// @author belbix, bogdoslav
 contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStrategyBase {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   /// @notice Strategy type for statistical purposes
   string private constant _STRATEGY_NAME = "AaveMaiBalStrategyBase";
@@ -35,13 +35,13 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   uint256 private constant _BUY_BACK_RATIO = 10_00;
   uint256 private constant _TIME_LOCK = 48 hours;
 
-  uint internal constant _TOTAL_AMOUNT_OUT_SLOT    = uint(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1;
-  uint internal constant _MAI_STABLECOIN_PIPE_SLOT = uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1;
-  uint internal constant _MAI_CAM_PIPE_SLOT        = uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiCamPipe")) - 1;
+ bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
+ bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
+ bytes32 internal constant _MAI_CAM_PIPE_SLOT        = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiCamPipe")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
-  uint internal constant _ASSET_SLOT               = uint(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1;
-  uint internal constant _TIMELOCKS                = uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelocks")) - 1;
-  uint internal constant _TIMELOCK_ADDRESSES       = uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelockAddresses")) - 1;
+ bytes32 internal constant _ASSET_SLOT               = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
+ bytes32 internal constant _TIMELOCKS                = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelocks")) - 1);
+ bytes32 internal constant _TIMELOCK_ADDRESSES       = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelockAddresses")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);

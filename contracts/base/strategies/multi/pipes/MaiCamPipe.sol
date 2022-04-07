@@ -22,7 +22,7 @@ import "./../../../../third_party/qidao/ICamToken.sol";
 /// @author bogdoslav
 contract MaiCamPipe is Pipe {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   struct MaiCamPipeData {
     address sourceToken;

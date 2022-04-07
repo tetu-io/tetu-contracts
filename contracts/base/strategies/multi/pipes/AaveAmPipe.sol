@@ -22,7 +22,7 @@ import "./Pipe.sol";
 /// @author bogdoslav
 contract AaveAmPipe is Pipe {
   using SafeERC20 for IERC20;
-  using SlotsLib for uint;
+  using SlotsLib for bytes32;
 
   struct AaveAmPipeData {
     address pool;
@@ -31,7 +31,7 @@ contract AaveAmPipe is Pipe {
     address rewardToken;
   }
 
-  uint internal constant _POOL_SLOT = uint(keccak256("eip1967.AaveAmPipe.pool")) - 1;
+ bytes32 internal constant _POOL_SLOT = bytes32(uint(keccak256("eip1967.AaveAmPipe.pool")) - 1);
 
   function initialize(AaveAmPipeData memory _d) public {
     require(_d.pool != address(0), "Zero pool");
