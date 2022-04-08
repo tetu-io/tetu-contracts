@@ -1,6 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {readFileSync} from "fs";
+import {readFileSync, truncateSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
@@ -12,6 +12,13 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
 import {FoldingDoHardWork} from "../../FoldingDoHardWork";
+
+
+import {ethers} from "hardhat";
+
+
+
+
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -32,7 +39,7 @@ const argv = require('yargs/yargs')()
     },
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 80001
     },
   }).argv;
 
@@ -40,7 +47,7 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Universal Aave Fold tests', async () => {
-
+  
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
@@ -70,6 +77,8 @@ describe('Universal Aave Fold tests', async () => {
       console.log('skip ', tokenName);
       return;
     }
+
+   
 
     if (argv.onlyOneAaveFoldStrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAaveFoldStrategyTest) {
       return;
@@ -158,4 +167,5 @@ describe('Universal Aave Fold tests', async () => {
       specificTests,
     );
   });
+   
 });
