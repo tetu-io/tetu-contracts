@@ -267,8 +267,8 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   function announcePipeReplacement(uint pipeIndex, address newPipe)
   external {
     _onlyControllerOrGovernance();
-    require(newPipe != address(0), "AMB: newPipe is 0");
-    require(_TIMELOCKS.uintAt(pipeIndex) == 0, "AMB: Already defined");
+    require(newPipe != address(0), "MB: newPipe is 0");
+    require(_TIMELOCKS.uintAt(pipeIndex) == 0, "MB: Already defined");
     _TIMELOCKS.setAt(pipeIndex, block.timestamp + _TIME_LOCK);
     _TIMELOCK_ADDRESSES.setAt(pipeIndex, newPipe);
     emit PipeReplaceAnnounced(pipeIndex, newPipe);
@@ -282,8 +282,8 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   external {
     _onlyControllerOrGovernance();
     uint timelock = _TIMELOCKS.uintAt(pipeIndex);
-    require(timelock != 0 && timelock < block.timestamp, "AMB: Too early");
-    require(_TIMELOCK_ADDRESSES.addressAt(pipeIndex) == newPipe, "AMB: Wrong address");
+    require(timelock != 0 && timelock < block.timestamp, "MB: Too early");
+    require(_TIMELOCK_ADDRESSES.addressAt(pipeIndex) == newPipe, "MB: Wrong address");
 
     _replacePipe(pipeIndex, IPipe(newPipe), maxDecrease1000);
 

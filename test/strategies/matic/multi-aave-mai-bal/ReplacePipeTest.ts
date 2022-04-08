@@ -82,7 +82,7 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
         await expect(
             strategyGov.replacePipe(i, newPipes[i], 0)
-        ).to.be.revertedWith('LP: Loss more than maxDecrease');
+        ).to.be.revertedWith('LP: Loss');
 
         await strategyGov.replacePipe(i, newPipes[i], 5); // 0,5%
 
