@@ -1,7 +1,7 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, SmartVault, StrategyMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -31,8 +31,8 @@ export class MoreMaiFromBalTest extends SpecificStrategyTest {
 
       const bal = await TokenUtils.balanceOf(underlying, user.address);
 
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
-      const strategyGov = strategyAaveMaiBal.connect(signer);
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
+      const strategyGov = strategyMaiBal.connect(signer);
 
       const pipesLength = await strategyGov.pipesLength();
       console.log('>>>pipesLength  ', pipesLength.toString());

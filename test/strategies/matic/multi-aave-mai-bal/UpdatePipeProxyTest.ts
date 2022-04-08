@@ -18,7 +18,6 @@ import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {BigNumber} from "ethers";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -42,7 +41,6 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       const strategyUser = strategyAaveMaiBal.connect(deployInfo.user as SignerWithAddress);
       const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
       const strategyUserProxy = await DeployerUtils.connectInterface(deployInfo.user as SignerWithAddress, 'TetuProxyControlled', strategyAaveMaiBal.address) as TetuProxyControlled;
-      const strategyGovProxy = await DeployerUtils.connectInterface(deployInfo.signer as SignerWithAddress, 'TetuProxyControlled', strategyAaveMaiBal.address) as TetuProxyControlled;
 
       const info = infos.filter(i => i.underlying === underlying.toLowerCase())[0];
       console.log('info', info);

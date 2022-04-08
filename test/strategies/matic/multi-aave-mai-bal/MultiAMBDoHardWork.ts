@@ -1,6 +1,5 @@
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {
-  ICamToken,
   IErc20Stablecoin,
   IStrategy,
   PriceSource,
@@ -9,7 +8,6 @@ import {
 } from "../../../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber} from "ethers";

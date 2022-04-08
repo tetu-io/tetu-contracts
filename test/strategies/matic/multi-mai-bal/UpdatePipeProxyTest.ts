@@ -1,7 +1,7 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {
   SmartVault,
-  StrategyAaveMaiBal,
+  StrategyMaiBal,
   TetuProxyControlled,
   Controller,
   Announcer,
@@ -18,7 +18,7 @@ import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {BigNumber} from "ethers";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+// import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -38,11 +38,10 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       const controller = await DeployerUtils.connectInterface(signer, 'Controller', core.controller.address) as Controller;
       const announcer = await DeployerUtils.connectInterface(signer, 'Announcer', core.announcer.address) as Announcer;
 
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
-      const strategyUser = strategyAaveMaiBal.connect(deployInfo.user as SignerWithAddress);
-      const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
-      const strategyUserProxy = await DeployerUtils.connectInterface(deployInfo.user as SignerWithAddress, 'TetuProxyControlled', strategyAaveMaiBal.address) as TetuProxyControlled;
-      const strategyGovProxy = await DeployerUtils.connectInterface(deployInfo.signer as SignerWithAddress, 'TetuProxyControlled', strategyAaveMaiBal.address) as TetuProxyControlled;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
+      const strategyUser = strategyMaiBal.connect(deployInfo.user as SignerWithAddress);
+      const strategyGov = strategyMaiBal.connect(deployInfo.signer as SignerWithAddress);
+      const strategyUserProxy = await DeployerUtils.connectInterface(deployInfo.user as SignerWithAddress, 'TetuProxyControlled', strategyMaiBal.address) as TetuProxyControlled;
 
       const info = infos.filter(i => i.underlying === underlying.toLowerCase())[0];
       console.log('info', info);
@@ -58,7 +57,7 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       console.log('newPipeImpl', newPipeImpl);
 
       // --------- deposit
-      const maxDeposit = await strategyAaveMaiBal.maxDeposit();
+      const maxDeposit = await strategyMaiBal.maxDeposit();
       console.log('maxDeposit', maxDeposit.toString());
       expect(maxDeposit).gt(0, 'maxDeposit is 0');
       const depositAmount = maxDeposit.div(200);

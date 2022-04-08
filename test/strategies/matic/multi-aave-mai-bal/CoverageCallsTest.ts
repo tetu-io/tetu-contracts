@@ -3,17 +3,13 @@ import {
   SmartVault,
   StrategyAaveMaiBal,
   BalVaultPipe,
-  IMerkleOrchard
 } from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {VaultUtils} from "../../../VaultUtils";
-import {BigNumber, BigNumberish} from "ethers";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {BytesLike} from "@ethersproject/bytes";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);

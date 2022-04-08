@@ -1,5 +1,5 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {SmartVault, StrategyMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -27,8 +27,8 @@ export class ReplacePipeTest extends SpecificStrategyTest {
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
       const core = deployInfo?.core as CoreContractsWrapper;
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
-      const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
+      const strategyGov = strategyMaiBal.connect(deployInfo.signer as SignerWithAddress);
 
       const info = infos.filter(i => i.underlying === underlying.toLowerCase())[0];
       console.log('info', info);
@@ -42,7 +42,7 @@ export class ReplacePipeTest extends SpecificStrategyTest {
       console.log('new pipes', newPipes);
 
       // --------- deposit
-      const maxDeposit = await strategyAaveMaiBal.maxDeposit();
+      const maxDeposit = await strategyMaiBal.maxDeposit();
       console.log('maxDeposit', maxDeposit.toString());
 
       expect(maxDeposit).gt(0, 'maxDeposit is 0');

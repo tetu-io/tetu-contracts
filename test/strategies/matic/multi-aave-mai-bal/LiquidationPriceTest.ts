@@ -1,12 +1,11 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {IStrategy, StrategyAaveMaiBal, MaiStablecoinPipe, IErc20Stablecoin, SmartVault} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {AMBUtils} from "./AMBUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../../VaultUtils";

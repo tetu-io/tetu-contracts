@@ -17,7 +17,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {MultiAaveMaiBalTest} from "./MultiMBDoHardWork";
+import {MultiMaiBalTest} from "./MultiMBDoHardWork";
 import {utils} from "ethers";
 import {MBTargetPercentageTest} from "./MBTargetPercentageTest";
 import {MabRebalanceTest} from "./MabRebalanceTest";
@@ -156,7 +156,7 @@ describe('Universal (CelsiusX) MaiBal tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new MultiAaveMaiBalTest(
+      return new MultiMaiBalTest(
         _signer,
         _user,
         _core,
