@@ -11,7 +11,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
-import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
+import {infos} from "../../../../scripts/deploy/strategies/multi/MultiMBInfos";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {network} from "hardhat";
 import {TokenUtils} from "../../../TokenUtils";
@@ -61,7 +61,7 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       const maxDeposit = await strategyAaveMaiBal.maxDeposit();
       console.log('maxDeposit', maxDeposit.toString());
       expect(maxDeposit).gt(0, 'maxDeposit is 0');
-      const depositAmount = maxDeposit.div(2);
+      const depositAmount = maxDeposit.div(200);
       await TokenUtils.getToken(underlying, user.address, depositAmount)
       await VaultUtils.deposit(user, vault, BigNumber.from(depositAmount))
       console.log('>>>deposited');

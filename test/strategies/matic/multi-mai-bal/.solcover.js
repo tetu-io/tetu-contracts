@@ -1,5 +1,6 @@
 module.exports = {
   skipFiles: [
+    'third_party',
     'third_party\\cafe',
     'third_party\\cosmic',
     'third_party\\curve',
@@ -23,6 +24,16 @@ module.exports = {
     'base\\strategies\\snx-base',
     'base\\strategies\\masterchef-base',
     'base\\strategies\\tetu',
+    'base\\strategies\\alpaca',
+    'base\\strategies\\beethoven',
+    'base\\strategies\\geist',
+    'base\\strategies\\klima',
+    'base\\strategies\\qidao',
+    'base\\strategies\\scream',
+    'base\\strategies\\vesq',
+    'base\\strategies\\tomb-base',
+    'base\\strategies\\impermax-base',
+    'base\\strategies\\market-base',
     'base\\governance',
     'base\\interface',
     'base\\token',
@@ -40,6 +51,18 @@ module.exports = {
     'strategies\\matic\\quick',
     'strategies\\matic\\sushiswap',
     'strategies\\matic\\wault',
+    'strategies\\matic\\alpaca',
+    'strategies\\matic\\beethoven',
+    'strategies\\matic\\geist',
+    'strategies\\matic\\klima',
+    'strategies\\matic\\qidao',
+    'strategies\\matic\\scream',
+    'strategies\\matic\\vesq',
+    'strategies\\matic\\impermax',
+    'strategies\\matic\\klima',
+    'strategies\\matic\\market',
+    'strategies\\matic\\nacho',
+    'strategies\\matic\\vesq',
     'strategies\\matic\\tetu'
   ]
 };

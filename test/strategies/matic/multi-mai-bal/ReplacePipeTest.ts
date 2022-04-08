@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
-import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
+import {infos} from "../../../../scripts/deploy/strategies/multi/MultiMBInfos";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {MultiPipeDeployer} from "../../../../scripts/deploy/strategies/multi/MultiPipeDeployer";
 import {network} from "hardhat";
@@ -47,7 +47,7 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
       expect(maxDeposit).gt(0, 'maxDeposit is 0');
 
-      const depositAmount = maxDeposit.div(2);
+      const depositAmount = maxDeposit.div(200);
       await TokenUtils.getToken(underlying, user.address, depositAmount)
       await VaultUtils.deposit(user, vault, BigNumber.from(depositAmount))
       console.log('>>>deposited');
@@ -59,17 +59,17 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
         await expect(
             strategyGov.announcePipeReplacement(0, MaticAddresses.ZERO_ADDRESS)
-        ).to.be.revertedWith('AMB: newPipe is 0');
+        ).to.be.revertedWith('MB: newPipe is 0');
 
         await strategyGov.announcePipeReplacement(i, newPipes[i]);
 
         await expect(
             strategyGov.announcePipeReplacement(i, newPipes[i])
-        ).to.be.revertedWith('AMB: Already defined');
+        ).to.be.revertedWith('MB: Already defined');
 
         await expect(
             strategyGov.replacePipe(i, newPipes[i], 10)
-        ).to.be.revertedWith('AMB: Too early');
+        ).to.be.revertedWith('MB: Too early');
 
         const timeLockSec = 48 * 60 * 60;
         console.log('timeLockSec', timeLockSec);
@@ -78,11 +78,11 @@ export class ReplacePipeTest extends SpecificStrategyTest {
 
         await expect(
             strategyGov.replacePipe(i, MaticAddresses.ZERO_ADDRESS, 10)
-        ).to.be.revertedWith('AMB: Wrong address');
+        ).to.be.revertedWith('MB: Wrong address');
 
         await expect(
             strategyGov.replacePipe(i, newPipes[i], 0)
-        ).to.be.revertedWith('LP: Loss more than maxDecrease');
+        ).to.be.revertedWith('LP: Loss');
 
         await strategyGov.replacePipe(i, newPipes[i], 10);
 
