@@ -147,7 +147,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
   /// @dev Replaces pipe in the pipeline
   /// @param pipeIndex index of pipe to change
   /// @param newPipe to be changed
-  /// @param maxDecrease1000 maximum decrease ot totalAmountOut (in 0,1%)
+  /// @param maxDecrease1000 maximum decrease of totalAmountOut (in 0,1%)
   function _replacePipe(uint pipeIndex, IPipe newPipe, uint maxDecrease1000) internal {
     if (newPipe.pipeline() == address(0)) {
       newPipe.setPipeline(address(this));
@@ -162,7 +162,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     );
 
     uint totalAmountOutBefore = _getTotalAmountOut();
-    // pump out liqudity to prev pipe
+    // pump out liquidity to prev pipe
     _pumpOut(PipeLib.MAX_AMOUNT, pipeIndex);
 
     address prevPipe = currPipe.prevPipe();
@@ -191,7 +191,7 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     uint totalAmountOutAfter = _getTotalAmountOut();
     uint minTotalAmountOut = totalAmountOutBefore - (totalAmountOutBefore * maxDecrease1000 / 1000);
     // Let's do not replace pipe when we have unexpected loss
-    require(totalAmountOutAfter > minTotalAmountOut, 'LP: Loss more than maxDecrease');
+    require(totalAmountOutAfter > minTotalAmountOut, 'LP: Loss');
 
     emit PipeReplaced(pipeIndex, address(currPipe), address(newPipe));
   }
@@ -329,7 +329,4 @@ contract LinearPipeline is ILinearPipeline, Initializable {
     return abi.decode(reason, (uint256));
   }
 
-  // !!! decrease gap size after adding variables!!!
-  //slither-disable-next-line unused-state
-  uint[32] private ______gap;
 }

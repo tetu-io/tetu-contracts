@@ -295,7 +295,5 @@ abstract contract Pipe is IPipe, ControllableV2 {
     IERC20(_token).safeApprove(spender, amount);
   }
 
-  // !!! decrease gap size after adding variables!!!
-  //slither-disable-next-line unused-state
   uint[32] private ______gap;
 }

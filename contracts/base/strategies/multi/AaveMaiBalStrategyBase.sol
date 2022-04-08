@@ -35,13 +35,11 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   uint256 private constant _BUY_BACK_RATIO = 10_00;
   uint256 private constant _TIME_LOCK = 48 hours;
 
- bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
- bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiStablecoinPipe")) - 1);
- bytes32 internal constant _MAI_CAM_PIPE_SLOT        = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._maiCamPipe")) - 1);
+  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.totalAmountOut")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
- bytes32 internal constant _ASSET_SLOT               = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
- bytes32 internal constant _TIMELOCKS                = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelocks")) - 1);
- bytes32 internal constant _TIMELOCK_ADDRESSES       = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelockAddresses")) - 1);
+  bytes32 internal constant _ASSET_SLOT               = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase._asset")) - 1);
+  bytes32 internal constant _TIMELOCKS                = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelocks")) - 1);
+  bytes32 internal constant _TIMELOCK_ADDRESSES       = bytes32(uint(keccak256("eip1967.AaveMaiBalStrategyBase.timelockAddresses")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);
@@ -56,10 +54,7 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
     address[] memory __rewardTokens
   ) public initializer
   {
-    require(_controller != address(0), "Zero controller");
-    require(_underlyingToken != address(0), "Zero underlying");
-    require(_vault != address(0), "Zero vault");
-
+    // _controller, _underlyingToken, _vault checked at the functions below
     initializeStrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
     initializeLinearPipeline(_underlyingToken);
 
@@ -92,11 +87,11 @@ contract AaveMaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBa
   }
 
   function _maiStablecoinPipe() internal view returns (IMaiStablecoinPipe) {
-    return IMaiStablecoinPipe(_MAI_STABLECOIN_PIPE_SLOT.getAddress());
+    return IMaiStablecoinPipe(address(_pipes(2)));
   }
 
   function _maiCamPipe() internal view returns (IPipe) {
-    return IPipe(_MAI_CAM_PIPE_SLOT.getAddress());
+    return _pipes(1);
   }
 
   // ********************************************************
