@@ -50,6 +50,7 @@ import {FtmAddresses} from "../addresses/FtmAddresses";
 import {TimeUtils} from "../../test/TimeUtils";
 import {readFileSync} from "fs";
 import {Libraries} from "hardhat-deploy/dist/types";
+import { RopstenAddresses } from "../addresses/RopstenAddresses";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -1057,12 +1058,12 @@ export class DeployerUtils {
 
   public static async getGovernance() {
     const net = await ethers.provider.getNetwork();
-    if (net.chainId === 137) {
-      return MaticAddresses.GOV_ADDRESS;
+    if (net.chainId === 31337) {
+     return MaticAddresses.GOV_ADDRESS;
     } else if (net.chainId === 250) {
       return FtmAddresses.GOV_ADDRESS;
     } else {
-      throw Error('No config for ' + net.chainId);
+      throw Error('No config for here ' + net.chainId);
     }
   }
 
