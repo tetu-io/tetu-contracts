@@ -103,7 +103,7 @@ export class MultiPipeDeployer {
         poolID: MaticAddresses.BALANCER_POOL_MAI_STABLE_ID,
         tokenIndex: '2', // tokenIndex
         lpToken: MaticAddresses.BALANCER_STABLE_POOL, // Balancer Polygon Stable Pool (BPSP)
-        rewardToken: MaticAddresses.BAL_TOKEN,
+        rewardTokens: [MaticAddresses.BAL_TOKEN, MaticAddresses.QI_TOKEN],
       },
       {gasLimit: 12_000_000}
     ));

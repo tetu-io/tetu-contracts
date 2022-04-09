@@ -29,6 +29,7 @@ async function ipfsGet(
 ) {
   const url = `https://${gateway}/${protocolType}/${ipfsHash}`;
   const result = await fetch(url).then(res => res.json());
+
   return result
 }
 
