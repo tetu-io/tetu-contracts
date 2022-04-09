@@ -66,7 +66,20 @@ async function main() {
       '--------------------\n\n',
       'utf8');
 
-  if (network.name !== 'hardhat') return;
+  console.log('--------------- VERIFY -------');
+  await DeployerUtils.wait(5);
+  for (const amb of newAMBImpls) {
+    console.log('verify newAMBImpl', amb);
+    await DeployerUtils.verifyImpl(signer, amb);
+  }
+  for (const pipe of newPipes) {
+    console.log('verify pipe', pipe);
+    await DeployerUtils.verifyImpl(signer, pipe);
+  }
+  return;
+
+  // Stop the script on non-hardhat network
+  if (network.name !== 'hardhat') return
 
   console.log('announceTetuProxyUpgradeBatch AMB Strategy');
   await announcer.announceTetuProxyUpgradeBatch(AMBsToUpgrade, newAMBImpls);

@@ -839,6 +839,19 @@ export class DeployerUtils {
     }
   }
 
+  public static async verifyImpl(signer: SignerWithAddress, proxyAddress: string) {
+    const proxy = await this.connectInterface(signer, 'TetuProxyControlled', proxyAddress) as TetuProxyControlled;
+    const implAddress = await proxy.implementation();
+    console.log('implAddress', implAddress);
+    try {
+      await hre.run("verify:verify", {
+        implAddress
+      })
+    } catch (e) {
+      log.info('error verify ' + e);
+    }
+  }
+
   // tslint:disable-next-line:no-any
   public static async verifyWithArgs(address: string, args: any[]) {
     try {
@@ -855,6 +868,21 @@ export class DeployerUtils {
     try {
       await hre.run("verify:verify", {
         address, contract: contractPath, constructorArguments: args
+      })
+    } catch (e) {
+      log.info('error verify ' + e);
+    }
+  }
+
+
+  // tslint:disable-next-line:no-any
+  public static async verifyImplWithContractName(signer: SignerWithAddress, proxyAddress: string, contractPath: string, args?: any[]) {
+    const proxy = await this.connectInterface(signer, 'TetuProxyControlled', proxyAddress) as TetuProxyControlled;
+    const implAddress = await proxy.implementation();
+    console.log('implAddress', implAddress);
+    try {
+      await hre.run("verify:verify", {
+        implAddress, contract: contractPath, constructorArguments: args
       })
     } catch (e) {
       log.info('error verify ' + e);

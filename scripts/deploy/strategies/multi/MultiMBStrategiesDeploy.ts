@@ -2,7 +2,6 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {
   ContractReader,
-  IStrategy, SmartVault,
   StrategyMaiBal,
   StrategyMaiBal__factory
 } from "../../../../typechain";
