@@ -106,7 +106,7 @@ async function main() {
     const underlyingAddress = await vault.underlying();
     console.log('underlying', underlyingAddress);
     const underlying = await DeployerUtils.connectInterface(signer, 'ERC20', underlyingAddress) as ERC20;
-    const amount = utils.parseUnits('10');
+    const amount = utils.parseUnits('1');
     console.log('getToken');
     await TokenUtils.getToken(underlyingAddress, signer.address, amount);
 

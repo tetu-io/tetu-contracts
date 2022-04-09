@@ -23,6 +23,7 @@ const tokens = [
 const weekFirst = 1;
 const weekLast = 23;
 console.log('weeks from', weekFirst, 'to', weekLast);
+
 const networkName = network.name === 'hardhat' ? 'matic' : network.name; // use matic constants for forking
 
 async function claimBal() {
@@ -68,6 +69,12 @@ async function claimBal() {
       console.log("Making claims");
       let balanceBefore = await tokenContract.balanceOf(account);
       let balanceBeforePretty = new BigNumber(balanceBefore).div(new BigNumber(Math.pow(10, 18)));
+
+      // impersonate account to test claims
+      if (network.name === 'hardhat') {
+
+      }
+
       let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
       console.log("tx:", claim.hash);
       let balanceAfter = await tokenContract.balanceOf(account);
