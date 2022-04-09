@@ -2,6 +2,7 @@ const gateway = process.env.VUE_APP_IPFS_NODE || 'ipfs.io';
 const fetch = require("node-fetch");
 const BigNumber = require("bignumber.js");
 const { MerkleTree, loadTree } = require("./merkle.js");
+const { IMerkleOrchard } = require('./../../../typechain');
 const { keccak256, keccakFromString, bufferToHex } = require('ethereumjs-util');
 const { hexToBytes, toWei, soliditySha3 } = require('web3-utils');
 const { type2Transaction } = require('./utils.js');
@@ -141,7 +142,8 @@ async function claimRewards(
       merkleAddress = constants.merkleOrchardEth;
     }
     const merkleContract = await ethers.getContractAt("IMerkleOrchard", merkleAddress);
-    const result = await type2Transaction(network, merkleContract.claimDistributions, account, claims, [token]);
+    // const result = await type2Transaction(network, merkleContract.claimDistributions, account, claims, [token]);
+    const result = await merkleContract.claimDistributions(account, claims, [token]);
     return result;
   } catch (e) {
     console.log('[Claim] Claim Rewards Error:', e);

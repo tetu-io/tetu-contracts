@@ -20,7 +20,9 @@ const tokens = [
 ];
 
 
-const weekFirst = 1;
+// TODO remove comment
+// const weekFirst = 1;
+const weekFirst = 22;
 const weekLast = 23;
 console.log('weeks from', weekFirst, 'to', weekLast);
 
@@ -29,6 +31,7 @@ const networkName = network.name === 'hardhat' ? 'matic' : network.name; // use 
 async function claimBal() {
   console.log("Network:", networkName);
   let totalRewards = 0;
+  let totalClaimed = 0;
 
   for (let j = 0; j < accounts.length; j++) {
     let account = accounts[j];
@@ -68,7 +71,6 @@ async function claimBal() {
 
       console.log("Making claims");
       let balanceBefore = await tokenContract.balanceOf(account);
-      let balanceBeforePretty = new BigNumber(balanceBefore).div(new BigNumber(Math.pow(10, 18)));
 
       // impersonate account to test claims
       if (network.name === 'hardhat') {
@@ -78,12 +80,16 @@ async function claimBal() {
       let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
       console.log("tx:", claim.hash);
       let balanceAfter = await tokenContract.balanceOf(account);
-      let balanceAfterPretty = new BigNumber(balanceAfter).div(new BigNumber(Math.pow(10, 18)));
-      console.log("Claimed:", balanceAfterPretty.toFixed() - balanceBeforePretty.toFixed());
+      const fixed = 8;
+      const claimed = (balanceAfter.sub(balanceBefore).div(10**(18-fixed))).toNumber() / 10**fixed;
+      console.log("++++ Claimed:", claimed/*.toFixed(fixed)*/);
+      totalClaimed += claimed;
+
     }
   }
   console.log('totalRewards for all accounts', totalRewards);
+  console.log('totalClaimed for all accounts', totalClaimed);
 }
 
-// claimBal().then();
-module.exports = {claimBal}
+claimBal().then();
+// module.exports = {claimBal}
