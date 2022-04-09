@@ -6,7 +6,7 @@ import {
   IStrategy,
   IPriceSourceAll,
   SmartVault,
-  StrategyAaveMaiBal
+  StrategyMaiBal
 } from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -36,19 +36,19 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       const {stablecoinAddress, priceSlotIndex,} = MBUtils.getSlotsInfo(underlying);
       const bal = await TokenUtils.balanceOf(underlying, user.address);
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
 
       console.log('>>>Rebalance test');
-      const strategyGov = strategyAaveMaiBal.connect(signer);
+      const strategyGov = strategyMaiBal.connect(signer);
 
       const stablecoin = (await ethers.getContractAt('IErc20Stablecoin', stablecoinAddress)) as IErc20Stablecoin;
 
       await strategyGov.rebalanceAllPipes() // should do nothing - as we have no deposit and collateral yet. Needed for coverage call
-      const needed0 = await strategyAaveMaiBal.isRebalanceNeeded();
+      const needed0 = await strategyMaiBal.isRebalanceNeeded();
       console.log('>>>needed0', needed0);
-      const collateralPercentage0 = await strategyAaveMaiBal.collateralPercentage();
+      const collateralPercentage0 = await strategyMaiBal.collateralPercentage();
       console.log('>>>collateralPercentage0', collateralPercentage0.toString());
-      const liquidationPrice0 = await strategyAaveMaiBal.liquidationPrice();
+      const liquidationPrice0 = await strategyMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice0', liquidationPrice0.toString());
 
 
@@ -92,11 +92,11 @@ export class MabRebalanceTest extends SpecificStrategyTest {
 
       const stablecoinEthPrice2 = await stablecoin.getEthPriceSource()
       console.log('>>>stablecoinEthPrice2', stablecoinEthPrice2.toString())
-      const needed1 = await strategyAaveMaiBal.isRebalanceNeeded();
+      const needed1 = await strategyMaiBal.isRebalanceNeeded();
       console.log('>>>needed1', needed1);
-      const collateralPercentage1 = await strategyAaveMaiBal.collateralPercentage();
+      const collateralPercentage1 = await strategyMaiBal.collateralPercentage();
       console.log('>>>collateralPercentage1', collateralPercentage1.toString());
-      const liquidationPrice1 = await strategyAaveMaiBal.liquidationPrice();
+      const liquidationPrice1 = await strategyMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice1', liquidationPrice1.toString());
 
       expect(stablecoinEthPrice2).to.be.equal(mockSourcePrice)
@@ -107,10 +107,10 @@ export class MabRebalanceTest extends SpecificStrategyTest {
         .to.emit(strategyGov, 'RebalancedAllPipes')
       const bal2 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal2', bal2.toString())
-      const needed2 = await strategyAaveMaiBal.isRebalanceNeeded();
-      const collateralPercentage2 = await strategyAaveMaiBal.collateralPercentage();
+      const needed2 = await strategyMaiBal.isRebalanceNeeded();
+      const collateralPercentage2 = await strategyMaiBal.collateralPercentage();
       console.log('>>>collateralPercentage2', collateralPercentage2.toString());
-      const liquidationPrice2 = await strategyAaveMaiBal.liquidationPrice();
+      const liquidationPrice2 = await strategyMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice2', liquidationPrice2.toString());
 
       // ***** check balance after matic price changed back ***
@@ -119,11 +119,11 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrOriginal);
       const stablecoinEthPrice3 = await stablecoin.getEthPriceSource();
       console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
-      const needed3 = await strategyAaveMaiBal.isRebalanceNeeded();
+      const needed3 = await strategyMaiBal.isRebalanceNeeded();
       console.log('>>>needed3', needed3);
-      const collateralPercentage3 = await strategyAaveMaiBal.collateralPercentage();
+      const collateralPercentage3 = await strategyMaiBal.collateralPercentage();
       console.log('>>>collateralPercentage3', collateralPercentage3.toString());
-      const liquidationPrice3 = await strategyAaveMaiBal.liquidationPrice();
+      const liquidationPrice3 = await strategyMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice3', liquidationPrice3.toString());
 
       await expect(strategyGov.rebalanceAllPipes())
@@ -131,9 +131,9 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>rebalanced');
       const bal3 = await strategyGov.getMostUnderlyingBalance()
       console.log('>>>bal3', bal3.toString())
-      const collateralPercentage4 = await strategyAaveMaiBal.collateralPercentage();
+      const collateralPercentage4 = await strategyMaiBal.collateralPercentage();
       console.log('>>>collateralPercentage4', collateralPercentage4.toString());
-      const liquidationPrice4 = await strategyAaveMaiBal.liquidationPrice();
+      const liquidationPrice4 = await strategyMaiBal.liquidationPrice();
       console.log('>>>liquidationPrice4', liquidationPrice4.toString());
 
       expect(bal0).to.be.eq(bal1);
@@ -146,7 +146,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       expect(needed2).is.eq(false);
       expect(needed3).is.eq(true);
 
-      const targetPercentage = (await strategyAaveMaiBal.targetPercentage());
+      const targetPercentage = (await strategyMaiBal.targetPercentage());
 
       expect(collateralPercentage0).is.eq(0);
       TestAsserts.closeTo(collateralPercentage1, targetPercentage.mul(mockPricePercents).div(100), 1, 0);

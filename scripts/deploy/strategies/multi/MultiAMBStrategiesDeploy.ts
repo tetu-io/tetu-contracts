@@ -8,7 +8,7 @@ import {
 } from "../../../../typechain";
 import {appendFileSync, mkdir} from "fs";
 import {infos} from "./MultiAMBInfos";
-import {AMBPipeDeployer} from "./AMBPipeDeployer";
+import {MultiPipeDeployer} from "./MultiPipeDeployer";
 
 
 async function main() {
@@ -54,21 +54,21 @@ async function main() {
       vaultNameWithoutPrefix,
       async vaultAddress => {
 
-        const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
+        const aaveAmPipeData = await MultiPipeDeployer.deployAaveAmPipe(
           signer,
           info.underlying,
           info.amToken
         );
         pipes.push(aaveAmPipeData.address);
         // -----------------
-        const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
+        const maiCamPipeData = await MultiPipeDeployer.deployMaiCamPipe(
           signer,
           info.amToken,
           info.camToken
         );
         pipes.push(maiCamPipeData.address);
         // -----------------
-        const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
+        const maiStablecoinPipeData = await MultiPipeDeployer.deployMaiStablecoinPipe(
           signer,
           info.camToken,
           info.stablecoin,
@@ -77,7 +77,7 @@ async function main() {
         );
         pipes.push(maiStablecoinPipeData.address);
         // -----------------
-        const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
+        const balVaultPipeData = await MultiPipeDeployer.deployBalVaultPipe(
           signer
         );
         pipes.push(balVaultPipeData.address);

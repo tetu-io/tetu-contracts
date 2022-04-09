@@ -1,14 +1,16 @@
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
-const infos: {
-  underlyingName: string,
-  underlying: string,
-  camToken: string,
-  amToken: string,
-  stablecoin: string,
-  targetPercentage: string,
-  collateralNumerator?: string, // will be used '1' on deploy, when undefined
-}[] = [
+interface IAMBInfo {
+  underlyingName: string;
+  underlying: string;
+  camToken: string;
+  amToken: string;
+  stablecoin: string;
+  targetPercentage: string;
+  collateralNumerator?: string; // will be used '1' on deploy, when undefined
+}
+
+const infos: IAMBInfo[] = [
   {
     underlyingName: 'AAVE',
     underlying: MaticAddresses.AAVE_TOKEN,
@@ -25,14 +27,15 @@ const infos: {
     stablecoin: MaticAddresses.camWMATICVault,
     targetPercentage: '300',
   },
-  {
-    underlyingName: 'DAI',
-    underlying: MaticAddresses.DAI_TOKEN,
-    camToken: MaticAddresses.camDAI_TOKEN,
-    amToken: MaticAddresses.amDAI_TOKEN,
-    stablecoin: MaticAddresses.camDAIVault,
-    targetPercentage: '250',
-  },
+  // ------ We do not have DAI vaults
+  // {
+  //   underlyingName: 'DAI',
+  //   underlying: MaticAddresses.DAI_TOKEN,
+  //   camToken: MaticAddresses.camDAI_TOKEN,
+  //   amToken: MaticAddresses.amDAI_TOKEN,
+  //   stablecoin: MaticAddresses.camDAIVault,
+  //   targetPercentage: '250',
+  // },
   {
     underlyingName: 'WBTC',
     underlying: MaticAddresses.WBTC_TOKEN,
@@ -52,7 +55,7 @@ const infos: {
   },
 ]
 
-export {infos}
+export {IAMBInfo, infos}
 
 
 /*

@@ -1,6 +1,6 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {TokenUtils} from "../../../TokenUtils";
-import {IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, SmartVault, StrategyMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -21,25 +21,25 @@ export class EmergencyWithdrawFromPoolTest extends SpecificStrategyTest {
       const signer = deployInfo?.signer as SignerWithAddress;
       const user = deployInfo?.user as SignerWithAddress;
       const vault = deployInfo?.vault as SmartVault;
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
       const strategy = deployInfo?.strategy as IStrategy;
       await MBUtils.refuelMAI(user, strategy.address);
 
       console.log('>>>emergencyWithdrawFromPool test');
       const userAddress = user.address
       const _depositAmount = await TokenUtils.balanceOf(underlying, userAddress);
-      const before = await strategyAaveMaiBal.getMostUnderlyingBalance()
+      const before = await strategyMaiBal.getMostUnderlyingBalance()
       console.log('>>>before      ', before.toString());
 
       await VaultUtils.deposit(user, vault, _depositAmount);
 
-      const afterDeposit = await strategyAaveMaiBal.getMostUnderlyingBalance()
+      const afterDeposit = await strategyMaiBal.getMostUnderlyingBalance()
       console.log('>>>afterDeposit', afterDeposit.toString());
 
-      const strategyGov = strategyAaveMaiBal.connect(signer);
+      const strategyGov = strategyMaiBal.connect(signer);
       await strategyGov.emergencyExit({gasLimit: 19_000_000});
 
-      const afterExit = await strategyAaveMaiBal.getMostUnderlyingBalance()
+      const afterExit = await strategyMaiBal.getMostUnderlyingBalance()
       console.log('>>>afterExit   ', afterExit.toString());
 
       expect(before).to.be.equal(0)

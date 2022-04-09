@@ -17,7 +17,6 @@ import "../../../base/SlotsLib.sol";
 /// @title MAI->BAL Multi Strategy Polygon Implementation
 /// @author belbix, bogdoslav
 contract StrategyMaiBal is MaiBalStrategyBase {
-  using SlotsLib for bytes32;
 
   address private constant _QI = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4;
   address private constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
@@ -35,19 +34,26 @@ contract StrategyMaiBal is MaiBalStrategyBase {
     _initPipes(__pipes);
   }
 
+  function pipeNameIs(address pipe, string memory name)
+  private view returns (bool) {
+    return keccak256(abi.encodePacked(IPipe(pipe).name())) == keccak256(abi.encodePacked(name));
+  }
+
   /// @dev
   ///      0 - MaiStablecoinPipe
   ///      1 - BalVaultPipe
   function _initPipes(address[] memory __pipes) private {
-    require(__pipes.length == 2, "Wrong pipes");
+    require(
+      __pipes.length == 2 &&
+      pipeNameIs(__pipes[0], 'MaiStablecoinPipe') &&
+      pipeNameIs(__pipes[1], 'BalVaultPipe')
+    );
 
     for (uint i; i < __pipes.length; i++) {
       IPipe(__pipes[i]).setPipeline(address(this));
       _addPipe(IPipe(__pipes[i]));
     }
-    // pipe with index 0 must be MaiStablecoinPipe
-    _MAI_STABLECOIN_PIPE_SLOT.set(__pipes[0]);
-  }
 
+  }
 
 }
