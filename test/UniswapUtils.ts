@@ -61,6 +61,7 @@ export class UniswapUtils {
 
       const fbFac = await DeployerUtils.connectInterface(sender, 'IFireBirdFactory', MaticAddresses.FIREBIRD_FACTORY) as IFireBirdFactory;
       const fbPair = await fbFac.getPair(_route[0], _route[1], 50, 20);
+
       return router.swapExactTokensForTokens(
         _route[0],
         _route[1],
@@ -73,14 +74,28 @@ export class UniswapUtils {
     } else {
       const router = await UniswapUtils.connectRouter(_router, sender);
       await TokenUtils.approve(_route[0], sender, router.address, amountToSell);
-      return router.swapExactTokensForTokens(
-        BigNumber.from(amountToSell),
-        BigNumber.from("0"),
-        _route,
-        _to,
-        UniswapUtils.deadline
-      );
+      if (UniswapUtils.isFeeToken(_route[0]) || UniswapUtils.isFeeToken(_route[1])) {
+        return router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+          BigNumber.from(amountToSell),
+          BigNumber.from("0"),
+          _route,
+          _to,
+          UniswapUtils.deadline
+        );
+      } else {
+        return router.swapExactTokensForTokens(
+          BigNumber.from(amountToSell),
+          BigNumber.from("0"),
+          _route,
+          _to,
+          UniswapUtils.deadline
+        );
+      }
     }
+  }
+
+  private static isFeeToken(token: string) {
+    return token.toLowerCase() === MaticAddresses.SPHERE_TOKEN.toLowerCase();
   }
 
   public static async addLiquidity(

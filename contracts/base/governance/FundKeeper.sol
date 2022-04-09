@@ -12,15 +12,16 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./Controllable.sol";
+
+import "./ControllableV2.sol";
 import "../interface/IFundKeeper.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
 
 /// @title Upgradable contract that holds money for further implementations
 /// @dev Use with TetuProxy
 /// @author belbix
-contract FundKeeper is Controllable, IFundKeeper {
+contract FundKeeper is ControllableV2, IFundKeeper {
   using SafeERC20 for IERC20;
 
   /// @notice Governance moved token to Controller
@@ -30,7 +31,13 @@ contract FundKeeper is Controllable, IFundKeeper {
   /// @dev Use it only once after first logic setup
   /// @param _controller Controller address
   function initialize(address _controller) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
+  }
+
+  /// @dev Allow operation only for Controller
+  modifier onlyController() {
+    require(_controller() == msg.sender, "Not controller");
+    _;
   }
 
   /// @notice Move tokens to controller where money will be protected with time lock
@@ -39,7 +46,7 @@ contract FundKeeper is Controllable, IFundKeeper {
   function withdrawToController(address _token, uint256 amount) external override onlyController {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "not enough balance");
-    IERC20(_token).safeTransfer(controller(), amount);
+    IERC20(_token).safeTransfer(_controller(), amount);
     emit TokenWithdrawn(_token, amount);
   }
 

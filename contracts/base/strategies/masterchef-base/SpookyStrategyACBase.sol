@@ -12,16 +12,12 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../third_party/spooky/ISpookyMasterChef.sol";
 
 /// @title Abstract contract for SpookySwap strategy implementation
 /// @author belbix
 abstract contract SpookyStrategyACBase is StrategyBase {
-  using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************

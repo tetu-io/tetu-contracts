@@ -15,6 +15,7 @@ import {BigNumber, utils} from "ethers";
 import {VaultUtils} from "../VaultUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {TokenUtils} from "../TokenUtils";
+import {Misc} from "../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -74,7 +75,10 @@ describe("Proxy tests", function () {
       "xTETU1",
       core.controller.address,
       networkToken,
-      999999
+      999999,
+      false,
+      Misc.ZERO_ADDRESS,
+      0
     );
 
     await core.controller.addVaultsAndStrategies([vault.address], [psEmptyStrategy1.address]);
@@ -170,7 +174,10 @@ describe("Proxy tests", function () {
         "xTETU1",
         signer.address,
         networkToken,
-        999999
+        999999,
+      false,
+      Misc.ZERO_ADDRESS,
+      0
     );
     await expect(vaultProxy1.upgrade(signer.address))
         .is.rejectedWith('UpgradeableProxy: new implementation is not a contract')
@@ -187,7 +194,10 @@ describe("Proxy tests", function () {
         "xTETU1",
         core.controller.address,
         networkToken,
-        999999
+        999999,
+      false,
+      Misc.ZERO_ADDRESS,
+      0
     );
 
     await core.announcer.announceTetuProxyUpgradeBatch([

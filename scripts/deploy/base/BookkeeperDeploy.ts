@@ -1,6 +1,6 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {Bookkeeper, Controller} from "../../../typechain";
+import {Bookkeeper} from "../../../typechain";
 
 
 async function main() {
@@ -12,18 +12,16 @@ async function main() {
   const bookkeeper = logic.attach(proxy.address) as Bookkeeper;
   await bookkeeper.initialize(core.controller);
 
-  const controller = await DeployerUtils.connectContract(signer, "Controller", core.controller) as Controller;
-  await controller.setBookkeeper(bookkeeper.address);
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(logic.address);
-  await DeployerUtils.verifyWithArgs(proxy.address, [logic.address]);
-  await DeployerUtils.verifyProxy(proxy.address);
+  // await DeployerUtils.verifyWithArgs(proxy.address, [logic.address]);
+  // await DeployerUtils.verifyProxy(proxy.address);
 }
 
 main()
-.then(() => process.exit(0))
-.catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

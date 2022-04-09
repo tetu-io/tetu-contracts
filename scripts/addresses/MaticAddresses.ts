@@ -64,9 +64,11 @@ export class MaticAddresses {
   public static SFF_TOKEN = "0xdf9B4b57865B403e08c85568442f95c26b7896b0".toLowerCase();
   public static NACHO_TOKEN = '0xcD86152047e800d67BDf00A4c635A8B6C0e5C4c2'.toLowerCase();
   public static NSHARE_TOKEN = '0x948D0a28b600BDBd77AF4ea30E6F338167034181'.toLowerCase();
-  public static NBOND_NOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
-  public static UNT_NOKEN = '0xc46DB78Be28B5F2461097ed9e3Fcc92E9FF8676d'.toLowerCase();
-  public static UMA_NOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
+  public static NBOND_TOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
+  public static UNT_TOKEN = '0xc46DB78Be28B5F2461097ed9e3Fcc92E9FF8676d'.toLowerCase();
+  public static UMA_TOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
+  public static SPHERE_TOKEN = '0x8D546026012bF75073d8A586f24A5d5ff75b9716'.toLowerCase();
+  public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -200,6 +202,8 @@ export class MaticAddresses {
   // BALANCER
   public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
   public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012'.toLowerCase();
+  public static BALANCER_POOL_BAL_ETH_ID = '0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426'.toLowerCase();
+  public static BALANCER_BAL_ETH_POOL = '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f'.toLowerCase();
   public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
 
   // KLIMA

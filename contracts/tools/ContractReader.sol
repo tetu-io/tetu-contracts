@@ -12,30 +12,36 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../base/governance/Controllable.sol";
+import "../base/governance/ControllableV2.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
 import "../base/interface/IVaultController.sol";
 import "../base/interface/IStrategy.sol";
 import "../base/interface/IStrategySplitter.sol";
 import "../infrastructure/price/IPriceCalculator.sol";
+import "../openzeppelin/IERC20.sol";
+import "../openzeppelin/Math.sol";
+import "../third_party/IERC20Extended.sol";
 
 /// @title View data reader for using on website UI and other integrations
 /// @author belbix
-contract ContractReader is Initializable, Controllable {
+contract ContractReader is Initializable, ControllableV2 {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.0.7";
+  string public constant VERSION = "1.1.0";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
   function initialize(address _controller, address _calculator) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
     tools[keccak256(abi.encodePacked("calculator"))] = _calculator;
+  }
+
+  /// @dev Allow operation only for Controller or Governance
+  modifier onlyControllerOrGovernance() {
+    require(_isController(msg.sender) || _isGovernance(msg.sender), "Not controller or gov");
+    _;
   }
 
   event ToolAddressUpdated(address newValue);
@@ -304,8 +310,8 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function tetuTokenValues() external view returns (uint256[] memory){
-    uint256 price = getPrice(IController(controller()).rewardToken());
-    uint256 mCap = ERC20(IController(controller()).rewardToken()).totalSupply()
+    uint256 price = getPrice(IController(_controller()).rewardToken());
+    uint256 mCap = IERC20(IController(_controller()).rewardToken()).totalSupply()
     .mul(price).div(1e18);
 
     uint256[] memory result = new uint256[](2);
@@ -363,7 +369,7 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function vaultName(address _vault) public view returns (string memory){
-    return ERC20(_vault).name();
+    return IERC20Extended(_vault).name();
   }
 
   function vaultPlatform(address _vault) public view returns (IStrategy.Platform){
@@ -372,7 +378,7 @@ contract ContractReader is Initializable, Controllable {
 
   // no decimals
   function vaultCreated(address _vault) public view returns (uint256){
-    return Controllable(_vault).created();
+    return ControllableV2(_vault).created();
   }
 
   function vaultActive(address _vault) public view returns (bool){
@@ -391,7 +397,7 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function vaultDecimals(address _vault) public view returns (uint256){
-    return uint256(ERC20(_vault).decimals());
+    return uint256(IERC20Extended(_vault).decimals());
   }
 
   function vaultUnderlying(address _vault) public view returns (address){
@@ -412,7 +418,7 @@ contract ContractReader is Initializable, Controllable {
     uint256[] memory result = new uint256[](vaultRewardTokens(_vault).length);
     for (uint256 i = 0; i < vaultRewardTokens(_vault).length; i++) {
       address rt = vaultRewardTokens(_vault)[i];
-      result[i] = normalizePrecision(ERC20(rt).balanceOf(_vault), ERC20(rt).decimals());
+      result[i] = normalizePrecision(IERC20(rt).balanceOf(_vault), IERC20Extended(rt).decimals());
     }
     return result;
   }
@@ -423,8 +429,8 @@ contract ContractReader is Initializable, Controllable {
     for (uint256 i = 0; i < vaultRewardTokens(_vault).length; i++) {
       address rt = vaultRewardTokens(_vault)[i];
       uint256 rtPrice = getPrice(rt);
-      uint256 bal = ERC20(rt).balanceOf(_vault).mul(rtPrice).div(PRECISION);
-      result[i] = normalizePrecision(bal, ERC20(rt).decimals());
+      uint256 bal = IERC20(rt).balanceOf(_vault).mul(rtPrice).div(PRECISION);
+      result[i] = normalizePrecision(bal, IERC20Extended(rt).decimals());
     }
     return result;
   }
@@ -460,7 +466,7 @@ contract ContractReader is Initializable, Controllable {
       .div(1e36);
 
       // amounts should have the same decimals
-      rtBalanceUsd = normalizePrecision(rtBalanceUsd, ERC20(rt).decimals());
+      rtBalanceUsd = normalizePrecision(rtBalanceUsd, IERC20Extended(rt).decimals());
 
       return computeApr(tvlUsd, rtBalanceUsd, currentPeriod);
     } else {
@@ -526,7 +532,7 @@ contract ContractReader is Initializable, Controllable {
 
   // no decimals
   function strategyCreated(address _strategy) public view returns (uint256){
-    return Controllable(_strategy).created();
+    return ControllableV2(_strategy).created();
   }
 
   function strategyPlatform(address _strategy) public view returns (IStrategy.Platform){
@@ -550,10 +556,10 @@ contract ContractReader is Initializable, Controllable {
 
   // normalized precision
   function strategyEarned(address _strategy) public view returns (uint256){
-    address targetToken = IController(controller()).rewardToken();
+    address targetToken = IController(_controller()).rewardToken();
     return normalizePrecision(
       IBookkeeper(bookkeeper()).targetTokenEarned(_strategy),
-      ERC20(targetToken).decimals()
+      IERC20Extended(targetToken).decimals()
     );
   }
 
@@ -594,7 +600,7 @@ contract ContractReader is Initializable, Controllable {
     for (uint256 i = 0; i < rewardTokens.length; i++) {
       rewards[i] = normalizePrecision(
         ISmartVault(_vault).earned(rewardTokens[i], _user),
-        ERC20(rewardTokens[i]).decimals()
+        IERC20Extended(rewardTokens[i]).decimals()
       );
     }
     return rewards;
@@ -607,7 +613,7 @@ contract ContractReader is Initializable, Controllable {
     for (uint256 i = 0; i < rewardTokens.length; i++) {
       rewards[i] = normalizePrecision(
         _vaultEarnedWithBoost(_vault, rewardTokens[i], _user),
-        ERC20(rewardTokens[i]).decimals()
+        IERC20Extended(rewardTokens[i]).decimals()
       );
     }
     return rewards;
@@ -621,8 +627,8 @@ contract ContractReader is Initializable, Controllable {
     if (boostStart != 0 && boostStart < block.timestamp) {
       uint256 currentBoostDuration = block.timestamp.sub(boostStart);
       // not 100% boost
-      uint256 boostDuration = IVaultController(IController(controller()).vaultController()).rewardBoostDuration();
-      uint256 rewardRatioWithoutBoost = IVaultController(IController(controller()).vaultController()).rewardRatioWithoutBoost();
+      uint256 boostDuration = IVaultController(IController(_controller()).vaultController()).rewardBoostDuration();
+      uint256 rewardRatioWithoutBoost = IVaultController(IController(_controller()).vaultController()).rewardRatioWithoutBoost();
       bool pm = false;
       try sv.protectionMode() returns (bool protectionMode) {
         pm = protectionMode;
@@ -649,7 +655,7 @@ contract ContractReader is Initializable, Controllable {
       uint256 price = getPrice(rewardTokens[i]);
       rewards[i] = normalizePrecision(
         ISmartVault(_vault).earned(rewardTokens[i], _user).mul(price).div(PRECISION),
-        ERC20(rewardTokens[i]).decimals()
+        IERC20Extended(rewardTokens[i]).decimals()
       );
     }
     return rewards;
@@ -663,7 +669,7 @@ contract ContractReader is Initializable, Controllable {
       uint256 price = getPrice(rewardTokens[i]);
       rewards[i] = normalizePrecision(
         _vaultEarnedWithBoost(_vault, rewardTokens[i], _user).mul(price).div(PRECISION),
-        ERC20(rewardTokens[i]).decimals()
+        IERC20Extended(rewardTokens[i]).decimals()
       );
     }
     return rewards;
@@ -690,7 +696,7 @@ contract ContractReader is Initializable, Controllable {
   }
 
   function bookkeeper() public view returns (address) {
-    return IController(controller()).bookkeeper();
+    return IController(_controller()).bookkeeper();
   }
 
   // normalized precision

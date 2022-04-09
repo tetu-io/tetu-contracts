@@ -312,7 +312,7 @@ describe("Price calculator matic tests", function () {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-      MaticAddresses.UNT_NOKEN, MaticAddresses.USDC_TOKEN);
+      MaticAddresses.UNT_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.0001);
     expect(price).is.lessThan(100);
   });

@@ -52,7 +52,7 @@ async function main() {
   // for (let i = 0; i < length; i++) {
   for (let i = 0; i < 1; i++) {
     //   const pair = await factory.allPairs(i);
-    const pair = '0xAbcA7538233cbE69709C004c52DC37e61c03796B';
+    const pair = '0xF8cC463a49C71BCD603dB760584B6c9766dD65FD';
     const pairCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', pair) as TetuSwapPair;
     const token0 = await pairCtr.token0();
     const token1 = await pairCtr.token1();
