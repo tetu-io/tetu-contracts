@@ -7,16 +7,16 @@ const {ethers, network } = require("hardhat");
 
 const accounts = [
   // // AMB 2.0 BAL Pipes
-  // "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
-  // "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
-  // "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
-  // "0xA69967d315d7add8222aEe81c1F178dAc0017089", // AMB WBTC
+  "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
+  "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
+  "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
+  "0xA69967d315d7add8222aEe81c1F178dAc0017089", // AMB WBTC
 
   // // AMB 1.0 BAL Pipes
-  "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
-  "0xF710277064c49f4689f061B4263d8930E395C61d", // AMB MATIC
-  "0x88f0b9F9B97f8A02508E4E69d46B619fc385c5f4", // AMB AAVE
-  "0x42d68D48120333720FbA4B079f47240b6FdEcef2", // AMB WBTC
+  // "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
+  // "0xF710277064c49f4689f061B4263d8930E395C61d", // AMB MATIC
+  // "0x88f0b9F9B97f8A02508E4E69d46B619fc385c5f4", // AMB AAVE
+  // "0x42d68D48120333720FbA4B079f47240b6FdEcef2", // AMB WBTC
 ];
 
 const tokens = [
@@ -28,8 +28,8 @@ const tokens = [
 
 // TODO remove comment
 // const weekFirst = 1;
-const weekFirst = 1;
-const weekLast = 26;
+const weekFirst = 25;
+const weekLast = 999;
 console.log('weeks from', weekFirst, 'to', weekLast);
 
 const networkName = network.name === 'hardhat' ? 'matic' : network.name; // use matic constants for forking
@@ -61,7 +61,9 @@ async function claimBal() {
             pendingClaims.reports[week] = pendingClaim.report[week];
           }
         } catch (e) {
-          console.warn('Error getting claims for week', week, 'Error:', e.message)
+          console.warn('Error getting claims for week', week, 'Error:', e.message, typeof e)
+          // week is not published, so break the cycle
+          break;
         }
       }
       console.log("Claims:");

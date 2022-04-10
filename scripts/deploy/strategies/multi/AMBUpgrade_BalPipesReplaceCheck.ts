@@ -76,7 +76,6 @@ async function main() {
     console.log('verify pipe', pipe);
     await DeployerUtils.verifyImpl(signer, pipe);
   }
-  return;
 
   // Stop the script on non-hardhat network
   if (network.name !== 'hardhat') return

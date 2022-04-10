@@ -108,7 +108,7 @@ export class TokenUtils {
     [MaticAddresses.UNT_TOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
     [MaticAddresses.cxDOGE_TOKEN,'0x2d187a560cfbd28e1eb2f68534754b0f120459a9'.toLowerCase()],
     [MaticAddresses.cxADA_TOKEN,'0x5a8c2d949b3f6bcaec7d20c8b6e57c1619a97504'.toLowerCase()],
-    [MaticAddresses.cxETH_TOKEN,'0x5a8c2d949b3f6bcaec7d20c8b6e57c1619a97504'.toLowerCase()],
+    [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN,'0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
     [EthAddresses.USDC_TOKEN,'0x0a59649758aa4d66e25f08dd01271e891fe52199'.toLowerCase()], // maker
     [EthAddresses.TETU_TOKEN,'0x8f5adc58b32d4e5ca02eac0e293d35855999436c'.toLowerCase()], // todo temporally farm!
