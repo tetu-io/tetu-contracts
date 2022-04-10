@@ -108,6 +108,9 @@ export class TokenUtils {
     [MaticAddresses.cxDOGE_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
+    [FtmAddresses.BEETS_TOKEN,'0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
+    [FtmAddresses.SPIRIT_TOKEN,'0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit
+    [FtmAddresses.TAROT_TOKEN,'0x11D90eA9d16e1Ee5879B299A819F6D618816D70F'.toLowerCase()], // spooky lp
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
