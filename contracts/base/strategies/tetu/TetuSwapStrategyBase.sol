@@ -26,12 +26,15 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "TetuSwapStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.2.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  uint256 private constant _BUY_BACK_RATIO = 90_00;
 
   /// @notice TetuSwap pair
   address public pair;
+
+  /// @notice Uniswap router for underlying LP
+  address public router;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -43,13 +46,15 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     address _controller,
     address _underlying,
     address _vault,
-    address[] memory __rewardTokens
+    address[] memory __rewardTokens,
+    address _router
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_vault != address(0), "Zero vault");
     require(_underlying != address(0), "Zero underlying");
     pair = _underlying;
     _rewardTokens.push(ITetuSwapPair(pair).token0());
     _rewardTokens.push(ITetuSwapPair(pair).token1());
+    router = _router;
   }
 
   // ************* VIEWS *******************

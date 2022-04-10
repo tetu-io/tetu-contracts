@@ -18,6 +18,7 @@ contract StrategyTetuSwapFantom is TetuSwapStrategyBase {
 
   address public constant TETU = address(0x65c9d9d080714cDa7b5d58989Dc27f897F165179);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.TETU_SWAP;
+  address private constant _ROUTER = address(0x1c7F7210a7ACc13d26824A8267cf9CA5D4020Bc1);
   // rewards
   address[] private _rewards = [TETU];
   address[] private _assets;
@@ -26,7 +27,7 @@ contract StrategyTetuSwapFantom is TetuSwapStrategyBase {
     address _controller,
     address _vault,
     address _underlying
-  ) TetuSwapStrategyBase(_controller, _underlying, _vault, _rewards) {
+  ) TetuSwapStrategyBase(_controller, _underlying, _vault, _rewards, _ROUTER) {
     require(_underlying != address(0), "zero underlying");
     _assets.push(ITetuSwapPair(_underlying).token0());
     _assets.push(ITetuSwapPair(_underlying).token1());
@@ -54,6 +55,7 @@ contract StrategyTetuSwapFantom is TetuSwapStrategyBase {
       IERC20(rt).safeApprove(_smartVault, amount);
       ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
     }
+    autocompoundLP(router);
     // if no not enough fees for buybacks it should not ruin hardwork process
     liquidateRewardSilently();
   }
