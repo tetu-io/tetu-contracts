@@ -1,15 +1,13 @@
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {
-  ICamToken,
   IErc20Stablecoin,
   IStrategy,
   IPriceSourceAll,
   SmartVault,
-  StrategyAaveMaiBal
+  StrategyMaiBal
 } from "../../../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber} from "ethers";
@@ -21,7 +19,7 @@ import {ethers} from "hardhat";
 
 chai.use(chaiAsPromised);
 
-export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
+export class MultiMaiBalTest extends DoHardWorkLoopBase {
 
   public camToken: string;
   public airDropper: SignerWithAddress;
@@ -47,18 +45,10 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
   public async afterBlockAdvance() {
     await super.afterBlockAdvance();
 
-    const strategyAaveMaiBal: StrategyAaveMaiBal = this.strategy as StrategyAaveMaiBal;
-
-    // claim aave rewards on mai
-    // doesn't work after wmatic rewards stopped
-    // if (this.camToken) {
-    // console.log('claimAaveRewards');
-    // const cam = await DeployerUtils.connectInterface(this.signer, 'ICamToken', this.camToken) as ICamToken;
-    // await cam.claimAaveRewards();
-    // }
+    const strategyMaiBal: StrategyMaiBal = this.strategy as StrategyMaiBal;
 
     // air drop reward token
-    const pipeAddress = await strategyAaveMaiBal.pipes(this.airDropPipeIndex);
+    const pipeAddress = await strategyMaiBal.pipes(this.airDropPipeIndex);
     await TokenUtils.getToken(this.airDropToken, pipeAddress, this.airDropAmount);
 
     // *** mock price ***
@@ -85,7 +75,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     await DeployerUtils.setStorageAt(stablecoin.address, priceSlotIndex, adrBytes32);
 
     // rebalance strategy
-    const strategyGov = strategyAaveMaiBal.connect(this.signer);
+    const strategyGov = strategyMaiBal.connect(this.signer);
     await strategyGov.rebalanceAllPipes()
 
 

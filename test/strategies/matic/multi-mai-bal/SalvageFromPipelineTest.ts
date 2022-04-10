@@ -1,7 +1,7 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {StrategyAaveMaiBal} from "../../../../typechain";
+import {StrategyMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -19,10 +19,10 @@ export class SalvageFromPipelineTest extends SpecificStrategyTest {
     it("Salvage from pipeline", async () => {
       const signer = deployInfo?.signer as SignerWithAddress;
 
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
 
       console.log('>>>Salvage from pipeline test');
-      const strategyGov = strategyAaveMaiBal.connect(signer);
+      const strategyGov = strategyMaiBal.connect(signer);
       const token = MaticAddresses.DAI_TOKEN; // token to test salvage, 18 decimals
       const pipesLength = await strategyGov.pipesLength();
       console.log('>>>pipesLength  ', pipesLength.toString());

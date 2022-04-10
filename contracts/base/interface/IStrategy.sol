@@ -50,9 +50,9 @@ interface IStrategy {
     UNIVERSE, //32
     MAI_BAL, //33
     UMA, //34
-    SLOT_35, //35
-    SLOT_36, //36
-    SLOT_37, //37
+    SPHERE, //35
+    BALANCER, //36
+    OTTERCLAM, //37
     SLOT_38, //38
     SLOT_39, //39
     SLOT_40, //40

@@ -15,41 +15,43 @@ pragma solidity 0.8.4;
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
 import "./../../../../openzeppelin/Initializable.sol";
+import "../../../governance/ControllableV2.sol";
 import "../../../interface/strategies/IPipe.sol";
+import "../../../interface/IControllable.sol";
 import "../../../SlotsLib.sol";
 import "./PipeLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav
-abstract contract Pipe is IPipe, Initializable {
+abstract contract Pipe is IPipe, ControllableV2 {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
   /// @notice Address of the master pipeline
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
-  bytes32 internal constant _PIPELINE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.pipeline")) - 1);
+ bytes32 internal constant _PIPELINE_SLOT = bytes32(uint(keccak256("eip1967.Pipe.pipeline")) - 1);
 
   /// @notice Pipe name for statistical purposes only
-  /// @dev initialize it in constructor
-  bytes32 internal constant _NAME_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.name")) - 1);
+  /// @dev initialize it in initializer
+ bytes32 internal constant _NAME_SLOT = bytes32(uint(keccak256("eip1967.Pipe.name")) - 1);
 
   /// @notice Source token address type
-  /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-  bytes32 internal constant _SOURCE_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.sourceToken")) - 1);
+  /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
+ bytes32 internal constant _SOURCE_TOKEN_SLOT = bytes32(uint(keccak256("eip1967.Pipe.sourceToken")) - 1);
 
   /// @notice Output token address type
-  /// @dev initialize it in constructor, for ether (bnb, matic) use _ETHER
-  bytes32 internal constant _OUTPUT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.outputToken")) - 1);
+  /// @dev initialize it in initializer, for ether (bnb, matic) use _ETHER
+ bytes32 internal constant _OUTPUT_TOKEN_SLOT = bytes32(uint(keccak256("eip1967.Pipe.outputToken")) - 1);
 
   /// @notice Next pipe in pipeline
-  bytes32 internal constant _PREV_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.prevPipe")) - 1);
+ bytes32 internal constant _PREV_PIPE_SLOT = bytes32(uint(keccak256("eip1967.Pipe.prevPipe")) - 1);
 
   /// @notice Previous pipe in pipeline
-  bytes32 internal constant _NEXT_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.Pipe.nextPipe")) - 1);
+ bytes32 internal constant _NEXT_PIPE_SLOT = bytes32(uint(keccak256("eip1967.Pipe.nextPipe")) - 1);
 
   /// @notice Reward token address for claiming
-  /// @dev initialize it in constructor
-  address[] public override rewardTokens;
+  /// @dev initialize it in initializer
+ bytes32 internal constant _REWARD_TOKENS = bytes32(uint(keccak256("eip1967.Pipe.rewardTokens")) - 1);
 
   event Get(uint256 amount, uint256 output);
   event Put(uint256 amount, uint256 output);
@@ -58,7 +60,13 @@ abstract contract Pipe is IPipe, Initializable {
     string memory __name,
     address __sourceToken,
     address __outputToken
-  ) internal initializer {
+  ) internal  {
+    require(
+      _SOURCE_TOKEN_SLOT.getUint() == 0 &&
+      _OUTPUT_TOKEN_SLOT.getUint() == 0,
+      'Pipe: Already initialized'
+    );
+
     require(__sourceToken != address(0), "Zero source token");
     require(__outputToken != address(0), "Zero output token");
 
@@ -68,9 +76,9 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   modifier onlyPipeline() {
-    address _pipeline = _PIPELINE_SLOT.getAddress();
+    address __pipeline = _pipeline();
     require(
-      _pipeline == msg.sender || _pipeline == address(this),
+      __pipeline == msg.sender || __pipeline == address(this),
       "PIPE: caller is not the pipeline"
     );
     _;
@@ -98,6 +106,10 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   function pipeline() external view override returns (address) {
+    return _pipeline();
+  }
+
+  function _pipeline() internal view returns (address) {
     return _PIPELINE_SLOT.getAddress();
   }
 
@@ -121,7 +133,7 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   /// @dev Replaces MAX constant to output token balance. Should be used at get() function start
-  function maxOutputAmount(uint256 amount) internal view returns (uint256) {
+  function _maxOutputAmount(uint256 amount) internal view returns (uint256) {
     if (amount == PipeLib.MAX_AMOUNT) {
       return outputBalance();
     } else {
@@ -130,14 +142,22 @@ abstract contract Pipe is IPipe, Initializable {
   }
 
   /// @dev After adding the pipe to a pipeline it should be immediately initialized
-  function setPipeline(address _pipeline) external override {
-    require(_PIPELINE_SLOT.getAddress() == address(0), "PIPE: Already init");
-    _PIPELINE_SLOT.set(_pipeline);
+  /// @notice ! Pipeline must be Controllable
+  function setPipeline(address __pipeline) external override {
+    require(_pipeline() == address(0), "PIPE: Already init");
+    _PIPELINE_SLOT.set(__pipeline);
+    initializeControllable(IControllableExtended(__pipeline).controller());
   }
 
   /// @dev Size of reward tokens array
   function rewardTokensLength() external view override returns (uint) {
-    return rewardTokens.length;
+    return _REWARD_TOKENS.arrayLength();
+  }
+
+  /// @dev Returns reward token
+  /// @param index - token index in array
+  function rewardTokens(uint index) external view override returns (address) {
+    return _REWARD_TOKENS.addressAt(index);
   }
 
   /// @dev function for investing, deposits, entering, borrowing
@@ -180,17 +200,18 @@ abstract contract Pipe is IPipe, Initializable {
 
   /// @dev function for claiming rewards
   function claim() onlyPipeline virtual override external {
-    address _pipeline = _PIPELINE_SLOT.getAddress();
-    for (uint i = 0; i < rewardTokens.length; i++) {
-      address rewardToken = rewardTokens[i];
+    address __pipeline = _pipeline();
+    require(__pipeline != address(0));
+
+    uint len = _REWARD_TOKENS.arrayLength();
+    for (uint i = 0; i < len; i++) {
+      address rewardToken = _REWARD_TOKENS.addressAt(i);
       if (rewardToken == address(0)) {
         return;
       }
-      require(_pipeline != address(0));
-
       uint256 amount = _erc20Balance(rewardToken);
       if (amount > 0) {
-        IERC20(rewardToken).safeTransfer(_pipeline, amount);
+        IERC20(rewardToken).safeTransfer(__pipeline, amount);
       }
     }
   }
@@ -274,7 +295,5 @@ abstract contract Pipe is IPipe, Initializable {
     IERC20(_token).safeApprove(spender, amount);
   }
 
-  // !!! decrease gap size after adding variables!!!
-  //slither-disable-next-line unused-state
   uint[32] private ______gap;
 }

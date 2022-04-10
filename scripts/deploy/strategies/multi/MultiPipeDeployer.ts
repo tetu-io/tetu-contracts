@@ -8,12 +8,18 @@ import {
   MaiCamPipe,
   MaiCamPipe__factory,
   MaiStablecoinPipe,
-  MaiStablecoinPipe__factory
+  MaiStablecoinPipe__factory,
+  StrategyMaiBal__factory,
+  StrategyAaveMaiBal__factory
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 import {RunHelper} from "../../../utils/tools/RunHelper";
+// import {StrategyTestUtils} from "../../../../test/strategies/StrategyTestUtils";
+import {CoreContractsWrapper} from "../../../../test/CoreContractsWrapper";
+import {IAMBInfo} from "./MultiAMBInfos";
+import {IMBInfo} from "./MultiMBInfos";
 
-export class AMBPipeDeployer {
+export class MultiPipeDeployer {
 
 
   public static async deployAaveAmPipe(
@@ -102,6 +108,102 @@ export class AMBPipeDeployer {
       {gasLimit: 12_000_000}
     ));
     return p;
+  }
+
+  public static AMBStrategyDeployer(
+      strategyContractName: string,
+      core: CoreContractsWrapper,
+      signer: SignerWithAddress,
+      underlying: string,
+      info: IAMBInfo,
+      pipes: string[],
+      initializeStrategy = true
+  ) {
+    return async (vaultAddress: string) => {
+      // -----------------
+      const aaveAmPipeData = await MultiPipeDeployer.deployAaveAmPipe(
+          signer,
+          underlying,
+          info.amToken
+      );
+      pipes.push(aaveAmPipeData.address);
+      // -----------------
+      const maiCamPipeData = await MultiPipeDeployer.deployMaiCamPipe(
+          signer,
+          info.amToken,
+          info.camToken
+      );
+      pipes.push(maiCamPipeData.address);
+      // -----------------
+      const maiStablecoinPipeData = await MultiPipeDeployer.deployMaiStablecoinPipe(
+          signer,
+          info.camToken,
+          info.stablecoin,
+          info.targetPercentage,
+          info.collateralNumerator || '1'
+      );
+      pipes.push(maiStablecoinPipeData.address);
+      // -----------------
+      const balVaultPipeData = await MultiPipeDeployer.deployBalVaultPipe(
+          signer
+      );
+      pipes.push(balVaultPipeData.address);
+      // -----------------
+
+      const strategyData = await DeployerUtils.deployTetuProxyControlled(
+          signer,
+          strategyContractName
+      );
+      if (initializeStrategy) {
+        await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
+            core.controller.address,
+            vaultAddress,
+            info.underlying,
+            pipes
+        );
+      }
+      return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
+    }
+  }
+
+  public static MBStrategyDeployer(
+      strategyContractName: string,
+      core: CoreContractsWrapper,
+      signer: SignerWithAddress,
+      underlying: string,
+      info: IMBInfo,
+      pipes: string[],
+      initializeStrategy = true
+  ) {
+    return async (vaultAddress: string) => {
+      const maiStablecoinPipeData = await MultiPipeDeployer.deployMaiStablecoinPipe(
+          signer,
+          info.underlying,
+          info.stablecoin,
+          info.targetPercentage,
+          info.collateralNumerator || '1'
+      );
+      pipes.push(maiStablecoinPipeData.address);
+      // -----------------
+      const balVaultPipeData = await MultiPipeDeployer.deployBalVaultPipe(
+          signer
+      );
+      pipes.push(balVaultPipeData.address);
+      // -----------------
+
+      const strategyData = await DeployerUtils.deployTetuProxyControlled(
+          signer,
+          strategyContractName
+      );
+      if (initializeStrategy)
+        await StrategyMaiBal__factory.connect(strategyData[0].address, signer).initialize(
+          core.controller.address,
+          vaultAddress,
+          info.underlying,
+          pipes
+        );
+      return StrategyMaiBal__factory.connect(strategyData[0].address, signer);
+    }
   }
 
 }

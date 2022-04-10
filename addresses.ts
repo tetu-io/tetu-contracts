@@ -6,22 +6,29 @@ import {MaticToolsAddresses} from "./addresses_tools_matic";
 import {RinkebyToolsAddresses} from "./addresses_tools_rinkeby";
 import {FtmCoreAddresses} from "./addresses_core_ftm";
 import {FtmToolsAddresses} from "./addresses_tools_ftm";
+import {EthereumToolsAddresses} from "./addresses_tools_ethereum";
+import {EthereumCoreAddresses} from "./addresses_core_ethereum";
 
 export class Addresses {
 
   public static CORE = new Map<string, CoreAddresses>([
     ['137', MaticCoreAddresses.ADDRESSES],
     ['250', FtmCoreAddresses.ADDRESSES],
-    ['4', RinkebyCoreAddress.ADDRESSES]
+    ['4', RinkebyCoreAddress.ADDRESSES],
+    ['1', EthereumCoreAddresses.ADDRESSES],
   ]);
 
   public static TOOLS = new Map<string, ToolsAddresses>([
     ['137', MaticToolsAddresses.ADDRESSES],
     ['250', FtmToolsAddresses.ADDRESSES],
-    ['4', RinkebyToolsAddresses.ADDRESSES]
+    ['4', RinkebyToolsAddresses.ADDRESSES],
+    ['1', EthereumToolsAddresses.ADDRESSES]
   ]);
 
   public static TOKENS = new Map<string, Map<string, string>>([
+    ['1', new Map([
+      ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
+    ])],
     ['137', new Map([
       ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
       ['sushi_lp_token_usdc', '0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9'],

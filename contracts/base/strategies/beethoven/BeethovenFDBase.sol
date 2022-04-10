@@ -21,7 +21,6 @@ import "../../../base/strategies/beethoven/BeethovenBase.sol";
   It requires to add extra exchange rate logic
 */
 contract BeethovenFDBase is BeethovenBase {
-  using SafeMath for uint;
   using SafeERC20 for IERC20;
 
   uint private constant _PRECISION = 10 ** 18;

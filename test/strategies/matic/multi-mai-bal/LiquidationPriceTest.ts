@@ -1,12 +1,11 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {IStrategy, StrategyAaveMaiBal, MaiStablecoinPipe, IErc20Stablecoin, SmartVault} from "../../../../typechain";
+import {IStrategy, StrategyMaiBal, MaiStablecoinPipe, IErc20Stablecoin, SmartVault} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {MBUtils} from "./MBUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../../VaultUtils";
@@ -28,21 +27,21 @@ export class LiquidationPriceTest extends SpecificStrategyTest {
       const strategy = deployInfo?.strategy as IStrategy;
       await MBUtils.refuelMAI(signer, strategy.address);
       const bal = await TokenUtils.balanceOf(underlying, user.address);
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
 
       console.log('>>>Liquidation Price');
 
-      const liqPrice1 = await strategyAaveMaiBal.liquidationPrice()
+      const liqPrice1 = await strategyMaiBal.liquidationPrice()
       console.log('liqPrice1     ', liqPrice1.toString());
 
       await VaultUtils.deposit(user, vault, BigNumber.from(bal));
 
-      const percentage = await strategyAaveMaiBal.collateralPercentage()
+      const percentage = await strategyMaiBal.collateralPercentage()
       console.log('percentage    ', percentage.toString());
-      const liqPrice2 = await strategyAaveMaiBal.liquidationPrice()
+      const liqPrice2 = await strategyMaiBal.liquidationPrice()
       console.log('liqPrice2     ', liqPrice2.toString());
 
-      const maiStbPipe = await strategyAaveMaiBal.pipes(0);
+      const maiStbPipe = await strategyMaiBal.pipes(0);
       const maiStbPipeCtr = await DeployerUtils.connectInterface(signer, 'MaiStablecoinPipe', maiStbPipe) as MaiStablecoinPipe;
       const _targetPercentage = await maiStbPipeCtr.targetPercentage()
       const _stablecoin = await maiStbPipeCtr.stablecoin()

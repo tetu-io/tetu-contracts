@@ -14,9 +14,11 @@ pragma solidity 0.8.4;
 
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
-import "./../../../../openzeppelin/Initializable.sol";
 import "../../../../openzeppelin/Math.sol";
 import "./../../../../third_party/balancer/IBVaultLocalOZ.sol";
+import "./../../../../third_party/balancer/IMerkleOrchard.sol";
+import "../../../interface/IControllableExtended.sol";
+import "../../../interface/IController.sol";
 import "../../../SlotsLib.sol";
 import "./Pipe.sol";
 
@@ -35,11 +37,11 @@ contract BalVaultPipe is Pipe {
     address rewardToken;
   }
 
-  bytes32 internal constant _VAULT_SLOT       = bytes32(uint256(keccak256("eip1967.BalVaultPipe.vault")) - 1);
-  bytes32 internal constant _POOL_ID_SLOT     = bytes32(uint256(keccak256("eip1967.BalVaultPipe.poolID")) - 1);
-  bytes32 internal constant _TOKEN_INDEX_SLOT = bytes32(uint256(keccak256("eip1967.BalVaultPipe.tokenIndex")) - 1);
+ bytes32 internal constant _VAULT_SLOT       = bytes32(uint(keccak256("eip1967.BalVaultPipe.vault")) - 1);
+ bytes32 internal constant _POOL_ID_SLOT     = bytes32(uint(keccak256("eip1967.BalVaultPipe.poolID")) - 1);
+ bytes32 internal constant _TOKEN_INDEX_SLOT = bytes32(uint(keccak256("eip1967.BalVaultPipe.tokenIndex")) - 1);
 
-  function initialize(BalVaultPipeData memory _d) public initializer {
+  function initialize(BalVaultPipeData memory _d) public {
     require(_d.vault != address(0), "Zero vault");
     require(_d.rewardToken != address(0), "Zero reward token");
 
@@ -49,7 +51,7 @@ contract BalVaultPipe is Pipe {
     _POOL_ID_SLOT.set(_d.poolID);
     _TOKEN_INDEX_SLOT.set(_d.tokenIndex);
 
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -116,7 +118,7 @@ contract BalVaultPipe is Pipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    amount = maxOutputAmount(amount);
+    amount = _maxOutputAmount(amount);
     address outputToken = _outputToken();
     address sourceToken = _sourceToken();
 
@@ -158,6 +160,21 @@ contract BalVaultPipe is Pipe {
     assembly {
       assets := tokens
     }
+  }
+
+  /// @dev Proxy function to claim balancer rewards (see https://docs.balancer.fi/products/merkle-orchard/claiming-tokens)
+  /// @param merkleOrchard IERC20 array
+  /// @param claims Claims array
+  /// @param tokens Reward tokens array
+  function claimDistributions(
+    address merkleOrchard,
+    IMerkleOrchard.Claim[] memory claims,
+    address[] memory tokens
+  ) external {
+    IController controller = IController(_controller());
+    require(controller.isHardWorker(msg.sender) || controller.governance() == msg.sender, 'BVP: Not HW or Gov');
+
+    IMerkleOrchard(merkleOrchard).claimDistributions(address(this), claims, tokens);
   }
 
 }

@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
-import "./../../../../openzeppelin/Initializable.sol";
+import "../../../SlotsLib.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/ICamToken.sol";
 
@@ -22,6 +22,7 @@ import "./../../../../third_party/qidao/ICamToken.sol";
 /// @author bogdoslav
 contract MaiCamPipe is Pipe {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
   struct MaiCamPipeData {
     address sourceToken;
@@ -30,12 +31,12 @@ contract MaiCamPipe is Pipe {
   }
 
   /// @dev creates context
-  function initialize(MaiCamPipeData memory _d) public initializer {
+  function initialize(MaiCamPipeData memory _d) public {
     require(_d.rewardToken != address(0), "Zero reward token");
 
     Pipe._initialize('MaiCamTokenPipe', _d.sourceToken, _d.lpToken);
 
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
   }
 
   /// @dev function for investing, deposits, entering, borrowing
@@ -44,8 +45,10 @@ contract MaiCamPipe is Pipe {
   function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
     amount = maxSourceAmount(amount);
     address outputToken = _outputToken();
-    _erc20Approve(_sourceToken(), outputToken, amount);
-    ICamToken(outputToken).enter(amount);
+    if (amount > 0) {
+      _erc20Approve(_sourceToken(), outputToken, amount);
+      ICamToken(outputToken).enter(amount);
+    }
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
     emit Put(amount, output);
@@ -55,8 +58,10 @@ contract MaiCamPipe is Pipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline  public returns (uint256 output) {
-    amount = maxOutputAmount(amount);
-    ICamToken(_outputToken()).leave(amount);
+    amount = _maxOutputAmount(amount);
+    if (amount > 0) {
+      ICamToken(_outputToken()).leave(amount);
+    }
     address sourceToken = _sourceToken();
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);

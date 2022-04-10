@@ -19,6 +19,11 @@ import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
 import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 
+const PPFS_NO_INCREASE = new Set<string>([
+  'QiStakingStrategyBase',
+  'BalBridgedStakingStrategyBase',
+])
+
 export class VaultUtils {
 
   constructor(public vault: SmartVault) {
@@ -242,7 +247,8 @@ export class VaultUtils {
       }
       if (bbRatio !== 10000 && !ppfsDecreaseAllowed) {
         // it is a unique case where we send profit to vault instead of AC
-        if (await strategyCtr.STRATEGY_NAME() !== 'QiStakingStrategyBase') {
+        const strategyName = await strategyCtr.STRATEGY_NAME();
+        if (!PPFS_NO_INCREASE.has(strategyName)) {
           expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
         }
       }

@@ -1,7 +1,7 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, SmartVault, StrategyMaiBal} from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
@@ -31,9 +31,9 @@ export class MBTargetPercentageTest extends SpecificStrategyTest {
       const bal = await TokenUtils.balanceOf(underlying, user.address);
       console.log('>>>Target percentage 3');
 
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
       console.log('>>>Target percentage 4');
-      const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
+      const strategyGov = strategyMaiBal.connect(deployInfo.signer as SignerWithAddress);
 
       console.log('>>>Target percentage 5');
       const targetPercentageInitial = await strategyGov.targetPercentage()
