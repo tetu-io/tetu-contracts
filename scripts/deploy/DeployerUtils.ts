@@ -863,15 +863,16 @@ export class DeployerUtils {
 
   public static async verifyImpl(signer: SignerWithAddress, proxyAddress: string) {
     const proxy = await this.connectInterface(signer, 'TetuProxyControlled', proxyAddress) as TetuProxyControlled;
-    const implAddress = await proxy.implementation();
-    console.log('implAddress', implAddress);
+    const address = await proxy.implementation();
+    console.log('impl address', address);
     try {
       await hre.run("verify:verify", {
-        implAddress
+        address
       })
     } catch (e) {
       log.info('error verify ' + e);
     }
+    await this.verifyProxy(proxyAddress);
   }
 
   // tslint:disable-next-line:no-any
@@ -900,15 +901,16 @@ export class DeployerUtils {
   // tslint:disable-next-line:no-any
   public static async verifyImplWithContractName(signer: SignerWithAddress, proxyAddress: string, contractPath: string, args?: any[]) {
     const proxy = await this.connectInterface(signer, 'TetuProxyControlled', proxyAddress) as TetuProxyControlled;
-    const implAddress = await proxy.implementation();
-    console.log('implAddress', implAddress);
+    const address = await proxy.implementation();
+    console.log('impl address', address);
     try {
       await hre.run("verify:verify", {
-        implAddress, contract: contractPath, constructorArguments: args
+        address, contract: contractPath, constructorArguments: args
       })
     } catch (e) {
       log.info('error verify ' + e);
     }
+    await this.verifyProxy(proxyAddress);
   }
 
   // tslint:disable-next-line:no-any

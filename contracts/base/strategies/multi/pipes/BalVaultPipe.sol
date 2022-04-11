@@ -34,7 +34,7 @@ contract BalVaultPipe is Pipe {
     bytes32 poolID;
     uint256 tokenIndex;
     address lpToken;
-    address rewardToken;
+    address[] rewardTokens;
   }
 
  bytes32 internal constant _VAULT_SLOT       = bytes32(uint(keccak256("eip1967.BalVaultPipe.vault")) - 1);
@@ -43,7 +43,8 @@ contract BalVaultPipe is Pipe {
 
   function initialize(BalVaultPipeData memory _d) public {
     require(_d.vault != address(0), "Zero vault");
-    require(_d.rewardToken != address(0), "Zero reward token");
+    require(_d.rewardTokens.length > 0, "No reward tokens");
+    require(_d.rewardTokens[0] != address(0), "Zero reward token");
 
     Pipe._initialize('BalVaultPipe', _d.sourceToken, _d.lpToken);
 
@@ -51,7 +52,10 @@ contract BalVaultPipe is Pipe {
     _POOL_ID_SLOT.set(_d.poolID);
     _TOKEN_INDEX_SLOT.set(_d.tokenIndex);
 
-    _REWARD_TOKENS.push(_d.rewardToken);
+    uint rewardsLength = _d.rewardTokens.length;
+    for (uint i = 0; i < rewardsLength; ++i) {
+      _REWARD_TOKENS.push(_d.rewardTokens[i]);
+    }
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
