@@ -1,7 +1,7 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {IStrategy, StrategyAaveMaiBal} from "../../../../typechain";
+import {IStrategy, StrategyMaiBal} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -23,9 +23,9 @@ export class PumpInOnHardWorkTest extends SpecificStrategyTest {
       const strategy = deployInfo?.strategy as IStrategy;
       await MBUtils.refuelMAI(signer, strategy.address);
 
-      const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
+      const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
       console.log('>>>PumpIn on hardwork');
-      const strategyGov = strategyAaveMaiBal.connect(signer);
+      const strategyGov = strategyMaiBal.connect(signer);
       const amount = utils.parseUnits('10')
       await TokenUtils.getToken(MaticAddresses.WMATIC_TOKEN, signer.address, amount);
       if (underlying.toLowerCase() === MaticAddresses.WBTC_TOKEN) {

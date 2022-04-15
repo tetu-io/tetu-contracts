@@ -2,7 +2,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+// import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
@@ -10,8 +10,7 @@ import {
   ForwarderV2,
   IStrategy,
   SmartVault,
-  StrategyAaveMaiBal,
-  StrategyAaveMaiBal__factory
+  StrategyAaveMaiBal
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -27,11 +26,13 @@ import {WithdrawAndClaimTest} from "./WithdrawAndClaimTest";
 import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
-import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
+import {MultiPipeDeployer} from "../../../../scripts/deploy/strategies/multi/MultiPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
 import {LiquidationPriceTest} from "./LiquidationPriceTest";
 import {MaxDepositTest} from "./MaxDepositTest";
+import {ReplacePipeTest} from "./ReplacePipeTest";
+import {UpdatePipeProxyTest} from "./UpdatePipeProxyTest";
 
 
 dotEnvConfig();
@@ -109,10 +110,12 @@ describe('Universal AMB tests', async () => {
       new PumpInOnHardWorkTest(),
       new WithdrawAndClaimTest(),
       new EmergencyWithdrawFromPoolTest(),
-      new CoverageCallsTest(),
       new MoreMaiFromBalTest(),
       new LiquidationPriceTest(),
       new MaxDepositTest(),
+      new ReplacePipeTest(),
+      new UpdatePipeProxyTest(),
+      new CoverageCallsTest(),
     ];
     const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10000');
     const BAL_PIPE_INDEX = 3;
@@ -125,49 +128,7 @@ describe('Universal AMB tests', async () => {
         signer,
         core,
         info.underlyingName,
-        async vaultAddress => {
-          // -----------------
-          const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
-            signer,
-            underlying,
-            info.amToken
-          );
-          pipes.push(aaveAmPipeData.address);
-          // -----------------
-          const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
-            signer,
-            info.amToken,
-            info.camToken
-          );
-          pipes.push(maiCamPipeData.address);
-          // -----------------
-          const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
-            signer,
-            info.camToken,
-            info.stablecoin,
-            info.targetPercentage,
-            info.collateralNumerator || '1'
-          );
-          pipes.push(maiStablecoinPipeData.address);
-          // -----------------
-          const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-            signer
-          );
-          pipes.push(balVaultPipeData.address);
-          // -----------------
-
-          const strategyData = await DeployerUtils.deployTetuProxyControlled(
-            signer,
-            strategyContractName
-          );
-          await StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer).initialize(
-            core.controller.address,
-            vaultAddress,
-            info.underlying,
-            pipes
-          );
-          return StrategyAaveMaiBal__factory.connect(strategyData[0].address, signer);
-        },
+        MultiPipeDeployer.AMBStrategyDeployer(strategyContractName, core, signer, underlying, info, pipes),
         underlying,
         25
       );

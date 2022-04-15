@@ -1,12 +1,14 @@
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
-const infos: {
+interface IMBInfo {
   underlyingName: string,
   underlying: string,
   stablecoin: string,
   targetPercentage: string,
   collateralNumerator?: string, // will be used '1' on deploy, when undefined
-}[] = [
+}
+
+const infos: IMBInfo[] = [
     // for now CelsiusX only tokens.
     // same strategy can be used for all other MAI vaults
   {
@@ -29,4 +31,4 @@ const infos: {
   },
 ]
 
-export {infos}
+export {IMBInfo, infos}

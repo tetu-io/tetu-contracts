@@ -2,13 +2,12 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {
   ContractReader,
-  IStrategy, SmartVault,
   StrategyMaiBal,
   StrategyMaiBal__factory
 } from "../../../../typechain";
 import {appendFileSync, mkdir} from "fs";
 import {infos} from "./MultiMBInfos";
-import {AMBPipeDeployer} from "./AMBPipeDeployer";
+import {MultiPipeDeployer} from "./MultiPipeDeployer";
 
 
 async function main() {
@@ -55,7 +54,7 @@ async function main() {
             info.underlying,
             async vaultAddress => {
               // -----------------
-              const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
+              const maiStablecoinPipeData = await MultiPipeDeployer.deployMaiStablecoinPipe(
                   signer,
                   info.underlying,
                   info.stablecoin,
@@ -64,7 +63,7 @@ async function main() {
               );
               pipes.push(maiStablecoinPipeData.address);
               // -----------------
-              const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
+              const balVaultPipeData = await MultiPipeDeployer.deployBalVaultPipe(
                   signer
               );
               pipes.push(balVaultPipeData.address);
