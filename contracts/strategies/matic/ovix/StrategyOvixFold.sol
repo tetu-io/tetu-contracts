@@ -11,17 +11,14 @@
  */
 pragma solidity 0.8.4;
 
-import "../../../base/strategies/Ovix/OvixFoldStrategyBase.sol";
+import "../../../base/strategies/ovix/OvixFoldStrategyBase.sol";
 
 contract StrategyOvixFold is OvixFoldStrategyBase {
     // OVIX CONTROLLER
-    address public constant _OVIX_CONTROLLER =
-        address(0x8849f1a0cB6b5D6076aB150546EddEe193754F1C);
-    IStrategy.Platform private constant _PLATFORM =
-        IStrategy.Platform.OVIX_LEND;
+    address public constant _OVIX_CONTROLLER = address(0x8849f1a0cB6b5D6076aB150546EddEe193754F1C);
+    IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.OVIX_LEND;
     // rewards
-    address private constant OVIX =
-        address(0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef); // not correct address(ICE address)
+    address private constant OVIX = address(0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef); // not correct address
     address[] private _poolRewards = [OVIX];
     address[] private _assets;
 

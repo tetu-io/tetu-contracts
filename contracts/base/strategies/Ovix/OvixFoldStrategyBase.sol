@@ -16,17 +16,15 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../FoldingBase.sol";
-import "../../../third_party/Ovix/CompleteOToken.sol";
-import "../../../third_party/Ovix/IOMatic.sol";
-import "../../../third_party/Ovix/PriceOracle.sol";
+import "./interfaces/ICompleteOToken.sol";
+import "./interfaces/IOMatic.sol";
+import "./interfaces/IPriceOracle.sol";
 import "../../../third_party/IWmatic.sol";
 import "../../interface/strategies/IOvixFoldStrategy.sol";
 
 /// @title Abstract contract for Ovix lending strategy implementation with folding functionality
-/// @author JasperS13
-/// @author belbix
+/// @author C-note
 abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // ************ VARIABLES **********************
@@ -34,18 +32,15 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     string public constant override STRATEGY_NAME = "OvixFoldStrategyBase";
     /// @notice Version of the contract
     /// @dev Should be incremented when contract changed
-    string public constant VERSION = "1.5.0";
+    string public constant VERSION = "1.0.0";
     /// @dev Placeholder, for non full buyback need to implement liquidation
     uint256 private constant _BUY_BACK_RATIO = 10000;
     /// @dev precision for the folding profitability calculation
     uint256 private constant _PRECISION = 10**18;
-    /// @dev ICE oToken address for reward price determination
-    IOToken public constant O_USDC =
-        IOToken(0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe);
-    address public constant W_MATIC =
-        0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    address public constant O_MATIC =
-        0xE554E874c9c60E45F1Debd479389C76230ae25A8;
+    /// @dev OVIX oToken address for reward price determination
+    IOToken public constant O_USDC = IOToken(0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe);
+    address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address public constant O_MATIC = 0xE554E874c9c60E45F1Debd479389C76230ae25A8;
 
     /// @notice oToken address
     address public override oToken;
@@ -74,19 +69,16 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
             _collateralFactorNumerator
         )
     {
-        require(_oToken != address(0), "IFS: Zero address oToken");
-        require(
-            _ovixController != address(0),
-            "IFS: Zero address ovixController"
-        );
+        require(_oToken != address(0), "OFS: Zero address oToken");
+        require(_ovixController != address(0), "OFS: Zero address ovixController");
         oToken = _oToken;
         ovixController = _ovixController;
 
         if (_isMatic()) {
-            require(_underlyingToken == W_MATIC, "IFS: Only wmatic allowed");
+            require(_underlyingToken == W_MATIC, "OFS: Only wmatic allowed");
         } else {
-            address _lpt = CompleteOToken(oToken).underlying();
-            require(_lpt == _underlyingToken, "IFS: Wrong underlying");
+            address _lpt = ICompleteOToken(oToken).underlying();
+            require(_lpt == _underlyingToken, "OFS: Wrong underlying");
         }
     }
 
@@ -107,11 +99,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     /// @dev Only for statistic
     /// @return Pool TVL
     function poolTotalAmount() external view override returns (uint256) {
-        return
-            CompleteOToken(oToken)
-                .getCash()
-                .add(CompleteOToken(oToken).totalBorrows())
-                .sub(CompleteOToken(oToken).totalReserves());
+        return ICompleteOToken(oToken).getCash() + (ICompleteOToken(oToken).totalBorrows()) - (ICompleteOToken(oToken).totalReserves());
     }
 
     /// @dev Do something useful with farmed rewards
@@ -123,13 +111,9 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     ///////////// internal functions require specific implementation for each platforms ///
     ///////////////////////////////////////////////////////////////////////////////////////
 
-    function _getInvestmentData()
-        internal
-        override
-        returns (uint256 supplied, uint256 borrowed)
-    {
-        supplied = CompleteOToken(oToken).balanceOfUnderlying(address(this));
-        borrowed = CompleteOToken(oToken).borrowBalanceCurrent(address(this));
+    function _getInvestmentData() internal override returns (uint256 supplied, uint256 borrowed){
+        supplied = ICompleteOToken(oToken).balanceOfUnderlying(address(this));
+        borrowed = ICompleteOToken(oToken).borrowBalanceCurrent(address(this));
     }
 
     /// @dev Return true if we can gain profit with folding
@@ -141,10 +125,8 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
             uint256 debtUnderlyingCostInUSDC
         ) = totalRewardPredictionInUSDC();
 
-        uint256 foldingProfitPeoToken = supplyRewardsInUSDC +
-            borrowRewardsInUSDC +
-            supplyUnderlyingProfitInUSDC;
-        return foldingProfitPeoToken > debtUnderlyingCostInUSDC;
+        uint256 foldingProfitPerToken = supplyRewardsInUSDC + borrowRewardsInUSDC + supplyUnderlyingProfitInUSDC;
+        return foldingProfitPerToken > debtUnderlyingCostInUSDC;
     }
 
     /// @dev Claim distribution rewards
@@ -155,29 +137,20 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     }
 
     function _supply(uint256 amount) internal override {
-        amount = Math.min(
-            IERC20(_underlyingToken).balanceOf(address(this)),
-            amount
-        );
+        amount = Math.min(IERC20(_underlyingToken).balanceOf(address(this)), amount);
         if (_isMatic()) {
             wmaticWithdraw(amount);
             IOMatic(oToken).mint{value: amount}();
         } else {
             IERC20(_underlyingToken).safeApprove(oToken, 0);
             IERC20(_underlyingToken).safeApprove(oToken, amount);
-            require(
-                CompleteOToken(oToken).mint(amount) == 0,
-                "IFS: Supplying failed"
-            );
+            require(ICompleteOToken(oToken).mint(amount) == 0, "OFS: Supplying failed");
         }
     }
 
     function _borrow(uint256 amountUnderlying) internal override {
         // Borrow, check the balance for this contract's address
-        require(
-            CompleteOToken(oToken).borrow(amountUnderlying) == 0,
-            "IFS: Borrow failed"
-        );
+        require(ICompleteOToken(oToken).borrow(amountUnderlying) == 0, "OFS: Borrow failed");
         if (_isMatic()) {
             IWmatic(W_MATIC).deposit{value: address(this).balance}();
         }
@@ -187,16 +160,13 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
         amountUnderlying = Math.min(amountUnderlying, _maxRedeem());
         if (amountUnderlying > 0) {
             uint256 redeemCode = 999;
-            try
-                CompleteOToken(oToken).redeemUnderlying(amountUnderlying)
-            returns (uint256 code) {
+            try ICompleteOToken(oToken).redeemUnderlying(amountUnderlying) returns (uint256 code) {
                 redeemCode = code;
             } catch {}
             if (redeemCode != 0) {
                 // ovix has verification function that can ruin tx with underlying, in this case redeem oToken will work
-                (, , , uint256 exchangeRate) = CompleteOToken(oToken)
-                    .getAccountSnapshot(address(this));
-                uint256 oTokenRedeem = (amountUnderlying * 1e18) / exchangeRate;
+                (, , , uint256 exchangeRate) = ICompleteOToken(oToken).getAccountSnapshot(address(this));
+                uint256 oTokenRedeem = (amountUnderlying * _PRECISION) / exchangeRate;
                 if (oTokenRedeem > 0) {
                     _redeemLoanToken(oTokenRedeem);
                 }
@@ -209,10 +179,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
 
     function _redeemLoanToken(uint256 amount) internal {
         if (amount > 0) {
-            require(
-                CompleteOToken(oToken).redeem(amount) == 0,
-                "IFS: Redeem failed"
-            );
+            require(ICompleteOToken(oToken).redeem(amount) == 0, "OFS: Redeem failed");
         }
     }
 
@@ -224,29 +191,21 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
             } else {
                 IERC20(_underlyingToken).safeApprove(oToken, 0);
                 IERC20(_underlyingToken).safeApprove(oToken, amountUnderlying);
-                require(
-                    CompleteOToken(oToken).repayBorrow(amountUnderlying) == 0,
-                    "IFS: Repay failed"
-                );
+                require(ICompleteOToken(oToken).repayBorrow(amountUnderlying) == 0,"OFS: Repay failed");
             }
         }
     }
 
     /// @dev Redeems the maximum amount of underlying. Either all of the balance or all of the available liquidity.
     function _redeemMaximumWithLoan() internal override {
-        uint256 supplied = CompleteOToken(oToken).balanceOfUnderlying(
-            address(this)
-        );
-        uint256 borrowed = CompleteOToken(oToken).borrowBalanceCurrent(
-            address(this)
-        );
-        uint256 balance = supplied.sub(borrowed);
+        uint256 supplied = ICompleteOToken(oToken).balanceOfUnderlying(address(this));
+        uint256 borrowed = ICompleteOToken(oToken).borrowBalanceCurrent(address(this));
+        uint256 balance = supplied + (borrowed);
         _redeemPartialWithLoan(balance);
 
         // we have a little amount of supply after full exit
         // better to redeem oToken amount for avoid rounding issues
-        (, uint256 oTokenBalance, , ) = CompleteOToken(oToken)
-            .getAccountSnapshot(address(this));
+        (, uint256 oTokenBalance, , ) = ICompleteOToken(oToken).getAccountSnapshot(address(this));
         if (oTokenBalance > 0) {
             _redeemLoanToken(oTokenBalance);
         }
@@ -257,98 +216,56 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     /////////////////////////////////////////////
 
     function decimals() private view returns (uint8) {
-        return CompleteOToken(oToken).decimals();
+        return ICompleteOToken(oToken).decimals();
     }
 
     function underlyingDecimals() private view returns (uint8) {
         return IERC20Extended(_underlyingToken).decimals();
     }
 
-    /// @notice returns forecast of all rewards (ICE and underlying) for the given period of time
-    function totalRewardPrediction()
-        private
-        view
-        returns (
-            uint256 supplyRewards,
-            uint256 borrowRewards,
-            uint256 supplyUnderlyingProfit,
-            uint256 debtUnderlyingCost
-        )
-    {
-        CompleteOToken rt = CompleteOToken(oToken);
+    /// @notice returns forecast of all rewards (OVIX and underlying) for the given period of time
+    function totalRewardPrediction() private view returns (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost){
+        ICompleteOToken rt = ICompleteOToken(oToken);
         // get reward per token for both - suppliers and borrowers
         uint256 rewardSpeed = IComptroller(ovixController).rewardSpeeds(oToken);
         // get total supply, cash and borrows, and normalize them to 18 decimals
-        uint256 totalSupply = (rt.totalSupply() * 1e18) / (10**decimals());
-        uint256 totalBorrows = (rt.totalBorrows() * 1e18) /
-            (10**underlyingDecimals());
+        uint256 totalSupply = (rt.totalSupply() * _PRECISION) / (10**decimals());
+        uint256 totalBorrows = (rt.totalBorrows() * _PRECISION) / (10**underlyingDecimals());
+
         if (totalSupply == 0 || totalBorrows == 0) {
             return (0, 0, 0, 0);
         }
 
         // exchange rate between oToken and underlyingToken
-        uint256 oTokenExchangeRate = (rt.exchangeRateStored() *
-            (10**decimals())) / (10**underlyingDecimals());
-
+        uint256 oTokenExchangeRate = (rt.exchangeRateStored() * (10**decimals())) / (10**underlyingDecimals());
         // amount of reward tokens per block for 1 supplied underlyingToken
-        supplyRewards =
-            (((rewardSpeed * 1e18) / oTokenExchangeRate) * 1e18) /
-            totalSupply;
+        supplyRewards = (((rewardSpeed * _PRECISION) / oTokenExchangeRate) * _PRECISION) / totalSupply;
         // amount of reward tokens per block for 1 borrowed underlyingToken
-        borrowRewards = (rewardSpeed * 1e18) / totalBorrows;
+        borrowRewards = (rewardSpeed * _PRECISION) / totalBorrows;
         supplyUnderlyingProfit = rt.supplyRatePerTimestamp();
         debtUnderlyingCost = rt.borrowRatePerTimestamp();
-        return (
-            supplyRewards,
-            borrowRewards,
-            supplyUnderlyingProfit,
-            debtUnderlyingCost
-        );
+        return (supplyRewards, borrowRewards, supplyUnderlyingProfit, debtUnderlyingCost);
     }
 
-    /// @notice returns forecast of all rewards (ICE and underlying)
-    ///         for the given period of time in USDC token using ICE price oracle
-    function totalRewardPredictionInUSDC()
-        private
-        view
-        returns (
-            uint256 supplyRewardsInUSDC,
-            uint256 borrowRewardsInUSDC,
-            uint256 supplyUnderlyingProfitInUSDC,
-            uint256 debtUnderlyingCostInUSDC
-        )
-    {
-        uint256 rewardTokenUSDC = PriceOracle(
-            IComptroller(ovixController).oracle()
-        ).getUnderlyingPrice(O_USDC);
+    /// @notice returns forecast of all rewards (OVIX and underlying)
+    ///         for the given period of time in USDC token using OVIX pr oracle
+    function totalRewardPredictionInUSDC() private view returns (uint256 supplyRewardsInUSDC, uint256 borrowRewardsInUSDC, uint256 supplyUnderlyingProfitInUSDC, uint256 debtUnderlyingCostInUSDC) {
+        uint256 rewardTokenUSDC = IPriceOracle(IComptroller(ovixController).oracle()).getUnderlyingPrice(O_USDC);
         uint256 oTokenUSDC = oTokenUnderlyingPrice(oToken);
-        (
-            uint256 supplyRewards,
-            uint256 borrowRewards,
-            uint256 supplyUnderlyingProfit,
-            uint256 debtUnderlyingCost
-        ) = totalRewardPrediction();
+
+        (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction();
 
         supplyRewardsInUSDC = (supplyRewards * rewardTokenUSDC) / _PRECISION;
         borrowRewardsInUSDC = (borrowRewards * rewardTokenUSDC) / _PRECISION;
-        supplyUnderlyingProfitInUSDC =
-            (supplyUnderlyingProfit * oTokenUSDC) /
-            _PRECISION;
-        debtUnderlyingCostInUSDC =
-            (debtUnderlyingCost * oTokenUSDC) /
-            _PRECISION;
+
+        supplyUnderlyingProfitInUSDC = (supplyUnderlyingProfit * oTokenUSDC) / _PRECISION;
+        debtUnderlyingCostInUSDC = (debtUnderlyingCost * oTokenUSDC) / _PRECISION;
     }
 
     /// @dev Return oToken price from Ovix Oracle solution. Can be used on-chain safely
-    function oTokenUnderlyingPrice(address _oToken)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 _oTokenPrice = PriceOracle(
-            IComptroller(ovixController).oracle()
-        ).getUnderlyingPrice(IOToken(_oToken));
-        // normalize token price to 1e18
+    function oTokenUnderlyingPrice(address _oToken) public view returns (uint256) {
+        uint256 _oTokenPrice = IPriceOracle(IComptroller(ovixController).oracle()).getUnderlyingPrice(IOToken(_oToken));
+        // normalize token price to _PRECISION
         if (underlyingDecimals() < 18) {
             _oTokenPrice = _oTokenPrice / (10**(18 - underlyingDecimals()));
         }
@@ -356,10 +273,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     }
 
     function wmaticWithdraw(uint256 amount) private {
-        require(
-            IERC20(W_MATIC).balanceOf(address(this)) >= amount,
-            "IFS: Not enough wmatic"
-        );
+        require(IERC20(W_MATIC).balanceOf(address(this)) >= amount, "OFS: Not enough wmatic");
         IWmatic(W_MATIC).withdraw(amount);
     }
 

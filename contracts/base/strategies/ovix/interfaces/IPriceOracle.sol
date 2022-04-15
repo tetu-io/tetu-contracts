@@ -3,9 +3,9 @@ pragma solidity 0.8.4;
 
 import "./IOToken.sol";
 
-abstract contract PriceOracle {
+interface IPriceOracle {
     /// @notice Indicator that this is a PriceOracle contract (for inspection)
-    bool public constant isPriceOracle = true;
+    function isPriceOracle() external view returns (bool);
 
     /**
      * @notice Get the underlying price of a oToken asset
@@ -13,9 +13,5 @@ abstract contract PriceOracle {
      * @return The underlying asset price mantissa (scaled by 1e18).
      *  Zero means the price is unavailable.
      */
-    function getUnderlyingPrice(IOToken oToken)
-        external
-        view
-        virtual
-        returns (uint256);
+    function getUnderlyingPrice(IOToken oToken) external view returns (uint256);
 }

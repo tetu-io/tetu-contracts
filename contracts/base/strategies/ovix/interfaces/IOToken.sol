@@ -132,15 +132,7 @@ interface IOToken is IEIP20 {
     /*** User Interface ***/
     function balanceOfUnderlying(address owner) external returns (uint256);
 
-    function getAccountSnapshot(address account)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        );
+    function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256);
 
     function borrowRatePerTimestamp() external view returns (uint256);
 

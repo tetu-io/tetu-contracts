@@ -2,7 +2,7 @@
 pragma solidity 0.8.4;
 
 import "./IOToken.sol";
-import "./PriceOracle.sol";
+import "./IPriceOracle.sol";
 
 interface IComptroller {
     /// @notice Indicator that this is a Comptroller contract (for inspection)
@@ -115,7 +115,7 @@ interface IComptroller {
 
     function getAllMarkets() external view returns (IOToken[] memory);
 
-    function oracle() external view returns (PriceOracle);
+    function oracle() external view returns (IPriceOracle);
 
     function updateAndDistributeSupplierRewardsForToken(
         address oToken,
