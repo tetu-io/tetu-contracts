@@ -5,12 +5,18 @@ const BigNumber = require("bignumber.js");
 
 const {ethers, network } = require("hardhat");
 
-
 const accounts = [
+  // // AMB 2.0 BAL Pipes
   "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
   "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
   "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
   "0xA69967d315d7add8222aEe81c1F178dAc0017089", // AMB WBTC
+
+  // // AMB 1.0 BAL Pipes
+  // "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
+  // "0xF710277064c49f4689f061B4263d8930E395C61d", // AMB MATIC
+  // "0x88f0b9F9B97f8A02508E4E69d46B619fc385c5f4", // AMB AAVE
+  // "0x42d68D48120333720FbA4B079f47240b6FdEcef2", // AMB WBTC
 ];
 
 const tokens = [
@@ -20,8 +26,10 @@ const tokens = [
 ];
 
 
-const weekFirst = 1;
-const weekLast = 23;
+// TODO remove comment
+// const weekFirst = 1;
+const weekFirst = 25;
+const weekLast = 999;
 console.log('weeks from', weekFirst, 'to', weekLast);
 
 const networkName = network.name === 'hardhat' ? 'matic' : network.name; // use matic constants for forking
@@ -29,6 +37,7 @@ const networkName = network.name === 'hardhat' ? 'matic' : network.name; // use 
 async function claimBal() {
   console.log("Network:", networkName);
   let totalRewards = 0;
+  let totalClaimed = 0;
 
   for (let j = 0; j < accounts.length; j++) {
     let account = accounts[j];
@@ -45,10 +54,16 @@ async function claimBal() {
       let pendingClaims = {claims: [], reports: []};
       for (let week = weekFirst; week <= weekLast; week++) {
         console.log('week', week);
-        let pendingClaim = await Claim.getPendingClaims(account, week, networkName, token);
-        if (pendingClaim) {
-          pendingClaims.claims.push(pendingClaim.claim);
-          pendingClaims.reports[week] = pendingClaim.report[week];
+        try {
+          let pendingClaim = await Claim.getPendingClaims(account, week, networkName, token);
+          if (pendingClaim) {
+            pendingClaims.claims.push(pendingClaim.claim);
+            pendingClaims.reports[week] = pendingClaim.report[week];
+          }
+        } catch (e) {
+          console.warn('Error getting claims for week', week, 'Error:', e.message, typeof e)
+          // week is not published, so break the cycle
+          break;
         }
       }
       console.log("Claims:");
@@ -68,7 +83,6 @@ async function claimBal() {
 
       console.log("Making claims");
       let balanceBefore = await tokenContract.balanceOf(account);
-      let balanceBeforePretty = new BigNumber(balanceBefore).div(new BigNumber(Math.pow(10, 18)));
 
       // impersonate account to test claims
       if (network.name === 'hardhat') {
@@ -77,13 +91,20 @@ async function claimBal() {
 
       let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
       console.log("tx:", claim.hash);
+      await claim.wait();
+      console.log("tx mined");
+
       let balanceAfter = await tokenContract.balanceOf(account);
-      let balanceAfterPretty = new BigNumber(balanceAfter).div(new BigNumber(Math.pow(10, 18)));
-      console.log("Claimed:", balanceAfterPretty.toFixed() - balanceBeforePretty.toFixed());
+      const fixed = 8;
+      const claimed = (balanceAfter.sub(balanceBefore).div(10**(18-fixed))).toNumber() / 10**fixed;
+      console.log("++++ Claimed:", claimed/*.toFixed(fixed)*/);
+      totalClaimed += claimed;
+
     }
   }
   console.log('totalRewards for all accounts', totalRewards);
+  console.log('totalClaimed for all accounts', totalClaimed);
 }
 
-// claimBal().then();
-module.exports = {claimBal}
+claimBal().then();
+// module.exports = {claimBal}

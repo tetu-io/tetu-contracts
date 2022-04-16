@@ -12,6 +12,7 @@ import {MaticAddresses} from "../../../addresses/MaticAddresses";
 import {utils} from "ethers";
 import {infos} from "./MultiMBInfos";
 import {MultiPipeDeployer} from "./MultiPipeDeployer";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const vaultAddresses = [
   '0x1227C91E9816DfEC6f31B7ED5a9F03372762E7Df', // cxDOGE
@@ -22,8 +23,13 @@ const vaultAddresses = [
 async function main() {
 
   const signer = (await ethers.getSigners())[0];
-  const gov = await DeployerUtils.impersonate(MaticAddresses.GOV_ADDRESS);
-
+  let gov: SignerWithAddress;
+  if (network.name === 'hardhat') {
+    console.log('impersonate GOV');
+    gov = await DeployerUtils.impersonate(MaticAddresses.GOV_ADDRESS);
+  } else {
+    gov = signer;
+  }
   const core = await DeployerUtils.getCoreAddresses();
   const coreWrapper = await DeployerUtils.getCoreAddressesWrapper(signer);
 
@@ -68,22 +74,25 @@ async function main() {
     const deployer = await MultiPipeDeployer.MBStrategyDeployer(strategyContractName, coreWrapper, signer, underlyingAddress, info, pipes);
     const strategy = await deployer(vaultAddress);
     strategyAddresses.push(strategy.address);
-    data.push('', vaultAddress, strategy, strategyArgs);
+    data.push('', vaultAddress, strategy, []);
     deployed.push(data);
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${data[1]}     strategy: ${data[2].address}\n`;
     appendFileSync(tmpFileName, txt, 'utf8');
 
     await DeployerUtils.wait(5);
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < pipes.length; i++) {
-      const pipeAdr = pipes[i];
+    for (const pipeAdr of pipes) {
       console.log('verifyImpl pipeAdr', pipeAdr);
       await DeployerUtils.verifyImpl(signer, pipeAdr);
     }
 
     console.log('verifyImplWithContractName',data[2].address);
-    await DeployerUtils.verifyImplWithContractName(signer, data[2].address, 'contracts/strategies/matic/multi/StrategyMaiBal.sol:StrategyMaiBal', data[3]);
+    await DeployerUtils.verifyImplWithContractName(
+        signer,
+        data[2].address,
+        'contracts/strategies/matic/multi/StrategyMaiBal.sol:StrategyMaiBal',
+        []
+    );
 
   }
   await DeployerUtils.wait(5);
@@ -91,6 +100,8 @@ async function main() {
   const arrTxt = 'vaults: '+JSON.stringify(vaultAddresses) + '\n'+
       'strategies: '+JSON.stringify(strategyAddresses) + '\n-----------------\n';
   appendFileSync(tmpFileName, arrTxt, 'utf8');
+
+  if (network.name === 'hardhat') return;
 
   // --- Test Upgrade
 
