@@ -28,6 +28,7 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.2.2";
   /// @dev Placeholder, for non full buyback need to implement liquidation
+  /// @dev 10% buybacks
   uint256 private constant _BUY_BACK_RATIO = 10_00;
 
   /// @notice TetuSwap pair
