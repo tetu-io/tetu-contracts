@@ -18,7 +18,7 @@ contract StrategyTetuSwap is TetuSwapStrategyBase {
 
   address public constant X_TETU = address(0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454);
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.TETU_SWAP;
-  address private constant _ROUTER = address(0x736FD9EabB15776A3adfea1B975c868F72A29d14);
+  address private constant _ROUTER = address(0xBCA055F25c3670fE0b1463e8d470585Fe15Ca819);
   // rewards
   address[] private _rewards = [X_TETU];
   address[] private _assets;
