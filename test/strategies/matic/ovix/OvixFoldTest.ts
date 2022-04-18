@@ -84,9 +84,6 @@ describe('Universal Ovix Fold tests', async () => {
     const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0.00001;
     let deposit = 100_000;
-    if (oTokenName === 'oVIX') {
-      deposit = 10_000;
-    }
     // at least 3
     const loops = 15;
     // number of blocks or timestamp value

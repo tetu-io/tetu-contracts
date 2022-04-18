@@ -21,9 +21,9 @@ contract StrategyOvixFold is OvixFoldStrategyBase {
     address private constant OVIX = address(0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef); // not correct address
 
     /// @dev OVIX oToken address for reward price determination
-    IOToken public constant O_USDC = IOToken(0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe);
-    address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    address public constant O_MATIC = 0xE554E874c9c60E45F1Debd479389C76230ae25A8;
+    IOToken public constant _O_USDC = IOToken(0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe);
+    address public constant _W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address public constant _O_MATIC = 0xE554E874c9c60E45F1Debd479389C76230ae25A8;
     address[] private _poolRewards = [OVIX];
     address[] private _assets;
 
@@ -41,7 +41,10 @@ contract StrategyOvixFold is OvixFoldStrategyBase {
             _vault,
             _poolRewards,
             _oToken,
+            _W_MATIC,
+            _O_MATIC,
             _OVIX_CONTROLLER,
+            _O_USDC,
             _borrowTargetFactorNumerator,
             _collateralFactorNumerator
         )
