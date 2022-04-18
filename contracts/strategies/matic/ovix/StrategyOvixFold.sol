@@ -15,10 +15,15 @@ import "../../../base/strategies/ovix/OvixFoldStrategyBase.sol";
 
 contract StrategyOvixFold is OvixFoldStrategyBase {
     // OVIX CONTROLLER
-    address public constant _OVIX_CONTROLLER = address(0x8849f1a0cB6b5D6076aB150546EddEe193754F1C);
+    address private constant _OVIX_CONTROLLER = address(0x8849f1a0cB6b5D6076aB150546EddEe193754F1C);
     IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.OVIX_LEND;
     // rewards
     address private constant OVIX = address(0x4A81f8796e0c6Ad4877A51C86693B0dE8093F2ef); // not correct address
+
+    /// @dev OVIX oToken address for reward price determination
+    IOToken public constant O_USDC = IOToken(0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe);
+    address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address public constant O_MATIC = 0xE554E874c9c60E45F1Debd479389C76230ae25A8;
     address[] private _poolRewards = [OVIX];
     address[] private _assets;
 

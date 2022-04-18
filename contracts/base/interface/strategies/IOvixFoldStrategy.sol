@@ -10,10 +10,14 @@
  * to Tetu and/or the underlying software and the use thereof are disclaimed.
  */
 
+import "../../strategies/ovix/interfaces/IOToken.sol";
+
 pragma solidity 0.8.4;
 
 interface IOvixFoldStrategy {
-    function oToken() external view returns (address);
+    function O_USDC() external view returns (IOToken);
 
-    function ovixController() external view returns (address);
+    function W_MATIC() external view returns (address);
+
+    function O_MATIC() external view returns (address);
 }

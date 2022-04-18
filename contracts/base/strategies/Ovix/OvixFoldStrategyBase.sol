@@ -12,9 +12,6 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../FoldingBase.sol";
 import "./interfaces/ICompleteOToken.sol";
 import "./interfaces/IOMatic.sol";
@@ -23,8 +20,10 @@ import "../../../third_party/IWmatic.sol";
 import "../../interface/strategies/IOvixFoldStrategy.sol";
 
 /// @title Abstract contract for Ovix lending strategy implementation with folding functionality
+/// @author JasperS13
+/// @author belbix
 /// @author C-note
-abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
+abstract contract OvixFoldStrategyBase is FoldingBase {
     using SafeERC20 for IERC20;
 
     // ************ VARIABLES **********************
@@ -37,15 +36,13 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     uint256 private constant _BUY_BACK_RATIO = 10000;
     /// @dev precision for the folding profitability calculation
     uint256 private constant _PRECISION = 10**18;
-    /// @dev OVIX oToken address for reward price determination
-    IOToken public constant O_USDC = IOToken(0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe);
-    address public constant W_MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    address public constant O_MATIC = 0xE554E874c9c60E45F1Debd479389C76230ae25A8;
 
     /// @notice oToken address
-    address public override oToken;
+    address public oToken;
     /// @notice Ovix Controller address
-    address public override ovixController;
+    address public ovixController;
+    /// @notice ovix fold strategy address
+    IOvixFoldStrategy public ovixFoldStrategyAddress;
 
     /// @notice Contract constructor using on strategy implementation
     /// @dev The implementation should check each parameter
@@ -75,7 +72,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
         ovixController = _ovixController;
 
         if (_isMatic()) {
-            require(_underlyingToken == W_MATIC, "OFS: Only wmatic allowed");
+            require(_underlyingToken == ovixFoldStrategyAddress.W_MATIC(), "OFS: Only wmatic allowed");
         } else {
             address _lpt = ICompleteOToken(oToken).underlying();
             require(_lpt == _underlyingToken, "OFS: Wrong underlying");
@@ -152,7 +149,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
         // Borrow, check the balance for this contract's address
         require(ICompleteOToken(oToken).borrow(amountUnderlying) == 0, "OFS: Borrow failed");
         if (_isMatic()) {
-            IWmatic(W_MATIC).deposit{value: address(this).balance}();
+            IWmatic(ovixFoldStrategyAddress.W_MATIC()).deposit{value: address(this).balance}();
         }
     }
 
@@ -172,7 +169,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
                 }
             }
             if (_isMatic()) {
-                IWmatic(W_MATIC).deposit{value: address(this).balance}();
+                IWmatic(ovixFoldStrategyAddress.W_MATIC()).deposit{value: address(this).balance}();
             }
         }
     }
@@ -200,7 +197,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     function _redeemMaximumWithLoan() internal override {
         uint256 supplied = ICompleteOToken(oToken).balanceOfUnderlying(address(this));
         uint256 borrowed = ICompleteOToken(oToken).borrowBalanceCurrent(address(this));
-        uint256 balance = supplied + (borrowed);
+        uint256 balance = supplied + borrowed;
         _redeemPartialWithLoan(balance);
 
         // we have a little amount of supply after full exit
@@ -237,7 +234,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
         }
 
         // exchange rate between oToken and underlyingToken
-        uint256 oTokenExchangeRate = (rt.exchangeRateStored() * (10**decimals())) / (10**underlyingDecimals());
+        uint256 oTokenExchangeRate = (rt.exchangeRateStored() * 10**decimals()) / 10**underlyingDecimals();
         // amount of reward tokens per block for 1 supplied underlyingToken
         supplyRewards = (((rewardSpeed * _PRECISION) / oTokenExchangeRate) * _PRECISION) / totalSupply;
         // amount of reward tokens per block for 1 borrowed underlyingToken
@@ -250,7 +247,7 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     /// @notice returns forecast of all rewards (OVIX and underlying)
     ///         for the given period of time in USDC token using OVIX pr oracle
     function totalRewardPredictionInUSDC() private view returns (uint256 supplyRewardsInUSDC, uint256 borrowRewardsInUSDC, uint256 supplyUnderlyingProfitInUSDC, uint256 debtUnderlyingCostInUSDC) {
-        uint256 rewardTokenUSDC = IPriceOracle(IComptroller(ovixController).oracle()).getUnderlyingPrice(O_USDC);
+        uint256 rewardTokenUSDC = IPriceOracle(IComptroller(ovixController).oracle()).getUnderlyingPrice(ovixFoldStrategyAddress.O_USDC());
         uint256 oTokenUSDC = oTokenUnderlyingPrice(oToken);
 
         (uint256 supplyRewards, uint256 borrowRewards, uint256 supplyUnderlyingProfit, uint256 debtUnderlyingCost) = totalRewardPrediction();
@@ -273,11 +270,19 @@ abstract contract OvixFoldStrategyBase is FoldingBase, IOvixFoldStrategy {
     }
 
     function wmaticWithdraw(uint256 amount) private {
-        require(IERC20(W_MATIC).balanceOf(address(this)) >= amount, "OFS: Not enough wmatic");
-        IWmatic(W_MATIC).withdraw(amount);
+        require(IERC20(ovixFoldStrategyAddress.W_MATIC()).balanceOf(address(this)) >= amount, "OFS: Not enough wmatic");
+        IWmatic(ovixFoldStrategyAddress.W_MATIC()).withdraw(amount);
     }
 
     function _isMatic() internal view returns (bool) {
-        return oToken == O_MATIC;
+        return oToken == ovixFoldStrategyAddress.O_MATIC();
+    }
+
+    /////////////////////////////////////////////
+    /////////////////GOVERNANCE//////////////////
+    /////////////////////////////////////////////
+
+    function setFoldStrategyAddress(address _addr) external onlyControllerOrGovernance{
+        ovixFoldStrategyAddress = IOvixFoldStrategy(_addr);
     }
 }
