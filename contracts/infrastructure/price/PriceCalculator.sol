@@ -195,7 +195,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   function isBPT(address token) public view returns (bool) {
     IBPT bpt = IBPT(token);
-    try bpt.getVault() returns (address vault){
+    try bpt.getVault{gas : 3000}() returns (address vault){
       return (vault == BEETHOVEN_VAULT_FANTOM
       || vault == BALANCER_VAULT_ETHEREUM);
     } catch {}
