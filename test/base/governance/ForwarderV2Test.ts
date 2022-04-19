@@ -13,6 +13,9 @@ import {MintHelperUtils} from "../../MintHelperUtils";
 import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
 import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
+import {FtmAddresses} from "../../../scripts/addresses/FtmAddresses";
+import {EthAddresses} from "../../../scripts/addresses/EthAddresses";
+import {balInfo} from "../../../scripts/deploy/base/info/ForwarderBalInfo";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -166,6 +169,76 @@ describe("ForwarderV2 tests", function () {
     await forwarder.liquidate(usdc, core.rewardToken.address, _amount);
   });
 
+  it("should liquidate bal to usdc & tetu", async () => {
+    let bal: string;
+    const net = await ethers.provider.getNetwork();
+    if (net.chainId === 137) {
+      bal = MaticAddresses.BAL_TOKEN;
+    } else {
+      throw Error('No BAL liq test for network' + net.chainId);
+    }
+
+    await forwarder.addLargestLps(
+        [MaticAddresses.BAL_TOKEN],
+        ['0xc67136e235785727a0d3B5Cfd08325327b81d373']
+    );
+
+    const dec = await TokenUtils.decimals(bal);
+    const _amount = utils.parseUnits('1000', dec);
+    const _amountToGet = _amount.mul(4);
+    await TokenUtils.getToken(bal, signer.address, _amountToGet);
+    await TokenUtils.approve(bal, signer, forwarder.address, _amountToGet.toString());
+    expect(+utils.formatUnits(await TokenUtils.balanceOf(bal, signer.address), dec)).is.greaterThanOrEqual(+utils.formatUnits(_amountToGet, dec))
+
+    console.log('1 ----- liq BAL to USDC using uniswap pool. amount', _amount.toString());
+    const usdcBefore1 = await TokenUtils.balanceOf(usdc, signer.address)
+    await forwarder.liquidate(bal, usdc, _amount);
+    const usdcAfter1 = await TokenUtils.balanceOf(usdc, signer.address)
+    const usdcOut1 = usdcAfter1.sub(usdcBefore1);
+    console.log('usdcOut1', usdcOut1.toString());
+
+    console.log('2 ----- liq BAL to TETU. using uniswap pool. amount', _amount.toString())
+    const tetu = MaticAddresses.TETU_TOKEN; // test with real TETU, not core.rewardToken.address;
+    const tetuBefore1 = await TokenUtils.balanceOf(tetu, signer.address)
+    await forwarder.liquidate(bal, tetu, _amount);
+    const tetuAfter1 = await TokenUtils.balanceOf(tetu, signer.address)
+    const tetuOut1 = tetuAfter1.sub(tetuBefore1);
+    console.log('tetuOut1', tetuOut1.toString());
+
+    // init Bal Data
+    await forwarder.setBalData(
+        balInfo.balToken,
+        balInfo.vault,
+        balInfo.pool,
+        balInfo.tokenOut
+    );
+    const balData = await forwarder.getBalData();
+    expect(balData.balToken.toLowerCase()).eq(balInfo.balToken);
+    expect(balData.vault.toLowerCase()).eq(balInfo.vault);
+    expect(balData.pool.toLowerCase()).eq(balInfo.pool);
+    expect(balData.tokenOut.toLowerCase()).eq(balInfo.tokenOut);
+
+    console.log('3 ----- liq BAL to USDC using Balancer. amount', _amount.toString());
+    const usdcBefore2 = await TokenUtils.balanceOf(usdc, signer.address)
+    await forwarder.liquidate(bal, usdc, _amount);
+    const usdcAfter2 = await TokenUtils.balanceOf(usdc, signer.address)
+    const usdcOut2 = usdcAfter2.sub(usdcBefore2);
+    console.log('usdcOut2', usdcOut2.toString());
+    const increasePercentsUsdc = usdcOut2.mul(100).div(usdcOut1);
+    console.log('increasePercentsUsdc', increasePercentsUsdc.toString());
+    expect(usdcOut2).gt(usdcOut1);
+
+    console.log('4 ----- liq BAL to TETU. using Balancer. amount', _amount.toString())
+    const tetuBefore2 = await TokenUtils.balanceOf(tetu, signer.address)
+    await forwarder.liquidate(bal, tetu, _amount);
+    const tetuAfter2 = await TokenUtils.balanceOf(tetu, signer.address)
+    const tetuOut2 = tetuAfter2.sub(tetuBefore2);
+    console.log('tetuOut2', tetuOut2.toString());
+    const increasePercentsTetu = tetuOut2.mul(100).div(tetuOut1);
+    console.log('increasePercentsTetu', increasePercentsTetu.toString());
+    expect(tetuOut2).gt(tetuOut1);
+  });
+
   it.skip("should liquidate sushi to fxs", async () => {
     await forwarder.addLargestLps(
       [MaticAddresses.FXS_TOKEN],
@@ -179,7 +252,7 @@ describe("ForwarderV2 tests", function () {
     await forwarder.liquidate(tokenIn, MaticAddresses.FXS_TOKEN, _amount);
   });
 
-  it.skip("should liquidate sushi to fxs", async () => {
+  it.skip("should liquidate sushi to polyDoge", async () => {
     const tokenIn = MaticAddresses.SUSHI_TOKEN;
     const dec = await TokenUtils.decimals(tokenIn);
     const _amount = utils.parseUnits('1', dec);

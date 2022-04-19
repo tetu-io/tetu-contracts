@@ -481,8 +481,14 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
         toInternalBalance: false
       });
 
-      _amount = IBVault(balVault).swap(singleSwap, funds, 1, block.timestamp );
+      IERC20(balToken).safeApprove(balVault, 0);
+      IERC20(balToken).safeApprove(balVault, _amount);
+      _amount = IBVault(balVault).swap(singleSwap, funds, 1, block.timestamp);
       _tokenIn = balTokenOut;
+
+      if (_tokenIn == _tokenOut) {
+        return _amount;
+      }
     }
     // end of temporary solution
 
