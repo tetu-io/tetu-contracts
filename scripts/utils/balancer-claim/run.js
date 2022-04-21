@@ -1,16 +1,14 @@
 // tslint:disable-next-line:no-var-requires
 const Claim = require("./claim.js");
-// tslint:disable-next-line:no-var-requires
-const BigNumber = require("bignumber.js");
 
 const {ethers, network } = require("hardhat");
 
 const accounts = [
   // // AMB 2.0 BAL Pipes
-  "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
-  "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
-  "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
-  "0xA69967d315d7add8222aEe81c1F178dAc0017089", // AMB WBTC
+  // "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
+  // "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
+  // "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
+  // "0xA69967d315d7add8222aEe81c1F178dAc0017089", // AMB WBTC
 
   // // AMB 1.0 BAL Pipes
   // "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
@@ -26,13 +24,14 @@ const tokens = [
 ];
 
 
-// TODO remove comment
 // const weekFirst = 1;
-const weekFirst = 25;
-const weekLast = 999;
+const weekFirst = 1;
+const weekLast = 2; // TODO 27
 console.log('weeks from', weekFirst, 'to', weekLast);
 
-const networkName = network.name === 'hardhat' ? 'matic' : network.name; // use matic constants for forking
+console.log('network.name', network.name);
+const networkName = ['hardhat','matic'].includes(network.name)
+    ? 'polygon' : network.name; // use matic constants for hardhat forking
 
 async function claimBal() {
   console.log("Network:", networkName);
@@ -80,19 +79,18 @@ async function claimBal() {
       }
       totalRewards += totalAmount;
       console.log("Total amount:", totalAmount);
+      console.log("for account :", account);
 
-      console.log("Making claims");
       let balanceBefore = await tokenContract.balanceOf(account);
+      console.log('network.name', network.name);
+      // if (network.name !== 'hardhat') { // TODO remove
+        console.log("Making claims");
 
-      // impersonate account to test claims
-      if (network.name === 'hardhat') {
-
-      }
-
-      let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
-      console.log("tx:", claim.hash);
-      await claim.wait();
-      console.log("tx mined");
+        let claim = await Claim.claimRewards(account, pendingClaims.claims, pendingClaims.reports, networkName, token);
+        console.log("tx:", claim.hash);
+        await claim.wait();
+        console.log("tx mined");
+      // } else console.log('Claim skipped.')
 
       let balanceAfter = await tokenContract.balanceOf(account);
       const fixed = 8;

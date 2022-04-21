@@ -35,7 +35,7 @@ async function ipfsGet(
 
 async function getSnapshot(network, token) {
   let snapshot
-  if (network == 'matic') {
+  if (network == 'polygon') {
     if (token == '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3'){
       snapshot = constants.snapshotBalPoly
     } else if (token == '0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756') {
@@ -128,8 +128,10 @@ async function claimRewards(
   try {
     const claims = pendingClaims.map(week => {
       const claimBalance = week.amount;
+      console.log('claimBalance', claimBalance);
       const merkleTree = loadTree(reports[week.id]);
       const distributor = week.distributor;
+      console.log('distributor', distributor);
 
       const proof = merkleTree.getHexProof(
         soliditySha3(account, toWei(claimBalance))
@@ -137,12 +139,15 @@ async function claimRewards(
       return [parseInt(week.id), toWei(claimBalance), distributor, 0, proof];
     });
     let merkleAddress, balToken, priorityFee;
-    if (network == 'matic') {
+    if (network == 'polygon') {
       merkleAddress = constants.merkleOrchardPoly;
     } else {
       merkleAddress = constants.merkleOrchardEth;
     }
     const merkleContract = await ethers.getContractAt("IMerkleOrchard", merkleAddress);
+    console.log('account', account);
+    console.log('token', token);
+    console.log('claims', claims);
     // const result = await type2Transaction(network, merkleContract.claimDistributions, account, claims, [token]);
     const result = await merkleContract.claimDistributions(account, claims, [token]);
     return result;
