@@ -12,6 +12,7 @@ import "hardhat-gas-reporter";
 import "hardhat-tracer";
 // import "hardhat-etherscan-abi";
 import "solidity-coverage"
+import "hardhat-abi-exporter"
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -173,4 +174,10 @@ export default {
   typechain: {
     outDir: "typechain",
   },
+  abiExporter: {
+    path: './artifacts/abi',
+    runOnCompile: false,
+    spacing: 2,
+    pretty: true,
+  }
 };

@@ -26,9 +26,9 @@ abstract contract QuickStrategyBaseAC is StrategyBase {
   string public constant override STRATEGY_NAME = "QuickStrategyBaseAC";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
-  /// @dev 1% buyback
-  uint256 private constant _BUY_BACK_RATIO = 100;
+  string public constant VERSION = "1.0.2";
+  /// @dev 10% buyback
+  uint256 private constant _BUY_BACK_RATIO = 1000;
   address public constant QUICK = address(0x831753DD7087CaC61aB5644b308642cc1c33Dc13);
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
   address[] private quickPoolRewards = [QUICK];
