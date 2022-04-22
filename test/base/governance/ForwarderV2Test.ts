@@ -170,13 +170,7 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should liquidate bal to usdc & tetu", async () => {
-    let bal: string;
-    const net = await ethers.provider.getNetwork();
-    if (net.chainId === 137) {
-      bal = MaticAddresses.BAL_TOKEN;
-    } else {
-      throw Error('No BAL liq test for network' + net.chainId);
-    }
+    const bal = MaticAddresses.BAL_TOKEN;
 
     await forwarder.addLargestLps(
         [MaticAddresses.BAL_TOKEN],
