@@ -4,6 +4,13 @@ pragma solidity 0.8.4;
 
 interface IVotingEscrow {
 
+  struct Point {
+    int128 bias;
+    int128 slope; // - dweight / dt
+    uint256 ts;
+    uint256 blk; // block
+  }
+
   function balanceOf(address addr) external view returns (uint);
 
   function balanceOfAt(address addr, uint block_) external view returns (uint);
@@ -25,5 +32,9 @@ interface IVotingEscrow {
   function commit_smart_wallet_checker(address addr) external;
 
   function apply_smart_wallet_checker() external;
+
+  function user_point_history(address user, uint256 timestamp) external view returns (Point memory);
+
+  function user_point_epoch(address user) external view returns (uint256);
 
 }

@@ -69,9 +69,9 @@ describe('BAL staking tests', async () => {
   // at least 3
   const loops = 3;
   // number of blocks or timestamp value
-  const loopValue = 300;
+  const loopValue = 60 * 60 * 24 * 7;
   // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
-  const advanceBlocks = true;
+  const advanceBlocks = false;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
@@ -98,9 +98,7 @@ describe('BAL staking tests', async () => {
       },
       underlying
     );
-    // await SmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
     await SmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
-    await core.vaultController.addRewardTokens([data[0].address], data[0].address);
     await core.controller.setRewardDistribution([data[1].address], true);
 
     const checker = await DeployerUtils.deployContract(signer, 'SmartWalletCheckerStub');
