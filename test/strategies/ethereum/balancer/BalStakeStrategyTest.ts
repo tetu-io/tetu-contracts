@@ -98,9 +98,7 @@ describe('BAL staking tests', async () => {
       },
       underlying
     );
-    // await SmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
     await SmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
-    await core.vaultController.addRewardTokens([data[0].address], data[0].address);
     await core.controller.setRewardDistribution([data[1].address], true);
 
     const checker = await DeployerUtils.deployContract(signer, 'SmartWalletCheckerStub');

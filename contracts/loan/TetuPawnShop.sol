@@ -95,7 +95,12 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   mapping(uint256 => uint256) public override lastAuctionBidTs;
 
   /// @dev Tetu Controller address requires for governance actions
-  constructor(address _owner, address _depositToken, uint _positionDepositAmount, address _feeRecipient) {
+  constructor(
+    address _owner,
+    address _depositToken,
+    uint _positionDepositAmount,
+    address _feeRecipient
+  ) {
     require(_owner != address(0), "TPS: Zero owner");
     require(_feeRecipient != address(0), "TPS: Zero feeRecipient");
     owner = _owner;
