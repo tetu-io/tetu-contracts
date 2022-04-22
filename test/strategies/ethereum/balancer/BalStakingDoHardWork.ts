@@ -8,10 +8,14 @@ import {EthAddresses} from "../../../../scripts/addresses/EthAddresses";
 import {
   BalDepositor__factory,
   IBVault__factory,
+  IERC20__factory,
+  IFeeDistributor__factory,
   StrategyBalStaking__factory
 } from "../../../../typechain";
 import {VaultUtils} from "../../../VaultUtils";
 import {defaultAbiCoder} from "@ethersproject/abi";
+import {parseUnits} from "ethers/lib/utils";
+import {TimeUtils} from "../../../TimeUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -19,17 +23,24 @@ chai.use(chaiAsPromised);
 
 export class BalStakingDoHardWork extends DoHardWorkLoopBase {
 
+  async init() {
+    await super.init();
+    // add reward to distributor
+    // const amount = parseUnits('100');
+    // await TokenUtils.getToken(EthAddresses.BAL_TOKEN, this.signer.address, amount);
+    // await IERC20__factory.connect(EthAddresses.BAL_TOKEN, this.signer).approve(EthAddresses.BALANCER_FEE_DISTRIBUTOR, amount);
+    // await IFeeDistributor__factory.connect(EthAddresses.BALANCER_FEE_DISTRIBUTOR, this.signer).depositToken(EthAddresses.BAL_TOKEN, amount);
+  }
+
   public async loopStartActions(i: number) {
     await super.loopStartActions(i);
 
-    // todo remove after develop claims
-
-    const ppfsBefore = await this.vault.getPricePerFullShare();
-    console.log('ppfs before transfer', ppfsBefore.toString());
-    await TokenUtils.getToken(EthAddresses.BAL_TOKEN, this.strategy.address, utils.parseUnits('1000'))
-    const ppfsAfter = await this.vault.getPricePerFullShare();
-    console.log('ppfs after transfer', ppfsAfter.toString());
-    expect(ppfsBefore).is.eq(ppfsAfter);
+    // add reward to distributor
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7);
+    const amount = parseUnits('100');
+    await TokenUtils.getToken(EthAddresses.BAL_TOKEN, this.signer.address, amount);
+    await IERC20__factory.connect(EthAddresses.BAL_TOKEN, this.signer).approve(EthAddresses.BALANCER_FEE_DISTRIBUTOR, amount);
+    await IFeeDistributor__factory.connect(EthAddresses.BALANCER_FEE_DISTRIBUTOR, this.signer).depositToken(EthAddresses.BAL_TOKEN, amount);
   }
 
   protected async enterToVault() {

@@ -18,6 +18,7 @@ import "../../../third_party/IDelegation.sol";
 import "../../SlotsLib.sol";
 import "../../../third_party/curve/IVotingEscrow.sol";
 import "../../../third_party/curve/IGaugeController.sol";
+import "../../../third_party/balancer/IFeeDistributor.sol";
 
 /// @title Base contract for BAL stake into veBAL pool
 /// @author belbix
@@ -41,6 +42,7 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
   uint256 private constant _WEEK = 7 * 86400;
   bytes32 internal constant _VE_BAL_KEY = bytes32(uint256(keccak256("s.ve_bal")) - 1);
   bytes32 internal constant _DEPOSITOR_KEY = bytes32(uint256(keccak256("s.depositor")) - 1);
+  bytes32 internal constant _FEE_DISTRIBUTOR_KEY = bytes32(uint256(keccak256("s.fee_dist")) - 1);
 
 
   /// @notice Initialize contract after setup it as proxy implementation
@@ -50,10 +52,12 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
     address vault_,
     address[] memory rewardTokens_,
     address veBAL_,
-    address depositor_
+    address depositor_,
+    address feeDistributor_
   ) public initializer {
     _VE_BAL_KEY.set(veBAL_);
     _DEPOSITOR_KEY.set(depositor_);
+    _FEE_DISTRIBUTOR_KEY.set(feeDistributor_);
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
       underlying_,
@@ -77,6 +81,10 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
     return IVotingEscrow(_VE_BAL_KEY.getAddress());
   }
 
+  function _feeDistributor() internal view returns (IFeeDistributor) {
+    return IFeeDistributor(_FEE_DISTRIBUTOR_KEY.getAddress());
+  }
+
   /// @dev Manual withdraw for any emergency purposes
   function manualWithdraw() external restricted {
     _veBAL().withdraw();
@@ -96,6 +104,8 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
   //***********************************************************
   // We assume extend control logic in future.
   // At the current stage only voting implemented.
+  // We don't want to create a dedicated contract for veBAL holding
+  // for keeping clear exist control under proxy updates.
   //***********************************************************
 
   // --------------------------------------------
@@ -113,19 +123,24 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
 
   /// @dev Collect profit and do something useful with them
   function doHardWork() external override {
+    uint length = _rewardTokens.length;
 
-    // todo claim
+    IERC20[] memory rtToClaim = new IERC20[](length);
+    for (uint i; i < length; i++) {
+      rtToClaim[i] = IERC20(_rewardTokens[i]);
+    }
+
+    _feeDistributor().claimTokens(address(this), rtToClaim);
 
     address _depositor = _DEPOSITOR_KEY.getAddress();
     require(msg.sender == _depositor, "Not depositor");
     // transfer all rewards to depositor contract
     // it should be called only from depositor contract for immediately transfer rewards to another chain
-    uint length = _rewardTokens.length;
     for (uint i; i < length; ++i) {
-      address rt = _rewardTokens[i];
-      uint balance = IERC20(rt).balanceOf(address(this));
+      IERC20 rt = rtToClaim[i];
+      uint balance = rt.balanceOf(address(this));
       if (balance != 0) {
-        IERC20(rt).safeTransfer(_depositor, balance);
+        rt.safeTransfer(_depositor, balance);
       }
     }
   }
@@ -149,6 +164,7 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
           _veBAL().increase_unlock_time(unlockAt);
         }
       }
+      _feeDistributor().checkpointUser(address(this));
     }
   }
 

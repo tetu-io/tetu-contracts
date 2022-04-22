@@ -69,9 +69,9 @@ describe('BAL staking tests', async () => {
   // at least 3
   const loops = 3;
   // number of blocks or timestamp value
-  const loopValue = 300;
+  const loopValue = 60 * 60 * 24 * 7;
   // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
-  const advanceBlocks = true;
+  const advanceBlocks = false;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 

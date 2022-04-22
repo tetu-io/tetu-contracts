@@ -113,7 +113,7 @@ export class TokenUtils {
     [EthAddresses.USDC_TOKEN,'0x0a59649758aa4d66e25f08dd01271e891fe52199'.toLowerCase()], // maker
     [EthAddresses.TETU_TOKEN,'0x8f5adc58b32d4e5ca02eac0e293d35855999436c'.toLowerCase()], // todo temporally farm!
     [EthAddresses.BAL_TOKEN,'0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // balancer vault
-    [EthAddresses.BALANCER_BAL_WETH,'0x849d52316331967b6ff1198e5e32a0eb168d039d'.toLowerCase()], // gnosis
+    [EthAddresses.BALANCER_BAL_WETH,'0xc128a9954e6c874ea3d62ce62b468ba073093f25'.toLowerCase()], // gnosis
     [MaticAddresses.BALANCER_BAL_ETH_POOL,'0xe67b7a560da673776d80a8da5469fff06eb1683c'.toLowerCase()],
     [FtmAddresses.BEETS_TOKEN,'0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
     [FtmAddresses.SPIRIT_TOKEN,'0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit

@@ -19,6 +19,7 @@ export class EthAddresses {
 
   // balancer
   public static BALANCER_VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8".toLowerCase();
+  public static BALANCER_FEE_DISTRIBUTOR = "0x26743984e3357eFC59f2fd6C1aFDC310335a61c9".toLowerCase();
   public static BALANCER_BAL_WETH_ID = "0x5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014";
   public static BALANCER_BAL_WETH = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56".toLowerCase();
   public static BALANCER_GAUGE_CONTROLLER = "0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD".toLowerCase();
@@ -39,6 +40,7 @@ export class EthAddresses {
     }
     throw Error('Unknown factory ' + factory);
   }
+
   //
   // public static getRouterName(router: string): string {
   //   switch (router.toLowerCase()) {
