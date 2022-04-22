@@ -5,17 +5,17 @@ const accountsEth = [
 ];
 
 const accountsPoly = [
+  // // AMB 1.0 BAL Pipes
+  // "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
+  // "0xF710277064c49f4689f061B4263d8930E395C61d", // AMB MATIC
+  // "0x88f0b9F9B97f8A02508E4E69d46B619fc385c5f4", // AMB AAVE
+  // "0x42d68D48120333720FbA4B079f47240b6FdEcef2", // AMB WBTC
+
   // AMB 2.0 BAL Pipes
   "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
   "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
   "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
   "0xA69967d315d7add8222aEe81c1F178dAc0017089", // AMB WBTC
-
-  // AMB 1.0 BAL Pipes
-  "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
-  "0xF710277064c49f4689f061B4263d8930E395C61d", // AMB MATIC
-  "0x88f0b9F9B97f8A02508E4E69d46B619fc385c5f4", // AMB AAVE
-  "0x42d68D48120333720FbA4B079f47240b6FdEcef2", // AMB WBTC
 ];
 
 const BAL_TOKEN = '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3';
@@ -35,10 +35,10 @@ const weeksEth = [73, 74];
 const weeksPoly = [];
 const firstWeek = 1
 const lastWeek = 27
-for (var i = 1; i <= lastWeek; i++) weeksPoly.push(i);
+for (let i = firstWeek; i <= lastWeek; i++) weeksPoly.push(i);
 
 let accounts;
-if (network == 'polygon') {
+if (network === 'polygon') {
   accounts = accountsPoly;
   weeks = weeksPoly;
   tokens = tokensPoly;
@@ -66,9 +66,9 @@ async function claimBal() {
       let pendingClaims = {claims: [], reports: []};
       for (l = 0; l < weeks.length; l++) {
         let week = weeks[l];
-        if (token == TUSD_TOKEN) {
+        if (token === TUSD_TOKEN) {
           week = week - 5;
-        } else if (token == QI_TOKEN) {
+        } else if (token === QI_TOKEN) {
           week = week - 15;
         }
         if (week < 1) {
@@ -103,7 +103,7 @@ async function claimBal() {
       console.log("Total amount:", totalAmount);
       console.log("for account :", account);
 
-      if (totalAmount < 50 && network == 'eth') {
+      if (totalAmount < 50 && network === 'eth') {
         console.log("Total claim amount too small");
         continue;
       }
