@@ -12,30 +12,18 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interface/IStrategy.sol";
-import "../interface/ISmartVault.sol";
-import "../interface/IFeeRewardForwarder.sol";
-import "./Controllable.sol";
-import "../interface/IBookkeeper.sol";
-import "../interface/IUpgradeSource.sol";
-import "../interface/IFundKeeper.sol";
+import "./ControllableV2.sol";
 import "./ControllerStorage.sol";
-import "../interface/ITetuProxy.sol";
-import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
 
 /// @title Contract for holding scheduling for time-lock actions
 /// @dev Use with TetuProxy
 /// @author belbix
-contract Announcer is Controllable, IAnnouncer {
+contract Announcer is ControllableV2, IAnnouncer {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.2.0";
   bytes32 internal constant _TIME_LOCK_SLOT = 0x244FE7C39AF244D294615908664E79A2F65DD3F4D5C387AF1D52197F465D1C2E;
 
   /// @dev Hold schedule for time-locked operations
@@ -77,7 +65,7 @@ contract Announcer is Controllable, IAnnouncer {
   /// @param _controller Controller address
   /// @param _timeLock TimeLock period
   function initialize(address _controller, uint256 _timeLock) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
 
     // fill timeLock
     bytes32 slot = _TIME_LOCK_SLOT;
@@ -91,24 +79,24 @@ contract Announcer is Controllable, IAnnouncer {
 
   /// @dev Operations allowed only for Governance address
   modifier onlyGovernance() {
-    require(isGovernance(msg.sender), "not governance");
+    require(_isGovernance(msg.sender), "not governance");
     _;
   }
 
   /// @dev Operations allowed for Governance or Dao addresses
   modifier onlyGovernanceOrDao() {
-    require(isGovernance(msg.sender)
-      || IController(controller()).isDao(msg.sender), "not governance or dao");
+    require(_isGovernance(msg.sender)
+      || IController(_controller()).isDao(msg.sender), "not governance or dao");
     _;
   }
 
   /// @dev Operations allowed for Governance or Dao addresses
   modifier onlyControlMembers() {
     require(
-      isGovernance(msg.sender)
-      || isController(msg.sender)
-      || IController(controller()).isDao(msg.sender)
-      || IController(controller()).vaultController() == msg.sender
+      _isGovernance(msg.sender)
+      || _isController(msg.sender)
+      || IController(_controller()).isDao(msg.sender)
+      || IController(_controller()).vaultController() == msg.sender
     , "not control member");
     _;
   }
@@ -161,7 +149,7 @@ contract Announcer is Controllable, IAnnouncer {
 
     address[] memory values = new address[](1);
     values[0] = newAddress;
-    _timeLockInfos.push(TimeLockInfo(opCode, opHash, controller(), values, new uint256[](0)));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, _controller(), values, new uint256[](0)));
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit AddressChangeAnnounce(opCode, newAddress);
@@ -203,7 +191,7 @@ contract Announcer is Controllable, IAnnouncer {
     uint256[] memory values = new uint256[](2);
     values[0] = numerator;
     values[1] = denominator;
-    _timeLockInfos.push(TimeLockInfo(opCode, opHash, controller(), new address[](0), values));
+    _timeLockInfos.push(TimeLockInfo(opCode, opHash, _controller(), new address[](0), values));
     timeLockIndexes[opCode] = (_timeLockInfos.length - 1);
 
     emit RatioChangeAnnounced(opCode, numerator, denominator);
@@ -263,7 +251,7 @@ contract Announcer is Controllable, IAnnouncer {
     uint256[] memory intValues = new uint256[](1);
     intValues[0] = totalAmount;
 
-    address mintHelper = IController(controller()).mintHelper();
+    address mintHelper = IController(_controller()).mintHelper();
 
     _timeLockInfos.push(TimeLockInfo(opCode, opHash, mintHelper, adrValues, intValues));
     timeLockIndexes[opCode] = _timeLockInfos.length - 1;

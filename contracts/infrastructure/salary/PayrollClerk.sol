@@ -12,18 +12,15 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../price/IPriceCalculator.sol";
 import "./PayrollClerkStorage.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/Math.sol";
+import "../../third_party/IERC20Extended.sol";
 
 /// @title Disperse salary to workers
 /// @author belbix
@@ -70,7 +67,7 @@ contract PayrollClerk is PayrollClerkStorage {
     uint256 totalSalaryUsd;
     for (uint256 i = 0; i < tokens.length; i++) {
       (uint256 salaryUsd, uint256 salaryToken) = computeSalary(worker, _workedHours, tokens[i]);
-      require(salaryToken <= ERC20(tokens[i]).balanceOf(address(this)), "not enough fund");
+      require(salaryToken <= IERC20(tokens[i]).balanceOf(address(this)), "not enough fund");
       IERC20(tokens[i]).safeTransfer(worker, salaryToken);
       totalSalaryUsd = totalSalaryUsd.add(salaryUsd);
     }
@@ -88,7 +85,7 @@ contract PayrollClerk is PayrollClerkStorage {
 
     // return token amount with token decimals
     salaryToken = salaryUsd.mul(1e18).div(tPrice)
-    .mul(10 ** ERC20(token).decimals()).div(1e18);
+    .mul(10 ** IERC20Extended(token).decimals()).div(1e18);
   }
 
   function hourlyRate(address worker) public view returns (uint256) {

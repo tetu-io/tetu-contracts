@@ -14,7 +14,6 @@ pragma solidity 0.8.4;
 
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
-import "./../../../../openzeppelin/Initializable.sol";
 import "../../../../openzeppelin/Math.sol";
 import "../../../SlotsLib.sol";
 import "./Pipe.sol";
@@ -38,24 +37,24 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
     uint256 collateralNumerator; // 1 for all tokens except 10*10 for WBTC erc20Stablecoin-cam-wbtc.sol at mai-qidao as it have only 8 decimals
   }
 
-  bytes32 internal constant _STABLECOIN_SLOT           = bytes32(uint256(keccak256("eip1967.MaiStablecoinPipe.stablecoin")) - 1);
-  bytes32 internal constant _BORROW_TOKEN_SLOT         = bytes32(uint256(keccak256("eip1967.MaiStablecoinPipe.borrowToken")) - 1);
-  bytes32 internal constant _TARGET_PERCENTAGE_SLOT    = bytes32(uint256(keccak256("eip1967.MaiStablecoinPipe.targetPercentage")) - 1);
-  bytes32 internal constant _MAX_IMBALANCE_SLOT        = bytes32(uint256(keccak256("eip1967.MaiStablecoinPipe.maxImbalance")) - 1);
-  bytes32 internal constant _COLLATERAL_NUMERATOR_SLOT = bytes32(uint256(keccak256("eip1967.MaiStablecoinPipe.collateralNumerator")) - 1);
-  bytes32 internal constant _VAULT_ID_SLOT             = bytes32(uint256(keccak256("eip1967.MaiStablecoinPipe.vaultID")) - 1);
+ bytes32 internal constant _STABLECOIN_SLOT           = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.stablecoin")) - 1);
+ bytes32 internal constant _BORROW_TOKEN_SLOT         = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.borrowToken")) - 1);
+ bytes32 internal constant _TARGET_PERCENTAGE_SLOT    = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.targetPercentage")) - 1);
+ bytes32 internal constant _MAX_IMBALANCE_SLOT        = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.maxImbalance")) - 1);
+ bytes32 internal constant _COLLATERAL_NUMERATOR_SLOT = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.collateralNumerator")) - 1);
+ bytes32 internal constant _VAULT_ID_SLOT             = bytes32(uint(keccak256("eip1967.MaiStablecoinPipe.vaultID")) - 1);
 
   event Rebalanced(uint256 borrowed, uint256 repaid);
   event Borrowed(uint256 amount);
   event Repaid(uint256 amount);
 
-  function initialize(MaiStablecoinPipeData memory _d) public initializer {
+  function initialize(MaiStablecoinPipeData memory _d) public {
     require(_d.stablecoin != address(0), "Zero stablecoin");
     require(_d.rewardToken != address(0), "Zero reward token");
 
     Pipe._initialize('MaiStablecoinPipe', _d.sourceToken, _d.borrowToken);
 
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
 
     _STABLECOIN_SLOT.set(_d.stablecoin);
     _BORROW_TOKEN_SLOT.set(_d.borrowToken);
@@ -213,7 +212,7 @@ contract MaiStablecoinPipe is Pipe, IMaiStablecoinPipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    amount = maxOutputAmount(amount);
+    amount = _maxOutputAmount(amount);
     if (amount != 0) {
       IErc20Stablecoin __stablecoin = _stablecoin();
       uint __vaultID = _vaultID();

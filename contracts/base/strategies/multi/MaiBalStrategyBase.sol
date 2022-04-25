@@ -35,15 +35,18 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   string private constant _VERSION = "1.0.0";
   /// @dev 10% buyback
   uint256 private constant _BUY_BACK_RATIO = 10_00;
+  uint256 private constant _TIME_LOCK = 48 hours;
 
-  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint256(keccak256("eip1967.MaiBalStrategyBase.totalAmountOut")) - 1);
-  bytes32 internal constant _MAI_STABLECOIN_PIPE_SLOT = bytes32(uint256(keccak256("eip1967.MaiBalStrategyBase._maiStablecoinPipe")) - 1);
+  bytes32 internal constant _TOTAL_AMOUNT_OUT_SLOT    = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase.totalAmountOut")) - 1);
   /// @dev Assets should reflect underlying tokens for investing
-  bytes32 internal constant _ASSET_SLOT               = bytes32(uint256(keccak256("eip1967.MaiBalStrategyBase._asset")) - 1);
+  bytes32 internal constant _ASSET_SLOT               = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase._asset")) - 1);
+  bytes32 internal constant _TIMELOCKS                = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase.timelocks")) - 1);
+  bytes32 internal constant _TIMELOCK_ADDRESSES       = bytes32(uint(keccak256("eip1967.MaiBalStrategyBase.timelockAddresses")) - 1);
 
   event SalvagedFromPipeline(address recipient, address token);
   event SetTargetPercentage(uint256 _targetPercentage);
   event SetMaxImbalance(uint256 _maxImbalance);
+  event PipeReplaceAnnounced(uint pipeIndex, address newPipe);
 
   /// @notice Contract initializer
   function initializeMaiBalStrategyBase(
@@ -53,29 +56,23 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
     address[] memory __rewardTokens
   ) public initializer
   {
-    require(_controller != address(0), "Zero controller");
-    require(_underlyingToken != address(0), "Zero underlying");
-    require(_vault != address(0), "Zero vault");
-
+    // _controller, _underlyingToken, _vault checked at the functions below
     initializeStrategyBase(_controller, _underlyingToken, _vault, __rewardTokens, _BUY_BACK_RATIO);
     initializeLinearPipeline(_underlyingToken);
 
     _ASSET_SLOT.set(_underlyingToken);
   }
 
-  //************************ MODIFIERS **************************
+  //************************ MODIFIER FUNCTIONS **************************
 
-  /// @dev Only for Governance/Controller.
-  modifier onlyControllerOrGovernance() {
+  function _onlyControllerOrGovernance() internal view {
     require(msg.sender == address(_controller())
       || IController(_controller()).governance() == msg.sender,
       "MB: Not Gov or Controller");
-    _;
   }
 
-  modifier updateTotalAmount() {
-    _;
-    _TOTAL_AMOUNT_OUT_SLOT.set(getTotalAmountOut());
+  function _updateTotalAmount() internal {
+    _TOTAL_AMOUNT_OUT_SLOT.set(_getTotalAmountOut());
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -91,7 +88,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   }
 
   function _maiStablecoinPipe() internal view returns (IMaiStablecoinPipe) {
-    return IMaiStablecoinPipe(_MAI_STABLECOIN_PIPE_SLOT.getAddress());
+    return IMaiStablecoinPipe(address(_pipes(0)));
   }
 
   // ********************************************************
@@ -103,7 +100,7 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
 
   /// @dev HardWork function for Strategy Base implementation
   function doHardWork()
-  external override onlyNotPausedInvesting hardWorkers updateTotalAmount {
+  external override onlyNotPausedInvesting hardWorkers {
     IERC20 __underlying = IERC20(_underlying());
     uint balance = __underlying.balanceOf(address(this));
     if (balance > 0) {
@@ -119,25 +116,29 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
       _pumpIn(toSupply);
     }
     liquidateRewardDefault();
+    _updateTotalAmount();
   }
 
   /// @dev Stub function for Strategy Base implementation
-  function depositToPool(uint256 underlyingAmount) internal override updateTotalAmount {
+  function depositToPool(uint256 underlyingAmount) internal override {
     _pumpIn(underlyingAmount);
+    _updateTotalAmount();
   }
 
   /// @dev Function to withdraw from pool
-  function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override updateTotalAmount {
+  function withdrawAndClaimFromPool(uint256 underlyingAmount) internal override {
     // don't claim on withdraw
     // update cached _totalAmount, and recalculate amount
-    uint256 newTotalAmount = getTotalAmountOut();
+    uint256 newTotalAmount = _getTotalAmountOut();
     uint256 amount = underlyingAmount * newTotalAmount / _totalAmountOut();
     _pumpOutSource(amount, 0);
+    _updateTotalAmount();
   }
 
   /// @dev Emergency withdraws all most underlying from the pool
-  function emergencyWithdrawFromPool() internal override updateTotalAmount {
+  function emergencyWithdrawFromPool() internal override {
     _pumpOut(_getMostUnderlyingBalance(), 0);
+    _updateTotalAmount();
   }
 
   /// @dev Liquidate all reward tokens
@@ -227,36 +228,67 @@ contract MaiBalStrategyBase is ProxyStrategyBase, LinearPipeline, IAaveMaiBalStr
   /// @param recipient Recipient address
   /// @param token Token address
   function salvageFromPipeline(address recipient, address token)
-  external override onlyControllerOrGovernance updateTotalAmount {
+  external override {
+    _onlyControllerOrGovernance();
     // transfers token to this contract
     _salvageFromAllPipes(recipient, token);
     emit SalvagedFromPipeline(recipient, token);
+    _updateTotalAmount();
   }
 
-  function rebalanceAllPipes() external override hardWorkers updateTotalAmount {
+  function rebalanceAllPipes() external override hardWorkers {
     _rebalanceAllPipes();
+    _updateTotalAmount();
   }
 
   /// @dev Sets targetPercentage for MaiStablecoinPipe and re-balances all pipes
   /// @param _targetPercentage - target collateral to debt percentage
   function setTargetPercentage(uint256 _targetPercentage)
-  external override onlyControllerOrGovernance updateTotalAmount {
+  external override {
+    _onlyControllerOrGovernance();
     _maiStablecoinPipe().setTargetPercentage(_targetPercentage);
     emit SetTargetPercentage(_targetPercentage);
     _rebalanceAllPipes();
+    _updateTotalAmount();
   }
-
 
   /// @dev Sets maxImbalance for maiStablecoinPipe and re-balances all pipes
   /// @param _maxImbalance - maximum imbalance deviation (+/-%)
   function setMaxImbalance(uint256 _maxImbalance)
-  external override onlyControllerOrGovernance updateTotalAmount {
+  external override {
+    _onlyControllerOrGovernance();
     _maiStablecoinPipe().setMaxImbalance(_maxImbalance);
     emit SetMaxImbalance(_maxImbalance);
     _rebalanceAllPipes();
+    _updateTotalAmount();
   }
 
-  // !!! decrease gap size after adding variables!!!
-  //slither-disable-next-line unused-state
-  uint[32] private ______gap;
+  /// @dev Announce a pipe replacement
+  function announcePipeReplacement(uint pipeIndex, address newPipe)
+  external {
+    _onlyControllerOrGovernance();
+    require(newPipe != address(0), "MB: newPipe is 0");
+    require(_TIMELOCKS.uintAt(pipeIndex) == 0, "MB: Already defined");
+    _TIMELOCKS.setAt(pipeIndex, block.timestamp + _TIME_LOCK);
+    _TIMELOCK_ADDRESSES.setAt(pipeIndex, newPipe);
+    emit PipeReplaceAnnounced(pipeIndex, newPipe);
+  }
+
+  /// @dev Replaces a pipe with index
+  /// @param pipeIndex - index of the pipe to replace
+  /// @param newPipe - address of the new pipe
+  /// @param maxDecrease1000 - maximum total amount decrease in 0,1%
+  function replacePipe(uint pipeIndex, address newPipe, uint maxDecrease1000)
+  external {
+    _onlyControllerOrGovernance();
+    uint timelock = _TIMELOCKS.uintAt(pipeIndex);
+    require(timelock != 0 && timelock < block.timestamp, "MB: Too early");
+    require(_TIMELOCK_ADDRESSES.addressAt(pipeIndex) == newPipe, "MB: Wrong address");
+
+    _replacePipe(pipeIndex, IPipe(newPipe), maxDecrease1000);
+
+    _TIMELOCKS.setAt(pipeIndex, 0);
+    _TIMELOCK_ADDRESSES.setAt(pipeIndex, 0);
+    _updateTotalAmount();
+  }
 }

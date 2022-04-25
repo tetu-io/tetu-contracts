@@ -12,8 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ISmartVaultV110.sol";
+import "../../openzeppelin/Initializable.sol";
 
 /// @title Eternal storage + getters and setters pattern
 /// @dev If you will change a key value it will require setup it again
@@ -39,34 +39,46 @@ abstract contract VaultStorageV110 is Initializable, ISmartVaultV110 {
   /// @param _durationValue Reward vesting period
   function initializeVaultStorage(
     address _underlyingToken,
-    uint256 _durationValue
+    uint256 _durationValue,
+    bool __lockAllowed
   ) public initializer {
     _setUnderlying(_underlyingToken);
     _setDuration(_durationValue);
     _setActive(true);
+    // no way to change it after initialisation for avoiding risks of misleading users
+    setBoolean("lockAllowed", __lockAllowed);
   }
 
   // ******************* SETTERS AND GETTERS **********************
 
   function _setStrategy(address _address) internal {
-    emit UpdatedAddressSlot("strategy", strategy(), _address);
+    emit UpdatedAddressSlot("strategy", _strategy(), _address);
     setAddress("strategy", _address);
   }
 
   /// @notice Current strategy that vault use for farming
-  function strategy() public override view returns (address) {
+  function strategy() external override view returns (address) {
+    return _strategy();
+  }
+
+  function _strategy() internal view returns (address) {
     return getAddress("strategy");
   }
 
   function _setUnderlying(address _address) private {
-    emit UpdatedAddressSlot("underlying", strategy(), _address);
+    emit UpdatedAddressSlot("underlying", _underlying(), _address);
     setAddress("underlying", _address);
   }
 
   /// @notice Vault underlying
-  function underlying() public view override returns (address) {
+  function underlying() external view override returns (address) {
+    return _underlying();
+  }
+
+  function _underlying() internal view returns (address) {
     return getAddress("underlying");
   }
+
 
   function _setDuration(uint256 _value) internal {
     emit UpdatedUint256Slot("duration", duration(), _value);
@@ -79,22 +91,147 @@ abstract contract VaultStorageV110 is Initializable, ISmartVaultV110 {
   }
 
   function _setActive(bool _value) internal {
-    emit UpdatedBoolSlot("active", active(), _value);
+    emit UpdatedBoolSlot("active", _active(), _value);
     setBoolean("active", _value);
   }
 
   /// @notice Vault status
-  function active() public view override returns (bool) {
+  function active() external view override returns (bool) {
+    return _active();
+  }
+
+  function _active() internal view returns (bool) {
     return getBoolean("active");
+  }
+
+  function _setPpfsDecreaseAllowed(bool _value) internal {
+    emit UpdatedBoolSlot("ppfsDecreaseAllowed", ppfsDecreaseAllowed(), _value);
+    setBoolean("ppfsDecreaseAllowed", _value);
+  }
+
+  /// @notice Vault status
+  function ppfsDecreaseAllowed() public view override returns (bool) {
+    return getBoolean("ppfsDecreaseAllowed");
+  }
+
+  function _setLockPeriod(uint256 _value) internal {
+    emit UpdatedUint256Slot("lockPeriod", lockPeriod(), _value);
+    setUint256("lockPeriod", _value);
+  }
+
+  /// @notice Deposit lock period
+  function lockPeriod() public view override returns (uint256) {
+    return getUint256("lockPeriod");
+  }
+
+  function _setLockPenalty(uint256 _value) internal {
+    emit UpdatedUint256Slot("lockPenalty", lockPenalty(), _value);
+    setUint256("lockPenalty", _value);
+  }
+
+  /// @notice Base penalty if funds locked
+  function lockPenalty() public view override returns (uint256) {
+    return getUint256("lockPenalty");
+  }
+
+  function _disableLock() internal {
+    emit UpdatedBoolSlot("lockAllowed", _lockAllowed(), false);
+    setBoolean("lockAllowed", false);
+  }
+
+  /// @notice Lock functionality allowed for this contract or not
+  function lockAllowed() external view override returns (bool) {
+    return _lockAllowed();
+  }
+
+  function _lockAllowed() internal view returns (bool) {
+    return getBoolean("lockAllowed");
+  }
+
+  function _setToInvest(uint256 _value) internal {
+    emit UpdatedUint256Slot("toInvest", _toInvest(), _value);
+    setUint256("toInvest", _value);
+  }
+
+  function toInvest() external view override returns (uint256) {
+    return _toInvest();
+  }
+
+  function _toInvest() internal view returns (uint256) {
+    return getUint256("toInvest");
+  }
+
+  function _setReentrantLock(bool _value) internal {
+    setBoolean("reentrantLock", _value);
+  }
+
+  /// @notice Vault status
+  function _reentrantLock() internal view returns (bool) {
+    return getBoolean("reentrantLock");
+  }
+
+  function _setDepositFeeNumerator(uint256 _value) internal {
+    emit UpdatedUint256Slot("depositFeeNumerator", _depositFeeNumerator(), _value);
+    setUint256("depositFeeNumerator", _value);
+  }
+
+  function depositFeeNumerator() external view override returns (uint256) {
+    return getUint256("depositFeeNumerator");
+  }
+
+  function _depositFeeNumerator() internal view returns (uint256) {
+    return getUint256("depositFeeNumerator");
+  }
+
+  function _setProtectionMode(bool _value) internal {
+    emit UpdatedBoolSlot("protectionMode", _protectionMode(), _value);
+    setBoolean("protectionMode", _value);
+  }
+
+  /// @notice Protection mode means claim rewards on withdraw and 0% initial reward boost
+  function protectionMode() external view override returns (bool) {
+    return _protectionMode();
+  }
+
+  function _protectionMode() internal view returns (bool) {
+    return getBoolean("protectionMode");
+  }
+
+  function _setDoHardWorkOnInvest(bool _value) internal {
+    emit UpdatedBoolSlot("hw_inv", _doHardWorkOnInvest(), _value);
+    setBoolean("hw_inv", _value);
+  }
+
+  /// @dev Returns doHardWorkOnInvest mode status
+  function doHardWorkOnInvest() external view returns (bool) {
+    return _doHardWorkOnInvest();
+  }
+
+  function _doHardWorkOnInvest() internal view returns (bool) {
+    return getBoolean("hw_inv");
+  }
+
+  function _setAlwaysInvest(bool _value) internal {
+    emit UpdatedBoolSlot("alwaysInvest", _alwaysInvest(), _value);
+    setBoolean("alwaysInvest", _value);
+  }
+
+  /// @dev Returns doHardWorkOnInvest mode status
+  function alwaysInvest() external view returns (bool) {
+    return _doHardWorkOnInvest();
+  }
+
+  function _alwaysInvest() internal view returns (bool) {
+    return getBoolean("alwaysInvest");
   }
 
   // ******************** STORAGE INTERNAL FUNCTIONS ********************
 
-  function setBoolean(string memory key, bool _value) internal {
+  function setBoolean(string memory key, bool _value) private {
     boolStorage[keccak256(abi.encodePacked(key))] = _value;
   }
 
-  function getBoolean(string memory key) internal view returns (bool) {
+  function getBoolean(string memory key) private view returns (bool) {
     return boolStorage[keccak256(abi.encodePacked(key))];
   }
 

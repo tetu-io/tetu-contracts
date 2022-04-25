@@ -11,6 +11,7 @@ import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {PawnShopTestUtils} from "./PawnShopTestUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -39,7 +40,8 @@ describe("Tetu pawnshop base tests", function () {
     shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop',
       signer.address,
       core.rewardToken.address,
-      core.controller.address
+      parseUnits('1000'),
+      core.controller.address,
     ) as TetuPawnShop;
     nft = await DeployerUtils.deployContract(signer, 'MockNFT') as MockNFT;
 

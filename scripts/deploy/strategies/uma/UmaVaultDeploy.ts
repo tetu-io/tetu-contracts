@@ -4,8 +4,8 @@ import {DeployStubVault} from "../DeployStubVault";
 async function main() {
   await DeployStubVault.deploy(
     'UMA',
-    MaticAddresses.UMA_NOKEN,
-    33
+    MaticAddresses.UMA_TOKEN,
+    34
   )
 }
 

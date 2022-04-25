@@ -3,11 +3,20 @@ import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {IUniswapV2Pair, TetuSwapFactory, TetuSwapRouter} from "../../typechain";
+import {
+  ISphereToken__factory,
+  IStrategy,
+  TetuSwapFactory,
+  TetuSwapPair__factory,
+  TetuSwapRouter
+} from "../../typechain";
 import {utils} from "ethers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers} from "hardhat";
 import {UniswapUtils} from "../UniswapUtils";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
+import {TokenUtils} from "../TokenUtils";
+import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -19,7 +28,7 @@ describe("Tetu Swap specific tests", function () {
   let user: SignerWithAddress;
   let core: CoreContractsWrapper;
   let factory: TetuSwapFactory;
-  let router: TetuSwapRouter;
+  let coreAddresses: CoreAddresses;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
@@ -28,10 +37,9 @@ describe("Tetu Swap specific tests", function () {
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
     const net = await ethers.provider.getNetwork();
-    const coreAddresses = await DeployerUtils.getCoreAddresses();
+    coreAddresses = await DeployerUtils.getCoreAddresses();
 
     factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', coreAddresses.swapFactory) as TetuSwapFactory;
-    router = await DeployerUtils.connectInterface(signer, 'TetuSwapRouter', coreAddresses.swapRouter) as TetuSwapRouter;
 
 
   });
@@ -49,22 +57,71 @@ describe("Tetu Swap specific tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  // it('swap btc-eth', async () => {
-  //   const tokenA = MaticAddresses.WBTC_TOKEN;
-  //   const tokenB = MaticAddresses.WETH_TOKEN;
-  //
-  //   await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('200'));
-  //   await UniswapUtils.getTokenFromHolder(signer, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WBTC_TOKEN, utils.parseUnits('100'));
-  //   const pair = await factory.getPair(tokenA, tokenB);
-  //   await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', pair) as IUniswapV2Pair).sync()
-  //   await UniswapUtils.swapExactTokensForTokens(
-  //     signer,
-  //     [tokenA, tokenB],
-  //     utils.parseUnits("0.000932", 8).toString(),
-  //     signer.address,
-  //     router.address
-  //   );
-  // });
+  it.skip('swap sphere - usdc', async () => {
+    const sphereOwner = await DeployerUtils.impersonate('0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe');
+    const sphere = MaticAddresses.SPHERE_TOKEN;
+    const usdc = MaticAddresses.USDC_TOKEN;
+    const usdcVault = '0xee3b4ce32a6229ae15903cda0a5da92e739685f7';
+    const amountSphere = utils.parseUnits('100');
+    const amountUsdc = utils.parseUnits('100', 6);
+
+    await TokenUtils.getToken(sphere, signer.address, amountSphere.mul(10));
+    await TokenUtils.getToken(usdc, signer.address, amountUsdc.mul(10));
+
+    const [sphereVaultLogic, sphereVault, sphereStrategy] = await DeployerUtils.deployVaultAndStrategy(
+      'SPHERE',
+      async vaultAddress => DeployerUtils.deployContract(
+        signer,
+        'NoopStrategy',
+        core.controller.address, // _controller
+        sphere, // _underlying
+        vaultAddress, // _vault
+        [], // __rewardTokens
+        [sphere], // __assets
+        35, // __platform
+      ) as Promise<IStrategy>,
+      core.controller.address,
+      core.psVault.address,
+      signer,
+      60 * 60 * 24 * 28,
+      0,
+      true
+    );
+
+    console.log('deployed')
+    await core.controller.addVaultsAndStrategies([sphereVault.address], [sphereStrategy.address]);
+
+    await factory.createPair(sphereVault.address, usdcVault);
+    const pair = await factory.getPair(sphere, usdc);
+
+    await core.controller.setPureRewardConsumers([pair], true);
+
+    const networkToken = await DeployerUtils.getNetworkTokenAddress();
+    const router = await DeployerUtils.deployContract(signer, "TetuSwapRouter", factory.address, networkToken) as TetuSwapRouter;
+
+    await factory.setPairRewardRecipients([pair], [signer.address]);
+
+    await ISphereToken__factory.connect(sphere, sphereOwner).setFeeExempt(sphereVault.address, true);
+
+    await UniswapUtils.addLiquidity(
+      signer,
+      sphere,
+      usdc,
+      amountSphere.toString(),
+      amountUsdc.toString(),
+      factory.address,
+      router.address
+    );
+
+    // await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', pair) as IUniswapV2Pair).sync()
+    await UniswapUtils.swapExactTokensForTokens(
+      signer,
+      [sphere, usdc],
+      amountSphere.div(10).toString(),
+      signer.address,
+      router.address
+    );
+  });
 
 
 });

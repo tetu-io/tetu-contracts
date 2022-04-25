@@ -10,11 +10,8 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IPriceCalculator.sol";
-import "../../base/governance/Controllable.sol";
+import "../../base/governance/ControllableV2.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/firebird/IFireBirdPair.sol";
@@ -33,12 +30,11 @@ pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
 /// @author belbix
-contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
-  using SafeMath for uint256;
+contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.3.2";
+  string public constant VERSION = "1.4.0";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -48,6 +44,7 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   address public constant CRV_USD_BTC_ETH_MATIC = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
   address public constant CRV_USD_BTC_ETH_FANTOM = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
   address public constant BEETHOVEN_VAULT_FANTOM = 0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce;
+  address public constant BALANCER_VAULT_ETHEREUM = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
   // ************ VARIABLES **********************
   // !!! DON'T CHANGE NAMES OR ORDERING !!!
@@ -78,7 +75,13 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function initialize(address _controller) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
+  }
+
+  /// @dev Allow operation only for Controller or Governance
+  modifier onlyControllerOrGovernance() {
+    require(_isController(msg.sender) || _isGovernance(msg.sender), "Not controller or gov");
+    _;
   }
 
   function getPriceWithDefaultOutput(address token) external view override returns (uint256) {
@@ -98,12 +101,12 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     uint256 rate = 1;
     uint256 rateDenominator = 1;
     // check if it is a vault need to return the underlying price
-    if (IController(controller()).vaults(token)) {
+    if (IController(_controller()).vaults(token)) {
       rate = ISmartVault(token).getPricePerFullShare();
       token = ISmartVault(token).underlying();
       rateDenominator = 10 ** IERC20Extended(token).decimals();
       // some vaults can have another vault as underlying
-      if (IController(controller()).vaults(token)) {
+      if (IController(_controller()).vaults(token)) {
         rate = rate * ISmartVault(token).getPricePerFullShare();
         token = ISmartVault(token).underlying();
         rateDenominator = rateDenominator * (10 ** IERC20Extended(token).decimals());
@@ -154,14 +157,14 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(IAaveToken(token).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
       price = price * ratio / (10 ** PRECISION_DECIMALS);
-    }else if (isBPT(token)) {
+    } else if (isBPT(token)) {
       price = calculateBPTPrice(token, outputToken);
-    }else {
+    } else {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(token, outputToken, usedLps, 0);
     }
 
-    return price.mul(rate).div(rateDenominator);
+    return price * rate / rateDenominator;
   }
 
   //Checks if address is Uni or Sushi LP. This is done in two steps,
@@ -192,8 +195,9 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
 
   function isBPT(address token) public view returns (bool) {
     IBPT bpt = IBPT(token);
-    try bpt.getVault() returns (address beethovenVault){
-      return (beethovenVault == BEETHOVEN_VAULT_FANTOM);
+    try bpt.getVault{gas : 3000}() returns (address vault){
+      return (vault == BEETHOVEN_VAULT_FANTOM
+      || vault == BALANCER_VAULT_ETHEREUM);
     } catch {}
     return false;
   }
@@ -312,17 +316,13 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
     uint256 token1Decimals = IERC20Extended(token1).decimals();
 
     // both reserves should have the same decimals
-    reserve0 = reserve0.mul(10 ** PRECISION_DECIMALS).div(10 ** token0Decimals);
-    reserve1 = reserve1.mul(10 ** PRECISION_DECIMALS).div(10 ** token1Decimals);
+    reserve0 = reserve0 * (10 ** PRECISION_DECIMALS) / (10 ** token0Decimals);
+    reserve1 = reserve1 * (10 ** PRECISION_DECIMALS) / (10 ** token1Decimals);
 
     if (token == token0) {
-      return reserve1
-      .mul(10 ** PRECISION_DECIMALS)
-      .div(reserve0);
+      return reserve1 * (10 ** PRECISION_DECIMALS) / reserve0;
     } else if (token == token1) {
-      return reserve0
-      .mul(10 ** PRECISION_DECIMALS)
-      .div(reserve1);
+      return reserve0 * (10 ** PRECISION_DECIMALS) / reserve1;
     } else {
       revert("PC: token not in lp");
     }
@@ -432,22 +432,22 @@ contract PriceCalculator is Initializable, Controllable, IPriceCalculator {
   }
 
   function normalizePrecision(uint256 amount, uint256 decimals) internal pure returns (uint256){
-    return amount.mul(10 ** PRECISION_DECIMALS).div(10 ** decimals);
+    return amount * (10 ** PRECISION_DECIMALS) / (10 ** decimals);
   }
 
   function calculateBPTPrice(address token, address outputToken) internal view returns (uint256){
     IBPT bpt = IBPT(token);
     address balancerVault = bpt.getVault();
     bytes32 poolId = bpt.getPoolId();
-    uint256 totalBPTSupply =  bpt.totalSupply();
+    uint256 totalBPTSupply = bpt.totalSupply();
     (IERC20[] memory poolTokens, uint256[] memory balances,) = IBVault(balancerVault).getPoolTokens(poolId);
 
     uint256 totalPrice = 0;
-    for(uint i = 0; i < poolTokens.length; i++){
+    for (uint i = 0; i < poolTokens.length; i++) {
       uint256 tokenDecimals = IERC20Extended(address(poolTokens[i])).decimals();
       uint256 tokenPrice = getPrice(address(poolTokens[i]), outputToken);
       // unknown token price
-      if (tokenPrice == 0){
+      if (tokenPrice == 0) {
         return 0;
       }
       totalPrice = totalPrice + tokenPrice * balances[i] * 10 ** PRECISION_DECIMALS / 10 ** tokenDecimals;

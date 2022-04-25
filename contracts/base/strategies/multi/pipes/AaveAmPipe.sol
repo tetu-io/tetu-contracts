@@ -14,7 +14,6 @@ pragma solidity 0.8.4;
 
 import "./../../../../openzeppelin/IERC20.sol";
 import "./../../../../openzeppelin/SafeERC20.sol";
-import "./../../../../openzeppelin/Initializable.sol";
 import "./../../../../third_party/aave/ILendingPool.sol";
 import "../../../SlotsLib.sol";
 import "./Pipe.sol";
@@ -32,16 +31,16 @@ contract AaveAmPipe is Pipe {
     address rewardToken;
   }
 
-  bytes32 internal constant _POOL_SLOT = bytes32(uint256(keccak256("eip1967.AaveAmPipe.pool")) - 1);
+ bytes32 internal constant _POOL_SLOT = bytes32(uint(keccak256("eip1967.AaveAmPipe.pool")) - 1);
 
-  function initialize(AaveAmPipeData memory _d) public initializer {
+  function initialize(AaveAmPipeData memory _d) public {
     require(_d.pool != address(0), "Zero pool");
     require(_d.rewardToken != address(0), "Zero reward token");
 
     Pipe._initialize('AaveAmPipe', _d.sourceToken, _d.lpToken);
 
     _POOL_SLOT.set(_d.pool);
-    rewardTokens.push(_d.rewardToken);
+    _REWARD_TOKENS.push(_d.rewardToken);
   }
 
   // ************* SLOT SETTERS/GETTERS *******************
@@ -58,10 +57,12 @@ contract AaveAmPipe is Pipe {
   /// @return output amount of output units (amTOKEN)
   function put(uint256 amount) override onlyPipeline external returns (uint256 output) {
     amount = maxSourceAmount(amount);
-    address sourceToken = _sourceToken();
-    address __pool = _pool();
-    _erc20Approve(sourceToken, __pool, amount);
-    ILendingPool(__pool).deposit(sourceToken, amount, address(this), 0);
+    if (amount > 0) {
+      address sourceToken = _sourceToken();
+      address __pool = _pool();
+      _erc20Approve(sourceToken, __pool, amount);
+      ILendingPool(__pool).deposit(sourceToken, amount, address(this), 0);
+    }
     address outputToken = _outputToken();
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
@@ -72,11 +73,13 @@ contract AaveAmPipe is Pipe {
   /// @param amount to withdraw
   /// @return output amount of source token
   function get(uint256 amount) override onlyPipeline external returns (uint256 output) {
-    amount = maxOutputAmount(amount);
-    address __pool = _pool();
-    _erc20Approve(_outputToken(), __pool, amount);
+    amount = _maxOutputAmount(amount);
     address sourceToken = _sourceToken();
-    ILendingPool(__pool).withdraw(sourceToken, amount, address(this));
+    if (amount > 0) {
+      address __pool = _pool();
+      _erc20Approve(_outputToken(), __pool, amount);
+      ILendingPool(__pool).withdraw(sourceToken, amount, address(this));
+    }
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
     emit Get(amount, output);

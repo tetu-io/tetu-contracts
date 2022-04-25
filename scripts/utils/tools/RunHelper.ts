@@ -17,9 +17,9 @@ export class RunHelper {
       Misc.printDuration('runAndWait completed', start);
       return;
     }
-    await DeployerUtils.wait(1);
+    const r0 = await tr.wait(1);
 
-    log.info('tx sent', tr.hash);
+    log.info('tx sent', tr.hash, 'gas used:', r0.gasUsed.toString());
 
     let receipt;
     while (true) {

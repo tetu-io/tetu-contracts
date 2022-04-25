@@ -49,7 +49,7 @@ describe("Bookkeeper tests", function () {
   });
 
   it("should not deploy with zero controller", async () => {
-    await expect(DeployerUtils.deployBookkeeper(signer, Misc.ZERO_ADDRESS)).rejectedWith('zero address');
+    await expect(DeployerUtils.deployBookkeeper(signer, Misc.ZERO_ADDRESS)).rejectedWith('');
   });
 
   it("should not register strat action for non strat", async () => {
@@ -65,11 +65,11 @@ describe("Bookkeeper tests", function () {
   });
 
   it("should not add vault", async () => {
-    await expect(bookkeeper.connect(signer1).addVault(Misc.ZERO_ADDRESS)).is.rejectedWith("not controller");
+    await expect(bookkeeper.connect(signer1).addVault(Misc.ZERO_ADDRESS)).is.rejectedWith("B: Not controller");
   });
 
   it("should not add strategy", async () => {
-    await expect(bookkeeper.connect(signer1).addStrategy(Misc.ZERO_ADDRESS)).is.rejectedWith("not controller");
+    await expect(bookkeeper.connect(signer1).addStrategy(Misc.ZERO_ADDRESS)).is.rejectedWith("B: Not controller");
   });
 
   it("is governance", async () => {
