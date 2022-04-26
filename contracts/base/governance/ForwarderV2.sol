@@ -22,6 +22,8 @@ import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/balancer/IBVault.sol";
+import "../SlotsLib.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to Profit Sharing pool, FundKeeper and vaults
@@ -30,18 +32,26 @@ import "../../third_party/uniswap/IUniswapV2Pair.sol";
 ///        If external rewards have a destination Profit Share pool
 ///        it is just sent to the contract as TETU tokens increasing share price.
 /// @author belbix
+/// @author bogdoslav
 contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.3.0";
+  string public constant VERSION = "1.4.0";
   uint256 public constant LIQUIDITY_DENOMINATOR = 100;
   uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
   uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
   uint constant public ROUTE_LENGTH_MAX = 5;
   uint constant public SLIPPAGE_DENOMINATOR = 100;
   uint constant public MINIMUM_AMOUNT = 100;
+
+  /// @dev Temporary solution to liquidate Balancer BAL tokens
+  bytes32 internal constant _BAL_TOKEN     = bytes32(uint(keccak256("eip1967.ForwarderV2.balToken")) - 1);
+  bytes32 internal constant _BAL_VAULT     = bytes32(uint(keccak256("eip1967.ForwarderV2.balVault")) - 1);
+  bytes32 internal constant _BAL_POOL      = bytes32(uint(keccak256("eip1967.ForwarderV2.balPool")) - 1);
+  bytes32 internal constant _BAL_TOKEN_OUT = bytes32(uint(keccak256("eip1967.ForwarderV2.balTokenOut")) - 1);
 
   // ************ EVENTS **********************
   /// @notice Fee distributed to Profit Sharing pool
@@ -110,6 +120,15 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
     return _slippageNumerator();
   }
 
+  /// @notice Return Balancer Data
+  function getBalData() external view
+  returns (address balToken, address vault, bytes32 pool, address tokenOut) {
+    balToken = _BAL_TOKEN.getAddress();
+    vault    = _BAL_VAULT.getAddress();
+    pool     = _BAL_POOL.getBytes32();
+    tokenOut = _BAL_TOKEN_OUT.getAddress();
+  }
+
 
   // ************ GOVERNANCE ACTIONS **************************
 
@@ -170,6 +189,21 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
     require(_feeNumerator <= _feeDenominator, "F2: Wrong values");
     require(_feeDenominator != 0, "F2: Wrong denominator");
     uniPlatformFee[_factory] = UniFee(_feeNumerator, _feeDenominator);
+  }
+
+  /// @notice Sets Balancer Data
+  /// @dev This function should be called right after proxy contract upgrade
+  /// @param balToken BAL token address
+  /// @param vault Balancer v2 Vault contract address
+  /// @param pool Pool ID
+  /// @param tokenOut Output token (ex. USDC)
+  function setBalData(address balToken, address vault, bytes32 pool, address tokenOut)
+  external onlyControllerOrGovernance {
+    require( balToken != address(0) && vault != address(0) && pool != 0 && tokenOut != address(0));
+    _BAL_TOKEN.set(balToken);
+    _BAL_VAULT.set(vault);
+    _BAL_POOL.set(pool);
+    _BAL_TOKEN_OUT.set(tokenOut);
   }
 
   // ***************** EXTERNAL *******************************
@@ -421,6 +455,43 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
       // this is already the right token
       return _amount;
     }
+
+    // This is temporary solution to swap Balancer BAL token with low slippage
+    // Should be replaced to more universal solution later
+    address balToken = _BAL_TOKEN.getAddress();
+    if (_tokenIn == balToken && balToken != address(0)) {
+      bytes memory userData;
+      address balVault = _BAL_VAULT.getAddress();
+      address balTokenOut = _BAL_TOKEN_OUT.getAddress();
+      require(balVault != address(0) && balTokenOut != address (0), 'F2: bal data not set');
+
+      IBVault.SingleSwap memory singleSwap = IBVault.SingleSwap({
+        poolId: _BAL_POOL.getBytes32(),
+        kind: IBVault.SwapKind.GIVEN_IN,
+        assetIn: IAsset(balToken),
+        assetOut: IAsset(balTokenOut),
+        amount: _amount,
+        userData: userData
+      });
+
+      IBVault.FundManagement memory funds = IBVault.FundManagement({
+        sender: payable(address(this)),
+        fromInternalBalance: false,
+        recipient: payable(address(this)),
+        toInternalBalance: false
+      });
+
+      IERC20(balToken).safeApprove(balVault, 0);
+      IERC20(balToken).safeApprove(balVault, _amount);
+      _amount = IBVault(balVault).swap(singleSwap, funds, 1, block.timestamp);
+      _tokenIn = balTokenOut;
+
+      if (_tokenIn == _tokenOut) {
+        return _amount;
+      }
+    }
+    // end of temporary solution
+
     (LpData[] memory route, uint count) = _createLiquidationRoute(_tokenIn, _tokenOut);
 
     uint outBalance = _amount;

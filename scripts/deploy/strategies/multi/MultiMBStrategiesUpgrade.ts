@@ -101,7 +101,7 @@ async function main() {
       'strategies: '+JSON.stringify(strategyAddresses) + '\n-----------------\n';
   appendFileSync(tmpFileName, arrTxt, 'utf8');
 
-  if (network.name === 'hardhat') return;
+  if (network.name !== 'hardhat') return;
 
   // --- Test Upgrade
 

@@ -30,12 +30,12 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.3";
+  string public constant VERSION = "1.0.4";
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
-  /// @dev 1% buyback
-  uint256 private constant _BUY_BACK_RATIO = 1_00;
+  /// @dev 10% buyback
+  uint256 private constant _BUY_BACK_RATIO = 10_00;
 
   /// @notice Curve gauge rewards pool
   address public override gauge;
