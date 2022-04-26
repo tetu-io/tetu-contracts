@@ -29,7 +29,7 @@ abstract contract WaultStrategyLPWithAC is StrategyBase {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.1";
   /// @dev 1% buyback
-  uint256 private constant _BUY_BACK_RATIO = 100;
+  uint256 private constant _BUY_BACK_RATIO = 1_00;
 
   /// @notice Wault rewards pool
   address public pool;
