@@ -12,8 +12,9 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./../../../../openzeppelin/IERC20.sol";
+import "./../../../../openzeppelin/SafeERC20.sol";
+import "../../../SlotsLib.sol";
 import "./Pipe.sol";
 import "./../../../../third_party/qidao/ICamToken.sol";
 
@@ -21,6 +22,7 @@ import "./../../../../third_party/qidao/ICamToken.sol";
 /// @author bogdoslav
 contract MaiCamPipe is Pipe {
   using SafeERC20 for IERC20;
+  using SlotsLib for bytes32;
 
   struct MaiCamPipeData {
     address sourceToken;
@@ -28,18 +30,13 @@ contract MaiCamPipe is Pipe {
     address rewardToken;
   }
 
-  MaiCamPipeData public pipeData;
-
   /// @dev creates context
-  constructor(MaiCamPipeData memory _d) Pipe(
-    'MaiCamTokenPipe',
-    _d.sourceToken,
-    _d.lpToken
-  ) {
+  function initialize(MaiCamPipeData memory _d) public {
     require(_d.rewardToken != address(0), "Zero reward token");
 
-    pipeData = _d;
-    rewardTokens.push(_d.rewardToken);
+    Pipe._initialize('MaiCamTokenPipe', _d.sourceToken, _d.lpToken);
+
+    _REWARD_TOKENS.push(_d.rewardToken);
   }
 
   /// @dev function for investing, deposits, entering, borrowing
@@ -47,8 +44,11 @@ contract MaiCamPipe is Pipe {
   /// @return output in underlying units
   function put(uint256 amount) override onlyPipeline public returns (uint256 output) {
     amount = maxSourceAmount(amount);
-    _erc20Approve(sourceToken, pipeData.lpToken, amount);
-    ICamToken(outputToken).enter(amount);
+    address outputToken = _outputToken();
+    if (amount > 0) {
+      _erc20Approve(_sourceToken(), outputToken, amount);
+      ICamToken(outputToken).enter(amount);
+    }
     output = _erc20Balance(outputToken);
     _transferERC20toNextPipe(outputToken, output);
     emit Put(amount, output);
@@ -58,8 +58,11 @@ contract MaiCamPipe is Pipe {
   /// @param amount in underlying units
   /// @return output in source units
   function get(uint256 amount) override onlyPipeline  public returns (uint256 output) {
-    amount = maxOutputAmount(amount);
-    ICamToken(pipeData.lpToken).leave(amount);
+    amount = _maxOutputAmount(amount);
+    if (amount > 0) {
+      ICamToken(_outputToken()).leave(amount);
+    }
+    address sourceToken = _sourceToken();
     output = _erc20Balance(sourceToken);
     _transferERC20toPrevPipe(sourceToken, output);
     emit Get(amount, output);

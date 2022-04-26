@@ -27,41 +27,11 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   using SafeERC20 for IERC20;
   using ArrayLib for uint256[];
 
-  /// @dev Tetu Controller address requires for governance actions
-  constructor(address _owner, address _depositToken, address _feeRecipient) {
-    require(_owner != address(0), "TPS: Zero owner");
-    require(_feeRecipient != address(0), "TPS: Zero feeRecipient");
-    owner = _owner;
-    feeRecipient = _feeRecipient;
-    positionDepositToken = _depositToken;
-    createdTs = block.timestamp;
-    createdBlock = block.number;
-  }
-
-  modifier onlyOwner() {
-    require(msg.sender == owner, "TPS: Not owner");
-    _;
-  }
-
-  /// @dev Check time lock for governance actions and revert if conditions wrong
-  modifier checkTimeLock(GovernanceAction action, address _address, uint256 _uint){
-    TimeLock memory timeLock = timeLocks[action];
-    require(timeLock.time != 0 && timeLock.time < block.timestamp, "TPS: Time Lock");
-    if (_address != address(0)) {
-      require(timeLock.addressValue == _address, "TPS: Wrong address value");
-    }
-    if (_uint != 0) {
-      require(timeLock.uintValue == _uint, "TPS: Wrong uint value");
-    }
-    _;
-    delete timeLocks[action];
-  }
-
   // ---- CONSTANTS
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.2";
   /// @dev Time lock for any governance actions
   uint256 constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
@@ -85,8 +55,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   /// @dev 1% by default, percent of acquired tokens that will be used for buybacks
   uint256 public platformFee = 100;
   /// @dev Amount of tokens for open position. Protection against spam
-  ///      1000 TETU by default
-  uint256 public positionDepositAmount = 1000 * 1e18;
+  uint256 public positionDepositAmount;
   /// @dev Token for antispam protection. TETU assumed
   ///      Zero address means no protection
   address public positionDepositToken;
@@ -124,6 +93,42 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   mapping(uint256 => uint256[]) public override positionToBidIds;
   /// @inheritdoc ITetuPawnShop
   mapping(uint256 => uint256) public override lastAuctionBidTs;
+
+  /// @dev Tetu Controller address requires for governance actions
+  constructor(
+    address _owner,
+    address _depositToken,
+    uint _positionDepositAmount,
+    address _feeRecipient
+  ) {
+    require(_owner != address(0), "TPS: Zero owner");
+    require(_feeRecipient != address(0), "TPS: Zero feeRecipient");
+    owner = _owner;
+    feeRecipient = _feeRecipient;
+    positionDepositToken = _depositToken;
+    createdTs = block.timestamp;
+    createdBlock = block.number;
+    positionDepositAmount = _positionDepositAmount;
+  }
+
+  modifier onlyOwner() {
+    require(msg.sender == owner, "TPS: Not owner");
+    _;
+  }
+
+  /// @dev Check time lock for governance actions and revert if conditions wrong
+  modifier checkTimeLock(GovernanceAction action, address _address, uint256 _uint){
+    TimeLock memory timeLock = timeLocks[action];
+    require(timeLock.time != 0 && timeLock.time < block.timestamp, "TPS: Time Lock");
+    if (_address != address(0)) {
+      require(timeLock.addressValue == _address, "TPS: Wrong address value");
+    }
+    if (_uint != 0) {
+      require(timeLock.uintValue == _uint, "TPS: Wrong uint value");
+    }
+    _;
+    delete timeLocks[action];
+  }
 
   // ************* USER ACTIONS *************
 

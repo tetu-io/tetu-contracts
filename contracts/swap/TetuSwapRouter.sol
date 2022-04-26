@@ -27,7 +27,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
 
   address public immutable override factory;
   address public immutable override WETH;
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
 
   event EthReceived(address sender);
 
@@ -355,7 +355,6 @@ contract TetuSwapRouter is ITetuSwapRouter {
   // **** SWAP (supporting fee-on-transfer tokens) ****
   // requires the initial amount to have already been sent to the first pair
   function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to) internal virtual {
-    callSync(path);
     for (uint i; i < path.length - 1; i++) {
       (address input, address output) = (path[i], path[i + 1]);
       (address token0,) = TetuSwapLibrary.sortTokens(input, output);
@@ -365,7 +364,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
       {// scope to avoid stack too deep errors
         (uint reserve0, uint reserve1,) = pair.getReserves();
         (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-        amountInput = pair.balanceOfVaultUnderlying(input) - reserveInput;
+        amountInput = pair.balanceOfVaultUnderlying(input) + IERC20(input).balanceOf(address(pair)) - reserveInput;
         amountOutput = TetuSwapLibrary.getAmountOut(
           amountInput,
           reserveInput,

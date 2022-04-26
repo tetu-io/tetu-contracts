@@ -11,25 +11,25 @@
 */
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../../base/governance/Controllable.sol";
+import "../../base/governance/ControllableV2.sol";
 import "../../base/interface/ISmartVault.sol";
 import "../../base/interface/IStrategy.sol";
 import "../../base/interface/IController.sol";
 import "./IRewardCalculator.sol";
 import "../../base/interface/IRewardToken.sol";
 import "./AutoRewarderStorage.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/Math.sol";
 
 /// @title Calculate recommended reward amount for vaults and distribute it
 /// @dev Use with TetuProxyGov
 /// @author belbix
-contract AutoRewarder is Controllable, AutoRewarderStorage {
+contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.1.4";
+  string public constant VERSION = "1.2.0";
   uint256 public constant PERIOD = 7 days - 4 hours;
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
@@ -50,7 +50,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
     uint _networkRatio,
     uint _rewardPerDay
   ) external initializer {
-    Controllable.initializeControllable(_controller);
+    ControllableV2.initializeControllable(_controller);
     AutoRewarderStorage.initializeAutoRewarderStorage(
       _rewardCalculator,
       _networkRatio,
@@ -58,13 +58,25 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
     );
   }
 
+  /// @dev Allow operation only for Controller or Governance
+  modifier onlyControllerOrGovernance() {
+    require(_isController(msg.sender) || _isGovernance(msg.sender), "Not controller or gov");
+    _;
+  }
+
+  /// @dev Only Reward Distributor allowed. Governance is Reward Distributor by default.
+  modifier onlyRewardDistribution() {
+    require(IController(_controller()).isRewardDistributor(msg.sender), "Only reward distributor");
+    _;
+  }
+
   // *********** VIEWS ********************
   function psVault() public view returns (address) {
-    return IController(controller()).psVault();
+    return IController(_controller()).psVault();
   }
 
   function tetuToken() public view returns (IRewardToken) {
-    return IRewardToken(IController(controller()).rewardToken());
+    return IRewardToken(IController(_controller()).rewardToken());
   }
 
   function vaultsSize() external view returns (uint256) {
@@ -98,7 +110,7 @@ contract AutoRewarder is Controllable, AutoRewarderStorage {
   function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "AR: Not enough balance");
-    IERC20(_token).safeTransfer(controller(), amount);
+    IERC20(_token).safeTransfer(_controller(), amount);
     emit TokenMoved(_token, amount);
   }
 

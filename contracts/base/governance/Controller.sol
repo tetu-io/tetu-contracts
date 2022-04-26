@@ -26,13 +26,13 @@ import "../interface/IMintHelper.sol";
 import "../interface/IAnnouncer.sol";
 import "../interface/strategies/IBalancingStrategy.sol";
 import "./ControllerStorage.sol";
-import "./Controllable.sol";
+import "./ControllableV2.sol";
 
 /// @title A central contract for control everything.
 ///        Governance is a Multi-Sig Wallet
 /// @dev Use with TetuProxy
 /// @author belbix
-contract Controller is Initializable, Controllable, ControllerStorage {
+contract Controller is Initializable, ControllableV2, ControllerStorage {
   using SafeERC20 for IERC20;
   using Address for address;
 
@@ -94,7 +94,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   ///      Initialize Controllable with sender address
   ///      Setup default values for PS and Fund ratio
   function initialize() external initializer {
-    Controllable.initializeControllable(address(this));
+    ControllableV2.initializeControllable(address(this));
     ControllerStorage.initializeControllerStorage(
       msg.sender
     );
@@ -576,7 +576,7 @@ contract Controller is Initializable, Controllable, ControllerStorage {
   /// @notice Only Governance or HardWorker can do it. Call doHardWork from given Vault
   /// @param _vault Vault addresses
   function doHardWork(address _vault) external {
-    require(hardWorkers[msg.sender] || isGovernance(msg.sender), "C: Not hardworker or governance");
+    require(hardWorkers[msg.sender] || _isGovernance(msg.sender), "C: Not hardworker or governance");
     require(vaults[_vault], "C: Not vault");
     uint256 oldSharePrice = ISmartVault(_vault).getPricePerFullShare();
     ISmartVault(_vault).doHardWork();

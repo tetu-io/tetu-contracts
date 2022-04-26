@@ -12,17 +12,14 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../base/governance/Controllable.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../openzeppelin/IERC20.sol";
+import "../../openzeppelin/Math.sol";
+import "../../third_party/IERC20Extended.sol";
 
 /// @title LiquidityBalancer sells a portion of the available amount of
 ///        TETU Tokens when the price hits the target price and immediately
@@ -31,7 +28,6 @@ import "../../third_party/uniswap/IUniswapV2Router02.sol";
 /// @author belbix
 contract LiquidityBalancer is Controllable {
   using SafeERC20 for IERC20;
-  using Address for address;
   using SafeMath for uint256;
 
   string public constant VERSION = "1.1.0";
@@ -193,7 +189,7 @@ contract LiquidityBalancer is Controllable {
       return 0;
     }
     uint256 remAmountRate = currentTvl.sub(lpTvlTargets[_lp]).mul(PRECISION).div(currentTvl);
-    return ERC20(address(_lp)).totalSupply().mul(remAmountRate).div(PRECISION);
+    return IERC20(address(_lp)).totalSupply().mul(remAmountRate).div(PRECISION);
   }
 
   function updateLpTvlTarget(address _lp) internal {
@@ -284,8 +280,8 @@ contract LiquidityBalancer is Controllable {
     IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
     address token0 = pair.token0();
     address token1 = pair.token1();
-    uint256 token0Decimals = ERC20(token0).decimals();
-    uint256 token1Decimals = ERC20(token1).decimals();
+    uint256 token0Decimals = IERC20Extended(token0).decimals();
+    uint256 token1Decimals = IERC20Extended(token1).decimals();
 
     (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
 

@@ -4,14 +4,15 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-solhint";
-import '@openzeppelin/hardhat-upgrades';
+// import '@openzeppelin/hardhat-upgrades';
 import "@typechain/hardhat";
-import "hardhat-docgen";
+// import "hardhat-docgen";
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "hardhat-tracer";
-import "hardhat-etherscan-abi";
+// import "hardhat-etherscan-abi";
 import "solidity-coverage"
+import "hardhat-abi-exporter"
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -42,13 +43,17 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
     },
+    ethForkBlock: {
+      type: "number",
+      default: 14628000
+    },
     maticForkBlock: {
       type: "number",
       default: 23945980
     },
     ftmForkBlock: {
       type: "number",
-      default: 32100000
+      default: 35202770
     },
   }).argv;
 
@@ -60,15 +65,18 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
       timeout: 99999 * 2,
-      gas: argv.hardhatChainId === 137 ? 19_000_000 :
+      gas: argv.hardhatChainId === 1 ? 19_000_000 :
+        argv.hardhatChainId === 137 ? 19_000_000 :
         argv.hardhatChainId === 250 ? 11_000_000 :
           9_000_000,
       forking: {
         url:
+          argv.hardhatChainId === 1 ? argv.ethRpcUrl :
           argv.hardhatChainId === 137 ? argv.maticRpcUrl :
             argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
               undefined,
         blockNumber:
+          argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
           argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
             argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
               undefined
@@ -166,4 +174,10 @@ export default {
   typechain: {
     outDir: "typechain",
   },
+  abiExporter: {
+    path: './artifacts/abi',
+    runOnCompile: false,
+    spacing: 2,
+    pretty: true,
+  }
 };

@@ -12,8 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IVaultController.sol";
+import "../../openzeppelin/Initializable.sol";
 
 /// @title Eternal storage + getters and setters pattern
 /// @dev If you will change a key value it will require setup it again

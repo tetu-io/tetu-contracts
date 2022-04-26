@@ -64,7 +64,11 @@ export class MaticAddresses {
   public static SFF_TOKEN = "0xdf9B4b57865B403e08c85568442f95c26b7896b0".toLowerCase();
   public static NACHO_TOKEN = '0xcD86152047e800d67BDf00A4c635A8B6C0e5C4c2'.toLowerCase();
   public static NSHARE_TOKEN = '0x948D0a28b600BDBd77AF4ea30E6F338167034181'.toLowerCase();
-  public static NBOND_NOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
+  public static NBOND_TOKEN = '0xfc4a30f328E946ef3E727BD294a93e84c2e43c24'.toLowerCase();
+  public static UNT_TOKEN = '0xc46DB78Be28B5F2461097ed9e3Fcc92E9FF8676d'.toLowerCase();
+  public static UMA_TOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
+  public static SPHERE_TOKEN = '0x8D546026012bF75073d8A586f24A5d5ff75b9716'.toLowerCase();
+  public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -198,6 +202,9 @@ export class MaticAddresses {
   // BALANCER
   public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
   public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012'.toLowerCase();
+  public static BALANCER_POOL_BAL_ETH_ID = '0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426'.toLowerCase();
+  public static BALANCER_POOL_WMATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
+  public static BALANCER_BAL_ETH_POOL = '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f'.toLowerCase();
   public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
 
   // KLIMA
@@ -216,6 +223,19 @@ export class MaticAddresses {
   public static IMPERMAX_FACTORY = "0xBB92270716C8c424849F17cCc12F4F24AD4064D6".toLowerCase();
 
   public static TRADE_BOT = "0x833D22F5c1B01ad2AD34611bD391c246712b9707".toLowerCase();
+
+  // CELSIUS X
+  public static cxDOGE_TOKEN = "0x9Bd9aD490dD3a52f096D229af4483b94D63BE618".toLowerCase();
+  public static cxADA_TOKEN = "0x64875Aaa68d1d5521666C67d692Ee0B926b08b2F".toLowerCase();
+  public static cxETH_TOKEN = "0xfe4546feFe124F30788c4Cc1BB9AA6907A7987F9".toLowerCase();
+
+  public static cxDOGE_MAI_VAULT = "0x7CbF49E4214C7200AF986bc4aACF7bc79dd9C19a".toLowerCase();
+  public static cxADA_MAI_VAULT = "0x506533B9C16eE2472A6BF37cc320aE45a0a24F11".toLowerCase();
+  public static cxETH_MAI_VAULT = "0x7d36999a69f2B99BF3FB98866cBbE47aF43696C8".toLowerCase();
+
+  // MARKET
+  public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
+  public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,

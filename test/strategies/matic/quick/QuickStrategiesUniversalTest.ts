@@ -18,7 +18,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneQuickStrategyTest: {
       type: "number",
-      default: 5,
+      default: 1,
     },
     deployCoreContracts: {
       type: "boolean",

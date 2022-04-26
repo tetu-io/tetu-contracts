@@ -2,11 +2,16 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+// import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {ForwarderV2, IStrategy, SmartVault, StrategyAaveMaiBal} from "../../../../typechain";
+import {
+  ForwarderV2,
+  IStrategy,
+  SmartVault,
+  StrategyAaveMaiBal
+} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
@@ -21,11 +26,13 @@ import {WithdrawAndClaimTest} from "./WithdrawAndClaimTest";
 import {EmergencyWithdrawFromPoolTest} from "./EmergencyWithdrawFromPoolTest";
 import {CoverageCallsTest} from "./CoverageCallsTest";
 import {infos} from "../../../../scripts/deploy/strategies/multi/MultiAMBInfos";
-import {AMBPipeDeployer} from "../../../../scripts/deploy/strategies/multi/AMBPipeDeployer";
+import {MultiPipeDeployer} from "../../../../scripts/deploy/strategies/multi/MultiPipeDeployer";
 import {MoreMaiFromBalTest} from "./MoreMaiFromBalTest";
 import {ethers} from "hardhat";
 import {LiquidationPriceTest} from "./LiquidationPriceTest";
 import {MaxDepositTest} from "./MaxDepositTest";
+import {ReplacePipeTest} from "./ReplacePipeTest";
+import {UpdatePipeProxyTest} from "./UpdatePipeProxyTest";
 
 
 dotEnvConfig();
@@ -37,7 +44,7 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneAMBStrategyTest: {
+    onlyOneAmbStrategyTest: {
       type: "number",
       default: -1,
     },
@@ -68,7 +75,7 @@ describe('Universal AMB tests', async () => {
 
   infos.forEach((info, i) => {
 
-    if (argv.onlyOneAMBStrategyTest !== -1 && i !== argv.onlyOneAMBStrategyTest) {
+    if (argv.onlyOneAmbStrategyTest !== -1 && i !== argv.onlyOneAmbStrategyTest) {
       return;
     }
     console.log('Start test strategy', i, info.underlyingName);
@@ -85,10 +92,10 @@ describe('Universal AMB tests', async () => {
       );
     };
     // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = true;
+    const ppfsDecreaseAllowed = false;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.021;
-    const finalBalanceTolerance = balanceTolerance * 4;
+    const finalBalanceTolerance = 0;
     const deposit = 100_000;
     // at least 3
     const loops = 9;
@@ -103,73 +110,25 @@ describe('Universal AMB tests', async () => {
       new PumpInOnHardWorkTest(),
       new WithdrawAndClaimTest(),
       new EmergencyWithdrawFromPoolTest(),
-      new CoverageCallsTest(),
       new MoreMaiFromBalTest(),
       new LiquidationPriceTest(),
       new MaxDepositTest(),
+      new ReplacePipeTest(),
+      new UpdatePipeProxyTest(),
+      new CoverageCallsTest(),
     ];
-    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10');
+    const AIRDROP_REWARDS_AMOUNT = utils.parseUnits('10000');
     const BAL_PIPE_INDEX = 3;
     // **********************************************
 
     const pipes: string[] = [];
-    // tslint:disable-next-line
-    const pipesArgs: any[][] = [];
     const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
       return StrategyTestUtils.deploy(
         signer,
         core,
         info.underlyingName,
-        async vaultAddress => {
-          // -----------------
-          const aaveAmPipeData = await AMBPipeDeployer.deployAaveAmPipe(
-            signer,
-            underlying,
-            info.amToken
-          );
-          pipes.push(aaveAmPipeData[0].address);
-          pipesArgs.push(aaveAmPipeData[1]);
-          // -----------------
-          const maiCamPipeData = await AMBPipeDeployer.deployMaiCamPipe(
-            signer,
-            info.amToken,
-            info.camToken
-          );
-          pipes.push(maiCamPipeData[0].address);
-          pipesArgs.push(maiCamPipeData[1]);
-          // -----------------
-          const maiStablecoinPipeData = await AMBPipeDeployer.deployMaiStablecoinPipe(
-            signer,
-            info.camToken,
-            info.stablecoin,
-            info.amToken,
-            info.targetPercentage,
-            info.collateralNumerator || '1'
-          );
-          pipes.push(maiStablecoinPipeData[0].address);
-          pipesArgs.push(maiStablecoinPipeData[1]);
-          // -----------------
-          const balVaultPipeData = await AMBPipeDeployer.deployBalVaultPipe(
-            signer
-          );
-          pipes.push(balVaultPipeData[0].address);
-          pipesArgs.push(balVaultPipeData[1]);
-          // -----------------
-
-          const strategyArgs = [
-            core.controller.address,
-            vaultAddress,
-            underlying,
-            pipes
-          ];
-
-          return await DeployerUtils.deployContract(
-            signer,
-            strategyContractName,
-            ...strategyArgs
-          ) as StrategyAaveMaiBal
-        },
+        MultiPipeDeployer.AMBStrategyDeployer(strategyContractName, core, signer, underlying, info, pipes),
         underlying,
         25
       );

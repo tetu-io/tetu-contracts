@@ -10,6 +10,7 @@ import {utils} from "ethers";
 import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {TokenUtils} from "../TokenUtils";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -44,7 +45,7 @@ describe("pawnshop reader tests", function () {
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS, core.controller.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS, parseUnits('1000'), core.controller.address,) as TetuPawnShop;
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 
     await reader.initialize(core.controller.address, calculator.address, shop.address);

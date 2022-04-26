@@ -12,6 +12,7 @@
 pragma solidity 0.8.4;
 
 import "../../../base/strategies/multi/AaveMaiBalStrategyBase.sol";
+import "../../../base/SlotsLib.sol";
 
 /// @title AAVE->MAI->BAL Multi Strategy Polygon Implementation
 /// @author belbix, bogdoslav
@@ -21,32 +22,32 @@ contract StrategyAaveMaiBal is AaveMaiBalStrategyBase {
   address private constant _QI = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4;
   address private constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
 
-  address[] private _rewardTokensArray = [_WMATIC, _QI, _BAL];
-
-  constructor(
+  function initialize(
     address _controller,
     address _vault,
     address _underlying,
-    address[] memory _pipes
-  ) AaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray) {
-    _initPipes(_pipes);
+    address[] memory __pipes
+  ) public initializer {
+    address[] memory _rewardTokensArray = new address[](3);
+    _rewardTokensArray[0] = _WMATIC;
+    _rewardTokensArray[1] = _QI;
+    _rewardTokensArray[2] = _BAL;
+    initializeAaveMaiBalStrategyBase(_controller, _underlying, _vault, _rewardTokensArray);
+    _initPipes(__pipes);
   }
 
   /// @dev 0 - AaveAmPipe
   ///      1 - MaiCamPipe
   ///      2 - MaiStablecoinPipe
   ///      3 - BalVaultPipe
-  function _initPipes(address[] memory _pipes) private {
-    require(_pipes.length == 4, "Wrong pipes");
-    for (uint i; i < _pipes.length; i++) {
-      IPipe(_pipes[i]).setPipeline(address(this));
-      _addPipe(IPipe(_pipes[i]));
-    }
-    // pipe with index 1 must be MaiCamPipe
-    _maiCamPipe = IPipe(_pipes[1]);
-    // pipe with index 2 must be MaiStablecoinPipe
-    _maiStablecoinPipe = IMaiStablecoinPipe(_pipes[2]);
-  }
+  function _initPipes(address[] memory __pipes) private {
+    require(__pipes.length == 4);
 
+    for (uint i; i < __pipes.length; i++) {
+      IPipe(__pipes[i]).setPipeline(address(this));
+      _addPipe(IPipe(__pipes[i]));
+    }
+
+  }
 
 }

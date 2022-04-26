@@ -7,6 +7,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TetuPawnShop} from "../../typechain";
 import {utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -24,7 +25,7 @@ describe("Tetu pawnshop gov tests", function () {
     signer = (await ethers.getSigners())[0];
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS, signer.address) as TetuPawnShop;
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS,parseUnits('1000'), signer.address,) as TetuPawnShop;
   });
 
   after(async function () {

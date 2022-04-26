@@ -8,10 +8,11 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {IStrategy, SmartVault} from "../../../../typechain";
+import {ForwarderV2, IStrategy, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
+import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -24,7 +25,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneTarotStrategyTest: {
       type: "number",
-      default: 45,
+      default: 77,
     },
     hardhatChainId: {
       type: "number",
@@ -58,7 +59,7 @@ describe('Universal Tarot tests', async () => {
     const borrow = strat[6];
     const utilization = strat[7];
 
-    if (+tvl < 1_000_000 || idx === 'idx') {
+    if (+tvl < 1_00_000 || idx === 'idx') {
       console.log('skip', idx, +tvl);
       return;
     }
@@ -78,13 +79,18 @@ describe('Universal Tarot tests', async () => {
     const underlying = tokenAdr;
 
     // add custom liquidation path if necessary
-    const forwarderConfigurator = null;
+    const forwarderConfigurator =
+        async (forwarder: ForwarderV2) => {
+        await forwarder.addLargestLps(
+          [FtmAddresses.BEETS_TOKEN, FtmAddresses.SPIRIT_TOKEN, FtmAddresses.TAROT_TOKEN, FtmAddresses.YFI_TOKEN],
+          ["0x648a7452DA25B4fB4BDB79bADf374a8f8a5ea2b5", "0x30748322B6E34545DBe0788C421886AEB5297789", "0xF050133847bb537C7476D054B8bE6e30253Fbd05", "0x4fc38a2735C7da1d71ccAbf6DeC235a7DA4Ec52C"]);
+      };
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = false;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0;
     const finalBalanceTolerance = 0;
-    const deposit = 1_000_000;
+    const deposit = 1_000;
     // at least 3
     const loops = 3;
     // number of blocks or timestamp value
@@ -106,7 +112,7 @@ describe('Universal Tarot tests', async () => {
             vaultAddress,
             underlying,
             poolAdr,
-            10_00
+            90_00
           ];
           return DeployerUtils.deployContract(
             signer,

@@ -2,7 +2,7 @@
 // Original contract: https://github.com/DinoSwap/fossil-farms-contract/blob/main/FossilFarms.sol
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../../openzeppelin/IERC20.sol";
 
 interface IFossilFarms {
 

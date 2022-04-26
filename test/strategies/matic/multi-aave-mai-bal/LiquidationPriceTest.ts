@@ -1,12 +1,11 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
-import {BigNumber, utils} from "ethers";
+import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {IStrategy, StrategyAaveMaiBal, MaiStablecoinPipe, IErc20Stablecoin, SmartVault} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {AMBUtils} from "./AMBUtils";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../../VaultUtils";
@@ -44,16 +43,17 @@ export class LiquidationPriceTest extends SpecificStrategyTest {
 
       const maiStbPipe = await strategyAaveMaiBal.pipes(2);
       const maiStbPipeCtr = await DeployerUtils.connectInterface(signer, 'MaiStablecoinPipe', maiStbPipe) as MaiStablecoinPipe;
-      const pipeData = await maiStbPipeCtr.pipeData()
+      const _targetPercentage = await maiStbPipeCtr.targetPercentage()
+      const _stablecoin = await maiStbPipeCtr.stablecoin()
 
-      const stablecoin = await DeployerUtils.connectInterface(signer, 'IErc20Stablecoin', pipeData.stablecoin) as IErc20Stablecoin;
+      const stablecoin = await DeployerUtils.connectInterface(signer, 'IErc20Stablecoin', _stablecoin) as IErc20Stablecoin;
       const currPrice = await stablecoin.getEthPriceSource()
       console.log('currPrice     ', currPrice.toString());
 
       const liqPercentage = await stablecoin._minimumCollateralPercentage()
       console.log('liqPercentage ', liqPercentage.toString());
 
-      const targetLiqPrice = currPrice.div(pipeData.targetPercentage).mul(liqPercentage)
+      const targetLiqPrice = currPrice.div(_targetPercentage).mul(liqPercentage)
       console.log('targetLiqPrice', targetLiqPrice.toString());
 
       expect(liqPrice1).to.be.equal(0)

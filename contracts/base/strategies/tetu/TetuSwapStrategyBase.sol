@@ -12,9 +12,6 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../StrategyBase.sol";
 import "../../../swap/interfaces/ITetuSwapPair.sol";
 import "../../interface/ISmartVault.sol";
@@ -22,7 +19,6 @@ import "../../interface/ISmartVault.sol";
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix
 abstract contract TetuSwapStrategyBase is StrategyBase {
-  using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -30,12 +26,15 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   string public constant override STRATEGY_NAME = "TetuSwapStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
-  /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  string public constant VERSION = "1.2.2";
+  /// @dev 10% buybacks
+  uint256 private constant _BUY_BACK_RATIO = 10_00;
 
   /// @notice TetuSwap pair
   address public pair;
+
+  /// @notice Uniswap router for underlying LP
+  address public router;
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -47,13 +46,15 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     address _controller,
     address _underlying,
     address _vault,
-    address[] memory __rewardTokens
+    address[] memory __rewardTokens,
+    address _router
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     require(_vault != address(0), "Zero vault");
     require(_underlying != address(0), "Zero underlying");
     pair = _underlying;
     _rewardTokens.push(ITetuSwapPair(pair).token0());
     _rewardTokens.push(ITetuSwapPair(pair).token1());
+    router = _router;
   }
 
   // ************* VIEWS *******************
