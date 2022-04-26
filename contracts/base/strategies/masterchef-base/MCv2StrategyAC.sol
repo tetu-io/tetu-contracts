@@ -27,9 +27,9 @@ abstract contract MCv2StrategyAC is StrategyBase {
   string public constant override STRATEGY_NAME = "MCv2StrategyAC";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
-  /// @dev 1% buyback
-  uint256 private constant _BUY_BACK_RATIO = 100;
+  string public constant VERSION = "1.0.2";
+  /// @dev 10% buyback
+  uint256 private constant _BUY_BACK_RATIO = 1000;
   address private constant _SUSHI = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
 
   /// @notice MasterChef rewards pool
