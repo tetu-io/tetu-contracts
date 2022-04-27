@@ -29,7 +29,7 @@ abstract contract QuickStrategyDualBaseAC is StrategyBase {
   string public constant VERSION = "1.1.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
   ///      10% buyback
-  uint256 private constant _BUY_BACK_RATIO = 1000;  // for non full buyback need to implement liquidation
+  uint256 private constant _BUY_BACK_RATIO = 10_00;  // for non full buyback need to implement liquidation
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
 
   /// @notice QuickSwap Dual farm pool
