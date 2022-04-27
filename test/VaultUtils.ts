@@ -164,7 +164,7 @@ export class VaultUtils {
     vault: SmartVault,
     core: CoreContractsWrapper,
     amount: number,
-    period = 60 * 60 * 24 * 7 + 1
+    period = 60 * 60 * 24 * 2
   ) {
     const start = Date.now();
     const net = await ethers.provider.getNetwork();
