@@ -72,6 +72,8 @@ export class FtmAddresses {
 
   // Tarot
   public static TAROT_FACTORY = "0x35C052bBf8338b06351782A565aa9AaD173432eA".toLowerCase();
+  public static TAROT_REQUIEM_FACTORY = "0xf6d943c8904195d0f69ba03d97c0baf5bbdcd01b".toLowerCase();
+  public static TAROT_CARCOSA_FACTORY = "0xbf76f858b42bb9b196a87e43235c2f0058cf7322".toLowerCase();
 
   // beethoven
   public static BEETS_TOKEN = "0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e".toLowerCase();

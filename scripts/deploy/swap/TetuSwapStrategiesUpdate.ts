@@ -64,7 +64,7 @@ async function main() {
 
     const strategy = await DeployerUtils.deployContract(signer, strategyName, ...strategyArgs) as IStrategy;
 
-    const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
+    const txt = `${vaultNameWithoutPrefix}: ${pair}     vault: ${vAdr}     strategy: ${strategy.address}\n`;
     appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 
     await DeployerUtils.wait(5);
