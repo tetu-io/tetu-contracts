@@ -35,7 +35,7 @@ abstract contract CurveStrategyBase is StrategyBase, ICurveStrategy {
   string public constant override STRATEGY_NAME = "CurveStrategyBase";
 
   /// @dev 10% buyback
-  uint256 private constant _BUY_BACK_RATIO = 1000;
+  uint256 private constant _BUY_BACK_RATIO = 10_00;
 
   /// @notice Curve gauge rewards pool
   address public override gauge;

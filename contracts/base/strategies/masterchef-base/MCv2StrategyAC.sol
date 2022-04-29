@@ -29,7 +29,7 @@ abstract contract MCv2StrategyAC is StrategyBase {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.2";
   /// @dev 10% buyback
-  uint256 private constant _BUY_BACK_RATIO = 1000;
+  uint256 private constant _BUY_BACK_RATIO = 10_00;
   address private constant _SUSHI = address(0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a);
 
   /// @notice MasterChef rewards pool
