@@ -1,18 +1,18 @@
-import {ethers, network} from "hardhat";
-import {MaticAddresses} from "../../../addresses/MaticAddresses";
+import {network} from "hardhat";
 import {updateCurveStrategy,} from "./utils/CurveUpdateLogic";
+import {FtmAddresses} from "../../../addresses/FtmAddresses";
 
 /**
- * Deploy new version of CurveRenStrategy to Matic
+ * Deploy new version of Curve2PoolStrategy to Fantom
  * Save address of new strategy to ./tmp/update/strategies.txt
  */
 async function main() {
   console.log("network.name", network.name);
 
-  const vaultNameWithoutPrefix = "CRV_REN";
-  const strategyName = 'CurveRenStrategy';
-  const strategyContractPath = 'contracts/strategies/matic/curve/CurveRenStrategy.sol:CurveRenStrategy';
-  const token: string = MaticAddresses.BTCCRV_TOKEN;
+  const vaultNameWithoutPrefix = "CRV_2POOL";
+  const strategyName = 'Curve2PoolStrategy';
+  const strategyContractPath = 'contracts/strategies/fantom/curve/Curve2PoolStrategy.sol:Curve2PoolStrategy';
+  const token: string = FtmAddresses._2poolCrv_TOKEN;
 
   await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
 }
