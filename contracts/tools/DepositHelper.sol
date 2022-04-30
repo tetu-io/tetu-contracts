@@ -14,38 +14,22 @@ pragma solidity 0.8.4;
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
-import "../base/governance/ControllableV2.sol";
 import "../base/interface/ISmartVault.sol";
-import "../base/interface/IController.sol";
 
 /// @title Helper Contract to deposit/withdraw to/from SmartVault.
 /// @author belbix, bogdoslav
-contract DepositHelper is ControllableV2, ReentrancyGuard {
+contract DepositHelper is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   string public constant VERSION = "1.0.0";
 
-  mapping(address => uint256) calls;
+  mapping(address => mapping(address => uint256)) calls;
   mapping(address => bool) whitelist;
 
-  constructor(address controller_) {
-    ControllableV2.initializeControllable(controller_);
-  }
-
-  modifier onlyOneCallPerBlock() {
-    require(calls[msg.sender] < block.number, "DH: call in the same block forbidden");
+  modifier onlyOneCallPerBlockPerVault(address vault_) {
+    require(calls[msg.sender][vault_] < block.number, "DH: call in the same block forbidden");
     _;
-    calls[msg.sender] = block.number;
-  }
-
-  modifier onlyWhitelisted() {
-    require(whitelist[msg.sender], "DH: not whitelisted");
-    _;
-  }
-
-  modifier onlyControllerOrGov() {
-    require(_isController(msg.sender) || _isGovernance(msg.sender), "DH: Not controller or gov");
-    _;
+    calls[msg.sender][vault_] = block.number;
   }
 
   // ******************** USERS ACTIONS *********************
@@ -54,13 +38,11 @@ contract DepositHelper is ControllableV2, ReentrancyGuard {
   /// @dev Approval for share token is assumed.
   /// @param vault_ A target vault for deposit
   /// @param underlyingAmount_ Amount of vault's underlying token for deposit
-  function depositToVault(
-    address vault_,
-    uint256 underlyingAmount_
-  ) external nonReentrant onlyOneCallPerBlock onlyWhitelisted {
+  function depositToVault(address vault_, uint256 underlyingAmount_)
+  external nonReentrant onlyOneCallPerBlockPerVault(vault_) {
     require(underlyingAmount_ > 1, "DH: not enough amount");
-    address underlying = ISmartVault(vault_).underlying();
 
+    address underlying = ISmartVault(vault_).underlying();
     IERC20(underlying).safeTransferFrom(msg.sender, address(this), underlyingAmount_);
 
     IERC20(underlying).safeApprove(vault_, 0);
@@ -83,10 +65,8 @@ contract DepositHelper is ControllableV2, ReentrancyGuard {
   /// @dev Approval for share token is assumed.
   /// @param vault_ A target vault for deposit
   /// @param shareTokenAmount_ Amount of vault's share token to withdraw
-  function withdrawFromVault(
-    address vault_,
-    uint256 shareTokenAmount_
-  ) external nonReentrant onlyOneCallPerBlock onlyWhitelisted {
+  function withdrawFromVault(address vault_, uint256 shareTokenAmount_)
+  external nonReentrant onlyOneCallPerBlockPerVault(vault_) {
     require(shareTokenAmount_ != 0, "DH: zero amount");
 
     IERC20(vault_).safeTransferFrom(msg.sender, address(this), shareTokenAmount_);
@@ -106,25 +86,14 @@ contract DepositHelper is ControllableV2, ReentrancyGuard {
     }
   }
 
-  // ************************* GOV ACTIONS *******************
+  // ************************* ACTIONS *******************
 
-  /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
+  /// @notice Claim coins that are somehow transferred into the contract
   /// @param token_ Token address
   /// @param amount_ Token amount
-  function salvage(address token_, uint256 amount_) external onlyControllerOrGov {
+  function salvage(address token_, uint256 amount_) external {
     IERC20(token_).safeTransfer(msg.sender, amount_);
   }
 
-  /// @notice Whitelist a caller address
-  /// @param caller_ Caller address
-  function addToWhitelist(address caller_) external onlyControllerOrGov {
-    whitelist[caller_] = true;
-  }
-
-  /// @notice Remove a caller from the whitelist
-  /// @param caller_ Caller address
-  function removeFromWhitelist(address caller_) external onlyControllerOrGov {
-    delete whitelist[caller_];
-  }
 
 }
