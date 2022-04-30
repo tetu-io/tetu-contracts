@@ -5,13 +5,7 @@ const accountsEth = [
 ];
 
 const accountsPoly = [
-  // // AMB 1.0 BAL Pipes
-  // "0xcacD584EF2815E066C8A507E26D3592a41c7DF4A", // AMB WETH
-  // "0xF710277064c49f4689f061B4263d8930E395C61d", // AMB MATIC
-  // "0x88f0b9F9B97f8A02508E4E69d46B619fc385c5f4", // AMB AAVE
-  // "0x42d68D48120333720FbA4B079f47240b6FdEcef2", // AMB WBTC
-
-  // AMB 2.0 BAL Pipes
+   // AMB 2.0 BAL Pipes
   "0x4bfe2eAc4c8e07fBfCD0D5A003A78900F8e0B589", // AMB WETH
   "0x62E3A5d0321616B73CCc890a5D894384020B768D", // AMB MATIC
   "0xf5c30eC17BcF3C34FB515EC68009e5da28b5D06F", // AMB AAVE
@@ -32,9 +26,10 @@ const FIXED_POINTS = 10**8;
 
 const network = 'polygon';
 const weeksEth = [73, 74];
+
 const weeksPoly = [];
-const firstWeek = 1
-const lastWeek = 28
+const firstWeek = 26;
+const lastWeek = 28;
 for (let i = firstWeek; i <= lastWeek; i++) weeksPoly.push(i);
 
 let accounts;
