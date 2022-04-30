@@ -35,14 +35,15 @@ describe("SmartVaultNoopStrat", () => {
   let usdc: string;
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[1];
     signerAddress = signer.address;
+    core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
+
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
 
-    core = await DeployerUtils.deployAllCoreContracts(signer);
     vaultRewardToken0 = core.psVault.address;
     vault = await DeployerUtils.deploySmartVault(signer);
 

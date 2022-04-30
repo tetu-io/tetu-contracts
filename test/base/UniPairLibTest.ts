@@ -23,9 +23,9 @@ describe("Array lib tests", function () {
 
   before(async function () {
     this.timeout(1200000);
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
     tetu = core.rewardToken.address.toLowerCase();
     unipair = await DeployerUtils.deployContract(signer, "UniPairLibTest") as UniPairLibTest;
     usdc = await DeployerUtils.getUSDCAddress();

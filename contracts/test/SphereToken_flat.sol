@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.4;
 
+import "hardhat/console.sol";
+
 interface IERC20 {
   function totalSupply() external view returns (uint256);
 
@@ -85,7 +87,6 @@ abstract contract ERC20Detailed is IERC20 {
 }
 
 interface IDEXRouter {
-
   function factory() external view returns (address);
 
   function WETH() external view returns (address);
@@ -93,163 +94,219 @@ interface IDEXRouter {
   function addLiquidity(
     address tokenA,
     address tokenB,
-    uint amountADesired,
-    uint amountBDesired,
-    uint amountAMin,
-    uint amountBMin,
+    uint256 amountADesired,
+    uint256 amountBDesired,
+    uint256 amountAMin,
+    uint256 amountBMin,
     address to,
-    uint deadline
-  ) external returns (uint amountA, uint amountB, uint liquidity);
+    uint256 deadline
+  )
+  external
+  returns (
+    uint256 amountA,
+    uint256 amountB,
+    uint256 liquidity
+  );
 
   function addLiquidityETH(
     address token,
-    uint amountTokenDesired,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 amountTokenDesired,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline
-  ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
+    uint256 deadline
+  )
+  external
+  payable
+  returns (
+    uint256 amountToken,
+    uint256 amountETH,
+    uint256 liquidity
+  );
 
   function removeLiquidity(
     address tokenA,
     address tokenB,
-    uint liquidity,
-    uint amountAMin,
-    uint amountBMin,
+    uint256 liquidity,
+    uint256 amountAMin,
+    uint256 amountBMin,
     address to,
-    uint deadline
-  ) external returns (uint amountA, uint amountB);
+    uint256 deadline
+  ) external returns (uint256 amountA, uint256 amountB);
 
   function removeLiquidityETH(
     address token,
-    uint liquidity,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 liquidity,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline
-  ) external returns (uint amountToken, uint amountETH);
+    uint256 deadline
+  ) external returns (uint256 amountToken, uint256 amountETH);
 
   function removeLiquidityWithPermit(
     address tokenA,
     address tokenB,
-    uint liquidity,
-    uint amountAMin,
-    uint amountBMin,
+    uint256 liquidity,
+    uint256 amountAMin,
+    uint256 amountBMin,
     address to,
-    uint deadline,
-    bool approveMax, uint8 v, bytes32 r, bytes32 s
-  ) external returns (uint amountA, uint amountB);
+    uint256 deadline,
+    bool approveMax,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external returns (uint256 amountA, uint256 amountB);
 
   function removeLiquidityETHWithPermit(
     address token,
-    uint liquidity,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 liquidity,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline,
-    bool approveMax, uint8 v, bytes32 r, bytes32 s
-  ) external returns (uint amountToken, uint amountETH);
+    uint256 deadline,
+    bool approveMax,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external returns (uint256 amountToken, uint256 amountETH);
 
   function swapExactTokensForTokens(
-    uint amountIn,
-    uint amountOutMin,
+    uint256 amountIn,
+    uint256 amountOutMin,
     address[] calldata path,
     address to,
-    uint deadline
-  ) external returns (uint[] memory amounts);
+    uint256 deadline
+  ) external returns (uint256[] memory amounts);
 
   function swapTokensForExactTokens(
-    uint amountOut,
-    uint amountInMax,
+    uint256 amountOut,
+    uint256 amountInMax,
     address[] calldata path,
     address to,
-    uint deadline
-  ) external returns (uint[] memory amounts);
+    uint256 deadline
+  ) external returns (uint256[] memory amounts);
 
-  function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
+  function swapExactETHForTokens(
+    uint256 amountOutMin,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external payable returns (uint256[] memory amounts);
+
+  function swapTokensForExactETH(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external returns (uint256[] memory amounts);
+
+  function swapExactTokensForETH(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external returns (uint256[] memory amounts);
+
+  function swapETHForExactTokens(
+    uint256 amountOut,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external payable returns (uint256[] memory amounts);
+
+  function quote(
+    uint256 amountA,
+    uint256 reserveA,
+    uint256 reserveB
+  ) external pure returns (uint256 amountB);
+
+  function getAmountOut(
+    uint256 amountIn,
+    uint256 reserveIn,
+    uint256 reserveOut,
+    uint256 fee
+  ) external pure returns (uint256 amountOut);
+
+  function getAmountIn(
+    uint256 amountOut,
+    uint256 reserveIn,
+    uint256 reserveOut,
+    uint256 fee
+  ) external pure returns (uint256 amountIn);
+
+  function getAmountsOut(uint256 amountIn, address[] calldata path)
   external
-  payable
-  returns (uint[] memory amounts);
+  view
+  returns (uint256[] memory amounts);
 
-  function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+  function getAmountsIn(uint256 amountOut, address[] calldata path)
   external
-  returns (uint[] memory amounts);
-
-  function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-  external
-  returns (uint[] memory amounts);
-
-  function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)
-  external
-  payable
-  returns (uint[] memory amounts);
-
-  function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
-
-  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee) external pure returns (uint amountOut);
-
-  function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint fee) external pure returns (uint amountIn);
-
-  function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
-
-  function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
+  view
+  returns (uint256[] memory amounts);
 
   function removeLiquidityETHSupportingFeeOnTransferTokens(
     address token,
-    uint liquidity,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 liquidity,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline
-  ) external returns (uint amountETH);
+    uint256 deadline
+  ) external returns (uint256 amountETH);
 
   function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
     address token,
-    uint liquidity,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 liquidity,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline,
-    bool approveMax, uint8 v, bytes32 r, bytes32 s
-  ) external returns (uint amountETH);
+    uint256 deadline,
+    bool approveMax,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external returns (uint256 amountETH);
 
   function swapExactTokensForTokensSupportingFeeOnTransferTokens(
-    uint amountIn,
-    uint amountOutMin,
+    uint256 amountIn,
+    uint256 amountOutMin,
     address[] calldata path,
     address to,
-    uint deadline
+    uint256 deadline
   ) external;
 
   function swapExactETHForTokensSupportingFeeOnTransferTokens(
-    uint amountOutMin,
+    uint256 amountOutMin,
     address[] calldata path,
     address to,
-    uint deadline
+    uint256 deadline
   ) external payable;
 
   function swapExactTokensForETHSupportingFeeOnTransferTokens(
-    uint amountIn,
-    uint amountOutMin,
+    uint256 amountIn,
+    uint256 amountOutMin,
     address[] calldata path,
     address to,
-    uint deadline
+    uint256 deadline
   ) external;
-
 }
 
 interface IDEXFactory {
+  function getPair(address tokenA, address tokenB)
+  external
+  view
+  returns (address pair);
 
-  function getPair(address tokenA, address tokenB) external view returns (address pair);
+  function allPairs(uint256) external view returns (address pair);
 
-  function allPairs(uint) external view returns (address pair);
+  function allPairsLength() external view returns (uint256);
 
-  function allPairsLength() external view returns (uint);
-
-  function createPair(address tokenA, address tokenB) external returns (address pair);
+  function createPair(address tokenA, address tokenB)
+  external
+  returns (address pair);
 
   function validPairs(address _pair) external view returns (bool);
-
 }
 
 interface IBalanceOfSphere {
@@ -302,7 +359,6 @@ contract Ownable {
 }
 
 contract SphereTokenV2 is ERC20Detailed, Ownable {
-
   address constant DEAD = 0x000000000000000000000000000000000000dEaD;
   address constant ZERO = 0x0000000000000000000000000000000000000000;
 
@@ -341,7 +397,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   mapping(address => uint256) private _gonBalances;
   mapping(address => uint256) public partyArrayFee;
 
-  uint256 private ONE_E_EIGHTEEN = 1 * 10 ** 18;
   uint256 private REWARD_YIELD_DENOMINATOR = 10000000000000000;
   uint256 private _gonsPerFragment;
   uint256 private _totalSupply;
@@ -390,6 +445,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   uint256 public epochCollectedBuyTax = 0;
   uint256 public epochCollectedSellTax = 0;
   uint256 public epochSellPressure = 0;
+  uint256 public INDEX;
   uint256 public maxBuyTransactionAmount = 500000 * 10 ** 18;
   uint256 public maxSellTransactionAmount = 500000 * 10 ** 18;
   uint256 public nextRebase = 1647385255;
@@ -415,10 +471,13 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   address public galaxyBondReceiver =
   0x20D61737f972EEcB0aF5f0a85ab358Cd083Dd56a;
 
+  address public convertTo = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+
   IDEXRouter public router;
   address public pair;
 
   uint256 maxInvestRemovablePerPeriod = 1500000 * 10 ** 18;
+
 
   bool inSwap;
 
@@ -444,14 +503,10 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     Withdrawal[] withdrawHistory;
   }
 
-  constructor()
-  ERC20Detailed('Sphere Finance', 'SPHERE', uint8(DECIMALS))
-  {
-  }
+  constructor() ERC20Detailed('Sphere Finance', 'SPHERE', uint8(DECIMALS)) {}
 
   function init(address _router, address _pair) external onlyOwner {
-
-    require(!doneInit, "Already initialized");
+    require(!doneInit, 'Already initialized');
     router = IDEXRouter(_router);
     pair = (_pair);
 
@@ -468,6 +523,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     _isTotalFeeExempt[galaxyBondReceiver] = true;
     _isTotalFeeExempt[address(this)] = true;
     _isTotalFeeExempt[msg.sender] = true;
+    INDEX = gonsForBalance(1e18);
 
     setWhitelistSetters(msg.sender, true, 1);
     setWhitelistSetters(msg.sender, true, 2);
@@ -495,6 +551,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   //get balance of user
   function balanceOf(address who) public view override returns (uint256) {
+    if (_gonsPerFragment == 0) {
+      return 0;
+    }
     return _gonBalances[who] / (_gonsPerFragment);
   }
 
@@ -505,12 +564,20 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   //get the current index of rebase
   function currentIndex() public view returns (uint256) {
-    return rebaseIndex;
+    return balanceForGons(INDEX);
   }
 
   //checks if a user is exempt from protocol fees
   function checkFeeExempt(address _addr) external view returns (bool) {
     return _isTotalFeeExempt[_addr];
+  }
+
+  function gonsForBalance(uint256 amount) public view returns (uint256) {
+    return amount * (_gonsPerFragment);
+  }
+
+  function balanceForGons(uint256 gons) public view returns (uint256) {
+    return gons / (_gonsPerFragment);
   }
 
   //checks what the threshold is for swapping
@@ -560,6 +627,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     !automatedMarketMakerPairs[msg.sender] &&
     !inSwap &&
     swapThreshold > 0 &&
+    swapEnabled &&
     (totalBuyFee + totalSellFee) > 0 &&
     balanceOf(address(this)) >= (gonSwapThreshold / _gonsPerFragment);
   }
@@ -567,7 +635,8 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   //calculates circulating supply (dead and zero is not added due to them being phased out of circulation forrever)
   function getCirculatingSupply() external view returns (uint256) {
     return
-    (TOTAL_GONS - _gonBalances[DEAD] - _gonBalances[ZERO]) / _gonsPerFragment;
+    (TOTAL_GONS - _gonBalances[DEAD] - _gonBalances[ZERO]) /
+    _gonsPerFragment;
   }
 
   //calculate the users total on different contracts
@@ -589,9 +658,8 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 userTotal;
 
     for (uint256 i = 0; i < subContracts.length; i++) {
-      userTotal + (
-      IBalanceOfSphere(subContracts[i]).balanceOfSphere(sender)
-      );
+      userTotal +
+      (IBalanceOfSphere(subContracts[i]).balanceOfSphere(sender));
     }
     for (uint256 i = 0; i < sphereGamesContracts.length; i++) {
       userTotal + (IERC20(sphereGamesContracts[i]).balanceOf(sender));
@@ -610,6 +678,10 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     return LPTotal;
   }
 
+  function getRewardYield() external view returns (uint256, uint256) {
+    return (REWARD_YIELD, REWARD_YIELD_DENOMINATOR);
+  }
+
   function getCurrentTaxBracket(address _address)
   public
   view
@@ -619,7 +691,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 userTotal = getUserTotalOnDifferentContractsSphere(_address);
 
     //calculate the percentage
-    uint256 totalCap = userTotal * (100) / (getTokensInLPCirculation());
+    uint256 totalCap = (userTotal * (100)) / (getTokensInLPCirculation());
 
     //calculate what is smaller, and use that
     uint256 _bracket = totalCap < maxBracketTax ? totalCap : maxBracketTax;
@@ -724,9 +796,8 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
       InvestorInfo storage investor = investorInfoMap[sender];
       //Make sure they can't withdraw too often.
       Withdrawal[] storage withdrawHistory = investor.withdrawHistory;
-      uint256 authorizedWithdraw = (maxInvestRemovablePerPeriod - (
-      getLastPeriodWithdrawals(sender)
-      ));
+      uint256 authorizedWithdraw = (maxInvestRemovablePerPeriod -
+      (getLastPeriodWithdrawals(sender)));
       require(amount <= authorizedWithdraw, 'max withdraw');
       withdrawHistory.push(
         Withdrawal({timestamp : block.timestamp, withdrawAmount : amount})
@@ -748,9 +819,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 gonAmountReceived = shouldTakeFee(sender, recipient)
     ? takeFee(sender, recipient, gonAmount)
     : gonAmount;
-    _gonBalances[recipient] = _gonBalances[recipient] + (
-    gonAmountReceived
-    );
+    _gonBalances[recipient] = _gonBalances[recipient] + (gonAmountReceived);
 
     if (
       shouldRebase() &&
@@ -766,14 +835,14 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     //calculate the amount of buy / sell
     if (automatedMarketMakerPairs[sender]) {
       epochBuyPressure += (gonAmount / (_gonsPerFragment));
-      epochCollectedBuyTax += (
-      gonAmount - (gonAmountReceived) / (_gonsPerFragment)
-      );
+      epochCollectedBuyTax += (gonAmount -
+      (gonAmountReceived) /
+      (_gonsPerFragment));
     } else if (automatedMarketMakerPairs[recipient]) {
       epochSellPressure += (gonAmount / (_gonsPerFragment));
-      epochCollectedSellTax += (
-      gonAmount - (gonAmountReceived) / (_gonsPerFragment)
-      );
+      epochCollectedSellTax += (gonAmount -
+      (gonAmountReceived) /
+      (_gonsPerFragment));
     }
 
     emit Transfer(
@@ -791,9 +860,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 value
   ) external override validRecipient(to) returns (bool) {
     if (_allowedFragments[from][msg.sender] != type(uint256).max) {
-      _allowedFragments[from][msg.sender] = _allowedFragments[from][
-      msg.sender
-      ] - (value);
+      _allowedFragments[from][msg.sender] =
+      _allowedFragments[from][msg.sender] -
+      (value);
     }
 
     _transferFrom(from, to, value);
@@ -808,22 +877,29 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
     uint256 balanceBefore = address(this).balance;
 
-    uint256 amountToBurn = contractTokenBalance
-    * (burnFee + (sellBurnFee))
-    / (realTotalFee);
+    uint256 amountToBurn = (contractTokenBalance *
+    (burnFee + sellBurnFee)) / realTotalFee;
 
-    uint256 amountToLiquidate = contractTokenBalance
-    * (dynamicLiquidityFee)
-    / (realTotalFee)
-    / (2);
+    tokenBurner(amountToBurn);
 
-    uint256 amountToSwap = contractTokenBalance - (amountToLiquidate) - (
-    amountToBurn
-    );
+    uint256 amountToLiquidate = (contractTokenBalance *
+    (dynamicLiquidityFee)) /
+    (realTotalFee) /
+    (2);
+
+    uint256 amountToSwap = contractTokenBalance -
+    amountToLiquidate -
+    amountToBurn;
 
     address[] memory path = new address[](2);
     path[0] = address(this);
-    path[1] = router.WETH();
+    path[1] = convertTo;
+
+    console.log("contractTokenBalance", contractTokenBalance);
+    console.log("balanceBefore", balanceBefore);
+    console.log("amountToBurn", amountToBurn);
+    console.log("amountToLiquidate", amountToLiquidate);
+    console.log("amountToSwap", amountToSwap);
 
     router.swapExactTokensForETHSupportingFeeOnTransferTokens(
       amountToSwap,
@@ -835,29 +911,25 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
     uint256 amountMATIC = address(this).balance - (balanceBefore);
 
-    uint256 totalMATICFee = ((realTotalFee) - (
-    dynamicLiquidityFee) / (2) -
-    (burnFee + sellBurnFee)
-    );
+    uint256 totalMATICFee = ((realTotalFee) -
+    (dynamicLiquidityFee) /
+    (2) -
+    (burnFee + sellBurnFee));
 
-    uint256 amountMATICLiquidity = amountMATIC
-    * (dynamicLiquidityFee)
-    / (totalMATICFee)
-    / (2);
+    uint256 amountMATICLiquidity = (amountMATIC * (dynamicLiquidityFee)) /
+    (totalMATICFee) /
+    (2);
 
+    uint256 amountToRFV = (amountMATIC *
+    (riskFreeValueFee + (sellFeeRFVAdded))) / (totalMATICFee);
 
-    uint256 amountToRFV = amountMATIC
-    * (riskFreeValueFee + (sellFeeRFVAdded))
-    / (totalMATICFee);
+    uint256 amountToGalaxyBond = (amountMATIC *
+    (buyGalaxyBondFee + (sellGalaxyBond))) / (totalMATICFee);
 
-    uint256 amountToGalaxyBond = amountMATIC
-    * (buyGalaxyBondFee + (sellGalaxyBond))
-    / (totalMATICFee);
-
-    uint256 amountToTreasury = amountMATIC
-    - (amountMATICLiquidity)
-    - (amountToRFV)
-    - (amountToGalaxyBond);
+    uint256 amountToTreasury = amountMATIC -
+    (amountMATICLiquidity) -
+    (amountToRFV) -
+    (amountToGalaxyBond);
 
     (bool success,) = payable(treasuryReceiver).call{
     value : amountToTreasury,
@@ -886,7 +958,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     }
   }
 
-  function manualSwapBack() public onlyOwner {
+  function manualSwapBack() external onlyOwner {
     swapBack();
   }
 
@@ -902,10 +974,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     Withdrawal[] storage withdrawHistory = investor.withdrawHistory;
     for (uint256 i = 0; i < withdrawHistory.length; i++) {
       Withdrawal memory withdraw = withdrawHistory[i];
-      if (withdraw.timestamp >= (block.timestamp - (investRemovalDelay))) {
-        totalWithdrawLastHour = totalWithdrawLastHour + (
-        withdrawHistory[i].withdrawAmount
-        );
+      if (
+        withdraw.timestamp >= (block.timestamp - (investRemovalDelay))
+      ) {
+        totalWithdrawLastHour =
+        totalWithdrawLastHour +
+        (withdrawHistory[i].withdrawAmount);
       }
     }
 
@@ -949,11 +1023,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
       }
     }
 
-    uint256 feeAmount = gonAmount * (_realFee) / (FEE_DENOMINATOR);
+    uint256 feeAmount = (gonAmount * (_realFee)) / (FEE_DENOMINATOR);
 
-    _gonBalances[address(this)] = _gonBalances[address(this)] + (
-    feeAmount
-    );
+    _gonBalances[address(this)] = _gonBalances[address(this)] + (feeAmount);
 
     emit Transfer(sender, address(this), (feeAmount / (_gonsPerFragment)));
 
@@ -973,9 +1045,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     if (subtractedValue >= oldValue) {
       _allowedFragments[msg.sender][spender] = 0;
     } else {
-      _allowedFragments[msg.sender][spender] = oldValue - (
-      subtractedValue
-      );
+      _allowedFragments[msg.sender][spender] =
+      oldValue -
+      (subtractedValue);
     }
     emit Approval(
       msg.sender,
@@ -989,9 +1061,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   external
   returns (bool)
   {
-    _allowedFragments[msg.sender][spender] = _allowedFragments[msg.sender][
-    spender
-    ] - (addedValue);
+    _allowedFragments[msg.sender][spender] =
+    _allowedFragments[msg.sender][spender] -
+    (addedValue);
     emit Approval(
       msg.sender,
       spender,
@@ -1016,13 +1088,13 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     if (!inSwap) {
       do {
         supplyDelta = int256(
-          _totalSupply * (REWARD_YIELD) / (REWARD_YIELD_DENOMINATOR)
+          (_totalSupply * (REWARD_YIELD)) / (REWARD_YIELD_DENOMINATOR)
         );
         coreRebase(supplyDelta);
-        emit LogManualRebase(supplyDelta, nextRebase);
         i++;
       }
       while (nextRebase < block.timestamp && i < 100);
+      manualSync();
     }
   }
 
@@ -1096,10 +1168,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
     do {
       supplyDelta = int256(
-        _totalSupply * (REWARD_YIELD) / (REWARD_YIELD_DENOMINATOR)
+        (_totalSupply * (REWARD_YIELD)) / (REWARD_YIELD_DENOMINATOR)
       );
       coreRebase(supplyDelta);
-      emit LogManualRebase(supplyDelta, nextRebase);
       i++;
     }
     while (nextRebase < block.timestamp && i < 100);
@@ -1114,6 +1185,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   returns (bool)
   {
     require(isMoveBalance, 'can not move');
+    require(initialDistributionFinished, 'Trade off');
     // Allow to move balance only once
     require(!_disallowedToMove[msg.sender], 'not allowed');
     require(balanceOf(msg.sender) > 0, 'No tokens');
@@ -1140,12 +1212,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   function updateRebaseIndex(uint256 epoch) private {
     // update the next Rebase time
-    nextRebase = epoch + (rebaseFrequency);
-
-    //update Index similarly to OHM, so a wrapped token created is possible (wSPHERE)
-
-    //formula: rebaseIndex * (1 * 10 ** 18 + ((1 * 10 ** 18) * rewardYield / rewardYieldDenominator)) / 1 * 10 ** 18
-    rebaseIndex = rebaseIndex * (1e18 + (1e18 * REWARD_YIELD / REWARD_YIELD_DENOMINATOR/ 1e18));
+    nextRebase = epoch + rebaseFrequency;
 
     //simply show how often we rebased since inception (how many epochs)
     rebaseEpoch += 1;
@@ -1285,6 +1352,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     emit SetHourlyLimit(_value);
   }
 
+  function setContractToChange(address _value) external onlyOwner {
+    convertTo = _value;
+
+    emit SetContractToChange(_value);
+  }
+
   function setPartyListDivisor(uint256 _value) external onlyOwner {
     require(_value <= MAX_PARTY_LIST_DIVISOR_RATE, 'max party');
     partyListDivisor = _value;
@@ -1324,7 +1397,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 _denom
   ) external onlyOwner {
     swapEnabled = _enabled;
-    gonSwapThreshold = TOTAL_GONS * (_num) / (_denom);
+    gonSwapThreshold = (TOTAL_GONS * (_num)) / (_denom);
     emit SetSwapBackSettings(_enabled, _num, _denom);
   }
 
@@ -1364,17 +1437,17 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     sellGalaxyBond = _sellGalaxyBond;
     realFeePartyArray = _realFeePartyArray;
 
-    uint256 maxTotalBuyFee = liquidityFee
-    + (treasuryFee)
-    + (burnFee)
-    + (buyGalaxyBondFee)
-    + (riskFreeValueFee);
+    uint256 maxTotalBuyFee = liquidityFee +
+    (treasuryFee) +
+    (burnFee) +
+    (buyGalaxyBondFee) +
+    (riskFreeValueFee);
 
-    uint256 maxTotalSellFee = maxTotalBuyFee
-    + (sellFeeTreasuryAdded)
-    + (sellFeeRFVAdded)
-    + (sellBurnFee)
-    + (sellGalaxyBond);
+    uint256 maxTotalSellFee = maxTotalBuyFee +
+    (sellFeeTreasuryAdded) +
+    (sellFeeRFVAdded) +
+    (sellBurnFee) +
+    (sellGalaxyBond);
 
     require(maxTotalBuyFee < MAX_TOTAL_BUY_FEE_RATE, 'max buy fees');
 
@@ -1382,7 +1455,8 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
     require(realFeePartyArray < MAX_PARTY_ARRAY, 'max party fees');
 
-    setSellFee(maxTotalSellFee);
+    totalBuyFee = maxTotalBuyFee;
+    totalSellFee = maxTotalSellFee;
 
     isTaxBracketEnabledInMoveFee = _isTaxBracketEnabledInMoveFee;
 
@@ -1399,19 +1473,15 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     );
   }
 
-  function setSellFee(uint256 _sellFee) internal {
-    totalSellFee = _sellFee;
-  }
-
   function setPartyTime(bool _value) external onlyOwner {
     partyTime = _value;
     emit SetPartyTime(_value, block.timestamp);
   }
 
-  function setTaxBracketFeeMultiplier(uint256 _taxBracketFeeMultiplier, bool _isTaxBracketEnabled)
-  external
-  onlyOwner
-  {
+  function setTaxBracketFeeMultiplier(
+    uint256 _taxBracketFeeMultiplier,
+    bool _isTaxBracketEnabled
+  ) external onlyOwner {
     require(
       _taxBracketFeeMultiplier <= MAX_TAX_BRACKET_FEE_RATE,
       'max bracket fee exceeded'
@@ -1600,7 +1670,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   );
 
   event LogRebase(uint256 indexed epoch, uint256 totalSupply);
-  event LogManualRebase(int256 supplyDelta, uint256 timeStamp);
   event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
   event SetInitialDistribution(bool indexed value);
   event SetInvestRemovalDelay(uint256 indexed value);
@@ -1609,6 +1678,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   event SetIsLiquidityEnabled(bool indexed value);
   event SetPartyListDivisor(uint256 indexed value);
   event SetHourlyLimit(bool indexed value);
+  event SetContractToChange(address indexed value);
   event SetSwapThreshold(uint256 indexed value);
   event SetTotalFeeExempt(address indexed addy, bool indexed value);
   event SetBuyFeeExempt(address indexed addy, bool indexed value);

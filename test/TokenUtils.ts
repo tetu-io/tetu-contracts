@@ -56,7 +56,7 @@ export class TokenUtils {
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
     [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
     [FtmAddresses.g3CRV_TOKEN, '0xd4f94d0aaa640bbb72b5eec2d85f6d114d81a88e'.toLowerCase()], // gauge
-    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
+    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x3b6b158a76fd8ccc297538f454ce7b4787778c7c'.toLowerCase()], // gauge
     [FtmAddresses.USD_BTC_ETH_CRV_TOKEN, '0x00702bbdead24c40647f235f15971db0867f6bdb'.toLowerCase()], // gauge
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
@@ -118,6 +118,7 @@ export class TokenUtils {
     [FtmAddresses.BEETS_TOKEN,'0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
     [FtmAddresses.SPIRIT_TOKEN,'0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit
     [FtmAddresses.TAROT_TOKEN,'0x11D90eA9d16e1Ee5879B299A819F6D618816D70F'.toLowerCase()], // spooky lp
+    [MaticAddresses.SPHEREV2_TOKEN,'0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
