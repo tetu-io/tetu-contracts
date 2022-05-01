@@ -108,7 +108,9 @@ contract DepositHelper is ReentrancyGuard {
     for (uint i = 0; i < len; ++i) {
       IERC20 token = IERC20(rewardTokens[i]);
       uint balance =  token.balanceOf(address(this));
-      token.safeTransfer(msg.sender, balance);
+      if (balance > 0) {
+        token.safeTransfer(msg.sender, balance);
+      }
     }
   }
 
