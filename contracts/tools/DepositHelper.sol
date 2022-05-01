@@ -63,7 +63,7 @@ contract DepositHelper is ReentrancyGuard {
 
   /// @notice Withdraws from vault specified share amount. Caller receives underlying token.
   /// @dev Approval for share token is assumed.
-  /// @param vault_ A target vault for deposit
+  /// @param vault_ A target vault withdraw from
   /// @param shareTokenAmount_ Amount of vault's share token to withdraw
   function withdrawFromVault(address vault_, uint256 shareTokenAmount_)
   external nonReentrant onlyOneCallPerBlockPerVault(vault_) {
@@ -79,10 +79,36 @@ contract DepositHelper is ReentrancyGuard {
 
     IERC20(underlying).safeTransfer(msg.sender, underlyingBalance);
 
+    _claimAndSendAllRewards(vault_);
+
     // send change (if any) back
     uint256 shareBalance = IERC20(vault_).balanceOf(address(this));
     if (shareBalance > 0) {
       IERC20(vault_).safeTransfer(msg.sender, shareBalance);
+    }
+  }
+
+  /// @notice Claims rewards from vault. Caller receives all reward tokens.
+  /// @dev Approval for share token is assumed.
+  /// @param vault_ A target vault to claim rewards from
+  function getAllRewards(address vault_)
+  external nonReentrant onlyOneCallPerBlockPerVault(vault_) {
+    _claimAndSendAllRewards(vault_);
+  }
+
+  // ************************* INTERNAL *******************
+
+  /// @notice Claims and transfers all reward tokens to msg.sender
+  /// @param vault_ A target vault to claim rewards from
+  function _claimAndSendAllRewards(address vault_)
+  internal {
+    ISmartVault(vault_).getAllRewards();
+    address[] memory rewardTokens = ISmartVault(vault_).rewardTokens();
+    uint len = rewardTokens.length;
+    for (uint i = 0; i < len; ++i) {
+      IERC20 token = IERC20(rewardTokens[i]);
+      uint balance =  token.balanceOf(address(this));
+      token.safeTransfer(msg.sender, balance);
     }
   }
 
