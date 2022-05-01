@@ -118,6 +118,7 @@ export class StrategyTestUtils {
     const start = Date.now();
     await forwarder.setLiquidityNumerator(30);
     await forwarder.setLiquidityRouter(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
+    // please set liquidation path for each test individually
     await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);
   }
@@ -151,7 +152,9 @@ export class StrategyTestUtils {
     if (deploy) {
       deployInfo.core = await DeployerUtils.deployAllCoreContracts(signer);
       deployInfo.tools = await DeployerUtils.deployAllToolsContracts(signer, deployInfo.core);
-      await StrategyTestUtils.initForwarder(deployInfo.core.feeRewardForwarder);
+      if (!(await deployInfo.core.feeRewardForwarder.blueChipsTokens(await DeployerUtils.getNetworkTokenAddress()))) {
+        await StrategyTestUtils.initForwarder(deployInfo.core.feeRewardForwarder);
+      }
     } else {
       deployInfo.core = await DeployerUtils.getCoreAddressesWrapper(signer);
       deployInfo.tools = await DeployerUtils.getToolsAddressesWrapper(signer);

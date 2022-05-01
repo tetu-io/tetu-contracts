@@ -22,9 +22,9 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 const vaultsSet = new Set<string>([
-  '0x0ed08c9A2EFa93C4bF3C8878e61D2B6ceD89E9d7',
-  '0x57205cC741f8787a5195B2126607ac505E11B650',
-  '0x5de724eD41317fD0212133ef4A1530005bb5837f'
+  '0xbd2e7f163d7605fa140d873fea3e28a031370363',
+  '0xee3b4ce32a6229ae15903cda0a5da92e739685f7',
+  '0x6781e4a6e6082186633130f08246a7af3a7b8b40'
 ]);
 
 describe("auto rewarder tests", function () {
@@ -64,9 +64,10 @@ describe("auto rewarder tests", function () {
       controller.address,
       rewardCalculator.address,
       utils.parseUnits('0.231').toString(),
-      utils.parseUnits('1000').toString()
+      utils.parseUnits('1000').toString(),
+      60 * 60 * 24 * 7
     ))[0];
-
+    await rewarder.setPeriod(60 * 60 * 24);
     console.log('gov', await controller.governance())
     // await rewardCalculator.set
     await controller.setRewardDistribution([rewarder.address], true);
@@ -88,7 +89,7 @@ describe("auto rewarder tests", function () {
     const rewardsPerDay = await rewarder.rewardsPerDay();
     console.log('rewards per day', utils.formatUnits(rewardsPerDay));
 
-    await MintHelperUtils.mint(controller, announcer,'0', rewarder.address, true);
+    await MintHelperUtils.mint(controller, announcer, '0', rewarder.address, true);
 
     const bal = await TokenUtils.balanceOf(core.rewardToken.address, rewarder.address);
     console.log('minted', utils.formatUnits(bal));
@@ -120,7 +121,7 @@ describe("auto rewarder tests", function () {
     expect(distributed).is.eq(0);
   });
 
-  it("distribute to vaults set", async () => {
+  it.skip("distribute to vaults set", async () => {
     const net = await ethers.provider.getNetwork();
     // todo creat on fantom
     if (net.chainId !== 137) {

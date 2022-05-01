@@ -24,11 +24,11 @@ describe("Controller tests", function () {
   let networkToken: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshotBefore = await TimeUtils.snapshot();
     vaultController = core.vaultController;
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();

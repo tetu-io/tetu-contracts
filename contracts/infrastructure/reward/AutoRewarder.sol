@@ -29,8 +29,7 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.2.0";
-  uint256 public constant PERIOD = 7 days - 4 hours;
+  string public constant VERSION = "1.2.1";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
 
@@ -38,6 +37,7 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   event TokenMoved(address token, uint256 amount);
   event NetworkRatioChanged(uint256 value);
   event RewardPerDayChanged(uint256 value);
+  event PeriodChanged(uint256 value);
   event ResetCycle(uint256 lastDistributedId, uint256 distributed);
   event DistributedTetu(address vault, uint256 toDistribute);
   event PlatformStatusChanged(uint256 platform, bool status);
@@ -48,13 +48,15 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
     address _controller,
     address _rewardCalculator,
     uint _networkRatio,
-    uint _rewardPerDay
+    uint _rewardPerDay,
+    uint _period
   ) external initializer {
     ControllableV2.initializeControllable(_controller);
     AutoRewarderStorage.initializeAutoRewarderStorage(
       _rewardCalculator,
       _networkRatio,
-      _rewardPerDay
+      _rewardPerDay,
+      _period
     );
   }
 
@@ -84,10 +86,10 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   }
 
   /// @dev Capacity for daily distribution. Calculates based on TETU vesting logic
-  function maxRewardsPerDay() public view virtual returns (uint256) {
+  function maxRewardsPerPeriod() public view virtual returns (uint256) {
     return (_maxSupplyPerWeek(tetuToken().currentWeek())
     - _maxSupplyPerWeek(tetuToken().currentWeek() - 1))
-    * networkRatio() / (7 days / PERIOD) / NETWORK_RATIO_DENOMINATOR;
+    * networkRatio() / (7 days / period()) / NETWORK_RATIO_DENOMINATOR;
   }
 
   // ********* GOV ACTIONS ****************
@@ -100,10 +102,16 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   }
 
   /// @dev Set rewards amount for daily distribution
-  function setRewardPerDay(uint256 _value) external onlyControllerOrGovernance {
-    require(_value <= maxRewardsPerDay(), "AR: Rewards per day too high");
+  function setRewardPerPeriod(uint256 _value) external onlyControllerOrGovernance {
+    require(_value <= maxRewardsPerPeriod(), "AR: Rewards per day too high");
     _setRewardsPerDay(_value);
     emit RewardPerDayChanged(_value);
+  }
+
+  /// @dev Set rewards period. Assume to be 1 week.
+  function setPeriod(uint256 _value) external onlyControllerOrGovernance {
+    _setPeriod(_value);
+    emit PeriodChanged(_value);
   }
 
   /// @dev Move tokens to controller where money will be protected with time lock
@@ -119,6 +127,39 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
       excludedPlatforms[_platforms[i]] = _status;
       emit PlatformStatusChanged(_platforms[i], _status);
     }
+  }
+
+  // ************** CLEAR FOR RESET THIS CONTRACT ********************
+
+  function clearVaultsFull() external onlyControllerOrGovernance {
+    uint length = vaults.length;
+    for (uint i; i < length; i++) {
+      address vault = vaults[i];
+      delete lastInfo[vault];
+      delete lastDistributionTs[vault];
+      delete lastDistributedAmount[vault];
+    }
+    delete vaults;
+    _setTotalStrategyRewards(0);
+    _setLastDistributedId(0);
+    _setDistributed(0);
+  }
+
+  /// @dev Once called should be done for all vaults!
+  function clearVaultsInfo(address[] memory vaults_) external onlyControllerOrGovernance {
+    for (uint i; i < vaults_.length; i++) {
+      delete lastInfo[vaults_[i]];
+      delete lastDistributionTs[vaults_[i]];
+      delete lastDistributedAmount[vaults_[i]];
+    }
+  }
+
+  /// @dev Must be called after clearing info!
+  function clearVaults() external onlyControllerOrGovernance {
+    delete vaults;
+    _setTotalStrategyRewards(0);
+    _setLastDistributedId(0);
+    _setDistributed(0);
   }
 
   // ********* DISTRIBUTOR ACTIONS ****************
@@ -151,9 +192,9 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
         continue;
       }
       RewardInfo memory info = lastInfo[_vaults[i]];
-      require(block.timestamp - info.time > PERIOD, "AR: Info too young");
+      require(block.timestamp - info.time > period(), "AR: Info too young");
 
-      uint256 rewards = rc.strategyRewardsUsd(ISmartVault(_vaults[i]).strategy(), PERIOD);
+      uint256 rewards = rc.strategyRewardsUsd(ISmartVault(_vaults[i]).strategy(), period());
 
       // new vault
       if (info.vault == address(0)) {
@@ -171,7 +212,7 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
     require(_vaults.length == _strategyRewards.length, "AR: Wrong arrays");
     for (uint256 i = 0; i < _vaults.length; i++) {
       RewardInfo memory info = lastInfo[_vaults[i]];
-      require(block.timestamp - info.time > PERIOD, "AR: Info too young");
+      require(block.timestamp - info.time > period(), "AR: Info too young");
 
       uint256 rewards = _strategyRewards[i];
       // new vault
@@ -195,10 +236,10 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
     }
     RewardInfo memory info = lastInfo[_vault];
     require(info.vault == _vault, "AR: Info not found");
-    require(block.timestamp - info.time < PERIOD, "AR: Info too old");
-    require(block.timestamp - lastDistributionTs[_vault] > PERIOD, "AR: Too early");
+    require(block.timestamp - info.time < period(), "AR: Info too old");
+    require(block.timestamp - lastDistributionTs[_vault] > period(), "AR: Too early");
     require(distributed() < rewardsPerDay(), "AR: Distributed too much");
-    require(rewardsPerDay() <= maxRewardsPerDay(), "AR: Rewards per day too high");
+    require(rewardsPerDay() <= maxRewardsPerPeriod(), "AR: Rewards per day too high");
     require(totalStrategyRewards() != 0, "AR: Zero total rewards");
 
     if (info.strategyRewardsUsd == 0) {

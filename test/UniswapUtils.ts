@@ -95,7 +95,8 @@ export class UniswapUtils {
   }
 
   private static isFeeToken(token: string) {
-    return token.toLowerCase() === MaticAddresses.SPHERE_TOKEN.toLowerCase();
+    return token.toLowerCase() === MaticAddresses.SPHERE_TOKEN.toLowerCase()
+      || token.toLowerCase() === MaticAddresses.SPHEREV2_TOKEN.toLowerCase();
   }
 
   public static async addLiquidity(

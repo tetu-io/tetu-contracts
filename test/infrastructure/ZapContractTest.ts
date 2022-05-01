@@ -45,11 +45,11 @@ describe("Zap contract tests", function () {
 
   before(async function () {
     this.timeout(1200000);
-    snapshot = await TimeUtils.snapshot();
     user = (await ethers.getSigners())[1];
     signer = await DeployerUtils.impersonate();
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
 
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
