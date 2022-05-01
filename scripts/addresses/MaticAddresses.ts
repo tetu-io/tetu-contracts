@@ -68,6 +68,7 @@ export class MaticAddresses {
   public static UNT_TOKEN = '0xc46DB78Be28B5F2461097ed9e3Fcc92E9FF8676d'.toLowerCase();
   public static UMA_TOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
   public static SPHERE_TOKEN = '0x8D546026012bF75073d8A586f24A5d5ff75b9716'.toLowerCase();
+  public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
@@ -154,6 +155,7 @@ export class MaticAddresses {
   public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
   public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
   public static CURVE_aTricrypto3_POOL = "0x1d8b86e3d88cdb2d34688e87e72f388cb541b7c8".toLocaleLowerCase();
+  public static CURVE_aTricrypto3V2_POOL = "0x92215849c439E1f8612b6646060B4E3E5ef822cC".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
 

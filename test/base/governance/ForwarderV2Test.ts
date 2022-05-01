@@ -34,11 +34,11 @@ describe("ForwarderV2 tests", function () {
   let factory: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[1];
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
+    snapshotBefore = await TimeUtils.snapshot();
     forwarder = (await DeployerUtils.deployForwarderV2(signer, core.controller.address))[0];
 
     await core.announcer.announceAddressChange(2, forwarder.address);
@@ -91,6 +91,7 @@ describe("ForwarderV2 tests", function () {
     await forwarder.setSlippageNumerator(50);
 
     await StrategyTestUtils.initForwarder(forwarder);
+    await StrategyTestUtils.setConversionPaths(forwarder);
     await TokenUtils.getToken(usdc, signer.address, amount)
   });
 

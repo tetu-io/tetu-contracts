@@ -28,10 +28,10 @@ describe("liquidity balancer tsets", function () {
   let router: string;
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
     token = core.rewardToken.address;
 

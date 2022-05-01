@@ -19,13 +19,13 @@ const ROUTER = MaticAddresses.TETU_SWAP_ROUTER;
 
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-    .env('TETU')
-    .options({
-      hardhatChainId: {
-        type: "number",
-        default: 137
-      },
-    }).argv;
+  .env('TETU')
+  .options({
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+  }).argv;
 
 describe("TradeBotTest", function () {
   let snapshot: string;

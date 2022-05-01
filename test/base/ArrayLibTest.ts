@@ -25,7 +25,7 @@ describe("Array lib tests", function () {
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     arraylib = await DeployerUtils.deployContract(signer, "ArrayLibTest") as ArrayLibTest;
     usdc = await DeployerUtils.getUSDCAddress();
     tetu = await DeployerUtils.getTETUAddress();

@@ -28,7 +28,7 @@ abstract contract BeethovenBase is StrategyBase {
   /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.0.1";
   /// @dev 10% buyback
-  uint private constant _BUY_BACK_RATIO = 1000;
+  uint private constant _BUY_BACK_RATIO = 10_00;
   /// @notice MasterChef rewards pool
   address public pool;
   /// @notice MasterChef rewards pool ID

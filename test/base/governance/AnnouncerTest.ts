@@ -28,10 +28,10 @@ describe("Announcer tests", function () {
   let usdc: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshotBefore = await TimeUtils.snapshot();
     controller = core.controller;
     announcer = core.announcer;
     timeLockDuration = (await core.announcer.timeLock()).toNumber();
@@ -784,24 +784,25 @@ describe("Announcer tests", function () {
     expect(await controller.announcer()).is.eq(newAnnouncer.address);
 
     // ******************
+    const WEEK = 60 * 60 * 24 * 7;
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
     // mint 2
     await controller.connect(signer1).setDistributor(core.notifyHelper.address);
-    await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
+    await TimeUtils.advanceBlocksOnTs(WEEK * 4);
     await controller.connect(signer1).mintAndDistribute(0, true);
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
     // mint 3
-    await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
+    await TimeUtils.advanceBlocksOnTs(WEEK * 4);
     await controller.connect(signer1).mintAndDistribute(0, true);
 
     await newAnnouncer.connect(signer1).announceMint(0, core.notifyHelper.address, fk, true);
 
     // mint 4
-    await TimeUtils.advanceBlocksOnTs(timeLockDuration * 4);
+    await TimeUtils.advanceBlocksOnTs(WEEK * 4);
     await controller.connect(signer1).mintAndDistribute(0, true);
   });
 

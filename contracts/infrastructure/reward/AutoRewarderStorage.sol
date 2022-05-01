@@ -53,11 +53,13 @@ abstract contract AutoRewarderStorage is Initializable {
   function initializeAutoRewarderStorage(
     address _rewardCalculator,
     uint _networkRatio,
-    uint _rewardPerDay
+    uint _rewardPerDay,
+    uint _period
   ) public initializer {
     _setRewardCalculator(_rewardCalculator);
     _setNetworkRatio(_networkRatio);
     _setRewardsPerDay(_rewardPerDay);
+    _setPeriod(_period);
   }
 
   // ******************* SETTERS AND GETTERS **********************
@@ -89,6 +91,16 @@ abstract contract AutoRewarderStorage is Initializable {
   /// @dev Capacity for daily distribution. Gov set it manually
   function rewardsPerDay() public view returns (uint256) {
     return getUint256("rewardsPerDay");
+  }
+
+  function _setPeriod(uint256 _value) internal {
+    emit UpdatedUint256Slot("period", period(), _value);
+    setUint256("period", _value);
+  }
+
+  /// @dev Rewards period
+  function period() public view returns (uint256) {
+    return getUint256("period");
   }
 
   function _setTotalStrategyRewards(uint256 _value) internal {

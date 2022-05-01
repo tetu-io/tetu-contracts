@@ -34,11 +34,11 @@ describe("pawnshop reader tests", function () {
 
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user1 = (await ethers.getSigners())[1];
     user2 = (await ethers.getSigners())[2];
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
     const logic = await DeployerUtils.deployContract(signer, "PawnShopReader") as PawnShopReader;
     const proxy = await DeployerUtils.deployContract(
       signer, "TetuProxyGov", logic.address) as TetuProxyGov;
