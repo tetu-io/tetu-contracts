@@ -21,8 +21,6 @@ describe("Deposit Helper tests", function () {
   let signer: SignerWithAddress;
   let core: CoreContractsWrapper;
   let depositHelper: DepositHelper;
-  // let usdc: string;
-  // let networkToken: string;
   let allVaults: string[];
   const activeVaults: {
     vaultAddress: string;
@@ -43,11 +41,6 @@ describe("Deposit Helper tests", function () {
 
     depositHelper = await DeployerUtils.deployContract(signer, 'DepositHelper') as DepositHelper;
     await core.controller.changeWhiteListStatus([depositHelper.address], true);
-
-    // usdc = await DeployerUtils.getUSDCAddress();
-    // networkToken = await DeployerUtils.getNetworkTokenAddress();
-    // await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    // await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('100000'));
 
   });
 
@@ -75,9 +68,11 @@ describe("Deposit Helper tests", function () {
       // const vault = await DeployerUtils.connectVault(vaultAddress, signer);
       const vault = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
       const vaultActive = await vault.active();
-      if (!vaultActive) return;
+      if (!vaultActive) {
+        console.log('Vault inactive');
+        return;
+      }
 
-      console.log('vaultActive');
       const underlyingAddress = await vault.underlying();
       console.log('underlyingAddress', underlyingAddress);
       const decimals = await TokenUtils.decimals(underlyingAddress)
