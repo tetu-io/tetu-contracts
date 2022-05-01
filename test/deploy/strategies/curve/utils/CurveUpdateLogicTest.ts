@@ -59,7 +59,7 @@ describe.skip("Tests for updateCurveStrategy - Matic", function () {
 /**
  * These tests should be skipped in CI, they are intended for debugging code of various curve-update scripts
  */
-describe("Tests for updateCurveStrategy - Fantom", function () {
+describe.skip("Tests for updateCurveStrategy - Fantom", function () {
 
   it("CurveRenFtmStrategy", async () => {
     const vaultNameWithoutPrefix = "CRV_REN";
