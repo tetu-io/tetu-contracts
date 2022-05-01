@@ -9,6 +9,7 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -83,7 +84,12 @@ describe("Deposit Helper tests", function () {
       console.log('decimals', decimals);
       activeVaults.push({vaultAddress, underlyingAddress, decimals});
 
-      const amount = utils.parseUnits('10', decimals);
+      let depositUnits = '100';
+      if (underlyingAddress.toLowerCase() === MaticAddresses.WBTC_TOKEN) {
+        depositUnits = '0.1';
+      }
+
+      const amount = utils.parseUnits(depositUnits, decimals);
       const balanceInitial = await TokenUtils.balanceOf(underlyingAddress, signer.address);
       try {
         await TokenUtils.getToken(underlyingAddress, signer.address, amount);
@@ -103,7 +109,7 @@ describe("Deposit Helper tests", function () {
       console.log('sharesAmount', sharesAmount);
 
       await TokenUtils.approve(vaultAddress, signer, depositHelper.address, sharesAmount.toString());
-      console.log('depositToVault...');
+      console.log('withdrawFromVault...');
       await depositHelper.withdrawFromVault(vaultAddress, sharesAmount);
       const sharesAfter = await TokenUtils.balanceOf(vaultAddress, signer.address);
 

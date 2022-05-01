@@ -92,7 +92,7 @@ contract DepositHelper is ReentrancyGuard {
   /// @dev Approval for share token is assumed.
   /// @param vault_ A target vault to claim rewards from
   function getAllRewards(address vault_)
-  external nonReentrant onlyOneCallPerBlockPerVault(vault_) {
+  external nonReentrant {
     _claimAndSendAllRewards(vault_);
   }
 
