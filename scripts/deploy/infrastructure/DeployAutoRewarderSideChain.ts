@@ -1,6 +1,5 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {RunHelper} from "../../utils/tools/RunHelper";
 import {utils} from "ethers";
 import {AutoRewarder, AutoRewarderSideChain, TetuProxyGov} from "../../../typechain";
 
@@ -13,8 +12,14 @@ async function main() {
   const logic = await DeployerUtils.deployContract(signer, "AutoRewarderSideChain") as AutoRewarderSideChain;
   const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
   const contract = logic.attach(proxy.address) as AutoRewarder;
-  await contract.initialize(core.controller, core.rewardCalculator, utils.parseUnits('0'), utils.parseUnits('50000'));
-  const data =  [contract, proxy, logic];
+  await contract.initialize(
+    core.controller,
+    core.rewardCalculator,
+    utils.parseUnits('0'),
+    utils.parseUnits('50000'),
+    60 * 60 * 24 * 7
+  );
+  const data = [contract, proxy, logic];
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(data[2].address);

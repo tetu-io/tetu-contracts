@@ -4,7 +4,7 @@ import {DeployStubVault} from "../DeployStubVault";
 async function main() {
   await DeployStubVault.deploy(
     'SPHERE',
-    MaticAddresses.SPHERE_TOKEN,
+    MaticAddresses.SPHEREV2_TOKEN,
     35
   )
 }

@@ -22,7 +22,7 @@ describe("Tetu pawnshop gov tests", function () {
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
     shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS,parseUnits('1000'), signer.address,) as TetuPawnShop;

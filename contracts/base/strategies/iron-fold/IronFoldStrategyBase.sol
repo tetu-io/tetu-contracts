@@ -34,7 +34,7 @@ abstract contract IronFoldStrategyBase is FoldingBase, IIronFoldStrategy {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.5.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  uint256 private constant _BUY_BACK_RATIO = 100_00;
   /// @dev precision for the folding profitability calculation
   uint256 private constant _PRECISION = 10 ** 18;
   /// @dev ICE rToken address for reward price determination

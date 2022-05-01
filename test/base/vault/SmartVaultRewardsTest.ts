@@ -29,9 +29,9 @@ describe("Smart vault rewards test", () => {
   let networkToken: string;
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
     const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 

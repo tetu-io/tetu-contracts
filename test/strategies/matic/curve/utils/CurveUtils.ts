@@ -17,6 +17,7 @@ import {UniswapUtils} from "../../../../UniswapUtils";
 import {TokenUtils} from "../../../../TokenUtils";
 import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
 import {FtmAddresses} from "../../../../../scripts/addresses/FtmAddresses";
+import {parseUnits} from "ethers/lib/utils";
 
 export class CurveUtils {
 
@@ -118,10 +119,13 @@ export class CurveUtils {
 
   public static async swapTricrypto(signer: SignerWithAddress) {
     console.log('swap tricrypto')
-    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, utils.parseUnits('10000', 6));
+    const dec = 18;
+    const token = MaticAddresses.DAI_TOKEN;
+    const amount = parseUnits('10000', dec);
+    await TokenUtils.getToken(token, signer.address, amount);
     const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPool', MaticAddresses.CURVE_aTricrypto3_POOL) as ITricryptoPool;
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, pool.address, utils.parseUnits('10000', 6).mul(2).toString());
-    await pool.exchange_underlying(1, 0, utils.parseUnits('10000', 6), 0, signer.address);
+    await TokenUtils.approve(token, signer, pool.address, amount.toString());
+    await pool.exchange_underlying(0, 1, amount, 0, signer.address);
     console.log('swap tricrypto completed')
   }
 

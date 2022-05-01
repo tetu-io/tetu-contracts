@@ -118,6 +118,7 @@ export class TokenUtils {
     [FtmAddresses.BEETS_TOKEN,'0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
     [FtmAddresses.SPIRIT_TOKEN,'0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit
     [FtmAddresses.TAROT_TOKEN,'0x11D90eA9d16e1Ee5879B299A819F6D618816D70F'.toLowerCase()], // spooky lp
+    [MaticAddresses.SPHEREV2_TOKEN,'0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     [MaticAddresses.UMA_TOKEN,'0x1b72bac3772050fdcaf468cce7e20deb3cb02d89'.toLowerCase()],
     [MaticAddresses.CLAM2_TOKEN,'0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()]
   ]);

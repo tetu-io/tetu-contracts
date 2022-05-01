@@ -30,12 +30,12 @@ describe("Tetu pawnshop base tests", function () {
   let networkToken: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user1 = (await ethers.getSigners())[1];
     user2 = (await ethers.getSigners())[2];
     user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
+    snapshotBefore = await TimeUtils.snapshot();
 
     shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop',
       signer.address,

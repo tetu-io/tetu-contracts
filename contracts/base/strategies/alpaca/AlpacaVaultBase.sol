@@ -31,7 +31,7 @@ abstract contract AlpacaVaultBase is StrategyBase{
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
   /// @dev 10% buyback
-  uint private constant _BUY_BACK_RATIO = 1000;
+  uint private constant _BUY_BACK_RATIO = 10_00;
   address public alpacaVault;
   IFairLaunch private fairLaunchPool;
   uint private poolID;
