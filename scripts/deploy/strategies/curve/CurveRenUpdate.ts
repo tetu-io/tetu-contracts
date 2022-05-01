@@ -1,18 +1,18 @@
 import {ethers, network} from "hardhat";
-import {updateCurveStrategy,} from "./utils/CurveUpdateLogic";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
+import {updateCurveStrategy,} from "./utils/CurveUpdateLogic";
 
 /**
- * Deploy new version of CurveATriCrypto3Strategy to Matic
+ * Deploy new version of CurveRenStrategy to Matic
  * Save address of new strategy to ./tmp/update/strategies.txt
  */
 async function main() {
   console.log("network.name", network.name);
 
-  const vaultNameWithoutPrefix = "CRV_ATC3";
-  const strategyName = 'CurveATriCrypto3Strategy';
-  const strategyContractPath = 'contracts/strategies/matic/curve/CurveATriCrypto3Strategy.sol:CurveATriCrypto3Strategy';
-  const token: string = MaticAddresses.USD_BTC_ETH_CRV_TOKEN;
+  const vaultNameWithoutPrefix = "CRV_REN";
+  const strategyName = 'CurveRenStrategy';
+  const strategyContractPath = 'contracts/strategies/matic/curve/CurveRenStrategy.sol:CurveRenStrategy';
+  const token: string = MaticAddresses.BTCCRV_TOKEN;
 
   await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
 }
