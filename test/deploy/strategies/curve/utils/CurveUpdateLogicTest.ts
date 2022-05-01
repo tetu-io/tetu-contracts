@@ -6,7 +6,7 @@ import {FtmAddresses} from "../../../../../scripts/addresses/FtmAddresses";
 /**
  * These tests should be skipped in CI, they are intended for debugging code of various curve-update scripts
  */
-describe("Tests for updateCurveStrategy - Matic", function () {
+describe.skip("Tests for updateCurveStrategy - Matic", function () {
 
   it("CurveRenStrategy", async () => {
     const vaultNameWithoutPrefix = "CRV_REN";
@@ -30,7 +30,13 @@ describe("Tests for updateCurveStrategy - Matic", function () {
     const strategyContractPath = 'contracts/strategies/matic/curve/CurveATriCrypto3Strategy.sol:CurveATriCrypto3Strategy';
     const token: string = MaticAddresses.USD_BTC_ETH_CRV_TOKEN;
 
-    const strategyAddress: string | undefined = await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
+    const strategyAddress: string | undefined = await updateCurveStrategy(
+      vaultNameWithoutPrefix
+      , strategyName
+      , strategyContractPath
+      , token
+      // , "0x96aFb62d057f7E0Dca987C503812b12BEE14f5E5"  // use known vault address to accelerate tests
+    );
     expect(strategyAddress).to.not.equal(undefined);
   });
 
@@ -40,7 +46,12 @@ describe("Tests for updateCurveStrategy - Matic", function () {
     const strategyContractPath = 'contracts/strategies/matic/curve/CurveAaveStrategy.sol:CurveAaveStrategy';
     const token: string = MaticAddresses.AM3CRV_TOKEN;
 
-    const strategyAddress: string | undefined = await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
+    const strategyAddress: string | undefined = await updateCurveStrategy(
+      vaultNameWithoutPrefix,
+      strategyName,
+      strategyContractPath,
+      token
+    );
     expect(strategyAddress).to.not.equal(undefined);
   });
 });
@@ -48,7 +59,7 @@ describe("Tests for updateCurveStrategy - Matic", function () {
 /**
  * These tests should be skipped in CI, they are intended for debugging code of various curve-update scripts
  */
-describe.skip("Tests for updateCurveStrategy - Fantom", function () {
+describe("Tests for updateCurveStrategy - Fantom", function () {
 
   it("CurveRenFtmStrategy", async () => {
     const vaultNameWithoutPrefix = "CRV_REN";
@@ -56,7 +67,12 @@ describe.skip("Tests for updateCurveStrategy - Fantom", function () {
     const strategyContractPath = 'contracts/strategies/fantom/curve/CurveRenFtmStrategy.sol:CurveRenFtmStrategy';
     const token: string = FtmAddresses.renCRV_TOKEN;
 
-    const strategyAddress: string | undefined = await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
+    const strategyAddress: string | undefined = await updateCurveStrategy(
+      vaultNameWithoutPrefix,
+      strategyName,
+      strategyContractPath,
+      token
+    );
     expect(strategyAddress).to.not.equal(undefined);
   });
 
@@ -66,7 +82,12 @@ describe.skip("Tests for updateCurveStrategy - Fantom", function () {
     const strategyContractPath = 'contracts/strategies/fantom/curve/CurveGeistStrategy.sol:CurveGeistStrategy';
     const token = FtmAddresses.g3CRV_TOKEN;
 
-    const strategyAddress: string | undefined = await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
+    const strategyAddress: string | undefined = await updateCurveStrategy(
+      vaultNameWithoutPrefix,
+      strategyName,
+      strategyContractPath,
+      token
+    );
     expect(strategyAddress).to.not.equal(undefined);
   });
 
@@ -76,7 +97,12 @@ describe.skip("Tests for updateCurveStrategy - Fantom", function () {
     const strategyContractPath = 'contracts/strategies/fantom/curve/Curve2PoolStrategy.sol:Curve2PoolStrategy';
     const token: string = FtmAddresses._2poolCrv_TOKEN;
 
-    const strategyAddress: string | undefined = await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
+    const strategyAddress: string | undefined = await updateCurveStrategy(
+      vaultNameWithoutPrefix,
+      strategyName,
+      strategyContractPath,
+      token
+    );
     expect(strategyAddress).to.not.equal(undefined);
   });
 
@@ -86,7 +112,12 @@ describe.skip("Tests for updateCurveStrategy - Fantom", function () {
     const strategyContractPath = 'contracts/strategies/fantom/curve/CurveTriCryptoFtmStrategy.sol:CurveTriCryptoFtmStrategy';
     const token: string = FtmAddresses.USD_BTC_ETH_CRV_TOKEN;
 
-    const strategyAddress: string | undefined = await updateCurveStrategy(vaultNameWithoutPrefix, strategyName, strategyContractPath, token);
+    const strategyAddress: string | undefined = await updateCurveStrategy(
+      vaultNameWithoutPrefix,
+      strategyName,
+      strategyContractPath,
+      token
+    );
     expect(strategyAddress).to.not.equal(undefined);
   });
 });

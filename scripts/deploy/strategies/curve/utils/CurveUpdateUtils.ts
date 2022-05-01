@@ -17,6 +17,7 @@ import {utils} from "ethers";
 import {TokenUtils} from "../../../../../test/TokenUtils";
 import path from "path";
 import {appendFileSync, mkdir} from "fs";
+import {FtmAddresses} from "../../../../addresses/FtmAddresses";
 
 //region Utils: find vault address, save strategy address to file
 /**
@@ -102,8 +103,13 @@ export async function testStrategyAfterUpgradeOnHardhat(
     console.log('Network is not hardhat, testStrategyOnHardhat is skipped')
     return false;
   }
+  const net = await ethers.provider.getNetwork();
 
-  const gov: SignerWithAddress = await DeployerUtils.impersonate(MaticAddresses.GOV_ADDRESS);
+  const gov: SignerWithAddress = await DeployerUtils.impersonate(
+    net.chainId === 137
+      ? MaticAddresses.GOV_ADDRESS
+      : FtmAddresses.GOV_ADDRESS
+  );
   const controller = await DeployerUtils.connectInterface(gov, 'Controller', core.controller) as Controller;
   const announcer = await DeployerUtils.connectInterface(gov, 'Announcer', core.announcer) as Announcer;
 
