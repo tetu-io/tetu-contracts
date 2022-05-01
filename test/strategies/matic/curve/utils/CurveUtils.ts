@@ -59,7 +59,7 @@ export class CurveUtils {
   public static async addLiquidityTrirypto(investor: SignerWithAddress, amountN: number) {
     console.log('try to deposit to atricrypto')
     await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, investor.address, utils.parseUnits('10000', 6));
-    const pool = await ethers.getContractAt("ITricryptoPool", MaticAddresses.CURVE_aTricrypto3V2_POOL, investor) as ITricryptoPool;
+    const pool = await ethers.getContractAt("ITricryptoPool", MaticAddresses.CURVE_aTricrypto3_POOL, investor) as ITricryptoPool;
     const bal = await TokenUtils.balanceOf(MaticAddresses.USDC_TOKEN, investor.address);
     await TokenUtils.approve(MaticAddresses.USDC_TOKEN, investor, pool.address, bal.toString());
     await pool.add_liquidity([0, bal, 0, 0, 0], 0);
@@ -123,7 +123,7 @@ export class CurveUtils {
     const token = MaticAddresses.DAI_TOKEN;
     const amount = parseUnits('10000', dec);
     await TokenUtils.getToken(token, signer.address, amount);
-    const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPool', MaticAddresses.CURVE_aTricrypto3V2_POOL) as ITricryptoPool;
+    const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPool', MaticAddresses.CURVE_aTricrypto3_POOL) as ITricryptoPool;
     await TokenUtils.approve(token, signer, pool.address, amount.toString());
     await pool.exchange_underlying(0, 1, amount, 0, signer.address);
     console.log('swap tricrypto completed')

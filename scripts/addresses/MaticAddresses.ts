@@ -155,7 +155,6 @@ export class MaticAddresses {
   public static CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351".toLocaleLowerCase();
   public static CURVE_renBTC_POOL = "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67".toLocaleLowerCase();
   public static CURVE_aTricrypto3_POOL = "0x1d8b86e3d88cdb2d34688e87e72f388cb541b7c8".toLocaleLowerCase();
-  public static CURVE_aTricrypto3V2_POOL = "0x92215849c439E1f8612b6646060B4E3E5ef822cC".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
 
