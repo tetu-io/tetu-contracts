@@ -38,6 +38,8 @@ interface IGauge {
 
   function claim_rewards(address _addr) external;
 
+  function claim_rewards(address _addr, address receiver) external;
+
   function balanceOf(address) external view returns (uint);
 
   function lp_token() external view returns (address);

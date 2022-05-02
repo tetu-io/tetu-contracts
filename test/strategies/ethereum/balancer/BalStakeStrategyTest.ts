@@ -9,6 +9,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {
   BalDepositor__factory,
+  BalLocker,
   IStrategy,
   IVotingEscrow__factory,
   SmartVault,
@@ -89,11 +90,21 @@ describe('BAL staking tests', async () => {
         await depositor.setAnotherChainRecipient(signer.address);
         await core.controller.setPureRewardConsumers([depositor.address], true);
 
+
         const strategy = await DeployerUtils.deployStrategyProxy(
           signer,
           strategyContractName,
         ) as StrategyBalStaking;
-        await strategy.initialize(core.controller.address, vaultAddress, depositor.address);
+
+        const balLocker = await DeployerUtils.deployContract(signer, 'BalLocker',
+          core.controller.address,
+          strategy.address,
+          EthAddresses.BALANCER_GAUGE_CONTROLLER,
+          EthAddresses.BALANCER_FEE_DISTRIBUTOR,
+        ) as BalLocker;
+
+
+        await strategy.initialize(core.controller.address, vaultAddress, depositor.address, balLocker.address);
         return strategy;
       },
       underlying

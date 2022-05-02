@@ -14,7 +14,7 @@ import {MintHelperUtils} from "../MintHelperUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("liquidity balancer tsets", function () {
+describe.skip("liquidity balancer tsets", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
