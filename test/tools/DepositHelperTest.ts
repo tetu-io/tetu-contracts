@@ -22,11 +22,6 @@ describe("Deposit Helper tests", function () {
   let core: CoreContractsWrapper;
   let depositHelper: DepositHelper;
   let allVaults: string[];
-  const activeVaults: {
-    vaultAddress: string;
-    underlyingAddress: string;
-    decimals: number;
-  }[] = [];
 
   const excludedVaults = [
       '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33', // no biggest holder: reverted with reason string 'BAL#406'
@@ -66,7 +61,6 @@ describe("Deposit Helper tests", function () {
         console.log('Vault excluded.');
         return;
       }
-      // const vault = await DeployerUtils.connectVault(vaultAddress, signer);
       const vault = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
       const vaultActive = await vault.active();
       if (!vaultActive) {
@@ -78,11 +72,12 @@ describe("Deposit Helper tests", function () {
       console.log('underlyingAddress', underlyingAddress);
       const decimals = await TokenUtils.decimals(underlyingAddress)
       console.log('decimals', decimals);
-      activeVaults.push({vaultAddress, underlyingAddress, decimals});
 
       let depositUnits = '100';
       if (underlyingAddress.toLowerCase() === MaticAddresses.WBTC_TOKEN) {
         depositUnits = '0.1';
+      } else if ([MaticAddresses.WETH_TOKEN, MaticAddresses.cxETH_TOKEN].includes(underlyingAddress.toLowerCase())) {
+        depositUnits = '1';
       }
 
       const amount = utils.parseUnits(depositUnits, decimals);
@@ -104,24 +99,48 @@ describe("Deposit Helper tests", function () {
       const balanceAfter = await TokenUtils.balanceOf(underlyingAddress, signer.address);
 
       const sharesAmount = await TokenUtils.balanceOf(vaultAddress, signer.address);
-      console.log('sharesAmount', sharesAmount);
+      console.log('sharesAmount', sharesAmount.toString());
 
       // REWIND RIME
-      const rewindTimeSec = 48 * 60 * 60;
-      console.log('rewindTimeSec', rewindTimeSec);
-      await network.provider.send("evm_increaseTime", [rewindTimeSec])
-      await network.provider.send("evm_mine")
+      const rewindTime = async function() {
+        const rewindTimeSec = 7 * 24 * 60 * 60;
+        console.log('rewindTimeSec', rewindTimeSec);
+        await TimeUtils.advanceBlocksOnTs(rewindTimeSec);
+      }
+      await rewindTime();
 
-      // CHECK REWARDS
+      // DISTRIBUTE REWARDS
       const rewardTokens = await vault.rewardTokens();
       console.log('rewardTokens', rewardTokens);
+      // const vaultGov = await DeployerUtils.connectInterface(gov, 'SmartVault', vaultAddress) as SmartVault;
+
+      const distributeRewards = async function() {
+        await rewindTime();
+        for (const token of rewardTokens) {
+          const tokenDecimals = await TokenUtils.decimals(token);
+          const rewardAmount = utils.parseUnits('10000', tokenDecimals);
+          await TokenUtils.getToken(token, gov.address, rewardAmount);
+          await TokenUtils.approve(token, gov, vaultAddress, rewardAmount.toString());
+          await vault.connect(gov).notifyTargetRewardAmount(token, rewardAmount);
+        }
+      }
+
+      Array(5).map(distributeRewards);
+
+      // CHECK REWARDS
       const rewardBalancesBefore: {[key: string]: BigNumber} = {};
       for (const token of rewardTokens)
         rewardBalancesBefore[token] = await TokenUtils.balanceOf(token, signer.address);
       console.log('rewardBalancesBefore', rewardBalancesBefore);
 
+      const toClaim: {[key: string]: BigNumber} = {};
+      for (const token of rewardTokens) {
+        toClaim[token] = await vault.earned(token, signer.address);
+        console.log('toClaim', token, toClaim[token]);
+      }
       console.log('getAllRewards...');
-      await depositHelper.getAllRewards(vaultAddress);
+      // await depositHelper.getAllRewards(vaultAddress);
+      await vault.getAllRewards();
 
       const rewardBalancesAfter: {[key: string]: BigNumber} = {};
       for (const token of rewardTokens)
@@ -132,8 +151,11 @@ describe("Deposit Helper tests", function () {
           (token) => rewardBalancesAfter[token].sub(rewardBalancesBefore[token])
       );
       console.log('rewardAmounts', rewardAmounts);
-      const totalRewardAmount = rewardAmounts.reduce((sum, curr) => sum.add(curr));
-      console.log('totalRewardAmount', totalRewardAmount);
+      const minRewards = rewardAmounts.reduce((min, curr) => curr.lt(min) ? curr : min);
+      console.log('minRewards', minRewards);
+
+      // REWIND TIME AND DISTRIBUTE REWARDS AGAIN
+      Array(5).map(distributeRewards);
 
       // WITHDRAW
       await TokenUtils.approve(vaultAddress, signer, depositHelper.address, sharesAmount.toString());
@@ -141,10 +163,28 @@ describe("Deposit Helper tests", function () {
       await depositHelper.withdrawFromVault(vaultAddress, sharesAmount);
       const sharesAfter = await TokenUtils.balanceOf(vaultAddress, signer.address);
 
+      await vault.getAllRewards(); // TODO remove
+
+      // CHECK REWARDS AFTER WITHDRAW
+      const rewardBalancesAfterWithdraw: {[key: string]: BigNumber} = {};
+      for (const token of rewardTokens)
+        rewardBalancesAfterWithdraw[token] = await TokenUtils.balanceOf(token, signer.address);
+      console.log('rewardBalancesAfterWithdraw', rewardBalancesAfterWithdraw);
+
+      const rewardAmountsAfterWithdraw = rewardTokens.map(
+        (token) => rewardBalancesAfterWithdraw[token].sub(rewardBalancesAfter[token])
+      );
+      console.log('rewardAmountsAfterWithdraw', rewardAmountsAfterWithdraw);
+      const minRewards2 = rewardAmountsAfterWithdraw.reduce((min, curr) => curr.lt(min) ? curr : min);
+      console.log('minRewards2', minRewards2);
+
+      // EXPECTATIONS
       expect(balanceBefore.sub(balanceInitial)).is.eq(amount);
       expect(balanceAfter).is.eq(balanceInitial);
       expect(sharesAmount).is.gt(0);
       expect(sharesAfter).is.eq(0);
+      expect(minRewards).is.gt(0);
+      expect(minRewards2).is.gt(0);
 
       console.log('+++vault test passed', vaultAddress);
     }
