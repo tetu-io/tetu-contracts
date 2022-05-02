@@ -3,7 +3,7 @@ import {ethers} from "hardhat";
 import {CoreAddresses} from "../../../../models/CoreAddresses";
 import {DeployerUtils} from "../../../DeployerUtils";
 import {ToolsAddresses} from "../../../../models/ToolsAddresses";
-import {deployAndVerifySingleStrategy, findVaultAddress} from "./CurveUpdateUtils";
+import {deployAndVerifySingleStrategy, findVaultAddress} from "../../StratUpdateUtils";
 
 /**
  * Deploy given curve strategy to Matic/Fantom.

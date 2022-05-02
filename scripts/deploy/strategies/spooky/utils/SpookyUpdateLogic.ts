@@ -2,8 +2,8 @@ import {ethers, network} from "hardhat";
 import {DeployerUtils} from "../../../DeployerUtils";
 import {
   deploySingleStrategy,
-  findAllVaults
-} from "../../curve/utils/CurveUpdateUtils";
+  findAllVaults, testStrategyAfterUpgradeOnHardhat, verifySingleStrategy
+} from "../../StratUpdateUtils";
 import {readFileSync} from "fs";
 import {IStrategy} from "../../../../../typechain";
 

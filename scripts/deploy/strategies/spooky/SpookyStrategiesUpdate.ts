@@ -1,27 +1,20 @@
 import {ethers, network} from "hardhat";
-import {DeployerUtils} from "../../DeployerUtils";
-import {IStrategy} from "../../../../typechain";
-import {appendFileSync, readFileSync} from "fs";
-import {
-  deploySingleStrategy,
-  findAllVaults, prepateFileToSaveUpdatedStrategies,
-  saveUpdatedStrategiesToFile,
-  verifySingleStrategy
-} from "../curve/utils/CurveUpdateUtils";
-import {makePrepareUpgrade} from "@openzeppelin/hardhat-upgrades/dist/prepare-upgrade";
+import {appendFileSync} from "fs";
 import {updateSpookyStrategy} from "./utils/SpookyUpdateLogic";
+import {prepateFileToSaveUpdatedStrategies} from "../StratUpdateUtils";
 
 
 async function main() {
   console.log("network.name", network.name);
 
+  const spookyPoolsCsv = 'scripts/utils/download/data/spooky_pools.csv';
   const destUpdateTxt = `./tmp/update/strategies.txt`;
   const strategyName = 'StrategySpookySwapLp';
   const strategyContractPath = 'contracts/strategies/fantom/spooky/StrategySpookySwapLp.sol:StrategySpookySwapLp';
 
   prepateFileToSaveUpdatedStrategies(destUpdateTxt);
   updateSpookyStrategy(
-    'scripts/utils/download/data/spooky_pools.csv'
+    spookyPoolsCsv
     , strategyName
     , strategyContractPath
     , (vaultNameWithoutPrefix, vaultAddress, strategy) => {

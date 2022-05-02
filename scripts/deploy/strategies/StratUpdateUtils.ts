@@ -1,6 +1,13 @@
+/**
+ * @author dvpublic
+ *
+ * Set of utils used by strategy-update scripts
+ * (find vault, test the strategy on hardhat, deploy and verify strategies and so on)
+ */
+
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ToolsAddresses} from "../../../../models/ToolsAddresses";
-import {DeployerUtils} from "../../../DeployerUtils";
+import {ToolsAddresses} from "../../models/ToolsAddresses";
+import {DeployerUtils} from "../DeployerUtils";
 import {
   Announcer,
   ContractReader,
@@ -9,15 +16,15 @@ import {
   IStrategy,
   SmartVault,
   SmartVault__factory
-} from "../../../../../typechain";
-import {CoreAddresses} from "../../../../models/CoreAddresses";
+} from "../../../typechain";
+import {CoreAddresses} from "../../models/CoreAddresses";
 import {ethers, network} from "hardhat";
-import {MaticAddresses} from "../../../../addresses/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {utils} from "ethers";
-import {TokenUtils} from "../../../../../test/TokenUtils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import path from "path";
 import {appendFileSync, mkdir} from "fs";
-import {FtmAddresses} from "../../../../addresses/FtmAddresses";
+import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 //region Utils: find vault address, save strategy address to file
 /**
