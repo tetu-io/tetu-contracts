@@ -105,9 +105,9 @@ export class TokenUtils {
     [FtmAddresses.BPT_STABEET,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [MaticAddresses.QI_TOKEN,'0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'.toLowerCase()], // qidao gov
-    [MaticAddresses.UNT_TOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
+    [MaticAddresses.UNT_TOKEN,'0x125ecc7e5771f47eac0cb5ada151d72be828ff34'.toLowerCase()], // gov
     [MaticAddresses.cxDOGE_TOKEN,'0x2d187a560cfbd28e1eb2f68534754b0f120459a9'.toLowerCase()],
-    [MaticAddresses.cxADA_TOKEN,'0x5a8c2d949b3f6bcaec7d20c8b6e57c1619a97504'.toLowerCase()],
+    [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN,'0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
     [EthAddresses.USDC_TOKEN,'0x0a59649758aa4d66e25f08dd01271e891fe52199'.toLowerCase()], // maker

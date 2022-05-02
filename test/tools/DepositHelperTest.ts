@@ -1,14 +1,14 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
+import {ethers, network} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {DepositHelper, SmartVault} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {TokenUtils} from "../TokenUtils";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
@@ -29,7 +29,8 @@ describe("Deposit Helper tests", function () {
   }[] = [];
 
   const excludedVaults = [
-      '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'
+      '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33', // no biggest holder: reverted with reason string 'BAL#406'
+      '0x116810f5dE147bB522BECBAA62aDF20d59677f17' // on deposit reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)
   ]
 
   before(async function () {
@@ -94,6 +95,8 @@ describe("Deposit Helper tests", function () {
           return
         } else throw e;
       }
+
+      // DEPOSIT
       const balanceBefore = await TokenUtils.balanceOf(underlyingAddress, signer.address);
       await TokenUtils.approve(underlyingAddress, signer, depositHelper.address, amount.toString());
       console.log('depositToVault...');
@@ -103,6 +106,36 @@ describe("Deposit Helper tests", function () {
       const sharesAmount = await TokenUtils.balanceOf(vaultAddress, signer.address);
       console.log('sharesAmount', sharesAmount);
 
+      // REWIND RIME
+      const rewindTimeSec = 48 * 60 * 60;
+      console.log('rewindTimeSec', rewindTimeSec);
+      await network.provider.send("evm_increaseTime", [rewindTimeSec])
+      await network.provider.send("evm_mine")
+
+      // CHECK REWARDS
+      const rewardTokens = await vault.rewardTokens();
+      console.log('rewardTokens', rewardTokens);
+      const rewardBalancesBefore: {[key: string]: BigNumber} = {};
+      for (const token of rewardTokens)
+        rewardBalancesBefore[token] = await TokenUtils.balanceOf(token, signer.address);
+      console.log('rewardBalancesBefore', rewardBalancesBefore);
+
+      console.log('getAllRewards...');
+      await depositHelper.getAllRewards(vaultAddress);
+
+      const rewardBalancesAfter: {[key: string]: BigNumber} = {};
+      for (const token of rewardTokens)
+        rewardBalancesAfter[token] = await TokenUtils.balanceOf(token, signer.address);
+      console.log('rewardBalancesAfter', rewardBalancesAfter);
+
+      const rewardAmounts = rewardTokens.map(
+          (token) => rewardBalancesAfter[token].sub(rewardBalancesBefore[token])
+      );
+      console.log('rewardAmounts', rewardAmounts);
+      const totalRewardAmount = rewardAmounts.reduce((sum, curr) => sum.add(curr));
+      console.log('totalRewardAmount', totalRewardAmount);
+
+      // WITHDRAW
       await TokenUtils.approve(vaultAddress, signer, depositHelper.address, sharesAmount.toString());
       console.log('withdrawFromVault...');
       await depositHelper.withdrawFromVault(vaultAddress, sharesAmount);
@@ -118,7 +151,7 @@ describe("Deposit Helper tests", function () {
 
     allVaults = await core.bookkeeper.vaults();
     console.log('allVaults.length', allVaults.length);
-    const slicedVaults = allVaults.slice(-20); // 20 last vaults (some of that will be skipped with no biggest holder)
+    const slicedVaults = allVaults.slice(-10); // n last vaults (some of that will be skipped with no biggest holder)
     for (const vault of slicedVaults) await testVault(vault);
 
   });
