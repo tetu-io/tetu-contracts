@@ -7,7 +7,7 @@ const _envParamName = 'TETU_MATIC_FORK_BLOCK';
 
 async function updateBlockNumber(url: string, envFilename: string, envParamName: string) {
   const blockData = await fetchJson({url});
-  const blockNumber = Number(blockData.result) - 10; // hardhat needs block that has at least 10 confirmations
+  const blockNumber = Number(blockData.result) - 32; // hardhat needs block that has at least 32 confirmations
   replaceParamInEnvFile(envFilename, envParamName, blockNumber.toString());
   console.log(_envParamName, 'replaced to', blockNumber, 'in file', envFilename);
 }
