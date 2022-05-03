@@ -395,6 +395,9 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function getAllRewardsFor(address rewardsReceiver) external override {
     _onlyAllowedUsers(msg.sender);
     if (rewardsReceiver != msg.sender) {
+      // To avoid calls from any address, and possibility to cancel boosts for other addresses
+      // we check approval of shares for msg.sender. Msg sender should have approval for max amount
+      // As approved amount is deducted every transfer, we checks it with max / 10
       uint allowance = allowance(rewardsReceiver, msg.sender);
       require(allowance > (type(uint256).max / 10), "SV: Not allowed");
     }
