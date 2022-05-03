@@ -1,7 +1,7 @@
-import {MaticAddresses} from "../../../../../scripts/addresses/MaticAddresses";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {expect} from "chai";
-import {updateCurveStrategy} from "../../../../../scripts/deploy/strategies/curve/utils/CurveUpdateLogic";
-import {FtmAddresses} from "../../../../../scripts/addresses/FtmAddresses";
+import {updateCurveStrategy} from "../../../../scripts/deploy/strategies/curve/utils/CurveUpdateLogic";
+import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
 
 /**
  * These tests should be skipped in CI, they are intended for debugging code of various curve-update scripts

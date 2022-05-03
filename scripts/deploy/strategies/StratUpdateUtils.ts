@@ -1,6 +1,13 @@
+/**
+ * @author dvpublic
+ *
+ * Set of utils used by strategy-update scripts
+ * (find vault, test the strategy on hardhat, deploy and verify strategies and so on)
+ */
+
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ToolsAddresses} from "../../../../models/ToolsAddresses";
-import {DeployerUtils} from "../../../DeployerUtils";
+import {ToolsAddresses} from "../../models/ToolsAddresses";
+import {DeployerUtils} from "../DeployerUtils";
 import {
   Announcer,
   ContractReader,
@@ -9,27 +16,24 @@ import {
   IStrategy,
   SmartVault,
   SmartVault__factory
-} from "../../../../../typechain";
-import {CoreAddresses} from "../../../../models/CoreAddresses";
+} from "../../../typechain";
+import {CoreAddresses} from "../../models/CoreAddresses";
 import {ethers, network} from "hardhat";
-import {MaticAddresses} from "../../../../addresses/MaticAddresses";
+import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {utils} from "ethers";
-import {TokenUtils} from "../../../../../test/TokenUtils";
+import {TokenUtils} from "../../../test/TokenUtils";
 import path from "path";
 import {appendFileSync, mkdir} from "fs";
-import {FtmAddresses} from "../../../../addresses/FtmAddresses";
+import {FtmAddresses} from "../../addresses/FtmAddresses";
 
 //region Utils: find vault address, save strategy address to file
 /**
- * Get vault address for TETU_CRV_REN
- * @author dvpublic
- *
- * Get all available vaults, get their names and found required vault by its name
+ * Find all vaults and their addresses
  * @param signer
  * @param tools
- * @param vaultNameWithTetuPrefix i.e. TETU_CRV_REN
+ * @return  map: (vault name, vault address)
  */
-export async function findVaultAddress(signer: SignerWithAddress, tools: ToolsAddresses, vaultNameWithTetuPrefix: string): Promise<string | undefined> {
+export async function findAllVaults(signer: SignerWithAddress, tools: ToolsAddresses): Promise<Map<string, string>> {
   // read all vaults addresses
   const cReader = await DeployerUtils.connectContract(
     signer, "ContractReader", tools.reader) as ContractReader;
@@ -39,38 +43,62 @@ export async function findVaultAddress(signer: SignerWithAddress, tools: ToolsAd
 
   // generate map: address : vaultNameWithTetuPrefix
   const vaultsMap = new Map<string, string>();
-  for (const vAddress of deployedVaultAddresses) {
+  for(const vAddress of deployedVaultAddresses) {
     vaultsMap.set(await cReader.vaultName(vAddress), vAddress);
   }
+
+  return vaultsMap;
+}
+
+/**
+ * Get vault address for the give vault name
+ *
+ * Get all available vaults, get their names and found required vault by its name
+ * @param signer
+ * @param tools
+ * @param vaultNameWithTetuPrefix i.e. TETU_CRV_REN
+ */
+export async function findVaultAddress(signer: SignerWithAddress, tools: ToolsAddresses, vaultNameWithTetuPrefix: string): Promise<string | undefined> {
+  // get map: address : vaultNameWithTetuPrefix
+  const vaultsMap = await findAllVaults(signer, tools);
 
   // find a vault by name
   return vaultsMap.get(vaultNameWithTetuPrefix);
 }
 
 /**
- * Save address of vault and strategy to the specified file.
+ * Prepare file to save address of vaults and strategies to the specified file.
  * Create target dir if necessary
  *
  * @param destPath i.e. `./tmp/update/strategies.txt`
- * @param vaultNameWithoutPrefix i.e. "CRV_REN"
- * @param vaultAddress
- * @param strategy
  */
-export function saveStrategyAddressToFile(
-  destPath: string,
-  vaultNameWithoutPrefix: string,
-  vaultAddress: string,
-  strategy: IStrategy
-) {
+export function prepateFileToSaveUpdatedStrategies(destPath: string) {
   const dirName = path.dirname(destPath);
   mkdir(dirName, {recursive: true}, (err) => {
     if (err) throw err;
   });
 
   appendFileSync(destPath, '\n-----------\n', 'utf8');
-  const txt = `${vaultNameWithoutPrefix}:     vault: ${vaultAddress}     strategy: ${strategy.address}\n`;
-  appendFileSync(`./tmp/update/strategies.txt`, txt, 'utf8');
 }
+
+/**
+ * Save address of vaults and strategies to the specified file.
+ * Create target dir if necessary
+ *
+ * @param destPath i.e. `./tmp/update/strategies.txt`
+ * @param data Array of deployed strategies
+ */
+export function saveUpdatedStrategiesToFile(
+  destPath: string,
+  data: {vaultNameWithoutPrefix: string, vaultAddress: string, strategy: IStrategy}[]
+) {
+  prepateFileToSaveUpdatedStrategies(destPath);
+  for (const j of data) {
+    const txt = `${j.vaultNameWithoutPrefix}:     vault: ${j.vaultAddress}     strategy: ${j.strategy.address}\n`;
+    appendFileSync(destPath, txt, 'utf8');
+  }
+}
+
 //endregion Utils: find vault address, save strategy address to file
 
 //region Test strategy on hardhat
@@ -200,10 +228,8 @@ export async function verifySingleStrategy(
   // tslint:disable-next-line:no-any
   strategyConstructorParams: any[]
 ) {
-  console.log('--------- Verify ----------')
   await DeployerUtils.wait(5);
   await DeployerUtils.verifyWithContractName(strategy.address, strategyContractPath, strategyConstructorParams);
-  console.log('--------- Verified ----------')
 }
 
 /**
@@ -239,11 +265,17 @@ export async function deployAndVerifySingleStrategy(
   );
 
   if (strategy) {
-    saveStrategyAddressToFile(destPath, vaultNameWithoutPrefix, vaultAddress, strategy);
+    saveUpdatedStrategiesToFile(
+      destPath
+      , [{"vaultNameWithoutPrefix": vaultNameWithoutPrefix, "vaultAddress": vaultAddress, "strategy": strategy}]
+    );
+
     if (network.name === "hardhat") {
       await testStrategyAfterUpgradeOnHardhat(signer, core, strategy, vaultAddress);
     } else {
+      console.log('--------- Verify ----------')
       await verifySingleStrategy(strategy, strategyContractPath, strategyConstructorParams);
+      console.log('--------- Verified ----------')
     }
     return strategy.address;
   } else {
