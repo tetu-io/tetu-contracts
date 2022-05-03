@@ -394,6 +394,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   /// @notice Update and Claim all rewards
   function getAllRewardsFor(address rewardsReceiver) external override {
     _onlyAllowedUsers(msg.sender);
+    if (rewardsReceiver != msg.sender) {
+      uint allowance = allowance(rewardsReceiver, msg.sender);
+      require(allowance > (type(uint256).max / 10), "SV: Not allowed");
+    }
     _getAllRewards(rewardsReceiver);
   }
 

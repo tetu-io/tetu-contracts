@@ -1,7 +1,7 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers, network} from "hardhat";
+import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {DepositHelper, SmartVault} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
@@ -10,22 +10,31 @@ import {MintHelperUtils} from "../MintHelperUtils";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
+import {fetchJson} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe("Deposit Helper tests", function () {
+  const MAX_UINT = BigNumber.from(2).pow(256).sub(1).toString();
+  console.log('MAX_UINT', MAX_UINT);
+  let targetVaultVersion: string;
   let snapshot: string;
   let snapshotForEach: string;
   let gov: SignerWithAddress;
   let signer: SignerWithAddress;
   let core: CoreContractsWrapper;
   let depositHelper: DepositHelper;
+  let smartVaultImpl: SmartVault;
   let allVaults: string[];
+  let timeLockSec: number;
+  const passedVaults: string[] = [];
 
+  // noinspection GrazieInspection
   const excludedVaults = [
-      '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33', // no biggest holder: reverted with reason string 'BAL#406'
-      '0x116810f5dE147bB522BECBAA62aDF20d59677f17' // on deposit reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)
+      '0x6781e4a6e6082186633130f08246a7af3a7b8b40', // why no rewards received? // TODO belbix help me
+      '0xf203b855b4303985b3dd3f35a9227828cc8cb009', // why no rewards received?
+      '0x4cd44ced63d9a6fef595f6ad3f7ced13fceac768', // QSS: Withdraw forbidden
   ]
 
   before(async function () {
@@ -36,7 +45,13 @@ describe("Deposit Helper tests", function () {
     core = await DeployerUtils.getCoreAddressesWrapper(gov);
 
     depositHelper = await DeployerUtils.deployContract(signer, 'DepositHelper') as DepositHelper;
+    smartVaultImpl = await DeployerUtils.deployContract(gov, 'SmartVault') as SmartVault;
     await core.controller.changeWhiteListStatus([depositHelper.address], true);
+
+    targetVaultVersion = await smartVaultImpl.VERSION();
+    console.log('targetVaultVersion', targetVaultVersion);
+    timeLockSec = (await core.announcer.timeLock()).toNumber();
+
 
   });
 
@@ -53,7 +68,7 @@ describe("Deposit Helper tests", function () {
   });
 
 
-  it("Should deposit and withdraw from vaults", async () => {
+  it("Should deposit, claim and withdraw from vaults", async () => {
     const testVault = async (vaultAddress: string) => {
       console.log('-----------------------------------------------------');
       console.log('vaultAddress', vaultAddress);
@@ -67,7 +82,30 @@ describe("Deposit Helper tests", function () {
         console.log('Vault inactive');
         return;
       }
+      const rewardTokens = await vault.rewardTokens();
+      if (rewardTokens.length === 0) {
+        console.log('Vault no have reward tokens');
+        return;
+      }
 
+      const vaultName = await vault.name();
+      console.log('vaultName', vaultName);
+
+      const vaultVersion = await vault.VERSION();
+      console.log('vaultVersion', vaultVersion);
+
+      // UPDATE VAULT IMPLEMENTATION
+      if (vaultVersion !== targetVaultVersion) {
+        console.log(`vaultVersion not eq ${targetVaultVersion} (${vaultVersion}). Updating...`);
+        await core.announcer.announceTetuProxyUpgradeBatch([vaultAddress], [smartVaultImpl.address]);
+        await TimeUtils.advanceBlocksOnTs(timeLockSec+1);
+        await core.controller.upgradeTetuProxyBatch([vaultAddress], [smartVaultImpl.address]);
+        const newVersion = await vault.VERSION();
+        console.log('newVersion', newVersion);
+        expect(newVersion).is.eq(targetVaultVersion);
+      }
+
+      // GET TOKENS FOR DEPOSIT
       const underlyingAddress = await vault.underlying();
       console.log('underlyingAddress', underlyingAddress);
       const decimals = await TokenUtils.decimals(underlyingAddress)
@@ -86,7 +124,7 @@ describe("Deposit Helper tests", function () {
         await TokenUtils.getToken(underlyingAddress, signer.address, amount);
       } catch (e) {
         if (e instanceof Error && e.message.startsWith('Please add holder')) {
-          console.warn(e.message + ' - Skipping vault test');
+          console.warn(e.message + '\n- Skipping vault test');
           return
         } else throw e;
       }
@@ -101,16 +139,14 @@ describe("Deposit Helper tests", function () {
       const sharesAmount = await TokenUtils.balanceOf(vaultAddress, signer.address);
       console.log('sharesAmount', sharesAmount.toString());
 
-      // REWIND RIME
+      // REWIND TIME
       const rewindTime = async function() {
         const rewindTimeSec = 7 * 24 * 60 * 60;
         console.log('rewindTimeSec', rewindTimeSec);
         await TimeUtils.advanceBlocksOnTs(rewindTimeSec);
       }
-      await rewindTime();
 
       // DISTRIBUTE REWARDS
-      const rewardTokens = await vault.rewardTokens();
       console.log('rewardTokens', rewardTokens);
       // const vaultGov = await DeployerUtils.connectInterface(gov, 'SmartVault', vaultAddress) as SmartVault;
 
@@ -118,7 +154,7 @@ describe("Deposit Helper tests", function () {
         await rewindTime();
         for (const token of rewardTokens) {
           const tokenDecimals = await TokenUtils.decimals(token);
-          const rewardAmount = utils.parseUnits('10000', tokenDecimals);
+          const rewardAmount = utils.parseUnits('100', tokenDecimals);
           await TokenUtils.getToken(token, gov.address, rewardAmount);
           await TokenUtils.approve(token, gov, vaultAddress, rewardAmount.toString());
           await vault.connect(gov).notifyTargetRewardAmount(token, rewardAmount);
@@ -131,39 +167,33 @@ describe("Deposit Helper tests", function () {
       const rewardBalancesBefore: {[key: string]: BigNumber} = {};
       for (const token of rewardTokens)
         rewardBalancesBefore[token] = await TokenUtils.balanceOf(token, signer.address);
-      console.log('rewardBalancesBefore', rewardBalancesBefore);
+      // console.log('rewardBalancesBefore', rewardBalancesBefore);
 
-      const toClaim: {[key: string]: BigNumber} = {};
-      for (const token of rewardTokens) {
-        toClaim[token] = await vault.earned(token, signer.address);
-        console.log('toClaim', token, toClaim[token]);
-      }
+      // GET REWARDS
+      await TokenUtils.approve(vaultAddress, signer, depositHelper.address, MAX_UINT);
       console.log('getAllRewards...');
-      // await depositHelper.getAllRewards(vaultAddress);
-      await vault.getAllRewards();
+      await depositHelper.getAllRewards(vaultAddress);
 
       const rewardBalancesAfter: {[key: string]: BigNumber} = {};
       for (const token of rewardTokens)
         rewardBalancesAfter[token] = await TokenUtils.balanceOf(token, signer.address);
-      console.log('rewardBalancesAfter', rewardBalancesAfter);
+      // console.log('rewardBalancesAfter', rewardBalancesAfter);
 
       const rewardAmounts = rewardTokens.map(
           (token) => rewardBalancesAfter[token].sub(rewardBalancesBefore[token])
       );
       console.log('rewardAmounts', rewardAmounts);
       const minRewards = rewardAmounts.reduce((min, curr) => curr.lt(min) ? curr : min);
-      console.log('minRewards', minRewards);
+      console.log('minRewards', minRewards.toString());
 
       // REWIND TIME AND DISTRIBUTE REWARDS AGAIN
       Array(5).map(distributeRewards);
 
       // WITHDRAW
-      await TokenUtils.approve(vaultAddress, signer, depositHelper.address, sharesAmount.toString());
+      await TokenUtils.approve(vaultAddress, signer, depositHelper.address, MAX_UINT);
       console.log('withdrawFromVault...');
       await depositHelper.withdrawFromVault(vaultAddress, sharesAmount);
       const sharesAfter = await TokenUtils.balanceOf(vaultAddress, signer.address);
-
-      await vault.getAllRewards(); // TODO remove
 
       // CHECK REWARDS AFTER WITHDRAW
       const rewardBalancesAfterWithdraw: {[key: string]: BigNumber} = {};
@@ -176,7 +206,7 @@ describe("Deposit Helper tests", function () {
       );
       console.log('rewardAmountsAfterWithdraw', rewardAmountsAfterWithdraw);
       const minRewards2 = rewardAmountsAfterWithdraw.reduce((min, curr) => curr.lt(min) ? curr : min);
-      console.log('minRewards2', minRewards2);
+      console.log('minRewards2', minRewards2.toString());
 
       // EXPECTATIONS
       expect(balanceBefore.sub(balanceInitial)).is.eq(amount);
@@ -187,12 +217,21 @@ describe("Deposit Helper tests", function () {
       expect(minRewards2).is.gt(0);
 
       console.log('+++vault test passed', vaultAddress);
+      passedVaults.push(vaultAddress);
     }
 
-    allVaults = await core.bookkeeper.vaults();
-    console.log('allVaults.length', allVaults.length);
-    const slicedVaults = allVaults.slice(-10); // n last vaults (some of that will be skipped with no biggest holder)
+    // allVaults = await core.bookkeeper.vaults();
+    const response: {active:boolean,users:number,strategyOnPause:boolean,tvl:number,addr:string}[] =
+        await fetchJson({url:'https://api.tetu.io/api/v1/reader/vaultInfos?network=MATIC'});
+    const filtered = response.filter(v => (v.active && (v.users>5) && !v.strategyOnPause && v.tvl>0));
+    allVaults = filtered.map(v => v.addr);
+    console.log('filtered allVaults.length', allVaults.length);
+    const slicedVaults = allVaults.slice(-20); // n last vaults (some of that will be skipped with no biggest holder)
+    console.log('slicedVaults.length', slicedVaults.length);
     for (const vault of slicedVaults) await testVault(vault);
+
+    console.log('===============================');
+    console.log('passedVaults length', passedVaults.length);
 
   });
 

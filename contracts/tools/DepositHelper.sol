@@ -24,7 +24,6 @@ contract DepositHelper is ReentrancyGuard {
   string public constant VERSION = "1.0.0";
 
   mapping(address => mapping(address => uint256)) calls;
-  mapping(address => bool) whitelist;
 
   modifier onlyOneCallPerBlockPerVault(address vault_) {
     require(calls[msg.sender][vault_] < block.number, "DH: call in the same block forbidden");
@@ -62,7 +61,7 @@ contract DepositHelper is ReentrancyGuard {
   }
 
   /// @notice Withdraws from vault specified share amount. Caller receives underlying token.
-  /// @dev Approval for share token is assumed.
+  /// @dev Approval for UINT_MAX share token is assumed.
   /// @param vault_ A target vault withdraw from
   /// @param shareTokenAmount_ Amount of vault's share token to withdraw
   function withdrawFromVault(address vault_, uint256 shareTokenAmount_)
@@ -89,7 +88,7 @@ contract DepositHelper is ReentrancyGuard {
   }
 
   /// @notice Claims rewards from vault. Caller receives all reward tokens.
-  /// @dev Approval for share token is assumed.
+  /// @dev Approval for UINT_MAX share token is assumed.
   /// @param vault_ A target vault to claim rewards from
   function getAllRewards(address vault_)
   external nonReentrant {
