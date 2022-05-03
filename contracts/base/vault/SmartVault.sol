@@ -34,7 +34,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.10.2";
+  string public constant VERSION = "1.10.3";
   /// @dev Denominator for penalty numerator
   uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant TO_INVEST_DENOMINATOR = 1000;
@@ -368,32 +368,39 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // assume that allowed users is trusted contracts with internal specific logic
     // for compatability we should not claim rewards on withdraw for them
     if (_protectionMode() && !IController(_controller()).isAllowedUser(msg.sender)) {
-      _getAllRewards();
+      _getAllRewards(msg.sender);
     }
 
     _withdraw(numberOfShares);
   }
 
   /// @notice Withdraw all and claim rewards
+  /// @notice If you use DepositHelper - then call getAllRewardsFor before exit to receive rewards
   function exit() external override {
     _onlyAllowedUsers(msg.sender);
     // for locked functionality need to claim rewards firstly
     // otherwise token transfer will refresh the lock period
     // also it will withdraw claimed tokens too
-    _getAllRewards();
+    _getAllRewards(msg.sender);
     _withdraw(balanceOf(msg.sender));
   }
 
   /// @notice Update and Claim all rewards
   function getAllRewards() external override {
     _onlyAllowedUsers(msg.sender);
-    _getAllRewards();
+    _getAllRewards(msg.sender);
   }
 
-  function _getAllRewards() internal {
-    _updateRewards(msg.sender);
+  /// @notice Update and Claim all rewards
+  function getAllRewardsFor(address rewardsReceiver) external override {
+    _onlyAllowedUsers(msg.sender);
+    _getAllRewards(rewardsReceiver);
+  }
+
+  function _getAllRewards(address rewardsReceiver) internal {
+    _updateRewards(rewardsReceiver);
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      _payReward(_rewardTokens[i]);
+      _payRewardTo(_rewardTokens[i], rewardsReceiver);
     }
   }
 
@@ -401,7 +408,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function getReward(address rt) external override {
     _onlyAllowedUsers(msg.sender);
     _updateReward(msg.sender, rt);
-    _payReward(rt);
+    _payRewardTo(rt, msg.sender);
   }
 
   /// @dev Update user specific variables
@@ -783,21 +790,22 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _notifyRewardWithoutPeriodChange(_amount, _rewardToken);
   }
 
-  /// @notice Transfer earned rewards to caller
-  function _payReward(address rt) internal {
-    (uint renotifiedAmount, uint paidReward) = VaultLibrary.processPayReward(
+  /// @notice Transfer earned rewards to rewardsReceiver
+  function _payRewardTo(address rt, address rewardsReceiver) internal {
+    (uint renotifiedAmount, uint paidReward) = VaultLibrary.processPayRewardFor(
       rt,
-      _earned(rt, msg.sender),
+      _earned(rt, rewardsReceiver),
       userBoostTs,
       _controller(),
       _protectionMode(),
-      rewardsForToken
+      rewardsForToken,
+      rewardsReceiver
     );
     if (renotifiedAmount != 0) {
       _notifyRewardWithoutPeriodChange(renotifiedAmount, rt);
     }
     if (paidReward != 0) {
-      emit RewardPaid(msg.sender, rt, renotifiedAmount);
+      emit RewardPaid(rewardsReceiver, rt, renotifiedAmount);
     }
   }
 

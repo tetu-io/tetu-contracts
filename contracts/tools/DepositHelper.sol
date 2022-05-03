@@ -71,6 +71,7 @@ contract DepositHelper is ReentrancyGuard {
 
     IERC20(vault_).safeTransferFrom(msg.sender, address(this), shareTokenAmount_);
 
+    _claimAndSendAllRewards(vault_);
     ISmartVault(vault_).withdraw(shareTokenAmount_);
 
     address underlying = ISmartVault(vault_).underlying();
@@ -79,7 +80,6 @@ contract DepositHelper is ReentrancyGuard {
 
     IERC20(underlying).safeTransfer(msg.sender, underlyingBalance);
 
-    _claimAndSendAllRewards(vault_);
 
     // send change (if any) back
     uint256 shareBalance = IERC20(vault_).balanceOf(address(this));
@@ -102,16 +102,7 @@ contract DepositHelper is ReentrancyGuard {
   /// @param vault_ A target vault to claim rewards from
   function _claimAndSendAllRewards(address vault_)
   internal {
-    ISmartVault(vault_).getAllRewards();
-    address[] memory rewardTokens = ISmartVault(vault_).rewardTokens();
-    uint len = rewardTokens.length;
-    for (uint i = 0; i < len; ++i) {
-      IERC20 token = IERC20(rewardTokens[i]);
-      uint balance =  token.balanceOf(address(this));
-      if (balance > 0) {
-        token.safeTransfer(msg.sender, balance);
-      }
-    }
+    ISmartVault(vault_).getAllRewardsFor(msg.sender);
   }
 
   // ************************* ACTIONS *******************
