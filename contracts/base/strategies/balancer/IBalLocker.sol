@@ -20,11 +20,17 @@ interface IBalLocker {
 
   function VE_BAL_UNDERLYING() external view returns (address);
 
+  function BALANCER_MINTER() external view returns (address);
+
+  function BAL() external view returns (address);
+
   function gaugeController() external view returns (address);
 
   function feeDistributor() external view returns (address);
 
   function operator() external view returns (address);
+
+  function voter() external view returns (address);
 
   function delegateVotes(bytes32 _id, address _delegateContract, address _delegate) external;
 
@@ -41,5 +47,7 @@ interface IBalLocker {
   function withdrawFromGauge(address gauge, uint amount) external;
 
   function claimRewardsFromGauge(address gauge, address receiver) external;
+
+  function claimRewardsFromMinter(address gauge, address receiver) external returns (uint claimed);
 
 }

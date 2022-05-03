@@ -19,6 +19,7 @@ import "../../../third_party/balancer/IFeeDistributor.sol";
 import "./IBalLocker.sol";
 import "../../../third_party/curve/IGauge.sol";
 import "../../../third_party/curve/IGaugeController.sol";
+import "../../../third_party/balancer/IBalancerMinter.sol";
 
 
 /// @title Dedicated contract for staking and managing veBAL
@@ -28,17 +29,21 @@ contract BalLocker is ControllableV2, IBalLocker {
 
   address public constant override VE_BAL = 0xC128a9954e6c874eA3d62ce62B468bA073093F25;
   address public constant override VE_BAL_UNDERLYING = 0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56;
+  address public constant override BALANCER_MINTER = 0x239e55F427D44C3cc793f49bFB507ebe76638a2b;
+  address public constant override BAL = 0xba100000625a3754423978a60c9317c58a424e3D;
   uint256 private constant _MAX_LOCK = 365 * 86400;
   uint256 private constant _WEEK = 7 * 86400;
 
   address public override gaugeController;
   address public override feeDistributor;
   address public override operator;
-  mapping(address => address) gaugesToDepositors;
+  address public override voter;
+  mapping(address => address) public gaugesToDepositors;
 
   event ChangeOperator(address oldValue, address newValue);
   event ChangeGaugeController(address oldValue, address newValue);
   event ChangeFeeDistributor(address oldValue, address newValue);
+  event ChangeVoter(address oldValue, address newValue);
   event LinkGaugeToDistributor(address gauge, address depositor);
 
   constructor(
@@ -56,12 +61,19 @@ contract BalLocker is ControllableV2, IBalLocker {
     operator = operator_;
     gaugeController = gaugeController_;
     feeDistributor = feeDistributor_;
+    // governance by default
+    voter = IController(_controller()).governance();
 
     IERC20(VE_BAL_UNDERLYING).safeApprove(VE_BAL, type(uint).max);
   }
 
   modifier onlyGovernance() {
     require(_isGovernance(msg.sender), "Not gov");
+    _;
+  }
+
+  modifier onlyVoter() {
+    require(msg.sender == voter, "Not voter");
     _;
   }
 
@@ -79,7 +91,7 @@ contract BalLocker is ControllableV2, IBalLocker {
     bytes32 _id,
     address _delegateContract,
     address _delegate
-  ) external override onlyGovernance {
+  ) external override onlyVoter {
     IDelegation(_delegateContract).setDelegate(_id, _delegate);
   }
 
@@ -87,7 +99,7 @@ contract BalLocker is ControllableV2, IBalLocker {
   function clearDelegatedVotes(
     bytes32 _id,
     address _delegateContract
-  ) external override onlyGovernance {
+  ) external override onlyVoter {
     IDelegation(_delegateContract).clearDelegate(_id);
   }
 
@@ -97,27 +109,28 @@ contract BalLocker is ControllableV2, IBalLocker {
 
   /// @dev Stake BAL-ETH LP to the veBAL with max lock. Extend period if necessary.
   ///      Without permissions - anyone can deposit.
+  ///      Requires transfer tokens and call in the same block via contract.
   function depositVe(uint256 amount) external override {
-    if (amount > 0) {
-      // lock on max period
-      IVotingEscrow ve = IVotingEscrow(VE_BAL);
+    require(amount != 0, "Zero amount");
 
-      (uint balanceLocked, uint unlockTime) = ve.locked(address(this));
-      if (unlockTime == 0 && balanceLocked == 0) {
-        ve.create_lock(amount, block.timestamp + _MAX_LOCK);
-      } else {
-        ve.increase_amount(amount);
+    // lock on max period
+    IVotingEscrow ve = IVotingEscrow(VE_BAL);
 
-        uint256 unlockAt = block.timestamp + _MAX_LOCK;
-        uint256 unlockInWeeks = (unlockAt / _WEEK) * _WEEK;
+    (uint balanceLocked, uint unlockTime) = ve.locked(address(this));
+    if (unlockTime == 0 && balanceLocked == 0) {
+      ve.create_lock(amount, block.timestamp + _MAX_LOCK);
+    } else {
+      ve.increase_amount(amount);
 
-        //increase time too if over 2 week buffer
-        if (unlockInWeeks > unlockTime && unlockInWeeks - unlockTime > 2) {
-          ve.increase_unlock_time(unlockAt);
-        }
+      uint256 unlockAt = block.timestamp + _MAX_LOCK;
+      uint256 unlockInWeeks = (unlockAt / _WEEK) * _WEEK;
+
+      //increase time too if over 2 week buffer
+      if (unlockInWeeks > unlockTime && unlockInWeeks - unlockTime > 2) {
+        ve.increase_unlock_time(unlockAt);
       }
-      IFeeDistributor(feeDistributor).checkpointUser(address(this));
     }
+    IFeeDistributor(feeDistributor).checkpointUser(address(this));
   }
 
   /// @dev Claim rewards and send to recipient.
@@ -125,6 +138,7 @@ contract BalLocker is ControllableV2, IBalLocker {
   ///      Assume that claimed rewards will be immediately transfer to Polygon.
   function claimVeRewards(IERC20[] memory tokens, address recipient) external override {
     require(msg.sender == operator, "Not operator");
+    require(recipient != address(0), "Zero recipient");
 
     IFeeDistributor(feeDistributor).claimTokens(address(this), tokens);
 
@@ -150,23 +164,53 @@ contract BalLocker is ControllableV2, IBalLocker {
 
   /// @dev Deposit to given gauge LP token. Sender should be linked to the gauge.
   function depositToGauge(address gauge, uint amount) external override onlyAllowedDepositor(gauge) {
+    require(amount != 0, "Zero amount");
+    require(gauge != address(0), "Zero gauge");
+
     address underlying = IGauge(gauge).lp_token();
     IERC20(underlying).safeTransferFrom(msg.sender, address(this), amount);
     IERC20(underlying).safeApprove(gauge, 0);
     IERC20(underlying).safeApprove(gauge, amount);
-    IGauge(gauge).deposit(amount);
+    IGauge(gauge).deposit(amount, address(this), false);
   }
 
   /// @dev Withdraw from given gauge LP tokens. Sender should be linked to the gauge.
-  function withdrawFromGauge(address gauge, uint amount) external override onlyAllowedDepositor(gauge) {
+  function withdrawFromGauge(
+    address gauge,
+    uint amount
+  ) external override onlyAllowedDepositor(gauge) {
+    require(amount != 0, "Zero amount");
+    require(gauge != address(0), "Zero gauge");
+
     IGauge(gauge).withdraw(amount, false);
     address underlying = IGauge(gauge).lp_token();
     IERC20(underlying).safeTransfer(msg.sender, amount);
   }
 
   /// @dev Claim rewards from given gauge. Sender should be linked to the gauge.
-  function claimRewardsFromGauge(address gauge, address receiver) external override onlyAllowedDepositor(gauge) {
+  function claimRewardsFromGauge(
+    address gauge,
+    address receiver
+  ) external override onlyAllowedDepositor(gauge) {
+    require(gauge != address(0), "Zero gauge");
+    require(receiver != address(0), "Zero receiver");
+
     IGauge(gauge).claim_rewards(address(this), receiver);
+  }
+
+  /// @dev Claim rewards from BalancerMinter for given gauge. Sender should be linked to the gauge.
+  function claimRewardsFromMinter(
+    address gauge,
+    address receiver
+  ) external override onlyAllowedDepositor(gauge) returns (uint) {
+    require(gauge != address(0), "Zero gauge");
+    require(receiver != address(0), "Zero receiver");
+
+    uint balance = IERC20(BAL).balanceOf(address(this));
+    IBalancerMinter(BALANCER_MINTER).mint(gauge);
+    uint claimed = IERC20(BAL).balanceOf(address(this)) - balance;
+    IERC20(BAL).safeTransfer(receiver, claimed);
+    return claimed;
   }
 
   //*****************************************************************
@@ -179,9 +223,11 @@ contract BalLocker is ControllableV2, IBalLocker {
   function voteForManyGaugeWeights(
     address[] memory _gauges,
     uint[] memory _userWeights
-  ) external onlyGovernance {
+  ) external onlyVoter {
     require(_gauges.length == _userWeights.length, "Wrong input");
-    IGaugeController(gaugeController).vote_for_many_gauge_weights(_gauges, _userWeights);
+    for (uint i; i < _gauges.length; i++) {
+      IGaugeController(gaugeController).vote_for_gauge_weights(_gauges[i], _userWeights[i]);
+    }
   }
 
   //*****************************************************************
@@ -207,6 +253,13 @@ contract BalLocker is ControllableV2, IBalLocker {
     require(value != address(0), "Zero value");
     emit ChangeFeeDistributor(feeDistributor, value);
     feeDistributor = value;
+  }
+
+  /// @dev Set a new voter address.
+  function setVoter(address value) external onlyVoter {
+    require(value != address(0), "Zero value");
+    emit ChangeVoter(voter, value);
+    voter = value;
   }
 
   /// @dev Link an address to a gauge.
