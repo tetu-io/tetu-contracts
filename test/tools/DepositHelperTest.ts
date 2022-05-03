@@ -32,8 +32,7 @@ describe("Deposit Helper tests", function () {
 
   // noinspection GrazieInspection
   const excludedVaults = [
-      '0x6781e4a6e6082186633130f08246a7af3a7b8b40', // why no rewards received? // TODO belbix help me
-      '0xf203b855b4303985b3dd3f35a9227828cc8cb009', // why no rewards received?
+      '0xf203b855b4303985b3dd3f35a9227828cc8cb009', // why no rewards received? // TODO belbix help me
       '0x4cd44ced63d9a6fef595f6ad3f7ced13fceac768', // QSS: Withdraw forbidden
   ]
 
