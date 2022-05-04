@@ -10,6 +10,8 @@ async function main() {
 
   await DeployerUtils.wait(5);
   await DeployerUtils.verify(contract.address);
+
+  // TODO call from gov: controller.changeWhiteListStatus([depositHelper.address], true);
 }
 
 main()
