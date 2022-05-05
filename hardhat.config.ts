@@ -131,7 +131,12 @@ export default {
     },
   },
   etherscan: {
-    apiKey: argv.networkScanKey
+    //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
+    apiKey: {
+      mainnet: argv.networkScanKey,
+      polygon: argv.networkScanKeyMatic || argv.networkScanKey,
+      opera: argv.networkScanKeyFtm || argv.networkScanKey
+    },
   },
   solidity: {
     compilers: [

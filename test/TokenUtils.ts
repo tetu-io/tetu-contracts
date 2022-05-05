@@ -56,7 +56,7 @@ export class TokenUtils {
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
     [MaticAddresses.AM3CRV_TOKEN, '0xbf3bc2f3d279466686174261bfccd0ac07576e59'.toLowerCase()], // wallet
     [FtmAddresses.g3CRV_TOKEN, '0xd4f94d0aaa640bbb72b5eec2d85f6d114d81a88e'.toLowerCase()], // gauge
-    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
+    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x25eeb8ab4e2f369c8f0e171d0701c06fa6a709dd'.toLowerCase()], // wallet
     [FtmAddresses.USD_BTC_ETH_CRV_TOKEN, '0x00702bbdead24c40647f235f15971db0867f6bdb'.toLowerCase()], // gauge
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
