@@ -12,10 +12,7 @@
 
 pragma solidity 0.8.4;
 
-//import "../../third_party/uniswap/IUniswapV2Factory.sol";
-//import "../../third_party/uniswap/IUniswapV2Pair.sol";
-//import "../../third_party/IERC20Name.sol";
-
+import "../../third_party/balancer/IBVault.sol";
 
 /// @title Multi Swap 2 Interface
 /// @dev Interface to do multiple swaps, based on routes with weights
@@ -34,5 +31,15 @@ interface IMultiSwap2 {
     uint slippageTolerance,
     bytes memory routesData
   ) external;
+
+  function multiSwap(
+    address tokenIn,
+    address tokenOut,
+    uint amount,
+    IBVault.BatchSwapStep[] memory swaps,
+    IAsset[] memory assets,
+    uint minAmountOut,
+    uint256 deadline
+  ) external returns (uint amountOut);
 
 }
