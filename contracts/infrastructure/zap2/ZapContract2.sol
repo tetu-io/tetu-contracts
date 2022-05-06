@@ -329,7 +329,8 @@ contract ZapContract2 is IZapContract2, ControllableV2, ReentrancyGuard {
     require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
     IERC20(_tokenIn).safeApprove(address(multiSwap), 0);
     IERC20(_tokenIn).safeApprove(address(multiSwap), _tokenInAmount);
-    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, _slippageTolerance, _routesData);
+    // TODO call new multiswap
+//    multiSwap.multiSwap(_tokenIn, _tokenOut, _tokenInAmount, _slippageTolerance, _routesData);
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender

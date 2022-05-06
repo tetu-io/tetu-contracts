@@ -25,7 +25,6 @@ import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/IERC20Name.sol"; // TODO remove
 import "../../base/SlotsLib.sol";
 import "./IMultiSwap2.sol";
-import "./AssetHelpers.sol";
 
 import "hardhat/console.sol";
 
@@ -36,87 +35,46 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
-  string public constant VERSION = "1.0.0";
-  uint public constant MAX_AMOUNT = type(uint).max;
-  uint128 constant private _PRECISION_FEE = 10000;
-  uint128 constant private _PRECISION_SLIPPAGE = 1000;
-  bytes32 private constant _UNISWAP_MASK = "0xfffffffffffffffffffffff0"; // last half-byte - index of uniswap dex
-  bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.weth")) - 1);
+//  string public constant VERSION = "1.0.0";
+//  uint public constant MAX_AMOUNT = type(uint).max;
+//  uint128 constant private _PRECISION_FEE = 10000;
+//  uint128 constant private _PRECISION_SLIPPAGE = 1000;
+//  bytes32 private constant _UNISWAP_MASK = "0xfffffffffffffffffffffff0"; // last half-byte - index of uniswap dex
+//  bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.weth")) - 1);
 
   // Sentinel value used to indicate WETH with wrapping/unwrapping semantics. The zero address is a good choice for
   // multiple reasons: it is cheap to pass as a calldata argument, it is a known invalid token and non-contract, and
   // it is an address Pools cannot register as a token.
-  address private constant _ETH = address(0);
-
-  function initializeAssetHelpers(address weth)
-  public initializer {
-      _WETH_SLOT.set(weth);
-  }
-
-  // solhint-disable-next-line func-name-mixedcase
-  function _WETH() internal view returns (address) {
-      return _WETH_SLOT.getAddress();
-  }
-
-  *
-     * @dev Returns true if `asset` is the sentinel value that represents ETH.
-
-    function _isETH(IAsset asset) internal pure returns (bool) {
-        return address(asset) == _ETH;
-    }
-
-    *
-     * @dev Translates `asset` into an equivalent IERC20 token address. If `asset` represents ETH, it will be translated
-     * to the WETH contract.
-
-    function _translateToIERC20(IAsset asset) internal view returns (IERC20) {
-        return _isETH(asset) ? IERC20(_WETH()) : _asIERC20(asset);
-    }
-
-    *
-     * @dev Same as `_translateToIERC20(IAsset)`, but for an entire array.
-
-    function _translateToIERC20(IAsset[] memory assets) internal view returns (IERC20[] memory) {
-        IERC20[] memory tokens = new IERC20[](assets.length);
-        for (uint256 i = 0; i < assets.length; ++i) {
-            tokens[i] = _translateToIERC20(assets[i]);
-        }
-        return tokens;
-    }
-
-    *
-     * @dev Interprets `asset` as an IERC20 token. This function should only be called on `asset` if `_isETH` previously
-     * returned false for it, that is, if `asset` is guaranteed not to be the ETH sentinel value.
-
-    function _asIERC20(IAsset asset) internal pure returns (IERC20) {
-        return IERC20(address(asset));
-    }
+//  address private constant _ETH = address(0);
 
   function initialize(address controller_, address weth_)
   public initializer {
-    ControllableV2.initializeControllable(controller_);
-    //    AssetHelpers.initializeAssetHelpers(weth_);// TODO remove comment
+//    ControllableV2.initializeControllable(controller_);
+//    _WETH_SLOT.set(weth_);
   }
 
   // ******* VIEWS ******
 
 
   // ******************** USERS ACTIONS *********************
+  struct SwapData {
+    address tokenIn;
+    address tokenOut;
+    uint amount;
+    uint minAmountOut;
+    uint256 deadline;
+  }
 
   function multiSwap(
-    address tokenIn,
-    address tokenOut,
-    uint amount,
+    SwapData memory swapData,
     IBVault.BatchSwapStep[] memory swaps,
-    IAsset[] memory assets,
-    uint minAmountOut, // TODO
-    uint256 deadline
+    IAsset[] memory assets
   )
-  external
-  override
-  nonReentrant
-  returns (uint amountOut) {
-    /*    require(tokenIn != address(0), "MS: zero tokenIn");
+    external
+    nonReentrant
+    returns (uint amountOut)
+  {
+        require(tokenIn != address(0), "MS: zero tokenIn");
         require(tokenOut != address(0), "MS: zero tokenOut");
         require(amount != 0, "MS: zero amount");
         require(swaps[0].amount > 0, 'MS: Unknown amount in first swap');
@@ -130,17 +88,17 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
         // some tokens have a burn/fee mechanic for transfers so amount can be changed
         // we are recommend to use manual swapping for this kind of tokens
         require(IERC20(tokenIn).balanceOf(address(this)) >= amount,
-          "MS: transfer fees forbidden for input Token");*/
+          "MS: transfer fees forbidden for input Token");
 
 
-    /*    IBVault.FundManagement memory funds = FundManagement({
+        IBVault.FundManagement memory funds = FundManagement({
           sender: address(this),
           fromInternalBalance: false,
           recipient: address(this),
           toInternalBalance: false
-        });*/
+        });
 
-    /*  uint amountOutBefore = IERC20(tokenOut).balanceOf(address(this));
+      uint amountOutBefore = IERC20(tokenOut).balanceOf(address(this));
 
       // These variables could be declared inside the loop, but that causes the compiler to allocate memory on each
       // loop iteration, increasing gas costs.
@@ -179,7 +137,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
       IERC20(tokenOut).safeTransfer(msg.sender, amountOut);
       require(amountOut <= IERC20(tokenOut).balanceOf(msg.sender),
-        "MS: transfer fees forbidden for output Token");*/
+        "MS: transfer fees forbidden for output Token");
   }
 
 
@@ -304,6 +262,48 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   function salvage(address _token, uint _amount) external {
     require(_isGovernance(msg.sender) || _isController(msg.sender), "MS: forbidden");
     IERC20(_token).safeTransfer(msg.sender, _amount);
+  }
+
+  // ************************* ASSET HELPERS *******************
+  //
+
+  // solhint-disable-next-line func-name-mixedcase
+  function _WETH() internal view returns (address) {
+    return _WETH_SLOT.getAddress();
+  }
+
+  /**
+   * @dev Returns true if `asset` is the sentinel value that represents ETH.
+   */
+  function _isETH(IAsset asset) internal pure returns (bool) {
+    return address(asset) == _ETH;
+  }
+
+  /**
+   * @dev Translates `asset` into an equivalent IERC20 token address. If `asset` represents ETH, it will be translated
+   * to the WETH contract.
+   */
+  function _translateToIERC20(IAsset asset) internal view returns (IERC20) {
+    return _isETH(asset) ? IERC20(_WETH()) : _asIERC20(asset);
+  }
+
+  /**
+   * @dev Same as `_translateToIERC20(IAsset)`, but for an entire array.
+   */
+  function _translateToIERC20(IAsset[] memory assets) internal view returns (IERC20[] memory) {
+    IERC20[] memory tokens = new IERC20[](assets.length);
+    for (uint256 i = 0; i < assets.length; ++i) {
+      tokens[i] = _translateToIERC20(assets[i]);
+    }
+    return tokens;
+  }
+
+  /**
+   * @dev Interprets `asset` as an IERC20 token. This function should only be called on `asset` if `_isETH` previously
+   * returned false for it, that is, if `asset` is guaranteed not to be the ETH sentinel value.
+   */
+  function _asIERC20(IAsset asset) internal pure returns (IERC20) {
+    return IERC20(address(asset));
   }
 
 }
