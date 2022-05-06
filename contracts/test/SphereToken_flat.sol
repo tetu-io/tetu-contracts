@@ -1,3 +1,7 @@
+/**
+ *Submitted for verification at polygonscan.com on 2022-05-03
+*/
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.4;
@@ -31,31 +35,6 @@ interface IERC20 {
     address indexed spender,
     uint256 value
   );
-}
-
-library Roles {
-  struct Role {
-    mapping(address => bool) bearer;
-  }
-
-  function add(Role storage role, address account) internal {
-    require(!has(role, account), 'Roles: account already has role');
-    role.bearer[account] = true;
-  }
-
-  function remove(Role storage role, address account) internal {
-    require(has(role, account), 'Roles: account does not have role');
-    role.bearer[account] = false;
-  }
-
-  function has(Role storage role, address account)
-  internal
-  view
-  returns (bool)
-  {
-    require(account != address(0), 'Roles: account is the zero address');
-    return role.bearer[account];
-  }
 }
 
 abstract contract ERC20Detailed is IERC20 {
@@ -358,6 +337,7 @@ contract Ownable {
   }
 }
 
+
 contract SphereTokenV2 is ERC20Detailed, Ownable {
   address constant DEAD = 0x000000000000000000000000000000000000dEaD;
   address constant ZERO = 0x0000000000000000000000000000000000000000;
@@ -366,10 +346,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   address[] public partyArray;
   address[] public sphereGamesContracts;
   address[] public subContracts;
+  address[] public lpContracts;
 
   bool private feesOnNormalTransfers = true;
   bool private manualSyncRefresh = true;
-  bool public autoRebase = false;
+  bool private doneInit = false;
+  bool public autoRebase = true;
   bool public initialDistributionFinished = false;
   bool public isBurnEnabled = false;
   bool public isLiquidityEnabled = true;
@@ -380,7 +362,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   bool public isWall = false;
   bool public partyTime = true;
   bool public swapEnabled = true;
-  bool private doneInit = false;
+  bool public goDeflationary = false;
 
   mapping(address => InvestorInfo) public investorInfoMap;
   mapping(address => bool) _isBuyFeeExempt;
@@ -393,9 +375,10 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   mapping(address => bool) public partyArrayCheck;
   mapping(address => bool) public sphereGamesCheck;
   mapping(address => bool) public subContractCheck;
+  mapping(address => bool) public lpContractCheck;
+  mapping(address => uint256) public partyArrayFee;
   mapping(address => mapping(address => uint256)) private _allowedFragments;
   mapping(address => uint256) private _gonBalances;
-  mapping(address => uint256) public partyArrayFee;
 
   uint256 private REWARD_YIELD_DENOMINATOR = 10000000000000000;
   uint256 private _gonsPerFragment;
@@ -417,20 +400,18 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   uint256 private constant MIN_BUY_AMOUNT_RATE = 500000 * 10 ** 18;
   uint256 private constant MIN_INVEST_REMOVABLE_PER_PERIOD = 1500000 * 10 ** 18;
   uint256 private constant MIN_SELL_AMOUNT_RATE = 500000 * 10 ** 18;
-  uint256 private constant SECONDS_PER_DAY = 86400;
   uint256 private constant TOTAL_GONS =
   MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
   uint256 private constant maxBracketTax = 10; // max bracket is holding 10%
 
+  uint256 private burnFee = 0;
+  uint256 private buyGalaxyBondFee = 0;
   uint256 private gonSwapThreshold = TOTAL_GONS / 1000;
   uint256 private investRemovalDelay = 3600;
   uint256 private liquidityFee = 50;
-  uint256 private burnFee = 0;
-  uint256 private buyGalaxyBondFee = 0;
   uint256 private partyListDivisor = 50;
   uint256 private realFeePartyArray = 490;
   uint256 private rebaseFrequency = 1800;
-  uint256 private rebaseIndex = 1 * 10 ** 18;
   uint256 private REWARD_YIELD = 3943560072416;
   uint256 private riskFreeValueFee = 50;
   uint256 private sellBurnFee = 0;
@@ -448,7 +429,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   uint256 public INDEX;
   uint256 public maxBuyTransactionAmount = 500000 * 10 ** 18;
   uint256 public maxSellTransactionAmount = 500000 * 10 ** 18;
-  uint256 public nextRebase = 1647385255;
+  uint256 public nextRebase = 1647385200;
   uint256 public oldEpochBuyPressure = 0;
   uint256 public oldEpochCollectedBuyTax = 0;
   uint256 public oldEpochCollectedSellTax = 0;
@@ -460,7 +441,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   uint256 public totalSellFee =
   totalBuyFee + (sellFeeTreasuryAdded) + (sellFeeRFVAdded);
   uint256 public wallDivisor = 2;
-  uint256 public wallMultiplier = 10;
 
   address public liquidityReceiver =
   0x1a2Ce410A034424B784D4b228f167A061B94CFf4;
@@ -471,7 +451,9 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   address public galaxyBondReceiver =
   0x20D61737f972EEcB0aF5f0a85ab358Cd083Dd56a;
 
-  address public convertTo = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+  address public sphereSwapper;
+
+  address public convertTo = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
 
   IDEXRouter public router;
   address public pair;
@@ -505,14 +487,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   constructor() ERC20Detailed('Sphere Finance', 'SPHERE', uint8(DECIMALS)) {}
 
-  function init(address _router, address _pair) external onlyOwner {
+  function init(address _router) external onlyOwner {
     require(!doneInit, 'Already initialized');
     router = IDEXRouter(_router);
-    pair = (_pair);
 
     _allowedFragments[address(this)][address(router)] = type(uint256).max;
     _allowedFragments[address(this)][address(this)] = type(uint256).max;
-    _allowedFragments[address(this)][pair] = type(uint256).max;
 
     _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
     _gonBalances[msg.sender] = TOTAL_GONS;
@@ -558,12 +538,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   }
 
   //get the address in the iteration
-  function markerPairAddress(uint256 value) public view returns (address) {
+  function markerPairAddress(uint256 value) external view returns (address) {
     return _makerPairs[value];
   }
 
   //get the current index of rebase
-  function currentIndex() public view returns (uint256) {
+  function currentIndex() external view returns (uint256) {
     return balanceForGons(INDEX);
   }
 
@@ -605,6 +585,17 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     return isWall;
   }
 
+  //validates if the swap back function should be initiated or not
+  function shouldSwapBack() internal view returns (bool) {
+    return
+    !automatedMarketMakerPairs[msg.sender] &&
+    !inSwap &&
+    swapThreshold > 0 &&
+    swapEnabled &&
+    (totalBuyFee + totalSellFee) > 0 &&
+    balanceOf(address(this)) >= (gonSwapThreshold / _gonsPerFragment);
+  }
+
   // check if the wallet should be taxed or not
   function shouldTakeFee(address from, address to)
   internal
@@ -621,36 +612,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     }
   }
 
-  //validates if the swap back function should be initiated or not
-  function shouldSwapBack() internal view returns (bool) {
-    return
-    !automatedMarketMakerPairs[msg.sender] &&
-    !inSwap &&
-    swapThreshold > 0 &&
-    swapEnabled &&
-    (totalBuyFee + totalSellFee) > 0 &&
-    balanceOf(address(this)) >= (gonSwapThreshold / _gonsPerFragment);
-  }
-
-  //calculates circulating supply (dead and zero is not added due to them being phased out of circulation forrever)
-  function getCirculatingSupply() external view returns (uint256) {
-    return
-    (TOTAL_GONS - _gonBalances[DEAD] - _gonBalances[ZERO]) /
-    _gonsPerFragment;
-  }
-
-  //calculate the users total on different contracts
-  function getUserTotalOnDifferentContractsSphere(address sender)
-  public
-  view
-  returns (uint256)
-  {
-    uint256 userTotal = balanceOf(sender);
-
-    //calculate the balance of different contracts on different wallets and sum them
-    return userTotal + (getBalanceContracts(sender));
-  }
-
   //this function iterates through all other contracts that are being part of the Sphere ecosystem
   //we add a new contract like wSPHERE or sSPHERE, whales could technically abuse this
   //by swapping to these contracts and leave the dynamic tax bracket
@@ -658,28 +619,20 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 userTotal;
 
     for (uint256 i = 0; i < subContracts.length; i++) {
-      userTotal +
-      (IBalanceOfSphere(subContracts[i]).balanceOfSphere(sender));
+      userTotal += (IBalanceOfSphere(subContracts[i]).balanceOfSphere(sender));
     }
     for (uint256 i = 0; i < sphereGamesContracts.length; i++) {
-      userTotal + (IERC20(sphereGamesContracts[i]).balanceOf(sender));
+      userTotal += (IERC20(sphereGamesContracts[i]).balanceOf(sender));
     }
 
     return userTotal;
   }
 
-  function getTokensInLPCirculation() public view returns (uint256) {
-    uint256 LPTotal;
-
-    for (uint256 i = 0; i < _makerPairs.length; i++) {
-      LPTotal += balanceOf(_makerPairs[i]);
-    }
-
-    return LPTotal;
-  }
-
-  function getRewardYield() external view returns (uint256, uint256) {
-    return (REWARD_YIELD, REWARD_YIELD_DENOMINATOR);
+  //calculates circulating supply (dead and zero is not added due to them being phased out of circulation forrever)
+  function getCirculatingSupply() external view returns (uint256) {
+    return
+    (TOTAL_GONS - _gonBalances[DEAD] - _gonBalances[ZERO] - _gonBalances[treasuryReceiver]) /
+    _gonsPerFragment;
   }
 
   function getCurrentTaxBracket(address _address)
@@ -700,6 +653,32 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     _bracket *= taxBracketMultiplier;
 
     return _bracket;
+  }
+
+  function getRewardYield() external view returns (uint256, uint256) {
+    return (REWARD_YIELD, REWARD_YIELD_DENOMINATOR);
+  }
+
+  function getTokensInLPCirculation() public view returns (uint256) {
+    uint256 LPTotal;
+
+    for (uint256 i = 0; i < lpContracts.length; i++) {
+      LPTotal += balanceOf(lpContracts[i]);
+    }
+
+    return LPTotal;
+  }
+
+  //calculate the users total on different contracts
+  function getUserTotalOnDifferentContractsSphere(address sender)
+  public
+  view
+  returns (uint256)
+  {
+    uint256 userTotal = balanceOf(sender);
+
+    //calculate the balance of different contracts on different wallets and sum them
+    return userTotal + (getBalanceContracts(sender));
   }
 
   //sync every LP to make sure Theft-of-Liquidity can't be arbitraged
@@ -758,20 +737,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
       require(amount <= maxSellTransactionAmount, 'Too much sell');
     }
 
-    //update manualSync every second sell / buy to resolve possible K issues with QLaaS
-    //only uses 60K gas
-    if (
-      automatedMarketMakerPairs[sender] ||
-      automatedMarketMakerPairs[recipient]
-    ) {
-      if (manualSyncRefresh) {
-        manualSync();
-        manualSyncRefresh = false;
-      } else {
-        manualSyncRefresh = true;
-      }
-    }
-
     if (
       automatedMarketMakerPairs[recipient] &&
       !excludedAccount &&
@@ -791,7 +756,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     if (
       automatedMarketMakerPairs[recipient] &&
       !excludedAccount &&
-      isSellHourlyLimit
+      isSellHourlyLimitEnabled()
     ) {
       InvestorInfo storage investor = investorInfoMap[sender];
       //Make sure they can't withdraw too often.
@@ -824,25 +789,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     if (
       shouldRebase() &&
       autoRebase &&
+      !goDeflationary &&
       !automatedMarketMakerPairs[sender] &&
       !automatedMarketMakerPairs[recipient]
     ) {
       _rebase();
       manualSync();
-      setEpochCalculation();
-    }
-
-    //calculate the amount of buy / sell
-    if (automatedMarketMakerPairs[sender]) {
-      epochBuyPressure += (gonAmount / (_gonsPerFragment));
-      epochCollectedBuyTax += (gonAmount -
-      (gonAmountReceived) /
-      (_gonsPerFragment));
-    } else if (automatedMarketMakerPairs[recipient]) {
-      epochSellPressure += (gonAmount / (_gonsPerFragment));
-      epochCollectedSellTax += (gonAmount -
-      (gonAmountReceived) /
-      (_gonsPerFragment));
     }
 
     emit Transfer(
@@ -875,7 +827,8 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
     uint256 contractTokenBalance = balanceOf(address(this));
 
-    uint256 balanceBefore = address(this).balance;
+    IERC20 toToken = IERC20(convertTo);
+    uint256 balanceBefore = toToken.balanceOf(address(this));
 
     uint256 amountToBurn = (contractTokenBalance *
     (burnFee + sellBurnFee)) / realTotalFee;
@@ -895,61 +848,52 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     path[0] = address(this);
     path[1] = convertTo;
 
-    console.log("contractTokenBalance", contractTokenBalance);
-    console.log("balanceBefore", balanceBefore);
-    console.log("amountToBurn", amountToBurn);
-    console.log("amountToLiquidate", amountToLiquidate);
-    console.log("amountToSwap", amountToSwap);
+    console.log("swap from", path[0]);
+    console.log("swap to", path[1]);
 
-    router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+    router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
       amountToSwap,
       0,
       path,
       address(this),
       block.timestamp
     );
+    console.log("swapped");
 
-    uint256 amountMATIC = address(this).balance - (balanceBefore);
+    uint256 amountStable = toToken.balanceOf(address(this)) - balanceBefore;
 
     uint256 totalMATICFee = ((realTotalFee) -
     (dynamicLiquidityFee) /
     (2) -
     (burnFee + sellBurnFee));
 
-    uint256 amountMATICLiquidity = (amountMATIC * (dynamicLiquidityFee)) /
+    uint256 amountStableLiquidity = (amountStable * (dynamicLiquidityFee)) /
     (totalMATICFee) /
     (2);
 
-    uint256 amountToRFV = (amountMATIC *
+    uint256 amountToRFV = (amountStable *
     (riskFreeValueFee + (sellFeeRFVAdded))) / (totalMATICFee);
 
-    uint256 amountToGalaxyBond = (amountMATIC *
+    uint256 amountToGalaxyBond = (amountStable *
     (buyGalaxyBondFee + (sellGalaxyBond))) / (totalMATICFee);
 
-    uint256 amountToTreasury = amountMATIC -
-    (amountMATICLiquidity) -
+    uint256 amountToTreasury = amountStable -
+    (amountStableLiquidity) -
     (amountToRFV) -
     (amountToGalaxyBond);
 
-    (bool success,) = payable(treasuryReceiver).call{
-    value : amountToTreasury,
-    gas : 30000
-    }('');
-    (success,) = payable(riskFreeValueReceiver).call{
-    value : amountToRFV,
-    gas : 30000
-    }('');
-    (success,) = payable(galaxyBondReceiver).call{
-    value : amountToGalaxyBond,
-    gas : 30000
-    }('');
-
-    success = false;
+    toToken.transfer(treasuryReceiver, amountToTreasury);
+    toToken.transfer(riskFreeValueReceiver, amountToRFV);
+    toToken.transfer(galaxyBondReceiver, amountToGalaxyBond);
 
     if (amountToLiquidate > 0) {
-      router.addLiquidityETH{value : amountMATICLiquidity}(
+      console.log("add liq from", address(this));
+      console.log("add liq to", convertTo);
+      router.addLiquidity(
         address(this),
+        convertTo,
         amountToLiquidate,
+        amountStableLiquidity,
         0,
         0,
         liquidityReceiver,
@@ -1025,9 +969,14 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
     uint256 feeAmount = (gonAmount * (_realFee)) / (FEE_DENOMINATOR);
 
-    _gonBalances[address(this)] = _gonBalances[address(this)] + (feeAmount);
-
-    emit Transfer(sender, address(this), (feeAmount / (_gonsPerFragment)));
+    if (sphereSwapper != address(0x0)) {
+      uint256 amount = feeAmount / _gonsPerFragment;
+      _transferFrom(address(this), sphereSwapper, amount);
+      emit Transfer(sender, sphereSwapper, amount);
+    } else {
+      _gonBalances[address(this)] = _gonBalances[address(this)] + (feeAmount);
+      emit Transfer(sender, address(this), (feeAmount / (_gonsPerFragment)));
+    }
 
     return gonAmount - (feeAmount);
   }
@@ -1144,15 +1093,12 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   }
 
   //set the router in case of dex switch
-  function setRouter(address _router, address _pair) external onlyOwner {
+  function setRouter(address _router) external onlyOwner {
     router = IDEXRouter(_router);
-
-    pair = _pair;
 
     _allowedFragments[address(this)][address(router)] = type(uint256).max;
     _allowedFragments[address(this)][address(this)] = type(uint256).max;
-    _allowedFragments[address(this)][pair] = type(uint256).max;
-    setAutomatedMarketMakerPair(pair, true);
+    require(IERC20(convertTo).approve(_router, type(uint256).max));
 
     emit SetRouter(_router);
   }
@@ -1180,7 +1126,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   //move full balance without the tax
   function moveBalance(address _to)
-  public
+  external
   validRecipient(_to)
   returns (bool)
   {
@@ -1220,9 +1166,11 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   //add new subcontracts to the protocol so they can be calculated
   function addSubContracts(address _subContract, bool _value)
-  public
+  external
   onlyOwner
   {
+    require(subContractCheck[_subContract] != _value, 'Value already set');
+
     subContractCheck[_subContract] = _value;
 
     if (_value) {
@@ -1240,11 +1188,40 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     emit SetSubContracts(_subContract, _value);
   }
 
-  //Add S.P.H.E.R.E. Games Contracts
-  function addSphereGamesAddies(address _sphereGamesAddy, bool _value)
-  public
+  //add new lpContracts to the protocol so they can be calculated
+  function addLPAddressesForDynamicTax(address _lpContract, bool _value)
+  external
   onlyOwner
   {
+    require(lpContractCheck[_lpContract] != _value, 'Value already set');
+
+    lpContractCheck[_lpContract] = _value;
+
+    if (_value) {
+      lpContracts.push(_lpContract);
+    } else {
+      for (uint256 i = 0; i < lpContracts.length; i++) {
+        if (lpContracts[i] == _lpContract) {
+          lpContracts[i] = lpContracts[lpContracts.length - 1];
+          lpContracts.pop();
+          break;
+        }
+      }
+    }
+
+    emit SetLPContracts(_lpContract, _value);
+  }
+
+  //Add S.P.H.E.R.E. Games Contracts
+  function addSphereGamesAddies(address _sphereGamesAddy, bool _value)
+  external
+  onlyOwner
+  {
+    require(
+      sphereGamesCheck[_sphereGamesAddy] != _value,
+      'Value already set'
+    );
+
     sphereGamesCheck[_sphereGamesAddy] = _value;
 
     if (_value) {
@@ -1269,8 +1246,10 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     address _partyAddy,
     bool _value,
     uint256 feeAmount
-  ) public onlyOwner {
+  ) external onlyOwner {
+
     partyArrayCheck[_partyAddy] = _value;
+    require(feeAmount < MAX_PARTY_ARRAY, 'max party fees');
     partyArrayFee[_partyAddy] = feeAmount;
 
     if (_value) {
@@ -1325,18 +1304,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     investRemovalDelay = _value;
 
     emit SetInvestRemovalDelay(_value);
-  }
-
-  function setEpochCalculation() private {
-    //store previous buy pressure
-    oldEpochBuyPressure = epochBuyPressure;
-    oldEpochCollectedBuyTax = epochCollectedBuyTax;
-    epochBuyPressure = 0;
-
-    //store previous sell pressure
-    oldEpochSellPressure = epochSellPressure;
-    oldEpochCollectedSellTax = epochCollectedSellTax;
-    epochSellPressure = 0;
   }
 
   function setMaxInvestRemovablePerPeriod(uint256 _value) external onlyOwner {
@@ -1405,12 +1372,14 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     address _liquidityReceiver,
     address _treasuryReceiver,
     address _riskFreeValueReceiver,
-    address _galaxyBondReceiver
+    address _galaxyBondReceiver,
+    address _sphereSwapper
   ) external onlyOwner {
     liquidityReceiver = _liquidityReceiver;
     treasuryReceiver = _treasuryReceiver;
     riskFreeValueReceiver = _riskFreeValueReceiver;
     galaxyBondReceiver = _galaxyBondReceiver;
+    sphereSwapper = _sphereSwapper;
   }
 
   function setFees(
@@ -1512,8 +1481,15 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   }
 
   function setAutoRebase(bool _autoRebase) external onlyOwner {
+    require(autoRebase != _autoRebase, 'already set');
     autoRebase = _autoRebase;
     emit SetAutoRebase(_autoRebase, block.timestamp);
+  }
+
+  function setGoDeflationary(bool _goDeflationary) external onlyOwner {
+    require(goDeflationary != _goDeflationary, 'already set');
+    goDeflationary = _goDeflationary;
+    emit SetGoDeflationary(_goDeflationary, block.timestamp);
   }
 
   //set rebase frequency
@@ -1584,27 +1560,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     emit SetWallDivisor(_wallDivisor, _isWall);
   }
 
-  event SwapBack(
-    uint256 contractTokenBalance,
-    uint256 amountToLiquify,
-    uint256 amountToRFV,
-    uint256 amountToTreasury,
-    uint256 amountToGalaxyBond
-  );
-
-  event SwapAndLiquify(
-    uint256 tokensSwapped,
-    uint256 MATICReceived,
-    uint256 tokensIntoLiqudity
-  );
-
-  event SetFeeReceivers(
-    address indexed _liquidityReceiver,
-    address indexed _treasuryReceiver,
-    address indexed _riskFreeValueReceiver,
-    address _galaxyBondReceiver
-  );
-
   event SetPartyTime(bool indexed state, uint256 indexed time);
 
   event SetTaxBracketFeeMultiplier(
@@ -1628,7 +1583,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
 
   event SetAutoRebase(bool indexed value, uint256 indexed time);
 
-  event SetTaxBracket(bool indexed value, uint256 indexed time);
+  event SetGoDeflationary(bool indexed value, uint256 indexed time);
 
   event SetRebaseFrequency(uint256 indexed frequency, uint256 indexed time);
 
@@ -1638,8 +1593,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 indexed time,
     address setter
   );
-
-  event SetFeesOnNormalTransfers(bool indexed value, uint256 indexed time);
 
   event SetNextRebase(uint256 indexed value, uint256 indexed time);
 
@@ -1679,7 +1632,6 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
   event SetPartyListDivisor(uint256 indexed value);
   event SetHourlyLimit(bool indexed value);
   event SetContractToChange(address indexed value);
-  event SetSwapThreshold(uint256 indexed value);
   event SetTotalFeeExempt(address indexed addy, bool indexed value);
   event SetBuyFeeExempt(address indexed addy, bool indexed value);
   event SetSellFeeExempt(address indexed addy, bool indexed value);
@@ -1689,6 +1641,7 @@ contract SphereTokenV2 is ERC20Detailed, Ownable {
     uint256 indexed _type
   );
   event SetSubContracts(address indexed pair, bool indexed value);
+  event SetLPContracts(address indexed pair, bool indexed value);
   event SetPartyAddresses(address indexed pair, bool indexed value);
   event SetSphereGamesAddresses(address indexed pair, bool indexed value);
   event GenericErrorEvent(string reason);

@@ -119,11 +119,12 @@ export class TokenUtils {
     [EthAddresses.TETU_TOKEN, '0x8f5adc58b32d4e5ca02eac0e293d35855999436c'.toLowerCase()], // todo temporally farm!
     [EthAddresses.BAL_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // balancer vault
     [EthAddresses.BALANCER_BAL_WETH, '0xc128a9954e6c874ea3d62ce62b468ba073093f25'.toLowerCase()], // gnosis
-    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0xe67b7a560da673776d80a8da5469fff06eb1683c'.toLowerCase()],
+    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer vault
     [FtmAddresses.BEETS_TOKEN, '0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
     [FtmAddresses.SPIRIT_TOKEN, '0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit
     [FtmAddresses.TAROT_TOKEN, '0x11D90eA9d16e1Ee5879B299A819F6D618816D70F'.toLowerCase()], // spooky lp
     [MaticAddresses.SPHEREV2_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
+    [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

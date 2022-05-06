@@ -12,7 +12,7 @@ import {
   IStrategy,
   SmartVault,
   SmartVault__factory,
-  StrategyBalStaking
+  StrategyBalBridgedStaking
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -88,7 +88,7 @@ describe('BAL bridged staking tests', async () => {
         const strategy = await DeployerUtils.deployStrategyProxy(
           signer,
           strategyContractName,
-        ) as StrategyBalStaking;
+        ) as StrategyBalBridgedStaking;
         await strategy.initialize(core.controller.address, vaultAddress, sender.address);
         return strategy;
       },
