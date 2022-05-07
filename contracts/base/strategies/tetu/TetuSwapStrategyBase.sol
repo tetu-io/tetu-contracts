@@ -29,6 +29,7 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   string public constant VERSION = "1.2.3";
   /// @dev 10% buybacks
   uint256 private constant _BUY_BACK_RATIO = 10_00;
+
   /// @notice TetuSwap pair
   address public pair;
 
