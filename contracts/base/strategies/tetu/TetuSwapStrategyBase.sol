@@ -15,6 +15,7 @@ pragma solidity 0.8.4;
 import "../StrategyBase.sol";
 import "../../../swap/interfaces/ITetuSwapPair.sol";
 import "../../interface/ISmartVault.sol";
+import "../../ArrayLib.sol";
 
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix
@@ -108,10 +109,19 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     address token1 = ITetuSwapPair(pair).token1();
     address vault = _smartVault;
     uint targetTokenEarnedTotal = 0;
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+    address[] storage rewardTokens = _rewardTokens;
+    address[] memory smartVaultRewardTokens = ISmartVault(vault).rewardTokens();
+    for (uint256 i = 0; i < smartVaultRewardTokens.length; i++) {
+      if (!ArrayLib.contains(rewardTokens, smartVaultRewardTokens[i])) {
+        rewardTokens.push(smartVaultRewardTokens[i]);
+        i++;
+      }
+      else { }
+    }
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
       uint256 amount = rewardBalance(i) * _buyBackRatio / _BUY_BACK_DENOMINATOR;
       if (amount != 0) {
-        address rt = _rewardTokens[i];
+        address rt = rewardTokens[i];
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, amount);
         // it will sell reward token to Target Token and distribute it to SmartVault and PS
@@ -121,21 +131,20 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
         } catch {}
         targetTokenEarnedTotal += targetTokenEarned;
       }
-      if (targetTokenEarnedTotal > 0) {
-        IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
-      }
+    }
+    if (targetTokenEarnedTotal > 0) {
+      IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
     }
     uint256 t0BalBefore = IERC20(token0).balanceOf(address(this));
     uint256 t1BalBefore = IERC20(token1).balanceOf(address(this));
     (uint256 reserve0, uint256 reserve1,) = ITetuSwapPair(pair).getReserves();
-    uint256 price = reserve0 * 1e18 / reserve1;
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      address rt = _rewardTokens[i];
+    for (uint256 i = 0; i < rewardTokens.length; i++) {
+      address rt = rewardTokens[i];
       uint256 rtBal = IERC20(rt).balanceOf(address(this));
       if (rt != token0 && rt != token1) {
         IERC20(rt).safeApprove(forwarder, 0);
         IERC20(rt).safeApprove(forwarder, rtBal);
-        if (t0BalBefore > t1BalBefore * price / 1e18) {
+        if (t0BalBefore > t1BalBefore * reserve0 / reserve1) {
           IFeeRewardForwarder(forwarder).liquidate(rt, token1, rtBal);
         }
         else {
@@ -145,16 +154,16 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     }
     uint256 t0BalAfter = IERC20(token0).balanceOf(address(this));
     uint256 t1BalAfter = IERC20(token1).balanceOf(address(this));
-    if (t0BalAfter == t1BalAfter * price / 1e18) {}
-    else if (t0BalAfter > t1BalAfter * price / 1e18) {
+    if (t0BalAfter == t1BalAfter * reserve0 / reserve1) {}
+    else if (t0BalAfter > t1BalAfter * reserve0 / reserve1) {
       IERC20(token0).safeApprove(forwarder, 0);
-      IERC20(token0).safeApprove(forwarder, (t0BalAfter - t1BalAfter * price / 1e18) / 2);
-      IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t0BalAfter - t1BalAfter * price / 1e18) / 2);
+      IERC20(token0).safeApprove(forwarder, (t0BalAfter - t1BalAfter * reserve0 / reserve1) / 2);
+      IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t0BalAfter - t1BalAfter * reserve0 / reserve1) / 2);
     }
     else {
       IERC20(token1).safeApprove(forwarder, 0);
-      IERC20(token1).safeApprove(forwarder, (t1BalAfter - t0BalAfter * 1e18 / price) / 2);
-      IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t1BalAfter - t0BalAfter * 1e18 / price) / 2);
+      IERC20(token1).safeApprove(forwarder, (t1BalAfter - t0BalAfter * reserve1 / reserve0) / 2);
+      IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t1BalAfter - t0BalAfter * reserve1 / reserve0) / 2);
     }
     autocompoundTetuSwapLP(token0, token1);
   }
