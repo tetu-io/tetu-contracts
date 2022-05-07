@@ -91,7 +91,8 @@ async function main() {
         lpAddress,
         token0,
         token1,
-        pool
+        pool,
+        rewards
       ]);
     }
   }

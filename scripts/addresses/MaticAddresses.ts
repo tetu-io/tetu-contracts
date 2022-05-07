@@ -1,5 +1,5 @@
 /* tslint:disable:variable-name */
-
+// noinspection SpellCheckingInspection
 // noinspection JSUnusedGlobalSymbols
 
 export class MaticAddresses {

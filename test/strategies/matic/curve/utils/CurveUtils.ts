@@ -90,14 +90,14 @@ export class CurveUtils {
     await UniswapUtils.getTokenFromHolder(trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000000')); // 100m wmatic
     await UniswapUtils.getTokenFromHolder(trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10000000'));
 
-    const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, trader) as IERC20;
+    const usdcToken = await ethers.getContractAt("ERC20", MaticAddresses.USDC_TOKEN, trader) as IERC20;
     const usdcUserBalance = await usdcToken.balanceOf(trader.address);
     expect(usdcUserBalance).is.not.eq("0", "user should have some USDC tokens to swap");
     const depContract = await ethers.getContractAt("IAavePool", MaticAddresses.CURVE_AAVE_POOL, trader) as IAavePool;
     await usdcToken.approve(MaticAddresses.CURVE_AAVE_POOL, usdcUserBalance, {from: trader.address});
     // swap usdc to dai
     await depContract.exchange_underlying(1, 0, usdcUserBalance, BigNumber.from("0"), {from: trader.address});
-    const daiToken = await ethers.getContractAt("IERC20", MaticAddresses.DAI_TOKEN, trader) as IERC20;
+    const daiToken = await ethers.getContractAt("ERC20", MaticAddresses.DAI_TOKEN, trader) as IERC20;
     const daiTokenBalance = await daiToken.balanceOf(trader.address);
     await daiToken.approve(MaticAddresses.CURVE_AAVE_POOL, daiTokenBalance, {from: trader.address});
     // swap dai to usdc

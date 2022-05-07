@@ -2,6 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../deploy/DeployerUtils";
 import {Announcer, Bookkeeper, ContractReader, Controller} from "../../typechain";
 import {RunHelper} from "../utils/tools/RunHelper";
+import {expect} from "chai";
 
 
 async function main() {
@@ -15,12 +16,11 @@ async function main() {
   const controller = await DeployerUtils.connectInterface(signer, 'Controller', core.controller) as Controller;
   const announcer = await DeployerUtils.connectInterface(signer, 'Announcer', core.announcer) as Announcer;
   const bookkeeper = await DeployerUtils.connectInterface(signer, 'Bookkeeper', core.bookkeeper) as Bookkeeper;
-  const cReader = await DeployerUtils.connectInterface(signer, 'ContractReader', tools.reader) as ContractReader;
 
   const vaultsLength = (await bookkeeper.vaultsLength()).toNumber();
+  console.log('vaultsLength', vaultsLength);
 
-  const vaults: string[] = [];
-
+  /*const vaults: string[] = [];
   for (let i = 0; i < vaultsLength; i++) {
     const vault = await bookkeeper._vaults(i);
     // if (
@@ -31,8 +31,11 @@ async function main() {
     //   continue;
     // }
     vaults.push(vault);
-    console.log('vault', vault);
-  }
+    console.log('vault', vault, vaults.length);
+  }*/
+  const vaults = await bookkeeper.vaults();
+  console.log('vaults.length', vaults.length);
+  expect(vaultsLength === vaults.length);
 
   let vaultBatch: string[] = [];
   let logicBatch: string[] = [];

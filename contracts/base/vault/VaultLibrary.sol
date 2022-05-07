@@ -191,6 +191,7 @@ library VaultLibrary {
   }
 
   /// @notice Transfer earned rewards to caller
+  /// @notice for backward compatibility with SmartVaultV110
   function processPayReward(
     address rt,
     uint reward,
@@ -199,18 +200,31 @@ library VaultLibrary {
     bool protectionMode,
     mapping(address => mapping(address => uint256)) storage rewardsForToken
   ) public returns (uint renotifiedAmount, uint paidReward) {
+    return processPayRewardFor(rt, reward, userBoostTs, controller, protectionMode, rewardsForToken, msg.sender);
+  }
+
+  /// @notice Transfer earned rewards to rewardsReceiver
+  function processPayRewardFor(
+    address rt,
+    uint reward,
+    mapping(address => uint256) storage userBoostTs,
+    address controller,
+    bool protectionMode,
+    mapping(address => mapping(address => uint256)) storage rewardsForToken,
+    address rewardsReceiver
+  ) public returns (uint renotifiedAmount, uint paidReward) {
     paidReward = reward;
     if (paidReward > 0 && IERC20(rt).balanceOf(address(this)) >= paidReward) {
       // calculate boosted amount
-      uint256 boostStart = userBoostTs[msg.sender];
+      uint256 boostStart = userBoostTs[rewardsReceiver];
       // refresh boost
-      userBoostTs[msg.sender] = block.timestamp;
+      userBoostTs[rewardsReceiver] = block.timestamp;
       // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
       // allow claim without penalty to some addresses, TetuSwap pairs as example
       if (
         boostStart != 0
         && boostStart < block.timestamp
-        && !IController(controller).isPoorRewardConsumer(msg.sender)
+        && !IController(controller).isPoorRewardConsumer(rewardsReceiver)
       ) {
         uint256 currentBoostDuration = block.timestamp - boostStart;
         IVaultController _vaultController = IVaultController(IController(controller).vaultController());
@@ -232,11 +246,11 @@ library VaultLibrary {
         }
       }
 
-      rewardsForToken[rt][msg.sender] = 0;
-      IERC20(rt).safeTransfer(msg.sender, paidReward);
+      rewardsForToken[rt][rewardsReceiver] = 0;
+      IERC20(rt).safeTransfer(rewardsReceiver, paidReward);
       // only statistic, should not affect reward claim process
       try IBookkeeper(IController(controller).bookkeeper())
-      .registerUserEarned(msg.sender, address(this), rt, paidReward) {
+      .registerUserEarned(rewardsReceiver, address(this), rt, paidReward) {
       } catch {}
     }
     return (renotifiedAmount, paidReward);
