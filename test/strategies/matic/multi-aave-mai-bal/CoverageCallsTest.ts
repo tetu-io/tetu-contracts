@@ -82,7 +82,7 @@ export class CoverageCallsTest extends SpecificStrategyTest {
       expect(await balPipeUser.name()).eq('BalVaultPipe')
       expect(await balPipeUser.nextPipe()).eq(MaticAddresses.ZERO_ADDRESS)
       expect(await balPipeUser.prevPipe()).eq(stablecoinPipeAddress)
-      expect(await balPipeUser.rewardTokensLength()).eq(1)
+      expect(await balPipeUser.rewardTokensLength()).eq(2)
       const rewardToken0 = await balPipeUser.rewardTokens(0);
       expect(rewardToken0.toLowerCase()).eq(MaticAddresses.BAL_TOKEN);
 

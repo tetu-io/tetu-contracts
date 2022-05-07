@@ -7,13 +7,15 @@ import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {IStrategy, IStrategy__factory, SmartVault} from "../../../../typechain";
+import {ForwarderV2, IStrategy, IStrategy__factory, SmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {SplitterDoHardWork} from "../../SplitterDoHardWork";
 import {SplitterSpecificTests} from "./SplitterSpecificTests";
+import {FtmAddresses} from "../../../../scripts/addresses/FtmAddresses";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -94,7 +96,12 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
     // **********************************************
     const underlying = token;
     // add custom liquidation path if necessary
-    const forwarderConfigurator = null;
+    const forwarderConfigurator = async (forwarder: ForwarderV2) => {
+      await forwarder.addLargestLps(
+        [MaticAddresses.ICE_TOKEN],
+        ["0x34832D9AC4127a232C1919d840f7aaE0fcb7315B"]
+      );
+    };
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations

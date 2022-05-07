@@ -239,7 +239,7 @@ describe("Deposit Helper tests", function () {
     const filtered = response.filter(v => (v.active && (v.users>5) && !v.strategyOnPause && v.tvl>0));
     allVaults = filtered.map(v => v.addr);
     console.log('filtered allVaults.length', allVaults.length);
-    const slicedVaults = allVaults.slice(-40); // n last vaults (some of that will be skipped with no biggest holder)
+    const slicedVaults = allVaults.slice(0, 10); // n last vaults (some of that will be skipped with no biggest holder)
     console.log('slicedVaults.length', slicedVaults.length);
     for (const vault of slicedVaults) await testVault(vault);
 

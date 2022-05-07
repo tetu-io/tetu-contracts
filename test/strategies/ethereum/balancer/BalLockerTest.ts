@@ -33,6 +33,10 @@ describe("Bal locker tests", function () {
   before(async function () {
     this.timeout(1200000);
     snapshotBefore = await TimeUtils.snapshot();
+
+    if((await ethers.provider.getNetwork()).chainId !== 1) {
+      return;
+    }
     [signer, distributor] = await ethers.getSigners();
 
     const controller = await DeployerUtils.deployContract(signer, 'ControllerMinimal', signer.address) as ControllerMinimal;
