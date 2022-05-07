@@ -128,9 +128,7 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     uint256 t1BalBefore = IERC20(token1).balanceOf(address(this));
     (uint256 reserve0, uint256 reserve1,) = ITetuSwapPair(pair).getReserves();
     uint256 price = reserve0 * 1e18 / reserve1;
-    for (uint256 i = 0;
-      i < _rewardTokens.length;
-      i++) {
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
       address rt = _rewardTokens[i];
       uint256 rtBal = IERC20(rt).balanceOf(address(this));
       if (rt != token0 && rt != token1) {
