@@ -15,6 +15,7 @@ pragma solidity 0.8.4;
 import "../StrategyBase.sol";
 import "../../../swap/interfaces/ITetuSwapPair.sol";
 import "../../interface/ISmartVault.sol";
+import "../../../swap/libraries/TetuSwapLibrary.sol";
 
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix
@@ -29,10 +30,6 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
   string public constant VERSION = "1.2.2";
   /// @dev 10% buybacks
   uint256 private constant _BUY_BACK_RATIO = 10_00;
-  /// @dev Used to prevent double profit liquidation in case of hardwork fail
-  /// @dev Necessary because first we liquidate profit and then add liquidity
-  bool private liquidated;
-
   /// @notice TetuSwap pair
   address public pair;
 
@@ -105,112 +102,89 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-
-    // assume only xTetu rewards exist
-    address rt = IController(controller()).psVault();
-
-    // it is redirected rewards - PS already had their part of income
-    // in case of pair with xTETU-XXX we not able to separate it
-    uint256 amount = IERC20(rt).balanceOf(address(this));
-    if (amount > 0) {
-      IERC20(rt).safeApprove(_smartVault, 0);
-      IERC20(rt).safeApprove(_smartVault, amount);
-      ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
-    }
-    // first liquidate rewards if bb ratio != 0 and we do not fail previous hardwork after liquidation
-    if (!liquidated && _buyBackRatio != 0) {
-      liquidateRewardTetuSwap();
-    }
-    liquidated = true;
-    // then autocompound the whole remainder
-    autocompoundTetuSwapLP();
-    // set liquidated to false because hardwork is succeeded and next time need to liquidate reward again
-    liquidated = false;
-  }
-
-  function autocompoundTetuSwapLP() internal {
     address forwarder = IController(controller()).feeRewardForwarder();
-
-    address token0;
-    address token1;
-
-    // define token0 and token1
+    // define tokens to add liquidity
+    address token0 = ITetuSwapPair(pair).token0();
+    address token1 = ITetuSwapPair(pair).token1();
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      if (_rewardTokens[i] == ITetuSwapPair(pair).token0()) {
-        token0 = _rewardTokens[i];
-      }
-      if (_rewardTokens[i] == ITetuSwapPair(pair).token1()) {
-        token1 = _rewardTokens[i];
-      }
-    }
-
-    uint amountToAddLiquidityToken0 = IERC20(token0).balanceOf(address(this));
-    uint amountToAddLiquidityToken1 = IERC20(token1).balanceOf(address(this));
-
-    // autocompound all that we can liquidate at start
-    if (amountToAddLiquidityToken0 >= 1 && amountToAddLiquidityToken1 >= 1) {
-      IERC20(token0).safeApprove(router, 0);
-      IERC20(token0).safeApprove(router, amountToAddLiquidityToken0);
-      IERC20(token1).safeApprove(router, 0);
-      IERC20(token1).safeApprove(router, amountToAddLiquidityToken1);
-      IUniswapV2Router02(router).addLiquidity(
-        token0,
-        token1,
-        amountToAddLiquidityToken0,
-        amountToAddLiquidityToken1,
-        1,
-        1,
-        address(this),
-        block.timestamp
-      );
-    }
-    uint token0amount = 0;
-    uint token1amount = 0;
-
-    if (IERC20(token0).balanceOf(address(this)) > 0 || IERC20(token1).balanceOf(address(this)) > 0) {
-      // try to swap the whole remainder of one reward token to another
-      if (IERC20(token0).balanceOf(address(this)) > 0 && IERC20(token1).balanceOf(address(this)) > 0) {
-        IERC20(token0).safeApprove(forwarder, 0);
-        IERC20(token0).safeApprove(forwarder, IERC20(token0).balanceOf(address(this)));
-        try IFeeRewardForwarder(forwarder).liquidate(token0, token1, IERC20(token0).balanceOf(address(this))) {}
-        catch {
-          IERC20(token1).safeApprove(forwarder, 0);
-          IERC20(token1).safeApprove(forwarder, IERC20(token1).balanceOf(address(this)));
-          IFeeRewardForwarder(forwarder).liquidate(token1, token0, IERC20(token1).balanceOf(address(this)));
+      address rt = _rewardTokens[i];
+      if (rt != token0 && rt != token1) {
+        uint256 amount = IERC20(rt).balanceOf(address(this));
+        if (amount > 0) {
+          IERC20(rt).safeApprove(_smartVault, 0);
+          IERC20(rt).safeApprove(_smartVault, amount * _buyBackRatio / _BUY_BACK_DENOMINATOR);
+          ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount * _buyBackRatio / _BUY_BACK_DENOMINATOR);
         }
       }
-      // after previous step all of rewards are in one token
-      // if all of rewards in token0 swap the half to token1
-      // else swap the half of token1 to token0
-      if (IERC20(token0).balanceOf(address(this)) > 0) {
-        IERC20(token0).safeApprove(forwarder, 0);
-        IERC20(token0).safeApprove(forwarder, IERC20(token0).balanceOf(address(this)) / 2);
-        token1amount = IFeeRewardForwarder(forwarder).liquidate(token0, token1, IERC20(token0).balanceOf(address(this)) / 2);
-        require(token1amount != 0, "SB: Token0 zero amount");
-      }
-      else {
-        IERC20(token1).safeApprove(forwarder, 0);
-        IERC20(token1).safeApprove(forwarder, IERC20(token1).balanceOf(address(this)) / 2);
-        token0amount = IFeeRewardForwarder(forwarder).liquidate(token1, token0, IERC20(token1).balanceOf(address(this)) / 2);
-        require(token0amount != 0, "SB: Token0 zero amount");
-      }
-
-      // now we have enough tokens to add maximum liquidity
-      IERC20(token0).safeApprove(router, 0);
-      IERC20(token0).safeApprove(router, IERC20(token0).balanceOf(address(this)));
-      IERC20(token1).safeApprove(router, 0);
-      IERC20(token1).safeApprove(router, IERC20(token1).balanceOf(address(this)));
-      IUniswapV2Router02(router).addLiquidity(
-        token0,
-        token1,
-        IERC20(token0).balanceOf(address(this)),
-        IERC20(token1).balanceOf(address(this)),
-        1,
-        1,
-        address(this),
-        block.timestamp
-      );
     }
+    liquidateRewardTetuSwap();
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      address rt = _rewardTokens[i];
+      if (rt != token0 && rt != token1) {
+        // check to which token (0/1) liquuidate reward tokens
+        uint256 t0BalBefore = IERC20(token0).balanceOf(address(this));
+        uint256 t1BalBefore = IERC20(token1).balanceOf(address(this));
+        (uint256 reserve0Before, uint256 reserve1Before,) = ITetuSwapPair(pair).getReserves();
+        uint256 quote1Before = TetuSwapLibrary.quote(t0BalBefore, reserve0Before, reserve1Before);
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, IERC20(rt).balanceOf(address(this)));
+        if (quote1Before > t1BalBefore) {
+          IFeeRewardForwarder(forwarder).liquidate(rt, token1, IERC20(rt).balanceOf(address(this)));
+        }
+        else {
+          IFeeRewardForwarder(forwarder).liquidate(rt, token0, IERC20(rt).balanceOf(address(this)));
+        }
+      }
+    }
+    uint256 t0BalAfter = IERC20(token0).balanceOf(address(this));
+    uint256 t1BalAfter = IERC20(token1).balanceOf(address(this));
+    (uint256 reserve0After, uint256 reserve1After,) = ITetuSwapPair(pair).getReserves();
+    uint256 quote1After = TetuSwapLibrary.quote(1e18, reserve0After, reserve1After);
+    if (quote1After == 1e18) {
+      if (t0BalAfter > t1BalAfter) {
+        IERC20(token0).safeApprove(forwarder, 0);
+        IERC20(token0).safeApprove(forwarder, (t0BalAfter - t1BalAfter) / 2);
+        IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t0BalAfter - t1BalAfter) / 2);
+      }
+      else if (t1BalAfter > t0BalAfter) {
+        IERC20(token1).safeApprove(forwarder, 0);
+        IERC20(token1).safeApprove(forwarder, (t1BalAfter - t0BalAfter) / 2);
+        IFeeRewardForwarder(forwarder).liquidate(token1, token0, (t1BalAfter - t0BalAfter) / 2);
+      }
+      else {}
+    }
+    else if (quote1After < 1e18) {
+      uint256 amount = (t0BalAfter - quote1After * t1BalAfter / 1e18) / 2;
+      IERC20(token0).safeApprove(forwarder, 0);
+      IERC20(token0).safeApprove(forwarder, amount);
+      IFeeRewardForwarder(forwarder).liquidate(token0, token1, amount);
+    }
+    else {
+      uint256 amount = (quote1After * t1BalAfter / 1e18 - t0BalAfter) / 2;
+      IERC20(token0).safeApprove(forwarder, 0);
+      IERC20(token0).safeApprove(forwarder, amount);
+      IFeeRewardForwarder(forwarder).liquidate(token0, token1, amount);
+    }
+    autocompoundTetuSwapLP(token0, token1);
+  }
+
+  function autocompoundTetuSwapLP(address token0, address token1) internal {
+    uint amountToAddLiquidityToken0 = IERC20(token0).balanceOf(address(this));
+    uint amountToAddLiquidityToken1 = IERC20(token1).balanceOf(address(this));
+    IERC20(token0).safeApprove(router, 0);
+    IERC20(token0).safeApprove(router, amountToAddLiquidityToken0);
+    IERC20(token1).safeApprove(router, 0);
+    IERC20(token1).safeApprove(router, amountToAddLiquidityToken1);
+    IUniswapV2Router02(router).addLiquidity(
+      token0,
+      token1,
+      amountToAddLiquidityToken0,
+      amountToAddLiquidityToken1,
+      1,
+      1,
+      address(this),
+      block.timestamp
+    );
   }
 
   function liquidateRewardTetuSwap() internal {

@@ -4,6 +4,7 @@ import {
   IBorrowable__factory,
   IFactory__factory,
   IPoolToken__factory,
+  IVaultToken__factory,
   PriceCalculator__factory,
   SmartVault,
 } from "../../../typechain";
@@ -18,6 +19,7 @@ import {TokenUtils} from "../../../test/TokenUtils";
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
+  const tools = await DeployerUtils.getToolsAddresses();
   const factory = IFactory__factory.connect(FtmAddresses.TAROT_FACTORY, signer);
 
   const tokensLength = (await factory.allLendingPoolsLength()).toNumber();
@@ -66,7 +68,7 @@ async function main() {
   });
 
   // console.log('data', data);
-  writeFileSync('./tmp/download/tarotClassic.csv', infos, 'utf8');
+  writeFileSync('./tmp/download/tarot.csv', infos, 'utf8');
   console.log('done');
 }
 
@@ -113,4 +115,12 @@ async function poolBorrowed(adr: string, dec: number, signer: SignerWithAddress)
 async function poolUnderlying(adr: string, signer: SignerWithAddress) {
   const pool = IPoolToken__factory.connect(adr, signer);
   return pool.underlying();
+}
+
+async function isVault(adr: string, signer: SignerWithAddress) {
+  try {
+    return await IVaultToken__factory.connect(adr, signer).isVaultToken();
+  } catch {
+    return false;
+  }
 }
