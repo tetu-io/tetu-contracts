@@ -318,9 +318,9 @@ contract ZapContract2 is IZapContract2, ControllableV2, ReentrancyGuard {
   function _callMultiSwap(
     address _tokenIn,
     uint _tokenInAmount,
-    bytes memory _routesData,
+    bytes memory /*_routesData*/,
     address _tokenOut,
-    uint _slippageTolerance
+    uint /*_slippageTolerance*/
   ) internal {
     if (_tokenIn == _tokenOut) {
       // no actions if we already have required token

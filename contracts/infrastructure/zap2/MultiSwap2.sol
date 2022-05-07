@@ -35,109 +35,114 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
-//  string public constant VERSION = "1.0.0";
-//  uint public constant MAX_AMOUNT = type(uint).max;
-//  uint128 constant private _PRECISION_FEE = 10000;
-//  uint128 constant private _PRECISION_SLIPPAGE = 1000;
-//  bytes32 private constant _UNISWAP_MASK = "0xfffffffffffffffffffffff0"; // last half-byte - index of uniswap dex
-//  bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.weth")) - 1);
+  string public constant VERSION = "1.0.0";
+  uint public constant MAX_AMOUNT = type(uint).max;
+  uint128 constant private _PRECISION_FEE = 10000;
+  uint128 constant private _PRECISION_SLIPPAGE = 1000;
+  bytes32 private constant _UNISWAP_MASK = "0xfffffffffffffffffffffff0"; // last half-byte - index of uniswap dex
+  bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.weth")) - 1);
+  bytes32 internal constant _BALANCER_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.balancerVault")) - 1);
 
   // Sentinel value used to indicate WETH with wrapping/unwrapping semantics. The zero address is a good choice for
   // multiple reasons: it is cheap to pass as a calldata argument, it is a known invalid token and non-contract, and
   // it is an address Pools cannot register as a token.
-//  address private constant _ETH = address(0);
+  address private constant _ETH = address(0);
 
-  function initialize(address controller_, address weth_)
+  function initialize(address controller_, address weth_, address balancerVault_)
   public initializer {
-//    ControllableV2.initializeControllable(controller_);
-//    _WETH_SLOT.set(weth_);
+    ControllableV2.initializeControllable(controller_);
+    require(weth_ != address(0), 'MS: Zero WETH');
+    require(balancerVault_ != address(0), 'MS: Zero Balancer vault');
+    _WETH_SLOT.set(weth_);
+    _BALANCER_VAULT_SLOT.set(balancerVault_);
   }
 
   // ******* VIEWS ******
 
-
-  // ******************** USERS ACTIONS *********************
-  struct SwapData {
-    address tokenIn;
-    address tokenOut;
-    uint amount;
-    uint minAmountOut;
-    uint256 deadline;
+  // solhint-disable-next-line func-name-mixedcase
+  function _WETH() internal view returns (address) {
+    return _WETH_SLOT.getAddress();
   }
 
+  function WETH() external view returns (address) {
+    return _WETH();
+  }
+
+  function _balancerVault() internal view returns (address) {
+    return _BALANCER_VAULT_SLOT.getAddress();
+  }
+
+  function balancerVault() external view returns (address) {
+    return _balancerVault();
+  }
+
+  // ******************** USERS ACTIONS *********************
   function multiSwap(
     SwapData memory swapData,
     IBVault.BatchSwapStep[] memory swaps,
     IAsset[] memory assets
   )
     external
+    override
     nonReentrant
     returns (uint amountOut)
   {
-        require(tokenIn != address(0), "MS: zero tokenIn");
-        require(tokenOut != address(0), "MS: zero tokenOut");
-        require(amount != 0, "MS: zero amount");
-        require(swaps[0].amount > 0, 'MS: Unknown amount in first swap');
-        require(tokenIn != tokenOut, "MS: same in/out");
+    require(swapData.tokenIn != address(0), "MS: zero tokenIn");
+    require(swapData.tokenOut != address(0), "MS: zero tokenOut");
+    require(swapData.tokenIn != swapData.tokenOut, "MS: same tokens");
+    require(swapData.amount != 0, "MS: zero amount");
+    require(swaps[0].amount > 0, 'MS: unknown amount in first swap');
 
-        // The deadline is timestamp-based: it should not be relied upon for sub-minute accuracy.
-        // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp <= deadline, "MS: deadline");
+    // The deadline is timestamp-based: it should not be relied upon for sub-minute accuracy.
+    // solhint-disable-next-line not-rely-on-time
+    require(block.timestamp <= swapData.deadline, "MS: deadline");
 
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
-        // some tokens have a burn/fee mechanic for transfers so amount can be changed
-        // we are recommend to use manual swapping for this kind of tokens
-        require(IERC20(tokenIn).balanceOf(address(this)) >= amount,
-          "MS: transfer fees forbidden for input Token");
+    IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.amount);
+    // some tokens have a burn/fee mechanic for transfers so amount can be changed
+    // we are recommend to use manual swapping for this kind of tokens
+    require(IERC20(swapData.tokenIn).balanceOf(address(this)) >= swapData.amount,
+      "MS: transfer fees forbidden for input Token");
 
+    uint amountOutBefore = IERC20(swapData.tokenOut).balanceOf(address(this));
 
-        IBVault.FundManagement memory funds = FundManagement({
-          sender: address(this),
-          fromInternalBalance: false,
-          recipient: address(this),
-          toInternalBalance: false
-        });
+    // These variables could be declared inside the loop, but that causes the compiler to allocate memory on each
+    // loop iteration, increasing gas costs.
+    IBVault.BatchSwapStep memory swapStep;
 
-      uint amountOutBefore = IERC20(tokenOut).balanceOf(address(this));
+    // These store data about the previous swap here to implement multihop logic across swaps.
+    IERC20 previousTokenOut = IERC20(swapData.tokenIn);
+    uint256 previousAmountOut = swapData.amount;
 
-      // These variables could be declared inside the loop, but that causes the compiler to allocate memory on each
-      // loop iteration, increasing gas costs.
-      IBVault.BatchSwapStep memory swapStep;
+    uint len = swaps.length;
+    for (uint i = 0; i < len; i++) {
+      swapStep = swaps[i];
 
-      // These store data about the previous swap here to implement multihop logic across swaps.
-      IERC20 previousTokenOut = IERC20(tokenIn);
-      uint256 previousAmountOut = amount;
+      IERC20 swapTokenIn = _translateToIERC20(assets[swapStep.assetInIndex]);
+      IERC20 swapTokenOut = _translateToIERC20(assets[swapStep.assetOutIndex]);
 
-      uint len = swaps.length;
-      for (uint i = 0; i < len; i++) {
-        swapStep = swaps[i];
-
-        IERC20 swapTokenIn = _translateToIERC20(assets[swapStep.assetInIndex]);
-        IERC20 swapTokenOut = _translateToIERC20(assets[swapStep.assetOutIndex]);
-
-        uint swapAmount;
-        if (swapStep.amount == 0) {
-          require(previousTokenOut == swapTokenIn, 'MS: Malconstructed multi swap');
-          require(previousAmountOut > 0, 'MS: Unknown amount in swap');
-          swapAmount = previousAmountOut;
-        } else {
-          swapAmount = swapStep.amount;
-        }
-
-        if (_isUniswapPool(swapStep.poolId)) {
-          previousAmountOut = _swapUniswap(swapStep, swapTokenIn, swapTokenOut, swapAmount);
-        } else { // Suppose Balancer pool // TODO
-          previousAmountOut = _swapBalancer(swapStep, swapTokenIn, swapTokenOut, swapAmount);
-        }
-        previousTokenOut = swapTokenOut;
+      uint swapAmount;
+      if (swapStep.amount == 0) {
+        require(previousTokenOut == swapTokenIn, 'MS: malconstructed multi swap');
+        require(previousAmountOut > 0, 'MS: unknown amount in swap');
+        swapAmount = previousAmountOut;
+      } else {
+        swapAmount = swapStep.amount;
       }
 
-      amountOut = IERC20(tokenOut).balanceOf(address(this)) - amountOutBefore;
-      require(amountOut >= minAmountOut, "MS: amount out less than required");
+      if (_isUniswapPool(swapStep.poolId)) {
+        previousAmountOut = _swapUniswap(swapStep, swapTokenIn, swapTokenOut, swapAmount);
+      } else { // Suppose Balancer pool
+        previousAmountOut = _swapBalancer(swapStep, swapTokenIn, swapTokenOut, swapAmount);
+      }
+      previousTokenOut = swapTokenOut;
+    }
 
-      IERC20(tokenOut).safeTransfer(msg.sender, amountOut);
-      require(amountOut <= IERC20(tokenOut).balanceOf(msg.sender),
-        "MS: transfer fees forbidden for output Token");
+    amountOut = IERC20(swapData.tokenOut).balanceOf(address(this)) - amountOutBefore;
+    require(amountOut >= swapData.minAmountOut, "MS: amount out less than required");
+
+    IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
+    require(amountOut <= IERC20(swapData.tokenOut).balanceOf(msg.sender),
+      "MS: transfer fees forbidden for output Token");
   }
 
 
@@ -158,6 +163,40 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     return (poolId & _UNISWAP_MASK) == _UNISWAP_MASK;
   }
 
+  function _swapBalancer(
+    IBVault.BatchSwapStep memory swapStep,
+    IERC20 tokenIn,
+    IERC20 tokenOut,
+    uint swapAmount
+  )
+  internal returns (uint amountOut) {
+
+    // This revert reason is for consistency with `batchSwap`: an equivalent `swap` performed using that function
+    // would result in this error.
+    require(swapAmount > 0, "MS: zero amount (balancer)");
+    require(tokenIn != tokenOut, "MS: same tokens (balancer)");
+
+    // Initializing each struct field one-by-one uses less gas than setting all at once.
+    IBVault.FundManagement memory funds;
+    funds.sender = address(this);
+    funds.fromInternalBalance = false;
+    funds.recipient = payable(address(this));
+    funds.toInternalBalance = false;
+
+    // Initializing each struct field one-by-one uses less gas than setting all at once.
+    IBVault.SingleSwap memory singleSwap;
+    singleSwap.poolId = swapStep.poolId;
+    singleSwap.kind = IBVault.SwapKind.GIVEN_IN;
+    singleSwap.assetIn = IAsset(address(tokenIn));
+    singleSwap.assetOut = IAsset(address(tokenOut));
+    singleSwap.amount = swapAmount;
+    singleSwap.userData = swapStep.userData;
+
+    // we'll check total amount out after all swaps, so do not care about intermediate swap step
+  uint limit = 1;
+    amountOut = IBVault(_balancerVault()).swap(singleSwap, funds, limit, block.timestamp);
+  }
+
   function _swapUniswap(
     IBVault.BatchSwapStep memory swapStep,
     IERC20 tokenIn,
@@ -173,7 +212,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     require(
       (token0 == address(tokenIn) && token1 == address(tokenOut)) ||
       (token1 == address(tokenIn) && token0 == address(tokenOut)),
-      'MS: Wrong tokens'
+      'MS: wrong tokens (uniswap)'
     );
 
     IERC20(tokenIn).safeTransfer(address(pair), swapAmount);
@@ -182,43 +221,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     (uint amountOut0, uint amountOut1) = _getAmountsOut(pair, swapAmount, reverse);
     pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
     amountOut = reverse ? amountOut0 : amountOut1;
-  }
-
-  function _swapBalancer(
-    IBVault.BatchSwapStep memory swapStep,
-    IERC20 tokenIn,
-    IERC20 tokenOut,
-    uint swapAmount
-  )
-  internal returns (uint amountOut) {
-    amountOut = 0; // TODO
-  }
-
-
-  //TODO remove obsolete
-  function _doSwapStepUniswap2(Step memory step, uint amountIn)
-  internal {
-    IUniswapV2Pair pair = IUniswapV2Pair(step.lp);
-    console.log(' ');
-    if (amountIn == MAX_AMOUNT)
-      console.log('swap', step.lp, step.reverse, 'MAX');
-    else
-      console.log('swap', step.lp, step.reverse, amountIn);
-
-    address tokenIn  =  step.reverse ? pair.token1() : pair.token0();
-    address tokenOut =  step.reverse ? pair.token0() : pair.token1();
-
-    console.log(
-      IERC20Metadata(tokenIn).symbol(),  IERC20(tokenIn).balanceOf(address(this)),
-      IERC20Metadata(tokenOut).symbol(), IERC20(tokenOut).balanceOf(address(this)));
-
-    amountIn = amountIn == MAX_AMOUNT ? IERC20(tokenIn).balanceOf(address(this)) : amountIn;
-    IERC20(tokenIn).safeTransfer(address(pair), amountIn);
-
-    bytes memory emptyData;
-    (uint amountOut0, uint amountOut1) = _getAmountsOut(pair, amountIn, step.reverse);
-    console.log('amountOut0, amountOut1', amountOut0, amountOut1);
-    pair.swap(amountOut0, amountOut1, address(this), emptyData);
   }
 
   function _getAmountsOut(IUniswapV2Pair pair, uint amountIn, bool reverse)
@@ -235,7 +237,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   }
 
   /// @dev given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-  function _getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee) internal view returns (uint amountOut) {
+  function _getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee)
+  internal pure returns (uint amountOut) {
     require(amountIn > 0, "MS: INSUFFICIENT_INPUT_AMOUNT");
     require(reserveIn > 0 && reserveOut > 0, "MS: INSUFFICIENT_LIQUIDITY");
     uint amountInWithFee = amountIn * (_PRECISION_FEE - fee);
@@ -266,11 +269,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
   // ************************* ASSET HELPERS *******************
   //
-
-  // solhint-disable-next-line func-name-mixedcase
-  function _WETH() internal view returns (address) {
-    return _WETH_SLOT.getAddress();
-  }
 
   /**
    * @dev Returns true if `asset` is the sentinel value that represents ETH.

@@ -12,12 +12,26 @@
 
 pragma solidity 0.8.4;
 
-
+import "../../third_party/balancer/IBVault.sol";
 
 /// @title Multi Swap 2 Interface
 /// @dev Interface to do multiple swaps, based on routes with weights
 /// @author bogdoslav
 interface IMultiSwap2 {
-  // TODO add multiSwap
+  struct SwapData {
+    address tokenIn;
+    address tokenOut;
+    uint amount;
+    uint minAmountOut;
+    uint256 deadline;
+  }
+
+  function multiSwap(
+    SwapData memory swapData,
+    IBVault.BatchSwapStep[] memory swaps,
+    IAsset[] memory assets
+  )
+  external
+  returns (uint amountOut);
 
 }
