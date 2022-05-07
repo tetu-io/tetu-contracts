@@ -15,7 +15,6 @@ pragma solidity 0.8.4;
 import "../StrategyBase.sol";
 import "../../../swap/interfaces/ITetuSwapPair.sol";
 import "../../interface/ISmartVault.sol";
-import "../../../swap/libraries/TetuSwapLibrary.sol";
 
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix
@@ -106,64 +105,57 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     // define tokens to add liquidity
     address token0 = ITetuSwapPair(pair).token0();
     address token1 = ITetuSwapPair(pair).token1();
+    address vault = _smartVault;
+    uint targetTokenEarnedTotal = 0;
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      address rt = _rewardTokens[i];
-      if (rt != token0 && rt != token1) {
-        uint256 amount = IERC20(rt).balanceOf(address(this));
-        if (amount > 0) {
-          IERC20(rt).safeApprove(_smartVault, 0);
-          IERC20(rt).safeApprove(_smartVault, amount * _buyBackRatio / _BUY_BACK_DENOMINATOR);
-          ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount * _buyBackRatio / _BUY_BACK_DENOMINATOR);
-        }
+      uint256 amount = rewardBalance(i) * _buyBackRatio / _BUY_BACK_DENOMINATOR;
+      if (amount != 0) {
+        address rt = _rewardTokens[i];
+        IERC20(rt).safeApprove(forwarder, 0);
+        IERC20(rt).safeApprove(forwarder, amount);
+        // it will sell reward token to Target Token and distribute it to SmartVault and PS
+        uint256 targetTokenEarned = 0;
+        try IFeeRewardForwarder(forwarder).distribute(amount, rt, vault) returns (uint r) {
+          targetTokenEarned = r;
+        } catch {}
+        targetTokenEarnedTotal += targetTokenEarned;
+      }
+      if (targetTokenEarnedTotal > 0) {
+        IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
       }
     }
-    liquidateRewardTetuSwap();
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+    uint256 t0BalBefore = IERC20(token0).balanceOf(address(this));
+    uint256 t1BalBefore = IERC20(token1).balanceOf(address(this));
+    (uint256 reserve0, uint256 reserve1,) = ITetuSwapPair(pair).getReserves();
+    uint256 price = reserve0 * 1e18 / reserve1;
+    for (uint256 i = 0;
+      i < _rewardTokens.length;
+      i++) {
       address rt = _rewardTokens[i];
+      uint256 rtBal = IERC20(rt).balanceOf(address(this));
       if (rt != token0 && rt != token1) {
-        // check to which token (0/1) liquuidate reward tokens
-        uint256 t0BalBefore = IERC20(token0).balanceOf(address(this));
-        uint256 t1BalBefore = IERC20(token1).balanceOf(address(this));
-        (uint256 reserve0Before, uint256 reserve1Before,) = ITetuSwapPair(pair).getReserves();
-        uint256 quote1Before = TetuSwapLibrary.quote(t0BalBefore, reserve0Before, reserve1Before);
         IERC20(rt).safeApprove(forwarder, 0);
-        IERC20(rt).safeApprove(forwarder, IERC20(rt).balanceOf(address(this)));
-        if (quote1Before > t1BalBefore) {
-          IFeeRewardForwarder(forwarder).liquidate(rt, token1, IERC20(rt).balanceOf(address(this)));
+        IERC20(rt).safeApprove(forwarder, rtBal);
+        if (t0BalBefore > t1BalBefore * price / 1e18) {
+          IFeeRewardForwarder(forwarder).liquidate(rt, token1, rtBal);
         }
         else {
-          IFeeRewardForwarder(forwarder).liquidate(rt, token0, IERC20(rt).balanceOf(address(this)));
+          IFeeRewardForwarder(forwarder).liquidate(rt, token0, rtBal);
         }
       }
     }
     uint256 t0BalAfter = IERC20(token0).balanceOf(address(this));
     uint256 t1BalAfter = IERC20(token1).balanceOf(address(this));
-    (uint256 reserve0After, uint256 reserve1After,) = ITetuSwapPair(pair).getReserves();
-    uint256 quote1After = TetuSwapLibrary.quote(1e18, reserve0After, reserve1After);
-    if (quote1After == 1e18) {
-      if (t0BalAfter > t1BalAfter) {
-        IERC20(token0).safeApprove(forwarder, 0);
-        IERC20(token0).safeApprove(forwarder, (t0BalAfter - t1BalAfter) / 2);
-        IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t0BalAfter - t1BalAfter) / 2);
-      }
-      else if (t1BalAfter > t0BalAfter) {
-        IERC20(token1).safeApprove(forwarder, 0);
-        IERC20(token1).safeApprove(forwarder, (t1BalAfter - t0BalAfter) / 2);
-        IFeeRewardForwarder(forwarder).liquidate(token1, token0, (t1BalAfter - t0BalAfter) / 2);
-      }
-      else {}
-    }
-    else if (quote1After < 1e18) {
-      uint256 amount = (t0BalAfter - quote1After * t1BalAfter / 1e18) / 2;
+    if (t0BalAfter == t1BalAfter * price / 1e18) {}
+    else if (t0BalAfter > t1BalAfter * price / 1e18) {
       IERC20(token0).safeApprove(forwarder, 0);
-      IERC20(token0).safeApprove(forwarder, amount);
-      IFeeRewardForwarder(forwarder).liquidate(token0, token1, amount);
+      IERC20(token0).safeApprove(forwarder, (t0BalAfter - t1BalAfter * price / 1e18) / 2);
+      IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t0BalAfter - t1BalAfter * price / 1e18) / 2);
     }
     else {
-      uint256 amount = (quote1After * t1BalAfter / 1e18 - t0BalAfter) / 2;
-      IERC20(token0).safeApprove(forwarder, 0);
-      IERC20(token0).safeApprove(forwarder, amount);
-      IFeeRewardForwarder(forwarder).liquidate(token0, token1, amount);
+      IERC20(token1).safeApprove(forwarder, 0);
+      IERC20(token1).safeApprove(forwarder, (t1BalAfter - t0BalAfter * 1e18 / price) / 2);
+      IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t1BalAfter - t0BalAfter * 1e18 / price) / 2);
     }
     autocompoundTetuSwapLP(token0, token1);
   }
@@ -185,27 +177,5 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
       address(this),
       block.timestamp
     );
-  }
-
-  function liquidateRewardTetuSwap() internal {
-    address forwarder = IController(controller()).feeRewardForwarder();
-    uint targetTokenEarnedTotal = 0;
-    for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      uint256 amount = rewardBalance(i) * _buyBackRatio / _BUY_BACK_DENOMINATOR;
-      if (amount != 0) {
-        address rt = _rewardTokens[i];
-        IERC20(rt).safeApprove(forwarder, 0);
-        IERC20(rt).safeApprove(forwarder, amount);
-        // it will sell reward token to Target Token and distribute it to SmartVault and PS
-        uint256 targetTokenEarned = 0;
-        try IFeeRewardForwarder(forwarder).distribute(amount, rt, _smartVault) returns (uint r) {
-          targetTokenEarned = r;
-        } catch {}
-        targetTokenEarnedTotal += targetTokenEarned;
-      }
-      if (targetTokenEarnedTotal > 0) {
-        IBookkeeper(IController(controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
-      }
-    }
   }
 }
