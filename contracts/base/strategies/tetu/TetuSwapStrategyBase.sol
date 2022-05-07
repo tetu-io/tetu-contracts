@@ -154,28 +154,29 @@ abstract contract TetuSwapStrategyBase is StrategyBase {
     }
     uint256 t0BalAfter = IERC20(token0).balanceOf(address(this));
     uint256 t1BalAfter = IERC20(token1).balanceOf(address(this));
-    if (t0BalAfter == t1BalAfter * reserve0 / reserve1) {}
-    else if (t0BalAfter > t1BalAfter * reserve0 / reserve1) {
+    if (t0BalAfter > t1BalAfter * reserve0 / reserve1) {
       IERC20(token0).safeApprove(forwarder, 0);
       IERC20(token0).safeApprove(forwarder, (t0BalAfter - t1BalAfter * reserve0 / reserve1) / 2);
       IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t0BalAfter - t1BalAfter * reserve0 / reserve1) / 2);
     }
-    else {
+    else if (t0BalAfter < t1BalAfter * reserve0 / reserve1){
       IERC20(token1).safeApprove(forwarder, 0);
       IERC20(token1).safeApprove(forwarder, (t1BalAfter - t0BalAfter * reserve1 / reserve0) / 2);
       IFeeRewardForwarder(forwarder).liquidate(token0, token1, (t1BalAfter - t0BalAfter * reserve1 / reserve0) / 2);
     }
-    autocompoundTetuSwapLP(token0, token1);
+    else {}
+    addLiquidityTetuSwap(token0, token1);
   }
 
-  function autocompoundTetuSwapLP(address token0, address token1) internal {
+  function addLiquidityTetuSwap(address token0, address token1) internal {
+    address uniswapRouter = router;
     uint amountToAddLiquidityToken0 = IERC20(token0).balanceOf(address(this));
     uint amountToAddLiquidityToken1 = IERC20(token1).balanceOf(address(this));
-    IERC20(token0).safeApprove(router, 0);
-    IERC20(token0).safeApprove(router, amountToAddLiquidityToken0);
-    IERC20(token1).safeApprove(router, 0);
-    IERC20(token1).safeApprove(router, amountToAddLiquidityToken1);
-    IUniswapV2Router02(router).addLiquidity(
+    IERC20(token0).safeApprove(uniswapRouter, 0);
+    IERC20(token0).safeApprove(uniswapRouter, amountToAddLiquidityToken0);
+    IERC20(token1).safeApprove(uniswapRouter, 0);
+    IERC20(token1).safeApprove(uniswapRouter, amountToAddLiquidityToken1);
+    IUniswapV2Router02(uniswapRouter).addLiquidity(
       token0,
       token1,
       amountToAddLiquidityToken0,
