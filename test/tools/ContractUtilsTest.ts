@@ -24,7 +24,7 @@ describe("Contract utils tests", function () {
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
-    signer = await DeployerUtils.impersonate();
+    signer = (await ethers.getSigners())[0];
     util = await DeployerUtils.deployContract(signer, "ContractUtils") as ContractUtils;
     addressWithUsdc = await DeployerUtils.deployContract(signer, "ContractUtils") as ContractUtils;
     addressWithoutUsdc = await DeployerUtils.deployContract(signer, "ContractUtils") as ContractUtils;

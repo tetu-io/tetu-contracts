@@ -15,7 +15,7 @@ import {fetchJson} from "ethers/lib/utils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Deposit Helper tests", function () {
+describe.skip("Deposit Helper tests", function () {
   const MAX_UINT = BigNumber.from(2).pow(256).sub(1).toString();
   let targetVaultVersion: string;
   let snapshot: string;
@@ -25,7 +25,7 @@ describe("Deposit Helper tests", function () {
   let core: CoreContractsWrapper;
   let depositHelper: DepositHelper;
   let smartVaultImpl: SmartVault;
-  let allVaults: string[];
+  // let allVaults: string[];
   let timeLockSec: number;
   const passedVaults: string[] = [];
 
@@ -35,10 +35,10 @@ describe("Deposit Helper tests", function () {
 
   before(async function () {
     this.timeout(1200000);
-    snapshot = await TimeUtils.snapshot();
     signer = (await ethers.getSigners())[0];
     gov = await DeployerUtils.impersonate();
     core = await DeployerUtils.getCoreAddressesWrapper(gov);
+    snapshot = await TimeUtils.snapshot();
 
     depositHelper = await DeployerUtils.deployContract(signer, 'DepositHelper') as DepositHelper;
     smartVaultImpl = await DeployerUtils.deployContract(gov, 'SmartVault') as SmartVault;
@@ -234,14 +234,16 @@ describe("Deposit Helper tests", function () {
     }
 
     console.log('networkNameForAPI', networkNameForAPI);
-    const response: {active:boolean,users:number,strategyOnPause:boolean,tvl:number,addr:string}[] =
-        await fetchJson({url:'https://api.tetu.io/api/v1/reader/vaultInfos?network='+networkNameForAPI});
-    const filtered = response.filter(v => (v.active && (v.users>5) && !v.strategyOnPause && v.tvl>0));
-    allVaults = filtered.map(v => v.addr);
-    console.log('filtered allVaults.length', allVaults.length);
-    const slicedVaults = allVaults.slice(0, 10); // n last vaults (some of that will be skipped with no biggest holder)
-    console.log('slicedVaults.length', slicedVaults.length);
-    for (const vault of slicedVaults) await testVault(vault);
+    // const response: {active:boolean,users:number,strategyOnPause:boolean,tvl:number,addr:string}[] =
+    //     await fetchJson({url:'https://api.tetu.io/api/v1/reader/vaultInfos?network='+networkNameForAPI});
+
+    // const filtered = response.filter(v => (v.active && (v.users>5) && !v.strategyOnPause && v.tvl>0));
+    // allVaults = filtered.map(v => v.addr);
+    // console.log('filtered allVaults.length', allVaults.length);
+    // const slicedVaults = allVaults.slice(0, 10); // n last vaults (some of that will be skipped with no biggest holder)
+    // console.log('slicedVaults.length', slicedVaults.length);
+    // for (const vault of slicedVaults) await testVault(vault);
+    await testVault('0xee3b4ce32a6229ae15903cda0a5da92e739685f7');
 
     console.log('===============================');
     console.log('passedVaults length', passedVaults.length);
