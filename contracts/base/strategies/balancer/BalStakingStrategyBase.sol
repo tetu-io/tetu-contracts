@@ -71,6 +71,13 @@ abstract contract BalStakingStrategyBase is ProxyStrategyBase {
     return _VE_LOCKER_KEY.getAddress();
   }
 
+  /// @dev Set locker if empty
+  function setVeLocker(address newVeLocker) external {
+    require(_VE_LOCKER_KEY.getAddress() == address(0), "Not zero locker");
+    _VE_LOCKER_KEY.set(newVeLocker);
+    IERC20(_underlying()).safeApprove(newVeLocker, type(uint256).max);
+  }
+
   // --------------------------------------------
 
   /// @notice Return only pool balance. Assume that we ALWAYS invest on vault deposit action

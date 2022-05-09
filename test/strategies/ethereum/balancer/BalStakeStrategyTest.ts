@@ -20,6 +20,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {BalStakingDoHardWork} from "./BalStakingDoHardWork";
 import {EthAddresses} from "../../../../scripts/addresses/EthAddresses";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -104,7 +105,8 @@ describe('BAL staking tests', async () => {
         ) as BalLocker;
 
 
-        await strategy.initialize(core.controller.address, vaultAddress, depositor.address, balLocker.address);
+        await strategy.initialize(core.controller.address, vaultAddress, depositor.address, Misc.ZERO_ADDRESS);
+        await strategy.setVeLocker(balLocker.address);
         return strategy;
       },
       underlying
