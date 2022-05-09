@@ -46,7 +46,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneAmbStrategyTest: {
       type: "number",
-      default: -1,
+      default: 1,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -60,7 +60,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe('Universal AMB tests', async () => {
+describe.skip('Universal AMB tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
@@ -92,7 +92,7 @@ describe('Universal AMB tests', async () => {
       );
     };
     // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = false;
+    const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0.021;
     const finalBalanceTolerance = 0;

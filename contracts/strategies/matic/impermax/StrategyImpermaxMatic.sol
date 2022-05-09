@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 import "../../../base/strategies/impermax-base/ImpermaxBaseStrategy.sol";
 
-contract StrategyImpermax is ImpermaxBaseStrategy {
+contract StrategyImpermaxMatic is ImpermaxBaseStrategy {
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IMPERMAX;
   address[] private _assets;

@@ -83,7 +83,7 @@ describe('Universal Market tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyMarket';
+    const strategyContractName = 'StrategyMarketMatic';
     const vaultName = tokenName;
     const underlying = tokenAdr;
     const deposit = 100_000;

@@ -61,7 +61,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe('Universal (CelsiusX) MaiBal tests', async () => {
+describe.skip('Universal (CelsiusX) MaiBal tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;

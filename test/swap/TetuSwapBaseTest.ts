@@ -463,6 +463,9 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('price{0,1}CumulativeLast', async () => {
+    if ((await ethers.provider.getNetwork()).chainId !== 250) {
+      return;
+    }
     const token0Amount = utils.parseUnits('100', tokenADec);
     const token1Amount = utils.parseUnits('200', tokenBDec);
     const blockTimestamp = (await lpCtr.getReserves())[2];
@@ -511,6 +514,9 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('healthy K', async () => {
+    if ((await ethers.provider.getNetwork()).chainId !== 250) {
+      return;
+    }
     console.log('--- NETWORK BALANCE', (await TokenUtils.balanceOf(networkToken, signer.address)).toString())
     console.log('--- USDC BALANCE', (await TokenUtils.balanceOf(usdc, signer.address)).toString())
     const amountOut = utils.parseUnits('1', tokenBDec);
@@ -528,6 +534,9 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('healthy K after vault manipulations', async () => {
+    if ((await ethers.provider.getNetwork()).chainId !== 250) {
+      return;
+    }
     await factory.setPairRewardRecipients([lp], [core.controller.address]);
 
     await VaultUtils.deposit(signer, vaultUsdcCtr, utils.parseUnits('800', tokenADec));

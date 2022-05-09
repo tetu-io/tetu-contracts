@@ -39,7 +39,7 @@ const ironSwapIds = new Set<string>([
   "3"
 ]);
 
-describe('Universal Iron tests', async () => {
+describe.skip('Universal Iron tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }

@@ -122,8 +122,14 @@ async function main() {
       // i = vaultsSize - 1;
       console.log('vAdr', i, vAdr);
       const vCtr = await DeployerUtils.connectInterface(signer, 'SmartVault', vAdr) as SmartVault;
+
+      if (!(await vCtr.active())) {
+        i++;
+        continue;
+      }
+      const name = await vCtr.name();
       const strategy = await vCtr.strategy();
-      console.log('strategy', strategy);
+      console.log(name + ' ,strategy', strategy);
 
       const platform = (await cReader.strategyPlatform(strategy));
       console.log('platform', platform);

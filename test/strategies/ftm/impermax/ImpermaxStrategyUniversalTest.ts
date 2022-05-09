@@ -74,7 +74,7 @@ describe('Universal Impermax tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'contracts/strategies/fantom/impermax/StrategyImpermax.sol:StrategyImpermax';
+    const strategyContractName = 'contracts/strategies/fantom/impermax/StrategyImpermax.sol:StrategyImpermaxFantom';
     const vaultName = tokenName;
     const underlying = tokenAdr;
     const deposit = 100_000;
