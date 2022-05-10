@@ -169,7 +169,7 @@ export default {
   docgen: {
     path: './docs',
     clear: true,
-    runOnCompile: true,
+    runOnCompile: false,
     except: ['contracts/third_party', 'contracts/test']
   },
   contractSizer: {
