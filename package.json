@@ -1,6 +1,6 @@
 {
   "name": "tetu-contracts",
-  "version": "1.0.0",
+  "version": "1.7.0",
   "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
   "directories": {
