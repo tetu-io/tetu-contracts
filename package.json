@@ -1,5 +1,5 @@
 {
-  "name": "tetu_contracts",
+  "name": "tetu-contracts",
   "version": "1.6.0",
   "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
