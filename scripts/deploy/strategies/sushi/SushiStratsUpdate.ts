@@ -73,12 +73,13 @@ async function main() {
       continue;
     }
 
-    const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', await vCtr.strategy()) as IStrategy;
-    const strName = await strCtr.STRATEGY_NAME();
-    if (strName === 'MCv2StrategyAC') {
-      console.log('already ac');
-      continue;
-    }
+    // The code below is commented to be able to upload new version of MCv2StrategyAC
+    // const strCtr = await DeployerUtils.connectInterface(signer, 'IStrategy', await vCtr.strategy()) as IStrategy;
+    // const strName = await strCtr.STRATEGY_NAME();
+    // if (strName === 'MCv2StrategyAC') {
+    //   console.log('already ac');
+    //   continue;
+    // }
 
     console.log('strat', idx, lpName);
 

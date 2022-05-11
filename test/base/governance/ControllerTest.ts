@@ -26,11 +26,11 @@ describe("Controller tests", function () {
   let bookkeeper: Bookkeeper;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshotBefore = await TimeUtils.snapshot();
     controller = core.controller;
     bookkeeper = core.bookkeeper;
     usdc = await DeployerUtils.getUSDCAddress();

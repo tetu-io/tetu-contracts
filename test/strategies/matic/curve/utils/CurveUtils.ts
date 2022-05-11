@@ -17,6 +17,7 @@ import {UniswapUtils} from "../../../../UniswapUtils";
 import {TokenUtils} from "../../../../TokenUtils";
 import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
 import {FtmAddresses} from "../../../../../scripts/addresses/FtmAddresses";
+import {parseUnits} from "ethers/lib/utils";
 
 export class CurveUtils {
 
@@ -89,14 +90,14 @@ export class CurveUtils {
     await UniswapUtils.getTokenFromHolder(trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.WMATIC_TOKEN, utils.parseUnits('10000000')); // 100m wmatic
     await UniswapUtils.getTokenFromHolder(trader, MaticAddresses.SUSHI_ROUTER, MaticAddresses.USDC_TOKEN, utils.parseUnits('10000000'));
 
-    const usdcToken = await ethers.getContractAt("IERC20", MaticAddresses.USDC_TOKEN, trader) as IERC20;
+    const usdcToken = await ethers.getContractAt("ERC20", MaticAddresses.USDC_TOKEN, trader) as IERC20;
     const usdcUserBalance = await usdcToken.balanceOf(trader.address);
     expect(usdcUserBalance).is.not.eq("0", "user should have some USDC tokens to swap");
     const depContract = await ethers.getContractAt("IAavePool", MaticAddresses.CURVE_AAVE_POOL, trader) as IAavePool;
     await usdcToken.approve(MaticAddresses.CURVE_AAVE_POOL, usdcUserBalance, {from: trader.address});
     // swap usdc to dai
     await depContract.exchange_underlying(1, 0, usdcUserBalance, BigNumber.from("0"), {from: trader.address});
-    const daiToken = await ethers.getContractAt("IERC20", MaticAddresses.DAI_TOKEN, trader) as IERC20;
+    const daiToken = await ethers.getContractAt("ERC20", MaticAddresses.DAI_TOKEN, trader) as IERC20;
     const daiTokenBalance = await daiToken.balanceOf(trader.address);
     await daiToken.approve(MaticAddresses.CURVE_AAVE_POOL, daiTokenBalance, {from: trader.address});
     // swap dai to usdc
@@ -118,10 +119,13 @@ export class CurveUtils {
 
   public static async swapTricrypto(signer: SignerWithAddress) {
     console.log('swap tricrypto')
-    await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, utils.parseUnits('10000', 6));
+    const dec = 18;
+    const token = MaticAddresses.DAI_TOKEN;
+    const amount = parseUnits('10000', dec);
+    await TokenUtils.getToken(token, signer.address, amount);
     const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPool', MaticAddresses.CURVE_aTricrypto3_POOL) as ITricryptoPool;
-    await TokenUtils.approve(MaticAddresses.USDC_TOKEN, signer, pool.address, utils.parseUnits('10000', 6).mul(2).toString());
-    await pool.exchange_underlying(1, 0, utils.parseUnits('10000', 6), 0, signer.address);
+    await TokenUtils.approve(token, signer, pool.address, amount.toString());
+    await pool.exchange_underlying(0, 1, amount, 0, signer.address);
     console.log('swap tricrypto completed')
   }
 

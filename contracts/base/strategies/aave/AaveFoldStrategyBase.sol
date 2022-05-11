@@ -44,7 +44,7 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   /// @dev Should be incremented when contract is changed
   string public constant VERSION = "1.3.1";
   /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;
+  uint256 private constant _BUY_BACK_RATIO = 100_00;
   /// @dev 2 is Variable
   uint256 private constant INTEREST_RATE_MODE = 2;
 

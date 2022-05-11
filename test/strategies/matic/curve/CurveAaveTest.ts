@@ -46,6 +46,7 @@ describe('Curve aave tests', async () => {
     strategyName,
     underlying,
     tokenName,
-    deployInfo
+    deployInfo,
+    100_00
   );
 });

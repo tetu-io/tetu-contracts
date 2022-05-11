@@ -73,6 +73,9 @@ const libraries = new Map<string, string>([
 
 export class DeployerUtils {
 
+  public static coreCache: CoreContractsWrapper;
+  public static toolsCache: ToolsContractsWrapper;
+
   // ************ CONTRACT CONNECTION **************************
 
   public static async connectContract<T extends ContractFactory>(
@@ -418,12 +421,13 @@ export class DeployerUtils {
     controller: string,
     rewardCalculator: string,
     networkRatio: string,
-    rewardsPerDay: string
+    rewardsPerDay: string,
+    period: number,
   ): Promise<[AutoRewarder, TetuProxyGov, AutoRewarder]> {
     const logic = await DeployerUtils.deployContract(signer, "AutoRewarder") as AutoRewarder;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as AutoRewarder;
-    await contract.initialize(controller, rewardCalculator, networkRatio, rewardsPerDay);
+    await contract.initialize(controller, rewardCalculator, networkRatio, rewardsPerDay, period);
     return [contract, proxy, logic];
   }
 
@@ -503,9 +507,12 @@ export class DeployerUtils {
   public static async deployAllCoreContracts(
     signer: SignerWithAddress,
     psRewardDuration: number = 60 * 60 * 24 * 28,
-    timeLock: number = 60 * 60 * 48,
+    timeLock: number = 1,
     wait = false
   ): Promise<CoreContractsWrapper> {
+    if (!!DeployerUtils.coreCache) {
+      return DeployerUtils.coreCache;
+    }
     const start = Date.now();
     // ************** CONTROLLER **********
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
@@ -585,7 +592,7 @@ export class DeployerUtils {
       true, wait);
 
     Misc.printDuration('Core contracts deployed', start);
-    return new CoreContractsWrapper(
+    DeployerUtils.coreCache = new CoreContractsWrapper(
       controller,
       controllerLogic.address,
       feeRewardForwarderData[0],
@@ -606,9 +613,13 @@ export class DeployerUtils {
       vaultControllerData[0],
       vaultControllerData[2].address,
     );
+    return DeployerUtils.coreCache;
   }
 
   public static async deployAllToolsContracts(signer: SignerWithAddress, core: CoreContractsWrapper): Promise<ToolsContractsWrapper> {
+    if (!!DeployerUtils.toolsCache) {
+      return DeployerUtils.toolsCache;
+    }
     const net = await ethers.provider.getNetwork();
     log.info('network ' + net.chainId);
     const tools = Addresses.TOOLS.get(net.chainId + '');
@@ -618,7 +629,7 @@ export class DeployerUtils {
     const calculator = await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
     const reader = await DeployerUtils.deployContractReader(signer, core.controller.address, calculator[0].address);
     // ! we will not deploy not important contracts
-    return new ToolsContractsWrapper(
+    DeployerUtils.toolsCache = new ToolsContractsWrapper(
       calculator[0],
       reader[0],
       await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
@@ -630,7 +641,7 @@ export class DeployerUtils {
       await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
       await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
     );
-
+    return DeployerUtils.toolsCache;
   }
 
   public static async deployAndInitVaultAndStrategy<T>(

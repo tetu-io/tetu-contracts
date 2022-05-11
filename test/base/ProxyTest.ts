@@ -30,10 +30,10 @@ describe("Proxy tests", function () {
   let tetu: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user1 = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
+    snapshotBefore = await TimeUtils.snapshot();
     networkToken = await DeployerUtils.getNetworkTokenAddress();
     tetu = core.rewardToken.address.toLowerCase();
   });
@@ -179,8 +179,7 @@ describe("Proxy tests", function () {
       Misc.ZERO_ADDRESS,
       0
     );
-    await expect(vaultProxy1.upgrade(signer.address))
-        .is.rejectedWith('UpgradeableProxy: new implementation is not a contract')
+    await expect(vaultProxy1.upgrade(signer.address)).is.rejectedWith('')
   });
 
   it('wrong impl test', async () =>{

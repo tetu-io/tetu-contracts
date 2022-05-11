@@ -54,7 +54,7 @@ export class TokenUtils {
     [FtmAddresses.FBTC_TOKEN, '0x1f45Df42E81892260f50A256bBE7120d6624c2F1'.toLowerCase()], // wallet
     [FtmAddresses.FETH_TOKEN, '0x15a3f675184a4e09877ed10ad8080438ea9e35ae'.toLowerCase()], // wallet
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
-    [MaticAddresses.AM3CRV_TOKEN, '0xA1C4Aac752043258c1971463390013e6082C106f'.toLowerCase()], // wallet
+    [MaticAddresses.AM3CRV_TOKEN, '0xbf3bc2f3d279466686174261bfccd0ac07576e59'.toLowerCase()], // wallet
     [FtmAddresses.g3CRV_TOKEN, '0xd4f94d0aaa640bbb72b5eec2d85f6d114d81a88e'.toLowerCase()], // gauge
     [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x5342D9085765baBF184e7bBa98C9CB7528dfDACE'.toLowerCase()], // wallet
     [FtmAddresses.USD_BTC_ETH_CRV_TOKEN, '0x00702bbdead24c40647f235f15971db0867f6bdb'.toLowerCase()], // gauge
@@ -105,9 +105,9 @@ export class TokenUtils {
     [FtmAddresses.BPT_STABEET,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
     [MaticAddresses.QI_TOKEN,'0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'.toLowerCase()], // qidao gov
-    [MaticAddresses.UNT_TOKEN,'0x352F9Fa490A86F625F53e581F0Ec3bD649fd8Bc9'.toLowerCase()], // gov
+    [MaticAddresses.UNT_TOKEN,'0x125ecc7e5771f47eac0cb5ada151d72be828ff34'.toLowerCase()], // gov
     [MaticAddresses.cxDOGE_TOKEN,'0x2d187a560cfbd28e1eb2f68534754b0f120459a9'.toLowerCase()],
-    [MaticAddresses.cxADA_TOKEN,'0x5a8c2d949b3f6bcaec7d20c8b6e57c1619a97504'.toLowerCase()],
+    [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN,'0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
     [EthAddresses.USDC_TOKEN,'0x0a59649758aa4d66e25f08dd01271e891fe52199'.toLowerCase()], // maker
@@ -118,6 +118,10 @@ export class TokenUtils {
     [FtmAddresses.BEETS_TOKEN,'0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
     [FtmAddresses.SPIRIT_TOKEN,'0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit
     [FtmAddresses.TAROT_TOKEN,'0x11D90eA9d16e1Ee5879B299A819F6D618816D70F'.toLowerCase()], // spooky lp
+    [MaticAddresses.SPHEREV2_TOKEN,'0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
+    [MaticAddresses.UMA_TOKEN,'0x1b72bac3772050fdcaf468cce7e20deb3cb02d89'.toLowerCase()],
+    [MaticAddresses.CLAM2_TOKEN,'0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
+    [MaticAddresses.xTETU,'0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()]
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

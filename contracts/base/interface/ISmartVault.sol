@@ -50,6 +50,8 @@ interface ISmartVault {
 
   function getAllRewards() external;
 
+  function getAllRewardsFor(address rewardsReceiver) external;
+
   function getReward(address rt) external;
 
   function underlying() external view returns (address);

@@ -2,7 +2,6 @@ const gateway = process.env.VUE_APP_IPFS_NODE || 'ipfs.io';
 const fetch = require("node-fetch");
 const BigNumber = require("bignumber.js");
 const { MerkleTree, loadTree } = require("./merkle.js");
-const { IMerkleOrchard } = require('./../../../typechain');
 const { keccak256, keccakFromString, bufferToHex } = require('ethereumjs-util');
 const { hexToBytes, toWei, soliditySha3 } = require('web3-utils');
 const { type2Transaction } = require('./utils.js');
@@ -29,13 +28,12 @@ async function ipfsGet(
 ) {
   const url = `https://${gateway}/${protocolType}/${ipfsHash}`;
   const result = await fetch(url).then(res => res.json());
-
   return result
 }
 
 async function getSnapshot(network, token) {
   let snapshot
-  if (network == 'matic') {
+  if (network == 'polygon') {
     if (token == '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3'){
       snapshot = constants.snapshotBalPoly
     } else if (token == '0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756') {
@@ -43,9 +41,9 @@ async function getSnapshot(network, token) {
     } else if (token == '0x580A84C73811E1839F75d86d75d88cCa0c241fF4') {
       snapshot = constants.snapshotQiPoly
     }
-  } else if (network == 'eth') {
+  } else {
     snapshot = constants.snapshotBalEth
-  } else throw new Error('unsupported network')
+  }
   if (snapshot) {
     return (await fetch(snapshot).then(res => res.json())) || {};
   }
@@ -59,7 +57,12 @@ async function getClaimStatus(
   token,
   distributor
 ) {
-  const merkleAddress = constants.merkleOrchardPoly;
+  let merkleAddress;
+  if (network == 'polygon') {
+    merkleAddress = constants.merkleOrchardPoly;
+  } else {
+    merkleAddress = constants.merkleOrchardEth;
+  }
   const merkleContract = await ethers.getContractAt("IMerkleOrchard", merkleAddress);
   return await merkleContract.isClaimed(token, distributor, week, account);
 }
@@ -136,14 +139,14 @@ async function claimRewards(
       );
       return [parseInt(week.id), toWei(claimBalance), distributor, 0, proof];
     });
+
     let merkleAddress, balToken, priorityFee;
-    if (network == 'matic') {
+    if (network == 'polygon') {
       merkleAddress = constants.merkleOrchardPoly;
     } else {
       merkleAddress = constants.merkleOrchardEth;
     }
     const merkleContract = await ethers.getContractAt("IMerkleOrchard", merkleAddress);
-    // const result = await type2Transaction(network, merkleContract.claimDistributions, account, claims, [token]);
     const result = await merkleContract.claimDistributions(account, claims, [token]);
     return result;
   } catch (e) {

@@ -36,11 +36,11 @@ describe("contract reader tests", function () {
 
   before(async function () {
     this.timeout(1200000);
-    snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
     const proxy = await DeployerUtils.deployContract(
       signer, "TetuProxyGov", logic.address) as TetuProxyGov;

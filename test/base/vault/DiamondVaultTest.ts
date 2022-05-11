@@ -28,10 +28,10 @@ describe("Diamond vault test", () => {
 
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
     const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 

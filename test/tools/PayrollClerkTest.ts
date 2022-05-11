@@ -26,9 +26,9 @@ describe("Payroll Clerk tests", function () {
 
   before(async function () {
     this.timeout(1200000);
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
 

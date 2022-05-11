@@ -62,11 +62,11 @@ describe("Tetu Swap base tests", function () {
         ) as string
       )
     );
-    snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[0];
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshotBefore = await TimeUtils.snapshot();
 
     usdc = await DeployerUtils.getUSDCAddress();
     networkToken = await DeployerUtils.getNetworkTokenAddress();

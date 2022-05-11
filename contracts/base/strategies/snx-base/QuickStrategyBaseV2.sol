@@ -28,7 +28,7 @@ abstract contract QuickStrategyBaseV2 is StrategyBase {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
   /// @dev Placeholder, for non full buyback need to implement liquidation
-  uint256 private constant _BUY_BACK_RATIO = 10000;  // for non full buyback need to implement liquidation
+  uint256 private constant _BUY_BACK_RATIO = 100_00;  // for non full buyback need to implement liquidation
   address public constant QUICK = address(0x831753DD7087CaC61aB5644b308642cc1c33Dc13);
   address public constant D_QUICK = address(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
   address[] private quickPoolRewards = [QUICK];
