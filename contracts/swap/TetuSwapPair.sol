@@ -34,7 +34,7 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   // ********** CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.0";
   uint public constant PRECISION = 10000;
   uint public constant MAX_FEE = 30;
   uint public constant override MINIMUM_LIQUIDITY = 10 ** 3;
@@ -217,10 +217,10 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
     // we check accurate input value with required fees
     require(amount0In >= expectedAmountIn0 && amount1In >= expectedAmountIn1, "TSP: Insufficient input amount");
 
-    if (amount0In > 1) {
+    if (amount0In > 0) {
       ISmartVault(vault0).deposit(amount0In);
     }
-    if (amount1In > 1) {
+    if (amount1In > 0) {
       ISmartVault(vault1).deposit(amount1In);
     }
 
@@ -355,14 +355,15 @@ contract TetuSwapPair is TetuSwapERC20, ITetuSwapPair, ReentrancyGuard {
   ) private {
     address _token0 = token0;
     address _token1 = token1;
-    if (amount0Out > 1) {
+    require(to != _token0 && to != _token1, "TSP: Invalid to");
+    if (amount0Out > 0) {
       withdrawFromVault(vault0, amount0Out + amountFee);
       IERC20(_token0).safeTransfer(to, amount0Out);
       if (amountFee > 0) {
         IERC20(_token0).safeTransfer(rewardRecipient, amountFee);
       }
     }
-    if (amount1Out > 1) {
+    if (amount1Out > 0) {
       withdrawFromVault(vault1, amount1Out + amountFee);
       IERC20(_token1).safeTransfer(to, amount1Out);
       if (amountFee > 0) {
