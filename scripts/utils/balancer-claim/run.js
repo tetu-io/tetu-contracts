@@ -27,7 +27,7 @@ const BAL_TOKEN = '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3';
 const TUSD_TOKEN = '0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756';
 const QI_TOKEN = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4';
 const tokensPoly = [
-  BAL_TOKEN,
+  // BAL_TOKEN,
   // TUSD_TOKEN, // AMB not rewarded with TUSD
   QI_TOKEN,
 ];
@@ -40,7 +40,7 @@ const weeksEth = [73, 74];
 
 const weeksPoly = [];
 const firstWeek = 26;
-const lastWeek = 30;
+const lastWeek = 31;
 for (let i = firstWeek; i <= lastWeek; i++) weeksPoly.push(i);
 
 let accounts;

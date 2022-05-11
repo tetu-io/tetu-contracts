@@ -68,6 +68,7 @@ async function getClaimStatus(
 }
 
 async function getReports(snapshot, week) {
+  if (!snapshot[week]) throw new Error(`No snapshot for week ${week} yet.`);
   const reports = [await ipfsGet(gateway, snapshot[week])];
   return Object.fromEntries(reports.map((report, i) => [week, report]));
 }
