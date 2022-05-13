@@ -50,6 +50,7 @@ import {FtmAddresses} from "../addresses/FtmAddresses";
 import {readFileSync} from "fs";
 import {Libraries} from "hardhat-deploy/dist/types";
 import {EthAddresses} from "../addresses/EthAddresses";
+import {formatUnits} from "ethers/lib/utils";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -126,7 +127,7 @@ export class DeployerUtils {
     log.info("Account balance: " + utils.formatUnits(await signer.getBalance(), 18));
 
     const gasPrice = await web3.eth.getGasPrice();
-    log.info("Gas price: " + gasPrice);
+    log.info("Gas price: " + formatUnits(gasPrice, 9));
     const lib: string | undefined = libraries.get(name);
     let _factory;
     if (lib) {

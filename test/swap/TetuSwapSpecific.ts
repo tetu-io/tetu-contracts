@@ -64,35 +64,7 @@ describe("Tetu Swap specific tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-
-  it('ttt', async () => {
-    const sphereSignerAdr = '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe';
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [sphereSignerAdr],
-    });
-    await hre.network.provider.request({
-      method: "hardhat_setBalance",
-      params: [sphereSignerAdr, "0x1431E0FAE6D7217CAA0000000"],
-    });
-    const sphereOwner = await ethers.getSigner(sphereSignerAdr);
-    const sphere = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7';
-    const amountSphere = parseUnits('100');
-
-
-    await IERC20__factory.connect(sphere, sphereOwner).approve(sphereOwner.address, amountSphere);
-    await IERC20__factory.connect(sphere, sphereOwner).transferFrom(sphereOwner.address, user.address, amountSphere);
-    console.log('1');
-
-    const sphereCtr = ISphereToken__factory.connect(sphere, sphereOwner);
-    await sphereCtr.setInitialDistributionFinished(true);
-
-    await IERC20__factory.connect(sphere, user).approve(user.address, Misc.MAX_UINT);
-    expect(await IERC20__factory.connect(sphere, user).balanceOf(user.address)).above(parseUnits('1'));
-    await IERC20__factory.connect(sphere, user).transfer('0x9cC56Fa7734DA21aC88F6a816aF10C5b898596Ce', parseUnits('1'));
-  });
-
-  it('swap sphere - usdc', async () => {
+  it.skip('swap sphere - usdc', async () => {
     const sphereOwner = await DeployerUtils.impersonate('0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe');
     // const sphereCtr = await (new SphereTokenV2__factory(signer)).deploy();
     // console.log('sphereCtr', sphereCtr.address);
