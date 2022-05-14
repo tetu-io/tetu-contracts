@@ -75,6 +75,7 @@ export class UniswapUtils {
       const router = await UniswapUtils.connectRouter(_router, sender);
       await TokenUtils.approve(_route[0], sender, router.address, amountToSell);
       if (UniswapUtils.isFeeToken(_route[0]) || UniswapUtils.isFeeToken(_route[1])) {
+        console.log("swap fee token")
         return router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
           BigNumber.from(amountToSell),
           BigNumber.from("0"),
@@ -96,7 +97,8 @@ export class UniswapUtils {
 
   private static isFeeToken(token: string) {
     return token.toLowerCase() === MaticAddresses.SPHERE_TOKEN.toLowerCase()
-      || token.toLowerCase() === MaticAddresses.SPHEREV2_TOKEN.toLowerCase();
+      || token.toLowerCase() === MaticAddresses.SPHEREV2_TOKEN.toLowerCase()
+      || token.toLowerCase() === MaticAddresses.SPHEREV3_TOKEN.toLowerCase()
   }
 
   public static async addLiquidity(
@@ -122,9 +124,8 @@ export class UniswapUtils {
     expect(+utils.formatUnits(bal1, t1Dec))
       .is.greaterThanOrEqual(+utils.formatUnits(amountB, t1Dec), 'not enough bal for token B ' + name1);
 
-
-    await RunHelper.runAndWait(() => TokenUtils.approve(tokenA, sender, _router, amountA), true, wait);
-    await RunHelper.runAndWait(() => TokenUtils.approve(tokenB, sender, _router, amountB), true, wait);
+    await RunHelper.runAndWait(() => TokenUtils.approve(tokenA, sender, _router, Misc.MAX_UINT), true, wait);
+    await RunHelper.runAndWait(() => TokenUtils.approve(tokenB, sender, _router, Misc.MAX_UINT), true, wait);
 
     if (_factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()) {
       const pair = await UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, _factory);

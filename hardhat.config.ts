@@ -107,8 +107,8 @@ export default {
       timeout: 99999,
       chainId: 137,
       gas: 12_000_000,
-      gasPrice: 50_000_000_000,
-      gasMultiplier: 1.3,
+      // gasPrice: 50_000_000_000,
+      // gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
     eth: {

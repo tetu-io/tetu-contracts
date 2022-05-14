@@ -1,5 +1,5 @@
 {
-  "name": "tetu-contracts",
+  "name": "@tetu_io/tetu-contracts",
   "version": "1.7.0",
   "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
@@ -35,7 +35,7 @@
   "bugs": {
     "url": "https://tasks.tetu.io/youtrack/issues/UISS"
   },
-  "homepage": "https://tetu.io/",
+  "homepage": "https://tetu.io",
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^3.0.0",
