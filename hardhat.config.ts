@@ -39,6 +39,12 @@ const argv = require('yargs/yargs')()
     networkScanKey: {
       type: "string",
     },
+    networkScanKeyMatic: {
+      type: "string",
+    },
+    networkScanKeyFtm: {
+      type: "string",
+    },
     privateKey: {
       type: "string",
       default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
@@ -49,7 +55,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 23945980
+      default: 28058008
     },
     ftmForkBlock: {
       type: "number",
@@ -101,8 +107,8 @@ export default {
       timeout: 99999,
       chainId: 137,
       gas: 12_000_000,
-      gasPrice: 50_000_000_000,
-      gasMultiplier: 1.3,
+      // gasPrice: 50_000_000_000,
+      // gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
     eth: {
@@ -131,7 +137,12 @@ export default {
     },
   },
   etherscan: {
-    apiKey: argv.networkScanKey
+    //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
+    apiKey: {
+      mainnet: argv.networkScanKey,
+      polygon: argv.networkScanKeyMatic || argv.networkScanKey,
+      opera: argv.networkScanKeyFtm || argv.networkScanKey
+    },
   },
   solidity: {
     compilers: [
@@ -158,7 +169,7 @@ export default {
   docgen: {
     path: './docs',
     clear: true,
-    runOnCompile: true,
+    runOnCompile: false,
     except: ['contracts/third_party', 'contracts/test']
   },
   contractSizer: {

@@ -1,5 +1,5 @@
 /* tslint:disable:variable-name */
-
+// noinspection SpellCheckingInspection
 // noinspection JSUnusedGlobalSymbols
 
 export class MaticAddresses {
@@ -69,6 +69,7 @@ export class MaticAddresses {
   public static UMA_TOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
   public static SPHERE_TOKEN = '0x8D546026012bF75073d8A586f24A5d5ff75b9716'.toLowerCase();
   public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
+  public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();

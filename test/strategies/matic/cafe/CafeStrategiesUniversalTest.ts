@@ -18,7 +18,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneCafeStrategyTest: {
       type: "number",
-      default: 1,
+      default: -1,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -32,7 +32,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe('Universal Cafe tests', async () => {
+describe.skip('Universal Cafe tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }

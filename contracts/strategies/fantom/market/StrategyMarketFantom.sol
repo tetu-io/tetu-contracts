@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 import "../../../base/strategies/market-base/MarketBaseStrategy.sol";
 
-contract StrategyMarket is MarketBaseStrategy {
+contract StrategyMarketFantom is MarketBaseStrategy {
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.MARKET;
   address[] private _assets;

@@ -20,15 +20,14 @@ contract StrategyBalStaking is BalStakingStrategyBase {
   address private constant _BPT_BAL_WETH = 0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56;
   address private constant _BAL = 0xba100000625a3754423978a60c9317c58a424e3D;
   address private constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  address private constant _VE_BAL = 0xC128a9954e6c874eA3d62ce62B468bA073093F25;
-  address private constant _FEE_DISTRIBUTOR = 0x26743984e3357eFC59f2fd6C1aFDC310335a61c9;
   address[] private _assets;
   address[] private _poolRewards;
 
   function initialize(
     address controller_,
     address vault_,
-    address depositor_
+    address depositor_,
+    address veLocker_
   ) external initializer {
     _assets.push(_BAL);
     _assets.push(_WETH);
@@ -38,9 +37,8 @@ contract StrategyBalStaking is BalStakingStrategyBase {
       _BPT_BAL_WETH,
       vault_,
       _poolRewards,
-      _VE_BAL,
-      depositor_,
-      _FEE_DISTRIBUTOR
+      veLocker_,
+      depositor_
     );
   }
 

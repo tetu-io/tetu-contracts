@@ -12,6 +12,7 @@ async function main() {
 
   // ********* config **************
   const DEPOSITOR = '0xBb84098e47d217f51cB014f692eada1F2280a179';
+  const LOCKER = '0x9cC56Fa7734DA21aC88F6a816aF10C5b898596Ce';
   const vaultName = 'TETU_ST_BAL'
   const vaultSymbol = 'tetuBAL';
   const underlying = EthAddresses.BALANCER_BAL_WETH;
@@ -43,7 +44,7 @@ async function main() {
     strategyName,
   ) as StrategyBalStaking;
   const strategyLogic = await TetuProxyControlled__factory.connect(strategy.address, signer).implementation()
-  await RunHelper.runAndWait(() => strategy.initialize(core.controller, vault.address, DEPOSITOR));
+  await RunHelper.runAndWait(() => strategy.initialize(core.controller, vault.address, DEPOSITOR, LOCKER));
 
 
   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;

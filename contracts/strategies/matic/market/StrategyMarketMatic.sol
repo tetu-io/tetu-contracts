@@ -12,11 +12,11 @@
 pragma solidity 0.8.4;
 
 
-import "../../../base/strategies/impermax-base/ImpermaxBaseStrategy.sol";
+import "../../../base/strategies/market-base/MarketBaseStrategy.sol";
 
-contract StrategyImpermax is ImpermaxBaseStrategy {
+contract StrategyMarketMatic is MarketBaseStrategy {
 
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.IMPERMAX;
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.MARKET;
   address[] private _assets;
 
   constructor(
@@ -25,7 +25,7 @@ contract StrategyImpermax is ImpermaxBaseStrategy {
     address _underlying,
     address _pool,
     uint __buyBackRatio
-  ) ImpermaxBaseStrategy(
+  ) MarketBaseStrategy(
     _controller,
     _underlying,
     _vault,
