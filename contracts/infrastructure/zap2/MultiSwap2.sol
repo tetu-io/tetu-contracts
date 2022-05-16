@@ -28,8 +28,8 @@ import "./IMultiSwap2.sol";
 
 import "hardhat/console.sol";
 
-/// @title MultiSwapLoader
-/// @dev Multi Swap Data Loader
+/// @title Tetu MultiSwap v2 Contract
+/// @dev Supports 1 balancer and uniswap v2 compatible pools
 /// @author bogdoslav
 contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
@@ -48,11 +48,31 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   // it is an address Pools cannot register as a token.
   address private constant _ETH = address(0);
 
+  error MSZeroWETH();
+  error MSZeroBalancerVault();
+  error MSZeroTokenIn();
+  error MSZeroTokenOut();
+  error MSSameTokens();
+  error MSZeroAmount();
+  error MSZeroAmountBalancer();
+  error MSSameTokensBalancer();
+  error MSWrongTokensUniswap();
+  error MSUnknownAmountInFirstSwap();
+  error MSDeadline();
+  error MSTransferFeesForbiddenForInputToken();
+  error MSTransferFeesForbiddenForOutputToken();
+  error MSMalconstructedMultiSwap();
+  error MSUnknownAmountInSwap();
+  error MSAmountOutLessThanRequired();
+  error MSInsufficientInputAmount();
+  error MSInsufficientLiquidity();
+  error MSForbidden();
+
   function initialize(address controller_, address weth_, address balancerVault_)
   public initializer {
     ControllableV2.initializeControllable(controller_);
-    require(weth_ != address(0), 'MS: Zero WETH');
-    require(balancerVault_ != address(0), 'MS: Zero Balancer vault');
+    if (weth_ == address(0)) revert MSZeroWETH();
+    if (balancerVault_ == address(0)) revert MSZeroBalancerVault();
     _WETH_SLOT.set(weth_);
     _BALANCER_VAULT_SLOT.set(balancerVault_);
   }
@@ -87,21 +107,21 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     nonReentrant
     returns (uint amountOut)
   {
-    require(swapData.tokenIn != address(0), "MS: zero tokenIn");
-    require(swapData.tokenOut != address(0), "MS: zero tokenOut");
-    require(swapData.tokenIn != swapData.tokenOut, "MS: same tokens");
-    require(swapData.amount != 0, "MS: zero amount");
-    require(swaps[0].amount > 0, 'MS: unknown amount in first swap');
+    if (swapData.tokenIn == address(0)) revert MSZeroTokenIn();
+    if (swapData.tokenOut == address(0)) revert MSZeroTokenOut();
+    if (swapData.tokenIn == swapData.tokenOut) revert MSSameTokens();
+    if (swapData.amount == 0) revert MSZeroAmount();
+    if (swaps[0].amount == 0) revert MSUnknownAmountInFirstSwap();
 
     // The deadline is timestamp-based: it should not be relied upon for sub-minute accuracy.
     // solhint-disable-next-line not-rely-on-time
-    require(block.timestamp <= swapData.deadline, "MS: deadline");
+    if (block.timestamp > swapData.deadline) revert MSDeadline();
 
     IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.amount);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
-    require(IERC20(swapData.tokenIn).balanceOf(address(this)) >= swapData.amount,
-      "MS: transfer fees forbidden for input Token");
+    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.amount)
+      revert MSTransferFeesForbiddenForInputToken();
 
     uint amountOutBefore = IERC20(swapData.tokenOut).balanceOf(address(this));
 
@@ -122,8 +142,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
       uint swapAmount;
       if (swapStep.amount == 0) {
-        require(previousTokenOut == swapTokenIn, 'MS: malconstructed multi swap');
-        require(previousAmountOut > 0, 'MS: unknown amount in swap');
+        if (previousTokenOut != swapTokenIn) revert MSMalconstructedMultiSwap();
+        if (previousAmountOut == 0) revert MSUnknownAmountInSwap();
         swapAmount = previousAmountOut;
       } else {
         swapAmount = swapStep.amount;
@@ -138,11 +158,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     }
 
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this)) - amountOutBefore;
-    require(amountOut >= swapData.minAmountOut, "MS: amount out less than required");
+    if (amountOut < swapData.minAmountOut) revert MSAmountOutLessThanRequired();
 
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
-    require(amountOut <= IERC20(swapData.tokenOut).balanceOf(msg.sender),
-      "MS: transfer fees forbidden for output Token");
+    if (amountOut > IERC20(swapData.tokenOut).balanceOf(msg.sender))
+      revert MSTransferFeesForbiddenForOutputToken();
   }
 
 
@@ -173,8 +193,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     // This revert reason is for consistency with `batchSwap`: an equivalent `swap` performed using that function
     // would result in this error.
-    require(swapAmount > 0, "MS: zero amount (balancer)");
-    require(tokenIn != tokenOut, "MS: same tokens (balancer)");
+    if (swapAmount == 0) revert MSZeroAmountBalancer();
+    if (tokenIn == tokenOut) revert MSSameTokensBalancer();
 
     // Initializing each struct field one-by-one uses less gas than setting all at once.
     IBVault.FundManagement memory funds;
@@ -209,11 +229,9 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     address token0 = pair.token0();
     address token1 = pair.token1();
 
-    require(
-      (token0 == address(tokenIn) && token1 == address(tokenOut)) ||
-      (token1 == address(tokenIn) && token0 == address(tokenOut)),
-      'MS: wrong tokens (uniswap)'
-    );
+    if (!(token0 == address(tokenIn) && token1 == address(tokenOut)) ||
+         (token1 == address(tokenIn) && token0 == address(tokenOut)))
+      revert MSWrongTokensUniswap();
 
     IERC20(tokenIn).safeTransfer(address(pair), swapAmount);
 
@@ -239,8 +257,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   /// @dev given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
   function _getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee)
   internal pure returns (uint amountOut) {
-    require(amountIn > 0, "MS: INSUFFICIENT_INPUT_AMOUNT");
-    require(reserveIn > 0 && reserveOut > 0, "MS: INSUFFICIENT_LIQUIDITY");
+    if (amountIn == 0) revert MSInsufficientInputAmount();
+    if (reserveIn == 0 || reserveOut == 0) revert MSInsufficientLiquidity();
     uint amountInWithFee = amountIn * (_PRECISION_FEE - fee);
     uint numerator = amountInWithFee * reserveOut;
     uint denominator = reserveIn * _PRECISION_FEE + amountInWithFee;
@@ -248,7 +266,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   }
 
   /// @dev returns fee for tetuswap or default uniswap v2 fee for other swaps
-  function _getTetuSwapFee(address pair) internal view returns (uint) {
+  function _getTetuSwapFee(address pair)
+  internal view returns (uint) {
     try ITetuSwapPair(pair).fee() returns (uint fee) {
       return fee;
     } catch Error(string memory /*reason*/) {
@@ -257,18 +276,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     return 30;
   }
 
-  // ************************* GOV ACTIONS *******************
-
-  /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
-  /// @param _token Token address
-  /// @param _amount Token amount
-  function salvage(address _token, uint _amount) external {
-    require(_isGovernance(msg.sender) || _isController(msg.sender), "MS: forbidden");
-    IERC20(_token).safeTransfer(msg.sender, _amount);
-  }
-
-  // ************************* ASSET HELPERS *******************
-  //
+  // ************************* INTERNAL ASSET HELPERS *******************
 
   /**
    * @dev Returns true if `asset` is the sentinel value that represents ETH.
@@ -302,6 +310,16 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
    */
   function _asIERC20(IAsset asset) internal pure returns (IERC20) {
     return IERC20(address(asset));
+  }
+
+  // ************************* GOV ACTIONS *******************
+
+  /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
+  /// @param _token Token address
+  /// @param _amount Token amount
+  function salvage(address _token, uint _amount) external {
+    if (!(_isGovernance(msg.sender) || _isController(msg.sender))) revert MSForbidden();
+    IERC20(_token).safeTransfer(msg.sender, _amount);
   }
 
 }
