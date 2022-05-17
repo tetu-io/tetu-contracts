@@ -41,22 +41,4 @@ contract StrategyTetuSwap is TetuSwapStrategyBase {
   function assets() external override view returns (address[] memory) {
     return _assets;
   }
-
-  /// @dev Do something useful with farmed rewards
-  function liquidateReward() internal override {
-    // assume only xTetu rewards exist
-    address rt = IController(controller()).psVault();
-
-    // it is redirected rewards - PS already had their part of income
-    // in case of pair with xTETU-XXX we not able to separate it
-    uint256 amount = IERC20(rt).balanceOf(address(this));
-    if (amount > 0) {
-      IERC20(rt).safeApprove(_smartVault, 0);
-      IERC20(rt).safeApprove(_smartVault, amount);
-      ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
-    }
-    autocompoundLP(router);
-    // if no not enough fees for buybacks it should not ruin hardwork process
-    liquidateRewardSilently();
-  }
 }
