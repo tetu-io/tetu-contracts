@@ -123,24 +123,24 @@ async function universalStrategyTest(
       await TimeUtils.rollback(snapshotBefore);
     });
 
-    it("doHardWork loop", async function () {
-      const core = deployInfo.core as CoreContractsWrapper;
-      const tools = deployInfo.tools as ToolsContractsWrapper;
-      await hardworkInitiator(
-        signer,
-        user,
-        core,
-        tools,
-        underlying,
-        vault,
-        strategy,
-        balanceTolerance,
-      ).start(userBalance, loops, loopValue, advanceBlocks);
-    });
-
-    it("common test should be ok", async () => {
-      await StrategyTestUtils.commonTests(strategy, underlying);
-    });
+    // it("doHardWork loop", async function () {
+    //   const core = deployInfo.core as CoreContractsWrapper;
+    //   const tools = deployInfo.tools as ToolsContractsWrapper;
+    //   await hardworkInitiator(
+    //     signer,
+    //     user,
+    //     core,
+    //     tools,
+    //     underlying,
+    //     vault,
+    //     strategy,
+    //     balanceTolerance,
+    //   ).start(userBalance, loops, loopValue, advanceBlocks);
+    // });
+    //
+    // it("common test should be ok", async () => {
+    //   await StrategyTestUtils.commonTests(strategy, underlying);
+    // });
 
     if (specificTests) {
       specificTests?.forEach(test => test.do(deployInfo));

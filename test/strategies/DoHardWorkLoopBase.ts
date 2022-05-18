@@ -337,7 +337,7 @@ export class DoHardWorkLoopBase {
         continue;
       }
       const rtBal = await TokenUtils.balanceOf(rt, this.strategy.address);
-      console.log('rt balance in strategy', rt, rtBal);
+      console.log('rt balance in strategy', rt, rtBal.toString());
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
 

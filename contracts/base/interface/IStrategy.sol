@@ -53,7 +53,7 @@ interface IStrategy {
     SPHERE, //35
     BALANCER, //36
     OTTERCLAM, //37
-    SLOT_38, //38
+    MESH, //38
     SLOT_39, //39
     SLOT_40, //40
     SLOT_41, //41
