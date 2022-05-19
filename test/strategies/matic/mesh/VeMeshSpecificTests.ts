@@ -34,6 +34,11 @@ export class VeMeshSpecificTests extends SpecificStrategyTest {
       await vault.deposit(depositAmount);
       const lpAddressToVote = "0x6Ffe747579eD4E807Dec9B40dBA18D15226c32dC";
 
+      console.log(`MESH balance in strategy: ${await votingMesh.lockedMESH(strategy.address)}`);
+      console.log(`vMESH balance in strategy: ${await votingMesh.balanceOf(strategy.address)}`);
+      expect(await votingMesh.lockedMESH(strategy.address)).is.eq(depositAmount);
+      expect(await votingMesh.balanceOf(strategy.address)).is.eq(depositAmount.mul(8));
+
       await strategy.addVoting(lpAddressToVote, 10)
       expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(1)
 
