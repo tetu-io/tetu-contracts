@@ -105,12 +105,6 @@ export class MeshStakingDoHardWork extends DoHardWorkLoopBase {
     console.log(`this.userRTBal ${this.userRTBal}`);
     console.log(`rewardBalanceAfter ${rewardBalanceAfter}`);
     console.log(`=============================`);
-
-    // check strategy balance
-
-
-
-
   }
 
   public async doHardWork() {

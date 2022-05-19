@@ -33,11 +33,18 @@ export class VeMeshSpecificTests extends SpecificStrategyTest {
       await meshToken.approve(vault.address,depositAmount);
       await vault.deposit(depositAmount);
       const lpAddressToVote = "0x6Ffe747579eD4E807Dec9B40dBA18D15226c32dC";
+
       await strategy.addVoting(lpAddressToVote, 10)
       expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(1)
-      await TimeUtils.advanceBlocksOnTs(60*60*24*100);
-      await strategy.removeVoting(lpAddressToVote, 10)
-      expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(0)
+
+      // this part needs to be tested manually because of comment from the team:
+      // It is not meant to compare timestamp and blocknumber directly on pool voting.
+      // when a certain timestamp passes, the epoch needs to be increased in governance, - therefore, it may be difficult to test it.
+
+      // await TimeUtils.advanceNBlocks(999);
+      //
+      // await strategy.removeAllVoting()
+      // expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(0)
     });
   }
 

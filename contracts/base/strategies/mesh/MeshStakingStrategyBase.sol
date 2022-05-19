@@ -57,6 +57,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
 
   event VotingAdded(address exchange, uint256 amount);
   event VotingRemoved(address exchange, uint256 amount);
+  event VotingRemovedAll();
 
   // ------------------ GOV actions --------------------------
 
@@ -76,6 +77,12 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
     poolVoting.removeVoting(exchange, amount);
     emit VotingRemoved(exchange, amount);
   }
+
+  function removeAllVoting() external restricted {
+    poolVoting.removeAllVoting();
+    emit VotingRemovedAll();
+  }
+
 
   // --------------------------------------------
 
@@ -120,9 +127,8 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   function liquidateReward() internal override {}
 
   /// @dev No claimable tokens
-  function readyToClaim() external view override returns (uint256[] memory) {
-    uint256[] memory toClaim = new uint256[](_rewardTokens.length);
-    return toClaim;
+  function readyToClaim() external view override returns (uint256[] memory toClaim) {
+    toClaim = new uint256[](_rewardTokens.length);
   }
 
   /// @dev Return full amount of staked tokens
