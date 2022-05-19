@@ -100,7 +100,6 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
       // lock on max period
       // mesh allows only integer values w/o precision e.g 1 mesh token
       amount = amount / _MESH_PRECISION; // rounding
-      console.log("amount %s", amount);
       IERC20(_underlying()).safeApprove(address(vMesh), 0);
       IERC20(_underlying()).safeApprove(address(vMesh), amount * _MESH_PRECISION);
       vMesh.lockMESH(amount, _MAX_LOCK_PERIOD);

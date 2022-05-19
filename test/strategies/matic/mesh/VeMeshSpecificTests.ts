@@ -35,7 +35,7 @@ export class VeMeshSpecificTests extends SpecificStrategyTest {
       const lpAddressToVote = "0x6Ffe747579eD4E807Dec9B40dBA18D15226c32dC";
       await strategy.addVoting(lpAddressToVote, 10)
       expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(1)
-      await TimeUtils.advanceBlocksOnTs(60*60*24*10);
+      await TimeUtils.advanceBlocksOnTs(60*60*24*100);
       await strategy.removeVoting(lpAddressToVote, 10)
       expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(0)
     });
