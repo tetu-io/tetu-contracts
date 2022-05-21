@@ -36,10 +36,9 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SlotsLib for bytes32;
 
   string public constant VERSION = "1.0.0";
-  uint public constant MAX_AMOUNT = type(uint).max;
-  uint128 constant private _PRECISION_FEE = 10000;
-  uint128 constant private _PRECISION_SLIPPAGE = 1000;
+  uint256 private constant  _SLIPPAGE_DENOMINATOR = 10000;
   bytes32 private constant _UNISWAP_MASK = "0xfffffffffffffffffffffff0"; // last half-byte - index of uniswap dex
+
   bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.weth")) - 1);
   bytes32 internal constant _BALANCER_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.balancerVault")) - 1);
 
@@ -100,7 +99,9 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   function multiSwap(
     SwapData memory swapData,
     IBVault.BatchSwapStep[] memory swaps,
-    IAsset[] memory assets
+    IAsset[] memory tokenAddresses,
+    uint slippage,
+    uint256 deadline
   )
     external
     override
@@ -110,17 +111,17 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     if (swapData.tokenIn == address(0)) revert MSZeroTokenIn();
     if (swapData.tokenOut == address(0)) revert MSZeroTokenOut();
     if (swapData.tokenIn == swapData.tokenOut) revert MSSameTokens();
-    if (swapData.amount == 0) revert MSZeroAmount();
+    if (swapData.swapAmount == 0) revert MSZeroAmount();
     if (swaps[0].amount == 0) revert MSUnknownAmountInFirstSwap();
 
     // The deadline is timestamp-based: it should not be relied upon for sub-minute accuracy.
     // solhint-disable-next-line not-rely-on-time
-    if (block.timestamp > swapData.deadline) revert MSDeadline();
+    if (block.timestamp > deadline) revert MSDeadline();
 
-    IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.amount);
+    IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.swapAmount);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
-    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.amount)
+    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
       revert MSTransferFeesForbiddenForInputToken();
 
     uint amountOutBefore = IERC20(swapData.tokenOut).balanceOf(address(this));
@@ -131,14 +132,14 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     // These store data about the previous swap here to implement multihop logic across swaps.
     IERC20 previousTokenOut = IERC20(swapData.tokenIn);
-    uint256 previousAmountOut = swapData.amount;
+    uint256 previousAmountOut = swapData.swapAmount;
 
     uint len = swaps.length;
     for (uint i = 0; i < len; i++) {
       swapStep = swaps[i];
 
-      IERC20 swapTokenIn = _translateToIERC20(assets[swapStep.assetInIndex]);
-      IERC20 swapTokenOut = _translateToIERC20(assets[swapStep.assetOutIndex]);
+      IERC20 swapTokenIn = _translateToIERC20(tokenAddresses[swapStep.assetInIndex]);
+      IERC20 swapTokenOut = _translateToIERC20(tokenAddresses[swapStep.assetOutIndex]);
 
       uint swapAmount;
       if (swapStep.amount == 0) {
@@ -158,7 +159,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     }
 
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this)) - amountOutBefore;
-    if (amountOut < swapData.minAmountOut) revert MSAmountOutLessThanRequired();
+    const minAmountOut = swapData.returnAmount * slippage / _SLIPPAGE_DENOMINATOR;
+    if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
 
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
     if (amountOut > IERC20(swapData.tokenOut).balanceOf(msg.sender))

@@ -21,15 +21,16 @@ interface IMultiSwap2 {
   struct SwapData {
     address tokenIn;
     address tokenOut;
-    uint amount;
-    uint minAmountOut;
-    uint256 deadline;
+    uint swapAmount;
+    uint returnAmount;
   }
 
   function multiSwap(
     SwapData memory swapData,
     IBVault.BatchSwapStep[] memory swaps,
-    IAsset[] memory assets
+    IAsset[] memory tokenAddresses,
+    uint slippage,
+    uint256 deadline
   )
   external
   returns (uint amountOut);

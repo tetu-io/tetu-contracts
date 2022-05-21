@@ -1,0 +1,686 @@
+{
+	"blockNumber": 28586453,
+	"testData": {
+		"1000 BAL->TETU": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x655262dc86afb333d6b9"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x655262dc342d4dd416b9"
+			},
+			"swaps": [
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "895254509496353193840",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "104745490503646806160",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+			],
+			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"marketSp": "0.0019815575983230475537595570592638",
+			"swapData": {
+				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x655262dc86afb333d6b9"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x655262dc86afb333d6b9"
+			}
+		},
+		"1000 TETU->BAL": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x1b117ec6ee9b6d7c"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x1b112c44893bad7c"
+			},
+			"swaps": [
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "663253485327321675778",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "336746514672678324222",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			],
+			"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"marketSp": "512.388361367680661252146800735108",
+			"swapData": {
+				"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x1b117ec6ee9b6d7c"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x1b117ec6ee9b6d7c"
+			}
+		},
+		"1000 BAL->QUICK": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x056d10994a382e60f7"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x056d1046c7d2cea0f7"
+			},
+			"swaps": [
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "654710125313301334571",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x019ba0325f1988213d448b3472fa1cf8d07618d7fffffffffffffffffffffff2",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "345289874686698665429",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x1bd06b96dd42ada85fdd0795f3b4a79db914add5fffffffffffffffffffffff2",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+				"0x831753dd7087cac61ab5644b308642cc1c33dc13",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+			],
+			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"tokenOut": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+			"marketSp": "9.9264552494772699946392788306392",
+			"swapData": {
+				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"tokenOut": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x056d10994a382e60f7"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x056d10994a382e60f7"
+			}
+		},
+		"1000 QUICK->BAL": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x01da0244b8c75c0381d8"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x01da02446644f6a3c1d8"
+			},
+			"swaps": [
+				{
+					"poolId": "0x019ba0325f1988213d448b3472fa1cf8d07618d7fffffffffffffffffffffff2",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "661145930687501915633",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x1f1e4c845183ef6d50e9609f16f6f9cae43bc9cbfffffffffffffffffffffff2",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "338854069312498084367",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x831753dd7087cac61ab5644b308642cc1c33dc13",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
+			],
+			"tokenIn": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"marketSp": "0.10760601137132771819958494331105",
+			"swapData": {
+				"tokenIn": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x01da0244b8c75c0381d8"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x01da0244b8c75c0381d8"
+			}
+		},
+		"1000 BAL->SUSHI": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x01135a1ef6c73964ec81"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x01135a1ea444d4052c81"
+			},
+			"swaps": [
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "764912832150383918053",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "235087167849616081947",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			],
+			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+			"marketSp": "0.182229596342785315816298460864",
+			"swapData": {
+				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x01135a1ef6c73964ec81"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x01135a1ef6c73964ec81"
+			}
+		},
+		"1000 SUSHI->BAL": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x091e203f4e8764400c"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x091e1feccc2204800c"
+			},
+			"swaps": [
+				{
+					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "769110569227153586980",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "230889430772846413020",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			],
+			"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"marketSp": "5.861541033340032064089897606086",
+			"swapData": {
+				"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x091e203f4e8764400c"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x091e203f4e8764400c"
+			}
+		},
+		"1000 TETU->SUSHI": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x954a4ad4b29df84b"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x9549f8524d3e384b"
+			},
+			"swaps": [
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "616278492746244529019",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "383721507253755470981",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			],
+			"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+			"marketSp": "92.906046218486446964217282233088",
+			"swapData": {
+				"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x954a4ad4b29df84b"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x954a4ad4b29df84b"
+			}
+		},
+		"1000 SUSHI->TETU": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x10faa9c829f4728e23e7"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x10faa9c7d7720d2e63e7"
+			},
+			"swaps": [
+				{
+					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "703633111716868972304",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "296366888283131027696",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			],
+			"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"marketSp": "0.011671916284657591311139662128445",
+			"swapData": {
+				"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x10faa9c829f4728e23e7"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x10faa9c829f4728e23e7"
+			}
+		},
+		"1000 TETU->QUICK": {
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x02bdb5928be9d434"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x02bd8c515939f434"
+			},
+			"swaps": [
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "1000000000000000000000",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x1bd06b96dd42ada85fdd0795f3b4a79db914add5fffffffffffffffffffffff2",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x831753dd7087cac61ab5644b308642cc1c33dc13"
+			],
+			"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"tokenOut": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+			"marketSp": "5058.14774824332715965396526139805",
+			"swapData": {
+				"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"tokenOut": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x02bdb5928be9d434"
+				}
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x3635c9adc5dea00000"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x02bdb5928be9d434"
+			}
+		},
+		"1000 QUICK->TETU": {
+			"tokenAddresses": [],
+			"swaps": [],
+			"swapAmount": {
+				"type": "BigNumber",
+				"hex": "0x00"
+			},
+			"swapAmountForSwaps": {
+				"type": "BigNumber",
+				"hex": "0x00"
+			},
+			"tokenIn": "",
+			"tokenOut": "",
+			"returnAmount": {
+				"type": "BigNumber",
+				"hex": "0x00"
+			},
+			"returnAmountConsideringFees": {
+				"type": "BigNumber",
+				"hex": "0x00"
+			},
+			"returnAmountFromSwaps": {
+				"type": "BigNumber",
+				"hex": "0x00"
+			},
+			"marketSp": "0",
+			"swapData": {
+				"tokenIn": "",
+				"tokenOut": "",
+				"swapAmount": {
+					"type": "BigNumber",
+					"hex": "0x00"
+				},
+				"returnAmount": {
+					"type": "BigNumber",
+					"hex": "0x00"
+				}
+			}
+		}
+	}
+}
