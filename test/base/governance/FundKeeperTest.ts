@@ -30,8 +30,7 @@ describe("Fund Keeper tests", function () {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshotBefore = await TimeUtils.snapshot();
     fundKeeper = core.fundKeeper;
-    usdc = await DeployerUtils.getUSDCAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
   });
 
   after(async function () {

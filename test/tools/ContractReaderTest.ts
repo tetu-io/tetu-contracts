@@ -6,7 +6,7 @@ import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {
-  ContractReader,
+  ContractReader, Multicall,
   NoopStrategy,
   PriceCalculator,
   SmartVault,
@@ -17,7 +17,7 @@ import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {VaultUtils} from "../VaultUtils";
-import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
+import {StrategyTestUtils} from "../StrategyTestUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
@@ -33,6 +33,7 @@ describe("contract reader tests", function () {
   let calculator: PriceCalculator;
   let usdc: string;
   let networkToken: string;
+  let multicall: Multicall;
 
   before(async function () {
     this.timeout(1200000);
@@ -47,14 +48,20 @@ describe("contract reader tests", function () {
     contractReader = logic.attach(proxy.address) as ContractReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    const factory = uniData.factory.address;
+    const router = uniData.router.address;
 
-    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    calculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, factory))[0];
+
+    multicall = await DeployerUtils.deployContract(signer, 'Multicall') as Multicall;
 
     await contractReader.initialize(core.controller.address, calculator.address);
+
+    // create lp for price feed
+    await UniswapUtils.createPairForRewardTokenOnTestnet(signer, core, "987000", usdc, factory, router);
 
     // for (let i = 0; i < 3; i++) {
     //   await DeployerUtils.deployAndInitVaultAndStrategy(
@@ -89,9 +96,6 @@ describe("contract reader tests", function () {
 
 
   it("vault rewards apr", async () => {
-
-    // create lp for price feed
-    await UniswapUtils.createPairForRewardToken(signer, core, "987000");
 
     const rewardTokenPrice = await calculator.getPriceWithDefaultOutput(core.rewardToken.address);
     console.log('rewardTokenPrice', utils.formatUnits(rewardTokenPrice, 18), core.rewardToken.address);
@@ -129,7 +133,7 @@ describe("contract reader tests", function () {
     const rtBalanceUsdFormatted = +utils.formatUnits(rtBalanceUsd, rtDecimals);
     console.log('rtBalanceUsd', rtBalanceUsd.toString(), rtBalanceUsdFormatted);
     const periodFinish = await core.psVault.periodFinishForToken(rt);
-    const time = await TimeUtils.getBlockTime();
+    const time = await TimeUtils.getBlockTime(multicall);
     const days = (periodFinish.toNumber() - time) / (60 * 60 * 24);
     console.log('days', days);
 
@@ -226,7 +230,6 @@ describe("contract reader tests", function () {
     expect(info.vault.name).is.eq('TETU_PS');
   });
 
-  // too heavy for alchemy
   it.skip("vault + user infos pages", async () => {
     const infos = await contractReader.vaultWithUserInfoPages(signer.address, 1, 2);
     expect(infos.length).is.eq(2);

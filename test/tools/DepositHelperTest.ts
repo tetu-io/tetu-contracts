@@ -251,7 +251,7 @@ describe.skip("Deposit Helper tests", function () {
   });
 
   it("Should salvage token", async () => {
-    const usdc = await DeployerUtils.getUSDCAddress();
+    const usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
     const amount = utils.parseUnits("10", 6);
     await TokenUtils.getToken(usdc, signer.address, amount);
     await TokenUtils.transfer(usdc, signer, depositHelper.address, amount.toString());

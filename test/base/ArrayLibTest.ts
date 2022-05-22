@@ -27,9 +27,9 @@ describe("Array lib tests", function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     arraylib = await DeployerUtils.deployContract(signer, "ArrayLibTest") as ArrayLibTest;
-    usdc = await DeployerUtils.getUSDCAddress();
-    tetu = await DeployerUtils.getTETUAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    tetu = (await DeployerUtils.deployMockToken(signer, 'TETU')).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
     addresses.push(usdc);
     addresses.push(networkToken)
   });

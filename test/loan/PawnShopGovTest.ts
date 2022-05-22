@@ -1,10 +1,9 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {TetuPawnShop} from "../../typechain";
+import {Multicall, TetuPawnShop} from "../../typechain";
 import {utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {parseUnits} from "ethers/lib/utils";
@@ -19,13 +18,15 @@ describe("Tetu pawnshop gov tests", function () {
   let shop: TetuPawnShop;
   let usdc: string;
   let networkToken: string;
+  let multicall: Multicall;
 
   before(async function () {
     snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS,parseUnits('1000'), signer.address,) as TetuPawnShop;
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+    shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS, parseUnits('1000'), signer.address,) as TetuPawnShop;
+    multicall = await DeployerUtils.deployContract(signer, 'Multicall') as Multicall;
   });
 
   after(async function () {
@@ -42,7 +43,7 @@ describe("Tetu pawnshop gov tests", function () {
   });
 
   it("Change governance", async () => {
-    const currentTime = await TimeUtils.getBlockTime();
+    const currentTime = await TimeUtils.getBlockTime(multicall);
     expect((await shop.owner()).toLowerCase()).is.eq(signer.address.toLowerCase());
 
     await shop.announceGovernanceAction(0, usdc, 0)
@@ -67,7 +68,7 @@ describe("Tetu pawnshop gov tests", function () {
   });
 
   it("Change fee recipient", async () => {
-    const currentTime = await TimeUtils.getBlockTime();
+    const currentTime = await TimeUtils.getBlockTime(multicall);
     expect((await shop.feeRecipient()).toLowerCase()).is.eq(signer.address.toLowerCase());
 
     await shop.announceGovernanceAction(1, usdc, 0)
@@ -93,7 +94,7 @@ describe("Tetu pawnshop gov tests", function () {
 
   it("Change platform fee", async () => {
     const id = 2;
-    const currentTime = await TimeUtils.getBlockTime();
+    const currentTime = await TimeUtils.getBlockTime(multicall);
     expect((await shop.platformFee()).toNumber()).is.eq(100);
 
     await shop.announceGovernanceAction(id, Misc.ZERO_ADDRESS, 200)
@@ -120,7 +121,7 @@ describe("Tetu pawnshop gov tests", function () {
   it("Change deposit amount", async () => {
     const id = 3;
     const value = utils.parseUnits('1000')
-    const currentTime = await TimeUtils.getBlockTime();
+    const currentTime = await TimeUtils.getBlockTime(multicall);
     expect((await shop.positionDepositAmount())).is.eq(value);
 
     await shop.announceGovernanceAction(id, Misc.ZERO_ADDRESS, value)
@@ -146,7 +147,7 @@ describe("Tetu pawnshop gov tests", function () {
 
   it("Change deposit token", async () => {
     const id = 4;
-    const currentTime = await TimeUtils.getBlockTime();
+    const currentTime = await TimeUtils.getBlockTime(multicall);
     expect((await shop.positionDepositToken()).toLowerCase()).is.eq(Misc.ZERO_ADDRESS);
 
     await shop.announceGovernanceAction(id, usdc, 0)

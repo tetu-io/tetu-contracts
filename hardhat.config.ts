@@ -21,7 +21,7 @@ const argv = require('yargs/yargs')()
   .options({
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 31337
     },
     maticRpcUrl: {
       type: "string",
@@ -73,20 +73,20 @@ export default {
       timeout: 99999999,
       gas: argv.hardhatChainId === 1 ? 19_000_000 :
         argv.hardhatChainId === 137 ? 19_000_000 :
-        argv.hardhatChainId === 250 ? 11_000_000 :
-          9_000_000,
-      forking: {
+          argv.hardhatChainId === 250 ? 11_000_000 :
+            9_000_000,
+      forking: argv.hardhatChainId !== 31337 ? {
         url:
           argv.hardhatChainId === 1 ? argv.ethRpcUrl :
-          argv.hardhatChainId === 137 ? argv.maticRpcUrl :
-            argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
-              undefined,
+            argv.hardhatChainId === 137 ? argv.maticRpcUrl :
+              argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+                undefined,
         blockNumber:
           argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
-          argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
-            argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
-              undefined
-      },
+            argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
+              argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+                undefined
+      } : undefined,
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
         path: "m/44'/60'/0'/0",

@@ -15,7 +15,7 @@ describe("Various Slots Tests", function () {
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
 
     const proxy = (await DeployerUtils.deployTetuProxyControlled(signer, 'SlotsTest'))[0];
     slotsTest = SlotsTest__factory.connect(proxy.address, signer);

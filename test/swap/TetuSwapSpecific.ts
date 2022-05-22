@@ -32,16 +32,12 @@ describe("Tetu Swap specific tests", function () {
   let core: CoreContractsWrapper;
   let factory: TetuSwapFactory;
   let router: TetuSwapRouter;
-  let coreAddresses: CoreAddresses;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[0];
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshotBefore = await TimeUtils.snapshot();
-
-    const net = await ethers.provider.getNetwork();
-    coreAddresses = await DeployerUtils.getCoreAddresses();
 
     // factory = await DeployerUtils.connectInterface(signer, 'TetuSwapFactory', coreAddresses.swapFactory) as TetuSwapFactory;
     // router = await DeployerUtils.connectInterface(signer, 'TetuSwapRouter', coreAddresses.swapRouter) as TetuSwapRouter;

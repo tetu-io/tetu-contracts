@@ -41,8 +41,8 @@ describe("SmartVaultNoopStrat", () => {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshot = await TimeUtils.snapshot();
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
 
     vaultRewardToken0 = core.psVault.address;
     vault = await DeployerUtils.deploySmartVault(signer);
@@ -74,21 +74,21 @@ describe("SmartVaultNoopStrat", () => {
       REWARD_DURATION
     );
 
-    await UniswapUtils.wrapNetworkToken(signer);
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
     await TokenUtils.getToken(usdc, user.address, utils.parseUnits("1000000", 6))
-    await TokenUtils.wrapNetworkToken(signer, '10000000');
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+
     const lpAddress = await UniswapUtils.addLiquidity(
       signer,
       core.rewardToken.address,
       usdc,
       utils.parseUnits("100", 18).toString(),
       utils.parseUnits("100", 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      uniData.factory.address,
+      uniData.router.address
     );
     expect(await TokenUtils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 

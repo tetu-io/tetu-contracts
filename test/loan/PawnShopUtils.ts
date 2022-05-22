@@ -15,6 +15,7 @@ export class PawnShopUtils {
 
 
   public static async openErc20ForUsdc(
+    usdc: string,
     signer: SignerWithAddress,
     shop: TetuPawnShop,
     collateralToken: string,
@@ -35,7 +36,7 @@ export class PawnShopUtils {
       collateralToken,
       collateralAmount,
       0,
-      await DeployerUtils.getUSDCAddress(),
+      usdc,
       acquiredAmount,
       posDurationBlocks,
       posFee
@@ -46,6 +47,7 @@ export class PawnShopUtils {
   }
 
   public static async openNftForUsdc(
+    usdc: string,
     signer: SignerWithAddress,
     shop: TetuPawnShop,
     collateralToken: string,
@@ -61,7 +63,7 @@ export class PawnShopUtils {
       collateralToken,
       0,
       collateralId,
-      await DeployerUtils.getUSDCAddress(),
+      usdc,
       acquiredAmount,
       posDurationBlocks,
       posFee

@@ -22,6 +22,9 @@ describe("Price calculator matic tests", function () {
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
