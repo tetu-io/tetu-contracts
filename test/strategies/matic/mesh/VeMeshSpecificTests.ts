@@ -2,15 +2,17 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {
   IERC20,
   IPoolVoting, ISmartVault, IVotingMesh,
-  MeshStakingStrategyBase,
+  MeshStakingStrategyBase, SmartVault__factory,
 } from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {BigNumber} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {TimeUtils} from "../../../TimeUtils";
+import {TokenUtils} from "../../../TokenUtils";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -51,6 +53,66 @@ export class VeMeshSpecificTests extends SpecificStrategyTest {
       // await strategy.removeAllVoting()
       // expect(await poolVoting.userVotingPoolCount(strategy.address)).is.eq(0)
     });
+
+    it("Autoclimed rewards after the deposit should not change ppfs and be liquidated to the vault.", async () =>{
+      const largeApproval = '100000000000000000000000000000000'
+      const signer = deployInfo.signer as SignerWithAddress;
+      const vault = deployInfo.vault as ISmartVault;
+
+
+      const underlying = await vault.underlying();
+      const tetuMeshAddress = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'
+      const tetuMeshToken = await DeployerUtils.connectInterface(signer, "contracts/openzeppelin/IERC20.sol:IERC20", tetuMeshAddress) as IERC20;
+      const vaultRewardBalanceBefore = await tetuMeshToken.balanceOf(vault.address);
+      console.log(`vaultRewardBalanceBefore ${vaultRewardBalanceBefore}`);
+      const meshToken = await DeployerUtils.connectInterface(signer, "contracts/openzeppelin/IERC20.sol:IERC20", underlying) as IERC20;
+      const meshBal = await meshToken.balanceOf(signer.address)
+      console.log(`meshBal ${meshBal}`);
+      const depositAmount1 = meshBal.div(2)
+      await meshToken.approve(vault.address, largeApproval);
+      const expectedPPFS = BigNumber.from(10).pow(18);
+      console.log(`Deposit 1 ...`)
+      await vault.depositAndInvest(depositAmount1);
+      console.log(`PPFS 1: ${await vault.getPricePerFullShare()}`)
+      console.log(`Underlying balance 1: ${await vault.underlyingBalanceWithInvestment()}`)
+      expect(await vault.getPricePerFullShare()).is.eq(expectedPPFS);
+      await TimeUtils.advanceBlocksOnTs(60*60*24*30);
+      const depositAmount2 = meshBal.div(2)
+      console.log(`Deposit 2 ...`)
+      await vault.depositAndInvest(depositAmount2);
+      console.log(`PPFS 2: ${await vault.getPricePerFullShare()}`)
+      console.log(`Underlying balance 2: ${await vault.underlyingBalanceWithInvestment()}`)
+      expect(await vault.getPricePerFullShare()).is.eq(expectedPPFS);
+      const vaultRewardBalanceAfter = await tetuMeshToken.balanceOf(vault.address);
+      console.log(`vaultRewardBalanceAfter ${vaultRewardBalanceAfter}`);
+      expect(vaultRewardBalanceAfter).is.gt(vaultRewardBalanceBefore);
+    })
+
+    it("In case of extra token in strategy PPFS should be adjusted", async () =>{
+      const signer = deployInfo.signer as SignerWithAddress;
+      const vault = deployInfo.vault as ISmartVault;
+      await SmartVault__factory.connect(vault.address, signer).changePpfsDecreaseAllowed(true);
+
+      const underlying = await vault.underlying();
+      const strategy = deployInfo.strategy as MeshStakingStrategyBase;
+      const meshToken = await DeployerUtils.connectInterface(signer, "contracts/openzeppelin/IERC20.sol:IERC20", underlying) as IERC20;
+      const depositAmount1 = BigNumber.from(104).mul(BigNumber.from(10).pow(17))
+      await meshToken.approve(vault.address,depositAmount1.mul(100000));
+      const expectedPPFS = BigNumber.from(10).pow(18);
+      console.log(`Deposit 1 ...`)
+      await vault.deposit(depositAmount1);
+      console.log(`PPFS 1: ${await vault.getPricePerFullShare()}`)
+      console.log(`Underlying balance 1: ${await vault.underlyingBalanceWithInvestment()}`)
+      expect(await vault.getPricePerFullShare()).is.eq(expectedPPFS);
+      await TimeUtils.advanceBlocksOnTs(60*60*24);
+      const depositAmount2 = BigNumber.from(107).mul(BigNumber.from(10).pow(17))
+      await TokenUtils.getToken(MaticAddresses.MESH_TOKEN, strategy.address, utils.parseUnits('1000'))
+      console.log(`Deposit 2 ...`)
+      await vault.deposit(depositAmount2);
+      console.log(`PPFS 2: ${await vault.getPricePerFullShare()}`)
+      console.log(`Underlying balance 2: ${await vault.underlyingBalanceWithInvestment()}`)
+      expect(await vault.getPricePerFullShare()).is.eq(expectedPPFS);
+    })
   }
 
 }

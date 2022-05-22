@@ -24,11 +24,12 @@ contract StrategyMeshStaking is MeshStakingStrategyBase {
 
   function initialize(
     address _controller,
-    address _vault
+    address _vault,
+    address _targetRewardVault
   ) external initializer {
     _assets.push(_MESH);
     _poolRewards.push(_MESH);
-    MeshStakingStrategyBase.initializeStrategy(_controller, _MESH, _vault, _poolRewards);
+    MeshStakingStrategyBase.initializeStrategy(_controller, _MESH, _vault, _poolRewards, _targetRewardVault);
   }
 
   // assets should reflect underlying tokens need to investing

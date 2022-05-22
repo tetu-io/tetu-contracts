@@ -55,7 +55,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 28405300
+      default: 28638200
     },
     ftmForkBlock: {
       type: "number",
@@ -92,6 +92,7 @@ export default {
         path: "m/44'/60'/0'/0",
         accountsBalance: "100000000000000000000000000000"
       },
+      // loggingEnabled: true
     },
     ftm: {
       url: argv.ftmRpcUrl || '',

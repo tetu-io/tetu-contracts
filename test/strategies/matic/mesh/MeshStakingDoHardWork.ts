@@ -50,16 +50,6 @@ export class MeshStakingDoHardWork extends DoHardWorkLoopBase {
     console.log('--- Enter to vault end')
   }
 
-  public async loopStartActions(i: number) {
-    await super.loopStartActions(i);
-    const ppfsBefore = await this.vault.getPricePerFullShare();
-    console.log('ppfs before transfer MESH', ppfsBefore.toString());
-    await TokenUtils.getToken(MaticAddresses.MESH_TOKEN, this.strategy.address, utils.parseUnits('1000'))
-    const ppfsAfter = await this.vault.getPricePerFullShare();
-    console.log('ppfs after transfer MESH', ppfsAfter.toString());
-    expect(ppfsBefore).is.eq(ppfsAfter);
-  }
-
 
   public async loopEndActions(i: number) {
     const strategyBalance = await this.strategy.investedUnderlyingBalance();
@@ -106,10 +96,4 @@ export class MeshStakingDoHardWork extends DoHardWorkLoopBase {
     console.log(`rewardBalanceAfter ${rewardBalanceAfter}`);
     console.log(`=============================`);
   }
-
-  public async doHardWork() {
-    console.log('Pass in this version');
-  }
-
-
 }

@@ -53,7 +53,8 @@ describe('Mesh staking tests', async () => {
   // **********************************************
   const strategyContractName = strategyName;
   const vaultName = 'tetuMesh';
-
+  // needed for custom tests.
+  const tetuMeshAddress = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a';
   // only for strategies where we expect PPFS fluctuations
   const ppfsDecreaseAllowed = false;
   // only for strategies where we expect PPFS fluctuations
@@ -80,7 +81,7 @@ describe('Mesh staking tests', async () => {
           signer,
           strategyContractName,
         ) as StrategyMeshStaking;
-        await strategy.initialize(core.controller.address, vaultAddress);
+        await strategy.initialize(core.controller.address, vaultAddress, vaultAddress);
         return strategy;
       },
       underlying
@@ -88,6 +89,7 @@ describe('Mesh staking tests', async () => {
     await SmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
     await SmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
     await core.vaultController.addRewardTokens([data[0].address], data[0].address);
+    await core.vaultController.addRewardTokens([data[0].address], tetuMeshAddress);
     await core.controller.setRewardDistribution([data[1].address], true);
     return data;
   };
