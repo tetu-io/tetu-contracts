@@ -11,6 +11,7 @@ import {PawnShopTestUtils} from "../loan/PawnShopTestUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
 import {TokenUtils} from "../TokenUtils";
 import {parseUnits} from "ethers/lib/utils";
+import {UniswapUtils} from "../UniswapUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -45,12 +46,18 @@ describe("pawnshop reader tests", function () {
     reader = logic.attach(proxy.address) as PawnShopReader;
     expect(await proxy.implementation()).is.eq(logic.address);
 
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    const factory = uniData.factory.address;
+    const router = uniData.router.address;
+
     shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop', signer.address, Misc.ZERO_ADDRESS, parseUnits('1000'), core.controller.address,) as TetuPawnShop;
-    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    calculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, factory))[0];
 
     await reader.initialize(core.controller.address, calculator.address, shop.address);
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
     await TokenUtils.getToken(usdc, user1.address, utils.parseUnits('100000', 6));
     await TokenUtils.getToken(usdc, user2.address, utils.parseUnits('100000', 6));
@@ -60,6 +67,7 @@ describe("pawnshop reader tests", function () {
 
     for (let i = 0; i < EXECUTED_POSITION_COUNT; i++) {
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+        usdc,
         user1,
         shop,
         networkToken,
@@ -77,6 +85,7 @@ describe("pawnshop reader tests", function () {
         aAmount = '0';
       }
       const posId = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+        usdc,
         user1,
         shop,
         networkToken,

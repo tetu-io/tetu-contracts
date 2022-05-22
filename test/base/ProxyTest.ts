@@ -34,7 +34,7 @@ describe("Proxy tests", function () {
     user1 = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
     snapshotBefore = await TimeUtils.snapshot();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
     tetu = core.rewardToken.address.toLowerCase();
   });
 

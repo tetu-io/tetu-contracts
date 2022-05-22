@@ -5,7 +5,6 @@ import {Bookkeeper, Controller, NoopStrategy} from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../../TimeUtils";
-import {UniswapUtils} from "../../UniswapUtils";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {Misc} from "../../../scripts/utils/tools/Misc";
 
@@ -33,8 +32,11 @@ describe("Controller tests", function () {
     snapshotBefore = await TimeUtils.snapshot();
     controller = core.controller;
     bookkeeper = core.bookkeeper;
-    usdc = await DeployerUtils.getUSDCAddress();
-    await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+
+    if ((await controller.fundToken()) === Misc.ZERO_ADDRESS) {
+      await controller.setFundToken(usdc);
+    }
   });
 
   after(async function () {
@@ -179,7 +181,7 @@ describe("Controller tests", function () {
   });
 
   it("should not setup fund token without announce", async () => {
-    await expect(controller.setFundToken(Misc.ZERO_ADDRESS)).rejectedWith('C: Not announced');
+    await expect(controller.setFundToken(Misc.ZERO_ADDRESS)).revertedWith('C: Not announced');
   });
 
   it("should not setup fund without announce", async () => {

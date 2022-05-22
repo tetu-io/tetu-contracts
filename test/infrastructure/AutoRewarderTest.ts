@@ -17,6 +17,7 @@ import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers} from "hardhat";
+import {UniswapUtils} from "../UniswapUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -45,19 +46,18 @@ describe("auto rewarder tests", function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
 
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
-    const tools = await DeployerUtils.getToolsAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
 
     bookkeeper = core.bookkeeper
     controller = core.controller
     announcer = core.announcer
 
-    priceCalculator = tools.calculator
+    const uniData = await UniswapUtils.deployUniswap(signer);
+
+    priceCalculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, uniData.factory.address))[2];
     rewardCalculator = (await DeployerUtils.deployRewardCalculator(signer, controller.address, priceCalculator.address))[0] as RewardCalculator;
     rewarder = (await DeployerUtils.deployAutoRewarder(
       signer,

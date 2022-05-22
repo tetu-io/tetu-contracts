@@ -15,84 +15,91 @@ export class PawnShopTestUtils {
 
 
   public static async openErc20ForUsdcAndCheck(
-      signer: SignerWithAddress,
-      shop: TetuPawnShop,
-      collateralToken: string,
-      collateralAmount: string,
-      acquiredAmount: string,
-      posDurationBlocks = 99,
-      posFee = 100,
+    usdc: string,
+    signer: SignerWithAddress,
+    shop: TetuPawnShop,
+    collateralToken: string,
+    collateralAmount: string,
+    acquiredAmount: string,
+    posDurationBlocks = 99,
+    posFee = 100,
   ): Promise<number> {
     const id = await PawnShopUtils.openErc20ForUsdc(
-        signer,
-        shop,
-        collateralToken,
-        collateralAmount,
-        acquiredAmount,
-        posDurationBlocks,
-        posFee
+      usdc,
+      signer,
+      shop,
+      collateralToken,
+      collateralAmount,
+      acquiredAmount,
+      posDurationBlocks,
+      posFee
     );
 
     await PawnShopTestUtils.checkPosition(
-        id,
-        signer,
-        shop,
-        collateralToken,
-        collateralAmount,
-        "0",
-        0,
-        acquiredAmount,
-        posDurationBlocks,
-        posFee,
+      id,
+      signer,
+      shop,
+      collateralToken,
+      collateralAmount,
+      "0",
+      0,
+      usdc,
+      acquiredAmount,
+      posDurationBlocks,
+      posFee,
     )
     return id;
   }
 
   public static async openNftForUsdcAndCheck(
-      signer: SignerWithAddress,
-      shop: TetuPawnShop,
-      collateralToken: string,
-      collateralId: string,
-      acquiredAmount: string,
-      posDurationBlocks = 99,
-      posFee = 100,
+    usdc: string,
+    signer: SignerWithAddress,
+    shop: TetuPawnShop,
+    collateralToken: string,
+    collateralId: string,
+    acquiredAmount: string,
+    posDurationBlocks = 99,
+    posFee = 100,
   ): Promise<number> {
     const id = await PawnShopUtils.openNftForUsdc(
-        signer,
-        shop,
-        collateralToken,
-        collateralId,
-        acquiredAmount,
-        posDurationBlocks,
-        posFee
+      usdc,
+      signer,
+      shop,
+      collateralToken,
+      collateralId,
+      acquiredAmount,
+      posDurationBlocks,
+      posFee
     );
 
     await PawnShopTestUtils.checkPosition(
-        id,
-        signer,
-        shop,
-        collateralToken,
-        "0",
-        collateralId,
-        1,
-        acquiredAmount,
-        posDurationBlocks,
-        posFee,
+      id,
+      signer,
+      shop,
+      collateralToken,
+      "0",
+      collateralId,
+      1,
+      usdc,
+      acquiredAmount,
+      posDurationBlocks,
+      posFee,
     )
     return id;
   }
 
   public static async checkPosition(
-      id: number,
-      signer: SignerWithAddress,
-      shop: TetuPawnShop,
-      collateralToken: string,
-      collateralAmount: string,
-      collateralId: string,
-      collateralType: number,
-      acquiredAmount: string,
-      posDurationBlocks: number,
-      posFee: number,
+    id: number,
+    signer: SignerWithAddress,
+    shop: TetuPawnShop,
+    collateralToken: string,
+    collateralAmount: string,
+    collateralId: string,
+    collateralType: number,
+    acquiredToken: string,
+    acquiredAmount: string,
+    posDurationBlocks: number,
+    posFee: number,
   ) {
     const l = await shop.positions(id);
 
@@ -112,7 +119,7 @@ export class PawnShopTestUtils {
     expect(collateral.collateralTokenId.toString()).is.eq(collateralId);
 
     const acquired = l.acquired;
-    expect(acquired.acquiredToken.toLowerCase()).is.eq(await DeployerUtils.getUSDCAddress());
+    expect(acquired.acquiredToken.toLowerCase()).is.eq(acquiredToken);
     expect(acquired.acquiredAmount.toString()).is.eq(acquiredAmount);
 
     const execution = l.execution;
@@ -128,7 +135,7 @@ export class PawnShopTestUtils {
 
     expect(await shop.openPositions(listIndex)).is.eq(id);
     expect((await shop.positionsByCollateral(collateralToken, cIndex))).is.eq(id);
-    expect((await shop.positionsByAcquired(await DeployerUtils.getUSDCAddress(), aIndex))).is.eq(id);
+    expect((await shop.positionsByAcquired(acquiredToken, aIndex))).is.eq(id);
     expect((await shop.borrowerPositions(signer.address, bIndex))).is.eq(id);
   }
 
@@ -172,11 +179,11 @@ export class PawnShopTestUtils {
   }
 
   public static async checkExecution(
-      loanId: number,
-      amount: string,
-      lenderAddress: string,
-      shop: TetuPawnShop,
-      cBalanceBefore: BigNumber
+    loanId: number,
+    amount: string,
+    lenderAddress: string,
+    shop: TetuPawnShop,
+    cBalanceBefore: BigNumber
   ) {
     const lAfter = await shop.positions(loanId);
 

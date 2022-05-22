@@ -4,7 +4,7 @@ import {
   IERC721Enumerable__factory,
   IWmatic,
   IWmatic__factory,
-  RewardToken
+  MockToken__factory
 } from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -15,6 +15,7 @@ import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {FtmAddresses} from "../scripts/addresses/FtmAddresses";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {EthAddresses} from "../scripts/addresses/EthAddresses";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -203,12 +204,20 @@ export class TokenUtils {
 
   public static async getToken(token: string, to: string, amount?: BigNumber) {
     const start = Date.now();
-    console.log('transfer token from biggest holder', token, amount?.toString());
-    if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
-      const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
-      const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
-      await tokenCtr.mint(to, amount as BigNumber);
-      return amount;
+    const signer0 = await DeployerUtils.impersonate();
+    const name = await MockToken__factory.connect(token, signer0).name();
+    console.log('transfer token from biggest holder', name, token, amount?.toString());
+    // if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
+    //   const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
+    //   const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
+    //   await tokenCtr.mint(to, amount as BigNumber);
+    //   return amount;
+    // }
+
+    if (name.endsWith('_MOCK_TOKEN')) {
+      const amount0 = amount || parseUnits('100');
+      await MockToken__factory.connect(token, signer0).mint(to, amount0);
+      return amount0;
     }
 
     if (token.toLowerCase() === await DeployerUtils.getNetworkTokenAddress()) {

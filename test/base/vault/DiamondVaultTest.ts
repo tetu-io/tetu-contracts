@@ -23,7 +23,7 @@ describe("Diamond vault test", () => {
   let snapshotForEach: string;
   let signer: SignerWithAddress;
   let core: CoreContractsWrapper;
-  let contractReader: ContractReader;
+  // let contractReader: ContractReader;
   let multicall: Multicall;
 
 
@@ -33,14 +33,14 @@ describe("Diamond vault test", () => {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshot = await TimeUtils.snapshot();
 
-    const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    // const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
 
     multicall = await DeployerUtils.deployContract(signer, "Multicall") as Multicall;
-    const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
-    const crProxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", crLogic.address);
-    contractReader = crLogic.attach(crProxy.address) as ContractReader;
+    // const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
+    // const crProxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", crLogic.address);
+    // contractReader = crLogic.attach(crProxy.address) as ContractReader;
 
-    await contractReader.initialize(core.controller.address, calculator.address);
+    // await contractReader.initialize(core.controller.address, calculator.address);
   });
 
   after(async function () {
@@ -58,6 +58,7 @@ describe("Diamond vault test", () => {
 
   it("check locked funds in loop", async () => {
     const underlying = core.psVault.address;
+    const usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
 
 
     // ******** DEPLOY VAULT *******
@@ -90,7 +91,8 @@ describe("Diamond vault test", () => {
     const rewardsToDistribute = utils.parseUnits('10000', rtDecimals);
     let rewardsTotalAmount = rewardsToDistribute;
 
-    await UniswapUtils.createPairForRewardToken(signer, core, '567111');
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    await UniswapUtils.createPairForRewardTokenOnTestnet(signer, core, '567111', usdc, uniData.factory.address, uniData.router.address);
     await VaultUtils.deposit(signer, core.psVault, await TokenUtils.balanceOf(core.rewardToken.address, signer.address));
     console.log('underlying amount', utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec));
     await VaultUtils.deposit(signer, vault, rewardsToDistribute.mul(2).add(1));
@@ -194,8 +196,8 @@ describe("Diamond vault test", () => {
 
       console.log('ppfs after time machine', +utils.formatUnits(await vault.getPricePerFullShare(), underlyingDec));
 
-      console.log('vaultApr', await VaultUtils.vaultApr(vault, rt, contractReader),
-        utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]));
+      // console.log('vaultApr', await VaultUtils.vaultApr(vault, rt, contractReader),
+      //   utils.formatUnits((await contractReader.vaultRewardsApr(vault.address))[0]));
       console.log('rewardPerToken', utils.formatUnits(await vault.rewardPerToken(rt)));
 
       if (user1Deposited) {
