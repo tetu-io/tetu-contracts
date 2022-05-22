@@ -103,7 +103,7 @@ export default {
       accounts: [argv.privateKey],
     },
     matic: {
-      url: argv.maticRpcUrl,
+      url: argv.maticRpcUrl || '',
       timeout: 99999,
       chainId: 137,
       gas: 12_000_000,
@@ -112,7 +112,7 @@ export default {
       accounts: [argv.privateKey],
     },
     eth: {
-      url: argv.ethRpcUrl,
+      url: argv.ethRpcUrl || '',
       chainId: 1,
       accounts: [argv.privateKey],
     },
