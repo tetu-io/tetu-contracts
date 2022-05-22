@@ -359,6 +359,7 @@ contract TetuSwapRouter is ITetuSwapRouter {
       (address input, address output) = (path[i], path[i + 1]);
       (address token0,) = TetuSwapLibrary.sortTokens(input, output);
       ITetuSwapPair pair = ITetuSwapPair(TetuSwapLibrary.pairFor(factory, input, output));
+      pair.sync();
       uint amountInput;
       uint amountOutput;
       {// scope to avoid stack too deep errors
@@ -385,7 +386,6 @@ contract TetuSwapRouter is ITetuSwapRouter {
     address to,
     uint deadline
   ) external virtual override ensure(deadline) {
-    callSync(path);
     TransferHelper.safeTransferFrom(
       path[0], msg.sender, TetuSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
     );
@@ -410,7 +410,6 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ensure(deadline)
   {
     require(path[0] == WETH, "TSR: INVALID_PATH");
-    callSync(path);
     uint amountIn = msg.value;
     IWETH(WETH).deposit{value : amountIn}();
     assert(IWETH(WETH).transfer(TetuSwapLibrary.pairFor(factory, path[0], path[1]), amountIn));
@@ -435,7 +434,6 @@ contract TetuSwapRouter is ITetuSwapRouter {
   ensure(deadline)
   {
     require(path[path.length - 1] == WETH, "TSR: INVALID_PATH");
-    callSync(path);
     TransferHelper.safeTransferFrom(
       path[0], msg.sender, TetuSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
     );

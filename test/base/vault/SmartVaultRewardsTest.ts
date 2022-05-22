@@ -1,9 +1,16 @@
 import {ethers} from "hardhat";
 import chai from "chai";
-import {ContractReader, Multicall, MultiSwap, NoopStrategy, ZapContract} from "../../../typechain";
+import {
+  ContractReader,
+  DepositHelper,
+  Multicall,
+  MultiSwap,
+  NoopStrategy,
+  ZapContract
+} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../VaultUtils";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {TimeUtils} from "../../TimeUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -12,11 +19,15 @@ import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {UniswapUtils} from "../../UniswapUtils";
 import {ZapUtils} from "../../ZapUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
+import {MintHelperUtils} from "../../MintHelperUtils";
+import { parseUnits } from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe("Smart vault rewards test", () => {
+  const MAX_UINT = BigNumber.from(2).pow(256).sub(1).toString();
+
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -25,31 +36,51 @@ describe("Smart vault rewards test", () => {
   let zapContract: ZapContract;
   let multiSwap: MultiSwap;
   let multicall: Multicall;
+  let depositHelper: DepositHelper;
   let usdc: string;
   let networkToken: string;
+  let factory: string;
+  let router: string;
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
-    const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    factory = uniData.factory.address;
+    router = uniData.router.address;
+
+    const calculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, factory))[0];
 
     multicall = await DeployerUtils.deployContract(signer, "Multicall") as Multicall;
+    depositHelper = await DeployerUtils.deployContract(signer, "DepositHelper") as DepositHelper;
+    await core.controller.changeWhiteListStatus([depositHelper.address], true);
+
     const crLogic = await DeployerUtils.deployContract(signer, "ContractReader");
     const crProxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", crLogic.address);
     contractReader = crLogic.attach(crProxy.address) as ContractReader;
 
     await contractReader.initialize(core.controller.address, calculator.address);
 
-    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    multiSwap = await DeployerUtils.deployMultiSwapTestnet(signer, core.controller.address, calculator.address, factory, router);
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     await core.controller.changeWhiteListStatus([zapContract.address], true);
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
-    await TokenUtils.wrapNetworkToken(signer, '10000000');
+    await UniswapUtils.addLiquidity(
+      signer,
+      usdc,
+      networkToken,
+      parseUnits('100000', 6).toString(),
+      parseUnits('100000').toString(),
+      uniData.factory.address,
+      uniData.router.address,
+    );
+    await calculator.addKeyToken(networkToken);
+
   });
 
   after(async function () {
@@ -72,8 +103,8 @@ describe("Smart vault rewards test", () => {
       usdc,
       utils.parseUnits('10000').toString(),
       utils.parseUnits('10000', 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      factory,
+      router,
     );
 
     const rt = networkToken;
@@ -101,6 +132,8 @@ describe("Smart vault rewards test", () => {
     const user3 = (await ethers.getSigners())[3];
     const user4 = (await ethers.getSigners())[4];
     const user5 = (await ethers.getSigners())[5];
+    const user6 = (await ethers.getSigners())[6]; // DepositHelper deposit / getAllRewards tests
+    const user7 = (await ethers.getSigners())[7]; // DepositHelper deposit / withdraw (with rewards) tests
     const rtDecimals = await TokenUtils.decimals(rt);
     const underlyingDec = await TokenUtils.decimals(underlying);
     const duration = (await vault.duration()).toNumber();
@@ -115,12 +148,14 @@ describe("Smart vault rewards test", () => {
 
 
     const signerUndBal = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec);
-    const signerDeposit = (signerUndBal * 0.1).toFixed(underlyingDec);
+    // const signerDeposit = (signerUndBal * 0.1).toFixed(underlyingDec);
     const user1Deposit = (signerUndBal * 0.2).toFixed(underlyingDec);
-    const user2Deposit = (signerUndBal * 0.3).toFixed(underlyingDec);
+    // const user2Deposit = (signerUndBal * 0.3).toFixed(underlyingDec);
     const user3Deposit = (signerUndBal * 0.15).toFixed(underlyingDec);
     const user4Deposit = (signerUndBal * 0.05).toFixed(underlyingDec);
     const user5Deposit = (signerUndBal * 0.09).toFixed(underlyingDec);
+    const user6Deposit = (signerUndBal * 0.06).toFixed(underlyingDec);
+    const user7Deposit = (signerUndBal * 0.07).toFixed(underlyingDec);
 
 
     await TokenUtils.transfer(underlying, signer, user1.address, utils.parseUnits(user1Deposit, underlyingDec).toString());
@@ -129,11 +164,22 @@ describe("Smart vault rewards test", () => {
     await TokenUtils.transfer(underlying, signer, user3.address, utils.parseUnits(user3Deposit, underlyingDec).toString());
     await TokenUtils.transfer(underlying, signer, user4.address, utils.parseUnits(user4Deposit, underlyingDec).toString());
     await TokenUtils.transfer(underlying, signer, user5.address, utils.parseUnits(user5Deposit, underlyingDec).toString());
+    await TokenUtils.transfer(underlying, signer, user6.address, utils.parseUnits(user6Deposit, underlyingDec).toString());
+    await TokenUtils.transfer(underlying, signer, user7.address, utils.parseUnits(user7Deposit, underlyingDec).toString());
 
     // long holder
     await VaultUtils.deposit(user3, vault, utils.parseUnits(user3Deposit, underlyingDec));
     await VaultUtils.deposit(user4, vault, utils.parseUnits(user4Deposit, underlyingDec));
     await VaultUtils.deposit(user5, vault, utils.parseUnits(user5Deposit, underlyingDec));
+
+    // deposit helper
+    const depositAmount6 = utils.parseUnits(user6Deposit, underlyingDec);
+    await TokenUtils.approve(underlying, user6, depositHelper.address, depositAmount6.toString());
+    await depositHelper.connect(user6).depositToVault(vault.address, depositAmount6);
+
+    const depositAmount7 = utils.parseUnits(user7Deposit, underlyingDec);
+    await TokenUtils.approve(underlying, user7, depositHelper.address, depositAmount7.toString());
+    await depositHelper.connect(user7).depositToVault(vault.address, depositAmount7);
 
     const signerUndBal2 = +utils.formatUnits(await TokenUtils.balanceOf(underlying, signer.address), underlyingDec);
 
@@ -216,6 +262,10 @@ describe("Smart vault rewards test", () => {
       const toClaimUser5 = +utils.formatUnits(await vault.earnedWithBoost(rt, user5.address), rtDecimals);
       const toClaimUser5FullBoost = +utils.formatUnits(await vault.earned(rt, user5.address), rtDecimals);
 
+      const rtBalanceUser6 = +utils.formatUnits(await TokenUtils.balanceOf(rt, user6.address), rtDecimals);
+      const toClaimUser6 = +utils.formatUnits(await vault.earnedWithBoost(rt, user6.address), rtDecimals);
+      const toClaimUser6FullBoost = +utils.formatUnits(await vault.earned(rt, user6.address), rtDecimals);
+
       const rtBalanceUser1 = +utils.formatUnits(await TokenUtils.balanceOf(rt, user1.address), rtDecimals);
       const toClaimUser1 = +utils.formatUnits(await vault.earnedWithBoost(rt, user1.address), rtDecimals);
       const toClaimUser1FullBoost = +utils.formatUnits(await vault.earned(rt, user1.address), rtDecimals);
@@ -227,12 +277,14 @@ describe("Smart vault rewards test", () => {
       const _toClaimUser3FullBoost = +utils.formatUnits(await vault.earned(rt, user3.address), rtDecimals);
       const _toClaimUser3 = +utils.formatUnits(await vault.earnedWithBoost(rt, user3.address), rtDecimals);
 
+      console.log('User6 toClaim', toClaimUser6, 'all rewards in vault', _vaultRtBalance, 'rt balance', rtBalanceUser6, 'full boost', toClaimUser6FullBoost);
       console.log('User5 toClaim', toClaimUser5, 'all rewards in vault', _vaultRtBalance, 'rt balance', rtBalanceUser5, 'full boost', toClaimUser5FullBoost);
       console.log('User1 toClaim', toClaimUser1, 'all rewards in vault', _vaultRtBalance, 'rt balance', rtBalanceUser1, 'full boost', toClaimUser1FullBoost);
       console.log('User2 toClaim', toClaimUser2, 'all rewards in vault', _vaultRtBalance, 'rt balance', rtBalanceUser2, 'full boost', toClaimUser2FullBoost);
       console.log('User3 toClaim', _toClaimUser3, '100% boost', _toClaimUser3FullBoost);
 
       expect(toClaimUser5).is.greaterThan(0, 'to claim is zero ' + i);
+      expect(toClaimUser6).is.greaterThan(0, 'to claim is zero ' + i);
       if (user1Deposited) {
         expect(toClaimUser1).is.greaterThan(0, 'to claim is zero ' + i);
       }
@@ -246,6 +298,14 @@ describe("Smart vault rewards test", () => {
       claimedTotal += claimedUser5;
       expect(claimedUser5).is.greaterThan(0);
       expect(toClaimUser5).is.approximately(claimedUser5, claimedUser5 * 0.01, 'user5 claimed not enough ' + i);
+
+      // we have to approve shares for deposit helper to claim (SmartVault checks approval to shares when claiming)
+      await TokenUtils.approve(vault.address, user6, depositHelper.address, MAX_UINT);
+      await depositHelper.connect(user6).getAllRewards(vault.address);
+      const claimedUser6 = +utils.formatUnits(await TokenUtils.balanceOf(rt, user6.address), rtDecimals) - rtBalanceUser6;
+      claimedTotal += claimedUser6;
+      expect(claimedUser6).is.greaterThan(0);
+      expect(toClaimUser6).is.approximately(claimedUser6, claimedUser6 * 0.01, 'user6 claimed not enough ' + i);
 
       if (user1Deposited) {
         // test claim with exit
@@ -310,6 +370,18 @@ describe("Smart vault rewards test", () => {
     expect(claimedUser4).is.greaterThan(0);
     expect(toClaimUser4).is.approximately(claimedUser4, claimedUser4 * 0.01, 'user4 claimed not enough');
 
+    const rtBalanceUser7 = +utils.formatUnits(await TokenUtils.balanceOf(rt, user7.address), rtDecimals);
+    const toClaimUser7 = +utils.formatUnits(await vault.earnedWithBoost(rt, user7.address), rtDecimals);
+    const shares = await TokenUtils.balanceOf(vault.address, user7.address);
+    // we have to approve shares for deposit helper to claim (SmartVault checks approval to shares when claiming)
+    await TokenUtils.approve(vault.address, user7, depositHelper.address, MAX_UINT);
+    await depositHelper.connect(user7).withdrawFromVault(vault.address, shares);
+    const claimedUser7 = +utils.formatUnits(await TokenUtils.balanceOf(rt, user7.address), rtDecimals) - rtBalanceUser7;
+    claimedTotal += claimedUser7;
+    expect(claimedUser7).is.greaterThan(0);
+    expect(toClaimUser7).is.approximately(claimedUser7, claimedUser7 * 0.01, 'user7 (used DepositHelper) claimed not enough ');
+
+
     const vaultRtBalance = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address), rtDecimals);
     console.log('vaultRtBalance', vaultRtBalance);
     const controllerBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, core.controller.address), rtDecimals);
@@ -330,8 +402,8 @@ describe("Smart vault rewards test", () => {
       usdc,
       utils.parseUnits('10000').toString(),
       utils.parseUnits('10000', 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      factory,
+      router
     );
     const rt = networkToken;
 

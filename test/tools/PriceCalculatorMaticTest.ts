@@ -22,6 +22,9 @@ describe("Price calculator matic tests", function () {
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
@@ -273,8 +276,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.DFYN_USDC_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(50000);
-    expect(price).is.lessThan(500000);
+    expect(price).is.greaterThan(10000);
+    expect(price).is.lessThan(100000);
   });
 
   it("calculate IRON_IRON_IS3USD, price and check", async () => {

@@ -24,14 +24,13 @@ describe("Fund Keeper tests", function () {
   let usdc: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     signer1 = (await ethers.getSigners())[1];
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshotBefore = await TimeUtils.snapshot();
     fundKeeper = core.fundKeeper;
-    usdc = await DeployerUtils.getUSDCAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
   });
 
   after(async function () {

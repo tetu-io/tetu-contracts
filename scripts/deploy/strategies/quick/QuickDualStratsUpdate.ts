@@ -2,6 +2,7 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../../DeployerUtils";
 import {ContractReader, IStrategy, SmartVault} from "../../../../typechain";
 import {appendFileSync, mkdir, readFileSync} from "fs";
+import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 const alreadyDeployed = new Set<string>([]);
 
@@ -41,6 +42,8 @@ async function main() {
     const token1Name = strat[6];
     const pool = strat[7];
     const duration = strat[9];
+    const r1 = strat[15];
+    const rewards = [MaticAddresses.QUICK_TOKEN, r1];
 
     if (+duration <= 0 || !token0 || ids === 'idx') {
       console.log('skip', ids);
@@ -73,7 +76,8 @@ async function main() {
         lpAddress,
         token0,
         token1,
-        pool
+        pool,
+        rewards
     ) as IStrategy;
 
     const txt = `${vaultNameWithoutPrefix}:     vault: ${vAdr}     strategy: ${strategy.address}\n`;
@@ -87,7 +91,8 @@ async function main() {
         lpAddress,
         token0,
         token1,
-        pool
+        pool,
+        rewards
       ]);
     }
   }

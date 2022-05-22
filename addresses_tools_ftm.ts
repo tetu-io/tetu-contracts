@@ -16,5 +16,6 @@ export class FtmToolsAddresses {
   );
 
   // retranslator 0xcBDeF56CE454A81c3c6C6b639D683285bd467D02
+  // - DepositHelper Fantom: 0x69a457CD13Ee72b0CA1b483aB17C36D80a23422f
 
 }

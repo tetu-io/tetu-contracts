@@ -25,20 +25,18 @@ describe("Notify Helper test", () => {
   let networkToken: string;
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
     console.log("snapshot", snapshot);
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[1];
 
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
     notifier = core.notifyHelper;
     await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await MintHelperUtils.mint(core.controller, core.announcer, '1000000', core.notifyHelper.address);
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
 
     for (let i = 0; i < 2; i++) {
       await DeployerUtils.deployAndInitVaultAndStrategy(

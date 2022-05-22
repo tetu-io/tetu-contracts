@@ -25,11 +25,11 @@ describe("Array lib tests", function () {
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     arraylib = await DeployerUtils.deployContract(signer, "ArrayLibTest") as ArrayLibTest;
-    usdc = await DeployerUtils.getUSDCAddress();
-    tetu = await DeployerUtils.getTETUAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    tetu = (await DeployerUtils.deployMockToken(signer, 'TETU')).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
     addresses.push(usdc);
     addresses.push(networkToken)
   });

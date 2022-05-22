@@ -10,11 +10,9 @@ import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {utils} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
-import {StrategyTestUtils} from "../../strategies/StrategyTestUtils";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
 import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
-import {FtmAddresses} from "../../../scripts/addresses/FtmAddresses";
-import {EthAddresses} from "../../../scripts/addresses/EthAddresses";
 import {balInfo} from "../../../scripts/deploy/base/info/ForwarderBalInfo";
 
 const {expect} = chai;
@@ -34,11 +32,11 @@ describe("ForwarderV2 tests", function () {
   let factory: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[1];
     signerAddress = signer.address;
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
+    snapshotBefore = await TimeUtils.snapshot();
     forwarder = (await DeployerUtils.deployForwarderV2(signer, core.controller.address))[0];
 
     await core.announcer.announceAddressChange(2, forwarder.address);
@@ -50,10 +48,8 @@ describe("ForwarderV2 tests", function () {
     await TimeUtils.advanceBlocksOnTs(1);
     await core.controller.setPSNumeratorDenominator(50, 100);
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
     const amountLp = '100000';
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amountLp, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
@@ -66,7 +62,8 @@ describe("ForwarderV2 tests", function () {
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amountLp);
 
-    factory = await DeployerUtils.getDefaultNetworkFactory();
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    factory = uniData.factory.address;
     tetuLp = await UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
@@ -74,12 +71,12 @@ describe("ForwarderV2 tests", function () {
       utils.parseUnits(amountLp, 18).toString(),
       utils.parseUnits(amountLp, 6).toString(),
       factory,
-      await DeployerUtils.getRouterByFactory(factory)
+      uniData.router.address
     );
 
     await forwarder.addLargestLps(
-      [rewardTokenAddress],
-      [tetuLp]
+      [rewardTokenAddress, usdc],
+      [tetuLp, tetuLp]
     );
 
     await forwarder.setUniPlatformFee(
@@ -88,10 +85,18 @@ describe("ForwarderV2 tests", function () {
       10000
     );
 
+    await forwarder.addBlueChipsLps([tetuLp]);
     await forwarder.setSlippageNumerator(50);
+    await forwarder.setLiquidityNumerator(30);
+    await forwarder.setLiquidityRouter(uniData.router.address);
 
-    await StrategyTestUtils.initForwarder(forwarder);
-    await TokenUtils.getToken(usdc, signer.address, amount)
+    if ((await core.controller.fundToken()) === Misc.ZERO_ADDRESS) {
+      await core.controller.setFundToken(usdc);
+    }
+
+    // await StrategyTestUtils.initForwarder(forwarder);
+    // await StrategyTestUtils.setConversionPaths(forwarder);
+    // await TokenUtils.getToken(usdc, signer.address, amount)
   });
 
   after(async function () {
@@ -130,10 +135,12 @@ describe("ForwarderV2 tests", function () {
   });
 
   it("should distribute", async () => {
+    console.log('usdc', usdc)
+    console.log('rewardToken', core.rewardToken.address)
+
     const _amount = utils.parseUnits('10', 6);
     const vault = core.psVault;
     await core.vaultController.addRewardTokens([vault.address], vault.address);
-    await TokenUtils.getToken(usdc, signer.address, _amount);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(_amount, 6))
     await TokenUtils.approve(usdc, signer, forwarder.address, _amount.toString());
     await forwarder.distribute(_amount, usdc, vault.address);
@@ -157,7 +164,7 @@ describe("ForwarderV2 tests", function () {
     expect(fundKeeperLPBal).is.greaterThan(0);
     expect(psVaultBal).is.greaterThan(0);
     expect(forwarderUsdcBal).is.eq(0);
-    expect(forwarderTetuBal).is.eq(2e-18);
+    expect(forwarderTetuBal).is.eq(1e-18);
   });
 
   it("should liquidate usdc to tetu", async () => {
@@ -180,8 +187,8 @@ describe("ForwarderV2 tests", function () {
     }
 
     await forwarder.addLargestLps(
-        [MaticAddresses.BAL_TOKEN],
-        ['0xc67136e235785727a0d3B5Cfd08325327b81d373']
+      [MaticAddresses.BAL_TOKEN],
+      ['0xc67136e235785727a0d3B5Cfd08325327b81d373']
     );
 
     const dec = await TokenUtils.decimals(bal);
@@ -208,10 +215,10 @@ describe("ForwarderV2 tests", function () {
 
     // init Bal Data
     await forwarder.setBalData(
-        balInfo.balToken,
-        balInfo.vault,
-        balInfo.pool,
-        balInfo.tokenOut
+      balInfo.balToken,
+      balInfo.vault,
+      balInfo.pool,
+      balInfo.tokenOut
     );
     const balData = await forwarder.getBalData();
     expect(balData.balToken.toLowerCase()).eq(balInfo.balToken);

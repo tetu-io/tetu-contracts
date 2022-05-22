@@ -19,7 +19,7 @@ import "./AutoRewarder.sol";
 contract AutoRewarderSideChain is AutoRewarder {
 
   /// @dev Stub max amount to 200k
-  function maxRewardsPerDay() public pure override returns (uint256) {
+  function maxRewardsPerPeriod() public pure override returns (uint256) {
     return 200_000 * PRECISION;
   }
 

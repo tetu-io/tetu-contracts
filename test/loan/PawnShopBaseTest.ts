@@ -30,12 +30,12 @@ describe("Tetu pawnshop base tests", function () {
   let networkToken: string;
 
   before(async function () {
-    snapshotBefore = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user1 = (await ethers.getSigners())[1];
     user2 = (await ethers.getSigners())[2];
     user3 = (await ethers.getSigners())[3];
     core = await DeployerUtils.deployAllCoreContracts(signer, 1, 1);
+    snapshotBefore = await TimeUtils.snapshot();
 
     shop = await DeployerUtils.deployContract(signer, 'TetuPawnShop',
       signer.address,
@@ -55,16 +55,20 @@ describe("Tetu pawnshop base tests", function () {
     await nft.mint(user1.address);
     await nft.mint(user2.address);
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('10000', 6));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+    // await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('10000', 6));
     await TokenUtils.getToken(usdc, user1.address, utils.parseUnits('10000', 6));
     await TokenUtils.getToken(usdc, user2.address, utils.parseUnits('10000', 6));
     await TokenUtils.getToken(usdc, user3.address, utils.parseUnits('10000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('1000'));
+    // await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('1000'));
     await TokenUtils.getToken(networkToken, user1.address, utils.parseUnits('1000'));
     await TokenUtils.getToken(networkToken, user2.address, utils.parseUnits('1000'));
     await TokenUtils.getToken(networkToken, user3.address, utils.parseUnits('1000'));
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    const factory = uniData.factory.address;
+    const router = uniData.router.address;
 
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', user1.address);
     await MintHelperUtils.mint(core.controller, core.announcer, '100000', signer.address)
@@ -74,8 +78,8 @@ describe("Tetu pawnshop base tests", function () {
       usdc,
       utils.parseUnits('50', 18).toString(),
       utils.parseUnits('255', 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      factory,
+      router,
     );
     await TokenUtils.approve(core.rewardToken.address, user1, shop.address, utils.parseUnits('10000').toString());
   });
@@ -98,6 +102,7 @@ describe("Tetu pawnshop base tests", function () {
 
     for (let i = 0; i < 3; i++) {
       await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+        usdc,
         user1,
         shop,
         collateralToken,
@@ -118,6 +123,7 @@ describe("Tetu pawnshop base tests", function () {
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       collateralToken,
@@ -135,6 +141,7 @@ describe("Tetu pawnshop base tests", function () {
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       collateralToken,
@@ -154,6 +161,7 @@ describe("Tetu pawnshop base tests", function () {
 
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       collateralToken,
@@ -169,6 +177,7 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction and claim", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       networkToken,
@@ -204,6 +213,7 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction and redeem", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       networkToken,
@@ -227,6 +237,7 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction and close", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       networkToken,
@@ -248,6 +259,7 @@ describe("Tetu pawnshop base tests", function () {
   it("start auction with instant deal", async () => {
 
     const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       networkToken,
@@ -271,6 +283,7 @@ describe("Tetu pawnshop base tests", function () {
   it("NFT bid on position with instant execution", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       nft.address,
@@ -286,6 +299,7 @@ describe("Tetu pawnshop base tests", function () {
   it("NFT bid on position and claim", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       nft.address,
@@ -303,6 +317,7 @@ describe("Tetu pawnshop base tests", function () {
   it("NFT open position and redeem", async () => {
     const acquiredAmount = utils.parseUnits('55', 6).toString();
     const id = await PawnShopTestUtils.openNftForUsdcAndCheck(
+      usdc,
       user1,
       shop,
       nft.address,

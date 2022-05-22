@@ -12,6 +12,7 @@ import {
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {utils} from "ethers";
+import {UniswapUtils} from "../UniswapUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -20,21 +21,30 @@ const exclude = new Set<string>([
   'NoopStrategy'
 ]);
 
-describe("Reward calculator tests", function () {
+describe.skip("Reward calculator tests", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
   let core: CoreContractsWrapper;
   let priceCalculator: PriceCalculator;
   let rewardCalculator: RewardCalculator;
+  let usdc: string;
+  let networkToken: string;
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
-    core = await DeployerUtils.getCoreAddressesWrapper(signer);
+    core = await DeployerUtils.deployAllCoreContracts(signer);
     // core = await DeployerUtils.deployAllCoreContracts(signer);
 
-    priceCalculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    const factory = uniData.factory.address;
+    const router = uniData.router.address;
+
+    priceCalculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, factory))[0] as PriceCalculator;
     rewardCalculator = (await DeployerUtils.deployRewardCalculator(signer, core.controller.address, priceCalculator.address))[0] as RewardCalculator;
   });
 

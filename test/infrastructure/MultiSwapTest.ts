@@ -5,9 +5,10 @@ import {TimeUtils} from "../TimeUtils";
 import {ContractReader, IUniswapV2Pair, MultiSwap, PriceCalculator} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {UniswapUtils} from "../UniswapUtils";
 import {utils} from "ethers";
 import {TokenUtils} from "../TokenUtils";
+import {UniswapUtils} from "../UniswapUtils";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -25,19 +26,33 @@ describe("Multi swap tests", function () {
 
   before(async function () {
     this.timeout(1200000);
-    snapshot = await TimeUtils.snapshot();
     signer = await DeployerUtils.impersonate();
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
 
-    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
-    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    const uniData = await UniswapUtils.deployUniswap(signer);
+
+    calculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, uniData.factory.address))[0] as PriceCalculator;
+    multiSwap = await DeployerUtils.deployMultiSwapTestnet(signer, core.controller.address, calculator.address, uniData.factory.address, uniData.router.address);
     cReader = (await DeployerUtils.deployContractReader(signer, core.controller.address, calculator.address))[0];
+
+    const lp = await UniswapUtils.addLiquidity(
+      signer,
+      usdc,
+      networkToken,
+      parseUnits('100000', 6).toString(),
+      parseUnits('100000').toString(),
+      uniData.factory.address,
+      uniData.router.address,
+    );
+    await calculator.addKeyToken(networkToken);
+
+    const d = await calculator.getLargestPool(usdc, []);
+    expect(lp.toLowerCase()).eq(d[2].toLowerCase());
   });
 
   after(async function () {

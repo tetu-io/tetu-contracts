@@ -14,7 +14,7 @@ import {MintHelperUtils} from "../MintHelperUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("liquidity balancer tsets", function () {
+describe.skip("liquidity balancer tsets", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
@@ -28,10 +28,10 @@ describe("liquidity balancer tsets", function () {
   let router: string;
 
   before(async function () {
-    snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
     user = (await ethers.getSigners())[1];
     core = await DeployerUtils.deployAllCoreContracts(signer);
+    snapshot = await TimeUtils.snapshot();
 
     token = core.rewardToken.address;
 
@@ -49,10 +49,8 @@ describe("liquidity balancer tsets", function () {
     expect(await liquidityBalancer.isGovernance(signer.address)).is.eq(true);
     lp = await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "1000");
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
 
     const factory = await DeployerUtils.getDefaultNetworkFactory();
     router = await DeployerUtils.getRouterByFactory(factory);

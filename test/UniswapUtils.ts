@@ -5,7 +5,7 @@ import {
   IUniswapV2Factory,
   IUniswapV2Pair,
   IUniswapV2Router02,
-  PriceCalculator
+  PriceCalculator, UniswapV2Factory, UniswapV2Router02
 } from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
@@ -21,6 +21,17 @@ import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 
 export class UniswapUtils {
   public static deadline = "1000000000000";
+
+  public static async deployUniswap(signer: SignerWithAddress) {
+    const factory = await DeployerUtils.deployContract(signer, 'UniswapV2Factory', signer.address) as UniswapV2Factory;
+    const netToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+    const router = await DeployerUtils.deployContract(signer, 'UniswapV2Router02', factory.address, netToken) as UniswapV2Router02;
+    return {
+      factory,
+      netToken,
+      router
+    }
+  }
 
   public static async swapNETWORK_COINForExactTokens(
     signer: SignerWithAddress,
@@ -75,6 +86,7 @@ export class UniswapUtils {
       const router = await UniswapUtils.connectRouter(_router, sender);
       await TokenUtils.approve(_route[0], sender, router.address, amountToSell);
       if (UniswapUtils.isFeeToken(_route[0]) || UniswapUtils.isFeeToken(_route[1])) {
+        console.log("swap fee token")
         return router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
           BigNumber.from(amountToSell),
           BigNumber.from("0"),
@@ -95,7 +107,9 @@ export class UniswapUtils {
   }
 
   private static isFeeToken(token: string) {
-    return token.toLowerCase() === MaticAddresses.SPHERE_TOKEN.toLowerCase();
+    return token.toLowerCase() === MaticAddresses.SPHERE_TOKEN.toLowerCase()
+      || token.toLowerCase() === MaticAddresses.SPHEREV2_TOKEN.toLowerCase()
+      || token.toLowerCase() === MaticAddresses.SPHEREV3_TOKEN.toLowerCase()
   }
 
   public static async addLiquidity(
@@ -121,9 +135,8 @@ export class UniswapUtils {
     expect(+utils.formatUnits(bal1, t1Dec))
       .is.greaterThanOrEqual(+utils.formatUnits(amountB, t1Dec), 'not enough bal for token B ' + name1);
 
-
-    await RunHelper.runAndWait(() => TokenUtils.approve(tokenA, sender, _router, amountA), true, wait);
-    await RunHelper.runAndWait(() => TokenUtils.approve(tokenB, sender, _router, amountB), true, wait);
+    await RunHelper.runAndWait(() => TokenUtils.approve(tokenA, sender, _router, Misc.MAX_UINT), true, wait);
+    await RunHelper.runAndWait(() => TokenUtils.approve(tokenB, sender, _router, Misc.MAX_UINT), true, wait);
 
     if (_factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()) {
       const pair = await UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, _factory);
@@ -227,8 +240,7 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    const usdc = await DeployerUtils.getUSDCAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
+    const usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
     const rewardTokenAddress = core.rewardToken.address;
 
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
@@ -259,12 +271,49 @@ export class UniswapUtils {
     return lp;
   }
 
+  public static async createPairForRewardTokenOnTestnet(
+    signer: SignerWithAddress,
+    core: CoreContractsWrapper,
+    amount: string,
+    usdc: string,
+    factory: string,
+    router: string,
+  ) {
+    const rewardTokenAddress = core.rewardToken.address;
+
+    const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
+    console.log('USDC bought', usdcBal.toString());
+    expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
+
+    if (core.rewardToken.address.toLowerCase() === MaticAddresses.TETU_TOKEN) {
+      await TokenUtils.getToken(core.rewardToken.address, signer.address, utils.parseUnits(amount))
+    } else {
+      await MintHelperUtils.mint(core.controller, core.announcer, (+amount * 2).toString(), signer.address);
+    }
+
+    const tokenBal = await TokenUtils.balanceOf(rewardTokenAddress, signer.address);
+    console.log('Token minted', tokenBal.toString());
+    expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
+
+    const lp = await UniswapUtils.addLiquidity(
+      signer,
+      rewardTokenAddress,
+      usdc,
+      utils.parseUnits(amount, 18).toString(),
+      utils.parseUnits(amount, 6).toString(),
+      factory,
+      router
+    );
+    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [lp]);
+    return lp;
+  }
+
   public static async createPairForRewardTokenWithBuy(
     signer: SignerWithAddress,
     core: CoreContractsWrapper,
     amount: string
   ) {
-    const usdc = await DeployerUtils.getUSDCAddress();
+    const usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -295,7 +344,7 @@ export class UniswapUtils {
     amount: string
   ) {
     const start = Date.now();
-    const usdc = await DeployerUtils.getUSDCAddress();
+    const usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
     const tetu = core.rewardToken.address.toLowerCase();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6));
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);

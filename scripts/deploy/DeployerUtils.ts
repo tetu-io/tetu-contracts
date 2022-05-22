@@ -16,6 +16,7 @@ import {
   LiquidityBalancer,
   MintHelper,
   MockFaucet,
+  MockToken,
   Multicall,
   MultiSwap,
   NoopStrategy,
@@ -50,6 +51,7 @@ import {FtmAddresses} from "../addresses/FtmAddresses";
 import {readFileSync} from "fs";
 import {Libraries} from "hardhat-deploy/dist/types";
 import {EthAddresses} from "../addresses/EthAddresses";
+import {formatUnits, parseUnits} from "ethers/lib/utils";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -72,6 +74,9 @@ const libraries = new Map<string, string>([
 ]);
 
 export class DeployerUtils {
+
+  public static coreCache: CoreContractsWrapper;
+  public static toolsCache: ToolsContractsWrapper;
 
   // ************ CONTRACT CONNECTION **************************
 
@@ -123,7 +128,7 @@ export class DeployerUtils {
     log.info("Account balance: " + utils.formatUnits(await signer.getBalance(), 18));
 
     const gasPrice = await web3.eth.getGasPrice();
-    log.info("Gas price: " + gasPrice);
+    log.info("Gas price: " + formatUnits(gasPrice, 9));
     const lib: string | undefined = libraries.get(name);
     let _factory;
     if (lib) {
@@ -344,21 +349,25 @@ export class DeployerUtils {
     return [calculator, proxy, logic];
   }
 
-  public static async deployPriceCalculatorTestNet(signer: SignerWithAddress, controller: string): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+  public static async deployPriceCalculatorTestnet(
+    signer: SignerWithAddress,
+    controller: string,
+    usdc: string,
+    factory: string,
+  ): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const calculator = logic.attach(proxy.address) as PriceCalculator;
     await calculator.initialize(controller);
-    const mocks = await DeployerUtils.getTokenAddresses();
 
-    await calculator.addKeyTokens([
-      mocks.get('quick') as string,
-      mocks.get('sushi') as string,
-      mocks.get('usdc') as string,
-      mocks.get('weth') as string,
-    ]);
-    await calculator.setDefaultToken(mocks.get('usdc') as string);
-    await calculator.addSwapPlatform(MaticAddresses.SUSHI_FACTORY, "SushiSwap LP Token");
+    await RunHelper.runAndWait(() => calculator.addKeyTokens([
+      usdc,
+    ]));
+
+    await RunHelper.runAndWait(() => calculator.setDefaultToken(usdc),);
+    await RunHelper.runAndWait(() => calculator.addSwapPlatform(factory, "Uniswap V2"));
+
+    expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
   }
 
@@ -418,12 +427,13 @@ export class DeployerUtils {
     controller: string,
     rewardCalculator: string,
     networkRatio: string,
-    rewardsPerDay: string
+    rewardsPerDay: string,
+    period: number,
   ): Promise<[AutoRewarder, TetuProxyGov, AutoRewarder]> {
     const logic = await DeployerUtils.deployContract(signer, "AutoRewarder") as AutoRewarder;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
     const contract = logic.attach(proxy.address) as AutoRewarder;
-    await contract.initialize(controller, rewardCalculator, networkRatio, rewardsPerDay);
+    await contract.initialize(controller, rewardCalculator, networkRatio, rewardsPerDay, period);
     return [contract, proxy, logic];
   }
 
@@ -500,12 +510,34 @@ export class DeployerUtils {
     ) as MultiSwap;
   }
 
+  public static async deployMultiSwapTestnet(
+    signer: SignerWithAddress,
+    controllerAddress: string,
+    calculatorAddress: string,
+    factory: string,
+    router: string,
+  ): Promise<MultiSwap> {
+    return await DeployerUtils.deployContract(signer, "MultiSwap",
+      controllerAddress,
+      calculatorAddress,
+      [
+        factory
+      ],
+      [
+        router
+      ]
+    ) as MultiSwap;
+  }
+
   public static async deployAllCoreContracts(
     signer: SignerWithAddress,
     psRewardDuration: number = 60 * 60 * 24 * 28,
-    timeLock: number = 60 * 60 * 48,
+    timeLock: number = 1,
     wait = false
   ): Promise<CoreContractsWrapper> {
+    if (!!DeployerUtils.coreCache) {
+      return DeployerUtils.coreCache;
+    }
     const start = Date.now();
     // ************** CONTROLLER **********
     const controllerLogic = await DeployerUtils.deployContract(signer, "Controller");
@@ -567,11 +599,13 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => controller.setVaultController(vaultControllerData[0].address), true, wait);
     await RunHelper.runAndWait(() => controller.setDistributor(notifyHelper.address), true, wait);
 
-    try {
-      const tokens = await DeployerUtils.getTokenAddresses()
-      await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
-    } catch (e) {
-      console.error('USDC token not defined for network, need to setup Fund token later');
+    if ((await ethers.provider.getNetwork()).chainId !== 31337) {
+      try {
+        const tokens = await DeployerUtils.getTokenAddresses()
+        await RunHelper.runAndWait(() => controller.setFundToken(tokens.get('usdc') as string), true, wait);
+      } catch (e) {
+        console.error('USDC token not defined for network, need to setup Fund token later');
+      }
     }
     await RunHelper.runAndWait(() => controller.setRewardDistribution(
       [
@@ -585,7 +619,7 @@ export class DeployerUtils {
       true, wait);
 
     Misc.printDuration('Core contracts deployed', start);
-    return new CoreContractsWrapper(
+    DeployerUtils.coreCache = new CoreContractsWrapper(
       controller,
       controllerLogic.address,
       feeRewardForwarderData[0],
@@ -606,9 +640,13 @@ export class DeployerUtils {
       vaultControllerData[0],
       vaultControllerData[2].address,
     );
+    return DeployerUtils.coreCache;
   }
 
   public static async deployAllToolsContracts(signer: SignerWithAddress, core: CoreContractsWrapper): Promise<ToolsContractsWrapper> {
+    if (!!DeployerUtils.toolsCache) {
+      return DeployerUtils.toolsCache;
+    }
     const net = await ethers.provider.getNetwork();
     log.info('network ' + net.chainId);
     const tools = Addresses.TOOLS.get(net.chainId + '');
@@ -618,7 +656,7 @@ export class DeployerUtils {
     const calculator = await DeployerUtils.deployPriceCalculator(signer, core.controller.address)
     const reader = await DeployerUtils.deployContractReader(signer, core.controller.address, calculator[0].address);
     // ! we will not deploy not important contracts
-    return new ToolsContractsWrapper(
+    DeployerUtils.toolsCache = new ToolsContractsWrapper(
       calculator[0],
       reader[0],
       await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
@@ -630,7 +668,7 @@ export class DeployerUtils {
       await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
       await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
     );
-
+    return DeployerUtils.toolsCache;
   }
 
   public static async deployAndInitVaultAndStrategy<T>(
@@ -847,6 +885,12 @@ export class DeployerUtils {
     }
     console.log(' ================ IMPERMAX-LIKE DEPLOYED', strategies.length);
     return strategies;
+  }
+
+  public static async deployMockToken(signer: SignerWithAddress, name = 'MOCK', decimals = 18) {
+    const token = await DeployerUtils.deployContract(signer, 'MockToken', name + '_MOCK_TOKEN', name, decimals) as MockToken;
+    await token.mint(signer.address, parseUnits('1000000', decimals));
+    return token;
   }
 
   // ************** VERIFY **********************
@@ -1099,6 +1143,8 @@ export class DeployerUtils {
       return FtmAddresses.WFTM_TOKEN;
     } else if (net.chainId === 1) {
       return EthAddresses.WETH_TOKEN;
+    } else if (net.chainId === 31337) {
+      return Misc.ZERO_ADDRESS;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1112,6 +1158,8 @@ export class DeployerUtils {
       return FtmAddresses.TETU_TOKEN;
     } else if (net.chainId === 1) {
       return EthAddresses.TETU_TOKEN;
+    } else if (net.chainId === 31337) {
+      return Misc.ZERO_ADDRESS;
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1138,6 +1186,8 @@ export class DeployerUtils {
       return FtmAddresses.GOV_ADDRESS;
     } else if (net.chainId === 1) {
       return EthAddresses.GOV_ADDRESS;
+    } else if (net.chainId === 31337) {
+      return ((await ethers.getSigners())[0]).address;
     } else {
       throw Error('No config for ' + net.chainId);
     }

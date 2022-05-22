@@ -21,7 +21,7 @@ const argv = require('yargs/yargs')()
   .options({
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 31337
     },
     maticRpcUrl: {
       type: "string",
@@ -39,6 +39,12 @@ const argv = require('yargs/yargs')()
     networkScanKey: {
       type: "string",
     },
+    networkScanKeyMatic: {
+      type: "string",
+    },
+    networkScanKeyFtm: {
+      type: "string",
+    },
     privateKey: {
       type: "string",
       default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
@@ -49,7 +55,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 23945980
+      default: 28058008
     },
     ftmForkBlock: {
       type: "number",
@@ -64,23 +70,23 @@ export default {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
-      timeout: 99999 * 2,
+      timeout: 99999999,
       gas: argv.hardhatChainId === 1 ? 19_000_000 :
         argv.hardhatChainId === 137 ? 19_000_000 :
-        argv.hardhatChainId === 250 ? 11_000_000 :
-          9_000_000,
-      forking: {
+          argv.hardhatChainId === 250 ? 11_000_000 :
+            9_000_000,
+      forking: argv.hardhatChainId !== 31337 ? {
         url:
           argv.hardhatChainId === 1 ? argv.ethRpcUrl :
-          argv.hardhatChainId === 137 ? argv.maticRpcUrl :
-            argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
-              undefined,
+            argv.hardhatChainId === 137 ? argv.maticRpcUrl :
+              argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+                undefined,
         blockNumber:
           argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
-          argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
-            argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
-              undefined
-      },
+            argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
+              argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+                undefined
+      } : undefined,
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
         path: "m/44'/60'/0'/0",
@@ -97,16 +103,16 @@ export default {
       accounts: [argv.privateKey],
     },
     matic: {
-      url: argv.maticRpcUrl,
+      url: argv.maticRpcUrl || '',
       timeout: 99999,
       chainId: 137,
       gas: 12_000_000,
-      gasPrice: 50_000_000_000,
-      gasMultiplier: 1.3,
+      // gasPrice: 50_000_000_000,
+      // gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
     eth: {
-      url: argv.ethRpcUrl,
+      url: argv.ethRpcUrl || '',
       chainId: 1,
       accounts: [argv.privateKey],
     },
@@ -131,7 +137,12 @@ export default {
     },
   },
   etherscan: {
-    apiKey: argv.networkScanKey
+    //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
+    apiKey: {
+      mainnet: argv.networkScanKey,
+      polygon: argv.networkScanKeyMatic || argv.networkScanKey,
+      opera: argv.networkScanKeyFtm || argv.networkScanKey
+    },
   },
   solidity: {
     compilers: [
@@ -158,7 +169,7 @@ export default {
   docgen: {
     path: './docs',
     clear: true,
-    runOnCompile: true,
+    runOnCompile: false,
     except: ['contracts/third_party', 'contracts/test']
   },
   contractSizer: {
