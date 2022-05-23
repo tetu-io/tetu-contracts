@@ -130,7 +130,7 @@ describe("MultiSwap2 base tests", function () {
       const tokenIn = multiswap.swapData.tokenIn;
       const tokenOut = multiswap.swapData.tokenOut;
       const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
-      console.log('amountOutBefore', amountOutBefore);
+      console.log('amountOutBefore', amountOutBefore.toString());
       const amount = BigNumber.from(multiswap.swapAmount)
       await TokenUtils.getToken(tokenIn, signer.address, amount);
       await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());

@@ -129,6 +129,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
         swapAmount = swapStep.amount;
       }
 
+      console.logBytes32(swapStep.poolId);// TODO remove
+
       if (_isUniswapPool(swapStep.poolId)) {
         previousAmountOut = _swapUniswap(swapStep, swapTokenIn, swapTokenOut, swapAmount);
       } else { // Suppose Balancer pool
