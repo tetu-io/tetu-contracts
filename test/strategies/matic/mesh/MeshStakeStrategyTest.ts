@@ -55,8 +55,8 @@ describe('Mesh staking tests', async () => {
   const vaultName = 'tetuMesh';
   // needed for custom tests.
   const tetuMeshAddress = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a';
-  // only for strategies where we expect PPFS fluctuations
-  const ppfsDecreaseAllowed = false;
+  // we need this for adjustment tests only
+  const ppfsDecreaseAllowed = true;
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 1;
   const finalBalanceTolerance = 0;

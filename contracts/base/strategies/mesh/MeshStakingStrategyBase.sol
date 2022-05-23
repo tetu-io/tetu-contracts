@@ -45,6 +45,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   uint256 private constant _TARGET_PPFS = 1e18;
   uint256 private _dust;
   address public targetRewardVault;
+  address [] public rewardTokensFromVoting;
 
   /// @notice Initialize contract after setup it as proxy implementation
   function initializeStrategy(
@@ -98,6 +99,9 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
     emit TargetRewardVaultUpdated(_targetRewardVault);
   }
 
+  function updateRewardTokensFromVoting(address[] memory _rewardTokensFromVoting) external restricted {
+    rewardTokensFromVoting = _rewardTokensFromVoting;
+  }
 
   // --------------------------------------------
 
@@ -109,8 +113,23 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   /// @dev In this version rewards are accumulated in this strategy
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     vMesh.claimReward();
+    poolVoting.claimRewardAll();
+    _liquidateVotingRewards();
     uint256 underlyingBalance = IERC20(_underlying()).balanceOf(address(this));
     _liquidateReward(underlyingBalance - _dust);
+  }
+
+  function _liquidateVotingRewards() internal {
+    uint256 i = 0;
+    for (i; i < rewardTokensFromVoting.length; i++) {
+      uint256 rtBalance = IERC20(rewardTokensFromVoting[i]).balanceOf(address(this));
+      if (rtBalance > 0) {
+        address[] memory route = new address[](2);
+        route[0] = rewardTokensFromVoting[i];
+        route[1] = _underlying();
+        _meshSwap(rtBalance, route);
+      }
+    }
   }
 
   /// @dev Stake Mesh to vMesh
@@ -124,8 +143,6 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
       // lock on max period
       // mesh allows only integer values w/o precision e.g 1 mesh token
       uint256 roundedAmount = amount / _MESH_PRECISION;
-      // rounding
-
       _dust = amount - roundedAmount * _MESH_PRECISION;
       IERC20(_underlying()).safeApprove(address(vMesh), 0);
       IERC20(_underlying()).safeApprove(address(vMesh), roundedAmount * _MESH_PRECISION);
