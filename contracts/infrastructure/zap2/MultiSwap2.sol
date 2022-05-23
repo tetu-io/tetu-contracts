@@ -26,7 +26,7 @@ import "../../third_party/IERC20Name.sol"; // TODO remove
 import "../../base/SlotsLib.sol";
 import "./IMultiSwap2.sol";
 
-import "hardhat/console.sol";
+import "hardhat/console.sol"; // TODO remove
 
 /// @title Tetu MultiSwap v2 Contract
 /// @dev Supports 1 balancer and uniswap v2 compatible pools
@@ -36,11 +36,12 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SlotsLib for bytes32;
 
   string public constant VERSION = "1.0.0";
-  uint256 private constant  _SLIPPAGE_DENOMINATOR = 10000;
-  bytes32 private constant _UNISWAP_MASK = "0xfffffffffffffffffffffff0"; // last half-byte - index of uniswap dex
+  uint256 private constant  _SLIPPAGE_PRECISION = 10000;
+  uint256 private constant  _PRECISION_FEE = 10000;
+  bytes32 private constant _UNISWAP_MASK = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
 
-  bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.weth")) - 1);
-  bytes32 internal constant _BALANCER_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.MultiSwap2.balancerVault")) - 1);
+  address public immutable WETH;
+  address public immutable balancerVault;
 
   // Sentinel value used to indicate WETH with wrapping/unwrapping semantics. The zero address is a good choice for
   // multiple reasons: it is cheap to pass as a calldata argument, it is a known invalid token and non-contract, and
@@ -49,8 +50,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
   error MSZeroWETH();
   error MSZeroBalancerVault();
-  error MSZeroTokenIn();
-  error MSZeroTokenOut();
   error MSSameTokens();
   error MSZeroAmount();
   error MSZeroAmountBalancer();
@@ -67,32 +66,13 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   error MSInsufficientLiquidity();
   error MSForbidden();
 
-  function initialize(address controller_, address weth_, address balancerVault_)
-  public initializer {
+
+  constructor (address controller_, address weth_, address balancerVault_) {
     ControllableV2.initializeControllable(controller_);
     if (weth_ == address(0)) revert MSZeroWETH();
     if (balancerVault_ == address(0)) revert MSZeroBalancerVault();
-    _WETH_SLOT.set(weth_);
-    _BALANCER_VAULT_SLOT.set(balancerVault_);
-  }
-
-  // ******* VIEWS ******
-
-  // solhint-disable-next-line func-name-mixedcase
-  function _WETH() internal view returns (address) {
-    return _WETH_SLOT.getAddress();
-  }
-
-  function WETH() external view returns (address) {
-    return _WETH();
-  }
-
-  function _balancerVault() internal view returns (address) {
-    return _BALANCER_VAULT_SLOT.getAddress();
-  }
-
-  function balancerVault() external view returns (address) {
-    return _balancerVault();
+    WETH = weth_;
+    balancerVault = balancerVault_;
   }
 
   // ******************** USERS ACTIONS *********************
@@ -101,15 +81,14 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     IBVault.BatchSwapStep[] memory swaps,
     IAsset[] memory tokenAddresses,
     uint slippage,
-    uint256 deadline
+    uint deadline
   )
     external
+    payable
     override
     nonReentrant
     returns (uint amountOut)
   {
-    if (swapData.tokenIn == address(0)) revert MSZeroTokenIn();
-    if (swapData.tokenOut == address(0)) revert MSZeroTokenOut();
     if (swapData.tokenIn == swapData.tokenOut) revert MSSameTokens();
     if (swapData.swapAmount == 0) revert MSZeroAmount();
     if (swaps[0].amount == 0) revert MSUnknownAmountInFirstSwap();
@@ -159,7 +138,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     }
 
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this)) - amountOutBefore;
-    const minAmountOut = swapData.returnAmount * slippage / _SLIPPAGE_DENOMINATOR;
+    uint minAmountOut = swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
     if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
 
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
@@ -208,6 +187,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     // Initializing each struct field one-by-one uses less gas than setting all at once.
     IBVault.SingleSwap memory singleSwap;
     singleSwap.poolId = swapStep.poolId;
+
     singleSwap.kind = IBVault.SwapKind.GIVEN_IN;
     singleSwap.assetIn = IAsset(address(tokenIn));
     singleSwap.assetOut = IAsset(address(tokenOut));
@@ -215,8 +195,9 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     singleSwap.userData = swapStep.userData;
 
     // we'll check total amount out after all swaps, so do not care about intermediate swap step
-  uint limit = 1;
-    amountOut = IBVault(_balancerVault()).swap(singleSwap, funds, limit, block.timestamp);
+    uint limit = 1;
+    tokenIn.approve(balancerVault, swapAmount);
+    amountOut = IBVault(balancerVault).swap(singleSwap, funds, limit, block.timestamp);
   }
 
   function _swapUniswap(
@@ -231,8 +212,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     address token0 = pair.token0();
     address token1 = pair.token1();
 
-    if (!(token0 == address(tokenIn) && token1 == address(tokenOut)) ||
-         (token1 == address(tokenIn) && token0 == address(tokenOut)))
+    if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
+          (token1 == address(tokenIn) && token0 == address(tokenOut))))
       revert MSWrongTokensUniswap();
 
     IERC20(tokenIn).safeTransfer(address(pair), swapAmount);
@@ -292,7 +273,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
    * to the WETH contract.
    */
   function _translateToIERC20(IAsset asset) internal view returns (IERC20) {
-    return _isETH(asset) ? IERC20(_WETH()) : _asIERC20(asset);
+    return _isETH(asset) ? IERC20(WETH) : _asIERC20(asset);
   }
 
   /**

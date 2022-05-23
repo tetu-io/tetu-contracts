@@ -33,6 +33,7 @@ interface IMultiSwap2 {
     uint256 deadline
   )
   external
+  payable
   returns (uint amountOut);
 
 }

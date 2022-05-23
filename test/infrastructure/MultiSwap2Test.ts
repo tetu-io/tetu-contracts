@@ -7,126 +7,155 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
-  MultiSwap2, ContractUtils,
+  MultiSwap2,
 } from "../../typechain";
-import {ethers, network} from "hardhat";
+import {ethers, network, config} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {
-  getAllRoutes,
-  loadReserves,
-  MULTI_SWAP2_MATIC,
-  CONTRACT_UTILS_MATIC,
-  findBestRoutes,
-  RoutesData,
-  encodeRouteData,
-  saveObjectToJsonFile
-} from "../../scripts/multiswap/MultiSwapLibrary";
-import pairsJson from '../../scripts/multiswap/json/MultiSwapPairs.json'
+
 import {TokenUtils} from "../TokenUtils";
-import {/*BigNumber,*/ utils} from "ethers";
+import {BigNumber, BigNumberish} from "ethers";
+import {MaxUint256} from '@ethersproject/constants';
 
-// import savedRoutesData from './json/USDC_TETU.json';
-import savedRoutesData from './json/USDC_AAVE.json';
 
-// const encodedRouteDataFileName = 'test/infrastructure/json/USDC_TETU.json';
-const encodedRouteDataFileName = 'test/infrastructure/json/USDC_AAVE.json';
-const pairs = pairsJson as string[][]
+import testJson from './json/MultiSwap2TestData.json';
+import hardhatConfig from "../../hardhat.config";
+import {CoreAddresses} from "../../scripts/models/CoreAddresses";
+import {TimeUtils} from "../TimeUtils";
+
 
 // const {expect} = chai;
 chai.use(chaiAsPromised);
 
+const _SLIPPAGE_DENOMINATOR = 10000;
+
+interface ISwapV2 {
+  poolId: string;
+  assetInIndex: number;
+  assetOutIndex: number;
+  amount: BigNumberish;
+  userData: string;
+}
+
+interface ISwapInfo {
+  swapData: ISwapData;
+  tokenAddresses: string[];
+  swaps: ISwapV2[];
+  swapAmount: BigNumberish;
+  swapAmountForSwaps?: BigNumberish; // Used with stETH/wstETH
+  returnAmount: BigNumberish;
+  returnAmountFromSwaps?: BigNumberish; // Used with stETH/wstETH
+  returnAmountConsideringFees: BigNumberish;
+  tokenIn: string;
+  tokenOut: string;
+  marketSp: BigNumberish;
+}
+
+interface ISwapData {
+  tokenIn: string;
+  tokenOut: string;
+  swapAmount: BigNumberish;
+  returnAmount: BigNumberish;
+}
+
+interface ITestData {
+  [key: string]: ISwapInfo
+};
 
 describe("MultiSwap2 base tests", function () {
-
+  let snapshot: string;
   let signer: SignerWithAddress;
+  let core: CoreAddresses;
   let multiSwap2: MultiSwap2;
-  let contractUtils: ContractUtils;
   let usdc: string;
+  const testData = testJson.testData as unknown as ITestData;
 
   before(async function () {
+    this.timeout(1200000);
+
+    // start hardhat fork from the block number test data generated for
+    console.log('Resetting hardhat fork to block Number', testJson.blockNumber);
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [{
+        forking: {
+          jsonRpcUrl: config.networks.hardhat.forking?.url,
+          blockNumber: testJson.blockNumber,
+        },
+      }]
+    });
+    const latestBlock = await ethers.provider.getBlock('latest');
+    console.log('latestBlock', latestBlock.number);
+
+
     signer = (await ethers.getSigners())[0];
-    console.log('network.name', network.name);
+    core = await DeployerUtils.getCoreAddresses();
 
     usdc = await DeployerUtils.getUSDCAddress();
 
-    if (network.name === 'matic') {
+    if (network.name === 'hardhat') {
 
-      multiSwap2 = await DeployerUtils.connectInterface(
-          signer, "MultiSwap2", MULTI_SWAP2_MATIC
+      const networkToken = await DeployerUtils.getNetworkTokenAddress();
+      multiSwap2 = await DeployerUtils.deployContract(
+          signer,
+          'MultiSwap2',
+          core.controller,
+          networkToken,
+          MaticAddresses.BALANCER_VAULT
       ) as MultiSwap2;
-      contractUtils = await DeployerUtils.connectInterface(
-          signer, "ContractUtils", CONTRACT_UTILS_MATIC
-      ) as ContractUtils;
-
-    } else if (network.name === 'hardhat') {
-
-      multiSwap2 = await DeployerUtils.deployContract(signer, 'MultiSwap2',
-          signer.address,
-      ) as MultiSwap2;
-      contractUtils = await DeployerUtils.deployContract(signer, 'ContractUtils',
-      ) as ContractUtils;
-
-      await TokenUtils.getToken(usdc, signer.address,
-          utils.parseUnits('500000', 6));
 
     } else console.error('Unsupported network', network.name)
 
+    snapshot = await TimeUtils.snapshot();
+
   })
 
-  after(async function () {
+  beforeEach(async function () {
   });
 
-  it("generateWays & multiSwap", async () => {
-    const tokenIn = usdc;
-    // const tokenOut = MaticAddresses.TETU_TOKEN;
-    const tokenOut = MaticAddresses.AAVE_TOKEN; // TODO check outputs
-    const amount = ethers.utils.parseUnits('100000', 6);
+  afterEach(async function () {
+  });
 
-    if (network.name === 'matic') {
+  it("do multi swaps", async () => {
+    const deadline = MaxUint256;
+    const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
+    for (const key of Object.keys(testData)) {
+      await TimeUtils.rollback(snapshot);
+      console.log('\n-----------------------');
+      console.log(key);
+      console.log('-----------------------');
+      const multiswap = testData[key];
 
-      console.time('getAllRoutes')
-      const allRoutes = getAllRoutes(pairs, tokenIn, tokenOut, 4);
-      console.timeEnd('getAllRoutes')
-      console.log('allRoutes.length', allRoutes.length);
+      const tokenIn = multiswap.swapData.tokenIn;
+      const tokenOut = multiswap.swapData.tokenOut;
+      const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
+      console.log('amountOutBefore', amountOutBefore);
+      const amount = BigNumber.from(multiswap.swapAmount)
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
 
-      console.time('loadReserves')
-      await loadReserves(contractUtils, allRoutes)
-      console.timeEnd('loadReserves')
+      await multiSwap2.multiSwap(
+        multiswap.swapData,
+        multiswap.swaps,
+        multiswap.tokenAddresses,
+        slippage,
+        deadline
+      );
 
-      const routesData = findBestRoutes(allRoutes, amount)
-      console.log('routesData', routesData);
+      const amountOut = await TokenUtils.balanceOf(tokenOut, signer.address);
+      console.log('amountOut     ', amountOut.toString());
+      const amountExpected = multiswap.returnAmount;
+      console.log('amountExpected', amountExpected);
+      const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100;
+      console.log('diff', diff, '%');
 
-      await saveObjectToJsonFile(routesData, encodedRouteDataFileName)
-      console.log('+++ Route data saved to ', encodedRouteDataFileName);
-
-    } else {
-
-      console.log('savedRoutesData', savedRoutesData);
-      const routesData = savedRoutesData as unknown as RoutesData
-      const encodedRoutesData = encodeRouteData(routesData);
-      console.log('encodedRoutesData', encodedRoutesData);
-
-      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString())
-      const slippage = 30; // 3%
-      await multiSwap2.multiSwap(tokenIn, tokenOut, amount,  slippage, encodedRoutesData);
+      // TODO check tokens out
+      // TODO check slippage 0
     }
 
 
   })
-
-  it.skip("should be able to buy all assets", async () => {
-
-    const entries = Object.entries(MaticAddresses);
-    const tokens = entries.filter(key => key[0].endsWith('_TOKEN'));
-
-    for (const token of tokens) {
-      console.log(token[0], token[1]);
-      // TODO call test swap from USDC to token[1]
-    }
-
-  });
 
 
 })
