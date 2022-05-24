@@ -34,11 +34,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.10.3";
+  string public constant override VERSION = "1.10.3";
   /// @dev Denominator for penalty numerator
-  uint256 public constant LOCK_PENALTY_DENOMINATOR = 1000;
-  uint256 public constant TO_INVEST_DENOMINATOR = 1000;
-  uint256 public constant DEPOSIT_FEE_DENOMINATOR = 10000;
+  uint256 public constant override LOCK_PENALTY_DENOMINATOR = 1000;
+  uint256 public constant override TO_INVEST_DENOMINATOR = 1000;
+  uint256 public constant override DEPOSIT_FEE_DENOMINATOR = 10000;
   uint256 private constant NAME_OVERRIDE_ID = 0;
   uint256 private constant SYMBOL_OVERRIDE_ID = 1;
   string private constant FORBIDDEN_MSG = "SV: Forbidden";
@@ -96,7 +96,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     bool _lockAllowed,
     address _rewardToken,
     uint _depositFee
-  ) external initializer {
+  ) external override initializer {
     __ERC20_init(_name, _symbol);
 
     ControllableV2.initializeControllable(_controller);
@@ -185,13 +185,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************ GOVERNANCE ACTIONS ******************
 
   /// @notice Override vault name
-  function overrideName(string calldata value) external {
+  function overrideName(string calldata value) external override {
     require(_isGovernance(msg.sender));
     _nameOverrides[NAME_OVERRIDE_ID] = value;
   }
 
   /// @notice Override vault name
-  function overrideSymbol(string calldata value) external {
+  function overrideSymbol(string calldata value) external override {
     require(_isGovernance(msg.sender));
     _nameOverrides[SYMBOL_OVERRIDE_ID] = value;
   }
@@ -257,14 +257,14 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
 
   /// @notice If true we will call doHardWork for each invest action
   /// @param _active Status true - active, false - deactivated
-  function changeDoHardWorkOnInvest(bool _active) external {
+  function changeDoHardWorkOnInvest(bool _active) external override {
     require(_isGovernance(msg.sender), FORBIDDEN_MSG);
     _setDoHardWorkOnInvest(_active);
   }
 
   /// @notice If true we will call invest for each deposit
   /// @param _active Status true - active, false - deactivated
-  function changeAlwaysInvest(bool _active) external {
+  function changeAlwaysInvest(bool _active) external override {
     require(_isGovernance(msg.sender), FORBIDDEN_MSG);
     _setAlwaysInvest(_active);
   }
@@ -319,7 +319,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /// @notice Withdraw all from strategy to the vault
-  function withdrawAllToVault() external {
+  function withdrawAllToVault() external override {
     require(address(_controller()) == msg.sender
       || IController(_controller()).governance() == msg.sender, FORBIDDEN_MSG);
     IStrategy(_strategy()).withdrawAllToVault();
