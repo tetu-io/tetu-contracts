@@ -143,14 +143,15 @@ describe("MultiSwap2 base tests", function () {
         deadline
       );
 
-      const amountOut = await TokenUtils.balanceOf(tokenOut, signer.address);
+      const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
+      console.log('amountOutAfter', amountOutAfter.toString());
+      const amountOut = amountOutAfter.sub(amountOutBefore);
       console.log('amountOut     ', amountOut.toString());
       const amountExpected = multiswap.returnAmount;
       console.log('amountExpected', amountExpected);
       const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100;
       console.log('diff', diff, '%');
 
-      // TODO check tokens out
       // TODO check slippage 0
     }
 
