@@ -9,7 +9,7 @@ async function main() {
   const core = await DeployerUtils.getCoreAddresses();
   const gov = await DeployerUtils.getGovernance()
 
-  const args = [gov, core.rewardToken, parseUnits('1000'), core.controller];
+  const args = [gov, core.rewardToken, parseUnits('1'), core.controller];
 
   const contract = await DeployerUtils.deployContract(signer, "TetuPawnShop", ...args) as TetuPawnShop;
 
