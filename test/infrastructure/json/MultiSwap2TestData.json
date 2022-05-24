@@ -1,30 +1,30 @@
 {
-	"blockNumber": 28671563,
+	"blockNumber": 28704270,
 	"testData": {
 		"100000 USDC->WMATIC": {
 			"swapAmount": "100000000000",
-			"returnAmount": "140116392328967613470084",
-			"returnAmountConsideringFees": "140116386728967613470084",
+			"returnAmount": "149242659999273310407793",
+			"returnAmountConsideringFees": "149242654399273310407793",
 			"swaps": [
 				{
 					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "40153609782",
+					"amount": "37166833792",
 					"userData": "0x"
 				},
 				{
 					"poolId": "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827fffffffffffffffffffffff2",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "46307425731",
+					"amount": "48431689436",
 					"userData": "0x"
 				},
 				{
 					"poolId": "0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f000000000000000000000068",
 					"assetInIndex": 0,
 					"assetOutIndex": 2,
-					"amount": "13538964487",
+					"amount": "14401476772",
 					"userData": "0x"
 				},
 				{
@@ -42,40 +42,40 @@
 			],
 			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.7135465403385668",
+			"marketSp": "0.6689198847466216",
 			"swapData": {
 				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "100000000000",
-				"returnAmount": "140116392328967613470084"
+				"returnAmount": "149242659999273310407793"
 			},
 			"swapAmountForSwaps": "100000000000",
-			"returnAmountFromSwaps": "140116392328967613470084"
+			"returnAmountFromSwaps": "149242659999273310407793"
 		},
 		"100000 WMATIC->USDC": {
 			"swapAmount": "100000000000000000000000",
-			"returnAmount": "67251680040",
-			"returnAmountConsideringFees": "67251680040",
+			"returnAmount": "63141029782",
+			"returnAmountConsideringFees": "63141029782",
 			"swaps": [
 				{
 					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "45247900833223039048762",
+					"amount": "49042020539490511013134",
 					"userData": "0x"
 				},
 				{
 					"poolId": "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827fffffffffffffffffffffff2",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "41499456388877359751640",
+					"amount": "38856624360795615984506",
 					"userData": "0x"
 				},
 				{
 					"poolId": "0x604229c960e5cacf2aaeac8be68ac07ba9df81c3fffffffffffffffffffffff2",
 					"assetInIndex": 0,
 					"assetOutIndex": 2,
-					"amount": "13252642777899601199598",
+					"amount": "12101355099713873002360",
 					"userData": "0x"
 				},
 				{
@@ -93,130 +93,26 @@
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "1.451770941124954",
+			"marketSp": "1.5444741550064909",
 			"swapData": {
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"swapAmount": "100000000000000000000000",
-				"returnAmount": "67251680040"
+				"returnAmount": "63141029782"
 			},
 			"swapAmountForSwaps": "100000000000000000000000",
-			"returnAmountFromSwaps": "67251680040"
-		},
-		"1000 BAL->SAND": {
-			"swapAmount": "1000000000000000000000",
-			"returnAmount": "5545291905471095815536",
-			"returnAmountConsideringFees": "5545291905471095815536",
-			"swaps": [
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "999244938998657315494",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0x369582d2010b6ed950b571f4101e3bb9b554876ffffffffffffffffffffffff2",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
-					"assetInIndex": 0,
-					"assetOutIndex": 3,
-					"amount": "755061001342684506",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0xd8ddc96c117aef8d600f660b435883ecb1675b1dfffffffffffffffffffffff2",
-					"assetInIndex": 3,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x"
-				}
-			],
-			"tokenAddresses": [
-				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0xbbba073c31bf03b8acf7c28ef0738decf3695683",
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-			],
-			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-			"tokenOut": "0xbbba073c31bf03b8acf7c28ef0738decf3695683",
-			"marketSp": "0.179502180439744044893705193827598",
-			"swapData": {
-				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"tokenOut": "0xbbba073c31bf03b8acf7c28ef0738decf3695683",
-				"swapAmount": "1000000000000000000000",
-				"returnAmount": "5545291905471095815536"
-			},
-			"swapAmountForSwaps": "1000000000000000000000",
-			"returnAmountFromSwaps": "5545291905471095815536"
-		},
-		"1000 SAND->BAL": {
-			"swapAmount": "1000000000000000000000",
-			"returnAmount": "167922028461115118457",
-			"returnAmountConsideringFees": "167922028461115118457",
-			"swaps": [
-				{
-					"poolId": "0x369582d2010b6ed950b571f4101e3bb9b554876ffffffffffffffffffffffff2",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "994099797048302533522",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0xd8ddc96c117aef8d600f660b435883ecb1675b1dfffffffffffffffffffffff2",
-					"assetInIndex": 0,
-					"assetOutIndex": 3,
-					"amount": "5900202951697466478",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
-					"assetInIndex": 3,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x"
-				}
-			],
-			"tokenAddresses": [
-				"0xbbba073c31bf03b8acf7c28ef0738decf3695683",
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-			],
-			"tokenIn": "0xbbba073c31bf03b8acf7c28ef0738decf3695683",
-			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-			"marketSp": "5.9506032396680880104615003808949",
-			"swapData": {
-				"tokenIn": "0xbbba073c31bf03b8acf7c28ef0738decf3695683",
-				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"swapAmount": "1000000000000000000000",
-				"returnAmount": "167922028461115118457"
-			},
-			"swapAmountForSwaps": "1000000000000000000000",
-			"returnAmountFromSwaps": "167922028461115118457"
+			"returnAmountFromSwaps": "63141029782"
 		},
 		"1000 BAL->TETU": {
 			"swapAmount": "1000000000000000000000",
-			"returnAmount": "471285041913086668755225",
-			"returnAmountConsideringFees": "471285041913086668755225",
+			"returnAmount": "463114530910067653820688",
+			"returnAmountConsideringFees": "463114530910067653820688",
 			"swaps": [
 				{
 					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "878965468477176607526",
+					"amount": "884713665637319495694",
 					"userData": "0x"
 				},
 				{
@@ -230,7 +126,7 @@
 					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
 					"assetInIndex": 0,
 					"assetOutIndex": 3,
-					"amount": "121034531522823392474",
+					"amount": "115286334362680504306",
 					"userData": "0x"
 				},
 				{
@@ -249,63 +145,26 @@
 			],
 			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
 			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
-			"marketSp": "0.00201319292529039588204408494931828",
+			"marketSp": "0.0020509561746858512115401750007391",
 			"swapData": {
 				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
 				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
 				"swapAmount": "1000000000000000000000",
-				"returnAmount": "471285041913086668755225"
+				"returnAmount": "463114530910067653820688"
 			},
 			"swapAmountForSwaps": "1000000000000000000000",
-			"returnAmountFromSwaps": "471285041913086668755225"
+			"returnAmountFromSwaps": "463114530910067653820688"
 		},
-		"100 BAL->cxETH": {
-			"swapAmount": "100000000000000000000",
-			"returnAmount": "379241666120377505",
-			"returnAmountConsideringFees": "379241666120377505",
+		"100000 TETU->BAL": {
+			"swapAmount": "100000000000000000000000",
+			"returnAmount": "197866312970275995016",
+			"returnAmountConsideringFees": "197866312970275995016",
 			"swaps": [
 				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "100000000000000000000",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0xda7cd765df426fca6fb5e1438c78581e4e66bfe7fffffffffffffffffffffff2",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x"
-				}
-			],
-			"tokenAddresses": [
-				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"0xfe4546fefe124f30788c4cc1bb9aa6907a7987f9"
-			],
-			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-			"tokenOut": "0xfe4546fefe124f30788c4cc1bb9aa6907a7987f9",
-			"marketSp": "263.55690293068144630972118062172",
-			"swapData": {
-				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"tokenOut": "0xfe4546fefe124f30788c4cc1bb9aa6907a7987f9",
-				"swapAmount": "100000000000000000000",
-				"returnAmount": "379241666120377505"
-			},
-			"swapAmountForSwaps": "100000000000000000000",
-			"returnAmountFromSwaps": "379241666120377505"
-		},
-		"10 cxETH->BAL": {
-			"swapAmount": "10000000000000000000",
-			"returnAmount": "2438223049274920706411",
-			"returnAmountConsideringFees": "2438223049274920706411",
-			"swaps": [
-				{
-					"poolId": "0xda7cd765df426fca6fb5e1438c78581e4e66bfe7fffffffffffffffffffffff2",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "10000000000000000000",
+					"amount": "88974457825965411354835",
 					"userData": "0x"
 				},
 				{
@@ -314,53 +173,16 @@
 					"assetOutIndex": 2,
 					"amount": "0",
 					"userData": "0x"
-				}
-			],
-			"tokenAddresses": [
-				"0xfe4546fefe124f30788c4cc1bb9aa6907a7987f9",
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3"
-			],
-			"tokenIn": "0xfe4546fefe124f30788c4cc1bb9aa6907a7987f9",
-			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-			"marketSp": "0.0040528107766282323375520265519094",
-			"swapData": {
-				"tokenIn": "0xfe4546fefe124f30788c4cc1bb9aa6907a7987f9",
-				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"swapAmount": "10000000000000000000",
-				"returnAmount": "2438223049274920706411"
-			},
-			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmountFromSwaps": "2438223049274920706411"
-		},
-		"1000 BAL->SUSHI": {
-			"swapAmount": "1000000000000000000000",
-			"returnAmount": "4384834587403223667239",
-			"returnAmountConsideringFees": "4384834587403223667239",
-			"swaps": [
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "721917270681337597476",
-					"userData": "0x"
 				},
 				{
-					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x"
-				},
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
 					"assetInIndex": 0,
 					"assetOutIndex": 3,
-					"amount": "278082729318662402524",
+					"amount": "11025542174034588645165",
 					"userData": "0x"
 				},
 				{
-					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
 					"assetInIndex": 3,
 					"assetOutIndex": 2,
 					"amount": "0",
@@ -368,33 +190,33 @@
 				}
 			],
 			"tokenAddresses": [
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
 			],
-			"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-			"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
-			"marketSp": "0.20945351865389207172781213143696",
+			"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+			"marketSp": "499.9740014859227052299674707504",
 			"swapData": {
-				"tokenIn": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-				"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
-				"swapAmount": "1000000000000000000000",
-				"returnAmount": "4384834587403223667239"
+				"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+				"swapAmount": "100000000000000000000000",
+				"returnAmount": "197866312970275995016"
 			},
-			"swapAmountForSwaps": "1000000000000000000000",
-			"returnAmountFromSwaps": "4384834587403223667239"
+			"swapAmountForSwaps": "100000000000000000000000",
+			"returnAmountFromSwaps": "197866312970275995016"
 		},
 		"1000 SUSHI->BAL": {
 			"swapAmount": "1000000000000000000000",
-			"returnAmount": "192626899804384296553",
-			"returnAmountConsideringFees": "192626899804384296553",
+			"returnAmount": "205950743827894284851",
+			"returnAmountConsideringFees": "205950743827894284851",
 			"swaps": [
 				{
 					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "721113928234928789554",
+					"amount": "729204119331042009544",
 					"userData": "0x"
 				},
 				{
@@ -408,7 +230,7 @@
 					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
 					"assetInIndex": 0,
 					"assetOutIndex": 3,
-					"amount": "278886071765071210446",
+					"amount": "270795880668957990456",
 					"userData": "0x"
 				},
 				{
@@ -427,26 +249,78 @@
 			],
 			"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
 			"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
-			"marketSp": "5.0996816062912125983172967683798",
+			"marketSp": "4.7656277592062331088150309342782",
 			"swapData": {
 				"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
 				"tokenOut": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
 				"swapAmount": "1000000000000000000000",
-				"returnAmount": "192626899804384296553"
+				"returnAmount": "205950743827894284851"
 			},
 			"swapAmountForSwaps": "1000000000000000000000",
-			"returnAmountFromSwaps": "192626899804384296553"
+			"returnAmountFromSwaps": "205950743827894284851"
+		},
+		"1000 TETU->SUSHI": {
+			"swapAmount": "1000000000000000000000",
+			"returnAmount": "8987170443306260665",
+			"returnAmountConsideringFees": "8987170443306260665",
+			"swaps": [
+				{
+					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "510859436391681051742",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0xe15e9d2a5af5c1d3524bbc594ddc4a7d80ad27cdfffffffffffffffffffffff1",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "489140563608318948258",
+					"userData": "0x"
+				},
+				{
+					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
+					"assetInIndex": 3,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x"
+				}
+			],
+			"tokenAddresses": [
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			],
+			"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+			"marketSp": "110.88275717612773942166718061568",
+			"swapData": {
+				"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"tokenOut": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+				"swapAmount": "1000000000000000000000",
+				"returnAmount": "8987170443306260665"
+			},
+			"swapAmountForSwaps": "1000000000000000000000",
+			"returnAmountFromSwaps": "8987170443306260665"
 		},
 		"1000 SUSHI->TETU": {
 			"swapAmount": "1000000000000000000000",
-			"returnAmount": "91130355830158967060220",
-			"returnAmountConsideringFees": "91130355830158967060220",
+			"returnAmount": "94840426956194602991192",
+			"returnAmountConsideringFees": "94840426956194602991192",
 			"swaps": [
 				{
 					"poolId": "0xb5846453b67d0b4b4ce655930cf6e4129f4416d7fffffffffffffffffffffff1",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "688070309786019776783",
+					"amount": "696379603592577727704",
 					"userData": "0x"
 				},
 				{
@@ -460,7 +334,7 @@
 					"poolId": "0x597a9bc3b24c2a578ccb3aa2c2c62c39427c6a49fffffffffffffffffffffff1",
 					"assetInIndex": 0,
 					"assetOutIndex": 3,
-					"amount": "311929690213980223217",
+					"amount": "303620396407422272296",
 					"userData": "0x"
 				},
 				{
@@ -479,54 +353,15 @@
 			],
 			"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
 			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
-			"marketSp": "0.0101651169296164544871965259717108",
+			"marketSp": "0.009716800747086102032061079852359",
 			"swapData": {
 				"tokenIn": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
 				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
 				"swapAmount": "1000000000000000000000",
-				"returnAmount": "91130355830158967060220"
+				"returnAmount": "94840426956194602991192"
 			},
 			"swapAmountForSwaps": "1000000000000000000000",
-			"returnAmountFromSwaps": "91130355830158967060220"
-		},
-		"10 cxETH->TETU": {
-			"tokenAddresses": [],
-			"swaps": [],
-			"swapAmount": {
-				"type": "BigNumber",
-				"hex": "0x00"
-			},
-			"swapAmountForSwaps": {
-				"type": "BigNumber",
-				"hex": "0x00"
-			},
-			"tokenIn": "",
-			"tokenOut": "",
-			"returnAmount": {
-				"type": "BigNumber",
-				"hex": "0x00"
-			},
-			"returnAmountConsideringFees": {
-				"type": "BigNumber",
-				"hex": "0x00"
-			},
-			"returnAmountFromSwaps": {
-				"type": "BigNumber",
-				"hex": "0x00"
-			},
-			"marketSp": "0",
-			"swapData": {
-				"tokenIn": "",
-				"tokenOut": "",
-				"swapAmount": {
-					"type": "BigNumber",
-					"hex": "0x00"
-				},
-				"returnAmount": {
-					"type": "BigNumber",
-					"hex": "0x00"
-				}
-			}
+			"returnAmountFromSwaps": "94840426956194602991192"
 		}
 	}
 }
