@@ -29,6 +29,7 @@ interface ITetuPawnShop {
   event PositionClosed(uint256 posId);
   event BidExecuted(
     uint256 posId,
+    uint256 bidId,
     uint256 amount,
     address acquiredMoneyHolder,
     address lender

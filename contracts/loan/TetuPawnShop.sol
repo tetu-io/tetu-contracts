@@ -31,7 +31,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
   /// @dev Time lock for any governance actions
   uint256 constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
@@ -244,7 +244,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(pos.execution.lender == address(0), "TPS: Can't bid executed position");
     if (pos.acquired.acquiredAmount != 0) {
       require(amount == pos.acquired.acquiredAmount, "TPS: Wrong bid amount");
-      _executeBid(pos, amount, msg.sender, msg.sender);
+      _executeBid(pos, 0, amount, msg.sender, msg.sender);
     } else {
       _auctionBid(pos, amount, msg.sender);
     }
@@ -297,7 +297,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(pos.open, "TPS: Position closed");
 
     pos.acquired.acquiredAmount = _bid.amount;
-    _executeBid(pos, _bid.amount, address(this), _bid.lender);
+    _executeBid(pos, bidId, _bid.amount, address(this), _bid.lender);
     lenderOpenBids[_bid.lender][pos.id] = 0;
     _bid.open = false;
     emit AuctionBidAccepted(posId, _bid.id);
@@ -346,6 +346,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   ///      In case of instant deal transfer collateral to lender
   function _executeBid(
     Position storage pos,
+    uint bidId,
     uint256 amount,
     address acquiredMoneyHolder,
     address lender
@@ -375,6 +376,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     }
     emit BidExecuted(
       pos.id,
+      bidId,
       amount,
       acquiredMoneyHolder,
       lender
