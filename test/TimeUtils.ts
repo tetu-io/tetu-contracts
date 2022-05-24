@@ -1,4 +1,4 @@
-import {ethers} from "hardhat";
+import {config, ethers, network} from "hardhat";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {Multicall__factory} from "../typechain";
@@ -57,15 +57,34 @@ export class TimeUtils {
     }
   }
 
+  private static snapshots: {[key: string]: boolean} = {};
+
   public static async snapshot() {
     const id = await ethers.provider.send("evm_snapshot", []);
+    this.snapshots[id] = true;
     console.log("made snapshot", id);
     return id;
   }
 
   public static async rollback(id: string) {
+    if (this.snapshots[id] === false) throw new Error(`Snapshot ${id} already restored. Create new one to restore again.`);
+    if (!this.snapshots[id]) throw new Error(`Snapshot ${id} not found`);
     console.log("restore snapshot", id);
+    this.snapshots[id] = false;
     return ethers.provider.send("evm_revert", [id]);
+  }
+
+  // use config.networks.hardhat.forking?.url for jsonRpcUrl
+  public static async resetBlockNumber(jsonRpcUrl: string | undefined, blockNumber: number) {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [{
+        forking: {
+          jsonRpcUrl,
+          blockNumber,
+        },
+      }]
+    });
   }
 
 }

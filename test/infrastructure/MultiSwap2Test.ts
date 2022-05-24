@@ -64,7 +64,6 @@ interface ITestData {
 };
 
 describe("MultiSwap2 base tests", function () {
-  let snapshot: string;
   let signer: SignerWithAddress;
   let core: CoreAddresses;
   let multiSwap2: MultiSwap2;
@@ -76,15 +75,8 @@ describe("MultiSwap2 base tests", function () {
 
     // start hardhat fork from the block number test data generated for
     console.log('Resetting hardhat fork to block Number', testJson.blockNumber);
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [{
-        forking: {
-          jsonRpcUrl: config.networks.hardhat.forking?.url,
-          blockNumber: testJson.blockNumber,
-        },
-      }]
-    });
+    await TimeUtils.resetBlockNumber(config.networks.hardhat.forking?.url, testJson.blockNumber);
+
     const latestBlock = await ethers.provider.getBlock('latest');
     console.log('latestBlock', latestBlock.number);
 
@@ -107,7 +99,6 @@ describe("MultiSwap2 base tests", function () {
 
     } else console.error('Unsupported network', network.name)
 
-    snapshot = await TimeUtils.snapshot();
 
   })
 
@@ -121,10 +112,11 @@ describe("MultiSwap2 base tests", function () {
     const deadline = MaxUint256;
     const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
     for (const key of Object.keys(testData)) {
-      await TimeUtils.rollback(snapshot);
       console.log('\n-----------------------');
       console.log(key);
       console.log('-----------------------');
+      const snapshot = await TimeUtils.snapshot();
+
       const multiswap = testData[key];
 
       const tokenIn = multiswap.swapData.tokenIn;
@@ -151,6 +143,8 @@ describe("MultiSwap2 base tests", function () {
       console.log('amountExpected', amountExpected);
       const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100;
       console.log('diff', diff, '%');
+
+      await TimeUtils.rollback(snapshot);
 
       // TODO check slippage 0
     }
