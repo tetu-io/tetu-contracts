@@ -13,11 +13,12 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/Initializable.sol";
+import "../interface/IFeeRewardForwarder.sol";
 
 /// @title Eternal storage + getters and setters pattern
 /// @dev If you will change a key value it will require setup it again
 /// @author belbix
-abstract contract ForwarderV2Storage is Initializable {
+abstract contract ForwarderV2Storage is Initializable, IFeeRewardForwarder {
 
   struct LpData {
     address lp;
@@ -35,13 +36,13 @@ abstract contract ForwarderV2Storage is Initializable {
   mapping(bytes32 => address) private addressStorage;
 
   /// @dev Liquidity Pools with the highest TVL for given token
-  mapping(address => LpData) public largestLps;
+  mapping(address => LpData) public override largestLps;
   /// @dev Liquidity Pools with the most popular tokens
-  mapping(address => mapping(address => LpData)) public blueChipsLps;
+  mapping(address => mapping(address => LpData)) public override blueChipsLps;
   /// @dev Factory address to fee value map
-  mapping(address => UniFee) public uniPlatformFee;
+  mapping(address => UniFee) public override uniPlatformFee;
   /// @dev Hold blue chips tokens addresses
-  mapping(address => bool) public blueChipsTokens;
+  mapping(address => bool) public override blueChipsTokens;
 
   /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
@@ -56,7 +57,7 @@ abstract contract ForwarderV2Storage is Initializable {
   }
 
   /// @notice Router address for adding liquidity
-  function liquidityRouter() public view returns (address) {
+  function liquidityRouter() public view override returns (address) {
     return getAddress("liquidityRouter");
   }
 
@@ -66,7 +67,7 @@ abstract contract ForwarderV2Storage is Initializable {
   }
 
   /// @notice Numerator for part of profit that goes to TETU liquidity
-  function liquidityNumerator() public view returns (uint256) {
+  function liquidityNumerator() public view override returns (uint256) {
     return getUint256("liquidityNumerator");
   }
 

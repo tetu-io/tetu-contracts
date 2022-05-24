@@ -203,7 +203,7 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   }
 
   /// @dev Returns doHardWorkOnInvest mode status
-  function doHardWorkOnInvest() external view returns (bool) {
+  function doHardWorkOnInvest() external view override returns (bool) {
     return _doHardWorkOnInvest();
   }
 
@@ -217,7 +217,7 @@ abstract contract VaultStorage is Initializable, ISmartVault {
   }
 
   /// @dev Returns doHardWorkOnInvest mode status
-  function alwaysInvest() external view returns (bool) {
+  function alwaysInvest() external view override returns (bool) {
     return _doHardWorkOnInvest();
   }
 
