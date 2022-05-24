@@ -17,7 +17,6 @@ import "./ForwarderV2Storage.sol";
 import "../../openzeppelin/IERC20.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../interface/ISmartVault.sol";
-import "../interface/IFeeRewardForwarder.sol";
 import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
@@ -33,19 +32,19 @@ import "../SlotsLib.sol";
 ///        it is just sent to the contract as TETU tokens increasing share price.
 /// @author belbix
 /// @author bogdoslav
-contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage {
+contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.4.0";
-  uint256 public constant LIQUIDITY_DENOMINATOR = 100;
-  uint constant public DEFAULT_UNI_FEE_DENOMINATOR = 1000;
-  uint constant public DEFAULT_UNI_FEE_NUMERATOR = 997;
-  uint constant public ROUTE_LENGTH_MAX = 5;
-  uint constant public SLIPPAGE_DENOMINATOR = 100;
-  uint constant public MINIMUM_AMOUNT = 100;
+  string public constant override VERSION = "1.4.0";
+  uint256 public constant override LIQUIDITY_DENOMINATOR = 100;
+  uint constant public override DEFAULT_UNI_FEE_DENOMINATOR = 1000;
+  uint constant public override DEFAULT_UNI_FEE_NUMERATOR = 997;
+  uint constant public override ROUTE_LENGTH_MAX = 5;
+  uint constant public override SLIPPAGE_DENOMINATOR = 100;
+  uint constant public override MINIMUM_AMOUNT = 100;
 
   /// @dev Temporary solution to liquidate Balancer BAL tokens
   bytes32 internal constant _BAL_TOKEN     = bytes32(uint(keccak256("eip1967.ForwarderV2.balToken")) - 1);
@@ -73,7 +72,7 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
   ///      Initialize Controllable with sender address
-  function initialize(address _controller) external initializer {
+  function initialize(address _controller) external override initializer {
     ControllableV2.initializeControllable(_controller);
   }
 
@@ -93,35 +92,35 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
 
   /// @notice Return Profit Sharing pool address
   /// @return Profit Sharing pool address
-  function psVault() public view returns (address) {
+  function psVault() public view override returns (address) {
     return IController(_controller()).psVault();
   }
 
   /// @notice Return FundKeeper address
   /// @return FundKeeper address
-  function fund() public view returns (address) {
+  function fund() public view override returns (address) {
     return IController(_controller()).fund();
   }
 
   /// @notice Return Target token (TETU) address
   /// @return Target token (TETU) address
-  function tetu() public view returns (address) {
+  function tetu() public view override returns (address) {
     return IController(_controller()).rewardToken();
   }
 
   /// @notice Return a token address used for FundKeeper (USDC by default)
   /// @return FundKeeper's main token address (USDC by default)
-  function fundToken() public view returns (address) {
+  function fundToken() public view override returns (address) {
     return IController(_controller()).fundToken();
   }
 
   /// @notice Return slippage numerator
-  function slippageNumerator() public view returns (uint) {
+  function slippageNumerator() public view override returns (uint) {
     return _slippageNumerator();
   }
 
   /// @notice Return Balancer Data
-  function getBalData() external view
+  function getBalData() external view override
   returns (address balToken, address vault, bytes32 pool, address tokenOut) {
     balToken = _BAL_TOKEN.getAddress();
     vault    = _BAL_VAULT.getAddress();
@@ -134,7 +133,7 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
 
   /// @notice Only Governance or Controller can call it.
   ///         Add a pair with largest TVL for given token
-  function addLargestLps(address[] memory _tokens, address[] memory _lps) external onlyControllerOrGovernance {
+  function addLargestLps(address[] memory _tokens, address[] memory _lps) external override onlyControllerOrGovernance {
     require(_tokens.length == _lps.length, "F2: Wrong arrays");
     for (uint i = 0; i < _lps.length; i++) {
       IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
@@ -152,7 +151,7 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
 
   /// @notice Only Governance or Controller can call it.
   ///         Add largest pairs with the most popular tokens on the current network
-  function addBlueChipsLps(address[] memory _lps) external onlyControllerOrGovernance {
+  function addBlueChipsLps(address[] memory _lps) external override onlyControllerOrGovernance {
     for (uint i = 0; i < _lps.length; i++) {
       IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
       blueChipsLps[lp.token0()][lp.token1()] = LpData(address(lp), lp.token0(), lp.token1());
@@ -164,27 +163,27 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
 
   /// @notice Only Governance or Controller can call it.
   ///         Sets numerator for a part of profit that goes instead of PS to TETU liquidity
-  function setLiquidityNumerator(uint256 _value) external onlyControllerOrGovernance {
+  function setLiquidityNumerator(uint256 _value) external override onlyControllerOrGovernance {
     require(_value <= LIQUIDITY_DENOMINATOR, "F2: Too high value");
     _setLiquidityNumerator(_value);
   }
 
   /// @notice Only Governance or Controller can call it.
   ///         Sets numerator for slippage value. Must be in a range 0-100
-  function setSlippageNumerator(uint256 _value) external onlyControllerOrGovernance {
+  function setSlippageNumerator(uint256 _value) external override onlyControllerOrGovernance {
     require(_value <= SLIPPAGE_DENOMINATOR, "F2: Too high value");
     _setSlippageNumerator(_value);
   }
 
   /// @notice Only Governance or Controller can call it.
   ///         Sets router for a pair with TETU liquidity
-  function setLiquidityRouter(address _value) external onlyControllerOrGovernance {
+  function setLiquidityRouter(address _value) external override onlyControllerOrGovernance {
     _setLiquidityRouter(_value);
   }
 
   /// @notice Only Governance or Controller can call it.
   ///         Sets specific Swap fee for given factory
-  function setUniPlatformFee(address _factory, uint _feeNumerator, uint _feeDenominator) external onlyControllerOrGovernance {
+  function setUniPlatformFee(address _factory, uint _feeNumerator, uint _feeDenominator) external override onlyControllerOrGovernance {
     require(_factory != address(0), "F2: Zero factory");
     require(_feeNumerator <= _feeDenominator, "F2: Wrong values");
     require(_feeDenominator != 0, "F2: Wrong denominator");
@@ -198,7 +197,7 @@ contract ForwarderV2 is ControllableV2, IFeeRewardForwarder, ForwarderV2Storage 
   /// @param pool Pool ID
   /// @param tokenOut Output token (ex. USDC)
   function setBalData(address balToken, address vault, bytes32 pool, address tokenOut)
-  external onlyControllerOrGovernance {
+  external override onlyControllerOrGovernance {
     require( balToken != address(0) && vault != address(0) && pool != 0 && tokenOut != address(0));
     _BAL_TOKEN.set(balToken);
     _BAL_VAULT.set(vault);

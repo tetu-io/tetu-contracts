@@ -23,7 +23,7 @@ contract Announcer is ControllableV2, IAnnouncer {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.2.0";
+  string public constant override VERSION = "1.2.0";
   bytes32 internal constant _TIME_LOCK_SLOT = 0x244FE7C39AF244D294615908664E79A2F65DD3F4D5C387AF1D52197F465D1C2E;
 
   /// @dev Hold schedule for time-locked operations
@@ -31,11 +31,11 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @dev Hold values for upgrade
   TimeLockInfo[] private _timeLockInfos;
   /// @dev Hold indexes for upgrade info
-  mapping(TimeLockOpCodes => uint256) public timeLockIndexes;
+  mapping(TimeLockOpCodes => uint256) public override timeLockIndexes;
   /// @dev Hold indexes for upgrade info by address
-  mapping(TimeLockOpCodes => mapping(address => uint256)) public multiTimeLockIndexes;
+  mapping(TimeLockOpCodes => mapping(address => uint256)) public override multiTimeLockIndexes;
   /// @dev Deprecated, don't remove for keep slot ordering
-  mapping(TimeLockOpCodes => bool) public multiOpCodes;
+  mapping(TimeLockOpCodes => bool) public override multiOpCodes;
 
   /// @notice Address change was announced
   event AddressChangeAnnounce(TimeLockOpCodes opCode, address newAddress);
@@ -64,7 +64,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @dev Use it only once after first logic setup
   /// @param _controller Controller address
   /// @param _timeLock TimeLock period
-  function initialize(address _controller, uint256 _timeLock) external initializer {
+  function initialize(address _controller, uint256 _timeLock) external initializer override {
     ControllableV2.initializeControllable(_controller);
 
     // fill timeLock
@@ -105,7 +105,7 @@ contract Announcer is ControllableV2, IAnnouncer {
 
   /// @notice Return time-lock period (in seconds) saved in the contract slot
   /// @return result TimeLock period
-  function timeLock() public view returns (uint256 result) {
+  function timeLock() public view override returns (uint256 result) {
     bytes32 slot = _TIME_LOCK_SLOT;
     assembly {
       result := sload(slot)
@@ -114,7 +114,7 @@ contract Announcer is ControllableV2, IAnnouncer {
 
   /// @notice Length of the the array of all undone announced actions
   /// @return Array length
-  function timeLockInfosLength() external view returns (uint256) {
+  function timeLockInfosLength() external view override returns (uint256) {
     return _timeLockInfos.length;
   }
 
@@ -141,7 +141,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   ///                 8 - Fund
   ///                 19 - VaultController
   /// @param newAddress New address
-  function announceAddressChange(TimeLockOpCodes opCode, address newAddress) external onlyGovernance {
+  function announceAddressChange(TimeLockOpCodes opCode, address newAddress) external override onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
     require(newAddress != address(0), "zero address");
     bytes32 opHash = keccak256(abi.encode(opCode, newAddress));
@@ -161,7 +161,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   ///                 20 - RewardBoostDuration
   ///                 21 - RewardRatioWithoutBoost
   /// @param newValue New value
-  function announceUintChange(TimeLockOpCodes opCode, uint256 newValue) external onlyGovernance {
+  function announceUintChange(TimeLockOpCodes opCode, uint256 newValue) external override onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
     bytes32 opHash = keccak256(abi.encode(opCode, newValue));
     timeLockSchedule[opHash] = block.timestamp + timeLock();
@@ -206,7 +206,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @param token Token the user wants to move.
   /// @param amount Amount that you want to move
   function announceTokenMove(TimeLockOpCodes opCode, address target, address token, uint256 amount)
-  external onlyGovernance {
+  external override onlyGovernance {
     require(timeLockIndexes[opCode] == 0, "already announced");
     require(target != address(0), "zero target");
     require(token != address(0), "zero token");
@@ -234,7 +234,7 @@ contract Announcer is ControllableV2, IAnnouncer {
     address _distributor,
     address _otherNetworkFund,
     bool mintAllAvailable
-  ) external onlyGovernance {
+  ) external override onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.Mint;
 
     require(timeLockIndexes[opCode] == 0, "already announced");
@@ -263,7 +263,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @param _contracts Array of Proxy contract addresses for upgrade
   /// @param _implementations Array of New implementation addresses
   function announceTetuProxyUpgradeBatch(address[] calldata _contracts, address[] calldata _implementations)
-  external onlyGovernance {
+  external override onlyGovernance {
     require(_contracts.length == _implementations.length, "wrong arrays");
     for (uint256 i = 0; i < _contracts.length; i++) {
       announceTetuProxyUpgrade(_contracts[i], _implementations[i]);
@@ -273,7 +273,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @notice Only Governance can do it. Announce Proxy upgrade. You will able to mint after Time-lock period
   /// @param _contract Proxy contract address for upgrade
   /// @param _implementation New implementation address
-  function announceTetuProxyUpgrade(address _contract, address _implementation) public onlyGovernance {
+  function announceTetuProxyUpgrade(address _contract, address _implementation) public override onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.TetuProxyUpdate;
 
     require(multiTimeLockIndexes[opCode][_contract] == 0, "already announced");
@@ -294,7 +294,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @notice Only Governance can do it. Announce strategy update for given vaults
   /// @param _targets Vault addresses
   /// @param _strategies Strategy addresses
-  function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external onlyGovernance {
+  function announceStrategyUpgrades(address[] calldata _targets, address[] calldata _strategies) external override onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.StrategyUpgrade;
     require(_targets.length == _strategies.length, "wrong arrays");
     for (uint256 i = 0; i < _targets.length; i++) {
@@ -313,7 +313,7 @@ contract Announcer is ControllableV2, IAnnouncer {
 
   /// @notice Only Governance can do it. Announce the stop vault action
   /// @param _vaults Vault addresses
-  function announceVaultStopBatch(address[] calldata _vaults) external onlyGovernance {
+  function announceVaultStopBatch(address[] calldata _vaults) external override onlyGovernance {
     TimeLockOpCodes opCode = TimeLockOpCodes.VaultStop;
     for (uint256 i = 0; i < _vaults.length; i++) {
       require(multiTimeLockIndexes[opCode][_vaults[i]] == 0, "already announced");
@@ -331,7 +331,7 @@ contract Announcer is ControllableV2, IAnnouncer {
   /// @param opCode TimeLockOpCodes uint8 value
   /// @param opHash keccak256(abi.encode()) code with attributes.
   /// @param target Address for multi time lock. Set zero address if not required.
-  function closeAnnounce(TimeLockOpCodes opCode, bytes32 opHash, address target) external onlyGovernance {
+  function closeAnnounce(TimeLockOpCodes opCode, bytes32 opHash, address target) external override onlyGovernance {
     clearAnnounce(opHash, opCode, target);
     emit AnnounceClosed(opHash);
   }
