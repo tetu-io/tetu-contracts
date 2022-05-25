@@ -256,6 +256,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     try ITetuSwapPair(pair).fee() returns (uint fee) {
       return fee;
     } catch Error(string memory /*reason*/) {
+    } catch Panic(uint /*errorCode*/) {
     } catch (bytes memory /*lowLevelData*/) {
     }
     return 30;

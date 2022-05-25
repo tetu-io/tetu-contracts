@@ -18,10 +18,11 @@ import "../third_party/uniswap/IUniswapV2Factory.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/IERC20Name.sol";
 import "../swap/libraries/Math.sol";
+import "../swap/interfaces/ITetuSwapPair.sol";
 
 
-/// @title Utility contract for using on website UI and other integrations
-/// @author belbix
+/// @title Utility contract for using on website UI and other integrations (like MultiSwap2)
+/// @author belbix, bogdoslav
 contract ContractUtils {
 
   struct LpData {
@@ -107,7 +108,7 @@ contract ContractUtils {
   }
 
   /// @dev Used for MultiSwap2
-  function loadPairReserves(address[] memory pairs)
+  function loadPairsReserves(address[] memory pairs)
   external view returns (ReservesData[] memory data) {
     uint len = pairs.length;
     data = new ReservesData[](len);
@@ -121,6 +122,29 @@ contract ContractUtils {
         data[i] = ReservesData({reserve0:0, reserve1:0});
       }
     }
+  }
+
+  /// @dev Used for MultiSwap2
+  function loadPairsFees(address[] memory pairs)
+  external view returns (uint16[] memory fees) {
+    uint len = pairs.length;
+    fees = new uint16[](len);
+
+    for (uint i = 0; i < len; i++) {
+      fees[i] = uint16(_getTetuSwapFee(pairs[i]));
+    }
+  }
+
+  /// @dev returns fee for tetuswap or default uniswap v2 fee for other swaps
+  function _getTetuSwapFee(address pair)
+  internal view returns (uint) {
+    try ITetuSwapPair(pair).fee() returns (uint fee) {
+      return fee;
+    } catch Error(string memory /*reason*/) {
+    } catch Panic(uint /*errorCode*/) {
+    } catch (bytes memory /*lowLevelData*/) {
+    }
+    return 30;
   }
 
 }
