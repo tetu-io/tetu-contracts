@@ -34,7 +34,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.4.2";
+  string public constant VERSION = "1.4.3";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -278,6 +278,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address[] memory _keyTokens = keyTokens;
     for (uint256 i = 0; i < _keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
+        if(token == _keyTokens[i]) {
+          continue;
+        }
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
 
         if (arrayContains(usedLps, lp)) {
