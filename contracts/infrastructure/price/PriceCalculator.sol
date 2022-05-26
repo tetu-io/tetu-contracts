@@ -275,9 +275,10 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address largestKeyToken = address(0);
     uint256 largestPlatformIdx = 0;
     address lpAddress = address(0);
-    for (uint256 i = 0; i < keyTokens.length; i++) {
+    address[] memory _keyTokens = keyTokens;
+    for (uint256 i = 0; i < _keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, keyTokens[i]);
+        (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
 
         if (arrayContains(usedLps, lp)) {
           continue;
@@ -285,7 +286,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
         if (poolSize > largestLpSize) {
           largestLpSize = poolSize;
-          largestKeyToken = keyTokens[i];
+          largestKeyToken = _keyTokens[i];
           largestPlatformIdx = j;
           lpAddress = lp;
         }
