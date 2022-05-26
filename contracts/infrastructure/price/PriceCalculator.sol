@@ -29,7 +29,7 @@ import "../../third_party/balancer/IBVault.sol";
 pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
-/// @author belbix
+/// @author belbix, bogdoslav
 contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
@@ -114,7 +114,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
-    // example amBTC/renBTC pool -> wtcb
+    // example amBTC/renBTC pool -> wbtc
     if (replacementTokens[token] != address(0)) {
       token = replacementTokens[token];
     }
@@ -175,11 +175,23 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     string memory name = pair.name();
 
     for (uint256 i = 0; i < swapFactories.length; i++) {
-      if (isEqualString(name, swapLpNames[i])) {
+      if (_isStringStartsWith(name, swapLpNames[i])) {
         return checkFactory(pair, swapFactories[i]);
       }
     }
     return false;
+  }
+
+  function _isStringStartsWith(string memory str, string memory prefix)
+  internal pure returns (bool){
+    bytes memory s = bytes(str);
+    bytes memory p = bytes(prefix);
+    uint len = p.length;
+    if (s.length < len) return false; // string length less than expected prefix
+    for (uint i = 0; i < len; ++i) {
+      if (s[i] != p[i]) return false;
+    }
+    return true;
   }
 
   function isIronPair(address token) public view returns (bool) {
@@ -263,13 +275,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address largestKeyToken = address(0);
     uint256 largestPlatformIdx = 0;
     address lpAddress = address(0);
-    address[] memory _keyTokens = keyTokens;
-    for (uint256 i = 0; i < _keyTokens.length; i++) {
+    for (uint256 i = 0; i < keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        if(token == _keyTokens[i]) {
-          continue;
-        }
-        (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
+        (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, keyTokens[i]);
 
         if (arrayContains(usedLps, lp)) {
           continue;
@@ -277,7 +285,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
         if (poolSize > largestLpSize) {
           largestLpSize = poolSize;
-          largestKeyToken = _keyTokens[i];
+          largestKeyToken = keyTokens[i];
           largestPlatformIdx = j;
           lpAddress = lp;
         }
