@@ -71,6 +71,14 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
       timeout: 99999999,
+      chains: {
+        137: {
+          hardforkHistory: {
+            berlin: 10000000,
+            london: 20000000,
+          },
+        },
+      },
       gas: argv.hardhatChainId === 1 ? 19_000_000 :
         argv.hardhatChainId === 137 ? 19_000_000 :
           argv.hardhatChainId === 250 ? 11_000_000 :

@@ -158,7 +158,7 @@ contract LiquidityBalancer is Controllable {
     uint256 tokenReserve,
     uint256 oppositeReserve,
     uint256 targetPrice
-  ) internal pure returns (uint256) {
+  ) public pure returns (uint256) {
     if (targetPrice == 0) {
       return 0;
     }
@@ -176,7 +176,7 @@ contract LiquidityBalancer is Controllable {
     uint256 tokenReserve,
     uint256 oppositeReserve,
     uint256 inputAmount
-  ) internal pure returns (uint256){
+  ) public pure returns (uint256){
     if (tokenReserve == 0 && inputAmount == 0) {
       return 0;
     }

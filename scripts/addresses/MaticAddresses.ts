@@ -239,6 +239,11 @@ export class MaticAddresses {
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
   public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
 
+  // MESHSWAP
+  public static MESH_FACTORY = '0x9f3044f7f9fc8bc9ed615d54845b4577b833282d'.toLowerCase();
+  public static MESH_ROUTER = '0x10f4a785f458bc144e3706575924889954946639'.toLowerCase();
+  public static TETU_MESH_MESH_LP = '0xcf40352253de7a0155d700a937Dc797D681c9867'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
