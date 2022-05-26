@@ -71,6 +71,10 @@ export class MaticAddresses {
   public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
   public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
+  public static SAND_TOKEN = '0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683'.toLowerCase();
+  public static tetuBAL_TOKEN = '0x7fc9e0aa043787bfad28e29632ada302c790ce33'.toLowerCase();
+  public static MESH_TOKEN = '0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a'.toLowerCase();
+  public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -158,6 +162,10 @@ export class MaticAddresses {
   public static CURVE_aTricrypto3_POOL = "0x1d8b86e3d88cdb2d34688e87e72f388cb541b7c8".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
+
+  // MeshSwap
+  public static MESH_FACTORY = "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d".toLowerCase();
+  public static MESH_tetuMESH_POOL = "0xcf40352253de7a0155d700a937Dc797D681c9867".toLowerCase();
 
   // HERMES
   /*

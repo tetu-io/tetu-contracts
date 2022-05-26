@@ -29,12 +29,12 @@ import "../../third_party/balancer/IBVault.sol";
 pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
-/// @author belbix
+/// @author belbix, bogdoslav
 contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.4.2";
+  string public constant VERSION = "1.4.3";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -114,7 +114,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
-    // example amBTC/renBTC pool -> wtcb
+    // example amBTC/renBTC pool -> wbtc
     if (replacementTokens[token] != address(0)) {
       token = replacementTokens[token];
     }
@@ -175,11 +175,23 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     string memory name = pair.name();
 
     for (uint256 i = 0; i < swapFactories.length; i++) {
-      if (isEqualString(name, swapLpNames[i])) {
+      if (_isStringStartsWith(name, swapLpNames[i])) {
         return checkFactory(pair, swapFactories[i]);
       }
     }
     return false;
+  }
+
+  function _isStringStartsWith(string memory str, string memory prefix)
+  internal pure returns (bool){
+    bytes memory s = bytes(str);
+    bytes memory p = bytes(prefix);
+    uint len = p.length;
+    if (s.length < len) return false; // string length less than expected prefix
+    for (uint i = 0; i < len; ++i) {
+      if (s[i] != p[i]) return false;
+    }
+    return true;
   }
 
   function isIronPair(address token) public view returns (bool) {
