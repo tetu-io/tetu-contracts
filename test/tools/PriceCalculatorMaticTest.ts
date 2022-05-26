@@ -42,6 +42,62 @@ describe("Price calculator matic tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
+  it("calculate MESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.MESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it("calculate tetuMESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.tetuMESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it("calculate tetuMESH-MESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.MESH_tetuMESH_POOL, MaticAddresses.USDC_TOKEN);
+    console.log('price', price);
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it.skip("calculate tetuBal/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    // const priceLp = await PriceCalculatorUtils.getFormattedPrice(calculator,
+    //     '0x7EB878107Af0440F9E776f999CE053D277c8Aca8'.toLowerCase(),
+    //     MaticAddresses.USDC_TOKEN);
+
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+
+    // expect(price).is.approximately(priceLp, priceLp/100)
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it.skip("calculate Unknown 80BAL20WETH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
 
   it("calculate eth/usdc price and check", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {

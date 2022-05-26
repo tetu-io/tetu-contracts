@@ -30,12 +30,12 @@ import "../../third_party/dystopia/IDystopiaFactory.sol";
 pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
-/// @author belbix
+/// @author belbix, bogdoslav
 contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.5.1";
+  string public constant VERSION = "1.5.2";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -118,7 +118,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
-    // example amBTC/renBTC pool -> wtcb
+    // example amBTC/renBTC pool -> wbtc
     if (replacementTokens[token] != address(0)) {
       token = replacementTokens[token];
     }
@@ -265,7 +265,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address[] memory _keyTokens = keyTokens;
     for (uint256 i = 0; i < _keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        if (token == _keyTokens[i]) {
+        if(token == _keyTokens[i]) {
           continue;
         }
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
