@@ -39,6 +39,12 @@ const argv = require('yargs/yargs')()
     networkScanKey: {
       type: "string",
     },
+    networkScanKeyMatic: {
+      type: "string",
+    },
+    networkScanKeyFtm: {
+      type: "string",
+    },
     privateKey: {
       type: "string",
       default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
@@ -131,7 +137,12 @@ export default {
     },
   },
   etherscan: {
-    apiKey: argv.networkScanKey
+    //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
+    apiKey: {
+      mainnet: argv.networkScanKey,
+      polygon: argv.networkScanKeyMatic || argv.networkScanKey,
+      opera: argv.networkScanKeyFtm || argv.networkScanKey
+    },
   },
   solidity: {
     compilers: [

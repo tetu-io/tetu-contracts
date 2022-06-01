@@ -104,7 +104,7 @@ describe("Contract utils tests", function () {
   it("loadPairReserves", async() =>{
     const pairs = await util.loadPairsUniswapV2(uniswap2factory, 0, 2);
 
-    const reserves = await util.loadPairReserves([pairs[0].lp, pairs[1].lp]);
+    const reserves = await util.loadPairsReserves([pairs[0].lp, pairs[1].lp]);
     expect(reserves.length).is.eq(2);
 
     const pairContract0 = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', pairs[0].lp) as IUniswapV2Pair;
@@ -117,9 +117,9 @@ describe("Contract utils tests", function () {
     expect(reserves[1][0]).is.eq(reserves1[0]);
     expect(reserves[1][1]).is.eq(reserves1[1]);
 
-    await expect(util.loadPairReserves([ethers.constants.AddressZero])).to.be.reverted;
+    await expect(util.loadPairsReserves([ethers.constants.AddressZero])).to.be.reverted;
     // call to wrong pair contract address
-    const nilReserves = await util.loadPairReserves([uniswap2factory])
+    const nilReserves = await util.loadPairsReserves([uniswap2factory])
     expect(nilReserves[0][0]).is.eq(0);
     expect(nilReserves[0][1]).is.eq(0);
   });

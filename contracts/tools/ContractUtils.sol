@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/IERC20Metadata.sol";
+import "../openzeppelin/Address.sol";
 import "../third_party/uniswap/IUniswapV2Factory.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../third_party/IERC20Name.sol";
@@ -24,6 +25,7 @@ import "../swap/interfaces/ITetuSwapPair.sol";
 /// @title Utility contract for using on website UI and other integrations (like MultiSwap2)
 /// @author belbix, bogdoslav
 contract ContractUtils {
+  using Address for address;
 
   struct LpData {
     address lp;
@@ -52,6 +54,22 @@ contract ContractUtils {
       result[i] = IERC20Name(tokens[i]).symbol();
     }
     return result;
+  }
+
+  // @note Some token contract addresses was destructed or wrong. This function does not revert on such addresses
+  function erc20SymbolsSafe(address[] memory tokens) external view returns (string[] memory result) {
+   result = new string[](tokens.length);
+    for (uint i = 0; i < tokens.length; i++) {
+      address token = tokens[i];
+      if (token.isContract()) {
+        try IERC20Name(token).symbol() returns (string memory symbol) {
+          result[i] = symbol;
+        } catch Error(string memory /*reason*/) {
+        } catch Panic(uint /*errorCode*/) {
+        } catch (bytes memory /*lowLevelData*/) {
+        }
+      }
+    }
   }
 
   function erc20Decimals(address[] memory tokens) external view returns (uint8[] memory) {
