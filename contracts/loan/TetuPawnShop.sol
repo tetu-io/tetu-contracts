@@ -207,6 +207,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     _takeDeposit(pos.id);
     _transferCollateral(pos.collateral, msg.sender, address(this));
     emit PositionOpened(
+      msg.sender,
       pos.id,
       _collateralToken,
       _collateralAmount,
@@ -233,7 +234,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     _transferCollateral(pos.collateral, address(this), pos.borrower);
     _returnDeposit(id);
     pos.open = false;
-    emit PositionClosed(id);
+    emit PositionClosed(msg.sender, id);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -262,7 +263,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     _endPosition(pos);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
-    emit PositionClaimed(id);
+    emit PositionClaimed(msg.sender, id);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -278,7 +279,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, pos.execution.lender, toSend);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
-    emit PositionRedeemed(id);
+    emit PositionRedeemed(msg.sender, id);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -300,7 +301,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     _executeBid(pos, bidId, _bid.amount, address(this), _bid.lender);
     lenderOpenBids[_bid.lender][pos.id] = 0;
     _bid.open = false;
-    emit AuctionBidAccepted(posId, _bid.id);
+    emit AuctionBidAccepted(msg.sender, posId, _bid.id);
   }
 
   /// @inheritdoc ITetuPawnShop
