@@ -13,7 +13,7 @@ export class MaticCoreAddresses {
     '0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454', // ps vault
     '0x7AD5935EA295c4E743e4f2f5B4CDA951f41223c2', // fund keeper
     '0xC5b3aF6FB4b2ff14642e337F41B86C9494f70b43', // vault controller
-    '0x77E3012dD1d768B4897AB20062722c078B388297', // pawnshop
+    '0xc12C8b002ca3Dc934e169bfd91369546544869C4', // pawnshop
     '0x684d8c187be836171a1Af8D533e4724893031828', // swapFactory
     '0xBCA055F25c3670fE0b1463e8d470585Fe15Ca819', // swapRouter
     '0x690a41ab256046dF39faDd3f32F6d26cB4490bed', // rewardCalculator

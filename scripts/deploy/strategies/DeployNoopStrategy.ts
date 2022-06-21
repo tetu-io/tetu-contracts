@@ -2,11 +2,10 @@ import {ethers} from "hardhat";
 import {DeployerUtils} from "../DeployerUtils";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {IStrategy} from "../../../typechain";
-import {FtmAddresses} from "../../addresses/FtmAddresses";
 
-const UNDERLYING = FtmAddresses.FUSD_TOKEN;
-const VAULT = '0x572749CD713cBfeacCF06F0c83B68e8c1C10A248';
-const PLATFORM = 1;
+const UNDERLYING = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
+const VAULT = '0x3B703E4301A56128f45fA17304eF9e1B5e0f3523';
+const PLATFORM = 36;
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
