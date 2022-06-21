@@ -6,9 +6,9 @@ import {RunHelper} from "../../../utils/tools/RunHelper";
 import {writeFileSync} from "fs";
 
 const REWARDS_DURATION = 60 * 60 * 24 * 7; // 7 days
-const UNDERLYING = MaticAddresses.TETU_MESH_MESH_LP;
-const NAME = 'TETU_ETH-BAL_tetuBAL_BPT';
-const SYMBOL = 'xETH-BAL_tetuBAL_BPT';
+const UNDERLYING = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
+const NAME = 'TETU_ETH-BAL_tetuBAL_BPT_V3';
+const SYMBOL = 'xETH-BAL_tetuBAL_BPT_V3';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
