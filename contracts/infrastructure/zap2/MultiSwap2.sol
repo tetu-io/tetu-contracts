@@ -140,7 +140,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     }
 
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this)) - amountOutBefore;
-    uint minAmountOut = swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
+    uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
     if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
 
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
@@ -277,17 +277,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
    */
   function _translateToIERC20(IAsset asset) internal view returns (IERC20) {
     return _isETH(asset) ? IERC20(WETH) : _asIERC20(asset);
-  }
-
-  /**
-   * @dev Same as `_translateToIERC20(IAsset)`, but for an entire array.
-   */
-  function _translateToIERC20(IAsset[] memory assets) internal view returns (IERC20[] memory) {
-    IERC20[] memory tokens = new IERC20[](assets.length);
-    for (uint256 i = 0; i < assets.length; ++i) {
-      tokens[i] = _translateToIERC20(assets[i]);
-    }
-    return tokens;
   }
 
   /**

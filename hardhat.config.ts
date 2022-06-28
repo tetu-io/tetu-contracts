@@ -10,7 +10,7 @@ import "@typechain/hardhat";
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "hardhat-tracer";
-// import "hardhat-etherscan-abi";
+import "hardhat-etherscan-abi";
 import "solidity-coverage"
 import "hardhat-abi-exporter"
 

@@ -4,7 +4,7 @@
 // Then run at fork - to test swaps itself
 // Do not forget to update fork block to have same state with network
 
-import chai from "chai";
+import chai, {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
   MultiSwap2,
@@ -23,6 +23,8 @@ import testJson from './json/MultiSwap2TestData.json';
 import hardhatConfig from "../../hardhat.config";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TimeUtils} from "../TimeUtils";
+import {parseUnits} from "ethers/lib/utils";
+import {beforeEach} from "mocha";
 
 
 // const {expect} = chai;
@@ -68,6 +70,7 @@ describe("MultiSwap2 base tests", function () {
   let core: CoreAddresses;
   let multiSwap2: MultiSwap2;
   let usdc: string;
+
   const testData = testJson.testData as unknown as ITestData;
 
   before(async function () {
@@ -102,16 +105,77 @@ describe("MultiSwap2 base tests", function () {
 
   })
 
-  beforeEach(async function () {
+  // TODO remove only
+  describe.only("errors", async () => {
+
+    const getDeadline = () => {
+      return Math.floor(Date.now() / 1000) + 60 * 30;
+    }
+
+    const getSwap = () => {
+      return Object.assign({}, testData['100000 USDC->WMATIC']);
+    }
+
+    it("MSForbidden", async () => {
+      await expect(multiSwap2.salvage(signer.address, 1))
+      .to.be.revertedWith('MSForbidden');
+    });
+
+    it("MSSameTokens", async () => {
+      const swap = getSwap();
+      swap.swapData.tokenOut = swap.swapData.tokenIn;
+      await expect(multiSwap2.multiSwap(
+          swap.swapData,
+          swap.swaps,
+          swap.tokenAddresses,
+          _SLIPPAGE_DENOMINATOR / 50,
+          getDeadline(),
+      ))
+      .to.be.revertedWith('MSSameTokens');
+    });
+
+    it("MSZeroAmount", async () => {
+      const swap = getSwap();
+      swap.swapData.swapAmount = '0';
+      await expect(multiSwap2.multiSwap(
+          swap.swapData,
+          swap.swaps,
+          swap.tokenAddresses,
+          _SLIPPAGE_DENOMINATOR / 50,
+          getDeadline(),
+      ))
+      .to.be.revertedWith('MSZeroAmount');
+    });
+
   });
 
-  afterEach(async function () {
+
+  it("salvage", async () => {
+    const amount = parseUnits('1000', 6)
+    await TokenUtils.getToken(usdc, signer.address, amount);
+    await TokenUtils.transfer(usdc, signer, multiSwap2.address, amount.toString());
+
+
+    const gov = await DeployerUtils.impersonate();
+    const usdBefore = await TokenUtils.balanceOf(usdc, gov.address);
+    console.log('usdBefore', usdBefore.toString());
+    const tx = await multiSwap2.connect(gov).salvage(usdc, amount);
+    await tx.wait(1);
+    const usdAfter = await TokenUtils.balanceOf(usdc, gov.address);
+    console.log('usdAfter', usdAfter.toString());
+
+    const diff = usdAfter.sub(usdBefore);
+    console.log('diff', diff.toString());
+
+    expect(diff).is.eq(amount, 'Amount not salvaged')
+
   });
 
   it("do multi swaps", async () => {
     const deadline = MaxUint256;
     const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
-    for (const key of Object.keys(testData)) {
+    // for (const key of Object.keys(testData)) {
+    for (const key of Object.keys(testData).slice(0, 3)) { // TODO remove slice
       console.log('\n-----------------------');
       console.log(key);
       console.log('-----------------------');
@@ -146,7 +210,6 @@ describe("MultiSwap2 base tests", function () {
 
       await TimeUtils.rollback(snapshot);
 
-      // TODO check slippage 0
     }
 
 
