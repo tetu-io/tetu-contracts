@@ -14,19 +14,22 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
+import "hardhat/console.sol";
+
 contract ERC20TransferFee is ERC20PresetMinterPauser {
   bytes32 public constant COLLECTOR_ROLE = keccak256("COLLECTOR_ROLE");
-  uint public constant FEE_RATE = 100; // 1% , 1000 = 0,1% ...
+  uint public constant FEE_RATE = 100; //  100 = 1% , 1000 = 0,1% ...
 
   constructor() ERC20PresetMinterPauser("Transfer Fee", "TRFEE")  {
     _setupRole(COLLECTOR_ROLE, _msgSender());
   }
 
   function _transferWithFee(address from, address recipient, uint amount) internal {
+    console.log('_transferWithFee from, recipient, amount', from, recipient, amount);
     uint fee = amount / FEE_RATE;
-    _transfer(_msgSender(), recipient, amount - fee);
+    _transfer(from, recipient, amount - fee);
     address collector = getRoleMember(COLLECTOR_ROLE, 0);
-    _transfer(_msgSender(),  collector, fee);
+    _transfer(from,  collector, fee);
   }
 
   /**

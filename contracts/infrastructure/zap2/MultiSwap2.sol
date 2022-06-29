@@ -102,8 +102,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
       revert MSTransferFeesForbiddenForInputToken();
 
-    uint amountOutBefore = IERC20(swapData.tokenOut).balanceOf(address(this));
-
     // These variables could be declared inside the loop, but that causes the compiler to allocate memory on each
     // loop iteration, increasing gas costs.
     IBVault.BatchSwapStep memory swapStep;
@@ -139,13 +137,23 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
       previousTokenOut = swapTokenOut;
     }
 
-    amountOut = IERC20(swapData.tokenOut).balanceOf(address(this)) - amountOutBefore;
+    amountOut = IERC20(swapData.tokenOut).balanceOf(address(this));
+    console.log('swapData.tokenOut', swapData.tokenOut);
+    console.log('amountOut', amountOut);
     uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
-    if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
 
-    IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
-    if (amountOut > IERC20(swapData.tokenOut).balanceOf(msg.sender))
-      revert MSTransferFeesForbiddenForOutputToken();
+    { // avoid stack to deep
+      uint balanceBefore = IERC20(swapData.tokenOut).balanceOf(msg.sender);
+      console.log('balanceBefore', balanceBefore);
+      IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
+      uint balanceAfter = IERC20(swapData.tokenOut).balanceOf(msg.sender);
+      console.log('balanceAfter', balanceAfter);
+
+      if (amountOut > (balanceAfter - balanceBefore))
+        revert MSTransferFeesForbiddenForOutputToken();
+    }
+
+    if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
 
     emit MultiSwap(swapData.tokenIn, swapData.swapAmount, swapData.tokenOut, amountOut);
   }

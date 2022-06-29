@@ -8,6 +8,7 @@ import chai, {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
   MultiSwap2,
+  ERC20TransferFee,
 } from "../../typechain";
 import {ethers, network, config} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
@@ -69,6 +70,7 @@ describe("MultiSwap2 base tests", function () {
   let core: CoreAddresses;
   let multiSwap2: MultiSwap2;
   let usdc: string;
+  let snapshotForEach: string;
 
   const testData = testJson.testData as unknown as ITestData;
 
@@ -104,6 +106,14 @@ describe("MultiSwap2 base tests", function () {
 
   })
 
+  beforeEach(async function () {
+    snapshotForEach = await TimeUtils.snapshot();
+  });
+
+  afterEach(async function () {
+    await TimeUtils.rollback(snapshotForEach);
+  });
+
   describe("errors", async () => {
 
     const getDeadline = () => {
@@ -126,7 +136,7 @@ describe("MultiSwap2 base tests", function () {
           swap.swapData,
           swap.swaps,
           swap.tokenAddresses,
-          _SLIPPAGE_DENOMINATOR / 50,
+          _SLIPPAGE_DENOMINATOR / 20,
           deadline ?? getDeadline(),
       ))
       .to.be.revertedWith(reason);
@@ -224,6 +234,31 @@ describe("MultiSwap2 base tests", function () {
       )
       .to.be.revertedWith('MSForbidden');
     });
+
+
+    it("MSTransferFeesForbiddenForOutputToken", async () => {
+      const signerERC = await DeployerUtils.impersonate();
+      const tf = await DeployerUtils.deployContract(signerERC, 'ERC20TransferFee') as ERC20TransferFee;
+
+      const swap = getSwap();
+      const amountToMint = BigNumber.from(swap.returnAmount);
+      await tf.mint(multiSwap2.address, amountToMint);
+      swap.swapData.tokenOut = tf.address
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSTransferFeesForbiddenForOutputToken');
+    });
+
+    it("MSTransferFeesForbiddenForInputToken", async () => {
+      const swap = getSwap();
+      const tf = await DeployerUtils.deployContract(signer, 'ERC20TransferFee') as ERC20TransferFee;
+      const amount = BigNumber.from(swap.swapAmount);
+      const amountToMint = amount.mul(2);
+      await tf.mint(signer.address, amountToMint);
+      swap.swapData.tokenIn = tf.address
+      await TokenUtils.approve(swap.swapData.tokenIn, signer, multiSwap2.address, amount.toString());
+      await expectSwapRevert(swap,'MSTransferFeesForbiddenForInputToken');
+    });
+
 
   });
 
