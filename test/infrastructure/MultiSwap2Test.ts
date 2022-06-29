@@ -202,6 +202,13 @@ describe("MultiSwap2 base tests", function () {
       await expectSwapRevert(swap,'MSSameTokens');
     });
 
+    it("MSSameTokensInSwap", async () => {
+      const swap = getSwap();
+      swap.swaps[0].assetOutIndex = swap.swaps[0].assetInIndex ;
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSSameTokensInSwap');
+    });
+
 
     it("MSWrongTokensUniswap", async () => {
       const swap = getSwap();

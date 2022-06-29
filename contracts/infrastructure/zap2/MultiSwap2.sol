@@ -54,6 +54,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   error MSZeroWETH();
   error MSZeroBalancerVault();
   error MSSameTokens();
+  error MSSameTokensInSwap();
   error MSZeroAmount();
   error MSWrongTokensUniswap();
   error MSUnknownAmountInFirstSwap();
@@ -126,7 +127,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
         swapAmount = swapStep.amount;
       }
 
-      if (swapTokenIn == swapTokenOut) revert MSSameTokens();
+      if (swapTokenIn == swapTokenOut) revert MSSameTokensInSwap();
 
       console.logBytes32(swapStep.poolId);// TODO remove
 
