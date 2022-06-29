@@ -55,18 +55,13 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   error MSZeroBalancerVault();
   error MSSameTokens();
   error MSZeroAmount();
-  error MSZeroAmountBalancer();
-  error MSSameTokensBalancer();
   error MSWrongTokensUniswap();
   error MSUnknownAmountInFirstSwap();
   error MSDeadline();
   error MSTransferFeesForbiddenForInputToken();
   error MSTransferFeesForbiddenForOutputToken();
   error MSMalconstructedMultiSwap();
-  error MSUnknownAmountInSwap();
   error MSAmountOutLessThanRequired();
-  error MSInsufficientInputAmount();
-  error MSInsufficientLiquidity();
   error MSForbidden();
 
 
@@ -125,12 +120,13 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
       uint swapAmount;
       if (swapStep.amount == 0) {
-        if (previousTokenOut != swapTokenIn) revert MSMalconstructedMultiSwap();
-        if (previousAmountOut == 0) revert MSUnknownAmountInSwap();
+        if ((previousTokenOut != swapTokenIn) || (previousAmountOut == 0)) revert MSMalconstructedMultiSwap();
         swapAmount = previousAmountOut;
       } else {
         swapAmount = swapStep.amount;
       }
+
+      if (swapTokenIn == swapTokenOut) revert MSSameTokens();
 
       console.logBytes32(swapStep.poolId);// TODO remove
 
@@ -178,12 +174,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     uint swapAmount
   )
   internal returns (uint amountOut) {
-
-    // This revert reason is for consistency with `batchSwap`: an equivalent `swap` performed using that function
-    // would result in this error.
-    if (swapAmount == 0) revert MSZeroAmountBalancer();
-    if (tokenIn == tokenOut) revert MSSameTokensBalancer();
-
     // Initializing each struct field one-by-one uses less gas than setting all at once.
     IBVault.FundManagement memory funds;
     funds.sender = address(this);
@@ -247,8 +237,6 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   /// @dev given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
   function _getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint fee)
   internal pure returns (uint amountOut) {
-    if (amountIn == 0) revert MSInsufficientInputAmount();
-    if (reserveIn == 0 || reserveOut == 0) revert MSInsufficientLiquidity();
     uint amountInWithFee = amountIn * (_PRECISION_FEE - fee);
     uint numerator = amountInWithFee * reserveOut;
     uint denominator = reserveIn * _PRECISION_FEE + amountInWithFee;

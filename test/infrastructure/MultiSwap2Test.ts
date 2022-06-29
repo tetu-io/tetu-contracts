@@ -115,6 +115,12 @@ describe("MultiSwap2 base tests", function () {
       return JSON.parse(JSON.stringify(testData['100000 USDC->WMATIC']));
     }
 
+    async function prepareTokens(swap: ISwapInfo) {
+      const amount = BigNumber.from(swap.swapAmount)
+      await TokenUtils.getToken(swap.tokenIn, signer.address, amount);
+      await TokenUtils.approve(swap.tokenIn, signer, multiSwap2.address, amount.toString());
+    }
+
     const expectSwapRevert = async (swap: ISwapInfo, reason: string, deadline?: number) => {
       return expect(multiSwap2.multiSwap(
           swap.swapData,
@@ -172,7 +178,44 @@ describe("MultiSwap2 base tests", function () {
 
     it("MSDeadline", async () => {
       const swap = getSwap();
-      await expectSwapRevert(swap,'MSDeadline', 1);
+      await expectSwapRevert(swap,'MSDeadline', 0);
+    });
+
+    it("MSMalconstructedMultiSwap", async () => {
+      const swap = getSwap();
+      swap.swaps[3].assetInIndex = 0;
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSMalconstructedMultiSwap');
+    });
+
+    it("MSAmountOutLessThanRequired", async () => {
+      const swap = getSwap();
+      swap.swapData.returnAmount = BigNumber.from(swap.swapData.returnAmount).mul(2).toString();
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSAmountOutLessThanRequired');
+    });
+
+    it("MSSameTokens", async () => {
+      const swap = getSwap();
+      swap.swapData.tokenOut = swap.swapData.tokenIn;
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSSameTokens');
+    });
+
+
+    it("MSWrongTokensUniswap", async () => {
+      const swap = getSwap();
+      swap.swaps[3].assetOutIndex = 0;
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSWrongTokensUniswap');
+    });
+
+
+    it("MSForbidden", async () => {
+      return expect(
+          multiSwap2.salvage(usdc,1)
+      )
+      .to.be.revertedWith('MSForbidden');
     });
 
   });
