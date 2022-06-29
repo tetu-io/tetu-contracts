@@ -20,11 +20,10 @@ import {MaxUint256} from '@ethersproject/constants';
 
 
 import testJson from './json/MultiSwap2TestData.json';
-import hardhatConfig from "../../hardhat.config";
+// import hardhatConfig from "../../hardhat.config";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TimeUtils} from "../TimeUtils";
 import {parseUnits} from "ethers/lib/utils";
-import {beforeEach} from "mocha";
 
 
 // const {expect} = chai;
@@ -63,7 +62,7 @@ interface ISwapData {
 
 interface ITestData {
   [key: string]: ISwapInfo
-};
+}
 
 describe("MultiSwap2 base tests", function () {
   let signer: SignerWithAddress;
@@ -105,46 +104,75 @@ describe("MultiSwap2 base tests", function () {
 
   })
 
-  // TODO remove only
-  describe.only("errors", async () => {
+  describe("errors", async () => {
 
     const getDeadline = () => {
       return Math.floor(Date.now() / 1000) + 60 * 30;
     }
 
     const getSwap = () => {
-      return Object.assign({}, testData['100000 USDC->WMATIC']);
+      // return Object.assign({}, testData['100000 USDC->WMATIC']);
+      return JSON.parse(JSON.stringify(testData['100000 USDC->WMATIC']));
     }
 
-    it("MSForbidden", async () => {
-      await expect(multiSwap2.salvage(signer.address, 1))
-      .to.be.revertedWith('MSForbidden');
+    const expectSwapRevert = async (swap: ISwapInfo, reason: string, deadline?: number) => {
+      return expect(multiSwap2.multiSwap(
+          swap.swapData,
+          swap.swaps,
+          swap.tokenAddresses,
+          _SLIPPAGE_DENOMINATOR / 50,
+          deadline ?? getDeadline(),
+      ))
+      .to.be.revertedWith(reason);
+    }
+
+    it("MSZeroWETH", async () => {
+      return expect(
+          DeployerUtils.deployContract(
+              signer,
+              'MultiSwap2',
+              core.controller,
+              ethers.constants.AddressZero,
+              MaticAddresses.BALANCER_VAULT
+          )
+      )
+      .to.be.revertedWith('MSZeroWETH');
+    });
+
+    it("MSZeroBalancerVault", async () => {
+      return expect(
+          DeployerUtils.deployContract(
+              signer,
+              'MultiSwap2',
+              core.controller,
+              await DeployerUtils.getNetworkTokenAddress(),
+              ethers.constants.AddressZero,
+          )
+      )
+      .to.be.revertedWith('MSZeroBalancerVault');
     });
 
     it("MSSameTokens", async () => {
       const swap = getSwap();
       swap.swapData.tokenOut = swap.swapData.tokenIn;
-      await expect(multiSwap2.multiSwap(
-          swap.swapData,
-          swap.swaps,
-          swap.tokenAddresses,
-          _SLIPPAGE_DENOMINATOR / 50,
-          getDeadline(),
-      ))
-      .to.be.revertedWith('MSSameTokens');
+      await expectSwapRevert(swap, 'MSSameTokens');
     });
 
     it("MSZeroAmount", async () => {
       const swap = getSwap();
       swap.swapData.swapAmount = '0';
-      await expect(multiSwap2.multiSwap(
-          swap.swapData,
-          swap.swaps,
-          swap.tokenAddresses,
-          _SLIPPAGE_DENOMINATOR / 50,
-          getDeadline(),
-      ))
-      .to.be.revertedWith('MSZeroAmount');
+      await expectSwapRevert(swap,'MSZeroAmount');
+    });
+
+    it("MSUnknownAmountInFirstSwap", async () => {
+      const swap = getSwap();
+      swap.swaps[0].amount = '0';
+      await expectSwapRevert(swap,'MSUnknownAmountInFirstSwap');
+    });
+
+    it("MSDeadline", async () => {
+      const swap = getSwap();
+      await expectSwapRevert(swap,'MSDeadline', 1);
     });
 
   });

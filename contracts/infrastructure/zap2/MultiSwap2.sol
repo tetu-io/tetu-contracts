@@ -35,7 +35,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint256 private constant  _SLIPPAGE_PRECISION = 10000;
   uint256 private constant  _PRECISION_FEE = 10000;
   bytes32 private constant _UNISWAP_MASK = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
@@ -47,6 +47,9 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   // multiple reasons: it is cheap to pass as a calldata argument, it is a known invalid token and non-contract, and
   // it is an address Pools cannot register as a token.
   address private constant _ETH = address(0);
+
+  event MultiSwap(address tokenIn, uint amountIn, address tokenOut, uint amountOut);
+  event Salvage(address sender, address token, uint amount);
 
   error MSZeroWETH();
   error MSZeroBalancerVault();
@@ -146,6 +149,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
     if (amountOut > IERC20(swapData.tokenOut).balanceOf(msg.sender))
       revert MSTransferFeesForbiddenForOutputToken();
+
+    emit MultiSwap(swapData.tokenIn, swapData.swapAmount, swapData.tokenOut, amountOut);
   }
 
 
@@ -295,6 +300,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   function salvage(address _token, uint _amount) external {
     if (!(_isGovernance(msg.sender) || _isController(msg.sender))) revert MSForbidden();
     IERC20(_token).safeTransfer(msg.sender, _amount);
+    emit Salvage(msg.sender, _token, _amount);
   }
 
 }
