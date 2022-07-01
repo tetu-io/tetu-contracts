@@ -3,8 +3,8 @@ import {DeployerUtils} from "../DeployerUtils";
 import {MultiSwap2} from "../../../typechain";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 
-// Latest: 0xABb67857ad54d5dDebd4280821833611a8C57D14  (with SOR support, slippage fixed)
-// Prev  : 0x8b56D66cCbc34DAd3e8ae214b9aA2BF752dF1041
+// Latest: 0x78043B892E7b3bADdF1A9488129a1063a0aCF7E5  (with SOR support, slippage fixed)
+// Prev  : 0xABb67857ad54d5dDebd4280821833611a8C57D14
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
