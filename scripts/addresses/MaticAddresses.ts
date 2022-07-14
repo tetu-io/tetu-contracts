@@ -71,6 +71,7 @@ export class MaticAddresses {
   public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
   public static SAND_TOKEN = '0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683'.toLowerCase();
+  public static DYST_TOKEN = '0x39aB6574c289c3Ae4d88500eEc792AB5B947A5Eb'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

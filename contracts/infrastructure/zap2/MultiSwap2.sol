@@ -18,7 +18,7 @@ import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/ReentrancyGuard.sol";
 import "../../base/governance/ControllableV2.sol";
 import "../../swap/interfaces/ITetuSwapPair.sol";
-//import "../../third_party/uniswap/IUniswapV2Factory.sol";
+import "../../third_party/dystopia/IPair.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/balancer/IBVault.sol";
@@ -35,11 +35,12 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
   uint256 private constant  _SLIPPAGE_PRECISION = 10000;
   uint256 private constant  _PRECISION_FEE = 10000;
-  bytes32 private constant _UNISWAP_MASK = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
-
+  bytes32 private constant _UNISWAP_MASK  = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
+  bytes32 private constant _DYSTOPIA_MASK = 0x0000000000000000000000000000000000000000ddddddddddddddddddddddd0; // last half-byte - index of uniswap dex
+  address private constant _TETU_FACTORY = 0x684d8c187be836171a1Af8D533e4724893031828;
   address public immutable WETH;
   address public immutable balancerVault;
 
@@ -129,8 +130,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
       console.logBytes32(swapStep.poolId);// TODO remove
 
+      // SWAPPING
       if (_isUniswapPool(swapStep.poolId)) {
         previousAmountOut = _swapUniswap(swapStep, swapTokenIn, swapTokenOut, swapAmount);
+      } else if (_isDystopiaPool(swapStep.poolId)) {
+        previousAmountOut = _swapDystopia(swapStep, swapTokenIn, swapTokenOut, swapAmount);
       } else { // Suppose Balancer pool
         previousAmountOut = _swapBalancer(swapStep, swapTokenIn, swapTokenOut, swapAmount);
       }
@@ -144,10 +148,10 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     { // avoid stack to deep
       uint balanceBefore = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-      console.log('balanceBefore', balanceBefore);
+      console.log('balanceBefore ', balanceBefore);
       IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
       uint balanceAfter = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-      console.log('balanceAfter', balanceAfter);
+      console.log('balanceAfter  ', balanceAfter);
 
       if (amountOut > (balanceAfter - balanceBefore))
         revert MSTransferFeesForbiddenForOutputToken();
@@ -174,6 +178,10 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
   function _isUniswapPool(bytes32 poolId) internal pure returns (bool) {
     return (poolId & _UNISWAP_MASK) == _UNISWAP_MASK;
+  }
+
+  function _isDystopiaPool(bytes32 poolId) internal pure returns (bool) {
+    return (poolId & _DYSTOPIA_MASK) == _DYSTOPIA_MASK;
   }
 
   function _swapBalancer(
@@ -215,6 +223,12 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   internal returns (uint amountOut) {
     IUniswapV2Pair pair = IUniswapV2Pair(_getPoolAddress(swapStep.poolId));
 
+    { // stack too deep
+    address pairFactory = pair.factory();
+    if (pairFactory == _TETU_FACTORY)
+      pair.sync();
+    }
+
     address token0 = pair.token0();
     address token1 = pair.token1();
 
@@ -222,12 +236,36 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
       revert MSWrongTokensUniswap();
 
-    IERC20(tokenIn).safeTransfer(address(pair), swapAmount);
+    tokenIn.safeTransfer(address(pair), swapAmount);
 
     bool reverse = address(tokenIn) == token1;
     (uint amountOut0, uint amountOut1) = _getAmountsOut(pair, swapAmount, reverse);
     pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
     amountOut = reverse ? amountOut0 : amountOut1;
+  }
+
+  function _swapDystopia(
+    IBVault.BatchSwapStep memory swapStep,
+    IERC20 tokenIn,
+    IERC20 tokenOut,
+    uint swapAmount
+  )
+  internal returns (uint amountOut) {
+    IPair pair = IPair(_getPoolAddress(swapStep.poolId));
+
+    address token0 = pair.token0();
+    address token1 = pair.token1();
+
+    if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
+          (token1 == address(tokenIn) && token0 == address(tokenOut))))
+      revert MSWrongTokensUniswap();
+
+    tokenIn.safeTransfer(address(pair), swapAmount);
+
+    amountOut = pair.getAmountOut(swapAmount, address(tokenIn));
+    bool reverse = address(tokenIn) == token1;
+    (uint amountOut0, uint amountOut1) = reverse ? (amountOut, uint(0)) : (uint(0), amountOut);
+    pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
   }
 
   function _getAmountsOut(IUniswapV2Pair pair, uint amountIn, bool reverse)

@@ -123,6 +123,7 @@ export class TokenUtils {
     [MaticAddresses.CLAM2_TOKEN,'0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
     [MaticAddresses.xTETU,'0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SAND_TOKEN,'0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245'.toLowerCase()],
+    [MaticAddresses.DYST_TOKEN,'0x060fa7aD32C510F12550c7a967999810dafC5697'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

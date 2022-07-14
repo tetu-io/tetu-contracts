@@ -113,7 +113,6 @@ describe("MultiSwap2 base tests", function () {
   afterEach(async function () {
     await TimeUtils.rollback(snapshotForEach);
   });
-
   describe("errors", async () => {
 
     const getDeadline = () => {
@@ -121,7 +120,6 @@ describe("MultiSwap2 base tests", function () {
     }
 
     const getSwap = () => {
-      // return Object.assign({}, testData['100000 USDC->WMATIC']);
       return JSON.parse(JSON.stringify(testData['100000 USDC->WMATIC']));
     }
 
@@ -284,7 +282,8 @@ describe("MultiSwap2 base tests", function () {
 
   });
 
-  it("do multi swaps", async () => {
+  // TODO remove only
+  it.only("do multi swaps", async () => {
     const deadline = MaxUint256;
     const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
     // for (const key of Object.keys(testData)) {
@@ -318,8 +317,8 @@ describe("MultiSwap2 base tests", function () {
       console.log('amountOut     ', amountOut.toString());
       const amountExpected = multiswap.returnAmount;
       console.log('amountExpected', amountExpected);
-      const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100;
-      console.log('diff', diff, '%');
+      const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
+      console.log('diff', diff.toFixed(4), '%');
 
       await TimeUtils.rollback(snapshot);
 
