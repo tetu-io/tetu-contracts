@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 
 interface IPair {
 
-  // Structure to capture time period obervations every 30 minutes, used for local oracles
+  // Structure to capture time period observations every 30 minutes, used for local oracles
   struct Observation {
     uint timestamp;
     uint reserve0Cumulative;

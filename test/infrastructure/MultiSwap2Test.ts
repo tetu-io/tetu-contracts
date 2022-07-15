@@ -98,7 +98,8 @@ describe("MultiSwap2 base tests", function () {
           'MultiSwap2',
           core.controller,
           networkToken,
-          MaticAddresses.BALANCER_VAULT
+          MaticAddresses.BALANCER_VAULT,
+          MaticAddresses.TETU_SWAP_FACTORY,
       ) as MultiSwap2;
 
     } else console.error('Unsupported network', network.name)
@@ -113,6 +114,7 @@ describe("MultiSwap2 base tests", function () {
   afterEach(async function () {
     await TimeUtils.rollback(snapshotForEach);
   });
+
   describe("errors", async () => {
 
     const getDeadline = () => {
@@ -120,7 +122,7 @@ describe("MultiSwap2 base tests", function () {
     }
 
     const getSwap = () => {
-      return JSON.parse(JSON.stringify(testData['100000 USDC->WMATIC']));
+      return JSON.parse(JSON.stringify(testData['1000000 USDC->WMATIC']));
     }
 
     async function prepareTokens(swap: ISwapInfo) {
@@ -147,7 +149,8 @@ describe("MultiSwap2 base tests", function () {
               'MultiSwap2',
               core.controller,
               ethers.constants.AddressZero,
-              MaticAddresses.BALANCER_VAULT
+              MaticAddresses.BALANCER_VAULT,
+              MaticAddresses.TETU_SWAP_FACTORY,
           )
       )
       .to.be.revertedWith('MSZeroWETH');
@@ -161,9 +164,24 @@ describe("MultiSwap2 base tests", function () {
               core.controller,
               await DeployerUtils.getNetworkTokenAddress(),
               ethers.constants.AddressZero,
+              MaticAddresses.TETU_SWAP_FACTORY,
           )
       )
       .to.be.revertedWith('MSZeroBalancerVault');
+    });
+
+    it("MSZeroTetuFactory", async () => {
+      return expect(
+          DeployerUtils.deployContract(
+              signer,
+              'MultiSwap2',
+              core.controller,
+              await DeployerUtils.getNetworkTokenAddress(),
+              MaticAddresses.BALANCER_VAULT,
+              ethers.constants.AddressZero,
+          )
+      )
+      .to.be.revertedWith('MSZeroTetuFactory');
     });
 
     it("MSSameTokens", async () => {
@@ -191,7 +209,7 @@ describe("MultiSwap2 base tests", function () {
 
     it("MSMalconstructedMultiSwap", async () => {
       const swap = getSwap();
-      swap.swaps[3].assetInIndex = 0;
+      swap.swaps[2].assetInIndex = 0;
       await prepareTokens(swap);
       await expectSwapRevert(swap,'MSMalconstructedMultiSwap');
     });
@@ -217,14 +235,13 @@ describe("MultiSwap2 base tests", function () {
       await expectSwapRevert(swap,'MSSameTokensInSwap');
     });
 
-
     it("MSWrongTokensUniswap", async () => {
       const swap = getSwap();
-      swap.swaps[3].assetOutIndex = 0;
+      // set token index to another, that do not support by pair
+      swap.swaps[0].assetOutIndex = Math.max(swap.swaps[0].assetInIndex, swap.swaps[0].assetOutIndex) + 1;
       await prepareTokens(swap);
       await expectSwapRevert(swap,'MSWrongTokensUniswap');
     });
-
 
     it("MSForbidden", async () => {
       return expect(
@@ -232,7 +249,6 @@ describe("MultiSwap2 base tests", function () {
       )
       .to.be.revertedWith('MSForbidden');
     });
-
 
     it("MSTransferFeesForbiddenForOutputToken", async () => {
       const signerERC = await DeployerUtils.impersonate();
@@ -257,7 +273,6 @@ describe("MultiSwap2 base tests", function () {
       await expectSwapRevert(swap,'MSTransferFeesForbiddenForInputToken');
     });
 
-
   });
 
 
@@ -279,15 +294,13 @@ describe("MultiSwap2 base tests", function () {
     console.log('diff', diff.toString());
 
     expect(diff).is.eq(amount, 'Amount not salvaged')
-
   });
 
-  // TODO remove only
-  it.only("do multi swaps", async () => {
+  it("do multi swaps", async () => {
     const deadline = MaxUint256;
     const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
     // for (const key of Object.keys(testData)) {
-    for (const key of Object.keys(testData).slice(0, 3)) { // TODO remove slice
+    for (const key of Object.keys(testData).slice(0, 5)) { // TODO remove slice
       console.log('\n-----------------------');
       console.log(key);
       console.log('-----------------------');
@@ -324,8 +337,6 @@ describe("MultiSwap2 base tests", function () {
 
     }
 
-
   })
-
 
 })

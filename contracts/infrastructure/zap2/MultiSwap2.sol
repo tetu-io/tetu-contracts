@@ -29,7 +29,7 @@ import "./IMultiSwap2.sol";
 import "hardhat/console.sol"; // TODO remove
 
 /// @title Tetu MultiSwap v2 Contract
-/// @dev Supports 1 balancer and uniswap v2 compatible pools
+/// @dev Supports 1 Balancer, 1 Dystopa, uniswap v2 compatible pools
 /// @author bogdoslav
 contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
@@ -40,9 +40,9 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   uint256 private constant  _PRECISION_FEE = 10000;
   bytes32 private constant _UNISWAP_MASK  = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
   bytes32 private constant _DYSTOPIA_MASK = 0x0000000000000000000000000000000000000000ddddddddddddddddddddddd0; // last half-byte - index of uniswap dex
-  address private constant _TETU_FACTORY = 0x684d8c187be836171a1Af8D533e4724893031828;
   address public immutable WETH;
   address public immutable balancerVault;
+  address public immutable tetuFactory;
 
   // Sentinel value used to indicate WETH with wrapping/unwrapping semantics. The zero address is a good choice for
   // multiple reasons: it is cheap to pass as a calldata argument, it is a known invalid token and non-contract, and
@@ -54,10 +54,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
   error MSZeroWETH();
   error MSZeroBalancerVault();
+  error MSZeroTetuFactory();
   error MSSameTokens();
   error MSSameTokensInSwap();
   error MSZeroAmount();
-  error MSWrongTokensUniswap();
+  error MSWrongTokens();
   error MSUnknownAmountInFirstSwap();
   error MSDeadline();
   error MSTransferFeesForbiddenForInputToken();
@@ -67,12 +68,15 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   error MSForbidden();
 
 
-  constructor (address controller_, address weth_, address balancerVault_) {
+  constructor (address controller_, address weth_, address balancerVault_, address tetuFactory_) {
     ControllableV2.initializeControllable(controller_);
     if (weth_ == address(0)) revert MSZeroWETH();
     if (balancerVault_ == address(0)) revert MSZeroBalancerVault();
+    if (tetuFactory_ == address(0)) revert MSZeroTetuFactory();
+
     WETH = weth_;
     balancerVault = balancerVault_;
+    tetuFactory = tetuFactory_;
   }
 
   // ******************** USERS ACTIONS *********************
@@ -225,7 +229,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     { // stack too deep
     address pairFactory = pair.factory();
-    if (pairFactory == _TETU_FACTORY)
+    if (pairFactory == tetuFactory)
       pair.sync();
     }
 
@@ -234,7 +238,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
-      revert MSWrongTokensUniswap();
+      revert MSWrongTokens();
 
     tokenIn.safeTransfer(address(pair), swapAmount);
 
@@ -258,7 +262,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
-      revert MSWrongTokensUniswap();
+      revert MSWrongTokens();
 
     tokenIn.safeTransfer(address(pair), swapAmount);
 
