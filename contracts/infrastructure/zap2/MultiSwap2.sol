@@ -29,7 +29,7 @@ import "./IMultiSwap2.sol";
 import "hardhat/console.sol"; // TODO remove
 
 /// @title Tetu MultiSwap v2 Contract
-/// @dev Supports 1 Balancer, 1 Dystopa, uniswap v2 compatible pools
+/// @dev Supports 1 Balancer, 1 Dystopia, up to 15 UniSwap v2 compatible pools
 /// @author bogdoslav
 contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
@@ -39,7 +39,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   uint256 private constant  _SLIPPAGE_PRECISION = 10000;
   uint256 private constant  _PRECISION_FEE = 10000;
   bytes32 private constant _UNISWAP_MASK  = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
-  bytes32 private constant _DYSTOPIA_MASK = 0x0000000000000000000000000000000000000000ddddddddddddddddddddddd0; // last half-byte - index of uniswap dex
+  bytes32 private constant _DYSTOPIA_MASK = 0x0000000000000000000000000000000000000000ddddddddddddddddddddddd0; // last half-byte - index of dex
   address public immutable WETH;
   address public immutable balancerVault;
   address public immutable tetuFactory;

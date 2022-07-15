@@ -235,12 +235,21 @@ describe("MultiSwap2 base tests", function () {
       await expectSwapRevert(swap,'MSSameTokensInSwap');
     });
 
-    it("MSWrongTokensUniswap", async () => {
+    it("MSWrongTokens (uniswap)", async () => {
       const swap = getSwap();
       // set token index to another, that do not support by pair
       swap.swaps[0].assetOutIndex = Math.max(swap.swaps[0].assetInIndex, swap.swaps[0].assetOutIndex) + 1;
       await prepareTokens(swap);
-      await expectSwapRevert(swap,'MSWrongTokensUniswap');
+      await expectSwapRevert(swap,'MSWrongTokens');
+    });
+
+    it("MSWrongTokens (dystopia)", async () => {
+      const swap = JSON.parse(JSON.stringify(testData['1000 USDC->DYST']));
+
+      // set token index to another, that do not support by pair
+      swap.swaps[1].assetOutIndex = 0;
+      await prepareTokens(swap);
+      await expectSwapRevert(swap,'MSWrongTokens');
     });
 
     it("MSForbidden", async () => {
@@ -299,8 +308,8 @@ describe("MultiSwap2 base tests", function () {
   it("do multi swaps", async () => {
     const deadline = MaxUint256;
     const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
-    // for (const key of Object.keys(testData)) {
-    for (const key of Object.keys(testData).slice(0, 5)) { // TODO remove slice
+    for (const key of Object.keys(testData)) {
+    // for (const key of Object.keys(testData).slice(0, 5)) {
       console.log('\n-----------------------');
       console.log(key);
       console.log('-----------------------');
@@ -311,7 +320,7 @@ describe("MultiSwap2 base tests", function () {
       const tokenIn = multiswap.swapData.tokenIn;
       const tokenOut = multiswap.swapData.tokenOut;
       const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
-      console.log('amountOutBefore', amountOutBefore.toString());
+
       const amount = BigNumber.from(multiswap.swapAmount)
       await TokenUtils.getToken(tokenIn, signer.address, amount);
       await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
@@ -325,7 +334,7 @@ describe("MultiSwap2 base tests", function () {
       );
 
       const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
-      console.log('amountOutAfter', amountOutAfter.toString());
+
       const amountOut = amountOutAfter.sub(amountOutBefore);
       console.log('amountOut     ', amountOut.toString());
       const amountExpected = multiswap.returnAmount;
