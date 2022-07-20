@@ -35,11 +35,12 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
-  string public constant VERSION = "1.1.0";
-  uint256 private constant  _SLIPPAGE_PRECISION = 10000;
-  uint256 private constant  _PRECISION_FEE = 10000;
-  bytes32 private constant _UNISWAP_MASK  = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of uniswap dex
-  bytes32 private constant _DYSTOPIA_MASK = 0x0000000000000000000000000000000000000000ddddddddddddddddddddddd0; // last half-byte - index of dex
+  string public constant VERSION = "1.1.1";
+  uint256 private constant _SLIPPAGE_PRECISION = 10000;
+  uint256 private constant _PRECISION_FEE = 10000;
+  bytes32 private constant _DEX_ID_MASK = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of dex 0-15
+  bytes32 private constant _UNISWAP_DEX_ID = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0;
+  bytes32 private constant _DYSTOPIA_DEX_ID = 0x0000000000000000000000000000000000000000ddddddddddddddddddddddd0;
   address public immutable WETH;
   address public immutable balancerVault;
   address public immutable tetuFactory;
@@ -152,10 +153,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     { // avoid stack to deep
       uint balanceBefore = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-      console.log('balanceBefore ', balanceBefore);
       IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
       uint balanceAfter = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-      console.log('balanceAfter  ', balanceAfter);
 
       if (amountOut > (balanceAfter - balanceBefore))
         revert MSTransferFeesForbiddenForOutputToken();
@@ -181,11 +180,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   }
 
   function _isUniswapPool(bytes32 poolId) internal pure returns (bool) {
-    return (poolId & _UNISWAP_MASK) == _UNISWAP_MASK;
+    return (poolId & _DEX_ID_MASK) == _UNISWAP_DEX_ID;
   }
 
   function _isDystopiaPool(bytes32 poolId) internal pure returns (bool) {
-    return (poolId & _DYSTOPIA_MASK) == _DYSTOPIA_MASK;
+    return (poolId & _DEX_ID_MASK) == _DYSTOPIA_DEX_ID;
   }
 
   function _swapBalancer(

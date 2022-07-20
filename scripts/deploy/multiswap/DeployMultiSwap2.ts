@@ -3,7 +3,8 @@ import {DeployerUtils} from "../DeployerUtils";
 import {MultiSwap2} from "../../../typechain";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 
-// Latest: 0x05f14e91f8a0aEe60dCeC853a2e5F03ae8A02620  (Dystopia support)
+// Latest: 0x4b16B97720968609f1CC41D9F79DE589e24fc097  (Dex detection fix)
+// Prev  : 0x05f14e91f8a0aEe60dCeC853a2e5F03ae8A02620  (Dystopia support)
 // Prev  : 0x78043B892E7b3bADdF1A9488129a1063a0aCF7E5  (with SOR support, slippage fixed)
 
 async function main() {
