@@ -70,6 +70,8 @@ interface ISmartVault {
 
   function getAllRewards() external;
 
+  function getAllRewardsAndRedirect(address owner) external;
+
   function getPricePerFullShare() external view returns (uint256);
 
   function getReward(address rt) external;
@@ -136,6 +138,8 @@ interface ISmartVault {
   function rewardsForToken(address, address) external view returns (uint256);
 
   function setLockPenalty(uint256 _value) external;
+
+  function setRewardsRedirect(address owner, address receiver) external;
 
   function setLockPeriod(uint256 _value) external;
 

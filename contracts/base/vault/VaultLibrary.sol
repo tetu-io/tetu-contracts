@@ -200,7 +200,7 @@ library VaultLibrary {
     bool protectionMode,
     mapping(address => mapping(address => uint256)) storage rewardsForToken
   ) public returns (uint renotifiedAmount, uint paidReward) {
-    return processPayRewardFor(rt, reward, userBoostTs, controller, protectionMode, rewardsForToken, msg.sender);
+    return processPayRewardFor(rt, reward, userBoostTs, controller, protectionMode, rewardsForToken, msg.sender, msg.sender);
   }
 
   /// @notice Transfer earned rewards to rewardsReceiver
@@ -211,20 +211,21 @@ library VaultLibrary {
     address controller,
     bool protectionMode,
     mapping(address => mapping(address => uint256)) storage rewardsForToken,
-    address rewardsReceiver
+    address owner,
+    address receiver
   ) public returns (uint renotifiedAmount, uint paidReward) {
     paidReward = reward;
     if (paidReward > 0 && IERC20(rt).balanceOf(address(this)) >= paidReward) {
       // calculate boosted amount
-      uint256 boostStart = userBoostTs[rewardsReceiver];
+      uint256 boostStart = userBoostTs[owner];
       // refresh boost
-      userBoostTs[rewardsReceiver] = block.timestamp;
+      userBoostTs[owner] = block.timestamp;
       // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
       // allow claim without penalty to some addresses, TetuSwap pairs as example
       if (
         boostStart != 0
         && boostStart < block.timestamp
-        && !IController(controller).isPoorRewardConsumer(rewardsReceiver)
+        && !IController(controller).isPoorRewardConsumer(owner)
       ) {
         uint256 currentBoostDuration = block.timestamp - boostStart;
         IVaultController _vaultController = IVaultController(IController(controller).vaultController());
@@ -246,11 +247,11 @@ library VaultLibrary {
         }
       }
 
-      rewardsForToken[rt][rewardsReceiver] = 0;
-      IERC20(rt).safeTransfer(rewardsReceiver, paidReward);
+      rewardsForToken[rt][owner] = 0;
+      IERC20(rt).safeTransfer(receiver, paidReward);
       // only statistic, should not affect reward claim process
       try IBookkeeper(IController(controller).bookkeeper())
-      .registerUserEarned(rewardsReceiver, address(this), rt, paidReward) {
+      .registerUserEarned(owner, address(this), rt, paidReward) {
       } catch {}
     }
     return (renotifiedAmount, paidReward);

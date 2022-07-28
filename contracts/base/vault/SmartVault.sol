@@ -34,7 +34,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant override VERSION = "1.10.3";
+  string public constant override VERSION = "1.10.4";
   /// @dev Denominator for penalty numerator
   uint256 public constant override LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant override TO_INVEST_DENOMINATOR = 1000;
@@ -77,6 +77,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   mapping(address => uint256) public override userLastDepositTs;
   /// @dev VaultStorage doesn't have a map for strings so we need to add it here
   mapping(uint256 => string) private _nameOverrides;
+  mapping(address => address) public rewardsRedirect;
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -135,6 +136,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   event RemovedRewardToken(address indexed token);
   event RewardRecirculated(address indexed token, uint256 amount);
   event RewardSentToController(address indexed token, uint256 amount);
+  event SetRewardsRedirect(address owner, address receiver);
 
   // *************** RESTRICTIONS ***************************
 
@@ -220,6 +222,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     require(_lockAllowed());
     require(lockPenalty() == 0);
     _setLockPenalty(_value);
+  }
+
+  /// @dev All rewards for given owner could be claimed for receiver address.
+  function setRewardsRedirect(address owner, address receiver) external override {
+    require(_isGovernance(msg.sender), FORBIDDEN_MSG);
+    rewardsRedirect[owner] = receiver;
+    emit SetRewardsRedirect(owner, receiver);
   }
 
   /// @notice Set numerator for toInvest ratio in range 0 - 1000
@@ -368,7 +377,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // assume that allowed users is trusted contracts with internal specific logic
     // for compatability we should not claim rewards on withdraw for them
     if (_protectionMode() && !IController(_controller()).isAllowedUser(msg.sender)) {
-      _getAllRewards(msg.sender);
+      _getAllRewards(msg.sender, msg.sender);
     }
 
     _withdraw(numberOfShares);
@@ -381,33 +390,41 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     // for locked functionality need to claim rewards firstly
     // otherwise token transfer will refresh the lock period
     // also it will withdraw claimed tokens too
-    _getAllRewards(msg.sender);
+    _getAllRewards(msg.sender, msg.sender);
     _withdraw(balanceOf(msg.sender));
   }
 
   /// @notice Update and Claim all rewards
   function getAllRewards() external override {
     _onlyAllowedUsers(msg.sender);
-    _getAllRewards(msg.sender);
+    _getAllRewards(msg.sender, msg.sender);
   }
 
-  /// @notice Update and Claim all rewards
-  function getAllRewardsFor(address rewardsReceiver) external override {
+  /// @notice Update and Claim all rewards for given owner address. Send them to predefined receiver.
+  function getAllRewardsAndRedirect(address owner) external override {
+    address receiver = rewardsRedirect[owner];
+    require(receiver != address(0), "zero receiver");
+    _getAllRewards(owner, receiver);
+  }
+
+  /// @notice Update and Claim all rewards for the given owner.
+  ///         Sender should have allowance for push rewards for the owner.
+  function getAllRewardsFor(address owner) external override {
     _onlyAllowedUsers(msg.sender);
-    if (rewardsReceiver != msg.sender) {
+    if (owner != msg.sender) {
       // To avoid calls from any address, and possibility to cancel boosts for other addresses
       // we check approval of shares for msg.sender. Msg sender should have approval for max amount
       // As approved amount is deducted every transfer, we checks it with max / 10
-      uint allowance = allowance(rewardsReceiver, msg.sender);
+      uint allowance = allowance(owner, msg.sender);
       require(allowance > (type(uint256).max / 10), "SV: Not allowed");
     }
-    _getAllRewards(rewardsReceiver);
+    _getAllRewards(owner, owner);
   }
 
-  function _getAllRewards(address rewardsReceiver) internal {
-    _updateRewards(rewardsReceiver);
+  function _getAllRewards(address owner, address receiver) internal {
+    _updateRewards(owner);
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      _payRewardTo(_rewardTokens[i], rewardsReceiver);
+      _payRewardTo(_rewardTokens[i], owner, receiver);
     }
   }
 
@@ -415,7 +432,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   function getReward(address rt) external override {
     _onlyAllowedUsers(msg.sender);
     _updateReward(msg.sender, rt);
-    _payRewardTo(rt, msg.sender);
+    _payRewardTo(rt, msg.sender, msg.sender);
   }
 
   /// @dev Update user specific variables
@@ -798,21 +815,22 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   }
 
   /// @notice Transfer earned rewards to rewardsReceiver
-  function _payRewardTo(address rt, address rewardsReceiver) internal {
+  function _payRewardTo(address rt, address owner, address receiver) internal {
     (uint renotifiedAmount, uint paidReward) = VaultLibrary.processPayRewardFor(
       rt,
-      _earned(rt, rewardsReceiver),
+      _earned(rt, owner),
       userBoostTs,
       _controller(),
       _protectionMode(),
       rewardsForToken,
-      rewardsReceiver
+      owner,
+      receiver
     );
     if (renotifiedAmount != 0) {
       _notifyRewardWithoutPeriodChange(renotifiedAmount, rt);
     }
     if (paidReward != 0) {
-      emit RewardPaid(rewardsReceiver, rt, renotifiedAmount);
+      emit RewardPaid(owner, rt, renotifiedAmount);
     }
   }
 

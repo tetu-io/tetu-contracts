@@ -12,6 +12,7 @@ import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -411,6 +412,19 @@ describe("SmartVaultNoopStrat", () => {
       await vault.overrideSymbol('ovSymbol')
       expect(await vault.name()).is.eq('ovName');
       expect(await vault.symbol()).is.eq('ovSymbol');
+    });
+
+    it("claim rewards with redirect", async () => {
+      expect(await core.psVault.balanceOf(user.address)).eq(0);
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
+      await VaultUtils.deposit(signer, vault, BigNumber.from("1000000"));
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 60);
+
+      await vault.setRewardsRedirect(signer.address, user.address);
+
+      await vault.getAllRewardsAndRedirect(signer.address);
+
+      expect(await core.psVault.balanceOf(user.address)).above(parseUnits('99'));
     });
 
   });
