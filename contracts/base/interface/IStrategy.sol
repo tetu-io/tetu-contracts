@@ -54,8 +54,8 @@ interface IStrategy {
     BALANCER, //36
     OTTERCLAM, //37
     MESH, //38
-    SLOT_39, //39
-    SLOT_40, //40
+    D_FORCE, //39
+    DYSTOPIA, //40
     SLOT_41, //41
     SLOT_42, //42
     SLOT_43, //43
