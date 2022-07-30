@@ -97,8 +97,8 @@ describe("Price calculator matic tests", function () {
     await calculator.setReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.WBTC_TOKEN);
     const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(ethPrice).is.greaterThan(30000);
-    expect(ethPrice).is.lessThan(300000);
+    expect(ethPrice).is.greaterThan(20000);
+    expect(ethPrice).is.lessThan(200000);
   });
 
   it("calculate prices", async () => {
@@ -256,8 +256,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.IRON_IS3USD, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.99);
-    expect(price).is.lessThan(1.01);
+    expect(price).is.greaterThan(0.95);
+    expect(price).is.lessThan(1.5);
   });
 
   it("calculate FIREBIRD eth-ice, price and check", async () => {
@@ -266,7 +266,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.FIREBIRD_ETH_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(1);
+    expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(500);
   });
 
@@ -286,8 +286,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.IRON_IRON_IS3USD, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.99);
-    expect(price).is.lessThan(1.01);
+    expect(price).is.greaterThan(0.95);
+    expect(price).is.lessThan(1.05);
   });
 
   it("calculate tetu-swap-wmatic-tetu price and check", async () => {
@@ -318,6 +318,16 @@ describe("Price calculator matic tests", function () {
       MaticAddresses.UNT_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.0001);
     expect(price).is.lessThan(100);
+  });
+
+  it("dystopia LP tetuQi-qi", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.DYSTOPIA_tetuQI_QI, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.2);
+    expect(price).is.lessThan(1);
   });
 
 });

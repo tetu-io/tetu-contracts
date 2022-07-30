@@ -239,6 +239,10 @@ export class MaticAddresses {
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
   public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
 
+  // DYSTOPIA
+  public static DYSTOPIA_FACTORY = '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9'.toLowerCase();
+  public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,

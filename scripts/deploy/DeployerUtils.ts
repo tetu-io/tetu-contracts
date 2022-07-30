@@ -292,6 +292,20 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.TETU_SWAP_FACTORY, "TetuSwap LP"), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(MaticAddresses.DINO_FACTORY, "Dinoswap V2"), true, wait);
 
+    await RunHelper.runAndWait(() => calculator.changeFactoriesStatus(
+      [
+        MaticAddresses.QUICK_FACTORY,
+        MaticAddresses.SUSHI_FACTORY,
+        MaticAddresses.WAULT_FACTORY,
+        MaticAddresses.FIREBIRD_FACTORY,
+        MaticAddresses.DFYN_FACTORY,
+        MaticAddresses.CAFE_FACTORY,
+        MaticAddresses.TETU_SWAP_FACTORY,
+        MaticAddresses.DINO_FACTORY,
+        MaticAddresses.DYSTOPIA_FACTORY,
+      ], true
+    ))
+
     // It is hard to calculate price of curve underlying token, easiest way is to replace pegged tokens with original
     await calculator.setReplacementTokens(MaticAddresses.BTCCRV_TOKEN, MaticAddresses.WBTC_TOKEN);
     await calculator.setReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);

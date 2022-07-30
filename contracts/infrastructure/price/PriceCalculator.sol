@@ -34,7 +34,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.4.2";
+  string public constant VERSION = "1.5.0";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -59,6 +59,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   address[] public keyTokens;
 
   mapping(address => address) public replacementTokens;
+
+  mapping(address => bool) public allowedFactories;
 
   // ********** EVENTS ****************************
 
@@ -167,19 +169,14 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return price * rate / rateDenominator;
   }
 
-  //Checks if address is Uni or Sushi LP. This is done in two steps,
-  //because the second step seems to cause errors for some tokens.
-  //Only the first step is not deemed accurate enough, as any token could be called UNI-V2.
   function isSwapPlatform(address token) public view returns (bool) {
-    IUniswapV2Pair pair = IUniswapV2Pair(token);
-    string memory name = pair.name();
+    address factory;
+    //slither-disable-next-line unused-return,variable-scope,uninitialized-local
+    try IUniswapV2Pair(token).factory{gas : 3000}() returns (address _factory) {
+      factory = _factory;
+    } catch {}
 
-    for (uint256 i = 0; i < swapFactories.length; i++) {
-      if (isEqualString(name, swapLpNames[i])) {
-        return checkFactory(pair, swapFactories[i]);
-      }
-    }
-    return false;
+    return allowedFactories[factory];
   }
 
   function isIronPair(address token) public view returns (bool) {
@@ -266,7 +263,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address[] memory _keyTokens = keyTokens;
     for (uint256 i = 0; i < _keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        if(token == _keyTokens[i]) {
+        if (token == _keyTokens[i]) {
           continue;
         }
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
@@ -502,6 +499,12 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     swapFactories.push(_factoryAddress);
     swapLpNames.push(_name);
     emit SwapPlatformAdded(_factoryAddress, _name);
+  }
+
+  function changeFactoriesStatus(address[] memory factories, bool status) external onlyControllerOrGovernance {
+    for (uint256 i; i < factories.length; i++) {
+      allowedFactories[factories[i]] = status;
+    }
   }
 
   function removeSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {
