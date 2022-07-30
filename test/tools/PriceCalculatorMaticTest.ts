@@ -330,4 +330,24 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(1);
   });
 
+  it("PEN price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.PEN_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.01);
+    expect(price).is.lessThan(1);
+  });
+
+  it("mesh/tetuMesh vault price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0xADC56043BFf96e2F3394bFd5719cd6De0a734257', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(1);
+  });
+
 });

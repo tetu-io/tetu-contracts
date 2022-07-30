@@ -25,6 +25,7 @@ import "../../third_party/IERC20Extended.sol";
 import "../../third_party/aave/IAaveToken.sol";
 import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
+import "../../third_party/dystopia/IDystopiaFactory.sol";
 
 pragma solidity 0.8.4;
 
@@ -34,10 +35,11 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.5.0";
+  string public constant VERSION = "1.5.1";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
+  address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -287,9 +289,18 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   public view returns (uint256, address){
     address pairAddress;
     // shortcut for firebird ice-weth
-    // todo make more smart solution
     if (_factory == FIREBIRD_FACTORY) {
       pairAddress = IFireBirdFactory(_factory).getPair(token, tokenOpposite, 50, 20);
+    } else if (_factory == DYSTOPIA_FACTORY) {
+      address sPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, true);
+      address vPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, false);
+      uint sReserve = getLpSize(sPair, token);
+      uint vReserve = getLpSize(vPair, token);
+      if (sReserve > vReserve) {
+        return (sReserve, sPair);
+      } else {
+        return (vReserve, vPair);
+      }
     } else {
       pairAddress = IUniswapV2Factory(_factory).getPair(token, tokenOpposite);
     }
@@ -300,6 +311,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function getLpSize(address pairAddress, address token) public view returns (uint256) {
+    if (pairAddress == address(0)) {
+      return 0;
+    }
     IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
     address token0 = pair.token0();
     (uint112 poolSize0, uint112 poolSize1,) = pair.getReserves();
