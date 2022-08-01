@@ -47,7 +47,7 @@ describe("Price calculator matic tests", function () {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-        MaticAddresses.MESH_TOKEN, MaticAddresses.USDC_TOKEN);
+      MaticAddresses.MESH_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(100000);
   });
@@ -57,7 +57,7 @@ describe("Price calculator matic tests", function () {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-        MaticAddresses.tetuMESH_TOKEN, MaticAddresses.USDC_TOKEN);
+      MaticAddresses.tetuMESH_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(100000);
   });
@@ -67,7 +67,7 @@ describe("Price calculator matic tests", function () {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-        MaticAddresses.MESH_tetuMESH_POOL, MaticAddresses.USDC_TOKEN);
+      MaticAddresses.MESH_tetuMESH_POOL, MaticAddresses.USDC_TOKEN);
     console.log('price', price);
     expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(100000);
@@ -82,7 +82,7 @@ describe("Price calculator matic tests", function () {
     //     MaticAddresses.USDC_TOKEN);
 
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-        MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+      MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
 
     // expect(price).is.approximately(priceLp, priceLp/100)
     expect(price).is.greaterThan(1);
@@ -94,7 +94,7 @@ describe("Price calculator matic tests", function () {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-        '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f', MaticAddresses.USDC_TOKEN);
+      '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f', MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(1);
     expect(price).is.lessThan(100000);
   });
