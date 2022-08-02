@@ -6,7 +6,7 @@ import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 
 const SYMBOL = 'xDystTETU-USDPlus';
-const UNDERLYING = MaticAddresses.DYSTOPIA_tetuQI_QI;
+const UNDERLYING = MaticAddresses.DYSTOPIA_TETU_USDPlus;
 const DURATION = 60 * 60 * 24 * 7;
 
 async function main() {
