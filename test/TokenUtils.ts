@@ -124,6 +124,8 @@ export class TokenUtils {
     [MaticAddresses.xTETU,'0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SAND_TOKEN,'0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245'.toLowerCase()],
     [MaticAddresses.DYST_TOKEN,'0x060fa7aD32C510F12550c7a967999810dafC5697'.toLowerCase()],
+    [MaticAddresses.USD_PLUS_TOKEN,'0x826b8d2d523E7af40888754E3De64348C00B99f4'.toLowerCase()],
+    [MaticAddresses.SPHERE_DYST_TOKEN,'0x20D61737f972EEcB0aF5f0a85ab358Cd083Dd56a'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
