@@ -21,7 +21,6 @@ import {MaxUint256} from '@ethersproject/constants';
 
 
 import testJson from './json/MultiSwap2TestData.json';
-import testJsonDyst from './json/MultiSwap2TestDataDyst.json';
 // import hardhatConfig from "../../hardhat.config";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TimeUtils} from "../TimeUtils";
@@ -74,15 +73,13 @@ describe("MultiSwap2 base tests", function () {
   let snapshotForEach: string;
 
   const testData = testJson.testData as unknown as ITestData;
-  const testDataDyst = testJsonDyst.testData as unknown as ITestData;
 
   before(async function () {
     this.timeout(1200000);
 
     // start hardhat fork from the block number test data generated for
-    const blockNumber = testJson.blockNumber;
-    console.log('Resetting hardhat fork to block Number', blockNumber);
-    await TimeUtils.resetBlockNumber(config.networks.hardhat.forking?.url, blockNumber);
+    console.log('Resetting hardhat fork to block Number', testJson.blockNumber);
+    await TimeUtils.resetBlockNumber(config.networks.hardhat.forking?.url, testJson.blockNumber);
 
     const latestBlock = await ethers.provider.getBlock('latest');
     console.log('latestBlock', latestBlock.number);
@@ -308,61 +305,46 @@ describe("MultiSwap2 base tests", function () {
     expect(diff).is.eq(amount, 'Amount not salvaged')
   });
 
-  // TODO remove only
-  it.only("do multi swaps dyst", async () => {
+  it("do multi swaps", async () => {
+    const deadline = MaxUint256;
+    const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
+    for (const key of Object.keys(testData)) {
+    // for (const key of Object.keys(testData).slice(0, 5)) {
+      console.log('\n-----------------------');
+      console.log(key);
+      console.log('-----------------------');
+      const snapshot = await TimeUtils.snapshot();
 
-    async function doMultiSwaps(data: ITestData) {
-      const deadline = MaxUint256;
-      const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
-      for (const key of Object.keys(data)) {
-        // for (const key of Object.keys(testData).slice(0, 5)) {
-        console.log('\n-----------------------');
-        console.log(key);
-        console.log('-----------------------');
-        const snapshot = await TimeUtils.snapshot();
+      const multiswap = testData[key];
 
-        const multiswap = data[key];
+      const tokenIn = multiswap.swapData.tokenIn;
+      const tokenOut = multiswap.swapData.tokenOut;
+      const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
 
-        const tokenIn = multiswap.swapData.tokenIn;
-        const tokenOut = multiswap.swapData.tokenOut;
-        const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
+      const amount = BigNumber.from(multiswap.swapAmount)
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
 
-        const amount = BigNumber.from(multiswap.swapAmount)
-        await TokenUtils.getToken(tokenIn, signer.address, amount);
-        await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
+      await multiSwap2.multiSwap(
+        multiswap.swapData,
+        multiswap.swaps,
+        multiswap.tokenAddresses,
+        slippage,
+        deadline
+      );
 
-        const tx = await multiSwap2.multiSwap(
-            multiswap.swapData,
-            multiswap.swaps,
-            multiswap.tokenAddresses,
-            slippage,
-            deadline
-        );
-        console.log('tx', tx.hash);
-        await tx.wait(1);
+      const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
 
-        const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
+      const amountOut = amountOutAfter.sub(amountOutBefore);
+      console.log('amountOut     ', amountOut.toString());
+      const amountExpected = multiswap.returnAmount;
+      console.log('amountExpected', amountExpected);
+      const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
+      console.log('diff', diff.toFixed(4), '%');
 
-        const amountOut = amountOutAfter.sub(amountOutBefore);
-        console.log('amountOut     ', amountOut.toString());
-        const amountExpected = multiswap.returnAmount;
-        console.log('amountExpected', amountExpected);
-        const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
-        console.log('diff', diff.toFixed(4), '%');
+      await TimeUtils.rollback(snapshot);
 
-        await TimeUtils.rollback(snapshot);
-
-      }
     }
-
-    // await doMultiSwaps(testData); // TODO remove comment
-
-    // Dystopia swaps
-    const blockNumber = testJsonDyst.blockNumber;
-    console.log('Resetting hardhat fork to block Number', blockNumber);
-    await TimeUtils.resetBlockNumber(config.networks.hardhat.forking?.url, blockNumber);
-
-    await doMultiSwaps(testDataDyst);
 
   })
 

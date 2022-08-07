@@ -83,7 +83,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   // ******************** USERS ACTIONS *********************
   function multiSwap(
     SwapData memory swapData,
-    IBVault.BatchSwapStep[] memory swaps,
+    SwapStep[] memory swaps,
     IAsset[] memory tokenAddresses,
     uint slippage,
     uint deadline
@@ -105,17 +105,17 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.swapAmount);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
-    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
-      revert MSTransferFeesForbiddenForInputToken();
-
-    // These variables could be declared inside the loop, but that causes the compiler to allocate memory on each
-    // loop iteration, increasing gas costs.
-    IBVault.BatchSwapStep memory swapStep;
+    // TODO add SPHERE to white list
+//    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
+//      revert MSTransferFeesForbiddenForInputToken();
 
     // These store data about the previous swap here to implement multihop logic across swaps.
     IERC20 previousTokenOut = IERC20(swapData.tokenIn);
     uint256 previousAmountOut = swapData.swapAmount;
 
+    // These variables could be declared inside the loop, but that causes the compiler to allocate memory on each
+    // loop iteration, increasing gas costs.
+    SwapStep memory swapStep;
     uint len = swaps.length;
     for (uint i = 0; i < len; i++) {
       swapStep = swaps[i];
@@ -143,6 +143,10 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
       } else { // Suppose Balancer pool
         previousAmountOut = _swapBalancer(swapStep, swapTokenIn, swapTokenOut, swapAmount);
       }
+      uint balanceOut =  swapTokenOut.balanceOf(address(this));
+      console.log('previousAmountOut', previousAmountOut, balanceOut);
+      console.log('balanceOut       ', balanceOut);
+      previousAmountOut = _min( swapTokenOut.balanceOf(address(this)), previousAmountOut);
       previousTokenOut = swapTokenOut;
     }
 
@@ -152,12 +156,12 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
 
     { // avoid stack to deep
-      uint balanceBefore = IERC20(swapData.tokenOut).balanceOf(msg.sender);
+//      uint balanceBefore = IERC20(swapData.tokenOut).balanceOf(msg.sender);
       IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
-      uint balanceAfter = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-
-      if (amountOut > (balanceAfter - balanceBefore))
-        revert MSTransferFeesForbiddenForOutputToken();
+//      uint balanceAfter = IERC20(swapData.tokenOut).balanceOf(msg.sender);
+      // TODO add SPHERE to white list
+//      if (amountOut > (balanceAfter - balanceBefore))
+//        revert MSTransferFeesForbiddenForOutputToken();
     }
 
     if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
@@ -167,6 +171,10 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
 
   // ******************* INTERNAL ***************************
+
+  function _min(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a <= b ? a : b;
+  }
 
   /**
    * @dev Returns the address of a Pool's contract.
@@ -188,7 +196,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   }
 
   function _swapBalancer(
-    IBVault.BatchSwapStep memory swapStep,
+    SwapStep memory swapStep,
     IERC20 tokenIn,
     IERC20 tokenOut,
     uint swapAmount
@@ -218,7 +226,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   }
 
   function _swapUniswap(
-    IBVault.BatchSwapStep memory swapStep,
+    SwapStep memory swapStep,
     IERC20 tokenIn,
     IERC20 tokenOut,
     uint swapAmount
@@ -226,29 +234,33 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   internal returns (uint amountOut) {
     IUniswapV2Pair pair = IUniswapV2Pair(_getPoolAddress(swapStep.poolId));
 
-    { // stack too deep
-    address pairFactory = pair.factory();
-    if (pairFactory == tetuFactory)
+    if (pair.factory() == tetuFactory) {
       pair.sync();
     }
 
-    address token0 = pair.token0();
     address token1 = pair.token1();
+    {
+    address token0 = pair.token0();
 
     if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
+    {
       revert MSWrongTokens();
+    }
+    }
 
+    console.log('swapAmount', swapAmount, tokenIn.balanceOf(address(this)));
     tokenIn.safeTransfer(address(pair), swapAmount);
-
     bool reverse = address(tokenIn) == token1;
-    (uint amountOut0, uint amountOut1) = _getAmountsOut(pair, swapAmount, reverse);
+    console.log('reverse', reverse);
+    (uint amountOut0, uint amountOut1) = _getAmountsOut(pair, swapAmount, reverse, swapStep.platformFee);
+    console.log('amountOut0, amountOut1', amountOut0, amountOut1);
     pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
     amountOut = reverse ? amountOut0 : amountOut1;
   }
 
   function _swapDystopia(
-    IBVault.BatchSwapStep memory swapStep,
+    SwapStep memory swapStep,
     IERC20 tokenIn,
     IERC20 tokenOut,
     uint swapAmount
@@ -271,10 +283,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
   }
 
-  function _getAmountsOut(IUniswapV2Pair pair, uint amountIn, bool reverse)
+  function _getAmountsOut(IUniswapV2Pair pair, uint amountIn, bool reverse, uint baseFee)
   internal view returns(uint amountOut0, uint amountOut1) {
     (amountOut0, amountOut1) = (0, 0);
-    uint fee = _getTetuSwapFee(address(pair));
+    uint fee = _getTetuSwapFee(address(pair), baseFee);
+    console.log('fee', fee);
     (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
 
     if (reverse) {
@@ -294,7 +307,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   }
 
   /// @dev returns fee for tetuswap or default uniswap v2 fee for other swaps
-  function _getTetuSwapFee(address pair)
+  function _getTetuSwapFee(address pair, uint defaultFee)
   internal view returns (uint) {
     try ITetuSwapPair(pair).fee() returns (uint fee) {
       return fee;
@@ -302,7 +315,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     } catch Panic(uint /*errorCode*/) {
     } catch (bytes memory /*lowLevelData*/) {
     }
-    return 30;
+    return defaultFee;
   }
 
   // ************************* INTERNAL ASSET HELPERS *******************

@@ -25,9 +25,18 @@ interface IMultiSwap2 {
     uint returnAmount;
   }
 
+  struct SwapStep {
+    bytes32 poolId;
+    uint256 assetInIndex;
+    uint256 assetOutIndex;
+    uint256 amount;
+    bytes userData;
+    uint32 platformFee;
+  }
+
   function multiSwap(
     SwapData memory swapData,
-    IBVault.BatchSwapStep[] memory swaps,
+    SwapStep[] memory swaps,
     IAsset[] memory tokenAddresses,
     uint slippage,
     uint256 deadline
