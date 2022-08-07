@@ -257,6 +257,7 @@ export class MaticAddresses {
 
   // DYSTOPIA
   public static DYSTOPIA_FACTORY = '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9'.toLowerCase();
+  public static DYSTOPIA_ROUTER = '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e'.toLowerCase();
   public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
   public static DYSTOPIA_TETU_USDPlus = '0x5A272ad79cBd3C874879E3FEc5753C2127f77583'.toLowerCase();
 
