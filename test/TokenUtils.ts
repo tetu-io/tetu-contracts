@@ -130,7 +130,7 @@ export class TokenUtils {
     [MaticAddresses.FRAX2_TOKEN,'0xe7ec500e14edbe3ca3358bcde7df145968b2aead'.toLowerCase()],
     [MaticAddresses.FXS_TOKEN,'0xdbc13e67f678cc00591920cece4dca6322a79ac7'.toLowerCase()],
     [MaticAddresses.KOGECOIN_TOKEN,'0xAf22Fd5898a4B4Ea42C06c9e77aD3B4807d66Bff'.toLowerCase()],
-    [MaticAddresses.MaticX_TOKEN,'0xd68a6c08a10ee8db1441b0883a9ebbd4cdf67baa'.toLowerCase()],
+    [MaticAddresses.MaticX_TOKEN,'0x00C3e7978Ede802d7ce6c6EfFfB4F05A4a806FD3'.toLowerCase()],
     [MaticAddresses.COMFI_TOKEN,'0x962699db05a9334c5cd1f9c2867d5160c8e37742'.toLowerCase()],
   ]);
 

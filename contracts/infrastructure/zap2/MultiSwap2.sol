@@ -145,18 +145,22 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
         previousAmountOut = _swapBalancer(swapStep, swapTokenIn, swapTokenOut, swapAmount);
       }
       uint balanceOut =  swapTokenOut.balanceOf(address(this));
-      console.log('previousAmountOut', previousAmountOut);
-      console.log('balanceOut       ', balanceOut);
+      console.log('amount expected', previousAmountOut);
+      console.log('balanceOut     ', balanceOut);
+      if (balanceOut < previousAmountOut && previousAmountOut != 0)
+        console.log('diff %      -', 100 - balanceOut * 100 / previousAmountOut);
       previousAmountOut = _min( swapTokenOut.balanceOf(address(this)), previousAmountOut);
       previousTokenOut = swapTokenOut;
     }
 
+    console.log('= = = = = = =');
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this));
     console.log('swapData.tokenOut', swapData.tokenOut);
     console.log('amountOut   ', amountOut);
     uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
     console.log('returnAmount', swapData.returnAmount);
-    console.log('minAmountOut', minAmountOut, amountOut > 0 ? minAmountOut * 100 / amountOut : 0);
+    console.log('minAmountOut', minAmountOut);
+    console.log('slippage tolerance left %', amountOut > 0 ? 100 -minAmountOut * 100 / amountOut : 0);
 
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
 
@@ -271,15 +275,22 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     address token0 = pair.token0();
     address token1 = pair.token1();
 
+    console.log('token0', token0, IERC20Name(token0).symbol());
+    console.log('token1', token1, IERC20Name(token1).symbol());
+
     if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
       revert MSWrongTokens();
 
     {
     uint pairBalanceBefore = tokenIn.balanceOf(address(pair));
+    console.log('swapAmount   ', swapAmount);
+    console.log('address(pair)', address(pair));
+    console.log('this  balance', tokenIn.balanceOf(address(this)));
     tokenIn.safeTransfer(address(pair), swapAmount);
     swapAmount = tokenIn.balanceOf(address(pair)) - pairBalanceBefore;
     }
+    console.log('swapAmount', swapAmount);
     {
     amountOut = pair.getAmountOut(swapAmount, address(tokenIn));
     bool reverse = address(tokenIn) == token1;

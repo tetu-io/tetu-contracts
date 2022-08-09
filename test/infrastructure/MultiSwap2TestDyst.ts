@@ -114,6 +114,7 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
     let total = 0
     let reverted = 0;
 
+    // for (const key of Object.keys(testData).slice(0)) {
     for (const key of Object.keys(testData)) {
       console.log('\n-----------------------');
       console.log(total++, key);
@@ -124,11 +125,11 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
 
       const tokenIn = multiswap.swapData.tokenIn;
       const tokenOut = multiswap.swapData.tokenOut;
-      const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
 
       const amount = BigNumber.from(multiswap.swapAmount)
-      await TokenUtils.getToken(tokenIn, signer.address, amount.mul(2));
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
       await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
+      const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
 
       try {
         await multiSwap2.multiSwap(
