@@ -118,6 +118,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     SwapStep memory swapStep;
     uint len = swaps.length;
     for (uint i = 0; i < len; i++) {
+      console.log('- - - - - - - - -', i);
       swapStep = swaps[i];
 
       IERC20 swapTokenIn = _translateToIERC20(tokenAddresses[swapStep.assetInIndex]);
@@ -133,7 +134,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
       if (swapTokenIn == swapTokenOut) revert MSSameTokensInSwap();
 
-      console.logBytes32(swapStep.poolId);// TODO remove
+      console.logBytes32(swapStep.poolId);
 
       // SWAPPING
       if (_isUniswapPool(swapStep.poolId)) {
@@ -144,7 +145,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
         previousAmountOut = _swapBalancer(swapStep, swapTokenIn, swapTokenOut, swapAmount);
       }
       uint balanceOut =  swapTokenOut.balanceOf(address(this));
-      console.log('previousAmountOut', previousAmountOut, balanceOut);
+      console.log('previousAmountOut', previousAmountOut);
       console.log('balanceOut       ', balanceOut);
       previousAmountOut = _min( swapTokenOut.balanceOf(address(this)), previousAmountOut);
       previousTokenOut = swapTokenOut;
@@ -152,17 +153,12 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this));
     console.log('swapData.tokenOut', swapData.tokenOut);
-    console.log('amountOut', amountOut);
+    console.log('amountOut   ', amountOut);
     uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
+    console.log('returnAmount', swapData.returnAmount);
+    console.log('minAmountOut', minAmountOut, amountOut > 0 ? minAmountOut * 100 / amountOut : 0);
 
-    { // avoid stack to deep
-//      uint balanceBefore = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-      IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
-//      uint balanceAfter = IERC20(swapData.tokenOut).balanceOf(msg.sender);
-      // TODO add SPHERE to white list
-//      if (amountOut > (balanceAfter - balanceBefore))
-//        revert MSTransferFeesForbiddenForOutputToken();
-    }
+    IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
 
     if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
 
@@ -250,7 +246,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     }
 
     console.log('swapAmount', swapAmount, tokenIn.balanceOf(address(this)));
+    // Support fee on transfer
+    uint pairBalanceBefore = tokenIn.balanceOf(address(pair));
     tokenIn.safeTransfer(address(pair), swapAmount);
+    swapAmount = tokenIn.balanceOf(address(pair)) - pairBalanceBefore;
+
     bool reverse = address(tokenIn) == token1;
     console.log('reverse', reverse);
     (uint amountOut0, uint amountOut1) = _getAmountsOut(pair, swapAmount, reverse, swapStep.platformFee);
@@ -275,12 +275,17 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
       revert MSWrongTokens();
 
+    {
+    uint pairBalanceBefore = tokenIn.balanceOf(address(pair));
     tokenIn.safeTransfer(address(pair), swapAmount);
-
+    swapAmount = tokenIn.balanceOf(address(pair)) - pairBalanceBefore;
+    }
+    {
     amountOut = pair.getAmountOut(swapAmount, address(tokenIn));
     bool reverse = address(tokenIn) == token1;
     (uint amountOut0, uint amountOut1) = reverse ? (amountOut, uint(0)) : (uint(0), amountOut);
     pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
+    }
   }
 
   function _getAmountsOut(IUniswapV2Pair pair, uint amountIn, bool reverse, uint baseFee)

@@ -2,7 +2,6 @@ import chai, {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
   MultiSwap2,
-  ERC20TransferFee,
 } from "../../typechain";
 import {ethers, network, config} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
@@ -17,7 +16,6 @@ import {MaxUint256} from '@ethersproject/constants';
 import testJson from './json/MultiSwap2TestDataDyst.json';
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TimeUtils} from "../TimeUtils";
-import {parseUnits} from "ethers/lib/utils";
 
 
 // const {expect} = chai;
@@ -110,10 +108,9 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
   });
 
 
-  // TODO remove only
-  it("do multi swaps", async () => {
+  it("do Dystopia-urgent multi swaps", async () => {
     const deadline = MaxUint256;
-    const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
+    const slippage = _SLIPPAGE_DENOMINATOR * 20 / 100; // 10%
     let total = 0
     let reverted = 0;
 
@@ -130,7 +127,7 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
       const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
 
       const amount = BigNumber.from(multiswap.swapAmount)
-      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.getToken(tokenIn, signer.address, amount.mul(2));
       await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
 
       try {
@@ -145,6 +142,7 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
         const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
 
         const amountOut = amountOutAfter.sub(amountOutBefore);
+        console.log('___');
         console.log('amountOut     ', amountOut.toString());
         const amountExpected = multiswap.returnAmount;
         console.log('amountExpected', amountExpected);

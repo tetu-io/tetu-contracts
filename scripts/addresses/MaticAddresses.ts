@@ -76,6 +76,9 @@ export class MaticAddresses {
   public static SPHERE_DYST_TOKEN = '0x62f594339830b90ae4c084ae7d223ffafd9658a7'.toLowerCase();
   public static stMATIC_TOKEN = '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4'.toLowerCase();
   public static FRAX2_TOKEN = '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase();
+  public static KOGECOIN_TOKEN = '0x13748d548D95D78a3c83fe3F32604B4796CFfa23'.toLowerCase();
+  public static MaticX_TOKEN = '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6'.toLowerCase();
+  public static COMFI_TOKEN = '0x72bba3Aa59a1cCB1591D7CDDB714d8e4D5597E96'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
