@@ -58,11 +58,12 @@ async function fetchFeeOnTransferTokens() {
       continue;
     }
 
-    const amount = parseUnits('1', token.decimals);
-    const balanceBefore = await TokenUtils.balanceOf(token.address, signer.address);
     let fee;
 
     try {
+      const amount = parseUnits('1', token.decimals);
+      const balanceBefore = await TokenUtils.balanceOf(token.address, signer.address);
+
       await TokenUtils.getToken(token.address, signer.address, amount);
       const balance = await TokenUtils.balanceOf(token.address, signer.address);
       const received = balance.sub(balanceBefore);

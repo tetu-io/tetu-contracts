@@ -250,5 +250,239 @@
 		"decimals": 18,
 		"symbol": "BANK",
 		"fee": "VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'"
+	},
+	"0x9c2c5fd7b07e95ee044ddeba0e97a665f142394f": {
+		"address": "0x9c2c5fd7b07e95ee044ddeba0e97a665f142394f",
+		"decimals": 18,
+		"symbol": "1INCH",
+		"fee": "0"
+	},
+	"0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f": {
+		"address": "0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f",
+		"decimals": 18,
+		"symbol": "20WETH-80BAL",
+		"fee": "VM Exception while processing transaction: reverted with reason string 'BAL#406'"
+	},
+	"0x7fc9e0aa043787bfad28e29632ada302c790ce33": {
+		"address": "0x7fc9e0aa043787bfad28e29632ada302c790ce33",
+		"decimals": 18,
+		"symbol": "tetuBAL",
+		"fee": "0"
+	},
+	"0xbd7a5cf51d22930b8b3df6d834f9bcef90ee7c4f": {
+		"address": "0xbd7a5cf51d22930b8b3df6d834f9bcef90ee7c4f",
+		"decimals": 18,
+		"symbol": "ENS",
+		"fee": "0"
+	},
+	"0xdb95f9188479575f3f718a245eca1b3bf74567ec": {
+		"address": "0xdb95f9188479575f3f718a245eca1b3bf74567ec",
+		"decimals": 18,
+		"symbol": "GTC",
+		"fee": "0"
+	},
+	"0xa584484f422bfc2128566f8f954b7f2e31e94cc8": {
+		"address": "0xa584484f422bfc2128566f8f954b7f2e31e94cc8",
+		"decimals": 18,
+		"symbol": "DOWN",
+		"fee": "0"
+	},
+	"0x580a84c73811e1839f75d86d75d88cca0c241ff4": {
+		"address": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
+		"decimals": 18,
+		"symbol": "QI",
+		"fee": "0"
+	},
+	"0x85955046df4668e1dd369d2de9f3aeb98dd2a369": {
+		"address": "0x85955046df4668e1dd369d2de9f3aeb98dd2a369",
+		"decimals": 18,
+		"symbol": "DPI",
+		"fee": "0"
+	},
+	"0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a": {
+		"address": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+		"decimals": 18,
+		"symbol": "SUSHI",
+		"fee": "0"
+	},
+	"0x831753dd7087cac61ab5644b308642cc1c33dc13": {
+		"address": "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+		"decimals": 18,
+		"symbol": "QUICK",
+		"fee": "0"
+	},
+	"0xc3fdbadc7c795ef1d6ba111e06ff8f16a20ea539": {
+		"address": "0xc3fdbadc7c795ef1d6ba111e06ff8f16a20ea539",
+		"decimals": 18,
+		"symbol": "ADDY",
+		"fee": "0"
+	},
+	"0x2b4fa97b84698dc1540d13d33754757bac3c8115": {
+		"address": "0x2b4fa97b84698dc1540d13d33754757bac3c8115",
+		"decimals": 18,
+		"symbol": "PDAO",
+		"fee": "0"
+	},
+	"0xe2aa7db6da1dae97c5f5c6914d285fbfcc32a128": {
+		"address": "0xe2aa7db6da1dae97c5f5c6914d285fbfcc32a128",
+		"decimals": 18,
+		"symbol": "PAR",
+		"fee": "0"
+	},
+	"0x49690541e3f6e933a9aa3cffee6010a7bb5b72d7": {
+		"address": "0x49690541e3f6e933a9aa3cffee6010a7bb5b72d7",
+		"decimals": 18,
+		"symbol": "AXIA",
+		"fee": "0"
+	},
+	"0x6e14790535c04b1a58592fbee6109d9bc57a51ad": {
+		"address": "0x6e14790535c04b1a58592fbee6109d9bc57a51ad",
+		"decimals": 18,
+		"symbol": "VLT",
+		"fee": "0"
+	},
+	"0xfe712251173a2cd5f5be2b46bb528328ea3565e1": {
+		"address": "0xfe712251173a2cd5f5be2b46bb528328ea3565e1",
+		"decimals": 18,
+		"symbol": "MVI",
+		"fee": "0"
+	},
+	"0x3809dcdd5dde24b37abe64a5a339784c3323c44f": {
+		"address": "0x3809dcdd5dde24b37abe64a5a339784c3323c44f",
+		"decimals": 18,
+		"symbol": "SWAP",
+		"fee": "0"
+	},
+	"0x8fd0195469b51a935dc3c48617ced6b400e38c9c": {
+		"address": "0x8fd0195469b51a935dc3c48617ced6b400e38c9c",
+		"decimals": 18,
+		"symbol": "C4C",
+		"fee": "call revert exception (method=\"balanceOf(address)\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)"
+	},
+	"0xa486c6bc102f409180ccb8a94ba045d39f8fc7cb": {
+		"address": "0xa486c6bc102f409180ccb8a94ba045d39f8fc7cb",
+		"decimals": 8,
+		"symbol": "NEX",
+		"fee": "0"
+	},
+	"0xbbba073c31bf03b8acf7c28ef0738decf3695683": {
+		"address": "0xbbba073c31bf03b8acf7c28ef0738decf3695683",
+		"decimals": 18,
+		"symbol": "SAND",
+		"fee": "0"
+	},
+	"0x2286518b7ed0b786bcd3ee92a5b0292aa8713350": {
+		"address": "0x2286518b7ed0b786bcd3ee92a5b0292aa8713350",
+		"decimals": 9,
+		"symbol": "AUR",
+		"fee": "0"
+	},
+	"0x6f8a06447ff6fcf75d803135a7de15ce88c1d4ec": {
+		"address": "0x6f8a06447ff6fcf75d803135a7de15ce88c1d4ec",
+		"decimals": 18,
+		"symbol": "SHIB",
+		"fee": "0"
+	},
+	"0xfbdd194376de19a88118e84e279b977f165d01b8": {
+		"address": "0xfbdd194376de19a88118e84e279b977f165d01b8",
+		"decimals": 18,
+		"symbol": "BIFI",
+		"fee": "0"
+	},
+	"0xb5c064f955d8e7f38fe0460c556a72987494ee17": {
+		"address": "0xb5c064f955d8e7f38fe0460c556a72987494ee17",
+		"decimals": 18,
+		"symbol": "QUICK",
+		"fee": "0"
+	},
+	"0xf28164a485b0b2c90639e47b0f377b4a438a16b1": {
+		"address": "0xf28164a485b0b2c90639e47b0f377b4a438a16b1",
+		"decimals": 18,
+		"symbol": "dQUICK",
+		"fee": "0"
+	},
+	"0x3d23038a15d2186a4467f9647482994792eb401c": {
+		"address": "0x3d23038a15d2186a4467f9647482994792eb401c",
+		"decimals": 18,
+		"symbol": "ZINGOT",
+		"fee": "0"
+	},
+	"0x54cfe73f2c7d0c4b62ab869b473f5512dc0944d2": {
+		"address": "0x54cfe73f2c7d0c4b62ab869b473f5512dc0944d2",
+		"decimals": 18,
+		"symbol": "BZRX",
+		"fee": "0"
+	},
+	"0x45c32fa6df82ead1e2ef74d17b76547eddfaff89": {
+		"address": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
+		"decimals": 18,
+		"symbol": "FRAX",
+		"fee": "VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'"
+	},
+	"0xe6469ba6d2fd6130788e0ea9c0a0515900563b59": {
+		"address": "0xe6469ba6d2fd6130788e0ea9c0a0515900563b59",
+		"decimals": 6,
+		"symbol": "UST",
+		"fee": "0"
+	},
+	"0xaf28b7702e239e7ed107b6e036851f56e0415188": {
+		"address": "0xaf28b7702e239e7ed107b6e036851f56e0415188",
+		"decimals": 18,
+		"symbol": "PLAN",
+		"fee": "0"
+	},
+	"0x7dee5b855e643cf25ef1efa9860bbb456a3b81ab": {
+		"address": "0x7dee5b855e643cf25ef1efa9860bbb456a3b81ab",
+		"decimals": 18,
+		"symbol": "CLIP",
+		"fee": "0"
+	},
+	"0x24834bbec7e39ef42f4a75eaf8e5b6486d3f0e57": {
+		"address": "0x24834bbec7e39ef42f4a75eaf8e5b6486d3f0e57",
+		"decimals": 18,
+		"symbol": "LUNA",
+		"fee": "0"
+	},
+	"0xdddca1d1fd4e72b85b7b95f07651ab36b62f69e9": {
+		"address": "0xdddca1d1fd4e72b85b7b95f07651ab36b62f69e9",
+		"decimals": 18,
+		"symbol": "GROSH",
+		"fee": "0"
+	},
+	"0x1d607faa0a51518a7728580c238d912747e71f7a": {
+		"address": "0x1d607faa0a51518a7728580c238d912747e71f7a",
+		"decimals": 18,
+		"symbol": "DATA",
+		"fee": "0"
+	},
+	"0x4e3decbb3645551b8a19f0ea1678079fcb33fb4c": {
+		"address": "0x4e3decbb3645551b8a19f0ea1678079fcb33fb4c",
+		"decimals": 18,
+		"symbol": "jEUR",
+		"fee": "0"
+	},
+	"0x767058f11800fba6a682e73a6e79ec5eb74fac8c": {
+		"address": "0x767058f11800fba6a682e73a6e79ec5eb74fac8c",
+		"decimals": 18,
+		"symbol": "jGBP",
+		"fee": "0"
+	},
+	"0x8343091f2499fd4b6174a46d067a920a3b851ff9": {
+		"address": "0x8343091f2499fd4b6174a46d067a920a3b851ff9",
+		"decimals": 18,
+		"symbol": "jJPY",
+		"fee": "0"
+	},
+	"0x84526c812d8f6c4fd6c1a5b68713aff50733e772": {
+		"address": "0x84526c812d8f6c4fd6c1a5b68713aff50733e772",
+		"decimals": 18,
+		"symbol": "jCNY",
+		"fee": "0"
+	},
+	"0xf153eff70dc0bf3b085134928daeea248d9b30d0": {
+		"address": "0xf153eff70dc0bf3b085134928daeea248d9b30d0",
+		"decimals": 9,
+		"symbol": "xMARK",
+		"fee": "0"
 	}
 }

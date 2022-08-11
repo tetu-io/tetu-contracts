@@ -12,6 +12,7 @@ import {StrategyTestUtils} from "./strategies/StrategyTestUtils";
 import {EthAddresses} from "../scripts/addresses/EthAddresses";
 import fetch from 'node-fetch';
 import { JSDOM } from 'jsdom';
+import {getAddress} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -242,6 +243,7 @@ export class TokenUtils {
     const dom = new JSDOM(body);
     const href = dom?.window?.document?.querySelector("tbody a")?.getAttribute("href");
     const holder = href?.split('?a=')[1].slice(0, 42);
-    return holder;
+    const address = getAddress(holder as string);
+    return address;
   }
 }
