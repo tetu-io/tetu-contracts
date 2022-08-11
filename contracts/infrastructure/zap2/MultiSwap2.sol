@@ -105,9 +105,8 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.swapAmount);
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
-    // TODO add SPHERE to white list
-//    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
-//      revert MSTransferFeesForbiddenForInputToken();
+    if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
+      revert MSTransferFeesForbiddenForInputToken();
 
     // These store data about the previous swap here to implement multihop logic across swaps.
     IERC20 previousTokenOut = IERC20(swapData.tokenIn);
@@ -156,11 +155,10 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     console.log('= = = = = = =');
     amountOut = IERC20(swapData.tokenOut).balanceOf(address(this));
     console.log('swapData.tokenOut', swapData.tokenOut);
-    console.log('amountOut   ', amountOut);
+    console.log('expected ', swapData.returnAmount);
     uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
-    console.log('returnAmount', swapData.returnAmount);
-    console.log('minAmountOut', minAmountOut);
-    console.log('slippage tolerance left %', amountOut > 0 ? 100 -minAmountOut * 100 / amountOut : 0);
+    console.log('amountOut', amountOut);
+    console.log('minimum  ', minAmountOut);
 
     IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
 
@@ -250,10 +248,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     }
 
     console.log('swapAmount', swapAmount, tokenIn.balanceOf(address(this)));
-    // Support fee on transfer
-    uint pairBalanceBefore = tokenIn.balanceOf(address(pair));
     tokenIn.safeTransfer(address(pair), swapAmount);
-    swapAmount = tokenIn.balanceOf(address(pair)) - pairBalanceBefore;
 
     bool reverse = address(tokenIn) == token1;
     console.log('reverse', reverse);
@@ -275,27 +270,25 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     address token0 = pair.token0();
     address token1 = pair.token1();
 
-    console.log('token0', token0, IERC20Name(token0).symbol());
-    console.log('token1', token1, IERC20Name(token1).symbol());
+    console.log('-token0', token0, IERC20Name(token0).symbol());
+    console.log('-token1', token1, IERC20Name(token1).symbol());
 
     if (!((token0 == address(tokenIn) && token1 == address(tokenOut)) ||
           (token1 == address(tokenIn) && token0 == address(tokenOut))))
       revert MSWrongTokens();
 
     {
-    uint pairBalanceBefore = tokenIn.balanceOf(address(pair));
-    console.log('swapAmount   ', swapAmount);
-    console.log('address(pair)', address(pair));
-    console.log('this  balance', tokenIn.balanceOf(address(this)));
-    tokenIn.safeTransfer(address(pair), swapAmount);
-    swapAmount = tokenIn.balanceOf(address(pair)) - pairBalanceBefore;
+      console.log('-swapAmount   ', swapAmount);
+      console.log('-address(pair)', address(pair));
+      console.log('-this  balance', tokenIn.balanceOf(address(this)));
+      tokenIn.safeTransfer(address(pair), swapAmount);
     }
-    console.log('swapAmount', swapAmount);
     {
-    amountOut = pair.getAmountOut(swapAmount, address(tokenIn));
-    bool reverse = address(tokenIn) == token1;
-    (uint amountOut0, uint amountOut1) = reverse ? (amountOut, uint(0)) : (uint(0), amountOut);
-    pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
+      amountOut = pair.getAmountOut(swapAmount, address(tokenIn));
+      bool reverse = address(tokenIn) == token1;
+      (uint amountOut0, uint amountOut1) = reverse ? (amountOut, uint(0)) : (uint(0), amountOut);
+      console.log('-amountOut0, amountOut1', amountOut0, amountOut1);
+      pair.swap(amountOut0, amountOut1, address(this), swapStep.userData);
     }
   }
 

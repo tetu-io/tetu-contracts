@@ -30,4 +30,6 @@ interface IPair {
   function token0() external returns (address);
 
   function token1() external returns (address);
+
+  function sync() external;
 }

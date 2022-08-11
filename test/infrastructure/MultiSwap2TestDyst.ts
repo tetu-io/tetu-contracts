@@ -107,10 +107,9 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-
   it("do Dystopia-urgent multi swaps", async () => {
     const deadline = MaxUint256;
-    const slippage = _SLIPPAGE_DENOMINATOR * 20 / 100; // 10%
+    const slippageTolerance = _SLIPPAGE_DENOMINATOR * 0.5 / 100; // 0.5%
     let total = 0
     let reverted = 0;
 
@@ -126,9 +125,12 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
       const tokenIn = multiswap.swapData.tokenIn;
       const tokenOut = multiswap.swapData.tokenOut;
 
-      const amount = BigNumber.from(multiswap.swapAmount)
-      await TokenUtils.getToken(tokenIn, signer.address, amount);
-      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
+      const amount = BigNumber.from(multiswap.swapAmount);
+      const getAmount = amount.mul(2); // to support fee on transfer tokens
+      await TokenUtils.getToken(tokenIn, signer.address, getAmount);
+      const receivedAmount = await TokenUtils.balanceOf(tokenIn, signer.address);
+
+      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, getAmount.toString());
       const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
 
       try {
@@ -136,7 +138,7 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
             multiswap.swapData,
             multiswap.swaps,
             multiswap.tokenAddresses,
-            slippage,
+            slippageTolerance,
             deadline
         );
 
@@ -147,8 +149,8 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
         console.log('amountOut     ', amountOut.toString());
         const amountExpected = multiswap.returnAmount;
         console.log('amountExpected', amountExpected);
-        const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
-        console.log('diff', diff.toFixed(4), '%');
+        const diff = BigNumber.from(amountOut).mul(1000000).div(amountExpected).toNumber() / 10000 - 100;
+        console.log('diff', diff.toFixed(4), '%  ');
 
         // expect(diff).lt(0.1); // TODO remove comment
 
@@ -162,7 +164,7 @@ describe("MultiSwap2 Dystopia main pairs test", function () {
     }
     console.log('total   ', total);
     console.log('reverted', reverted);
-
+    expect(reverted).eq(0);
 
   })
 
