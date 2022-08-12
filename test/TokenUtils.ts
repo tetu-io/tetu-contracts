@@ -129,7 +129,7 @@ export class TokenUtils {
     [MaticAddresses.DYST_TOKEN,'0x060fa7aD32C510F12550c7a967999810dafC5697'.toLowerCase()],
     [MaticAddresses.USD_PLUS_TOKEN,'0x826b8d2d523E7af40888754E3De64348C00B99f4'.toLowerCase()],
     [MaticAddresses.SPHERE_DYST_TOKEN,'0x20D61737f972EEcB0aF5f0a85ab358Cd083Dd56a'.toLowerCase()],
-    [MaticAddresses.stMATIC_TOKEN,'0x19d97aa29cd33bd966d52e2bc9dfc719f2bb9ae1'.toLowerCase()],
+    [MaticAddresses.stMATIC_TOKEN,'0x765c6d09ef9223b1becd3b92a0ec01548d53cfba'.toLowerCase()],
     [MaticAddresses.FRAX2_TOKEN,'0xe7ec500e14edbe3ca3358bcde7df145968b2aead'.toLowerCase()],
     [MaticAddresses.FXS_TOKEN,'0xdbc13e67f678cc00591920cece4dca6322a79ac7'.toLowerCase()],
     [MaticAddresses.KOGECOIN_TOKEN,'0xAf22Fd5898a4B4Ea42C06c9e77aD3B4807d66Bff'.toLowerCase()],
@@ -208,9 +208,9 @@ export class TokenUtils {
     return tokenId;
   }
 
-  public static async getToken(token: string, to: string, amount?: BigNumber) {
+  public static async getToken(token: string, to: string, amount?: BigNumber, refreshHolder?: boolean) {
     const start = Date.now();
-    console.log('transfer token from biggest holder', token, amount?.toString());
+    console.log('transfer token', token, 'from biggest holder. Amount:', amount?.toString());
     if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
       const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
       const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
@@ -218,7 +218,7 @@ export class TokenUtils {
       return amount;
     }
     let holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
-    if (!holder)
+    if (!holder || refreshHolder)
       holder = await this.getBiggestHolder(token.toLowerCase()) as string;
     if (!holder) {
       throw new Error('Please add holder for ' + token);
@@ -237,6 +237,7 @@ export class TokenUtils {
 
   // get the biggest holder from PolygonScan
   public static async getBiggestHolder(tokenAddress: string): Promise<string | undefined> {
+    console.log('getBiggestHolder for', tokenAddress);
     const url = 'https://polygonscan.com/token/generic-tokenholders2?m=normal&a=' + tokenAddress.toLowerCase();
     const response = await fetch(url);
     const body = await response.text();
@@ -244,6 +245,8 @@ export class TokenUtils {
     const href = dom?.window?.document?.querySelector("tbody a")?.getAttribute("href");
     const holder = href?.split('?a=')[1].slice(0, 42);
     const address = getAddress(holder as string);
+    console.log('    holder:', address);
+
     return address;
   }
 }
