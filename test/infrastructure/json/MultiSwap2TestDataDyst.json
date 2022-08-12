@@ -1,20 +1,20 @@
 {
-	"blockNumber": 31792151,
+	"blockNumber": 31798965,
 	"testData": {
 		"10 USDC->WMATIC": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10872976958969725119",
-			"returnAmountFromSwaps": "10872976958969725119",
-			"returnAmountConsideringFees": "10871576958969725119",
+			"returnAmount": "10897393840623267282",
+			"returnAmountFromSwaps": "10897393840623267282",
+			"returnAmountConsideringFees": "10895993840623267282",
 			"swaps": [
 				{
-					"poolId": "0xf85ac8aff5ad22c745bfca07d65fbcde67a04c90fffffffffffffffffffffff0",
+					"poolId": "0x60c088234180b36edcec7aa8aa23912bb6bed114ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
 					"amount": "10000000",
 					"userData": "0x",
-					"platformFee": 10
+					"platformFee": 5
 				}
 			],
 			"tokenAddresses": [
@@ -23,15 +23,15 @@
 			],
 			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.9178820033362994",
+			"marketSp": "0.9171770191336777",
 			"swapPlatforms": {
-				"0xf85ac8aff5ad22c745bfca07d65fbcde67a04c90fffffffffffffffffffffff0": "TetuSwap"
+				"0x60c088234180b36edcec7aa8aa23912bb6bed114ddddddddddddddddddddddd0": "Dystopia"
 			},
 			"swapData": {
 				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000",
-				"returnAmount": "10872976958969725119"
+				"returnAmount": "10897393840623267282"
 			},
 			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -39,44 +39,34 @@
 		"10 WMATIC->USDC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9244257",
-			"returnAmountFromSwaps": "9244257",
-			"returnAmountConsideringFees": "9244257",
+			"returnAmount": "9218603",
+			"returnAmountFromSwaps": "9218603",
+			"returnAmountConsideringFees": "9218603",
 			"swaps": [
 				{
-					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"poolId": "0xf85ac8aff5ad22c745bfca07d65fbcde67a04c90fffffffffffffffffffffff0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
 					"amount": "10000000000000000000",
-					"userData": "0x",
-					"platformFee": 10
-				},
-				{
-					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
 					"userData": "0x",
 					"platformFee": 10
 				}
 			],
 			"tokenAddresses": [
 				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0x255707b70bf90aa112006e1b07b9aea6de021424",
 				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "1.0766177408104238807215636372692",
+			"marketSp": "1.0826902851255051",
 			"swapPlatforms": {
-				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap",
-				"0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0": "TetuSwap"
+				"0xf85ac8aff5ad22c745bfca07d65fbcde67a04c90fffffffffffffffffffffff0": "TetuSwap"
 			},
 			"swapData": {
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9244257"
+				"returnAmount": "9218603"
 			},
 			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
@@ -84,9 +74,9 @@
 		"10 USDT->WMATIC": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10831890922691387579",
-			"returnAmountFromSwaps": "10831890922691387579",
-			"returnAmountConsideringFees": "10830490922691387579",
+			"returnAmount": "10895421135290770415",
+			"returnAmountFromSwaps": "10895421135290770415",
+			"returnAmountConsideringFees": "10894021135290770415",
 			"swaps": [
 				{
 					"poolId": "0x407ad7715894ef949f38fff31e442bef18112c45ddddddddddddddddddddddd0",
@@ -103,7 +93,7 @@
 			],
 			"tokenIn": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.9227085661538135",
+			"marketSp": "0.9173282497854369",
 			"swapPlatforms": {
 				"0x407ad7715894ef949f38fff31e442bef18112c45ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -111,7 +101,7 @@
 				"tokenIn": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000",
-				"returnAmount": "10831890922691387579"
+				"returnAmount": "10895421135290770415"
 			},
 			"tokenInForSwaps": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -119,9 +109,9 @@
 		"10 USD+->WMATIC": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10824198890126489588",
-			"returnAmountFromSwaps": "10824198890126489588",
-			"returnAmountConsideringFees": "10822798890126489588",
+			"returnAmount": "10890997859398900710",
+			"returnAmountFromSwaps": "10890997859398900710",
+			"returnAmountConsideringFees": "10889597859398900710",
 			"swaps": [
 				{
 					"poolId": "0x1a5feba5d5846b3b840312bd04d76ddaa6220170ddddddddddddddddddddddd0",
@@ -138,7 +128,7 @@
 			],
 			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.9233575026765316",
+			"marketSp": "0.9176940389711263",
 			"swapPlatforms": {
 				"0x1a5feba5d5846b3b840312bd04d76ddaa6220170ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -146,7 +136,7 @@
 				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000",
-				"returnAmount": "10824198890126489588"
+				"returnAmount": "10890997859398900710"
 			},
 			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -154,44 +144,44 @@
 		"10 WMATIC->USD+": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9269416",
-			"returnAmountFromSwaps": "9269416",
-			"returnAmountConsideringFees": "9269416",
+			"returnAmount": "9195392",
+			"returnAmountFromSwaps": "9195392",
+			"returnAmountConsideringFees": "9195392",
 			"swaps": [
 				{
-					"poolId": "0x1316e0655428840dba61bd75980cbe43488c35fdfffffffffffffffffffffff2",
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
 					"amount": "10000000000000000000",
 					"userData": "0x",
-					"platformFee": 30
+					"platformFee": 10
 				},
 				{
-					"poolId": "0x143b882e58fd8c543da98c7d84063a5ae34925dafffffffffffffffffffffff2",
+					"poolId": "0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0",
 					"assetInIndex": 1,
 					"assetOutIndex": 2,
 					"amount": "0",
 					"userData": "0x",
-					"platformFee": 30
+					"platformFee": 5
 				}
 			],
 			"tokenAddresses": [
 				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0x60eec374a1ba3907e9bdd8a74ce368d041d89c79",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
 				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"marketSp": "1.071982066179352303978301685713125",
+			"marketSp": "1.08278265697739474248224021612324",
 			"swapPlatforms": {
-				"0x1316e0655428840dba61bd75980cbe43488c35fdfffffffffffffffffffffff2": "QuickSwap",
-				"0x143b882e58fd8c543da98c7d84063a5ae34925dafffffffffffffffffffffff2": "QuickSwap"
+				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap",
+				"0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0": "Dystopia"
 			},
 			"swapData": {
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9269416"
+				"returnAmount": "9195392"
 			},
 			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
@@ -199,44 +189,34 @@
 		"10 WMATIC->USDT": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9224526",
-			"returnAmountFromSwaps": "9224526",
-			"returnAmountConsideringFees": "9224526",
+			"returnAmount": "9171991",
+			"returnAmountFromSwaps": "9171991",
+			"returnAmountConsideringFees": "9171991",
 			"swaps": [
 				{
-					"poolId": "0x92928272c2d5e6230350b1d9791edcf9263644d0fffffffffffffffffffffff2",
+					"poolId": "0x101640e107c4a72dec79826768c239f1eb48cc85fffffffffffffffffffffff4",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
 					"amount": "10000000000000000000",
 					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0x882ded13fc1e5076715397418ee31fe3370d496cfffffffffffffffffffffff2",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 30
+					"platformFee": 10
 				}
 			],
 			"tokenAddresses": [
 				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0x61daecab65ee2a1d5b6032df030f3faa3d116aa7",
 				"0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
-			"marketSp": "1.07548635418806798144623160165519",
+			"marketSp": "1.0873791670872086",
 			"swapPlatforms": {
-				"0x92928272c2d5e6230350b1d9791edcf9263644d0fffffffffffffffffffffff2": "QuickSwap",
-				"0x882ded13fc1e5076715397418ee31fe3370d496cfffffffffffffffffffffff2": "QuickSwap"
+				"0x101640e107c4a72dec79826768c239f1eb48cc85fffffffffffffffffffffff4": "JetSwap"
 			},
 			"swapData": {
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9224526"
+				"returnAmount": "9171991"
 			},
 			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOutFromSwaps": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
@@ -244,15 +224,15 @@
 		"10 WETH->WMATIC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "20488819561771413709737",
-			"returnAmountFromSwaps": "20488819561771413709737",
-			"returnAmountConsideringFees": "20488813961771413709737",
+			"returnAmount": "20452909443086224826251",
+			"returnAmountFromSwaps": "20452909443086224826251",
+			"returnAmountConsideringFees": "20452903843086224826251",
 			"swaps": [
 				{
 					"poolId": "0xadbf1854e5883eb8aa7baf50705338739e558e5bfffffffffffffffffffffff2",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "8270849483798293700",
+					"amount": "8418446419014455707",
 					"userData": "0x",
 					"platformFee": 30
 				},
@@ -260,25 +240,25 @@
 					"poolId": "0x6cf8654e85ab489ca7e70189046d507eba233613fffffffffffffffffffffff3",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "1140913041740387113",
+					"amount": "1012581821115908222",
 					"userData": "0x",
 					"platformFee": 20
-				},
-				{
-					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "280776580548207920",
-					"userData": "0x",
-					"platformFee": 25
 				},
 				{
 					"poolId": "0x62fc1e1fdabc0c9f2b096019e2d98204da049457ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "307460893913111267",
+					"amount": "463274144405934108",
 					"userData": "0x",
 					"platformFee": 5
+				},
+				{
+					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "105697615463701963",
+					"userData": "0x",
+					"platformFee": 25
 				}
 			],
 			"tokenAddresses": [
@@ -287,18 +267,18 @@
 			],
 			"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.0004860547678387776",
+			"marketSp": "0.0004868830445360597",
 			"swapPlatforms": {
 				"0xadbf1854e5883eb8aa7baf50705338739e558e5bfffffffffffffffffffffff2": "QuickSwap",
 				"0x6cf8654e85ab489ca7e70189046d507eba233613fffffffffffffffffffffff3": "ApeSwap",
-				"0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002": "Balancer",
-				"0x62fc1e1fdabc0c9f2b096019e2d98204da049457ddddddddddddddddddddddd0": "Dystopia"
+				"0x62fc1e1fdabc0c9f2b096019e2d98204da049457ddddddddddddddddddddddd0": "Dystopia",
+				"0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002": "Balancer"
 			},
 			"swapData": {
 				"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "20488819561771413709737"
+				"returnAmount": "20452909443086224826251"
 			},
 			"tokenInForSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -306,232 +286,25 @@
 		"10 USD+->USDC": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10017565",
-			"returnAmountFromSwaps": "10017565",
-			"returnAmountConsideringFees": "10017565",
-			"swaps": [
-				{
-					"poolId": "0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "10000000",
-					"userData": "0x",
-					"platformFee": 5
-				},
-				{
-					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 10
-				}
-			],
-			"tokenAddresses": [
-				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-				"0x255707b70bf90aa112006e1b07b9aea6de021424",
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-			],
-			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "0.9963881179401338601255228270144",
-			"swapPlatforms": {
-				"0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0": "Dystopia",
-				"0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0": "TetuSwap"
-			},
-			"swapData": {
-				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"swapAmount": "10000000",
-				"returnAmount": "10017565"
-			},
-			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-		},
-		"10 USDC->USD+": {
-			"swapAmount": "10000000",
-			"swapAmountForSwaps": "10000000",
-			"returnAmount": "9997262",
-			"returnAmountFromSwaps": "9997262",
-			"returnAmountConsideringFees": "9997262",
+			"returnAmount": "9993219",
+			"returnAmountFromSwaps": "9993219",
+			"returnAmountConsideringFees": "9993219",
 			"swaps": [
 				{
 					"poolId": "0x421a018cc5839c4c0300afb21c725776dc389b1addddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "10000000",
+					"amount": "6583221",
 					"userData": "0x",
 					"platformFee": 5
-				}
-			],
-			"tokenAddresses": [
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
-			],
-			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"marketSp": "0.9077202596021839",
-			"swapPlatforms": {
-				"0x421a018cc5839c4c0300afb21c725776dc389b1addddddddddddddddddddddd0": "Dystopia"
-			},
-			"swapData": {
-				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-				"swapAmount": "10000000",
-				"returnAmount": "9997262"
-			},
-			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
-		},
-		"10 WMATIC->WETH": {
-			"swapAmount": "10000000000000000000",
-			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "4870044657872496",
-			"returnAmountFromSwaps": "4870044657872496",
-			"returnAmountConsideringFees": "4870044657872496",
-			"swaps": [
-				{
-					"poolId": "0xbc7b96467f4e33b943ecd999432055127f600b61fffffffffffffffffffffff0",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "3349977132389132735",
-					"userData": "0x",
-					"platformFee": 10
 				},
 				{
-					"poolId": "0xcb60e17ea720ef331446e434be5de5f35fae8bc8fffffffffffffffffffffff1",
+					"poolId": "0xa81643567ff913230c9ca868ed2b83e19e05a525ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 2,
-					"amount": "3119955036196074271",
+					"amount": "3416779",
 					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0xa7c4754f4c5e58d5fcfbabdc7c2a8684296a32aefffffffffffffffffffffff2",
-					"assetInIndex": 2,
-					"assetOutIndex": 1,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0x3c2646a14b43c872a09ec9dc6135fc5920a50f56fffffffffffffffffffffff1",
-					"assetInIndex": 0,
-					"assetOutIndex": 3,
-					"amount": "3530067831414792994",
-					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0x235aeb304cc1a06602321eaf0f1dbafd6a34fb5ffffffffffffffffffffffff1",
-					"assetInIndex": 3,
-					"assetOutIndex": 1,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 30
-				}
-			],
-			"tokenAddresses": [
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"0x6ddb31002abc64e1479fc439692f7ea061e78165",
-				"0x8eef5a82e6aa222a60f009ac18c24ee12dbf4b41"
-			],
-			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-			"marketSp": "2041.4159795329293923169532589866",
-			"swapPlatforms": {
-				"0xbc7b96467f4e33b943ecd999432055127f600b61fffffffffffffffffffffff0": "TetuSwap",
-				"0xcb60e17ea720ef331446e434be5de5f35fae8bc8fffffffffffffffffffffff1": "SushiSwap",
-				"0xa7c4754f4c5e58d5fcfbabdc7c2a8684296a32aefffffffffffffffffffffff2": "QuickSwap",
-				"0x3c2646a14b43c872a09ec9dc6135fc5920a50f56fffffffffffffffffffffff1": "SushiSwap",
-				"0x235aeb304cc1a06602321eaf0f1dbafd6a34fb5ffffffffffffffffffffffff1": "SushiSwap"
-			},
-			"swapData": {
-				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"swapAmount": "10000000000000000000",
-				"returnAmount": "4870044657872496"
-			},
-			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"tokenOutFromSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
-		},
-		"10 USDC->WETH": {
-			"swapAmount": "10000000",
-			"swapAmountForSwaps": "10000000",
-			"returnAmount": "5263555892972026",
-			"returnAmountFromSwaps": "5263555892972026",
-			"returnAmountConsideringFees": "5263555892972026",
-			"swaps": [
-				{
-					"poolId": "0xad13ad855fcac6ffe6dbba9362873228937fba53fffffffffffffffffffffff0",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "5717297",
-					"userData": "0x",
-					"platformFee": 10
-				},
-				{
-					"poolId": "0xabca7538233cbe69709c004c52dc37e61c03796bfffffffffffffffffffffff0",
-					"assetInIndex": 0,
-					"assetOutIndex": 2,
-					"amount": "4282703",
-					"userData": "0x",
-					"platformFee": 10
-				},
-				{
-					"poolId": "0x6be10c5c7178af8c49997d07d6a5444c15e58170fffffffffffffffffffffff1",
-					"assetInIndex": 2,
-					"assetOutIndex": 1,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 30
-				}
-			],
-			"tokenAddresses": [
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"0x3066818837c5e6ed6601bd5a91b0762877a6b731"
-			],
-			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-			"marketSp": "1896.9941852735762",
-			"swapPlatforms": {
-				"0xad13ad855fcac6ffe6dbba9362873228937fba53fffffffffffffffffffffff0": "TetuSwap",
-				"0xabca7538233cbe69709c004c52dc37e61c03796bfffffffffffffffffffffff0": "TetuSwap",
-				"0x6be10c5c7178af8c49997d07d6a5444c15e58170fffffffffffffffffffffff1": "SushiSwap"
-			},
-			"swapData": {
-				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-				"swapAmount": "10000000",
-				"returnAmount": "5263555892972026"
-			},
-			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"tokenOutFromSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
-		},
-		"10 WETH->USDC": {
-			"swapAmount": "10000000000000000000",
-			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "18951339482",
-			"returnAmountFromSwaps": "18951339482",
-			"returnAmountConsideringFees": "18951339482",
-			"swaps": [
-				{
-					"poolId": "0x853ee4b2a13f8a742d64c8f088be7ba2131f670dfffffffffffffffffffffff2",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "7352528894211833114",
-					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0x4a35582a710e1f4b2030a3f826da20bfb6703c09fffffffffffffffffffffff2",
-					"assetInIndex": 0,
-					"assetOutIndex": 2,
-					"amount": "2647471105788166886",
-					"userData": "0x",
-					"platformFee": 30
+					"platformFee": 5
 				},
 				{
 					"poolId": "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012",
@@ -543,44 +316,44 @@
 				}
 			],
 			"tokenAddresses": [
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"
+				"0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
 			],
-			"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "0.0005254294093822296",
+			"marketSp": "1.0974531689303721",
 			"swapPlatforms": {
-				"0x853ee4b2a13f8a742d64c8f088be7ba2131f670dfffffffffffffffffffffff2": "QuickSwap",
-				"0x4a35582a710e1f4b2030a3f826da20bfb6703c09fffffffffffffffffffffff2": "QuickSwap",
+				"0x421a018cc5839c4c0300afb21c725776dc389b1addddddddddddddddddddddd0": "Dystopia",
+				"0xa81643567ff913230c9ca868ed2b83e19e05a525ddddddddddddddddddddddd0": "Dystopia",
 				"0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012": "Balancer"
 			},
 			"swapData": {
-				"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"swapAmount": "10000000000000000000",
-				"returnAmount": "18951339482"
+				"swapAmount": "10000000",
+				"returnAmount": "9993219"
 			},
-			"tokenInForSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
 		},
-		"10 DYST->WMATIC": {
-			"swapAmount": "10000000000000000000",
-			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "332347326812392355",
-			"returnAmountFromSwaps": "332347326812392355",
-			"returnAmountConsideringFees": "329547326812392355",
+		"10 USDC->USD+": {
+			"swapAmount": "10000000",
+			"swapAmountForSwaps": "10000000",
+			"returnAmount": "10019284",
+			"returnAmountFromSwaps": "10019284",
+			"returnAmountConsideringFees": "10019284",
 			"swaps": [
 				{
-					"poolId": "0xfdf8dcd97100a0a5cc36d6b4de12fb90517240b8ddddddddddddddddddddddd0",
+					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "10000000000000000000",
+					"amount": "10000000",
 					"userData": "0x",
-					"platformFee": 5
+					"platformFee": 10
 				},
 				{
-					"poolId": "0x2c5ba816da67ce34029fc4a9cc7545d207abf945ddddddddddddddddddddddd0",
+					"poolId": "0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0",
 					"assetInIndex": 1,
 					"assetOutIndex": 2,
 					"amount": "0",
@@ -589,22 +362,228 @@
 				}
 			],
 			"tokenAddresses": [
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
+			],
+			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
+			"marketSp": "0.99621604874854255682852822750139",
+			"swapPlatforms": {
+				"0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0": "TetuSwap",
+				"0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0": "Dystopia"
+			},
+			"swapData": {
+				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
+				"swapAmount": "10000000",
+				"returnAmount": "10019284"
+			},
+			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
+		},
+		"10 WMATIC->WETH": {
+			"swapAmount": "10000000000000000000",
+			"swapAmountForSwaps": "10000000000000000000",
+			"returnAmount": "4885862802349383",
+			"returnAmountFromSwaps": "4885862802349383",
+			"returnAmountConsideringFees": "4885862802349383",
+			"swaps": [
+				{
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "6990860907199737359",
+					"userData": "0x",
+					"platformFee": 10
+				},
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x",
+					"platformFee": 10
+				},
+				{
+					"poolId": "0xbc7b96467f4e33b943ecd999432055127f600b61fffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 2,
+					"amount": "3009139092800262641",
+					"userData": "0x",
+					"platformFee": 10
+				}
+			],
+			"tokenAddresses": [
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+			],
+			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+			"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+			"marketSp": "2037.83303964005547216141420159468",
+			"swapPlatforms": {
+				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap",
+				"0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0": "TetuSwap",
+				"0xbc7b96467f4e33b943ecd999432055127f600b61fffffffffffffffffffffff0": "TetuSwap"
+			},
+			"swapData": {
+				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+				"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"swapAmount": "10000000000000000000",
+				"returnAmount": "4885862802349383"
+			},
+			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+			"tokenOutFromSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+		},
+		"10 USDC->WETH": {
+			"swapAmount": "10000000",
+			"swapAmountForSwaps": "10000000",
+			"returnAmount": "5317609973668927",
+			"returnAmountFromSwaps": "5317609973668927",
+			"returnAmountConsideringFees": "5317609973668927",
+			"swaps": [
+				{
+					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "10000000",
+					"userData": "0x",
+					"platformFee": 10
+				},
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 1,
+					"assetOutIndex": 2,
+					"amount": "0",
+					"userData": "0x",
+					"platformFee": 10
+				}
+			],
+			"tokenAddresses": [
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+			],
+			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+			"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+			"marketSp": "1874.91179848277808432521472278673",
+			"swapPlatforms": {
+				"0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0": "TetuSwap",
+				"0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0": "TetuSwap"
+			},
+			"swapData": {
+				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"swapAmount": "10000000",
+				"returnAmount": "5317609973668927"
+			},
+			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+			"tokenOutFromSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+		},
+		"10 WETH->USDC": {
+			"swapAmount": "10000000000000000000",
+			"swapAmountForSwaps": "10000000000000000000",
+			"returnAmount": "18786386892",
+			"returnAmountFromSwaps": "18786386892",
+			"returnAmountConsideringFees": "18786386892",
+			"swaps": [
+				{
+					"poolId": "0x853ee4b2a13f8a742d64c8f088be7ba2131f670dfffffffffffffffffffffff2",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "5862430654407591201",
+					"userData": "0x",
+					"platformFee": 30
+				},
+				{
+					"poolId": "0xf6422b997c7f54d1c6a6e103bcb1499eea0a7046fffffffffffffffffffffff2",
+					"assetInIndex": 0,
+					"assetOutIndex": 2,
+					"amount": "1975015470335824469",
+					"userData": "0x",
+					"platformFee": 30
+				},
+				{
+					"poolId": "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012",
+					"assetInIndex": 2,
+					"assetOutIndex": 1,
+					"amount": "0",
+					"userData": "0x",
+					"platformFee": 4
+				},
+				{
+					"poolId": "0x4a35582a710e1f4b2030a3f826da20bfb6703c09fffffffffffffffffffffff2",
+					"assetInIndex": 0,
+					"assetOutIndex": 3,
+					"amount": "2162553875256584330",
+					"userData": "0x",
+					"platformFee": 30
+				},
+				{
+					"poolId": "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012",
+					"assetInIndex": 3,
+					"assetOutIndex": 1,
+					"amount": "0",
+					"userData": "0x",
+					"platformFee": 4
+				}
+			],
+			"tokenAddresses": [
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+				"0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"
+			],
+			"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+			"marketSp": "0.0005302045600018106",
+			"swapPlatforms": {
+				"0x853ee4b2a13f8a742d64c8f088be7ba2131f670dfffffffffffffffffffffff2": "QuickSwap",
+				"0xf6422b997c7f54d1c6a6e103bcb1499eea0a7046fffffffffffffffffffffff2": "QuickSwap",
+				"0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012": "Balancer",
+				"0x4a35582a710e1f4b2030a3f826da20bfb6703c09fffffffffffffffffffffff2": "QuickSwap"
+			},
+			"swapData": {
+				"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"swapAmount": "10000000000000000000",
+				"returnAmount": "18786386892"
+			},
+			"tokenInForSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
+		},
+		"10 DYST->WMATIC": {
+			"swapAmount": "10000000000000000000",
+			"swapAmountForSwaps": "10000000000000000000",
+			"returnAmount": "331920317982588162",
+			"returnAmountFromSwaps": "331920317982588162",
+			"returnAmountConsideringFees": "330520317982588162",
+			"swaps": [
+				{
+					"poolId": "0x84dceb1d412bcb39ae97129209141752ab207c6dddddddddddddddddddddddd0",
+					"assetInIndex": 0,
+					"assetOutIndex": 1,
+					"amount": "10000000000000000000",
+					"userData": "0x",
+					"platformFee": 5
+				}
+			],
+			"tokenAddresses": [
 				"0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
-				"0x9008d70a5282a936552593f410abcbce2f891a97",
 				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
 			],
 			"tokenIn": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "30.0577418491071034489275621650298",
+			"marketSp": "90.22458341644642",
 			"swapPlatforms": {
-				"0xfdf8dcd97100a0a5cc36d6b4de12fb90517240b8ddddddddddddddddddddddd0": "Dystopia",
-				"0x2c5ba816da67ce34029fc4a9cc7545d207abf945ddddddddddddddddddddddd0": "Dystopia"
+				"0x84dceb1d412bcb39ae97129209141752ab207c6dddddddddddddddddddddddd0": "Dystopia"
 			},
 			"swapData": {
 				"tokenIn": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "332347326812392355"
+				"returnAmount": "331920317982588162"
 			},
 			"tokenInForSwaps": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -612,9 +591,9 @@
 		"10 stMATIC->WMATIC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "10343666443212875566",
-			"returnAmountFromSwaps": "10343666443212875566",
-			"returnAmountConsideringFees": "10342266443212875566",
+			"returnAmount": "10347146585500286663",
+			"returnAmountFromSwaps": "10347146585500286663",
+			"returnAmountConsideringFees": "10345746585500286663",
 			"swaps": [
 				{
 					"poolId": "0x1237fea0b26f68191d50900bffd85e142697c423ddddddddddddddddddddddd0",
@@ -631,7 +610,7 @@
 			],
 			"tokenIn": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.5900073031088142",
+			"marketSp": "0.5889458424088672",
 			"swapPlatforms": {
 				"0x1237fea0b26f68191d50900bffd85e142697c423ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -639,7 +618,7 @@
 				"tokenIn": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "10343666443212875566"
+				"returnAmount": "10347146585500286663"
 			},
 			"tokenInForSwaps": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -647,20 +626,20 @@
 		"10 USD+->TETU": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "1262328113524829559618",
-			"returnAmountFromSwaps": "1262328113524829559618",
-			"returnAmountConsideringFees": "1262328113524829559618",
+			"returnAmount": "1268734314202036040617",
+			"returnAmountFromSwaps": "1268734314202036040617",
+			"returnAmountConsideringFees": "1268734314202036040617",
 			"swaps": [
 				{
-					"poolId": "0xa81643567ff913230c9ca868ed2b83e19e05a525ddddddddddddddddddddddd0",
+					"poolId": "0x1a5feba5d5846b3b840312bd04d76ddaa6220170ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "1724841",
+					"amount": "8391308",
 					"userData": "0x",
 					"platformFee": 5
 				},
 				{
-					"poolId": "0xca522cd609f7187c67c8b97be0a3a3259e7bb6fffffffffffffffffffffffff0",
+					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
 					"assetInIndex": 1,
 					"assetOutIndex": 2,
 					"amount": "0",
@@ -668,15 +647,15 @@
 					"platformFee": 10
 				},
 				{
-					"poolId": "0x1a5feba5d5846b3b840312bd04d76ddaa6220170ddddddddddddddddddddddd0",
+					"poolId": "0xa81643567ff913230c9ca868ed2b83e19e05a525ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 3,
-					"amount": "8275159",
+					"amount": "1608692",
 					"userData": "0x",
 					"platformFee": 5
 				},
 				{
-					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
+					"poolId": "0xca522cd609f7187c67c8b97be0a3a3259e7bb6fffffffffffffffffffffffff0",
 					"assetInIndex": 3,
 					"assetOutIndex": 2,
 					"amount": "0",
@@ -686,24 +665,24 @@
 			],
 			"tokenAddresses": [
 				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-				"0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"0x255707b70bf90aa112006e1b07b9aea6de021424",
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+				"0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
 			],
 			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
-			"marketSp": "0.0078984558735389729566134089798416",
+			"marketSp": "0.0078500102627773047194209923680188",
 			"swapPlatforms": {
-				"0xa81643567ff913230c9ca868ed2b83e19e05a525ddddddddddddddddddddddd0": "Dystopia",
-				"0xca522cd609f7187c67c8b97be0a3a3259e7bb6fffffffffffffffffffffffff0": "TetuSwap",
 				"0x1a5feba5d5846b3b840312bd04d76ddaa6220170ddddddddddddddddddddddd0": "Dystopia",
-				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap"
+				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap",
+				"0xa81643567ff913230c9ca868ed2b83e19e05a525ddddddddddddddddddddddd0": "Dystopia",
+				"0xca522cd609f7187c67c8b97be0a3a3259e7bb6fffffffffffffffffffffffff0": "TetuSwap"
 			},
 			"swapData": {
 				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
 				"swapAmount": "10000000",
-				"returnAmount": "1262328113524829559618"
+				"returnAmount": "1268734314202036040617"
 			},
 			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOutFromSwaps": "0x255707b70bf90aa112006e1b07b9aea6de021424"
@@ -746,9 +725,9 @@
 		"10 FRAX->WMATIC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "10801206360503005698",
-			"returnAmountFromSwaps": "10801206360503005698",
-			"returnAmountConsideringFees": "10798406360503005698",
+			"returnAmount": "10867472273201790934",
+			"returnAmountFromSwaps": "10867472273201790934",
+			"returnAmountConsideringFees": "10864672273201790934",
 			"swaps": [
 				{
 					"poolId": "0xb160d25619c9311dff390c8208e49c39cf026f74ddddddddddddddddddddddd0",
@@ -774,7 +753,7 @@
 			],
 			"tokenIn": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "1.11110648089011887882581411035416",
+			"marketSp": "1.10581563961954163679966422216952",
 			"swapPlatforms": {
 				"0xb160d25619c9311dff390c8208e49c39cf026f74ddddddddddddddddddddddd0": "Dystopia",
 				"0x1a5feba5d5846b3b840312bd04d76ddaa6220170ddddddddddddddddddddddd0": "Dystopia"
@@ -783,7 +762,7 @@
 				"tokenIn": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "10801206360503005698"
+				"returnAmount": "10867472273201790934"
 			},
 			"tokenInForSwaps": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -791,34 +770,53 @@
 		"10 USD+->WETH": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "5257165972783619",
-			"returnAmountFromSwaps": "5257165972783619",
-			"returnAmountConsideringFees": "5257165972783619",
+			"returnAmount": "5302790172579948",
+			"returnAmountFromSwaps": "5302790172579948",
+			"returnAmountConsideringFees": "5302790172579948",
 			"swaps": [
 				{
 					"poolId": "0xcf107443b87d9f9a6db946d02cb5df5ef5299c95ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "10000000",
+					"amount": "4659614",
 					"userData": "0x",
 					"platformFee": 5
+				},
+				{
+					"poolId": "0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0",
+					"assetInIndex": 0,
+					"assetOutIndex": 2,
+					"amount": "5340386",
+					"userData": "0x",
+					"platformFee": 5
+				},
+				{
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
+					"assetInIndex": 2,
+					"assetOutIndex": 1,
+					"amount": "0",
+					"userData": "0x",
+					"platformFee": 10
 				}
 			],
 			"tokenAddresses": [
 				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424"
 			],
 			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
-			"marketSp": "1900.7762051615487",
+			"marketSp": "1882.03332082238850937482037436508",
 			"swapPlatforms": {
-				"0xcf107443b87d9f9a6db946d02cb5df5ef5299c95ddddddddddddddddddddddd0": "Dystopia"
+				"0xcf107443b87d9f9a6db946d02cb5df5ef5299c95ddddddddddddddddddddddd0": "Dystopia",
+				"0x5a272ad79cbd3c874879e3fec5753c2127f77583ddddddddddddddddddddddd0": "Dystopia",
+				"0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0": "TetuSwap"
 			},
 			"swapData": {
 				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"tokenOut": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 				"swapAmount": "10000000",
-				"returnAmount": "5257165972783619"
+				"returnAmount": "5302790172579948"
 			},
 			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOutFromSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
@@ -826,9 +824,9 @@
 		"10 WETH->USD+": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "18937121863",
-			"returnAmountFromSwaps": "18937121863",
-			"returnAmountConsideringFees": "18937121863",
+			"returnAmount": "18766403643",
+			"returnAmountFromSwaps": "18766403643",
+			"returnAmountConsideringFees": "18766403643",
 			"swaps": [
 				{
 					"poolId": "0x853ee4b2a13f8a742d64c8f088be7ba2131f670dfffffffffffffffffffffff2",
@@ -854,7 +852,7 @@
 			],
 			"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"marketSp": "0.00047694291988705961342595401122344",
+			"marketSp": "0.00048312271995949682637547140451416",
 			"swapPlatforms": {
 				"0x853ee4b2a13f8a742d64c8f088be7ba2131f670dfffffffffffffffffffffff2": "QuickSwap",
 				"0x421a018cc5839c4c0300afb21c725776dc389b1addddddddddddddddddddddd0": "Dystopia"
@@ -863,7 +861,7 @@
 				"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "18937121863"
+				"returnAmount": "18766403643"
 			},
 			"tokenInForSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
@@ -871,9 +869,9 @@
 		"10 miMATIC->FRAX": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9963845960383362791",
-			"returnAmountFromSwaps": "9963845960383362791",
-			"returnAmountConsideringFees": "9963845960383362791",
+			"returnAmount": "9963219558644686107",
+			"returnAmountFromSwaps": "9963219558644686107",
+			"returnAmountConsideringFees": "9963219558644686107",
 			"swaps": [
 				{
 					"poolId": "0x3f54c58092e9735ad23cf296ee3af81f5a44a5bcddddddddddddddddddddddd0",
@@ -890,7 +888,7 @@
 			],
 			"tokenIn": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 			"tokenOut": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
-			"marketSp": "1.2624176879923301",
+			"marketSp": "1.2643990647810712",
 			"swapPlatforms": {
 				"0x3f54c58092e9735ad23cf296ee3af81f5a44a5bcddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -898,7 +896,7 @@
 				"tokenIn": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 				"tokenOut": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9963845960383362791"
+				"returnAmount": "9963219558644686107"
 			},
 			"tokenInForSwaps": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 			"tokenOutFromSwaps": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89"
@@ -906,9 +904,9 @@
 		"10 USD+->stMATIC": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10463092242835259591",
-			"returnAmountFromSwaps": "10463092242835259591",
-			"returnAmountConsideringFees": "10463092242835259591",
+			"returnAmount": "10524105694564970339",
+			"returnAmountFromSwaps": "10524105694564970339",
+			"returnAmountConsideringFees": "10524105694564970339",
 			"swaps": [
 				{
 					"poolId": "0x6f2fed287e47590b7702f9d331344c7dacbacfe5ddddddddddddddddddddddd0",
@@ -925,7 +923,7 @@
 			],
 			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOut": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
-			"marketSp": "0.9552290693059192",
+			"marketSp": "0.9496910598333251",
 			"swapPlatforms": {
 				"0x6f2fed287e47590b7702f9d331344c7dacbacfe5ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -933,7 +931,7 @@
 				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"tokenOut": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 				"swapAmount": "10000000",
-				"returnAmount": "10463092242835259591"
+				"returnAmount": "10524105694564970339"
 			},
 			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOutFromSwaps": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4"
@@ -941,12 +939,12 @@
 		"10 TETU->USD+": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "79350",
-			"returnAmountFromSwaps": "79350",
-			"returnAmountConsideringFees": "79350",
+			"returnAmount": "78983",
+			"returnAmountFromSwaps": "78983",
+			"returnAmountConsideringFees": "78983",
 			"swaps": [
 				{
-					"poolId": "0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0",
+					"poolId": "0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
 					"amount": "10000000000000000000",
@@ -954,7 +952,7 @@
 					"platformFee": 10
 				},
 				{
-					"poolId": "0x421a018cc5839c4c0300afb21c725776dc389b1addddddddddddddddddddddd0",
+					"poolId": "0xcf107443b87d9f9a6db946d02cb5df5ef5299c95ddddddddddddddddddddddd0",
 					"assetInIndex": 1,
 					"assetOutIndex": 2,
 					"amount": "0",
@@ -964,21 +962,21 @@
 			],
 			"tokenAddresses": [
 				"0x255707b70bf90aa112006e1b07b9aea6de021424",
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+				"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 				"0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
 			],
 			"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
 			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"marketSp": "114.24606402194634991467403049163",
+			"marketSp": "126.41766340089513704958488589762",
 			"swapPlatforms": {
-				"0x80ff4e4153883d770204607eb4af9994739c72dcfffffffffffffffffffffff0": "TetuSwap",
-				"0x421a018cc5839c4c0300afb21c725776dc389b1addddddddddddddddddddddd0": "Dystopia"
+				"0x8c9d7b1c0dad06166ef643dbb75def0913fe5760fffffffffffffffffffffff0": "TetuSwap",
+				"0xcf107443b87d9f9a6db946d02cb5df5ef5299c95ddddddddddddddddddddddd0": "Dystopia"
 			},
 			"swapData": {
 				"tokenIn": "0x255707b70bf90aa112006e1b07b9aea6de021424",
 				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "79350"
+				"returnAmount": "78983"
 			},
 			"tokenInForSwaps": "0x255707b70bf90aa112006e1b07b9aea6de021424",
 			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
@@ -986,9 +984,9 @@
 		"10 stMATIC->USD+": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9547195",
-			"returnAmountFromSwaps": "9547195",
-			"returnAmountConsideringFees": "9547195",
+			"returnAmount": "9491845",
+			"returnAmountFromSwaps": "9491845",
+			"returnAmountConsideringFees": "9491845",
 			"swaps": [
 				{
 					"poolId": "0x6f2fed287e47590b7702f9d331344c7dacbacfe5ddddddddddddddddddddddd0",
@@ -1005,7 +1003,7 @@
 			],
 			"tokenIn": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"marketSp": "1.046869313479553",
+			"marketSp": "1.0529740062789517",
 			"swapPlatforms": {
 				"0x6f2fed287e47590b7702f9d331344c7dacbacfe5ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -1013,7 +1011,7 @@
 				"tokenIn": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9547195"
+				"returnAmount": "9491845"
 			},
 			"tokenInForSwaps": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
@@ -1021,9 +1019,9 @@
 		"10 WMATIC->stMATIC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9660052188998445234",
-			"returnAmountFromSwaps": "9660052188998445234",
-			"returnAmountConsideringFees": "9660052188998445234",
+			"returnAmount": "9659534339675832633",
+			"returnAmountFromSwaps": "9659534339675832633",
+			"returnAmountConsideringFees": "9659534339675832633",
 			"swaps": [
 				{
 					"poolId": "0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366",
@@ -1040,7 +1038,7 @@
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
-			"marketSp": "1.03485771343707463936750110774709312",
+			"marketSp": "1.034885728022842638246020566287109972",
 			"swapPlatforms": {
 				"0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366": "Balancer"
 			},
@@ -1048,61 +1046,17 @@
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9660052188998445234"
+				"returnAmount": "9659534339675832633"
 			},
 			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOutFromSwaps": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4"
 		},
-		"10 KOGECOIN->USDC": {
-			"swapAmount": "10000000000",
-			"swapAmountForSwaps": "10000000000",
-			"returnAmount": "119338",
-			"returnAmountFromSwaps": "119338",
-			"returnAmountConsideringFees": "119338",
-			"swaps": [
-				{
-					"poolId": "0xf421dd9497a28bb72dbb18b240a77195f8757e50fffffffffffffffffffffff1",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "7200031259",
-					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0xc6990738c7e77952aef100bb56db64e8ad74de6fddddddddddddddddddddddd0",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "2799968741",
-					"userData": "0x",
-					"platformFee": 5
-				}
-			],
-			"tokenAddresses": [
-				"0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-			],
-			"tokenIn": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "81.93493002007037",
-			"swapPlatforms": {
-				"0xf421dd9497a28bb72dbb18b240a77195f8757e50fffffffffffffffffffffff1": "SushiSwap",
-				"0xc6990738c7e77952aef100bb56db64e8ad74de6fddddddddddddddddddddddd0": "Dystopia"
-			},
-			"swapData": {
-				"tokenIn": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"swapAmount": "10000000000",
-				"returnAmount": "119338"
-			},
-			"tokenInForSwaps": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-		},
 		"10 DAI->USDC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9999559",
-			"returnAmountFromSwaps": "9999559",
-			"returnAmountConsideringFees": "9999559",
+			"returnAmount": "9999417",
+			"returnAmountFromSwaps": "9999417",
+			"returnAmountConsideringFees": "9999417",
 			"swaps": [
 				{
 					"poolId": "0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f000000000000000000000068",
@@ -1119,7 +1073,7 @@
 			],
 			"tokenIn": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
 			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "1.000099131020637331",
+			"marketSp": "1.000099352860034262",
 			"swapPlatforms": {
 				"0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f000000000000000000000068": "Balancer"
 			},
@@ -1127,7 +1081,7 @@
 				"tokenIn": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
 				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9999559"
+				"returnAmount": "9999417"
 			},
 			"tokenInForSwaps": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
 			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
@@ -1135,9 +1089,9 @@
 		"10 USDC->FRAX": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10011471191682595064",
-			"returnAmountFromSwaps": "10011471191682595064",
-			"returnAmountConsideringFees": "10011471191682595064",
+			"returnAmount": "10011748070834808630",
+			"returnAmountFromSwaps": "10011748070834808630",
+			"returnAmountConsideringFees": "10011748070834808630",
 			"swaps": [
 				{
 					"poolId": "0x53227c83a98ba1035fed912da6ce26a0c11c7c66ddddddddddddddddddddddd0",
@@ -1154,7 +1108,7 @@
 			],
 			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOut": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
-			"marketSp": "0.8286088455306966",
+			"marketSp": "0.8277368372982116",
 			"swapPlatforms": {
 				"0x53227c83a98ba1035fed912da6ce26a0c11c7c66ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -1162,7 +1116,7 @@
 				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"tokenOut": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
 				"swapAmount": "10000000",
-				"returnAmount": "10011471191682595064"
+				"returnAmount": "10011748070834808630"
 			},
 			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOutFromSwaps": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89"
@@ -1170,9 +1124,9 @@
 		"10 WMATIC->FRAX": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9249321494460871209",
-			"returnAmountFromSwaps": "9249321494460871209",
-			"returnAmountConsideringFees": "9249321494460871209",
+			"returnAmount": "9195540031017823961",
+			"returnAmountFromSwaps": "9195540031017823961",
+			"returnAmountConsideringFees": "9195540031017823961",
 			"swaps": [
 				{
 					"poolId": "0x04f9ee08c2c9c0e6dad5e07f4ae0201d8dbeebdeddddddddddddddddddddddd0",
@@ -1189,7 +1143,7 @@
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
-			"marketSp": "1.080552496648369",
+			"marketSp": "1.0868724633967501",
 			"swapPlatforms": {
 				"0x04f9ee08c2c9c0e6dad5e07f4ae0201d8dbeebdeddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -1197,7 +1151,7 @@
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9249321494460871209"
+				"returnAmount": "9195540031017823961"
 			},
 			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOutFromSwaps": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89"
@@ -1205,9 +1159,9 @@
 		"10 USD+->CLAM": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "3832945746",
-			"returnAmountFromSwaps": "3832945746",
-			"returnAmountConsideringFees": "3832945746",
+			"returnAmount": "3813127595",
+			"returnAmountFromSwaps": "3813127595",
+			"returnAmountConsideringFees": "3813127595",
 			"swaps": [
 				{
 					"poolId": "0x291e289c39cbaf5ee158028d086d76ffa141cfdaddddddddddddddddddddddd0",
@@ -1224,7 +1178,7 @@
 			],
 			"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOut": "0xc250e9987a032acac293d838726c511e6e1c029d",
-			"marketSp": "2.6075408234977724",
+			"marketSp": "2.6210934326275726",
 			"swapPlatforms": {
 				"0x291e289c39cbaf5ee158028d086d76ffa141cfdaddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -1232,7 +1186,7 @@
 				"tokenIn": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"tokenOut": "0xc250e9987a032acac293d838726c511e6e1c029d",
 				"swapAmount": "10000000",
-				"returnAmount": "3832945746"
+				"returnAmount": "3813127595"
 			},
 			"tokenInForSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 			"tokenOutFromSwaps": "0xc250e9987a032acac293d838726c511e6e1c029d"
@@ -1240,9 +1194,9 @@
 		"10 MaticX->WMATIC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "10256597623448374894",
-			"returnAmountFromSwaps": "10256597623448374894",
-			"returnAmountConsideringFees": "10255197623448374894",
+			"returnAmount": "10241946816628485476",
+			"returnAmountFromSwaps": "10241946816628485476",
+			"returnAmountConsideringFees": "10240546816628485476",
 			"swaps": [
 				{
 					"poolId": "0xadb2395fec4d096b5086d3daf8b33f9f7568ba25ddddddddddddddddddddddd0",
@@ -1259,7 +1213,7 @@
 			],
 			"tokenIn": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
 			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "0.619895472696316",
+			"marketSp": "0.6257010613256455",
 			"swapPlatforms": {
 				"0xadb2395fec4d096b5086d3daf8b33f9f7568ba25ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -1267,52 +1221,17 @@
 				"tokenIn": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
 				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "10256597623448374894"
+				"returnAmount": "10241946816628485476"
 			},
 			"tokenInForSwaps": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
 			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
 		},
-		"10 USDC->KOGECOIN": {
-			"swapAmount": "10000000",
-			"swapAmountForSwaps": "10000000",
-			"returnAmount": "844631408534",
-			"returnAmountFromSwaps": "844631408534",
-			"returnAmountConsideringFees": "844631408534",
-			"swaps": [
-				{
-					"poolId": "0xc6990738c7e77952aef100bb56db64e8ad74de6fddddddddddddddddddddddd0",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "10000000",
-					"userData": "0x",
-					"platformFee": 5
-				}
-			],
-			"tokenAddresses": [
-				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"0x13748d548d95d78a3c83fe3f32604b4796cffa23"
-			],
-			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"tokenOut": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-			"marketSp": "0.011825948360131162",
-			"swapPlatforms": {
-				"0xc6990738c7e77952aef100bb56db64e8ad74de6fddddddddddddddddddddddd0": "Dystopia"
-			},
-			"swapData": {
-				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-				"tokenOut": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-				"swapAmount": "10000000",
-				"returnAmount": "844631408534"
-			},
-			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"tokenOutFromSwaps": "0x13748d548d95d78a3c83fe3f32604b4796cffa23"
-		},
 		"10 WMATIC->DYST": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "301658963924549214805",
-			"returnAmountFromSwaps": "301658963924549214805",
-			"returnAmountConsideringFees": "301658963924549214805",
+			"returnAmount": "305856074818258434835",
+			"returnAmountFromSwaps": "305856074818258434835",
+			"returnAmountConsideringFees": "305856074818258434835",
 			"swaps": [
 				{
 					"poolId": "0x1e08a5b6a1694bc1a65395db6f4c506498daa349ddddddddddddddddddddddd0",
@@ -1329,7 +1248,7 @@
 			],
 			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOut": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
-			"marketSp": "0.0331312660165761",
+			"marketSp": "0.032676606818810405",
 			"swapPlatforms": {
 				"0x1e08a5b6a1694bc1a65395db6f4c506498daa349ddddddddddddddddddddddd0": "Dystopia"
 			},
@@ -1337,7 +1256,7 @@
 				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 				"tokenOut": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "301658963924549214805"
+				"returnAmount": "305856074818258434835"
 			},
 			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 			"tokenOutFromSwaps": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb"
@@ -1345,9 +1264,9 @@
 		"10 USDC->USDT": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "9995090",
-			"returnAmountFromSwaps": "9995090",
-			"returnAmountConsideringFees": "9995090",
+			"returnAmount": "9994721",
+			"returnAmountFromSwaps": "9994721",
+			"returnAmountConsideringFees": "9994721",
 			"swaps": [
 				{
 					"poolId": "0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f000000000000000000000068",
@@ -1364,7 +1283,7 @@
 			],
 			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOut": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
-			"marketSp": "1.00010612834794823",
+			"marketSp": "1.000106707815814773",
 			"swapPlatforms": {
 				"0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f000000000000000000000068": "Balancer"
 			},
@@ -1372,7 +1291,7 @@
 				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"tokenOut": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
 				"swapAmount": "10000000",
-				"returnAmount": "9995090"
+				"returnAmount": "9994721"
 			},
 			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOutFromSwaps": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
@@ -1380,15 +1299,15 @@
 		"10 USDC->Qi": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "41925925265208410181",
-			"returnAmountFromSwaps": "41925925265208410181",
-			"returnAmountConsideringFees": "41925925265208410181",
+			"returnAmount": "42117826034988972609",
+			"returnAmountFromSwaps": "42117826034988972609",
+			"returnAmountConsideringFees": "42117826034988972609",
 			"swaps": [
 				{
 					"poolId": "0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "5235930",
+					"amount": "10000000",
 					"userData": "0x",
 					"platformFee": 25
 				},
@@ -1399,14 +1318,6 @@
 					"amount": "0",
 					"userData": "0x",
 					"platformFee": 25
-				},
-				{
-					"poolId": "0x5de47d7e7d24b72abecaac3310d34b0a5851ecb5ddddddddddddddddddddddd0",
-					"assetInIndex": 0,
-					"assetOutIndex": 2,
-					"amount": "4764070",
-					"userData": "0x",
-					"platformFee": 5
 				}
 			],
 			"tokenAddresses": [
@@ -1416,17 +1327,16 @@
 			],
 			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOut": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
-			"marketSp": "0.23829690573009627370001867930896",
+			"marketSp": "0.23710716594422457581428235065856",
 			"swapPlatforms": {
 				"0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002": "Balancer",
-				"0x827ad315960f5a0f5280d6936c8e52a5878bba0400020000000000000000005c": "Balancer",
-				"0x5de47d7e7d24b72abecaac3310d34b0a5851ecb5ddddddddddddddddddddddd0": "Dystopia"
+				"0x827ad315960f5a0f5280d6936c8e52a5878bba0400020000000000000000005c": "Balancer"
 			},
 			"swapData": {
 				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"tokenOut": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
 				"swapAmount": "10000000",
-				"returnAmount": "41925925265208410181"
+				"returnAmount": "42117826034988972609"
 			},
 			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOutFromSwaps": "0x580a84c73811e1839f75d86d75d88cca0c241ff4"
@@ -1434,25 +1344,17 @@
 		"10 Qi->USDC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "2380835",
-			"returnAmountFromSwaps": "2380835",
-			"returnAmountConsideringFees": "2380835",
+			"returnAmount": "2373207",
+			"returnAmountFromSwaps": "2373207",
+			"returnAmountConsideringFees": "2373207",
 			"swaps": [
 				{
 					"poolId": "0x5de47d7e7d24b72abecaac3310d34b0a5851ecb5ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "8265941022248011269",
+					"amount": "10000000000000000000",
 					"userData": "0x",
 					"platformFee": 5
-				},
-				{
-					"poolId": "0xf461f2240b66d55dcf9059e26c022160c06863bf000100000000000000000006",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "1734058977751988731",
-					"userData": "0x",
-					"platformFee": 25
 				}
 			],
 			"tokenAddresses": [
@@ -1461,16 +1363,15 @@
 			],
 			"tokenIn": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
 			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "4.196957057886835",
+			"marketSp": "4.210011008065802",
 			"swapPlatforms": {
-				"0x5de47d7e7d24b72abecaac3310d34b0a5851ecb5ddddddddddddddddddddddd0": "Dystopia",
-				"0xf461f2240b66d55dcf9059e26c022160c06863bf000100000000000000000006": "Balancer"
+				"0x5de47d7e7d24b72abecaac3310d34b0a5851ecb5ddddddddddddddddddddddd0": "Dystopia"
 			},
 			"swapData": {
 				"tokenIn": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
 				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "2380835"
+				"returnAmount": "2373207"
 			},
 			"tokenInForSwaps": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
 			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
@@ -1513,44 +1414,34 @@
 		"10 miMATIC->USDC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "9948595",
-			"returnAmountFromSwaps": "9948595",
-			"returnAmountConsideringFees": "9948595",
+			"returnAmount": "9947305",
+			"returnAmountFromSwaps": "9947305",
+			"returnAmountConsideringFees": "9947305",
 			"swaps": [
 				{
-					"poolId": "0x73cb437a96a9552b98a67fb2fec53a082044433afffffffffffffffffffffff6",
+					"poolId": "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
 					"amount": "10000000000000000000",
 					"userData": "0x",
-					"platformFee": 10
-				},
-				{
-					"poolId": "0x622753917443b4c7e62ec7bd9933b2d16a7795e9fffffffffffffffffffffff6",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 10
+					"platformFee": 4
 				}
 			],
 			"tokenAddresses": [
 				"0xa3fa99a148fa48d14ed51d610c367c61876997f1",
-				"0x613a489785c95afeb3b404cc41565ccff107b6e0",
 				"0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
 			],
 			"tokenIn": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 			"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-			"marketSp": "1.0027261736623148443343843701119",
+			"marketSp": "1.000477779158660944",
 			"swapPlatforms": {
-				"0x73cb437a96a9552b98a67fb2fec53a082044433afffffffffffffffffffffff6": "RadioShack",
-				"0x622753917443b4c7e62ec7bd9933b2d16a7795e9fffffffffffffffffffffff6": "RadioShack"
+				"0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012": "Balancer"
 			},
 			"swapData": {
 				"tokenIn": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 				"tokenOut": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "9948595"
+				"returnAmount": "9947305"
 			},
 			"tokenInForSwaps": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 			"tokenOutFromSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
@@ -1593,9 +1484,9 @@
 		"10 USDC->miMATIC": {
 			"swapAmount": "10000000",
 			"swapAmountForSwaps": "10000000",
-			"returnAmount": "10047049195937581735",
-			"returnAmountFromSwaps": "10047049195937581735",
-			"returnAmountConsideringFees": "10047049195937581735",
+			"returnAmount": "10044930149872340412",
+			"returnAmountFromSwaps": "10044930149872340412",
+			"returnAmountConsideringFees": "10044930149872340412",
 			"swaps": [
 				{
 					"poolId": "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012",
@@ -1612,7 +1503,7 @@
 			],
 			"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOut": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
-			"marketSp": "1.000319186479999298",
+			"marketSp": "1.000322546991237017",
 			"swapPlatforms": {
 				"0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012": "Balancer"
 			},
@@ -1620,7 +1511,7 @@
 				"tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 				"tokenOut": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 				"swapAmount": "10000000",
-				"returnAmount": "10047049195937581735"
+				"returnAmount": "10044930149872340412"
 			},
 			"tokenInForSwaps": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
 			"tokenOutFromSwaps": "0xa3fa99a148fa48d14ed51d610c367c61876997f1"
@@ -1628,9 +1519,9 @@
 		"10 WETH->WBTC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "78612472",
-			"returnAmountFromSwaps": "78612472",
-			"returnAmountConsideringFees": "78612472",
+			"returnAmount": "78133404",
+			"returnAmountFromSwaps": "78133404",
+			"returnAmountConsideringFees": "78133404",
 			"swaps": [
 				{
 					"poolId": "0xdc9232e2df177d7a12fdff6ecbab114e2231198dfffffffffffffffffffffff2",
@@ -1647,7 +1538,7 @@
 			],
 			"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 			"tokenOut": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
-			"marketSp": "12.64786147211537",
+			"marketSp": "12.725517299012163",
 			"swapPlatforms": {
 				"0xdc9232e2df177d7a12fdff6ecbab114e2231198dfffffffffffffffffffffff2": "QuickSwap"
 			},
@@ -1655,7 +1546,7 @@
 				"tokenIn": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 				"tokenOut": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "78612472"
+				"returnAmount": "78133404"
 			},
 			"tokenInForSwaps": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
 			"tokenOutFromSwaps": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6"
@@ -1663,98 +1554,53 @@
 		"10 WMATIC->TETU": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "1166192399277722646063",
-			"returnAmountFromSwaps": "1166192399277722646063",
-			"returnAmountConsideringFees": "1166192399277722646063",
+			"returnAmount": "1165705327760068744259",
+			"returnAmountFromSwaps": "1165705327760068744259",
+			"returnAmountConsideringFees": "1165705327760068744259",
 			"swaps": [
-				{
-					"poolId": "0x604229c960e5cacf2aaeac8be68ac07ba9df81c3fffffffffffffffffffffff2",
-					"assetInIndex": 0,
-					"assetOutIndex": 1,
-					"amount": "9035934076213675736",
-					"userData": "0x",
-					"platformFee": 30
-				},
-				{
-					"poolId": "0xca522cd609f7187c67c8b97be0a3a3259e7bb6fffffffffffffffffffffffff0",
-					"assetInIndex": 1,
-					"assetOutIndex": 2,
-					"amount": "0",
-					"userData": "0x",
-					"platformFee": 10
-				},
 				{
 					"poolId": "0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0",
 					"assetInIndex": 0,
-					"assetOutIndex": 2,
-					"amount": "964065923786324264",
+					"assetOutIndex": 1,
+					"amount": "8080534329138251734",
 					"userData": "0x",
 					"platformFee": 10
-				}
-			],
-			"tokenAddresses": [
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
-				"0x255707b70bf90aa112006e1b07b9aea6de021424"
-			],
-			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
-			"marketSp": "0.0085251490207187466766360415840376",
-			"swapPlatforms": {
-				"0x604229c960e5cacf2aaeac8be68ac07ba9df81c3fffffffffffffffffffffff2": "QuickSwap",
-				"0xca522cd609f7187c67c8b97be0a3a3259e7bb6fffffffffffffffffffffffff0": "TetuSwap",
-				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap"
-			},
-			"swapData": {
-				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
-				"swapAmount": "10000000000000000000",
-				"returnAmount": "1166192399277722646063"
-			},
-			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"tokenOutFromSwaps": "0x255707b70bf90aa112006e1b07b9aea6de021424"
-		},
-		"10 KOGECOIN->WMATIC": {
-			"swapAmount": "10000000000",
-			"swapAmountForSwaps": "10000000000",
-			"returnAmount": "128745303145590633",
-			"returnAmountFromSwaps": "128745303145590633",
-			"returnAmountConsideringFees": "127345303145590633",
-			"swaps": [
+				},
 				{
-					"poolId": "0x007174bed34bd4bfb656de52122b5246e487de3eddddddddddddddddddddddd0",
+					"poolId": "0xcc68081aab6200110da134217f917880d8832519ddddddddddddddddddddddd0",
 					"assetInIndex": 0,
 					"assetOutIndex": 1,
-					"amount": "10000000000",
+					"amount": "1919465670861748266",
 					"userData": "0x",
 					"platformFee": 5
 				}
 			],
 			"tokenAddresses": [
-				"0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+				"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+				"0x255707b70bf90aa112006e1b07b9aea6de021424"
 			],
-			"tokenIn": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-			"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-			"marketSp": "77.57062890024929",
+			"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+			"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+			"marketSp": "0.008554060426913476",
 			"swapPlatforms": {
-				"0x007174bed34bd4bfb656de52122b5246e487de3eddddddddddddddddddddddd0": "Dystopia"
+				"0x0196959958d923f2854e684b1694fb9b2d17aee9fffffffffffffffffffffff0": "TetuSwap",
+				"0xcc68081aab6200110da134217f917880d8832519ddddddddddddddddddddddd0": "Dystopia"
 			},
 			"swapData": {
-				"tokenIn": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-				"tokenOut": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-				"swapAmount": "10000000000",
-				"returnAmount": "128745303145590633"
+				"tokenIn": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+				"tokenOut": "0x255707b70bf90aa112006e1b07b9aea6de021424",
+				"swapAmount": "10000000000000000000",
+				"returnAmount": "1165705327760068744259"
 			},
-			"tokenInForSwaps": "0x13748d548d95d78a3c83fe3f32604b4796cffa23",
-			"tokenOutFromSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			"tokenInForSwaps": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+			"tokenOutFromSwaps": "0x255707b70bf90aa112006e1b07b9aea6de021424"
 		},
 		"10 DYST->USD+": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "306340",
-			"returnAmountFromSwaps": "306340",
-			"returnAmountConsideringFees": "306340",
+			"returnAmount": "300162",
+			"returnAmountFromSwaps": "300162",
+			"returnAmountConsideringFees": "300162",
 			"swaps": [
 				{
 					"poolId": "0x1222399e05c84ef713d6913b5f6522975bc80794ddddddddddddddddddddddd0",
@@ -1780,7 +1626,7 @@
 			],
 			"tokenIn": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 			"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
-			"marketSp": "39.153605627140744227900929823327",
+			"marketSp": "40.013564163809443288416496010784",
 			"swapPlatforms": {
 				"0x1222399e05c84ef713d6913b5f6522975bc80794ddddddddddddddddddddddd0": "Dystopia",
 				"0xb160d25619c9311dff390c8208e49c39cf026f74ddddddddddddddddddddddd0": "Dystopia"
@@ -1789,7 +1635,7 @@
 				"tokenIn": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 				"tokenOut": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "306340"
+				"returnAmount": "300162"
 			},
 			"tokenInForSwaps": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 			"tokenOutFromSwaps": "0x236eec6359fb44cce8f97e99387aa7f8cd5cde1f"
@@ -1797,9 +1643,9 @@
 		"10 DYST->miMATIC": {
 			"swapAmount": "10000000000000000000",
 			"swapAmountForSwaps": "10000000000000000000",
-			"returnAmount": "307782154469477639",
-			"returnAmountFromSwaps": "307782154469477639",
-			"returnAmountConsideringFees": "307782154469477639",
+			"returnAmount": "301604091156021761",
+			"returnAmountFromSwaps": "301604091156021761",
+			"returnAmountConsideringFees": "301604091156021761",
 			"swaps": [
 				{
 					"poolId": "0x1222399e05c84ef713d6913b5f6522975bc80794ddddddddddddddddddddddd0",
@@ -1825,7 +1671,7 @@
 			],
 			"tokenIn": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 			"tokenOut": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
-			"marketSp": "25.7740634194764418287821522237295",
+			"marketSp": "26.262632362544182762815019201928",
 			"swapPlatforms": {
 				"0x1222399e05c84ef713d6913b5f6522975bc80794ddddddddddddddddddddddd0": "Dystopia",
 				"0x3f54c58092e9735ad23cf296ee3af81f5a44a5bcddddddddddddddddddddddd0": "Dystopia"
@@ -1834,7 +1680,7 @@
 				"tokenIn": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 				"tokenOut": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
 				"swapAmount": "10000000000000000000",
-				"returnAmount": "307782154469477639"
+				"returnAmount": "301604091156021761"
 			},
 			"tokenInForSwaps": "0x39ab6574c289c3ae4d88500eec792ab5b947a5eb",
 			"tokenOutFromSwaps": "0xa3fa99a148fa48d14ed51d610c367c61876997f1"
