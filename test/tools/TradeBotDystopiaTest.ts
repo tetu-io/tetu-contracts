@@ -143,7 +143,7 @@ describe("TradeBotDystopia test", function () {
       ROUTER
     );
 
-    await bot.connect(executor).execute(owner.address, 10)
+    await bot.connect(executor).execute(owner.address, tokenInAmount.div(2))
 
     expect(await TokenUtils.balanceOf(TOKEN_IN, bot.address)).is.eq(tokenInAmount.div(2));
     expect(await TokenUtils.balanceOf(TOKEN_OUT, bot.address)).is.not.eq(0);
