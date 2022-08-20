@@ -8,6 +8,12 @@ import {FtmCoreAddresses} from "./addresses_core_ftm";
 import {FtmToolsAddresses} from "./addresses_tools_ftm";
 import {EthereumToolsAddresses} from "./addresses_tools_ethereum";
 import {EthereumCoreAddresses} from "./addresses_core_ethereum";
+import {BscAddresses} from "./scripts/addresses/BscAddresses";
+import {EthAddresses} from "./scripts/addresses/EthAddresses";
+import {MaticAddresses} from "./scripts/addresses/MaticAddresses";
+import {FtmAddresses} from "./scripts/addresses/FtmAddresses";
+import {BscCoreAddresses} from "./addresses_core_bsc";
+import {BscToolsAddresses} from "./addresses_tools_bsc";
 
 export class Addresses {
 
@@ -16,26 +22,31 @@ export class Addresses {
     ['250', FtmCoreAddresses.ADDRESSES],
     ['4', RinkebyCoreAddress.ADDRESSES],
     ['1', EthereumCoreAddresses.ADDRESSES],
+    ['56', BscCoreAddresses.ADDRESSES],
   ]);
 
   public static TOOLS = new Map<string, ToolsAddresses>([
     ['137', MaticToolsAddresses.ADDRESSES],
     ['250', FtmToolsAddresses.ADDRESSES],
     ['4', RinkebyToolsAddresses.ADDRESSES],
-    ['1', EthereumToolsAddresses.ADDRESSES]
+    ['1', EthereumToolsAddresses.ADDRESSES],
+    ['56', BscToolsAddresses.ADDRESSES]
   ]);
 
   public static TOKENS = new Map<string, Map<string, string>>([
     ['1', new Map([
-      ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
+      ['usdc', EthAddresses.USDC_TOKEN],
+    ])],
+    ['56', new Map([
+      ['usdc', BscAddresses.USDC_TOKEN],
     ])],
     ['137', new Map([
-      ['usdc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'],
+      ['usdc', MaticAddresses.USDC_TOKEN],
       ['sushi_lp_token_usdc', '0xF1c97B5d031f09f64580Fe79FE30110A8C971bF9'],
       ['quick_lp_token_usdc', '0x22E2BDaBEbA9b5ff8924275DbE47aDE5cf7b822B'],
     ])],
     ['250', new Map([
-      ['usdc', '0x04068da6c83afcfa0e13ba15a6696662335d5b75'],
+      ['usdc', FtmAddresses.USDC_TOKEN],
     ])],
     ['4', new Map([
       ['quick', '0xDE93781D8805b2698948996D71Ed03268B6e8549'],
