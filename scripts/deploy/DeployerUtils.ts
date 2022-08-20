@@ -227,6 +227,8 @@ export class DeployerUtils {
       return DeployerUtils.deployPriceCalculatorFantom(signer, controller, wait);
     } else if (net.chainId === 1) {
       return DeployerUtils.deployPriceCalculatorEthereum(signer, controller, wait);
+    } else if (net.chainId === 56) {
+      return DeployerUtils.deployPriceCalculatorBsc(signer, controller, wait);
     } else {
       throw Error('No config for ' + net.chainId);
     }
@@ -1199,6 +1201,8 @@ export class DeployerUtils {
       return EthAddresses.GOV_ADDRESS;
     } else if (net.chainId === 31337) {
       return ((await ethers.getSigners())[0]).address;
+    }else if (net.chainId === 56) {
+      return BscAddresses.GOVERNANCE;
     } else {
       throw Error('No config for ' + net.chainId);
     }

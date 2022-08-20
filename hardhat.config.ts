@@ -67,6 +67,10 @@ const argv = require('yargs/yargs')()
       type: "number",
       default: 35202770
     },
+    bscForkBlock: {
+      type: "number",
+      default: 0
+    },
   }).argv;
 
 task("deploy", "Deploy contract", async function (args, hre, runSuper) {
@@ -100,11 +104,13 @@ export default {
           argv.hardhatChainId === 1 ? argv.ethRpcUrl :
             argv.hardhatChainId === 137 ? argv.maticRpcUrl :
               argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+              argv.hardhatChainId === 56 ? argv.bscRpcUrl :
                 undefined,
         blockNumber:
           argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
             argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
               argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+              argv.hardhatChainId === 56 ? argv.bscForkBlock !== 0 ? argv.bscForkBlock : undefined :
                 undefined
       } : undefined,
       accounts: {

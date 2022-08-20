@@ -5,7 +5,7 @@
 export class BscAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  public static GOVERNANCE = "0xf00fD5282538F1C81df9F8388023FFDB3565c0D4";
+  public static GOVERNANCE = "0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94";
 
   // tokens
   public static WBNB_TOKEN = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c".toLowerCase();
