@@ -35,11 +35,12 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.5.2";
+  string public constant VERSION = "1.5.3";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
+  address public constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -265,7 +266,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address[] memory _keyTokens = keyTokens;
     for (uint256 i = 0; i < _keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        if(token == _keyTokens[i]) {
+        if (token == _keyTokens[i]) {
           continue;
         }
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
@@ -291,7 +292,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     // shortcut for firebird ice-weth
     if (_factory == FIREBIRD_FACTORY) {
       pairAddress = IFireBirdFactory(_factory).getPair(token, tokenOpposite, 50, 20);
-    } else if (_factory == DYSTOPIA_FACTORY) {
+    } else if (_factory == DYSTOPIA_FACTORY || _factory == CONE_FACTORY) {
       address sPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, true);
       address vPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, false);
       uint sReserve = getLpSize(sPair, token);
@@ -512,6 +513,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
     swapFactories.push(_factoryAddress);
     swapLpNames.push(_name);
+    allowedFactories[_factoryAddress] = true;
     emit SwapPlatformAdded(_factoryAddress, _name);
   }
 

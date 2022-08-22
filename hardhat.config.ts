@@ -32,6 +32,10 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: ''
     },
+    bscRpcUrl: {
+      type: "string",
+      default: 'https://bsc-dataseed.binance.org/'
+    },
     infuraKey: {
       type: "string",
     },
@@ -42,6 +46,9 @@ const argv = require('yargs/yargs')()
       type: "string",
     },
     networkScanKeyFtm: {
+      type: "string",
+    },
+    networkScanKeyBsc: {
       type: "string",
     },
     privateKey: {
@@ -59,6 +66,10 @@ const argv = require('yargs/yargs')()
     ftmForkBlock: {
       type: "number",
       default: 35202770
+    },
+    bscForkBlock: {
+      type: "number",
+      default: 0
     },
   }).argv;
 
@@ -93,11 +104,13 @@ export default {
           argv.hardhatChainId === 1 ? argv.ethRpcUrl :
             argv.hardhatChainId === 137 ? argv.maticRpcUrl :
               argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+              argv.hardhatChainId === 56 ? argv.bscRpcUrl :
                 undefined,
         blockNumber:
           argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
             argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
               argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+              argv.hardhatChainId === 56 ? argv.bscForkBlock !== 0 ? argv.bscForkBlock : undefined :
                 undefined
       } : undefined,
       accounts: {
@@ -148,13 +161,23 @@ export default {
       gasPrice: 1_100_000_000,
       accounts: [argv.privateKey],
     },
+    bsc: {
+      url: argv.bscRpcUrl,
+      timeout: 99999,
+      chainId: 56,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      // gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
     apiKey: {
       mainnet: argv.networkScanKey,
       polygon: argv.networkScanKeyMatic || argv.networkScanKey,
-      opera: argv.networkScanKeyFtm || argv.networkScanKey
+      opera: argv.networkScanKeyFtm || argv.networkScanKey,
+      bsc: argv.networkScanKeyBsc || argv.networkScanKey,
     },
   },
   solidity: {
