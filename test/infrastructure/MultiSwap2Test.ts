@@ -14,56 +14,20 @@ import {ethers, network, config} from "hardhat";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-
 import {TokenUtils} from "../TokenUtils";
-import {BigNumber, BigNumberish} from "ethers";
+import {BigNumber} from "ethers";
 import {MaxUint256} from '@ethersproject/constants';
-
-
 import testJson from './json/MultiSwap2TestData.json';
-// import hardhatConfig from "../../hardhat.config";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TimeUtils} from "../TimeUtils";
 import {parseUnits} from "ethers/lib/utils";
+import {_SLIPPAGE_DENOMINATOR, ISwapInfo, ITestData} from "./MultiSwap2Interfaces";
+// import hardhatConfig from "../../hardhat.config";
 
 
 // const {expect} = chai;
 chai.use(chaiAsPromised);
 
-const _SLIPPAGE_DENOMINATOR = 10000;
-
-interface ISwapV2 {
-  poolId: string;
-  assetInIndex: number;
-  assetOutIndex: number;
-  amount: BigNumberish;
-  userData: string;
-}
-
-interface ISwapInfo {
-  swapData: ISwapData;
-  tokenAddresses: string[];
-  swaps: ISwapV2[];
-  swapAmount: BigNumberish;
-  swapAmountForSwaps?: BigNumberish; // Used with stETH/wstETH
-  returnAmount: BigNumberish;
-  returnAmountFromSwaps?: BigNumberish; // Used with stETH/wstETH
-  returnAmountConsideringFees: BigNumberish;
-  tokenIn: string;
-  tokenOut: string;
-  marketSp: BigNumberish;
-}
-
-interface ISwapData {
-  tokenIn: string;
-  tokenOut: string;
-  swapAmount: BigNumberish;
-  returnAmount: BigNumberish;
-}
-
-interface ITestData {
-  [key: string]: ISwapInfo
-}
 
 describe("MultiSwap2 base tests", function () {
   let signer: SignerWithAddress;
@@ -73,6 +37,8 @@ describe("MultiSwap2 base tests", function () {
   let snapshotForEach: string;
 
   const testData = testJson.testData as unknown as ITestData;
+  // Contract uses zero address for network token
+  const _NETWORK_TOKEN = ethers.constants.AddressZero;
 
   before(async function () {
     this.timeout(1200000);
@@ -105,7 +71,7 @@ describe("MultiSwap2 base tests", function () {
     } else console.error('Unsupported network', network.name)
 
 
-  })
+  });
 
   beforeEach(async function () {
     snapshotForEach = await TimeUtils.snapshot();
@@ -136,7 +102,7 @@ describe("MultiSwap2 base tests", function () {
           swap.swapData,
           swap.swaps,
           swap.tokenAddresses,
-          _SLIPPAGE_DENOMINATOR / 20,
+          _SLIPPAGE_DENOMINATOR / 100, // 1%
           deadline ?? getDeadline(),
       ))
       .to.be.revertedWith(reason);
@@ -148,7 +114,7 @@ describe("MultiSwap2 base tests", function () {
               signer,
               'MultiSwap2',
               core.controller,
-              ethers.constants.AddressZero,
+              _NETWORK_TOKEN,
               MaticAddresses.BALANCER_VAULT,
               MaticAddresses.TETU_SWAP_FACTORY,
           )
@@ -163,7 +129,7 @@ describe("MultiSwap2 base tests", function () {
               'MultiSwap2',
               core.controller,
               await DeployerUtils.getNetworkTokenAddress(),
-              ethers.constants.AddressZero,
+              _NETWORK_TOKEN,
               MaticAddresses.TETU_SWAP_FACTORY,
           )
       )
@@ -178,7 +144,7 @@ describe("MultiSwap2 base tests", function () {
               core.controller,
               await DeployerUtils.getNetworkTokenAddress(),
               MaticAddresses.BALANCER_VAULT,
-              ethers.constants.AddressZero,
+              _NETWORK_TOKEN,
           )
       )
       .to.be.revertedWith('MSZeroTetuFactory');
@@ -194,6 +160,12 @@ describe("MultiSwap2 base tests", function () {
       const swap = getSwap();
       swap.swapData.swapAmount = '0';
       await expectSwapRevert(swap,'MSZeroAmount');
+    });
+
+    it("MSNoEthReceived", async () => {
+      const swap = getSwap();
+      swap.swapData.tokenIn = _NETWORK_TOKEN;
+      await expectSwapRevert(swap,'MSNoEthReceived');
     });
 
     it("MSUnknownAmountInFirstSwap", async () => {
@@ -259,18 +231,6 @@ describe("MultiSwap2 base tests", function () {
       .to.be.revertedWith('MSForbidden');
     });
 
-    it("MSTransferFeesForbiddenForOutputToken", async () => {
-      const signerERC = await DeployerUtils.impersonate();
-      const tf = await DeployerUtils.deployContract(signerERC, 'ERC20TransferFee') as ERC20TransferFee;
-
-      const swap = getSwap();
-      const amountToMint = BigNumber.from(swap.returnAmount);
-      await tf.mint(multiSwap2.address, amountToMint);
-      swap.swapData.tokenOut = tf.address
-      await prepareTokens(swap);
-      await expectSwapRevert(swap,'MSTransferFeesForbiddenForOutputToken');
-    });
-
     it("MSTransferFeesForbiddenForInputToken", async () => {
       const swap = getSwap();
       const tf = await DeployerUtils.deployContract(signer, 'ERC20TransferFee') as ERC20TransferFee;
@@ -284,12 +244,10 @@ describe("MultiSwap2 base tests", function () {
 
   });
 
-
   it("salvage", async () => {
     const amount = parseUnits('1000', 6)
     await TokenUtils.getToken(usdc, signer.address, amount);
     await TokenUtils.transfer(usdc, signer, multiSwap2.address, amount.toString());
-
 
     const gov = await DeployerUtils.impersonate();
     const usdBefore = await TokenUtils.balanceOf(usdc, gov.address);
@@ -305,47 +263,139 @@ describe("MultiSwap2 base tests", function () {
     expect(diff).is.eq(amount, 'Amount not salvaged')
   });
 
-  it("do multi swaps", async () => {
+  describe('multi swaps', async () => {
     const deadline = MaxUint256;
     const slippage = _SLIPPAGE_DENOMINATOR * 2 / 100; // 2%
-    for (const key of Object.keys(testData)) {
-    // for (const key of Object.keys(testData).slice(0, 5)) {
-      console.log('\n-----------------------');
-      console.log(key);
-      console.log('-----------------------');
-      const snapshot = await TimeUtils.snapshot();
 
-      const multiswap = testData[key];
+    it("tokens", async () => {
+      for (const key of Object.keys(testData)) {
+        console.log('\n-----------------------');
+        console.log(key);
+        console.log('-----------------------');
+        const snapshot = await TimeUtils.snapshot();
 
-      const tokenIn = multiswap.swapData.tokenIn;
-      const tokenOut = multiswap.swapData.tokenOut;
-      const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
+        const multiswap = testData[key];
 
-      const amount = BigNumber.from(multiswap.swapAmount)
-      await TokenUtils.getToken(tokenIn, signer.address, amount);
-      await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
+        const tokenIn = multiswap.swapData.tokenIn;
+        const tokenOut = multiswap.swapData.tokenOut;
+        const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
 
-      await multiSwap2.multiSwap(
-        multiswap.swapData,
-        multiswap.swaps,
-        multiswap.tokenAddresses,
-        slippage,
-        deadline
-      );
+        const amount = BigNumber.from(multiswap.swapAmount)
+        await TokenUtils.getToken(tokenIn, signer.address, amount);
+        await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
 
-      const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
+        await multiSwap2.multiSwap(
+            multiswap.swapData,
+            multiswap.swaps,
+            multiswap.tokenAddresses,
+            slippage,
+            deadline
+        );
 
-      const amountOut = amountOutAfter.sub(amountOutBefore);
-      console.log('amountOut     ', amountOut.toString());
-      const amountExpected = multiswap.returnAmount;
-      console.log('amountExpected', amountExpected);
-      const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
-      console.log('diff', diff.toFixed(4), '%');
+        const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
 
-      await TimeUtils.rollback(snapshot);
+        const amountOut = amountOutAfter.sub(amountOutBefore);
+        console.log('amountOut     ', amountOut.toString());
+        const amountExpected = multiswap.returnAmount;
+        console.log('amountExpected', amountExpected);
+        const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
+        console.log('diff', diff.toFixed(4), '%');
 
-    }
+        await TimeUtils.rollback(snapshot);
 
-  })
+      }
 
-})
+
+
+    })
+    it("network token in", async () => {
+      const networkToken = await DeployerUtils.getNetworkTokenAddress();
+      for (const key of Object.keys(testData)) {
+        const multiswap = testData[key];
+
+        if (multiswap.swapData.tokenIn.toLowerCase() !== networkToken.toLowerCase()) continue;
+        const snapshot = await TimeUtils.snapshot();
+
+        console.log('\n-----------------------');
+        console.log(key);
+        console.log('-----------------------');
+
+        multiswap.swapData.tokenIn = _NETWORK_TOKEN;
+
+        const tokenOut = multiswap.swapData.tokenOut;
+        const amountOutBefore = await TokenUtils.balanceOf(tokenOut, signer.address);
+
+        const amount = BigNumber.from(multiswap.swapAmount)
+
+        await multiSwap2.multiSwap(
+            multiswap.swapData,
+            multiswap.swaps,
+            multiswap.tokenAddresses,
+            slippage,
+            deadline,
+            {value: amount}
+        );
+
+        const amountOutAfter = await TokenUtils.balanceOf(tokenOut, signer.address);
+
+        const amountOut = amountOutAfter.sub(amountOutBefore);
+        console.log('amountOut     ', amountOut.toString());
+        const amountExpected = multiswap.returnAmount;
+        console.log('amountExpected', amountExpected);
+        const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
+        console.log('diff', diff.toFixed(4), '%');
+
+        await TimeUtils.rollback(snapshot);
+      }
+    })
+
+    it("network token out", async () => {
+      const networkToken = await DeployerUtils.getNetworkTokenAddress();
+      for (const key of Object.keys(testData)) {
+        const multiswap = testData[key];
+
+        const tokenIn = multiswap.swapData.tokenIn;
+
+        if (multiswap.swapData.tokenOut.toLowerCase() !== networkToken.toLowerCase()) continue;
+        const snapshot = await TimeUtils.snapshot();
+
+        console.log('\n-----------------------');
+        console.log(key);
+        console.log('-----------------------');
+
+        multiswap.swapData.tokenOut = _NETWORK_TOKEN;
+
+        const tokenOut = multiswap.swapData.tokenOut;
+
+        const amountOutBefore = await ethers.provider.getBalance(signer.address);
+        console.log('amountOutBefore', amountOutBefore);
+
+        const amount = BigNumber.from(multiswap.swapAmount)
+        await TokenUtils.getToken(tokenIn, signer.address, amount);
+        await TokenUtils.approve(tokenIn, signer, multiSwap2.address, amount.toString());
+
+        await multiSwap2.multiSwap(
+            multiswap.swapData,
+            multiswap.swaps,
+            multiswap.tokenAddresses,
+            slippage,
+            deadline
+        );
+
+        const amountOutAfter = await ethers.provider.getBalance(signer.address);
+
+        const amountOut = amountOutAfter.sub(amountOutBefore);
+        console.log('amountOut     ', amountOut.toString());
+        const amountExpected = multiswap.returnAmount;
+        console.log('amountExpected', amountExpected);
+        const diff = amountOut.mul(10000).div(amountExpected).toNumber() / 100 - 100;
+        console.log('diff', diff.toFixed(4), '%');
+
+        await TimeUtils.rollback(snapshot);
+      }
+
+    })
+
+  });
+
+});

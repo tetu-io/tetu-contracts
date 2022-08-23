@@ -16,46 +16,12 @@ import {MaxUint256} from '@ethersproject/constants';
 import testJson from './json/MultiSwap2TestDataDyst.json';
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {TimeUtils} from "../TimeUtils";
+import {_SLIPPAGE_DENOMINATOR, ITestData} from "./MultiSwap2Interfaces";
 
 
 // const {expect} = chai;
 chai.use(chaiAsPromised);
 
-const _SLIPPAGE_DENOMINATOR = 10000;
-
-interface ISwapStep {
-  poolId: string;
-  assetInIndex: number;
-  assetOutIndex: number;
-  amount: BigNumberish;
-  userData: string;
-  platformFee: BigNumberish;
-}
-
-interface ISwapInfo {
-  swapData: ISwapData;
-  tokenAddresses: string[];
-  swaps: ISwapStep[];
-  swapAmount: BigNumberish;
-  swapAmountForSwaps?: BigNumberish; // Used with stETH/wstETH
-  returnAmount: BigNumberish;
-  returnAmountFromSwaps?: BigNumberish; // Used with stETH/wstETH
-  returnAmountConsideringFees: BigNumberish;
-  tokenIn: string;
-  tokenOut: string;
-  marketSp: BigNumberish;
-}
-
-interface ISwapData {
-  tokenIn: string;
-  tokenOut: string;
-  swapAmount: BigNumberish;
-  returnAmount: BigNumberish;
-}
-
-interface ITestData {
-  [key: string]: ISwapInfo
-}
 
 describe("MultiSwap2 Dystopia main pairs test", function () {
   let signer: SignerWithAddress;

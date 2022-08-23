@@ -24,12 +24,13 @@ import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/IERC20Name.sol"; // TODO remove
 import "../../base/SlotsLib.sol";
+import "../../third_party/uniswap/IWETH.sol";
 import "./IMultiSwap2.sol";
 
 import "hardhat/console.sol"; // TODO remove
 
 /// @title Tetu MultiSwap v2 Contract
-/// @dev Supports 1 Balancer, 1 Dystopia, up to 15 UniSwap v2 compatible pools
+/// @dev Supports 1 Balancer, 1 Dystopia, up to 15 UniSwap v2 compatible pools with variable swap fees
 /// @author bogdoslav
 contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
@@ -59,11 +60,11 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   error MSSameTokens();
   error MSSameTokensInSwap();
   error MSZeroAmount();
+  error MSNoEthReceived();
   error MSWrongTokens();
   error MSUnknownAmountInFirstSwap();
   error MSDeadline();
   error MSTransferFeesForbiddenForInputToken();
-  error MSTransferFeesForbiddenForOutputToken();
   error MSMalconstructedMultiSwap();
   error MSAmountOutLessThanRequired();
   error MSForbidden();
@@ -102,7 +103,14 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     // solhint-disable-next-line not-rely-on-time
     if (block.timestamp > deadline) revert MSDeadline();
 
-    IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.swapAmount);
+    if (swapData.tokenIn == _ETH) {
+      if (msg.value == 0) revert MSNoEthReceived();
+      IWETH(WETH).deposit{value:msg.value}();
+      swapData.tokenIn = WETH;
+    } else {
+      IERC20(swapData.tokenIn).safeTransferFrom(msg.sender, address(this), swapData.swapAmount);
+    }
+
     // some tokens have a burn/fee mechanic for transfers so amount can be changed
     // we are recommend to use manual swapping for this kind of tokens
     if (IERC20(swapData.tokenIn).balanceOf(address(this)) < swapData.swapAmount)
@@ -152,17 +160,25 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
       previousTokenOut = swapTokenOut;
     }
 
+
+    address outToken = swapData.tokenOut == _ETH ? WETH : swapData.tokenOut;
+    amountOut = IERC20(outToken).balanceOf(address(this));
     console.log('= = = = = = =');
-    amountOut = IERC20(swapData.tokenOut).balanceOf(address(this));
     console.log('swapData.tokenOut', swapData.tokenOut);
     console.log('expected ', swapData.returnAmount);
     uint minAmountOut = swapData.returnAmount - swapData.returnAmount * slippage / _SLIPPAGE_PRECISION;
     console.log('amountOut', amountOut);
     console.log('minimum  ', minAmountOut);
 
-    IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
-
     if (amountOut < minAmountOut) revert MSAmountOutLessThanRequired();
+
+
+    if (swapData.tokenOut == _ETH) {
+      IWETH(WETH).withdraw(amountOut);
+      payable(msg.sender).transfer(amountOut);
+    } else {
+      IERC20(swapData.tokenOut).safeTransfer(msg.sender, amountOut);
+    }
 
     emit MultiSwap(swapData.tokenIn, swapData.swapAmount, swapData.tokenOut, amountOut);
   }
@@ -362,5 +378,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
     IERC20(_token).safeTransfer(msg.sender, _amount);
     emit Salvage(msg.sender, _token, _amount);
   }
+
+  receive() external payable {} // this is needed for the native token (ETH/MATIC) unwrapping
 
 }
