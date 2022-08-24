@@ -36,7 +36,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.2.0";
   uint256 private constant _SLIPPAGE_PRECISION = 10000;
   uint256 private constant _PRECISION_FEE = 10000;
   bytes32 private constant _DEX_ID_MASK = 0x0000000000000000000000000000000000000000fffffffffffffffffffffff0; // last half-byte - index of dex 0-15
@@ -370,7 +370,7 @@ contract MultiSwap2 is IMultiSwap2, ControllableV2, ReentrancyGuard {
 
   // ************************* GOV ACTIONS *******************
 
-  /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
+  /// @notice Claim coins that are somehow transferred into the contract
   /// @param _token Token address
   /// @param _amount Token amount
   function salvage(address _token, uint _amount) external {
