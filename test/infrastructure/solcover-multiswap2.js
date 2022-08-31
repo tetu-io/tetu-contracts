@@ -12,9 +12,7 @@ module.exports = {
       'infrastructure\\reward',
       'infrastructure\\salary',
       'infrastructure\\zap\\',
-      'infrastructure\\zap2\\IDepositHelper.sol',
       'infrastructure\\zap2\\IMultiSwap2.sol',
-      'infrastructure\\zap2\\IZapContract2.sol',
     'strategies',
     'openzeppelin',
   ]
