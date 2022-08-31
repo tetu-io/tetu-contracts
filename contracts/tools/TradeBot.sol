@@ -197,7 +197,7 @@ contract TradeBot is ReentrancyGuard {
     uint tokenInSnapshotBefore = IERC20(pos.tokenIn).balanceOf(address(this));
     uint tokenOutSnapshotBefore = IERC20(pos.tokenOut).balanceOf(address(this));
 
-    multiSwap(pos.router, swapData, swaps, tokenAddresses);
+    uint amountOut = multiSwap(pos.router, swapData, swaps, tokenAddresses);
 
     uint tokenInSnapshotAfter = IERC20(pos.tokenIn).balanceOf(address(this));
     uint tokenOutSnapshotAfter = IERC20(pos.tokenOut).balanceOf(address(this));
@@ -218,8 +218,8 @@ contract TradeBot is ReentrancyGuard {
     uint tokenInDecimals = IERC20Extended(swapData.tokenIn).decimals();
     uint tokenOutDecimals = IERC20Extended(swapData.tokenOut).decimals();
 
-    uint amountIn18 = pos.tokenInAmount * 1e18 / (10 ** tokenInDecimals);
-    uint amountOut18 = pos.tokenOutAmount * 1e18 / (10 ** tokenOutDecimals);
+    uint amountIn18 = amount * 1e18 / (10 ** tokenInDecimals);
+    uint amountOut18 = amountOut * 1e18 / (10 ** tokenOutDecimals);
     price = amountIn18 * 1e18 / amountOut18;
     }
 
@@ -238,7 +238,7 @@ contract TradeBot is ReentrancyGuard {
     IMultiSwap2.SwapData memory swapData,
     IMultiSwap2.SwapStep[] memory swaps,
     IAsset[] memory tokenAddresses
-  ) internal {
+  ) internal returns (uint amountOut){
     require(_multiswapContract != address(0), "Zero multiswap contract");
     uint bal = IERC20(swapData.tokenIn).balanceOf(address(this));
     uint _amount = swapData.swapAmount;
@@ -249,7 +249,7 @@ contract TradeBot is ReentrancyGuard {
     IERC20(swapData.tokenIn).safeApprove(_multiswapContract, 0);
     IERC20(swapData.tokenIn).safeApprove(_multiswapContract, _amount);
 
-    IMultiSwap2(_multiswapContract).multiSwap(
+    return IMultiSwap2(_multiswapContract).multiSwap(
       swapData,
       swaps,
       tokenAddresses,
