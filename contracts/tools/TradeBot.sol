@@ -20,6 +20,7 @@ import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
 import "../openzeppelin/Math.sol";
 import "../third_party/IERC20Extended.sol";
+import "../infrastructure/zap2/IMultiSwap2.sol";
 
 /// @title Simple contract for safe swap from untrusted EOA
 /// @author belbix
@@ -45,7 +46,8 @@ contract TradeBot is ReentrancyGuard {
     uint price;
   }
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
+  uint private constant _MS_SLIPPAGE_PRECISION = 10000;
 
   mapping(address => Position) public positions;
   mapping(address => Trade[]) public trades;
@@ -134,9 +136,9 @@ contract TradeBot is ReentrancyGuard {
   }
 
   // https://uniswap.org/docs/v2/smart-contracts/router02/#swapexacttokensfortokens
-  function swap(address _router, address[] memory _route, uint256 _amount) internal {
+  function swap(address _router, address[] memory _route, uint _amount) internal {
     require(_router != address(0), "Zero router");
-    uint256 bal = IERC20(_route[0]).balanceOf(address(this));
+    uint bal = IERC20(_route[0]).balanceOf(address(this));
     require(bal >= _amount, "Not enough balance");
     IERC20(_route[0]).safeApprove(_router, 0);
     IERC20(_route[0]).safeApprove(_router, _amount);
@@ -151,14 +153,14 @@ contract TradeBot is ReentrancyGuard {
   }
 
   function getLpInfo(address pairAddress, address targetToken)
-  internal view returns (address oppositeToken, uint256 oppositeTokenStacked, uint256 price, uint256 tokenStacked) {
+  internal view returns (address oppositeToken, uint oppositeTokenStacked, uint price, uint tokenStacked) {
     IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
     address token0 = pair.token0();
     address token1 = pair.token1();
-    uint256 token0Decimals = IERC20Extended(token0).decimals();
-    uint256 token1Decimals = IERC20Extended(token1).decimals();
+    uint token0Decimals = IERC20Extended(token0).decimals();
+    uint token1Decimals = IERC20Extended(token1).decimals();
 
-    (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+    (uint reserve0, uint reserve1,) = pair.getReserves();
 
     // both reserves should have the same decimals
     reserve0 = reserve0 * 1e18 / (10 ** token0Decimals);
@@ -178,6 +180,82 @@ contract TradeBot is ReentrancyGuard {
 
   function tradesLength(address owner) external view returns (uint) {
     return trades[owner].length;
+  }
+
+  function executeMultiswap(
+    address posOwner,
+    IMultiSwap2.SwapData memory swapData,
+    IMultiSwap2.SwapStep[] memory swaps,
+    IAsset[] memory tokenAddresses
+  ) external nonReentrant {
+    uint amount = swapData.swapAmount;
+
+    Position memory pos = positions[posOwner];
+    require(pos.executor == msg.sender, "Only position executor");
+    require(pos.tokenInAmount >= amount, "Amount too high");
+
+    uint tokenInSnapshotBefore = IERC20(pos.tokenIn).balanceOf(address(this));
+    uint tokenOutSnapshotBefore = IERC20(pos.tokenOut).balanceOf(address(this));
+
+    uint amountOut = multiSwap(pos.router, swapData, swaps, tokenAddresses);
+
+    uint tokenInSnapshotAfter = IERC20(pos.tokenIn).balanceOf(address(this));
+    uint tokenOutSnapshotAfter = IERC20(pos.tokenOut).balanceOf(address(this));
+
+    require(tokenInSnapshotBefore > tokenInSnapshotAfter, "TokenIn unhealthy");
+    require(tokenInSnapshotBefore - tokenInSnapshotAfter == amount, "Swap unhealthy");
+    require(tokenOutSnapshotAfter > tokenOutSnapshotBefore, "TokenOut unhealthy");
+
+    pos.tokenInAmount = pos.tokenInAmount - (tokenInSnapshotBefore - tokenInSnapshotAfter);
+    pos.tokenOutAmount = pos.tokenOutAmount + (tokenOutSnapshotAfter - tokenOutSnapshotBefore);
+    positions[posOwner] = pos;
+
+    uint tokenInAmount = tokenInSnapshotBefore - tokenInSnapshotAfter;
+    uint tokenOutAmount = tokenOutSnapshotAfter - tokenOutSnapshotBefore;
+
+    uint price;
+    { // stack too deep
+    uint tokenInDecimals = IERC20Extended(swapData.tokenIn).decimals();
+    uint tokenOutDecimals = IERC20Extended(swapData.tokenOut).decimals();
+
+    uint amountIn18 = amount * 1e18 / (10 ** tokenInDecimals);
+    uint amountOut18 = amountOut * 1e18 / (10 ** tokenOutDecimals);
+    price = amountIn18 * 1e18 / amountOut18;
+    }
+
+    trades[posOwner].push(Trade(
+        pos,
+        block.timestamp,
+        block.number,
+        tokenInAmount,
+        tokenOutAmount,
+        price
+      ));
+  }
+
+  function multiSwap(
+    address _multiswapContract,
+    IMultiSwap2.SwapData memory swapData,
+    IMultiSwap2.SwapStep[] memory swaps,
+    IAsset[] memory tokenAddresses
+  ) internal returns (uint amountOut){
+    require(_multiswapContract != address(0), "Zero multiswap contract");
+    uint bal = IERC20(swapData.tokenIn).balanceOf(address(this));
+    uint _amount = swapData.swapAmount;
+    require(bal >= _amount, "Not enough balance");
+
+    uint slippage = _MS_SLIPPAGE_PRECISION / 100 * 2; // 2%
+
+    IERC20(swapData.tokenIn).safeApprove(_multiswapContract, 0);
+    IERC20(swapData.tokenIn).safeApprove(_multiswapContract, _amount);
+
+    return IMultiSwap2(_multiswapContract).multiSwap(
+      swapData,
+      swaps,
+      tokenAddresses,
+      slippage,
+      block.timestamp
+    );
   }
 
 }
