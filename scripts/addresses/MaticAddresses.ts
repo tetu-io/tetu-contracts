@@ -187,6 +187,9 @@ export class MaticAddresses {
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x736FD9EabB15776A3adfea1B975c868F72A29d14".toLowerCase();
 
+  // MultiSwap2
+  public static TETU_MULTISWAP2 = "0x11637b94Dfab4f102c21fDe9E34915Bb5F766A8a".toLowerCase();
+
   // AAVE
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
   public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'.toLowerCase();

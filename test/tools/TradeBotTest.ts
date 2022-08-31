@@ -16,6 +16,7 @@ chai.use(chaiAsPromised);
 const TOKEN_IN = MaticAddresses.USDC_TOKEN;
 const TOKEN_OUT = MaticAddresses.TETU_TOKEN;
 const ROUTER = MaticAddresses.TETU_SWAP_ROUTER;
+const MULTISWAP2 = MaticAddresses.TETU_MULTISWAP2;
 
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
@@ -138,6 +139,60 @@ describe("TradeBotTest", function () {
       tokenInAmount,
       TOKEN_OUT,
       ROUTER
+    );
+
+    await bot.connect(executor).execute(owner.address, tokenInAmount.div(2))
+
+    expect(await TokenUtils.balanceOf(TOKEN_IN, bot.address)).is.eq(tokenInAmount.div(2));
+    expect(await TokenUtils.balanceOf(TOKEN_OUT, bot.address)).is.not.eq(0);
+
+    await bot.close();
+    expect(await TokenUtils.balanceOf(TOKEN_IN, bot.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(TOKEN_IN, owner.address)).is.eq(tokenInAmount.div(2));
+    expect(await TokenUtils.balanceOf(TOKEN_OUT, bot.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(TOKEN_OUT, owner.address)).is.not.eq(0);
+  });
+
+  it("execute multiswap test", async () => {
+    if (argv.hardhatChainId !== 137) {
+      return;
+    }
+    const tokenInAmount = utils.parseUnits('100000', 6);
+    await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
+    await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
+    await bot.open(
+        executor.address,
+        TOKEN_IN,
+        tokenInAmount,
+        TOKEN_OUT,
+        ROUTER
+    );
+
+    await bot.connect(executor).execute(owner.address, tokenInAmount)
+
+    expect(await TokenUtils.balanceOf(TOKEN_IN, owner.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(TOKEN_IN, bot.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(TOKEN_OUT, bot.address)).is.not.eq(0);
+
+    await bot.close();
+    expect(await TokenUtils.balanceOf(TOKEN_IN, owner.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(TOKEN_OUT, bot.address)).is.eq(0);
+    expect(await TokenUtils.balanceOf(TOKEN_OUT, owner.address)).is.not.eq(0);
+  });
+
+  it("partially execute multiswap test", async () => {
+    if (argv.hardhatChainId !== 137) {
+      return;
+    }
+    const tokenInAmount = utils.parseUnits('100000', 6);
+    await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
+    await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
+    await bot.open(
+        executor.address,
+        TOKEN_IN,
+        tokenInAmount,
+        TOKEN_OUT,
+        ROUTER
     );
 
     await bot.connect(executor).execute(owner.address, tokenInAmount.div(2))
