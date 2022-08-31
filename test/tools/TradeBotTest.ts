@@ -32,7 +32,7 @@ const argv = require('yargs/yargs')()
     },
   }).argv;
 
-describe("TradeBotTest", function () {
+describe.skip("TradeBotTest", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let owner: SignerWithAddress;

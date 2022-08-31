@@ -35,8 +35,7 @@ describe("Announcer tests", function () {
     controller = core.controller;
     announcer = core.announcer;
     timeLockDuration = (await core.announcer.timeLock()).toNumber();
-    usdc = await DeployerUtils.getUSDCAddress();
-    await UniswapUtils.wrapNetworkToken(signer); // 10m wmatic
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
   });
 
   after(async function () {
@@ -661,7 +660,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.mintAndDistribute(toMint,  false);
+    await controller.mintAndDistribute(toMint, false);
 
     let curNetAmount = toMint * 0.33;
     let forVaults = curNetAmount * 0.7;
@@ -723,7 +722,7 @@ describe("Announcer tests", function () {
 
     await TimeUtils.advanceBlocksOnTs(timeLockDuration);
 
-    await controller.connect(signer1).mintAndDistribute(toMint,  false);
+    await controller.connect(signer1).mintAndDistribute(toMint, false);
 
     curNetAmount = toMint * 0.33;
     forVaults = curNetAmount * 0.7;

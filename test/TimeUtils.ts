@@ -1,7 +1,7 @@
 import {config, ethers, network} from "hardhat";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
-import {Multicall__factory} from "../typechain";
+import {Multicall, Multicall__factory} from "../typechain";
 
 export class TimeUtils {
 
@@ -47,9 +47,7 @@ export class TimeUtils {
     return (await ethers.provider.getBlock(blockHash)).number;
   }
 
-  public static async getBlockTime(block?: number | null): Promise<number> {
-    const tools = await DeployerUtils.getToolsAddresses();
-    const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
+  public static async getBlockTime(multicall: Multicall, block?: number | null): Promise<number> {
     if (block) {
       return (await multicall.getCurrentBlockTimestamp({blockTag: block})).toNumber();
     } else {

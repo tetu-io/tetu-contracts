@@ -1,6 +1,6 @@
 {
-  "name": "tetu_contracts",
-  "version": "1.0.0",
+  "name": "@tetu_io/tetu-contracts",
+  "version": "1.7.3",
   "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
   "directories": {
@@ -35,7 +35,7 @@
   "bugs": {
     "url": "https://tasks.tetu.io/youtrack/issues/UISS"
   },
-  "homepage": "https://tetu.io/",
+  "homepage": "https://tetu.io",
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^3.0.0",
@@ -74,7 +74,7 @@
     "mocha": "^8.4.0",
     "node-fetch": "^2.6.7",
     "solc-0.8.4": "npm:solc@^0.8.9",
-    "solidity-coverage": "^0.7.17",
+    "solidity-coverage": "^0.7.21",
     "ts-generator": "^0.1.1",
     "ts-node": "^10.4.0",
     "tslint": "^6.1.3",

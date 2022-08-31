@@ -12,6 +12,7 @@ import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -41,8 +42,8 @@ describe("SmartVaultNoopStrat", () => {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshot = await TimeUtils.snapshot();
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
 
     vaultRewardToken0 = core.psVault.address;
     vault = await DeployerUtils.deploySmartVault(signer);
@@ -74,21 +75,21 @@ describe("SmartVaultNoopStrat", () => {
       REWARD_DURATION
     );
 
-    await UniswapUtils.wrapNetworkToken(signer);
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
     await TokenUtils.getToken(usdc, user.address, utils.parseUnits("1000000", 6))
-    await TokenUtils.wrapNetworkToken(signer, '10000000');
 
     await MintHelperUtils.mint(core.controller, core.announcer, '1000', signer.address);
     expect(await TokenUtils.balanceOf(core.rewardToken.address, signerAddress)).at.eq(utils.parseUnits("1000", 18));
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+
     const lpAddress = await UniswapUtils.addLiquidity(
       signer,
       core.rewardToken.address,
       usdc,
       utils.parseUnits("100", 18).toString(),
       utils.parseUnits("100", 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      uniData.factory.address,
+      uniData.router.address
     );
     expect(await TokenUtils.balanceOf(lpAddress, signerAddress)).at.eq("99999999999000");
 
@@ -411,6 +412,19 @@ describe("SmartVaultNoopStrat", () => {
       await vault.overrideSymbol('ovSymbol')
       expect(await vault.name()).is.eq('ovName');
       expect(await vault.symbol()).is.eq('ovSymbol');
+    });
+
+    it("claim rewards with redirect", async () => {
+      expect(await core.psVault.balanceOf(user.address)).eq(0);
+      await VaultUtils.addRewardsXTetu(signer, vault, core, 100);
+      await VaultUtils.deposit(signer, vault, BigNumber.from("1000000"));
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 60);
+
+      await vault.setRewardsRedirect(signer.address, user.address);
+
+      await vault.getAllRewardsAndRedirect(signer.address);
+
+      expect(await core.psVault.balanceOf(user.address)).above(parseUnits('99'));
     });
 
   });

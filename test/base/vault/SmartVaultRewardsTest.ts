@@ -1,6 +1,13 @@
 import {ethers} from "hardhat";
 import chai from "chai";
-import {ContractReader, DepositHelper, Multicall, MultiSwap, NoopStrategy, ZapContract} from "../../../typechain";
+import {
+  ContractReader,
+  DepositHelper,
+  Multicall,
+  MultiSwap,
+  NoopStrategy,
+  ZapContract
+} from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../VaultUtils";
 import {BigNumber, utils} from "ethers";
@@ -12,6 +19,8 @@ import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {UniswapUtils} from "../../UniswapUtils";
 import {ZapUtils} from "../../ZapUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
+import {MintHelperUtils} from "../../MintHelperUtils";
+import { parseUnits } from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -30,13 +39,22 @@ describe("Smart vault rewards test", () => {
   let depositHelper: DepositHelper;
   let usdc: string;
   let networkToken: string;
+  let factory: string;
+  let router: string;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshot = await TimeUtils.snapshot();
 
-    const calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    factory = uniData.factory.address;
+    router = uniData.router.address;
+
+    const calculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, factory))[0];
 
     multicall = await DeployerUtils.deployContract(signer, "Multicall") as Multicall;
     depositHelper = await DeployerUtils.deployContract(signer, "DepositHelper") as DepositHelper;
@@ -48,14 +66,21 @@ describe("Smart vault rewards test", () => {
 
     await contractReader.initialize(core.controller.address, calculator.address);
 
-    multiSwap = await DeployerUtils.deployMultiSwap(signer, core.controller.address, calculator.address);
+    multiSwap = await DeployerUtils.deployMultiSwapTestnet(signer, core.controller.address, calculator.address, factory, router);
     zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
     await core.controller.changeWhiteListStatus([zapContract.address], true);
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("1000000", 6))
-    await TokenUtils.wrapNetworkToken(signer, '10000000');
+    await UniswapUtils.addLiquidity(
+      signer,
+      usdc,
+      networkToken,
+      parseUnits('100000', 6).toString(),
+      parseUnits('100000').toString(),
+      uniData.factory.address,
+      uniData.router.address,
+    );
+    await calculator.addKeyToken(networkToken);
+
   });
 
   after(async function () {
@@ -78,8 +103,8 @@ describe("Smart vault rewards test", () => {
       usdc,
       utils.parseUnits('10000').toString(),
       utils.parseUnits('10000', 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      factory,
+      router,
     );
 
     const rt = networkToken;
@@ -377,8 +402,8 @@ describe("Smart vault rewards test", () => {
       usdc,
       utils.parseUnits('10000').toString(),
       utils.parseUnits('10000', 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      factory,
+      router
     );
     const rt = networkToken;
 

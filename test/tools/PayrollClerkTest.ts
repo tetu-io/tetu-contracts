@@ -10,6 +10,7 @@ import {MintHelperUtils} from "../MintHelperUtils";
 import {TokenUtils} from "../TokenUtils";
 import {utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -30,16 +31,27 @@ describe("Payroll Clerk tests", function () {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshot = await TimeUtils.snapshot();
 
-    calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0] as PriceCalculator;
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
+
+    const uniData = await UniswapUtils.deployUniswap(signer);
+    const factory = uniData.factory.address;
+    const router = uniData.router.address;
+
+    calculator = (await DeployerUtils.deployPriceCalculatorTestnet(signer, core.controller.address, usdc, factory))[0] as PriceCalculator;
 
     clerk = (await DeployerUtils.deployPayrollClerk(signer, core.controller.address, calculator.address))[0];
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
-
-    await UniswapUtils.createPairForRewardTokenWithBuy(signer, core, "10000");
+    await MintHelperUtils.mint(core.controller, core.announcer, '0', signer.address, true);
+    await UniswapUtils.addLiquidity(
+      signer,
+      usdc,
+      core.rewardToken.address,
+      parseUnits('100', 6).toString(),
+      parseUnits('100').toString(),
+      factory,
+      router,
+    )
   });
 
   after(async function () {
@@ -60,7 +72,6 @@ describe("Payroll Clerk tests", function () {
     expect(await clerk.workerIndex(signer.address)).is.eq(0);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
-    await MintHelperUtils.mint(core.controller, core.announcer, '10000', signer.address);
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000").toString());
 
     const balance = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
@@ -114,7 +125,6 @@ describe("Payroll Clerk tests", function () {
     await clerk.addWorker(signer.address, 100, 'Signer0', 'TEST', true);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
-    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
 
     const balance = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
@@ -151,7 +161,6 @@ describe("Payroll Clerk tests", function () {
     await clerk.switchBoost(signer.address, false);
     await clerk.changeTokens([core.rewardToken.address], [100]);
 
-    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
 
     const balance = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
@@ -183,7 +192,6 @@ describe("Payroll Clerk tests", function () {
   });
 
   it("should salvage token", async () => {
-    await MintHelperUtils.mint(core.controller, core.announcer, '1000000', signer.address);
     await TokenUtils.transfer(core.rewardToken.address, signer, clerk.address, utils.parseUnits("1000000").toString());
     const govBal = await TokenUtils.balanceOf(core.rewardToken.address, signer.address);
     const bal = await TokenUtils.balanceOf(core.rewardToken.address, clerk.address);

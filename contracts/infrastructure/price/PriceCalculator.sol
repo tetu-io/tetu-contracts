@@ -25,19 +25,22 @@ import "../../third_party/IERC20Extended.sol";
 import "../../third_party/aave/IAaveToken.sol";
 import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
+import "../../third_party/dystopia/IDystopiaFactory.sol";
 
 pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
-/// @author belbix
+/// @author belbix, bogdoslav
 contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.4.1";
+  string public constant VERSION = "1.5.3";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
+  address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
+  address public constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -59,6 +62,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   address[] public keyTokens;
 
   mapping(address => address) public replacementTokens;
+
+  mapping(address => bool) public allowedFactories;
 
   // ********** EVENTS ****************************
 
@@ -114,7 +119,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
-    // example amBTC/renBTC pool -> wtcb
+    // example amBTC/renBTC pool -> wbtc
     if (replacementTokens[token] != address(0)) {
       token = replacementTokens[token];
     }
@@ -167,19 +172,14 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return price * rate / rateDenominator;
   }
 
-  //Checks if address is Uni or Sushi LP. This is done in two steps,
-  //because the second step seems to cause errors for some tokens.
-  //Only the first step is not deemed accurate enough, as any token could be called UNI-V2.
   function isSwapPlatform(address token) public view returns (bool) {
-    IUniswapV2Pair pair = IUniswapV2Pair(token);
-    string memory name = pair.name();
+    address factory;
+    //slither-disable-next-line unused-return,variable-scope,uninitialized-local
+    try IUniswapV2Pair(token).factory{gas : 3000}() returns (address _factory) {
+      factory = _factory;
+    } catch {}
 
-    for (uint256 i = 0; i < swapFactories.length; i++) {
-      if (isEqualString(name, swapLpNames[i])) {
-        return checkFactory(pair, swapFactories[i]);
-      }
-    }
-    return false;
+    return allowedFactories[factory];
   }
 
   function isIronPair(address token) public view returns (bool) {
@@ -263,9 +263,13 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address largestKeyToken = address(0);
     uint256 largestPlatformIdx = 0;
     address lpAddress = address(0);
-    for (uint256 i = 0; i < keyTokens.length; i++) {
+    address[] memory _keyTokens = keyTokens;
+    for (uint256 i = 0; i < _keyTokens.length; i++) {
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, keyTokens[i]);
+        if (token == _keyTokens[i]) {
+          continue;
+        }
+        (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
 
         if (arrayContains(usedLps, lp)) {
           continue;
@@ -273,7 +277,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
         if (poolSize > largestLpSize) {
           largestLpSize = poolSize;
-          largestKeyToken = keyTokens[i];
+          largestKeyToken = _keyTokens[i];
           largestPlatformIdx = j;
           lpAddress = lp;
         }
@@ -286,9 +290,18 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   public view returns (uint256, address){
     address pairAddress;
     // shortcut for firebird ice-weth
-    // todo make more smart solution
     if (_factory == FIREBIRD_FACTORY) {
       pairAddress = IFireBirdFactory(_factory).getPair(token, tokenOpposite, 50, 20);
+    } else if (_factory == DYSTOPIA_FACTORY || _factory == CONE_FACTORY) {
+      address sPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, true);
+      address vPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, false);
+      uint sReserve = getLpSize(sPair, token);
+      uint vReserve = getLpSize(vPair, token);
+      if (sReserve > vReserve) {
+        return (sReserve, sPair);
+      } else {
+        return (vReserve, vPair);
+      }
     } else {
       pairAddress = IUniswapV2Factory(_factory).getPair(token, tokenOpposite);
     }
@@ -299,6 +312,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function getLpSize(address pairAddress, address token) public view returns (uint256) {
+    if (pairAddress == address(0)) {
+      return 0;
+    }
     IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
     address token0 = pair.token0();
     (uint112 poolSize0, uint112 poolSize1,) = pair.getReserves();
@@ -497,7 +513,14 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
     swapFactories.push(_factoryAddress);
     swapLpNames.push(_name);
+    allowedFactories[_factoryAddress] = true;
     emit SwapPlatformAdded(_factoryAddress, _name);
+  }
+
+  function changeFactoriesStatus(address[] memory factories, bool status) external onlyControllerOrGovernance {
+    for (uint256 i; i < factories.length; i++) {
+      allowedFactories[factories[i]] = status;
+    }
   }
 
   function removeSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {

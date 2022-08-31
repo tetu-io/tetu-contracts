@@ -32,8 +32,8 @@ describe("Mint helper tests", () => {
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshot = await TimeUtils.snapshot();
     minter = core.mintHelper;
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
     await UniswapUtils.wrapNetworkToken(signer);
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits("10000", 6))
   });

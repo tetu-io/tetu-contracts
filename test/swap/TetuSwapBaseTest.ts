@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {
-  IStrategy,
+  MockToken__factory,
   SmartVault,
   TetuSwapFactory,
   TetuSwapPair,
@@ -18,8 +18,8 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers, web3} from "hardhat";
 import {TestAsserts} from "../TestAsserts";
 import {VaultUtils} from "../VaultUtils";
-import {StrategyTestUtils} from "../strategies/StrategyTestUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -31,6 +31,7 @@ describe("Tetu Swap base tests", function () {
   let snapshot: string;
   let signer: SignerWithAddress;
   let user: SignerWithAddress;
+  let rewardRecipient: SignerWithAddress;
   let core: CoreContractsWrapper;
   let factory: TetuSwapFactory;
   let router: TetuSwapRouter;
@@ -40,8 +41,8 @@ describe("Tetu Swap base tests", function () {
   let tokenBDec: number;
   let lp: string;
   let lpCtr: TetuSwapPair;
-  let lpVault: SmartVault;
-  let lpStrategy: IStrategy;
+  // let lpVault: SmartVault;
+  // let lpStrategy: IStrategy;
   let vaultUsdcCtr: SmartVault;
   let vaultUsdtCtr: SmartVault;
   let usdc: string;
@@ -63,15 +64,14 @@ describe("Tetu Swap base tests", function () {
       )
     );
     signer = await DeployerUtils.impersonate();
-    user = (await ethers.getSigners())[0];
+    user = (await ethers.getSigners())[1];
+    rewardRecipient = (await ethers.getSigners())[2];
     // core = await DeployerUtils.getCoreAddressesWrapper(signer);
     core = await DeployerUtils.deployAllCoreContracts(signer);
     snapshotBefore = await TimeUtils.snapshot();
 
-    usdc = await DeployerUtils.getUSDCAddress();
-    networkToken = await DeployerUtils.getNetworkTokenAddress();
-    await TokenUtils.getToken(usdc, signer.address, utils.parseUnits('100000', 6));
-    await TokenUtils.getToken(networkToken, signer.address, utils.parseUnits('10000'));
+    usdc = (await DeployerUtils.deployMockToken(signer, 'USDC', 6)).address.toLowerCase();
+    networkToken = (await DeployerUtils.deployMockToken(signer, 'WETH')).address.toLowerCase();
     console.log('--- NETWORK BALANCE', (await TokenUtils.balanceOf(networkToken, signer.address)).toString())
     tokenA = usdc
     tokenB = networkToken
@@ -118,16 +118,16 @@ describe("Tetu Swap base tests", function () {
 
     lpCtr = await DeployerUtils.connectInterface(signer, 'TetuSwapPair', lp) as TetuSwapPair;
 
-    let strategyName = '';
-    if ((await ethers.provider.getNetwork()).chainId === 250) {
-      expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
-      strategyName = 'StrategyTetuSwapFantom';
-    } else if ((await ethers.provider.getNetwork()).chainId === 137) {
-      expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
-      strategyName = 'StrategyTetuSwap';
-    } else {
-      throw Error('Unsopported chain')
-    }
+    // let strategyName = '';
+    // if ((await ethers.provider.getNetwork()).chainId === 250) {
+    //   expect(await lpCtr.symbol()).is.eq('TLP_USDC_WFTM');
+    //   strategyName = 'StrategyTetuSwapFantom';
+    // } else if ((await ethers.provider.getNetwork()).chainId === 137) {
+    //   expect(await lpCtr.symbol()).is.eq('TLP_WMATIC_USDC');
+    //   strategyName = 'StrategyTetuSwap';
+    // } else {
+    //   throw Error('Unsopported chain')
+    // }
     const lpV0 = (await lpCtr.vault0()).toLowerCase();
     const lpV1 = (await lpCtr.vault1()).toLowerCase();
     expect(lpV0 === vault0.toLowerCase() || lpV0 === vault1.toLowerCase()).is.eq(true);
@@ -143,25 +143,25 @@ describe("Tetu Swap base tests", function () {
       router.address
     );
 
-    const data = await StrategyTestUtils.deploy(
-      signer,
-      core,
-      'TETU_LP_VAULT',
-      vaultAddress => DeployerUtils.deployContract(
-        signer,
-        strategyName,
-        core.controller.address,
-        vaultAddress,
-        lp
-      ) as Promise<IStrategy>,
-      lp
-    );
-    lpVault = data[0];
-    lpStrategy = data[1];
+    // const data = await StrategyTestUtils.deploy(
+    //   signer,
+    //   core,
+    //   'TETU_LP_VAULT',
+    //   vaultAddress => DeployerUtils.deployContract(
+    //     signer,
+    //     strategyName,
+    //     core.controller.address,
+    //     vaultAddress,
+    //     lp
+    //   ) as Promise<IStrategy>,
+    //   lp
+    // );
+    // lpVault = data[0];
+    // lpStrategy = data[1];
 
-    await factory.setPairRewardRecipients([lp], [lpStrategy.address]);
+    await factory.setPairRewardRecipients([lp], [rewardRecipient.address]);
 
-    await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
+    // await StrategyTestUtils.initForwarder(core.feeRewardForwarder);
 
   });
 
@@ -434,7 +434,7 @@ describe("Tetu Swap base tests", function () {
       router.address
     );
 
-    const strategyBal = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, lpStrategy.address));
+    const strategyBal = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, rewardRecipient.address));
 
     await UniswapUtils.swapExactTokensForTokens(
       signer,
@@ -444,25 +444,14 @@ describe("Tetu Swap base tests", function () {
       router.address
     );
 
-    const strategyBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, lpStrategy.address));
+    const strategyBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(tokenB, rewardRecipient.address));
     expect(strategyBalAfter).is.greaterThan(strategyBal);
-
-    await TimeUtils.advanceBlocksOnTs(60 * 60);
-
-    const rt = core.psVault.address;
-    const toClaim = +utils.formatUnits((await vaultUsdcCtr.earned(rt, lp)).add(await vaultUsdtCtr.earned(rt, lp)));
-
-    const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, lpVault.address));
-    console.log('call hw')
-    await lpVault.doHardWork();
-    const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, lpVault.address));
-
-    // todo fix
-    // expect(rtBalAfter).is.greaterThan(rtBal);
-    // expect(rtBalAfter).is.approximately(toClaim, toClaim * 0.001);
   });
 
   it('price{0,1}CumulativeLast', async () => {
+    if ((await ethers.provider.getNetwork()).chainId !== 250) {
+      return;
+    }
     const token0Amount = utils.parseUnits('100', tokenADec);
     const token1Amount = utils.parseUnits('200', tokenBDec);
     const blockTimestamp = (await lpCtr.getReserves())[2];
@@ -511,6 +500,9 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('healthy K', async () => {
+    if ((await ethers.provider.getNetwork()).chainId !== 250) {
+      return;
+    }
     console.log('--- NETWORK BALANCE', (await TokenUtils.balanceOf(networkToken, signer.address)).toString())
     console.log('--- USDC BALANCE', (await TokenUtils.balanceOf(usdc, signer.address)).toString())
     const amountOut = utils.parseUnits('1', tokenBDec);
@@ -528,6 +520,9 @@ describe("Tetu Swap base tests", function () {
   });
 
   it('healthy K after vault manipulations', async () => {
+    if ((await ethers.provider.getNetwork()).chainId !== 250) {
+      return;
+    }
     await factory.setPairRewardRecipients([lp], [core.controller.address]);
 
     await VaultUtils.deposit(signer, vaultUsdcCtr, utils.parseUnits('800', tokenADec));
@@ -548,7 +543,49 @@ describe("Tetu Swap base tests", function () {
       signer.address,
       '0x'
     );
+  });
 
+  it.skip('update overflow', async () => {
+    await MockToken__factory.connect(usdc, signer).mint(signer.address, BigNumber.from(Misc.MAX_UINT).sub(parseUnits('10000000', 6)));
+    await MockToken__factory.connect(networkToken, signer).mint(signer.address, BigNumber.from(Misc.MAX_UINT).sub(parseUnits('10000000')));
+    await UniswapUtils.addLiquidity(
+      signer,
+      tokenA,
+      tokenB,
+      parseUnits('100000000000000000000', tokenADec).toString(),
+      parseUnits('100000000000000000000', tokenBDec).toString(),
+      factory.address,
+      router.address
+    );
+
+    const amount = '100000000000000';
+    const amountABase = parseUnits(amount, tokenADec);
+    const amountBBase = parseUnits(amount, tokenBDec);
+
+    for (let i = 0; i < 10000; i++) {
+      await lpCtr.sync();
+      let swapAmount = BigNumber.from(0);
+      let path = [];
+      if (i % 2 === 0) {
+        swapAmount = amountABase;
+        path = [tokenA, tokenB];
+      } else {
+        swapAmount = amountBBase;
+        path = [tokenB, tokenA];
+      }
+      await UniswapUtils.swapExactTokensForTokens(
+        signer,
+        path,
+        swapAmount.toString(),
+        factory.address,
+        router.address
+      );
+      const p0 = await lpCtr.price0CumulativeLast();
+      const p1 = await lpCtr.price1CumulativeLast();
+      console.log('p0', p0.toString(), BigNumber.from(Misc.MAX_UINT).div(p0).toString())
+      console.log('p1', p1.toString(), BigNumber.from(Misc.MAX_UINT).div(p1).toString())
+      console.log('>>> LOOP', i)
+    }
   });
 
   // it('swap btc-eth', async () => {

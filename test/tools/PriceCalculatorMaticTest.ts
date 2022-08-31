@@ -22,6 +22,9 @@ describe("Price calculator matic tests", function () {
 
   before(async function () {
     snapshot = await TimeUtils.snapshot();
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
@@ -39,6 +42,62 @@ describe("Price calculator matic tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
+  it("calculate MESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.MESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it("calculate tetuMESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.tetuMESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it("calculate tetuMESH-MESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.MESH_tetuMESH_POOL, MaticAddresses.USDC_TOKEN);
+    console.log('price', price);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it.skip("calculate tetuBal/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    // const priceLp = await PriceCalculatorUtils.getFormattedPrice(calculator,
+    //     '0x7EB878107Af0440F9E776f999CE053D277c8Aca8'.toLowerCase(),
+    //     MaticAddresses.USDC_TOKEN);
+
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+
+    // expect(price).is.approximately(priceLp, priceLp/100)
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it.skip("calculate Unknown 80BAL20WETH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
 
   it("calculate eth/usdc price and check", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
@@ -94,8 +153,8 @@ describe("Price calculator matic tests", function () {
     await calculator.setReplacementTokens(MaticAddresses.AM3CRV_TOKEN, MaticAddresses.WBTC_TOKEN);
     const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(ethPrice).is.greaterThan(30000);
-    expect(ethPrice).is.lessThan(300000);
+    expect(ethPrice).is.greaterThan(20000);
+    expect(ethPrice).is.lessThan(200000);
   });
 
   it("calculate prices", async () => {
@@ -253,8 +312,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.IRON_IS3USD, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.99);
-    expect(price).is.lessThan(1.01);
+    expect(price).is.greaterThan(0.95);
+    expect(price).is.lessThan(1.5);
   });
 
   it("calculate FIREBIRD eth-ice, price and check", async () => {
@@ -263,7 +322,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.FIREBIRD_ETH_ICE, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(1);
+    expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(500);
   });
 
@@ -283,8 +342,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.IRON_IRON_IS3USD, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.99);
-    expect(price).is.lessThan(1.01);
+    expect(price).is.greaterThan(0.95);
+    expect(price).is.lessThan(1.05);
   });
 
   it("calculate tetu-swap-wmatic-tetu price and check", async () => {
@@ -315,6 +374,36 @@ describe("Price calculator matic tests", function () {
       MaticAddresses.UNT_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.0001);
     expect(price).is.lessThan(100);
+  });
+
+  it("dystopia LP tetuQi-qi", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.DYSTOPIA_tetuQI_QI, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.2);
+    expect(price).is.lessThan(1);
+  });
+
+  it("PEN price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.PEN_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.01);
+    expect(price).is.lessThan(1);
+  });
+
+  it("mesh/tetuMesh vault price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0xADC56043BFf96e2F3394bFd5719cd6De0a734257', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(1);
   });
 
 });
