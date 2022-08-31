@@ -3,8 +3,7 @@ import {
   ERC20__factory,
   IERC721Enumerable__factory,
   IWmatic,
-  IWmatic__factory,
-  MockToken__factory
+  RewardToken
 } from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -32,7 +31,7 @@ export class TokenUtils {
     // [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
     // [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
     [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave
-    [MaticAddresses.USDT_TOKEN, '0xf977814e90da44bfa03b6295a0616a897441acec'.toLowerCase()], // adr
+    [MaticAddresses.USDT_TOKEN, '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe'.toLowerCase()], // adr
     [MaticAddresses.QUICK_TOKEN, '0xdB74C5D4F154BBD0B8e0a28195C68ab2721327e5'.toLowerCase()], // dquick
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
     [MaticAddresses.TETU_TOKEN, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // fund keeper
@@ -85,61 +84,6 @@ export class TokenUtils {
     [MaticAddresses.NSHARE_TOKEN, '0xfb6935ef307e08cb9e9d4bfdbdc57e671d3b19a6'.toLowerCase()], // nacho treasury Fund
     [MaticAddresses.NACHO_TOKEN, '0xfb6935ef307e08cb9e9d4bfdbdc57e671d3b19a6'.toLowerCase()], // nacho treasury Fund
     [FtmAddresses.TOMB_TOKEN, '0xF50c6dAAAEC271B56FCddFBC38F0b56cA45E6f0d'.toLowerCase()], // tomb treasury Fund
-    [FtmAddresses.TSHARE_TOKEN,'0x8764DE60236C5843D9faEB1B638fbCE962773B67'.toLowerCase()], // tomb masonry
-    [FtmAddresses.BOO_TOKEN,'0xa48d959ae2e88f1daa7d5f611e01908106de7598'.toLowerCase()], // xBOO
-    [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()], // beets masterchef
-    [FtmAddresses.BPT_WAGMI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_BEETS_USDC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_BEETS_FTM_TOKEN,'0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1'.toLowerCase()],
-    [FtmAddresses.BPT_GRAND_ORCH_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_FTM_SONATA_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_E_MAJOR_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_B_MAJOR_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_CLASSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_LBP_DANCE_DEGEN_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_FTM_OPERA_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_BeetXLP_MIM_USDC_USDT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_BLP_USDC_MAI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_BPT_DANIELE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_MOOSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_PAINT_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_FTMUSIC_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_GUQINQI_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_QUARTET_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_ICEFIRE_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_CRVLINK_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_HND_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_BNBARON_TOKEN,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_STABEET,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [FtmAddresses.BPT_asUSDC,'0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()],
-    [MaticAddresses.QI_TOKEN,'0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'.toLowerCase()], // qidao gov
-    [MaticAddresses.UNT_TOKEN,'0x125ecc7e5771f47eac0cb5ada151d72be828ff34'.toLowerCase()], // gov
-    [MaticAddresses.cxDOGE_TOKEN,'0x2d187a560cfbd28e1eb2f68534754b0f120459a9'.toLowerCase()],
-    [MaticAddresses.cxADA_TOKEN,'0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
-    [MaticAddresses.cxETH_TOKEN,'0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
-    [MaticAddresses.SPHERE_TOKEN,'0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
-    [EthAddresses.USDC_TOKEN,'0x0a59649758aa4d66e25f08dd01271e891fe52199'.toLowerCase()], // maker
-    [EthAddresses.TETU_TOKEN,'0x8f5adc58b32d4e5ca02eac0e293d35855999436c'.toLowerCase()], // todo temporally farm!
-    [EthAddresses.BAL_TOKEN,'0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // balancer vault
-    [EthAddresses.BALANCER_BAL_WETH,'0xc128a9954e6c874ea3d62ce62b468ba073093f25'.toLowerCase()], // gnosis
-    [MaticAddresses.BALANCER_BAL_ETH_POOL,'0xe67b7a560da673776d80a8da5469fff06eb1683c'.toLowerCase()],
-    [FtmAddresses.BEETS_TOKEN,'0x2d6de488Fc701eB5AC687dE9Ad06F58fcBaE45DB'.toLowerCase()], // spirit lp
-    [FtmAddresses.SPIRIT_TOKEN,'0x2FBFf41a9efAEAE77538bd63f1ea489494acdc08'.toLowerCase()], // inSpirit
-    [FtmAddresses.TAROT_TOKEN,'0x11D90eA9d16e1Ee5879B299A819F6D618816D70F'.toLowerCase()], // spooky lp
-    [MaticAddresses.SPHEREV2_TOKEN,'0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
-    [MaticAddresses.UMA_TOKEN,'0x1b72bac3772050fdcaf468cce7e20deb3cb02d89'.toLowerCase()],
-    [MaticAddresses.CLAM2_TOKEN,'0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
-    [MaticAddresses.xTETU,'0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
-    [MaticAddresses.SAND_TOKEN,'0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245'.toLowerCase()],
-    [MaticAddresses.DYST_TOKEN,'0x060fa7aD32C510F12550c7a967999810dafC5697'.toLowerCase()],
-    [MaticAddresses.USD_PLUS_TOKEN,'0x826b8d2d523E7af40888754E3De64348C00B99f4'.toLowerCase()],
-    [MaticAddresses.SPHERE_DYST_TOKEN,'0x20D61737f972EEcB0aF5f0a85ab358Cd083Dd56a'.toLowerCase()],
-    [MaticAddresses.stMATIC_TOKEN,'0x765c6d09ef9223b1becd3b92a0ec01548d53cfba'.toLowerCase()],
-    [MaticAddresses.FRAX2_TOKEN,'0xe7ec500e14edbe3ca3358bcde7df145968b2aead'.toLowerCase()],
-    [MaticAddresses.FXS_TOKEN,'0xdbc13e67f678cc00591920cece4dca6322a79ac7'.toLowerCase()],
-    [MaticAddresses.KOGECOIN_TOKEN,'0xAf22Fd5898a4B4Ea42C06c9e77aD3B4807d66Bff'.toLowerCase()],
-    [MaticAddresses.MaticX_TOKEN,'0x00C3e7978Ede802d7ce6c6EfFfB4F05A4a806FD3'.toLowerCase()],
-    [MaticAddresses.COMFI_TOKEN,'0x962699db05a9334c5cd1f9c2867d5160c8e37742'.toLowerCase()],
     [FtmAddresses.TSHARE_TOKEN, '0x8764DE60236C5843D9faEB1B638fbCE962773B67'.toLowerCase()], // tomb masonry
     [FtmAddresses.BOO_TOKEN, '0xa48d959ae2e88f1daa7d5f611e01908106de7598'.toLowerCase()], // xBOO
     [FtmAddresses.BPT_WAGMI_TOKEN, '0x8166994d9ebbe5829ec86bd81258149b87facfd3'.toLowerCase()], // beets masterchef
@@ -261,28 +205,15 @@ export class TokenUtils {
 
   public static async getToken(token: string, to: string, amount?: BigNumber, refreshHolder?: boolean) {
     const start = Date.now();
-    const signer0 = await DeployerUtils.impersonate();
-    const name = await MockToken__factory.connect(token, signer0).name();
-    console.log('transfer token from biggest holder', name, token, amount?.toString());
-    // if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
-    //   const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
-    //   const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
-    //   await tokenCtr.mint(to, amount as BigNumber);
-    //   return amount;
-    // }
-
-    if (name.endsWith('_MOCK_TOKEN')) {
-      const amount0 = amount || parseUnits('100');
-      await MockToken__factory.connect(token, signer0).mint(to, amount0);
-      return amount0;
-    }
-
-    if (token.toLowerCase() === await DeployerUtils.getNetworkTokenAddress()) {
-      await IWmatic__factory.connect(token, await DeployerUtils.impersonate(to)).deposit({value: amount});
+    console.log('transfer token from biggest holder', token, amount?.toString());
+    if (token.toLowerCase() === FtmAddresses.TETU_TOKEN) {
+      const minter = await DeployerUtils.impersonate('0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c');
+      const tokenCtr = await DeployerUtils.connectInterface(minter, 'RewardToken', FtmAddresses.TETU_TOKEN) as RewardToken
+      await tokenCtr.mint(to, amount as BigNumber);
       return amount;
     }
 
-    const holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
+    let holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
     if (!holder || refreshHolder)
       holder = await this.getBiggestHolder(token.toLowerCase()) as string;
     if (!holder) {

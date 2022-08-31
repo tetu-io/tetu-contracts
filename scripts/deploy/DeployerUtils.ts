@@ -16,7 +16,6 @@ import {
   LiquidityBalancer,
   MintHelper,
   MockFaucet,
-  MockToken,
   Multicall,
   MultiSwap,
   NoopStrategy,
@@ -901,7 +900,7 @@ export class DeployerUtils {
   }
 
   public static async deployMockToken(signer: SignerWithAddress, name = 'MOCK', decimals = 18) {
-    const token = await DeployerUtils.deployContract(signer, 'MockToken', name + '_MOCK_TOKEN', name, decimals) as MockToken;
+    const token = await DeployerUtils.deployContract(signer, 'MockToken', name + '_MOCK_TOKEN', name, decimals)// as MockToken;
     await token.mint(signer.address, parseUnits('1000000', decimals));
     return token;
   }
