@@ -130,6 +130,16 @@ export class TokenUtils {
     [MaticAddresses.CLAM2_TOKEN, '0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
     [MaticAddresses.xTETU, '0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
+    [MaticAddresses.SAND_TOKEN,'0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245'.toLowerCase()],
+    [MaticAddresses.SAND_TOKEN,'0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245'.toLowerCase()],
+    [MaticAddresses.DYST_TOKEN,'0x060fa7aD32C510F12550c7a967999810dafC5697'.toLowerCase()],
+    [MaticAddresses.USD_PLUS_TOKEN,'0x826b8d2d523E7af40888754E3De64348C00B99f4'.toLowerCase()],
+    [MaticAddresses.SPHERE_DYST_TOKEN,'0x20D61737f972EEcB0aF5f0a85ab358Cd083Dd56a'.toLowerCase()],
+    [MaticAddresses.stMATIC_TOKEN,'0x765c6d09ef9223b1becd3b92a0ec01548d53cfba'.toLowerCase()],
+    [MaticAddresses.FRAX2_TOKEN,'0xe7ec500e14edbe3ca3358bcde7df145968b2aead'.toLowerCase()],
+    [MaticAddresses.KOGECOIN_TOKEN,'0xAf22Fd5898a4B4Ea42C06c9e77aD3B4807d66Bff'.toLowerCase()],
+    [MaticAddresses.MaticX_TOKEN,'0x00C3e7978Ede802d7ce6c6EfFfB4F05A4a806FD3'.toLowerCase()],
+    [MaticAddresses.COMFI_TOKEN,'0x962699db05a9334c5cd1f9c2867d5160c8e37742'.toLowerCase()],
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
