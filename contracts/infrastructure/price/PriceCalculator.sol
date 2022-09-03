@@ -28,8 +28,6 @@ import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 
-import "hardhat/console.sol";
-
 pragma solidity 0.8.4;
 
 /// @title Calculate current price for token using data from swap platforms
