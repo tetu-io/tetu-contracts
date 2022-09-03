@@ -331,6 +331,7 @@ export class DeployerUtils {
       BscAddresses.USDT_TOKEN,
       BscAddresses.MAI_TOKEN,
       BscAddresses.BUSD_TOKEN,
+      BscAddresses.USDPlus_TOKEN,
     ]), true, wait);
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(BscAddresses.USDC_TOKEN), true, wait);

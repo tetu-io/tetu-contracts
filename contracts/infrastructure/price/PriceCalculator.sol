@@ -26,6 +26,9 @@ import "../../third_party/aave/IAaveToken.sol";
 import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
+import "../../third_party/dystopia/IDystopiaPair.sol";
+
+import "hardhat/console.sol";
 
 pragma solidity 0.8.4;
 
@@ -35,7 +38,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.5.3";
+  string public constant VERSION = "1.5.4";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -243,7 +246,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       return 0;
     }
 
-    require(deep <= DEPTH, "PC: too deep");
+    require(deep < DEPTH, "PC: too deep");
 
     (address keyToken,, address lpAddress) = getLargestPool(token, usedLps);
     require(lpAddress != address(0), toAsciiString(token));
@@ -324,23 +327,32 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   //Generic function giving the price of a given token vs another given token on Swap platform.
   function getPriceFromLp(address lpAddress, address token) public override view returns (uint256) {
-    IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
-    address token0 = pair.token0();
-    address token1 = pair.token1();
-    (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
-    uint256 token0Decimals = IERC20Extended(token0).decimals();
-    uint256 token1Decimals = IERC20Extended(token1).decimals();
-
-    // both reserves should have the same decimals
-    reserve0 = reserve0 * (10 ** PRECISION_DECIMALS) / (10 ** token0Decimals);
-    reserve1 = reserve1 * (10 ** PRECISION_DECIMALS) / (10 ** token1Decimals);
-
-    if (token == token0) {
-      return reserve1 * (10 ** PRECISION_DECIMALS) / reserve0;
-    } else if (token == token1) {
-      return reserve0 * (10 ** PRECISION_DECIMALS) / reserve1;
+    address _factory = IUniswapV2Pair(lpAddress).factory();
+    if (_factory == DYSTOPIA_FACTORY || _factory == CONE_FACTORY) {
+      (address token0, address token1) = IDystopiaPair(lpAddress).tokens();
+      uint256 tokenInDecimals = token == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+      uint256 tokenOutDecimals = token == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+      uint out = IDystopiaPair(lpAddress).getAmountOut(10 ** tokenInDecimals, token);
+      return out * (10 ** PRECISION_DECIMALS) / (10 ** tokenOutDecimals);
     } else {
-      revert("PC: token not in lp");
+      IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
+      address token0 = pair.token0();
+      address token1 = pair.token1();
+      (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+      uint256 token0Decimals = IERC20Extended(token0).decimals();
+      uint256 token1Decimals = IERC20Extended(token1).decimals();
+
+      // both reserves should have the same decimals
+      reserve0 = reserve0 * (10 ** PRECISION_DECIMALS) / (10 ** token0Decimals);
+      reserve1 = reserve1 * (10 ** PRECISION_DECIMALS) / (10 ** token1Decimals);
+
+      if (token == token0) {
+        return reserve1 * (10 ** PRECISION_DECIMALS) / reserve0;
+      } else if (token == token1) {
+        return reserve0 * (10 ** PRECISION_DECIMALS) / reserve1;
+      } else {
+        revert("PC: token not in lp");
+      }
     }
   }
 
