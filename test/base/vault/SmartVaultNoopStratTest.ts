@@ -427,5 +427,9 @@ describe("SmartVaultNoopStrat", () => {
       expect(await core.psVault.balanceOf(user.address)).above(parseUnits('99'));
     });
 
+    it("should not change strategy from eoa", async () => {
+      await expect(vault.setStrategy(signer.address)).rejectedWith("SV: Not controller");
+    });
+
   });
 });

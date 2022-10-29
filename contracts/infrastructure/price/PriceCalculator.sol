@@ -14,6 +14,8 @@ import "./IPriceCalculator.sol";
 import "../../base/governance/ControllableV2.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/uniswap/IUniPoolV3.sol";
+import "../../third_party/uniswap/IUniFactoryV3.sol";
 import "../../third_party/firebird/IFireBirdPair.sol";
 import "../../third_party/firebird/IFireBirdFactory.sol";
 import "../../base/interface/ISmartVault.sol";
@@ -27,6 +29,7 @@ import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
+import "../../openzeppelin/Math.sol";
 
 pragma solidity 0.8.4;
 
@@ -36,12 +39,13 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.5.4";
+  string public constant VERSION = "1.6.0";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address public constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
+  address public constant UNIV3_FACTORY_ETHEREUM = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -266,10 +270,10 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address lpAddress = address(0);
     address[] memory _keyTokens = keyTokens;
     for (uint256 i = 0; i < _keyTokens.length; i++) {
+      if (token == _keyTokens[i]) {
+        continue;
+      }
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        if (token == _keyTokens[i]) {
-          continue;
-        }
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
 
         if (arrayContains(usedLps, lp)) {
@@ -284,6 +288,30 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
         }
       }
     }
+
+    // try to find in UNIv3
+    if (lpAddress == address(0) && block.chainid == 1) {
+      for (uint256 i = 0; i < _keyTokens.length; i++) {
+        if (token == _keyTokens[i]) {
+          continue;
+        }
+
+        (uint256 poolSize, address lp) = findLpInUniV3(token, _keyTokens[i]);
+
+        if (arrayContains(usedLps, lp)) {
+          continue;
+        }
+
+        if (poolSize > largestLpSize) {
+          largestLpSize = poolSize;
+          largestKeyToken = _keyTokens[i];
+          largestPlatformIdx = type(uint).max;
+          lpAddress = lp;
+        }
+
+      }
+    }
+
     return (largestKeyToken, largestPlatformIdx, lpAddress);
   }
 
@@ -312,6 +340,33 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return (0, address(0));
   }
 
+  function findLpInUniV3(address token, address tokenOpposite)
+  public view returns (uint256, address){
+
+    address pairAddress;
+    uint reserve;
+    uint[] memory fees = new uint[](4);
+    fees[0] = 100;
+    fees[1] = 500;
+    fees[2] = 3000;
+    fees[3] = 10000;
+    for (uint i; i < fees.length; ++i) {
+      address pairAddressTmp = IUniFactoryV3(UNIV3_FACTORY_ETHEREUM).getPool(token, tokenOpposite, uint24(fees[i]));
+      if (pairAddressTmp != address(0)) {
+        uint reserveTmp = getUniV3Reserve(pairAddressTmp, token);
+        if (reserveTmp > reserve) {
+          pairAddress = pairAddressTmp;
+          reserve = reserveTmp;
+        }
+      }
+    }
+    return (reserve, pairAddress);
+  }
+
+  function getUniV3Reserve(address pairAddress, address token) public view returns (uint) {
+    return IERC20(token).balanceOf(pairAddress);
+  }
+
   function getLpSize(address pairAddress, address token) public view returns (uint256) {
     if (pairAddress == address(0)) {
       return 0;
@@ -332,6 +387,20 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       uint256 tokenOutDecimals = token == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
       uint out = IDystopiaPair(lpAddress).getAmountOut(10 ** tokenInDecimals, token);
       return out * (10 ** PRECISION_DECIMALS) / (10 ** tokenOutDecimals);
+    } else if (_factory == UNIV3_FACTORY_ETHEREUM) {
+      address token0 = IUniPoolV3(lpAddress).token0();
+      address token1 = IUniPoolV3(lpAddress).token1();
+
+      uint256 tokenInDecimals = token == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+      uint256 tokenOutDecimals = token == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+      (uint160 sqrtPriceX96,,,,,,) = IUniPoolV3(lpAddress).slot0();
+
+      uint divider = Math.max(10 ** tokenOutDecimals / 10 ** tokenInDecimals, 1);
+      if (token == token0) {
+        return uint(sqrtPriceX96) ** 2 / 2 ** 96 * 1e18 / 2 ** 96 / divider * 1e18 / (10 ** tokenOutDecimals);
+      } else {
+        return 2 ** 192 * 1e18 / uint(sqrtPriceX96) ** 2 / divider * 1e18 / (10 ** tokenOutDecimals);
+      }
     } else {
       IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
       address token0 = pair.token0();

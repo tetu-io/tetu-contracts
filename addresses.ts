@@ -14,6 +14,7 @@ import {MaticAddresses} from "./scripts/addresses/MaticAddresses";
 import {FtmAddresses} from "./scripts/addresses/FtmAddresses";
 import {BscCoreAddresses} from "./addresses_core_bsc";
 import {BscToolsAddresses} from "./addresses_tools_bsc";
+import {Misc} from "./scripts/utils/tools/Misc";
 
 export class Addresses {
 
@@ -55,6 +56,9 @@ export class Addresses {
       ['weth', '0x65741ef7bF896E9146125E289C0858552659B66b'],
       ['sushi_lp_token_usdc', '0x02436A8Ce8E92Fe980166b5edd8C844DC2EaC2ee'],
       ['quick_lp_token_usdc', ''],
+    ])],
+    ['1402', new Map([
+      ['usdc', Misc.ZERO_ADDRESS],
     ])],
 
   ]);

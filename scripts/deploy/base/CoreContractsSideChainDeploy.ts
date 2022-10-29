@@ -60,37 +60,6 @@ async function main() {
     fundKeeperData[0].address + ', // fundKeeper\n' +
     vaultControllerData[0].address + ', // vault controller\n'
     , 'utf8');
-  //
-  // await DeployerUtils.wait(5);
-  //
-  // // controller
-  // await DeployerUtils.verify(controllerLogic.address);
-  // await DeployerUtils.verifyWithArgs(controller.address, [controllerLogic.address]);
-  // await DeployerUtils.verifyProxy(controller.address);
-  //
-  // // announcer
-  // await DeployerUtils.verify(announcerData[1].address);
-  // await DeployerUtils.verifyWithArgs(announcerData[0].address, [announcerData[1].address]);
-  // await DeployerUtils.verifyProxy(announcerData[0].address);
-  //
-  // // forwarder
-  // await DeployerUtils.verify(feeRewardForwarderData[1].address);
-  // await DeployerUtils.verifyWithArgs(feeRewardForwarderData[0].address, [feeRewardForwarderData[1].address]);
-  // await DeployerUtils.verifyProxy(feeRewardForwarderData[0].address);
-  //
-  // // bookkeeper
-  // await DeployerUtils.verify(bookkeeperLogic.address);
-  // await DeployerUtils.verifyWithArgs(bookkeeper.address, [bookkeeperLogic.address]);
-  // await DeployerUtils.verifyProxy(bookkeeper.address);
-  //
-  // // fundKeeper
-  // await DeployerUtils.verify(fundKeeperData[1].address);
-  // await DeployerUtils.verifyWithArgs(fundKeeperData[0].address, [fundKeeperData[1].address]);
-  // await DeployerUtils.verifyProxy(fundKeeperData[0].address);
-  //
-  // await DeployerUtils.verify(vaultControllerData[1].address);
-  // await DeployerUtils.verifyWithArgs(vaultControllerData[0].address, [vaultControllerData[1].address]);
-  // await DeployerUtils.verifyProxy(vaultControllerData[0].address);
 }
 
 main()

@@ -53,14 +53,14 @@ export async function deployContract<T extends ContractFactory>(
   //   gas = 5_000_000;
   // }
   // const instance = await _factory.deploy(...args, {gasLimit: gas, gasPrice: Math.floor(+gasPrice * 1.1)});
-  const instance = await _factory.deploy(...args);
+  const instance = await _factory.deploy(...args, {gasLimit: 9_000_000, gasPrice: Math.floor(+gasPrice * 1.1)});
   log.info('Deploy tx:', instance.deployTransaction.hash);
   await instance.deployed();
 
   const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
   console.log('DEPLOYED: ', name, receipt.contractAddress);
 
-  if (hre.network.name !== 'hardhat') {
+  if (hre.network.name !== 'hardhat' && hre.network.name !== 'zktest') {
     await wait(hre, 10);
     if (args.length === 0) {
       await verify(hre, receipt.contractAddress);
