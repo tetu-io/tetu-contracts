@@ -91,4 +91,37 @@ describe("Price calculator eth tests", function () {
     expect(price).is.lessThan(100000);
   });
 
+  it("bbaUSD-wstETH_BPT price", async () => {
+    if (!(await DeployerUtils.isNetwork(1))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x25Accb7943Fd73Dda5E23bA6329085a3C24bfb6a', EthAddresses.USDC_TOKEN);
+    console.log('price', price)
+    expect(price).is.greaterThan(10);
+    expect(price).is.lessThan(100);
+  });
+
+  it("bb-a-USDT_BPT price", async () => {
+    if (!(await DeployerUtils.isNetwork(1))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x2f4eb100552ef93840d5adc30560e5513dfffacb', EthAddresses.USDC_TOKEN);
+    console.log('price', price)
+    expect(price).is.greaterThan(0.5);
+    expect(price).is.lessThan(2);
+  });
+
+  it("bb-a-USD_BPT price", async () => {
+    if (!(await DeployerUtils.isNetwork(1))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0xa13a9247ea42d743238089903570127dda72fe44', EthAddresses.USDC_TOKEN);
+    console.log('price', price)
+    expect(price).is.greaterThan(0.5);
+    expect(price).is.lessThan(2);
+  });
+
 });

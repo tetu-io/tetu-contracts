@@ -25,6 +25,7 @@ import "../../third_party/curve/ICurveLpToken.sol";
 import "../../third_party/curve/ICurveMinter.sol";
 import "../../third_party/IERC20Extended.sol";
 import "../../third_party/aave/IAaveToken.sol";
+import "../../third_party/aave/IWrappedAaveToken.sol";
 import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
@@ -39,7 +40,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.6.0";
+  string public constant VERSION = "1.6.1";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -163,10 +164,17 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
 
     } else if (isAave(token)) {
-      uint ratio = IAaveToken(token).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(token).scaledTotalSupply();
+      address aToken = unwrapAaveIfNecessary(token);
       address[] memory usedLps = new address[](DEPTH);
-      price = computePrice(IAaveToken(token).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
-      price = price * ratio / (10 ** PRECISION_DECIMALS);
+      price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
+      // add wrapped ratio if necessary
+      if (token != aToken) {
+        uint ratio = IWrappedAaveToken(token).staticToDynamicAmount(10 ** PRECISION_DECIMALS);
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      } else {
+        uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      }
     } else if (isBPT(token)) {
       price = calculateBPTPrice(token, outputToken);
     } else {
@@ -196,6 +204,13 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       return true;
     } catch {}
     return false;
+  }
+
+  function unwrapAaveIfNecessary(address token) public view returns (address) {
+    try IWrappedAaveToken(token).ATOKEN{gas : 60000}() returns (address aToken) {
+      return aToken;
+    } catch {}
+    return token;
   }
 
   function isBPT(address token) public view returns (bool) {
@@ -538,14 +553,33 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     (IERC20[] memory poolTokens, uint256[] memory balances,) = IBVault(balancerVault).getPoolTokens(poolId);
 
     uint256 totalPrice = 0;
+    uint[] memory prices = new uint[](poolTokens.length);
     for (uint i = 0; i < poolTokens.length; i++) {
       uint256 tokenDecimals = IERC20Extended(address(poolTokens[i])).decimals();
-      uint256 tokenPrice = getPrice(address(poolTokens[i]), outputToken);
+      uint256 tokenPrice;
+      if (token != address(poolTokens[i])) {
+        if (prices[i] == 0) {
+          tokenPrice = getPrice(address(poolTokens[i]), outputToken);
+          prices[i] = tokenPrice;
+        } else {
+          tokenPrice = prices[i];
+        }
+      } else {
+        // if token the same as BPT assume it has the same price as another one token in the pool
+        uint ii = i == 0 ? 1 : 0;
+        if (prices[ii] == 0) {
+          tokenPrice = getPrice(address(poolTokens[ii]), outputToken);
+          prices[ii] = tokenPrice;
+        } else {
+          tokenPrice = prices[ii];
+        }
+      }
       // unknown token price
       if (tokenPrice == 0) {
         return 0;
       }
       totalPrice = totalPrice + tokenPrice * balances[i] * 10 ** PRECISION_DECIMALS / 10 ** tokenDecimals;
+
     }
     return totalPrice / totalBPTSupply;
   }
