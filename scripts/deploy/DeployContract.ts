@@ -19,6 +19,7 @@ export async function deployContract<T extends ContractFactory>(
   // tslint:disable-next-line:no-any
   ...args: any[]
 ) {
+  await hre.run("compile")
   const web3 = hre.web3;
   const ethers = hre.ethers;
   log.info(`Deploying ${name}`);

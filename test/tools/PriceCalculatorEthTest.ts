@@ -56,7 +56,7 @@ describe("Price calculator eth tests", function () {
       return;
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-      '0x32296969Ef14EB0c6d29669C550D4a0449130230', EthAddresses.USDC_TOKEN);
+      EthAddresses.BALANCER_wstETH_WETH, EthAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(100);
     expect(price).is.lessThan(10000);
   });
