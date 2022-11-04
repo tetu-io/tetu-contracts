@@ -164,13 +164,14 @@ library VaultLibrary {
   /// @notice Return amount ready to claim, calculated with actual boost.
   ///         Accurate value returns only after updateRewards call.
   function earnedWithBoost(
+    address rt,
     uint reward,
     uint boostStart,
     address controller,
     bool protectionMode
   ) public view returns (uint) {
     // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
-    if (boostStart != 0 && boostStart < block.timestamp) {
+    if (_isBoostProtected(controller, rt) && boostStart != 0 && boostStart < block.timestamp) {
       uint currentBoostDuration = block.timestamp - boostStart;
       // not 100% boost
       IVaultController _vaultController = IVaultController(IController(controller).vaultController());
@@ -223,7 +224,8 @@ library VaultLibrary {
       // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
       // allow claim without penalty to some addresses, TetuSwap pairs as example
       if (
-        boostStart != 0
+        _isBoostProtected(controller, rt)
+        && boostStart != 0
         && boostStart < block.timestamp
         && !IController(controller).isPoorRewardConsumer(owner)
       ) {
@@ -255,6 +257,10 @@ library VaultLibrary {
       } catch {}
     }
     return (renotifiedAmount, paidReward);
+  }
+
+  function _isBoostProtected(address controller, address token) internal view returns (bool){
+    return IController(controller).rewardToken() == token || IController(controller).psVault() == token;
   }
 
 }

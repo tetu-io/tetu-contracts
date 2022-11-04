@@ -676,6 +676,7 @@ contract SmartVaultV110 is Initializable, ERC20Upgradeable, VaultStorageV110, Co
   ///         Accurate value returns only after updateRewards call
   function earnedWithBoost(address rt, address account) external view override returns (uint256) {
     return VaultLibrary.earnedWithBoost(
+      rt,
       _earned(rt, account),
       userBoostTs[account],
       _controller(),

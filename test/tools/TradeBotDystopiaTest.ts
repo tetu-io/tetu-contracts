@@ -23,7 +23,7 @@ const argv = require('yargs/yargs')()
   .options({
     hardhatChainId: {
       type: "number",
-      default: 137
+      default: 0
     },
   }).argv;
 
