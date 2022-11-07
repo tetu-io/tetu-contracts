@@ -5,58 +5,84 @@ pragma solidity 0.8.4;
 import "../base/interface/IController.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
+import "../openzeppelin/Initializable.sol";
+import "../base/governance/ControllableV2.sol";
 
-contract HardWorkResolver {
+contract HardWorkResolver is ControllableV2 {
+
+  // --- CONSTANTS ---
+
+  string public constant VERSION = "1.0.0";
+  uint public constant DELAY_RATE_DENOMINATOR = 100_000;
+
+  // --- VARIABLES ---
 
   address public owner;
-  IController public immutable controller;
-  IBookkeeper public immutable bookkeeper;
-  uint public delay = 1 days;
-  uint public maxGas = 35 gwei;
-  uint public maxHwPerCall = 3;
+  address public pendingOwner;
+  uint public delay;
+  uint public maxGas;
+  uint public maxHwPerCall;
 
-  uint public lastVaultId;
   mapping(address => uint) public lastHW;
+  mapping(address => uint) public delayRate;
   mapping(address => bool) public operators;
 
-  constructor(
-    address controller_,
-    address bookkeeper_
-  ) {
-    controller = IController(controller_);
-    bookkeeper = IBookkeeper(bookkeeper_);
+  // --- INIT ---
+
+  function init(
+    address controller_
+  ) external initializer {
+    ControllableV2.initializeControllable(controller_);
+
     owner = msg.sender;
+    delay = 1 days;
+    maxGas = 35 gwei;
+    maxHwPerCall = 3;
+  }
+
+  modifier onlyOwner() {
+    require(msg.sender == owner, "!owner");
+    _;
   }
 
   // --- OWNER FUNCTIONS ---
 
-  function setDelay(uint value) external {
-    require(msg.sender == owner, "!owner");
+  function offerOwnership(address value) external onlyOwner {
+    pendingOwner = value;
+  }
+
+  function acceptOwnership() external {
+    require(msg.sender == pendingOwner, "!pendingOwner");
+    owner = pendingOwner;
+    pendingOwner = address(0);
+  }
+
+  function setDelay(uint value) external onlyOwner {
     delay = value;
   }
 
-  function setMaxGas(uint value) external {
-    require(msg.sender == owner, "!owner");
+  function setMaxGas(uint value) external onlyOwner {
     maxGas = value;
   }
 
-  function setMaxHwPerCall(uint value) external {
-    require(msg.sender == owner, "!owner");
+  function setMaxHwPerCall(uint value) external onlyOwner {
     maxHwPerCall = value;
   }
 
-  function changeOperatorStatus(address operator, bool status) external {
-    require(msg.sender == owner, "!owner");
+  function setDelayRate(address vault, uint value) external onlyOwner {
+    delayRate[vault] = value;
+  }
+
+  function changeOperatorStatus(address operator, bool status) external onlyOwner {
     operators[operator] = status;
   }
 
   // --- MAIN LOGIC ---
 
-  function call(bytes memory data) external returns (uint amountOfCalls){
+  function call(address[] memory vaults) external returns (uint amountOfCalls){
     require(operators[msg.sender], "!operator");
 
-    address[] memory vaults = abi.decode(data, (address[]));
-    IController _controller = controller;
+    IController __controller = IController(_controller());
     uint _delay = delay;
     uint _maxHwPerCall = maxHwPerCall;
     uint vaultsLength = vaults.length;
@@ -70,7 +96,7 @@ contract HardWorkResolver {
         continue;
       }
 
-      _controller.doHardWork(vault);
+      __controller.doHardWork(vault);
       lastHW[vault] = block.timestamp;
       counter++;
       if (counter >= _maxHwPerCall) {
@@ -86,16 +112,25 @@ contract HardWorkResolver {
       return (false, bytes("Too high gas"));
     }
 
-    IBookkeeper _bookkeeper = bookkeeper;
+    IBookkeeper _bookkeeper = IBookkeeper(IController(_controller()).bookkeeper());
     uint _delay = delay;
     uint vaultsLength = _bookkeeper.vaultsLength();
     address[] memory vaults = new address[](vaultsLength);
     uint counter;
     for (uint i; i < vaultsLength; ++i) {
       address vault = _bookkeeper._vaults(i);
-      if (ISmartVault(vault).active() && lastHW[vault] + _delay < block.timestamp) {
-        vaults[i] = vault;
-        counter++;
+      if (ISmartVault(vault).active()) {
+
+        uint delayAdjusted = _delay;
+        uint _delayRate = delayRate[vault];
+        if (_delayRate != 0) {
+          delayAdjusted = _delay * _delayRate / DELAY_RATE_DENOMINATOR;
+        }
+
+        if (lastHW[vault] + _delay < block.timestamp) {
+          vaults[i] = vault;
+          counter++;
+        }
       }
     }
     if (counter == 0) {
@@ -109,7 +144,7 @@ contract HardWorkResolver {
           ++j;
         }
       }
-      return (true, abi.encode(vaultsResult));
+      return (true, abi.encodeWithSelector(HardWorkResolver.call.selector, vaultsResult));
     }
   }
 

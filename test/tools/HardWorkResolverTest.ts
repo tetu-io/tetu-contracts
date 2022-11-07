@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
-import {HardWorkResolver} from "../../typechain";
+import {HardWorkResolver, HardWorkResolver__factory} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {Misc} from "../../scripts/utils/tools/Misc";
@@ -26,7 +26,8 @@ describe("HardWorkResolverTest", function () {
 
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
-    resolver = await DeployerUtils.deployContract(signer, "HardWorkResolver", core.controller.address, core.bookkeeper.address) as HardWorkResolver;
+    resolver = await DeployerUtils.deployContract(signer, "HardWorkResolver") as HardWorkResolver;
+    await resolver.init(core.controller.address);
 
     await core.controller.addHardWorker(resolver.address)
 
@@ -68,15 +69,20 @@ describe("HardWorkResolverTest", function () {
   });
 
   it("execute call", async () => {
+    await resolver.setMaxHwPerCall(3);
     await resolver.changeOperatorStatus(signer.address, true)
     const data = await resolver.checker();
-    const gas = (await resolver.estimateGas.call(data.execPayload)).toNumber();
+
+    const vaults = HardWorkResolver__factory.createInterface().decodeFunctionData('call', data.execPayload).vaults
+    console.log('vaults', vaults);
+
+    const gas = (await resolver.estimateGas.call(vaults)).toNumber();
     expect(gas).below(15_000_000);
 
-    const amountOfCalls = (await resolver.callStatic.call(data.execPayload)).toNumber();
+    const amountOfCalls = (await resolver.callStatic.call(vaults)).toNumber();
     expect(amountOfCalls).eq(3);
 
-    await resolver.call(data.execPayload)
+    await resolver.call(vaults)
   });
 
 });

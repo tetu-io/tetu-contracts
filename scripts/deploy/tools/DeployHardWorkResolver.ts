@@ -1,15 +1,17 @@
 import {DeployerUtils} from "../DeployerUtils";
 import {ethers} from "hardhat";
-import {ContractReader} from "../../../typechain";
+import {ContractReader, HardWorkResolver__factory} from "../../../typechain";
 import {RunHelper} from "../../utils/tools/RunHelper";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
 
-  await DeployerUtils.deployContract(signer, "HardWorkResolver", core.controller, core.bookkeeper);
+  const logic = await DeployerUtils.deployContract(signer, "HardWorkResolver");
+  const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address);
+
+  await RunHelper.runAndWait(() => HardWorkResolver__factory.connect(proxy.address, signer).init(core.controller));
 }
 
 main()
