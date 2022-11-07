@@ -29,9 +29,9 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault
-  address[] public _vaults;
+  address[] public override _vaults;
   /// @dev Add when Controller register strategy
-  address[] public _strategies;
+  address[] public override _strategies;
   /// @inheritdoc IBookkeeper
   mapping(address => uint256) public override targetTokenEarned;
   mapping(address => HardWork) private _lastHardWork;

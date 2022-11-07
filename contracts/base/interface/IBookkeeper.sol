@@ -31,6 +31,10 @@ interface IBookkeeper {
     uint256 targetTokenAmount;
   }
 
+  function _vaults(uint id) external view returns (address);
+
+  function _strategies(uint id) external view returns (address);
+
   function addVault(address _vault) external;
 
   function addStrategy(address _strategy) external;
