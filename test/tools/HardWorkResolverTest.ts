@@ -1,12 +1,11 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {HardWorkResolver, HardWorkResolver__factory} from "../../typechain";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {Misc} from "../../scripts/utils/tools/Misc";
+import {formatUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -31,7 +30,7 @@ describe("HardWorkResolverTest", function () {
 
     await core.controller.addHardWorker(resolver.address)
 
-    await resolver.setMaxGas(Misc.MAX_UINT);
+    await resolver.setMaxGas(5000_000_000_000);
   });
 
   after(async function () {
@@ -62,6 +61,14 @@ describe("HardWorkResolverTest", function () {
     await resolver.changeOperatorStatus(signer.address, true)
   });
 
+  it("maxGasAdjusted", async () => {
+    for (let i = 0; i < 30; i++) {
+      const gas = formatUnits(await resolver.maxGasAdjusted(), 9);
+      console.log(i, gas);
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24);
+    }
+  });
+
   it("checker", async () => {
     const gas = (await resolver.estimateGas.checker()).toNumber()
     expect(gas).below(15_000_000);
@@ -69,20 +76,28 @@ describe("HardWorkResolverTest", function () {
   });
 
   it("execute call", async () => {
-    await resolver.setMaxHwPerCall(3);
+    await resolver.setMaxHwPerCall(1);
     await resolver.changeOperatorStatus(signer.address, true)
-    const data = await resolver.checker();
 
-    const vaults = HardWorkResolver__factory.createInterface().decodeFunctionData('call', data.execPayload).vaults
-    console.log('vaults', vaults);
 
-    const gas = (await resolver.estimateGas.call(vaults)).toNumber();
-    expect(gas).below(15_000_000);
+    for (let i = 0; i < 1; i++) {
+      const data = await resolver.checker();
+      console.log('run', i, data.canExec, data.execPayload);
+      if (data.canExec) {
+        const vaults = HardWorkResolver__factory.createInterface().decodeFunctionData('call', data.execPayload).vaults
+        console.log('vaults', vaults);
 
-    const amountOfCalls = (await resolver.callStatic.call(vaults)).toNumber();
-    expect(amountOfCalls).eq(3);
+        const gas = (await resolver.estimateGas.call(vaults)).toNumber();
+        expect(gas).below(15_000_000);
 
-    await resolver.call(vaults)
+        const amountOfCalls = (await resolver.callStatic.call(vaults)).toNumber();
+        expect(amountOfCalls).eq(1);
+
+        await resolver.call(vaults)
+      } else {
+        console.log('can not exec');
+      }
+    }
   });
 
 });

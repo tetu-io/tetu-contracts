@@ -12,7 +12,7 @@ contract HardWorkResolver is ControllableV2 {
 
   // --- CONSTANTS ---
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint public constant DELAY_RATE_DENOMINATOR = 100_000;
 
   // --- VARIABLES ---
@@ -23,9 +23,11 @@ contract HardWorkResolver is ControllableV2 {
   uint public maxGas;
   uint public maxHwPerCall;
 
-  mapping(address => uint) public lastHW;
+  uint public lastHW;
+  mapping(address => uint) public lastHWPerVault;
   mapping(address => uint) public delayRate;
   mapping(address => bool) public operators;
+  mapping(address => bool) public excludedVaults;
 
   // --- INIT ---
 
@@ -69,12 +71,20 @@ contract HardWorkResolver is ControllableV2 {
     maxHwPerCall = value;
   }
 
-  function setDelayRate(address vault, uint value) external onlyOwner {
-    delayRate[vault] = value;
+  function setDelayRate(address[] memory vaults, uint value) external onlyOwner {
+    for (uint i; i < vaults.length; ++i) {
+      delayRate[vaults[i]] = value;
+    }
   }
 
   function changeOperatorStatus(address operator, bool status) external onlyOwner {
     operators[operator] = status;
+  }
+
+  function changeVaultExcludeStatus(address[] memory vaults, bool status) external onlyOwner {
+    for (uint i; i < vaults.length; ++i) {
+      excludedVaults[vaults[i]] = status;
+    }
   }
 
   // --- MAIN LOGIC ---
@@ -91,25 +101,40 @@ contract HardWorkResolver is ControllableV2 {
       address vault = vaults[i];
       if (
         !ISmartVault(vault).active()
-      || lastHW[vault] + _delay > block.timestamp
+      || lastHWPerVault[vault] + _delay > block.timestamp
       ) {
         continue;
       }
 
-      __controller.doHardWork(vault);
-      lastHW[vault] = block.timestamp;
+      try __controller.doHardWork(vault) {}  catch Error(string memory _err) {
+        revert(string(abi.encodePacked("Vault error: 0x", _toAsciiString(vault), " ", _err)));
+      } catch (bytes memory _err) {
+        revert(string(abi.encodePacked("Vault low-level error: 0x", _toAsciiString(vault), " ", string(_err))));
+      }
+      lastHWPerVault[vault] = block.timestamp;
       counter++;
       if (counter >= _maxHwPerCall) {
         break;
       }
     }
 
+    lastHW = block.timestamp;
     return counter;
   }
 
+  function maxGasAdjusted() public view returns (uint) {
+    uint _lastHW = lastHW;
+    _lastHW = _lastHW == 0 ? ControllableV2(address (this)).created() : _lastHW;
+    uint _maxGas = maxGas;
+
+    uint diff = block.timestamp - _lastHW;
+    uint multiplier = diff * 100 / 1 days;
+    return _maxGas + _maxGas * multiplier / 100;
+  }
+
   function checker() external view returns (bool canExec, bytes memory execPayload) {
-    if (tx.gasprice > maxGas) {
-      return (false, bytes("Too high gas"));
+    if (tx.gasprice > maxGasAdjusted()) {
+      return (false, abi.encodePacked("Too high gas", _toString(tx.gasprice)));
     }
 
     IBookkeeper _bookkeeper = IBookkeeper(IController(_controller()).bookkeeper());
@@ -119,7 +144,7 @@ contract HardWorkResolver is ControllableV2 {
     uint counter;
     for (uint i; i < vaultsLength; ++i) {
       address vault = _bookkeeper._vaults(i);
-      if (ISmartVault(vault).active()) {
+      if (!excludedVaults[vault] && ISmartVault(vault).active()) {
 
         uint delayAdjusted = _delay;
         uint _delayRate = delayRate[vault];
@@ -127,7 +152,7 @@ contract HardWorkResolver is ControllableV2 {
           delayAdjusted = _delay * _delayRate / DELAY_RATE_DENOMINATOR;
         }
 
-        if (lastHW[vault] + _delay < block.timestamp) {
+        if (lastHWPerVault[vault] + _delay < block.timestamp) {
           vaults[i] = vault;
           counter++;
         }
@@ -146,6 +171,44 @@ contract HardWorkResolver is ControllableV2 {
       }
       return (true, abi.encodeWithSelector(HardWorkResolver.call.selector, vaultsResult));
     }
+  }
+
+  /// @dev Inspired by OraclizeAPI's implementation - MIT license
+  ///      https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+  function _toString(uint value) internal pure returns (string memory) {
+    if (value == 0) {
+      return "0";
+    }
+    uint temp = value;
+    uint digits;
+    while (temp != 0) {
+      digits++;
+      temp /= 10;
+    }
+    bytes memory buffer = new bytes(digits);
+    while (value != 0) {
+      digits -= 1;
+      buffer[digits] = bytes1(uint8(48 + uint(value % 10)));
+      value /= 10;
+    }
+    return string(buffer);
+  }
+
+  function _toAsciiString(address x) internal pure returns (string memory) {
+    bytes memory s = new bytes(40);
+    for (uint i = 0; i < 20; i++) {
+      bytes1 b = bytes1(uint8(uint(uint160(x)) / (2 ** (8 * (19 - i)))));
+      bytes1 hi = bytes1(uint8(b) / 16);
+      bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+      s[2 * i] = _char(hi);
+      s[2 * i + 1] = _char(lo);
+    }
+    return string(s);
+  }
+
+  function _char(bytes1 b) internal pure returns (bytes1 c) {
+    if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+    else return bytes1(uint8(b) + 0x57);
   }
 
 }
