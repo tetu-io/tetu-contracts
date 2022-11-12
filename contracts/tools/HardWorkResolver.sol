@@ -12,7 +12,7 @@ contract HardWorkResolver is ControllableV2 {
 
   // --- CONSTANTS ---
 
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
   uint public constant DELAY_RATE_DENOMINATOR = 100_000;
 
   // --- VARIABLES ---
@@ -124,7 +124,7 @@ contract HardWorkResolver is ControllableV2 {
 
   function maxGasAdjusted() public view returns (uint) {
     uint _lastHW = lastHWCall;
-    _lastHW = _lastHW == 0 ? ControllableV2(address (this)).created() : _lastHW;
+    _lastHW = _lastHW == 0 ? ControllableV2(address(this)).created() : _lastHW;
     uint _maxGas = maxGas;
 
     uint diff = block.timestamp - _lastHW;
@@ -134,7 +134,7 @@ contract HardWorkResolver is ControllableV2 {
 
   function checker() external view returns (bool canExec, bytes memory execPayload) {
     if (tx.gasprice > maxGasAdjusted()) {
-      return (false, abi.encodePacked("Too high gas", _toString(tx.gasprice)));
+      return (false, abi.encodePacked("Too high gas: ", _toString(tx.gasprice / 1e9)));
     }
 
     IBookkeeper _bookkeeper = IBookkeeper(IController(_controller()).bookkeeper());
