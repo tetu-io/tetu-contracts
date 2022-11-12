@@ -21,6 +21,9 @@ describe("HardWorkResolverTest", function () {
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     signer = await DeployerUtils.impersonate()
 
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
@@ -46,22 +49,37 @@ describe("HardWorkResolverTest", function () {
   });
 
   it("setDelay", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     await resolver.setDelay(1)
   });
 
   it("setMaxGas", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     await resolver.setMaxGas(1)
   });
 
   it("setMaxHwPerCall", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     await resolver.setMaxHwPerCall(1)
   });
 
   it("changeOperatorStatus", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     await resolver.changeOperatorStatus(signer.address, true)
   });
 
   it("maxGasAdjusted", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     for (let i = 0; i < 30; i++) {
       const gas = formatUnits(await resolver.maxGasAdjusted(), 9);
       console.log(i, gas);
@@ -70,12 +88,18 @@ describe("HardWorkResolverTest", function () {
   });
 
   it("checker", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     const gas = (await resolver.estimateGas.checker()).toNumber()
     expect(gas).below(15_000_000);
     await resolver.checker();
   });
 
   it("execute call", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
     await resolver.setMaxHwPerCall(1);
     await resolver.changeOperatorStatus(signer.address, true)
 
