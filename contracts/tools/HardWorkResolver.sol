@@ -12,7 +12,7 @@ contract HardWorkResolver is ControllableV2 {
 
   // --- CONSTANTS ---
 
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   uint public constant DELAY_RATE_DENOMINATOR = 100_000;
 
   // --- VARIABLES ---
@@ -23,11 +23,11 @@ contract HardWorkResolver is ControllableV2 {
   uint public maxGas;
   uint public maxHwPerCall;
 
-  uint public lastHW;
-  mapping(address => uint) public lastHWPerVault;
+  mapping(address => uint) public lastHW;
   mapping(address => uint) public delayRate;
   mapping(address => bool) public operators;
   mapping(address => bool) public excludedVaults;
+  uint public lastHWCall;
 
   // --- INIT ---
 
@@ -101,7 +101,7 @@ contract HardWorkResolver is ControllableV2 {
       address vault = vaults[i];
       if (
         !ISmartVault(vault).active()
-      || lastHWPerVault[vault] + _delay > block.timestamp
+      || lastHW[vault] + _delay > block.timestamp
       ) {
         continue;
       }
@@ -111,19 +111,19 @@ contract HardWorkResolver is ControllableV2 {
       } catch (bytes memory _err) {
         revert(string(abi.encodePacked("Vault low-level error: 0x", _toAsciiString(vault), " ", string(_err))));
       }
-      lastHWPerVault[vault] = block.timestamp;
+      lastHW[vault] = block.timestamp;
       counter++;
       if (counter >= _maxHwPerCall) {
         break;
       }
     }
 
-    lastHW = block.timestamp;
+    lastHWCall = block.timestamp;
     return counter;
   }
 
   function maxGasAdjusted() public view returns (uint) {
-    uint _lastHW = lastHW;
+    uint _lastHW = lastHWCall;
     _lastHW = _lastHW == 0 ? ControllableV2(address (this)).created() : _lastHW;
     uint _maxGas = maxGas;
 
@@ -152,7 +152,7 @@ contract HardWorkResolver is ControllableV2 {
           delayAdjusted = _delay * _delayRate / DELAY_RATE_DENOMINATOR;
         }
 
-        if (lastHWPerVault[vault] + _delay < block.timestamp) {
+        if (lastHW[vault] + _delay < block.timestamp) {
           vaults[i] = vault;
           counter++;
         }
