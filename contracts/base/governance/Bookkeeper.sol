@@ -25,7 +25,7 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.2.1";
 
   // DO NOT CHANGE NAMES OR ORDERING!
   /// @dev Add when Controller register vault
@@ -136,8 +136,11 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
   /// @dev It should represent 100% of earned rewards including all fees.
   /// @param _targetTokenAmount Earned amount
   function registerStrategyEarned(uint256 _targetTokenAmount) external override onlyStrategy {
-    targetTokenEarned[msg.sender] = targetTokenEarned[msg.sender] + _targetTokenAmount;
+    if (_targetTokenAmount != 0) {
+      targetTokenEarned[msg.sender] = targetTokenEarned[msg.sender] + _targetTokenAmount;
+    }
 
+    // need to count hard works even with zero amount
     _lastHardWork[msg.sender] = HardWork(
       msg.sender,
       block.number,
@@ -150,28 +153,19 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
   /// @notice Only FeeRewardForwarder action. Save Fund Token earned value for given token
   /// @param _fundTokenAmount Earned amount
   function registerFundKeeperEarned(address _token, uint256 _fundTokenAmount) external override onlyFeeRewardForwarderOrStrategy {
-    fundKeeperEarned[_token] = fundKeeperEarned[_token] + _fundTokenAmount;
-    emit RegisterFundKeeperEarned(_token, _fundTokenAmount);
+    if (_fundTokenAmount != 0) {
+      fundKeeperEarned[_token] = fundKeeperEarned[_token] + _fundTokenAmount;
+      emit RegisterFundKeeperEarned(_token, _fundTokenAmount);
+    }
   }
 
-  /// ---------DEPRECATED----------------
-  /// @notice FeeRewardForwarder action.
+  /// @notice DEPRECATED FeeRewardForwarder action.
   ///         Register Price Per Full Share change for given vault
   /// @param vault Vault address
   /// @param value Price Per Full Share change
   function registerPpfsChange(address vault, uint256 value)
   external override onlyFeeRewardForwarderOrStrategy {
-    PpfsChange memory lastPpfs = _lastPpfsChange[vault];
-    _lastPpfsChange[vault] = PpfsChange(
-      vault,
-      block.number,
-      block.timestamp,
-      value,
-      lastPpfs.block,
-      lastPpfs.time,
-      lastPpfs.value
-    );
-    emit RegisterPpfsChange(vault, lastPpfs.value, value);
+    // noop
   }
 
   /// @notice Vault action.
@@ -257,7 +251,8 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
     }
 
     // don't count mint and burn - it should be covered in registerUserAction
-    if (from == address(0) || to == address(0)) {
+    // also transfer to ourself is ignoring
+    if (from == address(0) || to == address(0) || from == to) {
       return;
     }
 
@@ -284,8 +279,10 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
   /// @param _amount Claimed amount
   function registerUserEarned(address _user, address _vault, address _rt, uint256 _amount)
   external override onlyVault {
-    userEarned[_user][_vault][_rt] = userEarned[_user][_vault][_rt] + _amount;
-    emit RegisterUserEarned(_user, _vault, _rt, _amount);
+    if (_amount != 0) {
+      userEarned[_user][_vault][_rt] = userEarned[_user][_vault][_rt] + _amount;
+      emit RegisterUserEarned(_user, _vault, _rt, _amount);
+    }
   }
 
   /// @notice Return vaults array
@@ -351,6 +348,23 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
     _vaults.pop();
   }
 
+  /// @notice Governance action. Remove vaults by given indexes. Indexes should go in desc ordering!
+  /// @param indexes Indexes of vaults in desc ordering.
+  function removeFromVaultsBatch(uint256[] memory indexes) external onlyControllerOrGovernance {
+    uint lastIndex = type(uint).max;
+    for (uint i; i < indexes.length; ++i) {
+      uint index = indexes[i];
+      uint vLength = _vaults.length;
+      require(index < vLength && index < lastIndex, "B: Wrong index");
+      emit RemoveVault(_vaults[index]);
+      if (index != vLength - 1) {
+        _vaults[index] = _vaults[vLength - 1];
+      }
+      _vaults.pop();
+      lastIndex = index;
+    }
+  }
+
   /// @notice Governance action. Remove given Strategy from strategies array
   /// @param index Index of strategy in the strategies array
   function removeFromStrategies(uint256 index) external onlyControllerOrGovernance {
@@ -358,6 +372,23 @@ contract Bookkeeper is IBookkeeper, Initializable, ControllableV2 {
     emit RemoveStrategy(_strategies[index]);
     _strategies[index] = _strategies[_strategies.length - 1];
     _strategies.pop();
+  }
+
+  /// @notice Governance action. Remove strategies by given indexes. Indexes should go in desc ordering!
+  /// @param indexes Indexes of strategies in desc ordering.
+  function removeFromStrategiesBatch(uint256[] memory indexes) external onlyControllerOrGovernance {
+    uint lastIndex = type(uint).max;
+    for (uint i; i < indexes.length; ++i) {
+      uint index = indexes[i];
+      uint sLength = _strategies.length;
+      require(index < sLength && index < lastIndex, "B: Wrong index");
+      emit RemoveStrategy(_strategies[index]);
+      if (index != sLength - 1) {
+        _strategies[index] = _strategies[sLength - 1];
+      }
+      _strategies.pop();
+      lastIndex = index;
+    }
   }
 
 }
