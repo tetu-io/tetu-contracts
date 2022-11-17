@@ -5,6 +5,8 @@ pragma solidity 0.8.4;
 import "../base/interface/IController.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";
+import "../base/interface/IStrategy.sol";
+import "../base/interface/IStrategySplitter.sol";
 import "../openzeppelin/Initializable.sol";
 import "../base/governance/ControllableV2.sol";
 
@@ -12,7 +14,7 @@ contract HardWorkResolver is ControllableV2 {
 
   // --- CONSTANTS ---
 
-  string public constant VERSION = "1.0.3";
+  string public constant VERSION = "1.0.4";
   uint public constant DELAY_RATE_DENOMINATOR = 100_000;
 
   // --- VARIABLES ---
@@ -23,7 +25,7 @@ contract HardWorkResolver is ControllableV2 {
   uint public maxGas;
   uint public maxHwPerCall;
 
-  mapping(address => uint) public lastHW;
+  mapping(address => uint) internal _lastHW;
   mapping(address => uint) public delayRate;
   mapping(address => bool) public operators;
   mapping(address => bool) public excludedVaults;
@@ -89,6 +91,28 @@ contract HardWorkResolver is ControllableV2 {
 
   // --- MAIN LOGIC ---
 
+  function lastHW(address vault) public view returns (uint lastHardWorkTimestamp) {
+    lastHardWorkTimestamp = 0;
+    IBookkeeper bookkeeper = IBookkeeper(IController(_controller()).bookkeeper());
+    address strategy = ISmartVault(vault).strategy();
+    if (IStrategy(strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER) {
+      address[] memory subStrategies = IStrategySplitter(strategy).allStrategies();
+      for (uint i; i < subStrategies.length; ++i) {
+        address subStrategy = subStrategies[i];
+        uint time = bookkeeper.lastHardWork(subStrategy).time;
+        if (lastHardWorkTimestamp < time) {
+          lastHardWorkTimestamp = time;
+        }
+      }
+    } else {
+      lastHardWorkTimestamp = bookkeeper.lastHardWork(strategy).time;
+    }
+    uint localTime = _lastHW[vault];
+    if (lastHardWorkTimestamp == 0 || lastHardWorkTimestamp < localTime) {
+      lastHardWorkTimestamp = localTime;
+    }
+  }
+
   function call(address[] memory vaults) external returns (uint amountOfCalls){
     require(operators[msg.sender], "!operator");
 
@@ -101,7 +125,7 @@ contract HardWorkResolver is ControllableV2 {
       address vault = vaults[i];
       if (
         !ISmartVault(vault).active()
-      || lastHW[vault] + _delay > block.timestamp
+      || lastHW(vault) + _delay > block.timestamp
       ) {
         continue;
       }
@@ -111,7 +135,7 @@ contract HardWorkResolver is ControllableV2 {
       } catch (bytes memory _err) {
         revert(string(abi.encodePacked("Vault low-level error: 0x", _toAsciiString(vault), " ", string(_err))));
       }
-      lastHW[vault] = block.timestamp;
+      _lastHW[vault] = block.timestamp;
       counter++;
       if (counter >= _maxHwPerCall) {
         break;
@@ -123,11 +147,11 @@ contract HardWorkResolver is ControllableV2 {
   }
 
   function maxGasAdjusted() public view returns (uint) {
-    uint _lastHW = lastHWCall;
-    _lastHW = _lastHW == 0 ? ControllableV2(address(this)).created() : _lastHW;
+    uint _lastHWCall = lastHWCall;
+    _lastHWCall = _lastHWCall == 0 ? ControllableV2(address(this)).created() : _lastHWCall;
     uint _maxGas = maxGas;
 
-    uint diff = block.timestamp - _lastHW;
+    uint diff = block.timestamp - _lastHWCall;
     uint multiplier = diff * 100 / 1 days;
     return _maxGas + _maxGas * multiplier / 100;
   }
@@ -152,7 +176,7 @@ contract HardWorkResolver is ControllableV2 {
           delayAdjusted = _delay * _delayRate / DELAY_RATE_DENOMINATOR;
         }
 
-        if (lastHW[vault] + _delay < block.timestamp) {
+        if (lastHW(vault) + _delay < block.timestamp) {
           vaults[i] = vault;
           counter++;
         }

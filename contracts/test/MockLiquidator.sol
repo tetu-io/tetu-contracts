@@ -6,6 +6,8 @@ import "../base/interface/ITetuLiquidator.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/IERC20Metadata.sol";
 
+import "hardhat/console.sol";
+
 contract MockLiquidator is ITetuLiquidator {
 
   uint price = 100_000 * 1e18;
@@ -56,9 +58,15 @@ contract MockLiquidator is ITetuLiquidator {
     uint amount,
     uint
   ) external override {
+    console.log("liquidate amount", amount);
+    console.log("liquidate tokenIn", IERC20Metadata(tokenIn).symbol());
+    console.log("liquidate tokenOut", IERC20Metadata(tokenOut).symbol());
     uint dec0 = IERC20Metadata(tokenIn).decimals();
     uint dec1 = IERC20Metadata(tokenOut).decimals();
-    IERC20(tokenOut).transfer(msg.sender, amount * (10 ** dec1) / (10 ** dec0));
+    uint amountOut = amount * (10 ** dec1) / (10 ** dec0);
+    console.log("liquidateWithRoute amountOut", amountOut);
+    console.log("liquidateWithRoute out balance", IERC20(tokenOut).balanceOf(address(this)));
+    IERC20(tokenOut).transfer(msg.sender, amountOut);
   }
 
   function liquidateWithRoute(
@@ -66,10 +74,16 @@ contract MockLiquidator is ITetuLiquidator {
     uint amount,
     uint
   ) external override {
+    console.log("liquidateWithRoute amount", amount);
+    console.log("liquidateWithRoute tokenIn", IERC20Metadata(route[0].tokenIn).symbol());
+    console.log("liquidateWithRoute tokenOut", IERC20Metadata(route[route.length - 1].tokenOut).symbol());
     uint dec0 = IERC20Metadata(route[0].tokenIn).decimals();
     uint dec1 = IERC20Metadata(route[route.length - 1].tokenOut).decimals();
     IERC20(route[0].tokenIn).transferFrom(msg.sender, address(this), amount);
-    IERC20(route[route.length - 1].tokenOut).transfer(msg.sender, amount * (10 ** dec1) / (10 ** dec0));
+    uint amountOut = amount * (10 ** dec1) / (10 ** dec0);
+    console.log("liquidateWithRoute amountOut", amountOut);
+    console.log("liquidateWithRoute out balance", IERC20(route[route.length - 1].tokenOut).balanceOf(address(this)));
+    IERC20(route[route.length - 1].tokenOut).transfer(msg.sender, amountOut);
   }
 
 }

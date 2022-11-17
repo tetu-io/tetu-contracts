@@ -109,7 +109,12 @@ describe("HardWorkResolverTest", function () {
       console.log('run', i, data.canExec, data.execPayload);
       if (data.canExec) {
         const vaults = HardWorkResolver__factory.createInterface().decodeFunctionData('call', data.execPayload).vaults
-        console.log('vaults', vaults);
+
+        for (const vault of vaults) {
+          const lastHw = (await resolver.lastHW(vault)).toNumber();
+          console.log(vault, lastHw);
+        }
+
 
         const gas = (await resolver.estimateGas.call(vaults)).toNumber();
         expect(gas).below(15_000_000);

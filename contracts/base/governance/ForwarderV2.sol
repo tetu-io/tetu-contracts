@@ -39,7 +39,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant override VERSION = "1.5.0";
+  string public constant override VERSION = "1.5.1";
   uint256 public constant override LIQUIDITY_DENOMINATOR = 100;
   uint constant public override SLIPPAGE_DENOMINATOR = 100;
   uint constant public override MINIMUM_AMOUNT = 100;
@@ -196,7 +196,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     (uint tetuTokenAmount,) = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
-    if (tetuTokenAmount > 0 && fundTokenAmount > 0 && toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount > sentToFund) {
+    if (tetuTokenAmount > 0 && fundTokenAmount > 0 && toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount >= sentToFund) {
       tetuDistributed += _sendToPsAndLiquidity(
         tetuTokenAmount,
         toLiqTetuTokenPart,
