@@ -40,7 +40,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.6.1";
+  string public constant VERSION = "1.6.2";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
@@ -403,19 +403,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       uint out = IDystopiaPair(lpAddress).getAmountOut(10 ** tokenInDecimals, token);
       return out * (10 ** PRECISION_DECIMALS) / (10 ** tokenOutDecimals);
     } else if (_factory == UNIV3_FACTORY_ETHEREUM) {
-      address token0 = IUniPoolV3(lpAddress).token0();
-      address token1 = IUniPoolV3(lpAddress).token1();
-
-      uint256 tokenInDecimals = token == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
-      uint256 tokenOutDecimals = token == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
-      (uint160 sqrtPriceX96,,,,,,) = IUniPoolV3(lpAddress).slot0();
-
-      uint divider = Math.max(10 ** tokenOutDecimals / 10 ** tokenInDecimals, 1);
-      if (token == token0) {
-        return uint(sqrtPriceX96) ** 2 / 2 ** 96 * 1e18 / 2 ** 96 / divider * 1e18 / (10 ** tokenOutDecimals);
-      } else {
-        return 2 ** 192 * 1e18 / uint(sqrtPriceX96) ** 2 / divider * 1e18 / (10 ** tokenOutDecimals);
-      }
+      return getUniV3Price(lpAddress, token);
     } else {
       IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
       address token0 = pair.token0();
@@ -436,6 +424,46 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
         revert("PC: token not in lp");
       }
     }
+  }
+
+  function _countDigits(uint n) internal pure returns (uint){
+    if (n == 0) {
+      return 0;
+    }
+    uint count = 0;
+    while (n != 0) {
+      n = n / 10;
+      ++count;
+    }
+    return count;
+  }
+
+  /// @dev Return current price without amount impact.
+  function getUniV3Price(
+    address pool,
+    address tokenIn
+  ) public view returns (uint) {
+    address token0 = IUniPoolV3(pool).token0();
+    address token1 = IUniPoolV3(pool).token1();
+
+    uint256 tokenInDecimals = tokenIn == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+    uint256 tokenOutDecimals = tokenIn == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+    (uint160 sqrtPriceX96,,,,,,) = IUniPoolV3(pool).slot0();
+
+    uint divider = Math.max(10 ** tokenOutDecimals / 10 ** tokenInDecimals, 1);
+    uint priceDigits = _countDigits(uint(sqrtPriceX96));
+    uint purePrice;
+    uint precision;
+    if (tokenIn == token0) {
+      precision = 10 ** ((priceDigits < 29 ? 29 - priceDigits : 0) + 18);
+      uint part = uint(sqrtPriceX96) * precision / 2 ** 96;
+      purePrice = part * part;
+    } else {
+      precision = 10 ** ((priceDigits > 29 ? priceDigits - 29 : 0) + 18);
+      uint part = 2 ** 96 * precision / uint(sqrtPriceX96);
+      purePrice = part * part;
+    }
+    return purePrice / divider / precision / (precision > 1e18 ? (precision / 1e18) : 1) * 1e18 / (10 ** tokenOutDecimals);
   }
 
   //Checks if a given token is in the keyTokens list.
