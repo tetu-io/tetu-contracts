@@ -35,7 +35,7 @@ export class TokenUtils {
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
     [MaticAddresses.TETU_TOKEN, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // fund keeper
     [MaticAddresses.AAVE_TOKEN, '0x1d2a0e5ec8e5bbdca5cb219e649b565d8e5c3360'.toLowerCase()], // aave
-    [MaticAddresses.SUSHI_TOKEN, '0x1b1cd0fdb6592fe482026b8e47706eac1ee94a7c'.toLowerCase()], // peggy
+    [MaticAddresses.SUSHI_TOKEN, '0xd814b26554204245A30F8A42C289Af582421Bf04'.toLowerCase()], // treas
     [MaticAddresses.pBREW_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.ICE_TOKEN, '0xb1bf26c7b43d2485fa07694583d2f17df0dde010'.toLowerCase()], // blueIce
@@ -222,6 +222,7 @@ export class TokenUtils {
     }
 
     if (token.toLowerCase() === await DeployerUtils.getNetworkTokenAddress()) {
+      amount = !amount ? parseUnits('1000000') : amount;
       await IWmatic__factory.connect(token, await DeployerUtils.impersonate(to)).deposit({value: amount});
       return amount;
     }

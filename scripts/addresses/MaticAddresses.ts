@@ -77,6 +77,7 @@ export class MaticAddresses {
   public static SAND_TOKEN = '0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683'.toLowerCase();
   public static tetuBAL_TOKEN = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
   public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
+  public static LIDO_TOKEN = '0xC3C7d422809852031b44ab29EEC9F1EfF2A58756'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -216,6 +217,7 @@ export class MaticAddresses {
 
   // BALANCER
   public static BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase();
+  public static BALANCER_HELPER = '0x239e55F427D44C3cc793f49bFB507ebe76638a2b'.toLowerCase();
   public static BALANCER_POOL_MAI_STABLE_ID = '0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000012'.toLowerCase();
   public static BALANCER_POOL_BAL_ETH_ID = '0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426'.toLowerCase();
   public static BALANCER_POOL_WMATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
