@@ -54,6 +54,7 @@ describe("LiquidityMigratorTest", function () {
 
     await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, await DeployerUtils.impersonate(rewarder)).transfer(migrator.address, parseUnits('17000000'));
 
+    await migrator.migrate(1);
     await migrator.migrate(100);
   });
 });
