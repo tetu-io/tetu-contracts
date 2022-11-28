@@ -55,6 +55,8 @@ contract LiquidityMigrator {
   // *********** MAIN LOGIC *************
 
   function migrate(uint percent, bool extraTetu) external onlyOwner {
+    // community approved to use additional TETU from rewards
+    require(extraTetu, "only with extra tetu");
     _uni2Exit(IERC20(UNI2_POOL).balanceOf(address(this)) * percent / 100);
     _balancerJoin(extraTetu);
   }
