@@ -7,10 +7,10 @@ import "../openzeppelin/SafeERC20.sol";
 import "../third_party/uniswap/IUniswapV2Pair.sol";
 import "../openzeppelin/Strings.sol";
 
-import "hardhat/console.sol";
-
 contract LiquidityMigrator {
   using SafeERC20 for IERC20;
+
+  // *********** CONSTANTS *************
 
   address public constant UNI2_POOL = 0x80fF4e4153883d770204607eb4aF9994739C72DC;
   address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
@@ -19,17 +19,25 @@ contract LiquidityMigrator {
   address public constant BALANCER_POOL_ADDRESS = 0xE2f706EF1f7240b803AAe877C9C762644bb808d8;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
 
+  // *********** VARIABLES *************
+
   address public owner;
   address public pendingOwner;
+
+  // *********** INIT *************
 
   constructor() {
     owner = msg.sender;
   }
 
+  // *********** RESTRICTIONS *************
+
   modifier onlyOwner() {
     require(owner == msg.sender, "!owner");
     _;
   }
+
+  // *********** GOV *************
 
   function offerOwnership(address value) external onlyOwner {
     pendingOwner = value;
@@ -44,9 +52,15 @@ contract LiquidityMigrator {
     IERC20(token).safeTransfer(recipient, IERC20(token).balanceOf(address(this)));
   }
 
-  function migrate(uint percent) external onlyOwner {
+  // *********** MAIN LOGIC *************
+
+  function migrate(uint percent, bool extraTetu) external onlyOwner {
     _uni2Exit(IERC20(UNI2_POOL).balanceOf(address(this)) * percent / 100);
-    _balancerJoin();
+    _balancerJoin(extraTetu);
+  }
+
+  function buyBack(uint percent) external onlyOwner {
+    _buyBack(percent);
   }
 
   function _uni2Exit(uint amount) internal {
@@ -54,7 +68,7 @@ contract LiquidityMigrator {
     IUniswapV2Pair(UNI2_POOL).burn(address(this));
   }
 
-  function _calcBptAmounts() public view returns (IAsset[] memory _poolTokens, uint[] memory amounts, uint price) {
+  function _calcBptAmounts(bool extraTetu) public view returns (IAsset[] memory _poolTokens, uint[] memory amounts, uint price) {
     uint usdcBal = IERC20(USDC).balanceOf(address(this));
     uint tetuBal = IERC20(TETU).balanceOf(address(this));
 
@@ -78,24 +92,39 @@ contract LiquidityMigrator {
         tetuIndex = i;
       }
     }
-
     price = (usdcInPool * 5 * 1e36) / (tetuInPool * 5 / 4);
-    uint expectedTetu = (((usdcInPool + usdcBal) * 5 * 1e36) / price) * 4 / 5 - tetuInPool;
+    if (extraTetu) {
+      uint expectedTetu = (((usdcInPool + usdcBal) * 5 * 1e36) / price) * 4 / 5 - tetuInPool;
 
-    require(expectedTetu <= tetuBal, string(abi.encodePacked("Not enough TETU, need: ", Strings.toString(expectedTetu / 1e18))));
+      require(expectedTetu <= tetuBal, string(abi.encodePacked("Not enough TETU, need: ", Strings.toString(expectedTetu / 1e18))));
 
-    amounts = new uint[](2);
-    amounts[tetuIndex] = expectedTetu;
-    amounts[usdcIndex] = usdcBal;
+      amounts = new uint[](2);
+      amounts[tetuIndex] = expectedTetu;
+      amounts[usdcIndex] = usdcBal;
+    } else {
+      uint expectedUsdc = (((tetuInPool + tetuBal) * 5 / 4) * price) / 1e36 / 5 - usdcInPool;
+
+      require(expectedUsdc <= usdcBal, string(abi.encodePacked("Not enough USDC, need: ", Strings.toString(expectedUsdc / 1e6))));
+
+      amounts = new uint[](2);
+      amounts[tetuIndex] = tetuBal;
+      amounts[usdcIndex] = expectedUsdc;
+    }
 
     _poolTokens = new IAsset[](2);
     _poolTokens[tetuIndex] = IAsset(TETU);
     _poolTokens[usdcIndex] = IAsset(USDC);
   }
 
-  function _balancerJoin() internal {
+  function _buyBack(uint percent) internal {
+    uint usdcBal = IERC20(USDC).balanceOf(address(this)) * percent / 100;
+    _balancerSwap(USDC, TETU, usdcBal);
+    _balancerJoin(false);
+  }
 
-    (IAsset[] memory _poolTokens, uint[] memory amounts, uint price) = _calcBptAmounts();
+  function _balancerJoin(bool extraTetu) internal {
+
+    (IAsset[] memory _poolTokens, uint[] memory amounts, uint price) = _calcBptAmounts(extraTetu);
 
     for (uint i; i < _poolTokens.length; ++i) {
       _approveIfNeeds(address(_poolTokens[i]), amounts[i], address(BALANCER_VAULT));
@@ -130,6 +159,29 @@ contract LiquidityMigrator {
     uint priceAfter = (usdcInPool * 5 * 1e36) / (tetuInPool * 5 / 4);
     uint diff = priceAfter >= price ? priceAfter - price : price - priceAfter;
     require(diff * 1e18 / priceAfter < 1e15, string(abi.encodePacked("Price diff: ", Strings.toString(diff * 1e18 / priceAfter))));
+  }
+
+  function _balancerSwap(address _tokenIn, address _tokenOut, uint _amountIn) internal {
+    if (_amountIn != 0) {
+      IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
+      poolId : BALANCER_POOL_ID,
+      kind : IBVault.SwapKind.GIVEN_IN,
+      assetIn : IAsset(_tokenIn),
+      assetOut : IAsset(_tokenOut),
+      amount : _amountIn,
+      userData : ""
+      });
+
+      IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
+      sender : address(this),
+      fromInternalBalance : false,
+      recipient : payable(address(this)),
+      toInternalBalance : false
+      });
+
+      _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+      BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+    }
   }
 
   function _approveIfNeeds(address token, uint amount, address spender) internal {

@@ -141,7 +141,7 @@ export class TokenUtils {
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
-    console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
+    // console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
     return ERC20__factory.connect(tokenAddress, signer).approve(spender, BigNumber.from(amount));
   }
 
