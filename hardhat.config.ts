@@ -170,6 +170,15 @@ export default {
       // gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
+    zktest: {
+      url: 'https://public.zkevm-test.net:2083',
+      timeout: 99999,
+      chainId: 1402,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      // gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers

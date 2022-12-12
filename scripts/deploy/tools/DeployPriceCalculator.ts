@@ -5,6 +5,7 @@ import {PriceCalculator, TetuProxyGov} from "../../../typechain";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
+  // const signer = await DeployerUtils.impersonate();
   const core = await DeployerUtils.getCoreAddresses();
   const net = await ethers.provider.getNetwork();
 
@@ -15,6 +16,8 @@ async function main() {
     data = await DeployerUtils.deployPriceCalculatorFantom(signer, core.controller, true);
   } else if (net.chainId === 56) {
     data = await DeployerUtils.deployPriceCalculatorBsc(signer, core.controller, true);
+  } else if (net.chainId === 1) {
+    data = await DeployerUtils.deployPriceCalculatorEth(signer, core.controller, true);
   } else {
     throw Error("Incorrect network selected");
   }

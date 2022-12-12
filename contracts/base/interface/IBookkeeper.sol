@@ -31,6 +31,10 @@ interface IBookkeeper {
     uint256 targetTokenAmount;
   }
 
+  function _vaults(uint id) external view returns (address);
+
+  function _strategies(uint id) external view returns (address);
+
   function addVault(address _vault) external;
 
   function addStrategy(address _strategy) external;
@@ -80,7 +84,7 @@ interface IBookkeeper {
   /// @return User's earned tokens amount
   function userEarned(address user, address vault, address token) external view returns (uint256);
 
-  function lastHardWork(address vault) external view returns (HardWork memory);
+  function lastHardWork(address strategy) external view returns (HardWork memory);
 
   /// @notice Return users quantity for given Vault
   /// @dev Calculation based in Bookkeeper user balances

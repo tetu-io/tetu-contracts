@@ -14,6 +14,8 @@ import "./IPriceCalculator.sol";
 import "../../base/governance/ControllableV2.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "../../third_party/uniswap/IUniPoolV3.sol";
+import "../../third_party/uniswap/IUniFactoryV3.sol";
 import "../../third_party/firebird/IFireBirdPair.sol";
 import "../../third_party/firebird/IFireBirdFactory.sol";
 import "../../base/interface/ISmartVault.sol";
@@ -23,9 +25,12 @@ import "../../third_party/curve/ICurveLpToken.sol";
 import "../../third_party/curve/ICurveMinter.sol";
 import "../../third_party/IERC20Extended.sol";
 import "../../third_party/aave/IAaveToken.sol";
+import "../../third_party/aave/IWrappedAaveToken.sol";
 import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
+import "../../third_party/dystopia/IDystopiaPair.sol";
+import "../../openzeppelin/Math.sol";
 
 pragma solidity 0.8.4;
 
@@ -35,12 +40,13 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.5.3";
+  string public constant VERSION = "1.6.2";
   string public constant IS3USD = "IRON Stableswap 3USD";
   string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address public constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
+  address public constant UNIV3_FACTORY_ETHEREUM = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
   uint256 constant public PRECISION_DECIMALS = 18;
   uint256 constant public DEPTH = 20;
@@ -158,10 +164,17 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
 
     } else if (isAave(token)) {
-      uint ratio = IAaveToken(token).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(token).scaledTotalSupply();
+      address aToken = unwrapAaveIfNecessary(token);
       address[] memory usedLps = new address[](DEPTH);
-      price = computePrice(IAaveToken(token).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
-      price = price * ratio / (10 ** PRECISION_DECIMALS);
+      price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
+      // add wrapped ratio if necessary
+      if (token != aToken) {
+        uint ratio = IWrappedAaveToken(token).staticToDynamicAmount(10 ** PRECISION_DECIMALS);
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      } else {
+        uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      }
     } else if (isBPT(token)) {
       price = calculateBPTPrice(token, outputToken);
     } else {
@@ -191,6 +204,13 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       return true;
     } catch {}
     return false;
+  }
+
+  function unwrapAaveIfNecessary(address token) public view returns (address) {
+    try IWrappedAaveToken(token).ATOKEN{gas : 60000}() returns (address aToken) {
+      return aToken;
+    } catch {}
+    return token;
   }
 
   function isBPT(address token) public view returns (bool) {
@@ -243,7 +263,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       return 0;
     }
 
-    require(deep <= DEPTH, "PC: too deep");
+    require(deep < DEPTH, "PC: too deep");
 
     (address keyToken,, address lpAddress) = getLargestPool(token, usedLps);
     require(lpAddress != address(0), toAsciiString(token));
@@ -265,10 +285,10 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     address lpAddress = address(0);
     address[] memory _keyTokens = keyTokens;
     for (uint256 i = 0; i < _keyTokens.length; i++) {
+      if (token == _keyTokens[i]) {
+        continue;
+      }
       for (uint256 j = 0; j < swapFactories.length; j++) {
-        if (token == _keyTokens[i]) {
-          continue;
-        }
         (uint256 poolSize, address lp) = getLpForFactory(swapFactories[j], token, _keyTokens[i]);
 
         if (arrayContains(usedLps, lp)) {
@@ -283,6 +303,30 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
         }
       }
     }
+
+    // try to find in UNIv3
+    if (lpAddress == address(0) && block.chainid == 1) {
+      for (uint256 i = 0; i < _keyTokens.length; i++) {
+        if (token == _keyTokens[i]) {
+          continue;
+        }
+
+        (uint256 poolSize, address lp) = findLpInUniV3(token, _keyTokens[i]);
+
+        if (arrayContains(usedLps, lp)) {
+          continue;
+        }
+
+        if (poolSize > largestLpSize) {
+          largestLpSize = poolSize;
+          largestKeyToken = _keyTokens[i];
+          largestPlatformIdx = type(uint).max;
+          lpAddress = lp;
+        }
+
+      }
+    }
+
     return (largestKeyToken, largestPlatformIdx, lpAddress);
   }
 
@@ -311,6 +355,33 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return (0, address(0));
   }
 
+  function findLpInUniV3(address token, address tokenOpposite)
+  public view returns (uint256, address){
+
+    address pairAddress;
+    uint reserve;
+    uint[] memory fees = new uint[](4);
+    fees[0] = 100;
+    fees[1] = 500;
+    fees[2] = 3000;
+    fees[3] = 10000;
+    for (uint i; i < fees.length; ++i) {
+      address pairAddressTmp = IUniFactoryV3(UNIV3_FACTORY_ETHEREUM).getPool(token, tokenOpposite, uint24(fees[i]));
+      if (pairAddressTmp != address(0)) {
+        uint reserveTmp = getUniV3Reserve(pairAddressTmp, token);
+        if (reserveTmp > reserve) {
+          pairAddress = pairAddressTmp;
+          reserve = reserveTmp;
+        }
+      }
+    }
+    return (reserve, pairAddress);
+  }
+
+  function getUniV3Reserve(address pairAddress, address token) public view returns (uint) {
+    return IERC20(token).balanceOf(pairAddress);
+  }
+
   function getLpSize(address pairAddress, address token) public view returns (uint256) {
     if (pairAddress == address(0)) {
       return 0;
@@ -324,24 +395,75 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   //Generic function giving the price of a given token vs another given token on Swap platform.
   function getPriceFromLp(address lpAddress, address token) public override view returns (uint256) {
-    IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
-    address token0 = pair.token0();
-    address token1 = pair.token1();
-    (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
-    uint256 token0Decimals = IERC20Extended(token0).decimals();
-    uint256 token1Decimals = IERC20Extended(token1).decimals();
-
-    // both reserves should have the same decimals
-    reserve0 = reserve0 * (10 ** PRECISION_DECIMALS) / (10 ** token0Decimals);
-    reserve1 = reserve1 * (10 ** PRECISION_DECIMALS) / (10 ** token1Decimals);
-
-    if (token == token0) {
-      return reserve1 * (10 ** PRECISION_DECIMALS) / reserve0;
-    } else if (token == token1) {
-      return reserve0 * (10 ** PRECISION_DECIMALS) / reserve1;
+    address _factory = IUniswapV2Pair(lpAddress).factory();
+    if (_factory == DYSTOPIA_FACTORY || _factory == CONE_FACTORY) {
+      (address token0, address token1) = IDystopiaPair(lpAddress).tokens();
+      uint256 tokenInDecimals = token == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+      uint256 tokenOutDecimals = token == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+      uint out = IDystopiaPair(lpAddress).getAmountOut(10 ** tokenInDecimals, token);
+      return out * (10 ** PRECISION_DECIMALS) / (10 ** tokenOutDecimals);
+    } else if (_factory == UNIV3_FACTORY_ETHEREUM) {
+      return getUniV3Price(lpAddress, token);
     } else {
-      revert("PC: token not in lp");
+      IUniswapV2Pair pair = IUniswapV2Pair(lpAddress);
+      address token0 = pair.token0();
+      address token1 = pair.token1();
+      (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+      uint256 token0Decimals = IERC20Extended(token0).decimals();
+      uint256 token1Decimals = IERC20Extended(token1).decimals();
+
+      // both reserves should have the same decimals
+      reserve0 = reserve0 * (10 ** PRECISION_DECIMALS) / (10 ** token0Decimals);
+      reserve1 = reserve1 * (10 ** PRECISION_DECIMALS) / (10 ** token1Decimals);
+
+      if (token == token0) {
+        return reserve1 * (10 ** PRECISION_DECIMALS) / reserve0;
+      } else if (token == token1) {
+        return reserve0 * (10 ** PRECISION_DECIMALS) / reserve1;
+      } else {
+        revert("PC: token not in lp");
+      }
     }
+  }
+
+  function _countDigits(uint n) internal pure returns (uint){
+    if (n == 0) {
+      return 0;
+    }
+    uint count = 0;
+    while (n != 0) {
+      n = n / 10;
+      ++count;
+    }
+    return count;
+  }
+
+  /// @dev Return current price without amount impact.
+  function getUniV3Price(
+    address pool,
+    address tokenIn
+  ) public view returns (uint) {
+    address token0 = IUniPoolV3(pool).token0();
+    address token1 = IUniPoolV3(pool).token1();
+
+    uint256 tokenInDecimals = tokenIn == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+    uint256 tokenOutDecimals = tokenIn == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
+    (uint160 sqrtPriceX96,,,,,,) = IUniPoolV3(pool).slot0();
+
+    uint divider = Math.max(10 ** tokenOutDecimals / 10 ** tokenInDecimals, 1);
+    uint priceDigits = _countDigits(uint(sqrtPriceX96));
+    uint purePrice;
+    uint precision;
+    if (tokenIn == token0) {
+      precision = 10 ** ((priceDigits < 29 ? 29 - priceDigits : 0) + 18);
+      uint part = uint(sqrtPriceX96) * precision / 2 ** 96;
+      purePrice = part * part;
+    } else {
+      precision = 10 ** ((priceDigits > 29 ? priceDigits - 29 : 0) + 18);
+      uint part = 2 ** 96 * precision / uint(sqrtPriceX96);
+      purePrice = part * part;
+    }
+    return purePrice / divider / precision / (precision > 1e18 ? (precision / 1e18) : 1) * 1e18 / (10 ** tokenOutDecimals);
   }
 
   //Checks if a given token is in the keyTokens list.
@@ -459,14 +581,33 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     (IERC20[] memory poolTokens, uint256[] memory balances,) = IBVault(balancerVault).getPoolTokens(poolId);
 
     uint256 totalPrice = 0;
+    uint[] memory prices = new uint[](poolTokens.length);
     for (uint i = 0; i < poolTokens.length; i++) {
       uint256 tokenDecimals = IERC20Extended(address(poolTokens[i])).decimals();
-      uint256 tokenPrice = getPrice(address(poolTokens[i]), outputToken);
+      uint256 tokenPrice;
+      if (token != address(poolTokens[i])) {
+        if (prices[i] == 0) {
+          tokenPrice = getPrice(address(poolTokens[i]), outputToken);
+          prices[i] = tokenPrice;
+        } else {
+          tokenPrice = prices[i];
+        }
+      } else {
+        // if token the same as BPT assume it has the same price as another one token in the pool
+        uint ii = i == 0 ? 1 : 0;
+        if (prices[ii] == 0) {
+          tokenPrice = getPrice(address(poolTokens[ii]), outputToken);
+          prices[ii] = tokenPrice;
+        } else {
+          tokenPrice = prices[ii];
+        }
+      }
       // unknown token price
       if (tokenPrice == 0) {
         return 0;
       }
       totalPrice = totalPrice + tokenPrice * balances[i] * 10 ** PRECISION_DECIMALS / 10 ** tokenDecimals;
+
     }
     return totalPrice / totalBPTSupply;
   }

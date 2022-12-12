@@ -47,8 +47,6 @@ export class StrategyTestUtils {
       signer, core, "1000000"
     );
     log.info("LP created");
-
-    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
     log.info("Path setup completed");
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
@@ -120,29 +118,6 @@ export class StrategyTestUtils {
     // please set liquidation path for each test individually
     // await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);
-  }
-
-  public static async setConversionPaths(forwarder: ForwarderV2) {
-    const net = (await ethers.provider.getNetwork()).chainId;
-    const bc: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8'));
-
-    const batch = 20;
-    for (let i = 0; i < bc.length / batch; i++) {
-      const l = bc.slice(i * batch, i * batch + batch)
-      log.info('addBlueChipsLps', l.length);
-      await forwarder.addBlueChipsLps(l);
-    }
-
-    const tokens: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8'));
-    const lps: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8'));
-    for (let i = 0; i < tokens.length / batch; i++) {
-      const t = tokens.slice(i * batch, i * batch + batch)
-      const l = lps.slice(i * batch, i * batch + batch)
-      // log.info('t', t)
-      // log.info('l', l)
-      log.info('addLargestLps', t.length);
-      await forwarder.addLargestLps(t, l);
-    }
   }
 
   public static async getUnderlying(

@@ -29,7 +29,7 @@ import "../third_party/IERC20Extended.sol";
 contract ContractReader is Initializable, ControllableV2 {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -612,39 +612,11 @@ contract ContractReader is Initializable, ControllableV2 {
     uint256[] memory rewards = new uint256[](rewardTokens.length);
     for (uint256 i = 0; i < rewardTokens.length; i++) {
       rewards[i] = normalizePrecision(
-        _vaultEarnedWithBoost(_vault, rewardTokens[i], _user),
+        ISmartVault(_vault).earnedWithBoost(rewardTokens[i], _user),
         IERC20Extended(rewardTokens[i]).decimals()
       );
     }
     return rewards;
-  }
-
-  function _vaultEarnedWithBoost(address vault, address rt, address account) internal view returns (uint256) {
-    ISmartVault sv = ISmartVault(vault);
-    uint256 reward = sv.earned(rt, account);
-    uint256 boostStart = sv.userBoostTs(account);
-    // if we don't have a record we assume that it was deposited before boost logic and use 100% boost
-    if (boostStart != 0 && boostStart < block.timestamp) {
-      uint256 currentBoostDuration = block.timestamp.sub(boostStart);
-      // not 100% boost
-      uint256 boostDuration = IVaultController(IController(_controller()).vaultController()).rewardBoostDuration();
-      uint256 rewardRatioWithoutBoost = IVaultController(IController(_controller()).vaultController()).rewardRatioWithoutBoost();
-      bool pm = false;
-      try sv.protectionMode() returns (bool protectionMode) {
-        pm = protectionMode;
-      } catch {}
-      if (pm) {
-        rewardRatioWithoutBoost = 0;
-      }
-      if (currentBoostDuration < boostDuration) {
-        uint256 rewardWithoutBoost = reward.mul(rewardRatioWithoutBoost).div(100);
-        // calculate boosted part of rewards
-        reward = rewardWithoutBoost.add(
-          reward.sub(rewardWithoutBoost).mul(currentBoostDuration).div(boostDuration)
-        );
-      }
-    }
-    return reward;
   }
 
   // normalized precision
@@ -668,7 +640,7 @@ contract ContractReader is Initializable, ControllableV2 {
     for (uint256 i = 0; i < rewardTokens.length; i++) {
       uint256 price = getPrice(rewardTokens[i]);
       rewards[i] = normalizePrecision(
-        _vaultEarnedWithBoost(_vault, rewardTokens[i], _user).mul(price).div(PRECISION),
+        ISmartVault(_vault).earnedWithBoost(rewardTokens[i], _user).mul(price).div(PRECISION),
         IERC20Extended(rewardTokens[i]).decimals()
       );
     }

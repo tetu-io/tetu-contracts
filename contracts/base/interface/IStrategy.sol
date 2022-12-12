@@ -56,7 +56,7 @@ interface IStrategy {
     MESH, //38
     D_FORCE, //39
     DYSTOPIA, //40
-    SLOT_41, //41
+    CONE, //41
     SLOT_42, //42
     SLOT_43, //43
     SLOT_44, //44

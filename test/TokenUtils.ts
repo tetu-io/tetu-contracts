@@ -35,7 +35,7 @@ export class TokenUtils {
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
     [MaticAddresses.TETU_TOKEN, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // fund keeper
     [MaticAddresses.AAVE_TOKEN, '0x1d2a0e5ec8e5bbdca5cb219e649b565d8e5c3360'.toLowerCase()], // aave
-    [MaticAddresses.SUSHI_TOKEN, '0x1b1cd0fdb6592fe482026b8e47706eac1ee94a7c'.toLowerCase()], // peggy
+    [MaticAddresses.SUSHI_TOKEN, '0xd814b26554204245A30F8A42C289Af582421Bf04'.toLowerCase()], // treas
     [MaticAddresses.pBREW_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.ICE_TOKEN, '0xb1bf26c7b43d2485fa07694583d2f17df0dde010'.toLowerCase()], // blueIce
@@ -129,6 +129,7 @@ export class TokenUtils {
     [MaticAddresses.CLAM2_TOKEN, '0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
     [MaticAddresses.xTETU, '0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
+    ['0x178E029173417b1F9C8bC16DCeC6f697bC323746'.toLowerCase(), MaticAddresses.BALANCER_VAULT], // balancer vault
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -140,7 +141,7 @@ export class TokenUtils {
   }
 
   public static async approve(tokenAddress: string, signer: SignerWithAddress, spender: string, amount: string) {
-    console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
+    // console.log('approve', await TokenUtils.tokenSymbol(tokenAddress), amount);
     return ERC20__factory.connect(tokenAddress, signer).approve(spender, BigNumber.from(amount));
   }
 
@@ -221,6 +222,7 @@ export class TokenUtils {
     }
 
     if (token.toLowerCase() === await DeployerUtils.getNetworkTokenAddress()) {
+      amount = !amount ? parseUnits('1000000') : amount;
       await IWmatic__factory.connect(token, await DeployerUtils.impersonate(to)).deposit({value: amount});
       return amount;
     }

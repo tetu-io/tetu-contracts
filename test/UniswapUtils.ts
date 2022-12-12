@@ -5,7 +5,9 @@ import {
   IUniswapV2Factory,
   IUniswapV2Pair,
   IUniswapV2Router02,
-  PriceCalculator, UniswapV2Factory, UniswapV2Router02
+  PriceCalculator,
+  UniswapV2Factory,
+  UniswapV2Router02
 } from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
@@ -258,7 +260,7 @@ export class UniswapUtils {
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
     const factory = await DeployerUtils.getDefaultNetworkFactory();
-    const lp = await UniswapUtils.addLiquidity(
+    return UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
       usdc,
@@ -267,8 +269,6 @@ export class UniswapUtils {
       factory,
       await DeployerUtils.getRouterByFactory(factory)
     );
-    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [lp]);
-    return lp;
   }
 
   public static async createPairForRewardTokenOnTestnet(
@@ -295,7 +295,7 @@ export class UniswapUtils {
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
-    const lp = await UniswapUtils.addLiquidity(
+    return UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
       usdc,
@@ -304,8 +304,6 @@ export class UniswapUtils {
       factory,
       router
     );
-    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [lp]);
-    return lp;
   }
 
   public static async createPairForRewardTokenWithBuy(

@@ -406,4 +406,14 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(1);
   });
 
+  it("bbamUSD_BPT price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x48e6B98ef6329f8f0A30eBB8c7C960330d648085', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(1);
+  });
+
 });

@@ -27,6 +27,8 @@ export class EthAddresses {
   public static BALANCER_GAUGE_CONTROLLER = "0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD".toLowerCase();
   public static BALANCER_GAUGE_USDC_WETH = "0x9AB7B0C7b154f626451c9e8a68dC04f58fb6e5Ce".toLowerCase();
 
+  public static BALANCER_wstETH_WETH = "0x32296969Ef14EB0c6d29669C550D4a0449130230".toLowerCase();
+
   // uniswap
   public static UNISWAP_FACTORY = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f".toLowerCase();
   public static UNISWAP_ROUTER = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D".toLowerCase();

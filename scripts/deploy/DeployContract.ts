@@ -3,6 +3,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Libraries} from "hardhat-deploy/dist/types";
 import {Logger} from "tslog";
 import logSettings from "../../log_settings";
+import {formatUnits} from "ethers/lib/utils";
 
 const log: Logger = new Logger(logSettings);
 
@@ -19,13 +20,14 @@ export async function deployContract<T extends ContractFactory>(
   // tslint:disable-next-line:no-any
   ...args: any[]
 ) {
+  await hre.run("compile")
   const web3 = hre.web3;
   const ethers = hre.ethers;
   log.info(`Deploying ${name}`);
   log.info("Account balance: " + utils.formatUnits(await signer.getBalance(), 18));
 
   const gasPrice = await web3.eth.getGasPrice();
-  log.info("Gas price: " + gasPrice);
+  log.info("Gas price: " + formatUnits(gasPrice, 9));
   const lib: string | undefined = libraries.get(name);
   let _factory;
   if (lib) {
@@ -53,14 +55,14 @@ export async function deployContract<T extends ContractFactory>(
   //   gas = 5_000_000;
   // }
   // const instance = await _factory.deploy(...args, {gasLimit: gas, gasPrice: Math.floor(+gasPrice * 1.1)});
-  const instance = await _factory.deploy(...args);
+  const instance = await _factory.deploy(...args, {gasLimit: 9_000_000, gasPrice: Math.floor(+gasPrice * 1.1)});
   log.info('Deploy tx:', instance.deployTransaction.hash);
   await instance.deployed();
 
   const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
   console.log('DEPLOYED: ', name, receipt.contractAddress);
 
-  if (hre.network.name !== 'hardhat') {
+  if (hre.network.name !== 'hardhat' && hre.network.name !== 'zktest') {
     await wait(hre, 10);
     if (args.length === 0) {
       await verify(hre, receipt.contractAddress);
