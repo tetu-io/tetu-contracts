@@ -51,7 +51,7 @@ async function check(calculator: BalancerBoostCalculator, vault: string) {
   if (!(await DeployerUtils.isNetwork(1))) {
     return;
   }
-  const data = await calculator.getBalancerBoostInfo('vault');
+  const data = await calculator.getBalancerBoostInfo(vault);
   console.log('derivedBalanceBoost', formatUnits(data.derivedBalanceBoost))
   console.log('ableToBoost', formatUnits(data.ableToBoost))
   console.log('gaugeBalance', formatUnits(data.gaugeBalance));
