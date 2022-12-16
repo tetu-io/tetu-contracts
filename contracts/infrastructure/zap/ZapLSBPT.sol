@@ -64,7 +64,6 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
 
   /// @dev Add liquidity to Balancer WeightedPool, deposit/swap part to Tetu SmartVault, add liquidity to Balancer StablePool and deposit to vault.
   ///      Approval for token is assumed.
-  ///      TokenIn should be declared as a keyToken in the PriceCalculator.
   /// @param _vault A target vault for deposit
   /// @param _tokenIn This token will be swapped to required token for adding liquidity
   /// @param _asset0 Token address required for adding liquidity
@@ -84,7 +83,6 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     uint256 slippageTolerance
   ) external nonReentrant onlyOneCallPerBlock {
     require(_tokenInAmount > 1, "ZC: not enough amount");
-
     _zapInto(
       ZapInfo(
         _vault,
@@ -100,21 +98,9 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
   }
 
   function _zapInto(ZapInfo memory zapInfo) internal {
-    // tetuBal-BPT-80BAL-20WETH (StablePool)
-    // https://polygonscan.com/address/0xb797adfb7b268faeaa90cadbfed464c76ee599cd#readContract
     IBasePool rootBpt = IBasePool(ISmartVault(zapInfo.vault).underlying());
-
-    // 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba
     bytes32 rootPoolId = rootBpt.getPoolId();
-
-    // https://polygonscan.com/address/0xba12222222228d8ba445958a75a0704d566bf2c8#readContract
-    // IBVault rootBptVault = IBVault(rootBpt.getVault());
-
-    // 0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f, 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33
-    // 20WETH-80BAL (WeightedPool), TETU_ST_BAL (SmartVault)
     (IERC20[] memory rootBptVaultTokens, uint[] memory rootBptVaultBalances,) = IBVault(rootBpt.getVault()).getPoolTokens(rootPoolId);
-
-    // https://polygonscan.com/address/0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f#readContract
     IBPT wBpt = IBPT(address(rootBptVaultTokens[0]));
     uint256[] memory wBptWeights = wBpt.getNormalizedWeights();
     (IERC20[] memory wBptVaultTokens,,) = IBVault(wBpt.getVault()).getPoolTokens(wBpt.getPoolId());
@@ -125,12 +111,11 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     // transfer only require amount
     IERC20(zapInfo.tokenIn).safeTransferFrom(msg.sender, address(this), zapInfo.tokenInAmount.div(2).mul(2));
 
-    // swap _tokenInAmount to 20% weth, 80% bal
     if (zapInfo.tokenIn != zapInfo.asset0) {
       // asset0 multi-swap
       callMultiSwap(
         zapInfo.tokenIn,
-          zapInfo.tokenInAmount.div(zapInfo.asset0 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).mul(ONE),
+          zapInfo.tokenInAmount.mul(zapInfo.asset0 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).div(ONE),
           zapInfo.asset0Route,
           zapInfo.asset0,
           zapInfo.slippageTolerance
@@ -141,37 +126,15 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
       // asset1 multi-swap
       callMultiSwap(
         zapInfo.tokenIn,
-          zapInfo.tokenInAmount.div(zapInfo.asset1 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).mul(ONE),
+          zapInfo.tokenInAmount.mul(zapInfo.asset1 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).div(ONE),
           zapInfo.asset1Route,
           zapInfo.asset1,
           zapInfo.slippageTolerance
       );
     }
 
-    // assume that final outcome amounts was checked on the multiSwap contract side
-
     // add liquidity to weighted pool
-    IAsset[] memory _poolTokens = new IAsset[](2);
-    _poolTokens[0] = IAsset(zapInfo.asset0);
-    _poolTokens[1] = IAsset(zapInfo.asset1);
-    uint[] memory amounts = new uint[](2);
-    amounts[0] = IERC20(zapInfo.asset0).balanceOf(address(this));
-    amounts[1] = IERC20(zapInfo.asset1).balanceOf(address(this));
-
-    IERC20(zapInfo.asset0).safeApprove(wBpt.getVault(), amounts[0]);
-    IERC20(zapInfo.asset1).safeApprove(wBpt.getVault(), amounts[1]);
-
-    IBVault(wBpt.getVault()).joinPool(
-      wBpt.getPoolId(),
-      address(this),
-      address(this),
-      IBVault.JoinPoolRequest({
-        assets : _poolTokens,
-        maxAmountsIn : amounts,
-        userData : abi.encode(1, amounts, 1),
-        fromInternalBalance : false
-      })
-    );
+    joinBalancerPool(IBVault(wBpt.getVault()), wBpt.getPoolId(), zapInfo.asset0, zapInfo.asset1, IERC20(zapInfo.asset0).balanceOf(address(this)), IERC20(zapInfo.asset1).balanceOf(address(this)));
 
     uint wBptBalance = IERC20(address(wBpt)).balanceOf(address(this));
 
@@ -197,25 +160,7 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     }
 
     // add liquidity to root stable pool
-    _poolTokens[0] = IAsset(address(wBpt));
-    _poolTokens[1] = IAsset(address(sVault));
-    amounts[0] = IERC20(address(wBpt)).balanceOf(address(this));
-    amounts[1] = IERC20(address(sVault)).balanceOf(address(this));
-
-    IERC20(address(wBpt)).safeApprove(rootBpt.getVault(), amounts[0]);
-    IERC20(address(sVault)).safeApprove(rootBpt.getVault(), amounts[1]);
-
-    IBVault(rootBpt.getVault()).joinPool(
-      rootPoolId,
-      address(this),
-      address(this),
-      IBVault.JoinPoolRequest({
-        assets : _poolTokens,
-        maxAmountsIn : amounts,
-        userData : abi.encode(1, amounts, 1),
-        fromInternalBalance : false
-      })
-    );
+    joinBalancerPool(IBVault(rootBpt.getVault()), rootPoolId, address(wBpt), address(sVault), IERC20(address(wBpt)).balanceOf(address(this)), IERC20(address(sVault)).balanceOf(address(this)));
 
     depositToVault(zapInfo.vault, IERC20(address(rootBpt)).balanceOf(address(this)), address(rootBpt));
   }
@@ -256,61 +201,33 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
   }
 
   function _zapOut(ZapInfo memory zapInfo) internal {
-    // tetuBal-BPT-80BAL-20WETH (StablePool)
-    // https://polygonscan.com/address/0xb797adfb7b268faeaa90cadbfed464c76ee599cd#readContract
     IBasePool rootBpt = IBasePool(ISmartVault(zapInfo.vault).underlying());
-
-    // 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba
     bytes32 rootPoolId = rootBpt.getPoolId();
-
-    // https://polygonscan.com/address/0xba12222222228d8ba445958a75a0704d566bf2c8#readContract
     IBVault rootBptVault = IBVault(rootBpt.getVault());
-
-    // 0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f, 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33
-    // 20WETH-80BAL (WeightedPool), TETU_ST_BAL (SmartVault)
     (IERC20[] memory rootBptVaultTokens,,) = rootBptVault.getPoolTokens(rootPoolId);
-
-    // https://polygonscan.com/address/0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f#readContract
     IBPT wBpt = IBPT(address(rootBptVaultTokens[0]));
     IBVault wBptVault = IBVault(wBpt.getVault());
-    (IERC20[] memory wBptVaultTokens,,) = wBptVault.getPoolTokens(rootPoolId);
+    (IERC20[] memory wBptVaultTokens,,) = wBptVault.getPoolTokens(wBpt.getPoolId());
 
     require(zapInfo.asset0 == address(wBptVaultTokens[0]) || zapInfo.asset0 == address(wBptVaultTokens[1]), "ZC: asset 0 not exist in lp tokens");
     require(zapInfo.asset1 == address(wBptVaultTokens[0]) || zapInfo.asset1 == address(wBptVaultTokens[1]), "ZC: asset 1 not exist in lp tokens");
 
     IERC20(zapInfo.vault).safeTransferFrom(msg.sender, address(this), zapInfo.tokenInAmount);
 
-    /*uint256 lpBalance = */withdrawFromVault(zapInfo.vault, address(rootBpt), zapInfo.tokenInAmount);
+    uint256 withdrawnAmount = withdrawFromVault(zapInfo.vault, address(rootBpt), zapInfo.tokenInAmount);
 
     // remove liquidity from stable pool
-    uint256[] memory rootPoolBalance = rootBptVault.getInternalBalance(address(this), rootBptVaultTokens);
-    IAsset[] memory _poolTokens = new IAsset[](2);
-    _poolTokens[0] = IAsset(address(rootBptVaultTokens[0]));
-    _poolTokens[1] = IAsset(address(rootBptVaultTokens[1]));
+    uint[] memory exitAmounts = exitBalancerPool(rootBptVault, rootPoolId, rootBptVaultTokens, withdrawnAmount);
 
-    IERC20(rootBptVaultTokens[0]).safeApprove(address(wBptVault), rootPoolBalance[0]);
-    IERC20(rootBptVaultTokens[1]).safeApprove(address(wBptVault), rootPoolBalance[1]);
-
-    rootBptVault.exitPool(
-      rootPoolId,
-      address(this),
-      payable(address(this)), IBVault.ExitPoolRequest({
-        assets : _poolTokens,
-        minAmountsOut : rootPoolBalance,
-        userData : abi.encode(1, rootPoolBalance, 1),
-        toInternalBalance : false
-      })
-    );
-
-    // swap rootPoolBalance[1] to rootPoolBalance[0]
-    IERC20(rootBptVaultTokens[1]).safeApprove( address(rootBptVault), rootPoolBalance[1]);
+    // swap exitAmounts[1] to exitAmounts[0]
+    IERC20(rootBptVaultTokens[1]).safeApprove( address(rootBptVault), exitAmounts[1]);
     rootBptVault.swap(
       IBVault.SingleSwap({
         poolId : rootPoolId,
         kind : IBVault.SwapKind.GIVEN_IN,
-        assetIn : IAsset(address(rootBptVaultTokens[0])),
-        assetOut : IAsset(address(rootBptVaultTokens[1])),
-        amount : rootPoolBalance[1],
+        assetIn : IAsset(address(rootBptVaultTokens[1])),
+        assetOut : IAsset(address(rootBptVaultTokens[0])),
+        amount : exitAmounts[1],
         userData : ""
       }),
       IBVault.FundManagement({
@@ -324,44 +241,29 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     );
 
     // remove liquidity from weighted pool
-    IERC20(rootBptVaultTokens[0]).safeApprove(address(wBptVault), IERC20(rootBptVaultTokens[0]).balanceOf(address(this)));
-
-    uint256[] memory wBptPoolBalance = wBptVault.getInternalBalance(address(this), wBptVaultTokens);
-    _poolTokens[0] = IAsset(address(wBptVaultTokens[0]));
-    _poolTokens[1] = IAsset(address(wBptVaultTokens[1]));
-
-    IERC20(wBptVaultTokens[0]).safeApprove(address(wBptVault), wBptPoolBalance[0]);
-    IERC20(wBptVaultTokens[1]).safeApprove(address(wBptVault), wBptPoolBalance[1]);
-
-    wBptVault.exitPool(
-      wBpt.getPoolId(),
-      address(this),
-      payable(address(this)),
-      IBVault.ExitPoolRequest({
-        assets : _poolTokens,
-        minAmountsOut : wBptPoolBalance,
-        userData : abi.encode(1, wBptPoolBalance, 1),
-        toInternalBalance : false
-      })
-    );
+    exitAmounts = exitBalancerPool(wBptVault, wBpt.getPoolId(), wBptVaultTokens, IERC20(rootBptVaultTokens[0]).balanceOf(address(this)));
 
     // asset0 multi-swap
-    callMultiSwap(
+    if (zapInfo.tokenIn != zapInfo.asset0) {
+      callMultiSwap(
         zapInfo.asset0,
-        IERC20(zapInfo.asset0).balanceOf(address(this)),
+        exitAmounts[0],
         zapInfo.asset0Route,
         zapInfo.tokenIn,
         zapInfo.slippageTolerance
-    );
+      );
+    }
 
     // asset1 multi-swap
-    callMultiSwap(
+    if (zapInfo.tokenIn != zapInfo.asset1) {
+      callMultiSwap(
         zapInfo.asset1,
-        IERC20(zapInfo.asset1).balanceOf(address(this)),
+        exitAmounts[1],
         zapInfo.asset1Route,
         zapInfo.tokenIn,
         zapInfo.slippageTolerance
-    );
+      );
+    }
 
     uint256 tokenOutBalance = IERC20(zapInfo.tokenIn).balanceOf(address(this));
     require(tokenOutBalance != 0, "zero token out balance");
@@ -369,6 +271,58 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
   }
 
   // ************************* INTERNAL *******************
+
+  function joinBalancerPool(IBVault _bVault, bytes32 _poolId, address _token0, address _token1, uint _amount0, uint _amount1) internal {
+    IAsset[] memory _poolTokens = new IAsset[](2);
+    _poolTokens[0] = IAsset(_token0);
+    _poolTokens[1] = IAsset(_token1);
+    uint[] memory amounts = new uint[](2);
+    amounts[0] = _amount0;
+    amounts[1] = _amount1;
+
+    IERC20(_token0).safeApprove(address(_bVault), amounts[0]);
+    IERC20(_token1).safeApprove(address(_bVault), amounts[1]);
+
+    _bVault.joinPool(
+      _poolId,
+      address(this),
+      address(this),
+      IBVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : abi.encode(1, amounts, 1),
+        fromInternalBalance : false
+      })
+    );
+
+  }
+
+  function exitBalancerPool(IBVault _bVault, bytes32 _poolId, /*IERC20 bpt,*/ IERC20[] memory _vaultTokens, uint _amount) internal returns(uint256[] memory) {
+    uint[] memory amounts = new uint[](2);
+    amounts[0] = 0;
+    amounts[1] = 0;
+
+    IAsset[] memory _poolTokens = new IAsset[](2);
+    _poolTokens[0] = IAsset(address(_vaultTokens[0]));
+    _poolTokens[1] = IAsset(address(_vaultTokens[1]));
+
+    _bVault.exitPool(
+      _poolId,
+      address(this),
+      payable(address(this)),
+      IBVault.ExitPoolRequest({
+        assets : _poolTokens,
+        minAmountsOut : amounts,
+        userData : abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, _amount),
+        toInternalBalance : false
+      })
+    );
+
+    amounts[0] = _vaultTokens[0].balanceOf(address(this));
+    amounts[1] = _vaultTokens[1].balanceOf(address(this));
+
+    return amounts;
+  }
 
   function callMultiSwap(
     address _tokenIn,
