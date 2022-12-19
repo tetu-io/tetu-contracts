@@ -20,7 +20,7 @@ import "../../base/interface/IController.sol";
 import "../../third_party/balancer/IBasePool.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/balancer/IBPT.sol";
-import "./IMultiSwap.sol";
+import "../../third_party/balancer/IBalancerHelper.sol";
 
 /// @title Liquid staking BPT zap
 ///        Able to zap in/out assets to TETU_ETH-BAL_tetuBAL_BPT_V3 and similar vaults
@@ -34,24 +34,24 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     address vault;
     address tokenIn;
     address asset0;
-    address[] asset0Route;
+    bytes asset0SwapData;
     address asset1;
-    address[] asset1Route;
+    bytes asset1SwapData;
     uint256 tokenInAmount;
-    uint256 slippageTolerance;
   }
 
   string public constant VERSION = "1.0.0";
 
   uint256 internal constant ONE = 1e18; // 18 decimal places
 
-  IMultiSwap public multiSwap;
+  address public immutable oneInchRouter;
+
   mapping(address => uint256) calls;
 
-  constructor(address _controller, address _multiSwap) {
-    require(_multiSwap != address(0), "ZC: zero multiSwap address");
+  constructor(address _controller, address _oneInchRouter) {
+    require(_oneInchRouter != address(0), "ZC: zero 1inch address");
     Controllable.initializeControllable(_controller);
-    multiSwap = IMultiSwap(_multiSwap);
+    oneInchRouter = _oneInchRouter;
   }
 
   modifier onlyOneCallPerBlock() {
@@ -67,20 +67,18 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
   /// @param _vault A target vault for deposit
   /// @param _tokenIn This token will be swapped to required token for adding liquidity
   /// @param _asset0 Token address required for adding liquidity
-  /// @param _asset0Route Pair addresses for buying asset0
+  /// @param _asset0SwapData Calldata for swap _tokenIn to _asset0 by 1inch
   /// @param _asset1 Token address required for adding liquidity
-  /// @param _asset1Route Pair addresses for buying asset1
+  /// @param _asset1SwapData Calldata for swap _tokenIn to _asset1 by 1inch
   /// @param _tokenInAmount Amount of token for deposit
-  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
   function zapInto(
     address _vault,
     address _tokenIn,
     address _asset0,
-    address[] memory _asset0Route,
+    bytes memory _asset0SwapData,
     address _asset1,
-    address[] memory _asset1Route,
-    uint256 _tokenInAmount,
-    uint256 slippageTolerance
+    bytes memory _asset1SwapData,
+    uint256 _tokenInAmount
   ) external nonReentrant onlyOneCallPerBlock {
     require(_tokenInAmount > 1, "ZC: not enough amount");
     _zapInto(
@@ -88,14 +86,87 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
         _vault,
         _tokenIn,
         _asset0,
-        _asset0Route,
+        _asset0SwapData,
         _asset1,
-        _asset1Route,
-        _tokenInAmount,
-        slippageTolerance
+        _asset1SwapData,
+        _tokenInAmount
       )
     );
   }
+
+  /// @notice Approval for share token is assumed.
+  ///      Withdraw from given vault underlying, remove liquidity and sell tokens for given tokenOut
+  /// @param _vault A target vault for withdraw
+  /// @param _tokenOut This token will be a target for swaps
+  /// @param _asset0 Token address required selling removed assets
+  /// @param _asset0SwapData Calldata for swap _asset0 to _tokenOut by 1inch
+  /// @param _asset1 Token address required selling removed assets
+  /// @param _asset1SwapData Calldata for swap _asset1 to _tokenOut by 1inch
+  /// @param _shareTokenAmount Amount of share token for withdraw
+  function zapOut(
+    address _vault,
+    address _tokenOut,
+    address _asset0,
+    bytes memory _asset0SwapData,
+    address _asset1,
+    bytes memory _asset1SwapData,
+    uint256 _shareTokenAmount
+  ) external nonReentrant onlyOneCallPerBlock {
+    require(_shareTokenAmount != 0, "ZC: zero amount");
+    _zapOut(
+      ZapInfo(
+        _vault,
+        _tokenOut,
+        _asset0,
+        _asset0SwapData,
+        _asset1,
+        _asset1SwapData,
+        _shareTokenAmount
+      )
+    );
+  }
+
+  function quoteOutAssets(address _vault, address _asset0, address _asset1, uint _shareAmount) external returns(uint[] memory) {
+    IBasePool rootBpt = IBasePool(ISmartVault(_vault).underlying());
+    IBVault rootBptVault = IBVault(rootBpt.getVault());
+    bytes32 rootPoolId = rootBpt.getPoolId();
+    (IERC20[] memory rootBptVaultTokens,,) = rootBptVault.getPoolTokens(rootPoolId);
+    IBalancerHelper helper = IBalancerHelper(address(0x239e55F427D44C3cc793f49bFB507ebe76638a2b));
+    uint rootBptAmountOut = _shareAmount.mul(ISmartVault(_vault).underlyingBalanceWithInvestment()).div(IERC20(_vault).totalSupply());
+    address[] memory _poolTokens = new address[](2);
+    _poolTokens[0] = address(rootBptVaultTokens[0]);
+    _poolTokens[1] = address(rootBptVaultTokens[1]);
+    uint[] memory amounts = new uint[](2);
+    amounts[0] = 0;
+    amounts[1] = 0;
+    (, uint256[] memory rootAmountsOut) = helper.queryExit(
+      rootPoolId,
+      address(this),
+      payable(address(this)),
+      IVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, rootBptAmountOut, 0),
+        fromInternalBalance : false
+      })
+    );
+    _poolTokens[0] = _asset0;
+    _poolTokens[1] = _asset1;
+    (, uint256[] memory amountsOut) = helper.queryExit(
+      IBPT(address(rootBptVaultTokens[0])).getPoolId(),
+      address(this),
+      payable(address(this)),
+      IVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, rootAmountsOut[0]),
+        fromInternalBalance : false
+      })
+    );
+    return amountsOut;
+  }
+
+  // ************************* INTERNAL *******************
 
   function _zapInto(ZapInfo memory zapInfo) internal {
     IBasePool rootBpt = IBasePool(ISmartVault(zapInfo.vault).underlying());
@@ -112,24 +183,20 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     IERC20(zapInfo.tokenIn).safeTransferFrom(msg.sender, address(this), zapInfo.tokenInAmount.div(2).mul(2));
 
     if (zapInfo.tokenIn != zapInfo.asset0) {
-      // asset0 multi-swap
-      callMultiSwap(
+      // asset0 swap by 1inch
+      callOneInchSwap(
         zapInfo.tokenIn,
-          zapInfo.tokenInAmount.mul(zapInfo.asset0 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).div(ONE),
-          zapInfo.asset0Route,
-          zapInfo.asset0,
-          zapInfo.slippageTolerance
+        zapInfo.tokenInAmount.mul(zapInfo.asset0 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).div(ONE),
+        zapInfo.asset0SwapData
       );
     }
 
     if (zapInfo.tokenIn != zapInfo.asset1) {
-      // asset1 multi-swap
-      callMultiSwap(
+      // asset1 swap by 1inch
+      callOneInchSwap(
         zapInfo.tokenIn,
-          zapInfo.tokenInAmount.mul(zapInfo.asset1 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).div(ONE),
-          zapInfo.asset1Route,
-          zapInfo.asset1,
-          zapInfo.slippageTolerance
+        zapInfo.tokenInAmount.mul(zapInfo.asset1 == address(wBptVaultTokens[0]) ? wBptWeights[0] : wBptWeights[1]).div(ONE),
+        zapInfo.asset1SwapData
       );
     }
 
@@ -165,41 +232,6 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     depositToVault(zapInfo.vault, IERC20(address(rootBpt)).balanceOf(address(this)), address(rootBpt));
   }
 
-  /// @notice Approval for share token is assumed.
-  ///      Withdraw from given vault underlying, remove liquidity and sell tokens for given tokenOut
-  /// @param _vault A target vault for withdraw
-  /// @param _tokenOut This token will be a target for swaps
-  /// @param _asset0 Token address required selling removed assets
-  /// @param _asset0Route Pair addresses for selling asset0
-  /// @param _asset1 Token address required selling removed assets
-  /// @param _asset1Route Pair addresses for selling asset1
-  /// @param _shareTokenAmount Amount of share token for withdraw
-  /// @param slippageTolerance A number in 0-100 range that reflect is a percent of acceptable slippage
-  function zapOut(
-    address _vault,
-    address _tokenOut,
-    address _asset0,
-    address[] memory _asset0Route,
-    address _asset1,
-    address[] memory _asset1Route,
-    uint256 _shareTokenAmount,
-    uint256 slippageTolerance
-  ) external nonReentrant onlyOneCallPerBlock {
-    require(_shareTokenAmount != 0, "ZC: zero amount");
-    _zapOut(
-      ZapInfo(
-        _vault,
-        _tokenOut,
-        _asset0,
-        _asset0Route,
-        _asset1,
-        _asset1Route,
-        _shareTokenAmount,
-        slippageTolerance
-      )
-    );
-  }
-
   function _zapOut(ZapInfo memory zapInfo) internal {
     IBasePool rootBpt = IBasePool(ISmartVault(zapInfo.vault).underlying());
     bytes32 rootPoolId = rootBpt.getPoolId();
@@ -217,51 +249,26 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     uint256 withdrawnAmount = withdrawFromVault(zapInfo.vault, address(rootBpt), zapInfo.tokenInAmount);
 
     // remove liquidity from stable pool
-    uint[] memory exitAmounts = exitBalancerPool(rootBptVault, rootPoolId, rootBptVaultTokens, withdrawnAmount);
-
-    // swap exitAmounts[1] to exitAmounts[0]
-    IERC20(rootBptVaultTokens[1]).safeApprove( address(rootBptVault), exitAmounts[1]);
-    rootBptVault.swap(
-      IBVault.SingleSwap({
-        poolId : rootPoolId,
-        kind : IBVault.SwapKind.GIVEN_IN,
-        assetIn : IAsset(address(rootBptVaultTokens[1])),
-        assetOut : IAsset(address(rootBptVaultTokens[0])),
-        amount : exitAmounts[1],
-        userData : ""
-      }),
-      IBVault.FundManagement({
-        sender : address(this),
-        fromInternalBalance : false,
-        recipient : payable(address(this)),
-        toInternalBalance : false
-      }),
-      1,
-      block.timestamp
-    );
+    uint[] memory exitAmounts = exitBalancerPool(rootBptVault, rootPoolId, rootBptVaultTokens, withdrawnAmount, true);
 
     // remove liquidity from weighted pool
-    exitAmounts = exitBalancerPool(wBptVault, wBpt.getPoolId(), wBptVaultTokens, IERC20(rootBptVaultTokens[0]).balanceOf(address(this)));
+    exitAmounts = exitBalancerPool(wBptVault, wBpt.getPoolId(), wBptVaultTokens, exitAmounts[0], false);
 
-    // asset0 multi-swap
+    // asset0 swap by 1inch
     if (zapInfo.tokenIn != zapInfo.asset0) {
-      callMultiSwap(
+      callOneInchSwap(
         zapInfo.asset0,
         exitAmounts[0],
-        zapInfo.asset0Route,
-        zapInfo.tokenIn,
-        zapInfo.slippageTolerance
+        zapInfo.asset0SwapData
       );
     }
 
-    // asset1 multi-swap
+    // asset1 swap by 1inch
     if (zapInfo.tokenIn != zapInfo.asset1) {
-      callMultiSwap(
+      callOneInchSwap(
         zapInfo.asset1,
         exitAmounts[1],
-        zapInfo.asset1Route,
-        zapInfo.tokenIn,
-        zapInfo.slippageTolerance
+        zapInfo.asset1SwapData
       );
     }
 
@@ -269,8 +276,6 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     require(tokenOutBalance != 0, "zero token out balance");
     IERC20(zapInfo.tokenIn).safeTransfer(msg.sender, tokenOutBalance);
   }
-
-  // ************************* INTERNAL *******************
 
   function joinBalancerPool(IBVault _bVault, bytes32 _poolId, address _token0, address _token1, uint _amount0, uint _amount1) internal {
     IAsset[] memory _poolTokens = new IAsset[](2);
@@ -297,7 +302,7 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
 
   }
 
-  function exitBalancerPool(IBVault _bVault, bytes32 _poolId, /*IERC20 bpt,*/ IERC20[] memory _vaultTokens, uint _amount) internal returns(uint256[] memory) {
+  function exitBalancerPool(IBVault _bVault, bytes32 _poolId, IERC20[] memory _vaultTokens, uint _amount, bool oneTokenOut) internal returns(uint256[] memory) {
     uint[] memory amounts = new uint[](2);
     amounts[0] = 0;
     amounts[1] = 0;
@@ -313,7 +318,7 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
       IBVault.ExitPoolRequest({
         assets : _poolTokens,
         minAmountsOut : amounts,
-        userData : abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, _amount),
+        userData : oneTokenOut ? abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, _amount, 0) : abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, _amount),
         toInternalBalance : false
       })
     );
@@ -324,21 +329,15 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     return amounts;
   }
 
-  function callMultiSwap(
+  function callOneInchSwap(
     address _tokenIn,
     uint256 _tokenInAmount,
-    address[] memory _lpRoute,
-    address _tokenOut,
-    uint256 slippageTolerance
+    bytes memory _swapData
   ) internal {
-    if (_tokenIn == _tokenOut) {
-      // no actions if we already have required token
-      return;
-    }
-    require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for multi-swap");
-    IERC20(_tokenIn).safeApprove(address(multiSwap), 0);
-    IERC20(_tokenIn).safeApprove(address(multiSwap), _tokenInAmount);
-    multiSwap.multiSwap(_lpRoute, _tokenIn, _tokenOut, _tokenInAmount, slippageTolerance);
+    require(_tokenInAmount <= IERC20(_tokenIn).balanceOf(address(this)), "ZC: not enough balance for swap");
+    _approveIfNeeds(_tokenIn, _tokenInAmount, oneInchRouter);
+    (bool success,bytes memory result) = oneInchRouter.call(_swapData);
+    require(success, string(result));
   }
 
   /// @dev Deposit into the vault, check the result and send share token to msg.sender
@@ -364,6 +363,13 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
     return underlyingBalance;
   }
 
+  function _approveIfNeeds(address token, uint amount, address spender) internal {
+    if (IERC20(token).allowance(address(this), spender) < amount) {
+      IERC20(token).safeApprove(spender, 0);
+      IERC20(token).safeApprove(spender, type(uint).max);
+    }
+  }
+
   // ************************* GOV ACTIONS *******************
 
   /// @notice Controller or Governance can claim coins that are somehow transferred into the contract
@@ -372,5 +378,4 @@ contract ZapLSBPT is Controllable, ReentrancyGuard {
   function salvage(address _token, uint256 _amount) external onlyControllerOrGovernance {
     IERC20(_token).safeTransfer(msg.sender, _amount);
   }
-
 }
