@@ -7,27 +7,25 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {ToolsAddresses} from "../../scripts/models/ToolsAddresses";
-import {Controller, SmartVault, ZapLSBPT} from "../../typechain";
+import {Controller, IBVault, SmartVault, ZapTetuBal} from "../../typechain";
 import {parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
+import {BytesLike} from "@ethersproject/bytes";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("Zap liquid staking Balancer test", function () {
+describe("Zap tetuBAL test", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
   let core: CoreAddresses;
   let tools: ToolsAddresses;
-  let zapLsBpt: ZapLSBPT;
+  let zapLsBpt: ZapTetuBal;
   let controller: Controller;
   let vault: SmartVault;
-
-  // TETU_ETH-BAL_tetuBAL_BPT_V3
-  const vaultAddress = '0xBD06685a0e7eBd7c92fc84274b297791F3997ed3';
-
-  const oneInchRouter = '0x1111111254fb6c44bac0bed2854e76f90643097d';
+  let balVault: IBVault;
+  let poolId: BytesLike;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
@@ -41,11 +39,15 @@ describe("Zap liquid staking Balancer test", function () {
     core = await DeployerUtils.getCoreAddresses();
     tools = await DeployerUtils.getToolsAddresses();
 
-    zapLsBpt = await DeployerUtils.deployContract(signer, "ZapLSBPT", core.controller, oneInchRouter) as ZapLSBPT;
+    zapLsBpt = await DeployerUtils.deployContract(signer, "ZapTetuBal", core.controller) as ZapTetuBal;
     controller = await DeployerUtils.connectContract(signer, 'Controller', core.controller) as Controller;
-    vault = await DeployerUtils.connectInterface(signer, 'SmartVault', vaultAddress) as SmartVault;
+    vault = await DeployerUtils.connectInterface(signer, 'SmartVault', await zapLsBpt.TETU_VAULT()) as SmartVault;
 
     await controller.changeWhiteListStatus([zapLsBpt.address], true);
+
+    balVault = await DeployerUtils.connectInterface(signer, 'contracts/third_party/balancer/IBVault.sol:IBVault', await zapLsBpt.BALANCER_VAULT()) as IBVault;
+
+    poolId = await zapLsBpt.BALANCER_POOL_ID();
   });
 
   after(async function () {
@@ -102,11 +104,8 @@ describe("Zap liquid staking Balancer test", function () {
     console.log('1inch tx for swap tokenIn to asset1: ', swapTransactionAsset1);
 
     await zapLsBpt.zapInto(
-      vaultAddress,
       tokenIn,
-      MaticAddresses.WETH_TOKEN,
       swapTransactionAsset0.data,
-      MaticAddresses.BAL_TOKEN,
       swapTransactionAsset1.data,
       amount
     );
@@ -118,7 +117,7 @@ describe("Zap liquid staking Balancer test", function () {
     await TokenUtils.approve(vault.address, signer, zapLsBpt.address, vaultBalance.toString())
 
     // quote amounts to build 1inch swap data
-    const amountsOut = await zapLsBpt.callStatic.quoteOutAssets(vaultAddress,MaticAddresses.WETH_TOKEN,MaticAddresses.BAL_TOKEN,vaultBalance);
+    const amountsOut = await zapLsBpt.callStatic.quoteOutAssets(vaultBalance);
 
     // get 1inch swap data for swap asset0 to tokenIn
     params = {
@@ -149,16 +148,128 @@ describe("Zap liquid staking Balancer test", function () {
     console.log('1inch tx for swap asset1 to tokenIn: ', swapTransactionAsset1);
 
     await zapLsBpt.zapOut(
-      vaultAddress,
       tokenIn,
-      MaticAddresses.WETH_TOKEN,
       swapTransactionAsset0.data,
-      MaticAddresses.BAL_TOKEN,
       swapTransactionAsset1.data,
       vaultBalance
     );
 
     expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(95).div(100))
+  });
+
+  it("Zap in/out BAL", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    const tokenIn = MaticAddresses.BAL_TOKEN;
+    const amount = parseUnits('50', 18);
+
+    await TokenUtils.getToken(tokenIn, signer.address, amount);
+
+    const signerTokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+    await TokenUtils.approve(tokenIn, signer, zapLsBpt.address, amount.toString())
+
+    // get 1inch swap data for swap tokenIn to asset0
+    let params = {
+      fromTokenAddress: tokenIn,
+      toTokenAddress: MaticAddresses.WETH_TOKEN,
+      amount: amount.mul(2).div(10).toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 10,
+      disableEstimate: true,
+      allowPartialFill: false,
+    };
+
+    let swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn asset0: ', swapTransactionAsset0);
+
+    await zapLsBpt.zapInto(
+      tokenIn,
+      swapTransactionAsset0.data,
+      '0x00',
+      amount
+    );
+
+    const vaultBalance = await vault.balanceOf(signer.address);
+    expect(vaultBalance).to.be.gt(0)
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(signerTokenInBalanceBefore.sub(amount))
+
+    await TokenUtils.approve(vault.address, signer, zapLsBpt.address, vaultBalance.toString())
+
+    // quote amounts to build 1inch swap data
+    const amountsOut = await zapLsBpt.callStatic.quoteOutAssets(vaultBalance);
+
+    // get 1inch swap data for swap asset0 to tokenIn
+    params = {
+      fromTokenAddress: MaticAddresses.WETH_TOKEN,
+      toTokenAddress: tokenIn,
+      amount: amountsOut[0].toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 10,
+      disableEstimate: true,
+      allowPartialFill: false,
+    };
+
+    swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap asset0 to tokenIn: ', swapTransactionAsset0);
+
+    await zapLsBpt.zapOut(
+      tokenIn,
+      swapTransactionAsset0.data,
+      '0x00',
+      vaultBalance
+    );
+
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(95).div(100))
+  });
+
+  it("Zap in 300k BAL", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    console.log('Balancer pool balances before:', (await balVault.getPoolTokens(poolId))[1])
+
+    const tokenIn = MaticAddresses.BAL_TOKEN;
+    const amount = parseUnits('300000', 18);
+
+    await TokenUtils.getToken(tokenIn, signer.address, amount);
+
+    const signerTokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+    await TokenUtils.approve(tokenIn, signer, zapLsBpt.address, amount.toString())
+
+    // get 1inch swap data for swap tokenIn to asset0
+    const params = {
+      fromTokenAddress: tokenIn,
+      toTokenAddress: MaticAddresses.WETH_TOKEN,
+      amount: amount.mul(2).div(10).toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 10,
+      disableEstimate: true,
+      allowPartialFill: false,
+      protocols: 'POLYGON_QUICKSWAP,POLYGON_CURVE,POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2',
+    };
+
+    const swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn asset0: ', swapTransactionAsset0);
+
+    await zapLsBpt.zapInto(
+      tokenIn,
+      swapTransactionAsset0.data,
+      '0x00',
+      amount
+    );
+
+    const vaultBalance = await vault.balanceOf(signer.address);
+    expect(vaultBalance).to.be.gt(0)
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(signerTokenInBalanceBefore.sub(amount))
+
+    console.log('Balancer pool balances after:', (await balVault.getPoolTokens(poolId))[1])
   });
 })
 
