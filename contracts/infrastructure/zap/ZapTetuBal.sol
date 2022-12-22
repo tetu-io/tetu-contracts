@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBalancerHelper.sol";
 
 /// @title Zap for tetuBAL
