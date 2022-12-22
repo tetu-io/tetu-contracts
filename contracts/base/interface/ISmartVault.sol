@@ -48,8 +48,6 @@ interface ISmartVault {
 
   function depositFor(uint256 amount, address holder) external;
 
-  function disableLock() external;
-
   function doHardWork() external;
 
   function doHardWorkOnInvest() external view returns (bool);

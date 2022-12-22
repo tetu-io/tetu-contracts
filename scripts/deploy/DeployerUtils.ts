@@ -1059,7 +1059,10 @@ export class DeployerUtils {
     }
 
     const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
-    const str = await ps.strategy();
+    let str = MaticAddresses.ZERO_ADDRESS;
+    if (net.chainId !== 1) {
+      str = await ps.strategy();
+    }
     return new CoreContractsWrapper(
       await DeployerUtils.connectInterface(signer, "Controller", core.controller) as Controller,
       '',
@@ -1222,7 +1225,7 @@ export class DeployerUtils {
       return EthAddresses.GOV_ADDRESS;
     } else if (net.chainId === 31337) {
       return ((await ethers.getSigners())[0]).address;
-    }else if (net.chainId === 56) {
+    } else if (net.chainId === 56) {
       return BscAddresses.GOVERNANCE;
     } else {
       throw Error('No config for ' + net.chainId);

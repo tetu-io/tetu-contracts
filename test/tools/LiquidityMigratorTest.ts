@@ -23,7 +23,7 @@ import {UniswapUtils} from "../UniswapUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe("LiquidityMigratorTest", function () {
+describe.skip("LiquidityMigratorTest", function () {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
