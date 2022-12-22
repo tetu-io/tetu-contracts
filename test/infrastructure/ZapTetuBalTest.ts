@@ -7,10 +7,17 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {ToolsAddresses} from "../../scripts/models/ToolsAddresses";
-import {Controller, IBVault, SmartVault, ZapTetuBal} from "../../typechain";
+import {
+  Controller,
+  IBVault,
+  MockChildToken__factory,
+  SmartVault,
+  ZapTetuBal
+} from "../../typechain";
 import {parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
 import {BytesLike} from "@ethersproject/bytes";
+import {BigNumber, ethers} from "ethers";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -62,7 +69,7 @@ describe("Zap tetuBAL test", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("Zap in/out USDC", async () => {
+  /*it("Zap in/out USDC", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       console.error('Test only for polygon forking')
       return;
@@ -224,20 +231,29 @@ describe("Zap tetuBAL test", function () {
     );
 
     expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(95).div(100))
-  });
+  });*/
 
-  it("Zap in 300k BAL", async () => {
+  it("Zap in 2m BAL", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       console.error('Test only for polygon forking')
       return;
     }
 
-    console.log('Balancer pool balances before:', (await balVault.getPoolTokens(poolId))[1])
+    let poolBalances = (await balVault.getPoolTokens(poolId))[1]
+    const tetuBalInPoolBefore: BigNumber = poolBalances[1]
+    console.log('Balancer pool balances before:', poolBalances)
 
     const tokenIn = MaticAddresses.BAL_TOKEN;
-    const amount = parseUnits('300000', 18);
+    const amount = parseUnits('2000000', 18);
 
-    await TokenUtils.getToken(tokenIn, signer.address, amount);
+    // await TokenUtils.getToken(tokenIn, signer.address, amount);
+    // not enough BAL on top holder balance
+
+    // mint as bridge DEPOSITOR_ROLE address
+    const balDepositor = await DeployerUtils.impersonate('0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa');
+    const token = await MockChildToken__factory.connect(tokenIn, balDepositor);
+    const packedAmount = ethers.utils.solidityPack([ "uint256" ], [ amount.toString() ])
+    await token.deposit(signer.address, packedAmount)
 
     const signerTokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
@@ -252,7 +268,7 @@ describe("Zap tetuBAL test", function () {
       slippage: 10,
       disableEstimate: true,
       allowPartialFill: false,
-      protocols: 'POLYGON_QUICKSWAP,POLYGON_CURVE,POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2',
+      protocols: 'POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2',
     };
 
     const swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
@@ -269,7 +285,16 @@ describe("Zap tetuBAL test", function () {
     expect(vaultBalance).to.be.gt(0)
     expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(signerTokenInBalanceBefore.sub(amount))
 
-    console.log('Balancer pool balances after:', (await balVault.getPoolTokens(poolId))[1])
+    poolBalances = (await balVault.getPoolTokens(poolId))[1]
+    console.log('Balancer pool balances after:', poolBalances)
+    // after this test balancer pool become balanced
+    /*Balancer pool balances after: [
+      BigNumber { value: "560634593238713782173626" },
+      BigNumber { value: "560634593238713782173626" }
+    ]*/
+
+    // check that new tetuBAL was minted
+    expect(poolBalances[1]).to.be.gt(tetuBalInPoolBefore)
   });
 })
 
