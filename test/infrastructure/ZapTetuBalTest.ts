@@ -69,7 +69,7 @@ describe("Zap tetuBAL test", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  /*it("Zap in/out USDC", async () => {
+  it("Zap in/out USDC", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       console.error('Test only for polygon forking')
       return;
@@ -231,7 +231,7 @@ describe("Zap tetuBAL test", function () {
     );
 
     expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(95).div(100))
-  });*/
+  });
 
   it("Zap in 2m BAL", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
