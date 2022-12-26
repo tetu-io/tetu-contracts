@@ -12,7 +12,7 @@ import {
   IBVault,
   MockChildToken__factory,
   SmartVault,
-  ZapTetuBal
+  ZapTetuBal, ZapTetuBalHelper
 } from "../../typechain";
 import {parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
@@ -33,6 +33,7 @@ describe("Zap tetuBAL test", function () {
   let vault: SmartVault;
   let balVault: IBVault;
   let poolId: BytesLike;
+  let helper: ZapTetuBalHelper;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
@@ -55,6 +56,8 @@ describe("Zap tetuBAL test", function () {
     balVault = await DeployerUtils.connectInterface(signer, 'contracts/third_party/balancer/IBVault.sol:IBVault', await zapLsBpt.BALANCER_VAULT()) as IBVault;
 
     poolId = await zapLsBpt.BALANCER_POOL_ID();
+
+    helper = await DeployerUtils.deployContract(signer, "ZapTetuBalHelper") as ZapTetuBalHelper;
   });
 
   after(async function () {
@@ -69,7 +72,7 @@ describe("Zap tetuBAL test", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("Zap in/out USDC", async () => {
+  it("Zap in/out 5 USDC", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       console.error('Test only for polygon forking')
       return;
@@ -93,8 +96,8 @@ describe("Zap tetuBAL test", function () {
       allowPartialFill: false,
     };
 
-    let swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap tokenIn asset0: ', swapTransactionAsset0);
+    let swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn asset0: ', swapQuoteAsset0.tx);
 
     // get 1inch swap data for swap tokenIn to asset1
     params = {
@@ -107,18 +110,21 @@ describe("Zap tetuBAL test", function () {
       allowPartialFill: false,
     };
 
-    let swapTransactionAsset1 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap tokenIn to asset1: ', swapTransactionAsset1);
+    let swapQuoteAsset1 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn to asset1: ', swapQuoteAsset1.tx);
+
+    const quoteOutShared = await helper.callStatic.quoteInSharedAmount(BigNumber.from(swapQuoteAsset0.toTokenAmount), BigNumber.from(swapQuoteAsset1.toTokenAmount))
+    console.log('Quote out shared', quoteOutShared)
 
     await zapLsBpt.zapInto(
       tokenIn,
-      swapTransactionAsset0.data,
-      swapTransactionAsset1.data,
+      swapQuoteAsset0.tx.data,
+      swapQuoteAsset1.tx.data,
       amount
     );
 
     const vaultBalance = await vault.balanceOf(signer.address);
-    expect(vaultBalance).to.be.gt(0)
+    expect(vaultBalance).to.be.gt(quoteOutShared.sub(quoteOutShared.div(100))) // 1% slippage
     expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(0)
 
     await TokenUtils.approve(vault.address, signer, zapLsBpt.address, vaultBalance.toString())
@@ -137,8 +143,8 @@ describe("Zap tetuBAL test", function () {
       allowPartialFill: false,
     };
 
-    swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap asset0 to tokenIn: ', swapTransactionAsset0);
+    swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap asset0 to tokenIn: ', swapQuoteAsset0);
 
     // get 1inch swap data for swap asset1 to tokenIn
     params = {
@@ -151,13 +157,13 @@ describe("Zap tetuBAL test", function () {
       allowPartialFill: false,
     };
 
-    swapTransactionAsset1 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap asset1 to tokenIn: ', swapTransactionAsset1);
+    swapQuoteAsset1 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap asset1 to tokenIn: ', swapQuoteAsset1);
 
     await zapLsBpt.zapOut(
       tokenIn,
-      swapTransactionAsset0.data,
-      swapTransactionAsset1.data,
+      swapQuoteAsset0.tx.data,
+      swapQuoteAsset1.tx.data,
       vaultBalance
     );
 
@@ -190,12 +196,12 @@ describe("Zap tetuBAL test", function () {
       allowPartialFill: false,
     };
 
-    let swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap tokenIn asset0: ', swapTransactionAsset0);
+    let swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn asset0: ', swapQuoteAsset0.tx);
 
     await zapLsBpt.zapInto(
       tokenIn,
-      swapTransactionAsset0.data,
+      swapQuoteAsset0.tx.data,
       '0x00',
       amount
     );
@@ -220,12 +226,12 @@ describe("Zap tetuBAL test", function () {
       allowPartialFill: false,
     };
 
-    swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap asset0 to tokenIn: ', swapTransactionAsset0);
+    swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap asset0 to tokenIn: ', swapQuoteAsset0);
 
     await zapLsBpt.zapOut(
       tokenIn,
-      swapTransactionAsset0.data,
+      swapQuoteAsset0.tx.data,
       '0x00',
       vaultBalance
     );
@@ -271,12 +277,12 @@ describe("Zap tetuBAL test", function () {
       protocols: 'POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2',
     };
 
-    const swapTransactionAsset0 = await buildTxForSwap(JSON.stringify(params));
-    console.log('1inch tx for swap tokenIn asset0: ', swapTransactionAsset0);
+    const swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn asset0: ', swapQuoteAsset0.tx);
 
     await zapLsBpt.zapInto(
       tokenIn,
-      swapTransactionAsset0.data,
+      swapQuoteAsset0.tx.data,
       '0x00',
       amount
     );
@@ -311,5 +317,5 @@ async function buildTxForSwap(params: string) {
   return fetch(url).then(res => {
     // console.log('res', res)
     return res.json();
-  }).then(res => res.tx);
+  })/*.then(res => res.tx)*/;
 }
