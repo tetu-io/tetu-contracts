@@ -9,7 +9,7 @@ async function main() {
 
   const zap = await DeployerUtils.deployContract(signer, "ZapTetuBal", core.controller) as ZapTetuBal;
 
-  await DeployerUtils.wait(5);
+  await DeployerUtils.wait(10);
   await DeployerUtils.verifyWithArgs(zap.address, [core.controller]);
 }
 

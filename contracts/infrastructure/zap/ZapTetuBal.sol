@@ -19,11 +19,11 @@ import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/balancer/IBalancerHelper.sol";
 
 /// @title Zap for tetuBAL
-/// @author Tetu team
+/// @author a17
 contract ZapTetuBal is Controllable, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   uint internal constant ONE = 1e18; // 18 decimal places
   address public constant TETU_VAULT = 0xBD06685a0e7eBd7c92fc84274b297791F3997ed3; // TETU_ETH-BAL_tetuBAL_BPT_V3
   address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
@@ -119,6 +119,11 @@ contract ZapTetuBal is Controllable, ReentrancyGuard {
     joinBalancerPool(BALANCER_VAULT, BALANCER_POOL_ID, BALANCER_VAULT_TOKEN0, address(sVault), IERC20(BALANCER_VAULT_TOKEN0).balanceOf(address(this)), IERC20(address(sVault)).balanceOf(address(this)));
 
     depositToVault(IERC20(ISmartVault(TETU_VAULT).underlying()).balanceOf(address(this)));
+
+    uint dustBalance = IERC20(_tokenIn).balanceOf(address(this));
+    if (dustBalance != 0) {
+      IERC20(_tokenIn).safeTransfer(msg.sender, dustBalance);
+    }
   }
 
   /// @notice Approval for share token is assumed.
@@ -165,6 +170,54 @@ contract ZapTetuBal is Controllable, ReentrancyGuard {
     uint tokenOutBalance = IERC20(_tokenOut).balanceOf(address(this));
     require(tokenOutBalance != 0, "zero token out balance");
     IERC20(_tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+  }
+
+  function quoteInSharedAmount(uint _asset0Amount, uint _asset1Amount) external returns(uint) {
+    IBalancerHelper helper = IBalancerHelper(BALANCER_HELPER);
+    address[] memory _poolTokens = new address[](2);
+    _poolTokens[0] = ASSET0;
+    _poolTokens[1] = ASSET1;
+    uint[] memory amounts = new uint[](2);
+    amounts[0] = _asset0Amount;
+    amounts[1] = _asset1Amount;
+    (uint wBptBalance,) = helper.queryJoin(
+      BALANCER_W_POOL_ID,
+      address(this),
+      payable(address(this)),
+      IVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, amounts, 0),
+        fromInternalBalance : false
+      })
+    );
+    // swap or deposit part of part tokens to smart vault
+    (, uint[] memory rootBptVaultBalances,) = IBVault(BALANCER_VAULT).getPoolTokens(BALANCER_POOL_ID);
+    // rough calculations without current price, pool fee, impact
+    uint canBuySmartVaultTokensByGoodPrice = rootBptVaultBalances[1] > rootBptVaultBalances[0] ? (rootBptVaultBalances[1] - rootBptVaultBalances[0]) / 2 : 0;
+    uint needToMintSmartVaultTokens;
+    if (canBuySmartVaultTokensByGoodPrice != 0 && canBuySmartVaultTokensByGoodPrice < wBptBalance / 2) {
+      needToMintSmartVaultTokens = wBptBalance / 2 - canBuySmartVaultTokensByGoodPrice;
+    }
+    if (canBuySmartVaultTokensByGoodPrice == 0) {
+      needToMintSmartVaultTokens = wBptBalance / 2;
+    }
+    _poolTokens[0] = BALANCER_VAULT_TOKEN0;
+    _poolTokens[1] = BALANCER_VAULT_TOKEN1;
+    amounts[0] = wBptBalance - needToMintSmartVaultTokens;
+    amounts[1] = needToMintSmartVaultTokens;
+    (uint rootBptOut,) = helper.queryJoin(
+      BALANCER_POOL_ID,
+      address(this),
+      payable(address(this)),
+      IVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, amounts, 0),
+        fromInternalBalance : false
+      })
+    );
+    return rootBptOut * IERC20(TETU_VAULT).totalSupply() / ISmartVault(TETU_VAULT).underlyingBalanceWithInvestment();
   }
 
   function quoteOutAssets( uint _shareAmount) external returns(uint[] memory) {

@@ -12,7 +12,7 @@ import {
   IBVault,
   MockChildToken__factory,
   SmartVault,
-  ZapTetuBal, ZapTetuBalHelper
+  ZapTetuBal
 } from "../../typechain";
 import {parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
@@ -33,7 +33,6 @@ describe("Zap tetuBAL test", function () {
   let vault: SmartVault;
   let balVault: IBVault;
   let poolId: BytesLike;
-  let helper: ZapTetuBalHelper;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
@@ -56,8 +55,6 @@ describe("Zap tetuBAL test", function () {
     balVault = await DeployerUtils.connectInterface(signer, 'contracts/third_party/balancer/IBVault.sol:IBVault', await zapLsBpt.BALANCER_VAULT()) as IBVault;
 
     poolId = await zapLsBpt.BALANCER_POOL_ID();
-
-    helper = await DeployerUtils.deployContract(signer, "ZapTetuBalHelper") as ZapTetuBalHelper;
   });
 
   after(async function () {
@@ -70,6 +67,118 @@ describe("Zap tetuBAL test", function () {
 
   afterEach(async function () {
     await TimeUtils.rollback(snapshotForEach);
+  });
+
+  it("Zap in/out WMATIC", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    const tokenIn = MaticAddresses.WMATIC_TOKEN;
+    const amount = parseUnits('1.387594689349642971', 18);
+
+    await TokenUtils.getToken(tokenIn, signer.address, amount);
+
+    await TokenUtils.approve(tokenIn, signer, zapLsBpt.address, amount.toString())
+
+    // get 1inch swap data for swap tokenIn to asset0
+    let params = {
+      fromTokenAddress: tokenIn,
+      toTokenAddress: MaticAddresses.WETH_TOKEN,
+      amount: amount.mul(2).div(10).toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 1,
+      disableEstimate: true,
+      allowPartialFill: false,
+    };
+
+    let swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn asset0: ', swapQuoteAsset0.tx);
+
+    // get 1inch swap data for swap tokenIn to asset1
+    params = {
+      fromTokenAddress: tokenIn,
+      toTokenAddress: MaticAddresses.BAL_TOKEN,
+      amount: amount.mul(8).div(10).toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 1,
+      disableEstimate: true,
+      allowPartialFill: false,
+    };
+
+    let swapQuoteAsset1 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap tokenIn to asset1: ', swapQuoteAsset1.tx);
+
+    const quoteOutShared = await zapLsBpt.callStatic.quoteInSharedAmount(BigNumber.from(swapQuoteAsset0.toTokenAmount), BigNumber.from(swapQuoteAsset1.toTokenAmount))
+    console.log('Quote out shared', quoteOutShared)
+
+    await zapLsBpt.zapInto(
+      tokenIn,
+      swapQuoteAsset0.tx.data,
+      swapQuoteAsset1.tx.data,
+      amount
+    );
+
+    const vaultBalance = await vault.balanceOf(signer.address);
+    expect(vaultBalance).to.be.gt(quoteOutShared.sub(quoteOutShared.div(100))) // 1% slippage
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(20) // dust
+
+    await TokenUtils.approve(vault.address, signer, zapLsBpt.address, vaultBalance.toString())
+
+    // contract balance must be empty
+    expect(await TokenUtils.balanceOf(tokenIn, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN0(), zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN1(), zapLsBpt.address)).to.eq(0)
+
+    // quote amounts to build 1inch swap data
+    const amountsOut = await zapLsBpt.callStatic.quoteOutAssets(vaultBalance);
+
+    // get 1inch swap data for swap asset0 to tokenIn
+    params = {
+      fromTokenAddress: MaticAddresses.WETH_TOKEN,
+      toTokenAddress: tokenIn,
+      amount: amountsOut[0].toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 1,
+      disableEstimate: true,
+      allowPartialFill: false,
+    };
+
+    swapQuoteAsset0 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap asset0 to tokenIn: ', swapQuoteAsset0);
+
+    // get 1inch swap data for swap asset1 to tokenIn
+    params = {
+      fromTokenAddress: MaticAddresses.BAL_TOKEN,
+      toTokenAddress: tokenIn,
+      amount: amountsOut[1].toString(),
+      fromAddress: zapLsBpt.address,
+      slippage: 1,
+      disableEstimate: true,
+      allowPartialFill: false,
+    };
+
+    swapQuoteAsset1 = await buildTxForSwap(JSON.stringify(params));
+    console.log('1inch tx for swap asset1 to tokenIn: ', swapQuoteAsset1);
+
+    await zapLsBpt.zapOut(
+      tokenIn,
+      swapQuoteAsset0.tx.data,
+      swapQuoteAsset1.tx.data,
+      vaultBalance
+    );
+
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(95).div(100))
+
+    // contract balance must be empty
+    expect(await TokenUtils.balanceOf(tokenIn, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN0(), zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN1(), zapLsBpt.address)).to.eq(0)
   });
 
   it("Zap in/out 5 USDC", async () => {
@@ -113,7 +222,7 @@ describe("Zap tetuBAL test", function () {
     let swapQuoteAsset1 = await buildTxForSwap(JSON.stringify(params));
     console.log('1inch tx for swap tokenIn to asset1: ', swapQuoteAsset1.tx);
 
-    const quoteOutShared = await helper.callStatic.quoteInSharedAmount(BigNumber.from(swapQuoteAsset0.toTokenAmount), BigNumber.from(swapQuoteAsset1.toTokenAmount))
+    const quoteOutShared = await zapLsBpt.callStatic.quoteInSharedAmount(BigNumber.from(swapQuoteAsset0.toTokenAmount), BigNumber.from(swapQuoteAsset1.toTokenAmount))
     console.log('Quote out shared', quoteOutShared)
 
     await zapLsBpt.zapInto(
@@ -123,9 +232,16 @@ describe("Zap tetuBAL test", function () {
       amount
     );
 
+    // contract balance must be empty
+    expect(await TokenUtils.balanceOf(tokenIn, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN0(), zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN1(), zapLsBpt.address)).to.eq(0)
+
     const vaultBalance = await vault.balanceOf(signer.address);
     expect(vaultBalance).to.be.gt(quoteOutShared.sub(quoteOutShared.div(100))) // 1% slippage
-    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(20) // dust
 
     await TokenUtils.approve(vault.address, signer, zapLsBpt.address, vaultBalance.toString())
 
@@ -168,6 +284,13 @@ describe("Zap tetuBAL test", function () {
     );
 
     expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(95).div(100))
+
+    // contract balance must be empty
+    expect(await TokenUtils.balanceOf(tokenIn, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN0(), zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN1(), zapLsBpt.address)).to.eq(0)
   });
 
   it("Zap in/out BAL", async () => {
@@ -206,10 +329,16 @@ describe("Zap tetuBAL test", function () {
       amount
     );
 
+    // contract balance must be empty
+    expect(await TokenUtils.balanceOf(tokenIn, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN0(), zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN1(), zapLsBpt.address)).to.eq(0)
+
     const vaultBalance = await vault.balanceOf(signer.address);
     expect(vaultBalance).to.be.gt(0)
-    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(signerTokenInBalanceBefore.sub(amount))
-
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(signerTokenInBalanceBefore.sub(amount).add(20)) // dust
     await TokenUtils.approve(vault.address, signer, zapLsBpt.address, vaultBalance.toString())
 
     // quote amounts to build 1inch swap data
@@ -287,9 +416,16 @@ describe("Zap tetuBAL test", function () {
       amount
     );
 
+    // contract balance must be empty
+    expect(await TokenUtils.balanceOf(tokenIn, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN0(), zapLsBpt.address)).to.eq(0)
+    expect(await TokenUtils.balanceOf(await zapLsBpt.BALANCER_VAULT_TOKEN1(), zapLsBpt.address)).to.eq(0)
+
     const vaultBalance = await vault.balanceOf(signer.address);
     expect(vaultBalance).to.be.gt(0)
-    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(signerTokenInBalanceBefore.sub(amount))
+    expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(signerTokenInBalanceBefore.sub(amount).add(20)) // dust
 
     poolBalances = (await balVault.getPoolTokens(poolId))[1]
     console.log('Balancer pool balances after:', poolBalances)
