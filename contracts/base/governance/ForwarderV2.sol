@@ -25,11 +25,7 @@ import "../SlotsLib.sol";
 import "../interface/ITetuLiquidator.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
-///        and send them to Profit Sharing pool, FundKeeper and vaults
-///        After swap TETU tokens are deposited to the Profit Share pool and give xTETU tokens.
-///        These tokens sent to Vault as a reward for vesting (4 weeks).
-///        If external rewards have a destination Profit Share pool
-///        it is just sent to the contract as TETU tokens increasing share price.
+///        and send them to veTETU distributor, FundKeeper and vaults
 /// @author belbix
 /// @author bogdoslav
 contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
@@ -144,7 +140,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   }
 
   /// @notice Only Governance can call it.
-  ///         Sets TetuLiquidator address
+  ///         Sets veDist for profit sharing
   function setVeDist(address value) external onlyGov {
     require(value != address(0), "F2: Zero adr");
     _setVeDist(value);
@@ -158,8 +154,8 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   }
 
   /// @notice Only Reward Distributor or Governance or Controller can call it.
-  ///         Distribute rewards for given vault, move fees to PS and Fund
-  ///         Under normal circumstances, sender is the strategy
+  ///         Distribute rewards for given vault, move fees to veDist and FundKeeper
+  ///         Under normal circumstances, sender is a strategy
   /// @param _amount Amount of tokens for distribute
   /// @param _token Token for distribute
   /// @param _vault Target vault
