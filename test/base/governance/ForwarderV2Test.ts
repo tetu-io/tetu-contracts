@@ -6,7 +6,7 @@ import {
   ForwarderV2, IERC20__factory,
   IUniswapV2Factory,
   MockLiquidator,
-  MockToken__factory
+  MockToken__factory, MockVeDist, NoopStrategy, SmartVault
 } from "../../../typechain";
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
@@ -36,6 +36,8 @@ describe("ForwarderV2 tests", function () {
   let usdc: string;
   let factory: string;
   let liquidator: MockLiquidator;
+  let vault: SmartVault;
+  let veDist: MockVeDist;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
@@ -96,6 +98,28 @@ describe("ForwarderV2 tests", function () {
     // await StrategyTestUtils.initForwarder(forwarder);
     // await StrategyTestUtils.setConversionPaths(forwarder);
     // await TokenUtils.getToken(usdc, signer.address, amount)
+
+    veDist = await DeployerUtils.deployContract(signer, 'MockVeDist') as MockVeDist;
+    await forwarder.setVeDist(veDist.address);
+
+
+    vault = await DeployerUtils.deploySmartVault(signer);
+
+    const strategy = await DeployerUtils.deployContract(signer, "NoopStrategy",
+      core.controller.address, usdc, vault.address, [Misc.ZERO_ADDRESS], [usdc], 1) as NoopStrategy;
+
+    await vault.initializeSmartVault(
+      "NOOP",
+      "tNOOP",
+      core.controller.address,
+      usdc,
+      60*60*24,
+      false,
+      Misc.ZERO_ADDRESS,
+      0
+    );
+
+    await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
   });
 
   after(async function () {
@@ -130,8 +154,7 @@ describe("ForwarderV2 tests", function () {
     console.log('rewardToken', core.rewardToken.address)
 
     const _amount = utils.parseUnits('10', 6);
-    const vault = core.psVault;
-    await core.vaultController.addRewardTokens([vault.address], vault.address);
+    await core.vaultController.addRewardTokens([vault.address], core.rewardToken.address);
     expect(+utils.formatUnits(await TokenUtils.balanceOf(usdc, signer.address), 6)).is.greaterThanOrEqual(+utils.formatUnits(_amount, 6))
     await TokenUtils.approve(usdc, signer, forwarder.address, _amount.toString());
     await forwarder.distribute(_amount, usdc, vault.address);
@@ -143,17 +166,17 @@ describe("ForwarderV2 tests", function () {
 
     const fundKeeperUSDCBal = +utils.formatUnits(await TokenUtils.balanceOf(usdc, core.fundKeeper.address), 6);
     const fundKeeperLPBal = +utils.formatUnits(await TokenUtils.balanceOf(lpToken, core.fundKeeper.address));
-    const psVaultBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken.address, core.psVault.address));
+    const veDistBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken.address, veDist.address));
     const forwarderUsdcBal = +utils.formatUnits(await TokenUtils.balanceOf(usdc, forwarder.address), 6);
     const forwarderTetuBal = +utils.formatUnits(await TokenUtils.balanceOf(core.rewardToken.address, forwarder.address));
 
     console.log('fundKeeperUSDCBal', fundKeeperUSDCBal);
     console.log('fundKeeperLPBal', fundKeeperLPBal);
-    console.log('psVaultBal', psVaultBal);
+    console.log('veDistBal', veDistBal);
 
     expect(fundKeeperUSDCBal).is.greaterThanOrEqual(+utils.formatUnits(amount.div(10), 6));
     expect(fundKeeperLPBal).is.greaterThan(0);
-    expect(psVaultBal).is.greaterThan(0);
+    expect(veDistBal).is.greaterThan(0);
     expect(forwarderUsdcBal).is.eq(0);
     expect(forwarderTetuBal).is.eq(0);
   });

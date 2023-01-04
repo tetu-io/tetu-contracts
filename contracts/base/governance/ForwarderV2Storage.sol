@@ -68,6 +68,16 @@ abstract contract ForwarderV2Storage is Initializable, IFeeRewardForwarder {
     return getAddress("liquidityRouter");
   }
 
+  function _setVeDist(address _address) internal {
+    emit UpdatedAddressSlot("veDist", veDist(), _address);
+    setAddress("veDist", _address);
+  }
+
+  /// @notice veTETU distributor contract
+  function veDist() public view returns (address) {
+    return getAddress("veDist");
+  }
+
   function _setLiquidityNumerator(uint256 _value) internal {
     emit UpdatedUint256Slot("liquidityNumerator", liquidityNumerator(), _value);
     setUint256("liquidityNumerator", _value);

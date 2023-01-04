@@ -20,6 +20,7 @@ import "../interface/ISmartVault.sol";
 import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
+import "../../third_party/IVeDistributor.sol";
 import "../SlotsLib.sol";
 import "../interface/ITetuLiquidator.sol";
 
@@ -39,7 +40,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant override VERSION = "1.5.1";
+  string public constant override VERSION = "1.6.0";
   uint256 public constant override LIQUIDITY_DENOMINATOR = 100;
   uint constant public override SLIPPAGE_DENOMINATOR = 100;
   uint constant public override MINIMUM_AMOUNT = 100;
@@ -82,12 +83,6 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   }
 
   // ***************** VIEW ************************
-
-  /// @notice Return Profit Sharing pool address
-  /// @return Profit Sharing pool address
-  function psVault() public view override returns (address) {
-    return IController(_controller()).psVault();
-  }
 
   /// @notice Return FundKeeper address
   /// @return FundKeeper address
@@ -146,6 +141,13 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   function setLiquidator(address value) external onlyGov {
     require(value != address(0), "F2: Zero adr");
     liquidator = value;
+  }
+
+  /// @notice Only Governance can call it.
+  ///         Sets TetuLiquidator address
+  function setVeDist(address value) external onlyGov {
+    require(value != address(0), "F2: Zero adr");
+    _setVeDist(value);
   }
 
   // ***************** EXTERNAL *******************************
@@ -261,9 +263,9 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     address _tetu = tetu();
     uint excessTetuToken = IERC20(_tetu).balanceOf(address(this));
     if (excessTetuToken > MINIMUM_AMOUNT) {
-      address _psVault = psVault();
-      IERC20(_tetu).safeTransfer(_psVault, excessTetuToken);
-      emit FeeMovedToPs(_psVault, _tetu, excessTetuToken);
+      address _veDist = veDist();
+      IERC20(_tetu).safeTransfer(_veDist, excessTetuToken);
+      emit FeeMovedToPs(_veDist, _tetu, excessTetuToken);
     }
   }
 
@@ -282,9 +284,10 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     uint toPs = tetuTokenAmount * baseToPs / baseSum;
     if (toPs > MINIMUM_AMOUNT) {
       address _tetu = tetu();
-      address _psVault = psVault();
-      IERC20(_tetu).safeTransfer(_psVault, toPs);
-      emit FeeMovedToPs(_psVault, _tetu, toPs);
+      address _veDist = veDist();
+      IERC20(_tetu).safeTransfer(_veDist, toPs);
+      IVeDistributor(_veDist).checkpoint();
+      emit FeeMovedToPs(_veDist, _tetu, toPs);
     }
     return toPs + tetuLiqAmount;
   }
@@ -296,11 +299,18 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     uint baseToPs,
     uint baseToVault
   ) internal returns (uint256) {
-    address _psVault = psVault();
+    address _tetu = tetu();
     ISmartVault smartVault = ISmartVault(_vault);
     address[] memory rts = smartVault.rewardTokens();
-    require(rts.length > 0, "F2: No reward tokens");
-    address rt = rts[0];
+
+    address rt;
+    for (uint i; i < rts.length; ++i) {
+      if (rts[i] == _tetu) {
+        rt = _tetu;
+        break;
+      }
+    }
+    require(rt != address(0), "F2: No TETU rt");
 
     uint baseSum = baseToLiqTetuTokenPart + baseToPs + baseToVault;
     uint toVault = tetuTokenAmount * baseToVault / baseSum;
@@ -309,18 +319,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
       return 0;
     }
 
-    address _tetu = tetu();
-    uint256 amountToSend;
-    if (rt == _psVault) {
-      uint rtBalanceBefore = IERC20(_psVault).balanceOf(address(this));
-      _approveIfNeed(_tetu, _psVault, toVault);
-      ISmartVault(_psVault).deposit(toVault);
-      amountToSend = IERC20(_psVault).balanceOf(address(this)) - rtBalanceBefore;
-    } else if (rt == _tetu) {
-      amountToSend = toVault;
-    } else {
-      revert("F2: First reward token not TETU nor xTETU");
-    }
+    uint256 amountToSend = toVault;
 
     _approveIfNeed(rt, _vault, amountToSend);
     smartVault.notifyTargetRewardAmount(rt, amountToSend);
