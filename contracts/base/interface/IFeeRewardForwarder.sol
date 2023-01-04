@@ -50,8 +50,6 @@ interface IFeeRewardForwarder {
 
   function notifyPsPool(address, uint256) external pure returns (uint256);
 
-  function psVault() external view returns (address);
-
   function slippageNumerator() external view returns (uint256);
 
   function tetu() external view returns (address);
