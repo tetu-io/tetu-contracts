@@ -124,6 +124,11 @@ describe("ZapV2 test", function () {
         tokenIn: MaticAddresses.DAI_TOKEN,
         amount: parseUnits('10.089594483349642547', 18),
       },
+      {
+        vault: '0x984ED0DAe53947A209A877841Cbe6138cA7A7a5f', // TETU-USDPlus [DYSTOPIA]
+        tokenIn: MaticAddresses.DAI_TOKEN,
+        amount: parseUnits('10.089594483349642547', 18),
+      },
     ]
 
     for (const a of testTargets) {
@@ -214,7 +219,7 @@ async function swapQuote(tokenIn: string, tokenOut: string, amount: string, zapC
     slippage: 1,
     disableEstimate: true,
     allowPartialFill: false,
-    protocols: 'POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2',
+    protocols: 'POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2,POLYGON_DYSTOPIA',
   };
 
   const swapQuoteAsset = await buildTxForSwap(JSON.stringify(params));
