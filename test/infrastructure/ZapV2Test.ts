@@ -7,7 +7,7 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {
-  Controller,
+  Controller, IUniswapV2Pair,
   SmartVault,
   ZapV2
 } from "../../typechain";
@@ -105,10 +105,79 @@ describe("ZapV2 test", function () {
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
       expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
     }
-
   });
 
+  it("Zap in/out Uniswap V2 LP", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
 
+    const testTargets = [
+      {
+        vault: '0xCa870d6575eF0B872F60E7fa63774258c523027F', // TETU-USDC [Tetu Swap]
+        tokenIn: MaticAddresses.WMATIC_TOKEN,
+        amount: parseUnits('10.387594689349642971', 18),
+      },
+      {
+        vault: '0xf593a9b3B46dc6B8511139B7Cb08da3BfDc6c947', // USDC-USDT [Tetu Swap]
+        tokenIn: MaticAddresses.DAI_TOKEN,
+        amount: parseUnits('10.089594483349642547', 18),
+      },
+    ]
+
+    for (const a of testTargets) {
+      const tokenIn = a.tokenIn;
+      const amount = a.amount;
+      const vault = await DeployerUtils.connectInterface(signer, 'SmartVault', a.vault) as SmartVault
+      const underlying = await vault.underlying()
+
+      const lp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair
+      const asset0 = await lp.token0()
+      const asset1 = await lp.token1()
+
+      const swapQuoteAsset0 = await swapQuote(tokenIn, asset0, amount.div(2).toString(), zap.address)
+      const swapQuoteAsset1 = await swapQuote(tokenIn, asset1, amount.div(2).toString(), zap.address)
+
+      const quoteInShared = await zap.quoteIntoUniswapV2(vault.address, BigNumber.from(swapQuoteAsset0.toTokenAmount), BigNumber.from(swapQuoteAsset1.toTokenAmount))
+
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
+
+      await zap.zapIntoUniswapV2(
+        vault.address,
+        tokenIn,
+        swapQuoteAsset0.tx.data,
+        swapQuoteAsset1.tx.data,
+        amount
+      );
+
+      const vaultBalance = await vault.balanceOf(signer.address);
+      expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
+
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(2)
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(asset0, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(asset1, zap.address)).to.eq(0)
+
+      const amountsOut = await zap.quoteOutUniswapV2(vault.address, vaultBalance);
+      const swapQuoteOutAsset0 = await swapQuote(asset0, tokenIn, amountsOut[0].toString(), zap.address)
+      const swapQuoteOutAsset1 = await swapQuote(asset1, tokenIn, amountsOut[1].toString(), zap.address)
+      await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
+      await zap.zapOutUniswapV2(vault.address, tokenIn, swapQuoteOutAsset0.tx.data, swapQuoteOutAsset1.tx.data,vaultBalance)
+
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(98).div(100))
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(asset0, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(asset1, zap.address)).to.eq(0)
+    }
+  })
 })
 
 async function zapIntoSingle(signer: SignerWithAddress, zap: ZapV2, vault: SmartVault, tokenIn: string, amount: BigNumber, swapQuoteAsset: ISwapQuote) {
