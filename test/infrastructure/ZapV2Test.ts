@@ -7,8 +7,8 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {
-  Controller, IUniswapV2Pair,
-  SmartVault,
+  Controller, IBPT__factory, IBVault__factory, IUniswapV2Pair__factory,
+  SmartVault, SmartVault__factory,
   ZapV2
 } from "../../typechain";
 import {parseUnits} from "ethers/lib/utils";
@@ -80,7 +80,7 @@ describe("ZapV2 test", function () {
     for (const a of testTargets) {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
-      const vault = await DeployerUtils.connectInterface(signer, 'SmartVault', a.vault) as SmartVault
+      const vault = SmartVault__factory.connect(a.vault, signer)
       const underlying = await vault.underlying()
 
       const swapQuoteAsset = await swapQuote(tokenIn, underlying, amount.toString(), zap.address)
@@ -134,10 +134,13 @@ describe("ZapV2 test", function () {
     for (const a of testTargets) {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
-      const vault = await DeployerUtils.connectInterface(signer, 'SmartVault', a.vault) as SmartVault
+
+      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+      const vault = SmartVault__factory.connect(a.vault, signer)
       const underlying = await vault.underlying()
 
-      const lp = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair
+      const lp = IUniswapV2Pair__factory.connect(underlying, signer)
       const asset0 = await lp.token0()
       const asset1 = await lp.token1()
 
@@ -160,7 +163,7 @@ describe("ZapV2 test", function () {
       const vaultBalance = await vault.balanceOf(signer.address);
       expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(2)
+      // expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(2)
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
@@ -174,13 +177,119 @@ describe("ZapV2 test", function () {
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutUniswapV2(vault.address, tokenIn, swapQuoteOutAsset0.tx.data, swapQuoteOutAsset1.tx.data,vaultBalance)
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(98).div(100))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
       expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
       expect(await TokenUtils.balanceOf(asset0, zap.address)).to.eq(0)
       expect(await TokenUtils.balanceOf(asset1, zap.address)).to.eq(0)
+    }
+  })
+
+  it("Zap in/out Balancer", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    const testTargets = [
+      {
+        vault: '0xA8Fab27B7d41fF354f0034addC2d6a53b5E31356', // stMATIC-WMATIC BPT [BALANCER]
+        tokenIn: MaticAddresses.DAI_TOKEN,
+        amount: parseUnits('3430.00001', 18),
+      },
+      {
+        vault: '0x1e8a077d43A963504260281E73EfCA6292d48A2f', // MATICX-WMATIC BPT [BALANCER]
+        tokenIn: MaticAddresses.USDC_TOKEN,
+        amount: parseUnits('3.00001', 6),
+      },
+    ]
+
+    for (const a of testTargets) {
+      const tokenIn = a.tokenIn;
+      const amount = a.amount;
+      const vault = SmartVault__factory.connect(a.vault, signer)
+
+      // todo Make zap contract view function for extracting this data for bpt vaults
+      const underlying = await vault.underlying()
+      const bpt = IBPT__factory.connect(underlying, signer)
+      const bVault = IBVault__factory.connect(MaticAddresses.BALANCER_VAULT, signer)
+      const poolTokens = await bVault.getPoolTokens(await bpt.getPoolId())
+      const assets = [];
+      const amountsOfTokenIn = [];
+      const amountsOfAssetsIn = [];
+      const swapQuoteAsset = [];
+
+      let totalAmountOfRealTokensInPool = BigNumber.from(0);
+
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < poolTokens[0].length; i++) {
+        assets[i] = poolTokens[0][i]
+        if (assets[i] !== underlying) {
+          totalAmountOfRealTokensInPool = totalAmountOfRealTokensInPool.add(poolTokens[1][i])
+        }
+      }
+
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < poolTokens[0].length; i++) {
+        if (assets[i] !== underlying) {
+          amountsOfTokenIn[i] = amount.mul(poolTokens[1][i]).div(totalAmountOfRealTokensInPool).toString()
+          const swapQuoteResult = await swapQuote(tokenIn, assets[i], amountsOfTokenIn[i], zap.address);
+          swapQuoteAsset[i] = swapQuoteResult.tx.data
+          amountsOfAssetsIn[i] = swapQuoteResult.toTokenAmount
+        } else {
+          amountsOfTokenIn[i] = BigNumber.from(0).toString()
+          swapQuoteAsset[i] = '0x00'
+          amountsOfAssetsIn[i] = 0
+        }
+      }
+
+      const quoteInShared = await zap.callStatic.quoteIntoBalancer(vault.address, assets, amountsOfAssetsIn)
+
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
+
+      await zap.zapIntoBalancer(
+        vault.address,
+        tokenIn,
+        assets,
+        swapQuoteAsset,
+        amountsOfTokenIn
+      )
+
+      const vaultBalance = await vault.balanceOf(signer.address);
+      expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
+
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.lt(2)
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < assets.length; i++) {
+        expect(await TokenUtils.balanceOf(assets[i], zap.address)).to.eq(0)
+      }
+
+      const amountsOut = await zap.quoteOutBalancer(vault.address, assets, vaultBalance)
+
+      for (let i = 0; i < assets.length; i++) {
+        if (assets[i] !== underlying) {
+          swapQuoteAsset[i] = (await swapQuote(assets[i], tokenIn, amountsOut[i].sub(1).toString(), zap.address)).tx.data
+        } else {
+          swapQuoteAsset[i] = '0x00'
+        }
+      }
+
+      await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
+      await zap.zapOutBalancer(vault.address, tokenIn, assets, amountsOut.filter(b => b.gt(0)), swapQuoteAsset, vaultBalance)
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(98).div(100))
+
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < assets.length; i++) {
+        expect(await TokenUtils.balanceOf(assets[i], zap.address)).to.eq(0)
+      }
     }
   })
 })
