@@ -292,6 +292,138 @@ describe("ZapV2 test", function () {
       }
     }
   })
+
+  it("Zap in/out Balancer AAVE Boosted StablePool", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    const testTargets = [
+      {
+        tokenIn: MaticAddresses.WMATIC_TOKEN,
+        amount: parseUnits('3.00001', 18),
+      },
+      {
+        tokenIn: MaticAddresses.DAI_TOKEN,
+        amount: parseUnits('3.0001', 18),
+      },
+    ]
+
+    for (const a of testTargets) {
+      const tokenIn = a.tokenIn;
+      const amount = a.amount;
+
+      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+      // todo Make zap contract view function for extracting this data for bpt vaults
+      const vault = SmartVault__factory.connect(await zap.BB_AM_USD_VAULT(), signer)
+      const underlying = await zap.BB_AM_USD_BPT()
+      const dai = await zap.BB_AM_USD_POOL0_TOKEN1();
+      const usdc = await zap.BB_AM_USD_POOL2_TOKEN1();
+      const usdt = await zap.BB_AM_USD_POOL3_TOKEN1();
+      const bpt = IBPT__factory.connect(underlying, signer)
+      const bVault = IBVault__factory.connect(MaticAddresses.BALANCER_VAULT, signer)
+      const poolTokens = await bVault.getPoolTokens(await bpt.getPoolId())
+      const assets = [];
+      const amountsOfTokenIn = [];
+      const amountsOfAssetsIn = [];
+      const swapQuoteAsset = [];
+
+      let totalAmountOfRealTokensInPool = BigNumber.from(0);
+
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < poolTokens[0].length; i++) {
+        assets[i] = poolTokens[0][i]
+        if (assets[i] !== underlying) {
+          totalAmountOfRealTokensInPool = totalAmountOfRealTokensInPool.add(poolTokens[1][i])
+        }
+      }
+
+      let swapQuoteResult;
+      amountsOfTokenIn[0] = amount.mul(poolTokens[1][0]).div(totalAmountOfRealTokensInPool).toString()
+      if (tokenIn !== dai.toLowerCase()) {
+        swapQuoteResult = await swapQuote(tokenIn, dai, amountsOfTokenIn[0], zap.address);
+        swapQuoteAsset[0] = swapQuoteResult.tx.data
+        amountsOfAssetsIn[0] = swapQuoteResult.toTokenAmount
+      } else {
+        swapQuoteAsset[0] = "0x00"
+        amountsOfAssetsIn[0] = amountsOfTokenIn[0]
+      }
+
+      amountsOfTokenIn[1] = amount.mul(poolTokens[1][2]).div(totalAmountOfRealTokensInPool).toString()
+      if (tokenIn !== usdc.toLowerCase()) {
+        swapQuoteResult = await swapQuote(tokenIn, usdc, amountsOfTokenIn[1], zap.address);
+        swapQuoteAsset[1] = swapQuoteResult.tx.data
+        amountsOfAssetsIn[1] = swapQuoteResult.toTokenAmount
+      } else {
+        swapQuoteAsset[1] = "0x00"
+        amountsOfAssetsIn[1] = amountsOfTokenIn[1]
+      }
+
+      amountsOfTokenIn[2] = amount.mul(poolTokens[1][3]).div(totalAmountOfRealTokensInPool).toString()
+      if (tokenIn !== usdt.toLowerCase()) {
+        swapQuoteResult = await swapQuote(tokenIn, usdt, amountsOfTokenIn[2], zap.address);
+        swapQuoteAsset[2] = swapQuoteResult.tx.data
+        amountsOfAssetsIn[2] = swapQuoteResult.toTokenAmount
+      } else {
+        swapQuoteAsset[2] = "0x00"
+        amountsOfAssetsIn[2] = amountsOfTokenIn[2]
+      }
+
+      const quoteInShared = await zap.callStatic.quoteIntoBalancerAaveBoostedStablePool(amountsOfAssetsIn)
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
+
+      await zap.zapIntoBalancerAaveBoostedStablePool(
+        tokenIn,
+        swapQuoteAsset,
+        amountsOfTokenIn
+      )
+
+      const vaultBalance = await vault.balanceOf(signer.address);
+      expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(dai, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(usdc, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(usdt, zap.address)).to.eq(0)
+
+      const amountsOut = await zap.callStatic.quoteOutBalancerAaveBoostedStablePool(vaultBalance)
+
+      if (tokenIn !== dai.toLowerCase()) {
+        swapQuoteAsset[0] = (await swapQuote(dai, tokenIn, amountsOut[0].toString(), zap.address)).tx.data
+      } else {
+        swapQuoteAsset[0] = '0x00'
+      }
+
+      if (tokenIn !== usdc.toLowerCase()) {
+        swapQuoteAsset[1] = (await swapQuote(usdc, tokenIn, amountsOut[1].toString(), zap.address)).tx.data
+      } else {
+        swapQuoteAsset[1] = '0x00'
+      }
+
+      if (tokenIn !== usdt.toLowerCase()) {
+        swapQuoteAsset[2] = (await swapQuote(usdt, tokenIn, amountsOut[2].toString(), zap.address)).tx.data
+      } else {
+        swapQuoteAsset[2] = '0x00'
+      }
+
+      await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
+      await zap.zapOutBalancerAaveBoostedStablePool(tokenIn, swapQuoteAsset, vaultBalance)
+
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(dai, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(usdc, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(usdt, zap.address)).to.eq(0)
+    }
+  })
 })
 
 async function zapIntoSingle(signer: SignerWithAddress, zap: ZapV2, vault: SmartVault, tokenIn: string, amount: BigNumber, swapQuoteAsset: ISwapQuote) {

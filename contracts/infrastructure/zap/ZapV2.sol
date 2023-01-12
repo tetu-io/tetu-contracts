@@ -31,6 +31,19 @@ contract ZapV2 is Controllable, ReentrancyGuard {
     address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public constant BALANCER_HELPER = 0x239e55F427D44C3cc793f49bFB507ebe76638a2b;
 
+    address public constant BB_AM_USD_VAULT = 0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513;
+    address public constant BB_AM_USD_BPT = 0x48e6B98ef6329f8f0A30eBB8c7C960330d648085;
+    bytes32 public constant BB_AM_USD_POOL_ID = 0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b;
+    address public constant BB_AM_USD_POOL0_BPT = 0x178E029173417b1F9C8bC16DCeC6f697bC323746; // Balancer Aave Boosted Pool (DAI) (bb-am-DAI)
+    address public constant BB_AM_USD_POOL2_BPT = 0xF93579002DBE8046c43FEfE86ec78b1112247BB8; // Balancer Aave Boosted Pool (USDC) (bb-am-USDC)
+    address public constant BB_AM_USD_POOL3_BPT = 0xFf4ce5AAAb5a627bf82f4A571AB1cE94Aa365eA6; // Balancer Aave Boosted Pool (USDT) (bb-am-USDT)
+    bytes32 public constant BB_AM_USD_POOL0_ID = 0x178e029173417b1f9c8bc16dcec6f697bc323746000000000000000000000758;
+    bytes32 public constant BB_AM_USD_POOL2_ID = 0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759;
+    bytes32 public constant BB_AM_USD_POOL3_ID = 0xff4ce5aaab5a627bf82f4a571ab1ce94aa365ea600000000000000000000075a;
+    address public constant BB_AM_USD_POOL0_TOKEN1 = 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063; // DAI
+    address public constant BB_AM_USD_POOL2_TOKEN1 = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174; // USDC
+    address public constant BB_AM_USD_POOL3_TOKEN1 = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; // USDT
+
     mapping(address => uint) calls;
 
     constructor(address controller_) {
@@ -259,6 +272,127 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         _sendBackChangeAll(assets);
     }
 
+    function zapIntoBalancerAaveBoostedStablePool(
+        address tokenIn,
+        bytes[] memory assetsSwapData,
+        uint[] memory tokenInAmounts // calculated off-chain
+    ) external nonReentrant onlyOneCallPerBlock {
+        uint totalTokenInAmount = tokenInAmounts[0] + tokenInAmounts[1] + tokenInAmounts[2];
+        require(totalTokenInAmount > 1, "ZC: not enough amount");
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), totalTokenInAmount);
+
+        // swap to DAI
+        if (tokenIn != BB_AM_USD_POOL0_TOKEN1) {
+            _callOneInchSwap(
+                tokenIn,
+                tokenInAmounts[0],
+                assetsSwapData[0]
+            );
+        }
+
+        // swap to USDC
+        if (tokenIn != BB_AM_USD_POOL2_TOKEN1) {
+            _callOneInchSwap(
+                tokenIn,
+                tokenInAmounts[1],
+                assetsSwapData[1]
+            );
+        }
+
+        // swap to USDT
+        if (tokenIn != BB_AM_USD_POOL3_TOKEN1) {
+            _callOneInchSwap(
+                tokenIn,
+                tokenInAmounts[2],
+                assetsSwapData[2]
+            );
+        }
+
+        uint[] memory realAssetsAmounts = new uint[](3);
+        realAssetsAmounts[0] = IERC20(BB_AM_USD_POOL0_TOKEN1).balanceOf(address(this));
+        realAssetsAmounts[1] = IERC20(BB_AM_USD_POOL2_TOKEN1).balanceOf(address(this));
+        realAssetsAmounts[2] = IERC20(BB_AM_USD_POOL3_TOKEN1).balanceOf(address(this));
+
+        // get linear pool phantom bpts
+        _balancerSwap(BB_AM_USD_POOL0_ID, BB_AM_USD_POOL0_TOKEN1, BB_AM_USD_POOL0_BPT, realAssetsAmounts[0]);
+        _balancerSwap(BB_AM_USD_POOL2_ID, BB_AM_USD_POOL2_TOKEN1, BB_AM_USD_POOL2_BPT, realAssetsAmounts[1]);
+        _balancerSwap(BB_AM_USD_POOL3_ID, BB_AM_USD_POOL3_TOKEN1, BB_AM_USD_POOL3_BPT, realAssetsAmounts[2]);
+
+        // get root BPT
+        address[] memory rootAssets = new address[](4);
+        uint[] memory rootAmounts = new uint[](4);
+        rootAssets[0] = BB_AM_USD_POOL0_BPT;
+        rootAssets[1] = BB_AM_USD_BPT;
+        rootAssets[2] = BB_AM_USD_POOL2_BPT;
+        rootAssets[3] = BB_AM_USD_POOL3_BPT;
+        rootAmounts[0] = IERC20(BB_AM_USD_POOL0_BPT).balanceOf(address(this));
+        rootAmounts[1] = 0;
+        rootAmounts[2] = IERC20(BB_AM_USD_POOL2_BPT).balanceOf(address(this));
+        rootAmounts[3] = IERC20(BB_AM_USD_POOL3_BPT).balanceOf(address(this));
+        _addLiquidityBalancer(BB_AM_USD_POOL_ID, rootAssets, rootAmounts);
+
+        uint bptBalance = IERC20(BB_AM_USD_BPT).balanceOf(address(this));
+        require(bptBalance != 0, "ZC: zero liq");
+        _depositToVault(BB_AM_USD_VAULT, BB_AM_USD_BPT, bptBalance);
+    }
+
+    function zapOutBalancerAaveBoostedStablePool(
+        address tokenOut,
+        bytes[] memory assetsSwapData,
+        uint shareAmount
+    ) external nonReentrant onlyOneCallPerBlock {
+        require(shareAmount != 0, "ZC: zero amount");
+        IERC20(BB_AM_USD_VAULT).safeTransferFrom(msg.sender, address(this), shareAmount);
+        uint bptOut = _withdrawFromVault(BB_AM_USD_VAULT, BB_AM_USD_BPT, shareAmount);
+
+        (, uint[] memory tokensBalances,) = IBVault(BALANCER_VAULT).getPoolTokens(BB_AM_USD_POOL_ID);
+        uint totalTokenBalances = tokensBalances[0] + tokensBalances[2] + tokensBalances[3];
+
+        _balancerSwap(BB_AM_USD_POOL_ID, BB_AM_USD_BPT, BB_AM_USD_POOL0_BPT, bptOut * tokensBalances[0] / totalTokenBalances);
+        _balancerSwap(BB_AM_USD_POOL0_ID, BB_AM_USD_POOL0_BPT, BB_AM_USD_POOL0_TOKEN1, IERC20(BB_AM_USD_POOL0_BPT).balanceOf(address(this)));
+
+        _balancerSwap(BB_AM_USD_POOL_ID, BB_AM_USD_BPT, BB_AM_USD_POOL2_BPT, bptOut * tokensBalances[2] / totalTokenBalances);
+        _balancerSwap(BB_AM_USD_POOL2_ID, BB_AM_USD_POOL2_BPT, BB_AM_USD_POOL2_TOKEN1, IERC20(BB_AM_USD_POOL2_BPT).balanceOf(address(this)));
+
+        _balancerSwap(BB_AM_USD_POOL_ID, BB_AM_USD_BPT, BB_AM_USD_POOL3_BPT, bptOut * tokensBalances[3] / totalTokenBalances);
+        _balancerSwap(BB_AM_USD_POOL3_ID, BB_AM_USD_POOL3_BPT, BB_AM_USD_POOL3_TOKEN1, IERC20(BB_AM_USD_POOL3_BPT).balanceOf(address(this)));
+
+        if (tokenOut != BB_AM_USD_POOL0_TOKEN1) {
+            _callOneInchSwap(
+                BB_AM_USD_POOL0_TOKEN1,
+                IERC20(BB_AM_USD_POOL0_TOKEN1).balanceOf(address(this)),
+                assetsSwapData[0]
+            );
+        }
+
+        if (tokenOut != BB_AM_USD_POOL2_TOKEN1) {
+            _callOneInchSwap(
+                BB_AM_USD_POOL2_TOKEN1,
+                IERC20(BB_AM_USD_POOL2_TOKEN1).balanceOf(address(this)),
+                assetsSwapData[1]
+            );
+        }
+
+        if (tokenOut != BB_AM_USD_POOL3_TOKEN1) {
+            _callOneInchSwap(
+                BB_AM_USD_POOL3_TOKEN1,
+                IERC20(BB_AM_USD_POOL3_TOKEN1).balanceOf(address(this)),
+                assetsSwapData[2]
+            );
+        }
+
+        uint tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
+        require(tokenOutBalance != 0, "zero token out balance");
+        IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+
+        address[] memory assets = new address[](4);
+        assets[0] = BB_AM_USD_BPT;
+        assets[1] = BB_AM_USD_POOL0_TOKEN1;
+        assets[2] = BB_AM_USD_POOL2_TOKEN1;
+        assets[3] = BB_AM_USD_POOL3_TOKEN1;
+        _sendBackChangeAll(assets);
+    }
+
     // ******************** QUOTE HELPERS *********************
 
     function quoteIntoSingle(address vault, uint amount) external view returns(uint) {
@@ -307,8 +441,9 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         return bptOut * IERC20(vault).totalSupply() / ISmartVault(vault).underlyingBalanceWithInvestment();
     }
 
-    /// @dev Quote out for ComposableStablePool with BPT inside.
-    ///      This unusual algorithm is used due to the impossibility of using EXACT_BPT_IN_FOR_ALL_TOKENS_OUT for target pools.
+    /// @dev Quote out for ComposableStablePool with Phantom BPT.
+    ///      This unusual algorithm is used due to the impossibility of using EXACT_BPT_IN_FOR_ALL_TOKENS_OUT.
+    ///      We think it's can be better than queryBatchSwap for such pools.
     function quoteOutBalancer(address vault, address[] memory assets, uint shareAmount) external view returns(uint[] memory) {
         address bpt = ISmartVault(vault).underlying();
         bytes32 poolId = IBPT(bpt).getPoolId();
@@ -333,7 +468,100 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         return amounts;
     }
 
+    function quoteIntoBalancerAaveBoostedStablePool(uint[] memory amounts) external returns(uint) {
+        uint[] memory rootAmounts = new uint[](4);
+        rootAmounts[0] = _queryBalancerSingleSwap(BB_AM_USD_POOL0_ID, 1, 0, amounts[0]);
+        rootAmounts[1] = 0;
+        rootAmounts[2] = _queryBalancerSingleSwap(BB_AM_USD_POOL2_ID, 1, 2, amounts[1]);
+        rootAmounts[3] = _queryBalancerSingleSwap(BB_AM_USD_POOL3_ID, 1, 2, amounts[2]);
+
+        address[] memory rootAssets = new address[](4);
+        rootAssets[0] = BB_AM_USD_POOL0_BPT;
+        rootAssets[1] = BB_AM_USD_BPT;
+        rootAssets[2] = BB_AM_USD_POOL2_BPT;
+        rootAssets[3] = BB_AM_USD_POOL3_BPT;
+
+        uint bptOut = _quoteJoinBalancer(BB_AM_USD_POOL_ID, rootAssets, rootAmounts);
+        return bptOut * IERC20(BB_AM_USD_VAULT).totalSupply() / ISmartVault(BB_AM_USD_VAULT).underlyingBalanceWithInvestment();
+    }
+
+    function quoteOutBalancerAaveBoostedStablePool(uint shareAmount) external returns(uint[] memory) {
+        uint bptAmountOut = shareAmount * ISmartVault(BB_AM_USD_VAULT).underlyingBalanceWithInvestment() / IERC20(BB_AM_USD_VAULT).totalSupply();
+        (, uint[] memory tokensBalances,) = IBVault(BALANCER_VAULT).getPoolTokens(BB_AM_USD_POOL_ID);
+        uint totalTokenBalances = tokensBalances[0] + tokensBalances[2] + tokensBalances[3];
+
+        uint[] memory outAmounts = new uint[](3);
+        uint bptOutTmp;
+
+        bptOutTmp = _queryBalancerSingleSwap(BB_AM_USD_POOL_ID, 1, 0, bptAmountOut * tokensBalances[0] / totalTokenBalances);
+        outAmounts[0] = _queryBalancerSingleSwap(BB_AM_USD_POOL0_ID, 0, 1, bptOutTmp);
+        bptOutTmp = _queryBalancerSingleSwap(BB_AM_USD_POOL_ID, 1, 2, bptAmountOut * tokensBalances[2] / totalTokenBalances);
+        outAmounts[1] = _queryBalancerSingleSwap(BB_AM_USD_POOL2_ID, 2, 1, bptOutTmp);
+        bptOutTmp = _queryBalancerSingleSwap(BB_AM_USD_POOL_ID, 1, 3, bptAmountOut * tokensBalances[3] / totalTokenBalances);
+        outAmounts[2] = _queryBalancerSingleSwap(BB_AM_USD_POOL3_ID, 2, 1, bptOutTmp);
+
+        return outAmounts;
+    }
+
     // ************************* INTERNAL *******************
+
+    function _queryBalancerSingleSwap(bytes32 poolId, uint assetInIndex, uint assetOutIndex, uint amountIn) internal returns (uint) {
+        (IERC20[] memory tokens,,) = IBVault(BALANCER_VAULT).getPoolTokens(poolId);
+        IAsset[] memory assets = new IAsset[](tokens.length);
+        for (uint i; i < tokens.length; i++) {
+            assets[i] = IAsset(address(tokens[i]));
+        }
+
+        IBVault.BatchSwapStep[] memory swaps = new IBVault.BatchSwapStep[](1);
+
+        IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
+            sender : address(this),
+            fromInternalBalance : false,
+            recipient : payable(address(this)),
+            toInternalBalance : false
+        });
+
+        swaps[0] = IBVault.BatchSwapStep(
+            poolId,
+            assetInIndex,
+            assetOutIndex,
+            amountIn,
+            ""
+        );
+
+        int256[] memory assetDeltas = IBVault(BALANCER_VAULT).queryBatchSwap(
+            IBVault.SwapKind.GIVEN_IN,
+            swaps,
+            assets,
+            fundManagementStruct
+        );
+
+        return uint(-assetDeltas[assetOutIndex]);
+    }
+
+    /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId
+    function _balancerSwap(bytes32 poolId, address tokenIn, address tokenOut, uint amountIn) internal {
+        if (amountIn != 0) {
+            IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
+                poolId : poolId,
+                kind : IBVault.SwapKind.GIVEN_IN,
+                assetIn : IAsset(tokenIn),
+                assetOut : IAsset(tokenOut),
+                amount : amountIn,
+                userData : ""
+            });
+
+            IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
+                sender : address(this),
+                fromInternalBalance : false,
+                recipient : payable(address(this)),
+                toInternalBalance : false
+            });
+
+            _approveIfNeeds(tokenIn, amountIn, BALANCER_VAULT);
+            IBVault(BALANCER_VAULT).swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+        }
+    }
 
     /// @dev Was made to prevent the 'Stack too deep'
     function _quoteJoinBalancer(bytes32 poolId, address[] memory assets, uint[] memory amounts) internal returns(uint) {
