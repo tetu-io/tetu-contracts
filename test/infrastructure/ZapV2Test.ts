@@ -424,6 +424,103 @@ describe("ZapV2 test", function () {
       expect(await TokenUtils.balanceOf(usdt, zap.address)).to.eq(0)
     }
   })
+
+  it("Zap in/out TetuBal", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    const testTargets = [
+      {
+        tokenIn: MaticAddresses.WMATIC_TOKEN,
+        amount: parseUnits('3.00001', 18),
+      },
+      {
+        tokenIn: MaticAddresses.BAL_TOKEN,
+        amount: parseUnits('1.00000001', 18),
+      },
+    ]
+
+    for (const a of testTargets) {
+      const tokenIn = a.tokenIn;
+      const amount = a.amount;
+
+      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+      const vault = SmartVault__factory.connect(await zap.TETUBAL(), signer)
+      const underlying = await zap.WETH20BAL80_BPT()
+      const weth = await zap.WETH();
+      const bal = await zap.BAL();
+      const amountsOfTokenIn = [];
+      const amountsOfAssetsIn = [];
+      const swapQuoteAsset = [];
+
+      let swapQuoteResult;
+      amountsOfTokenIn[0] = amount.mul(2).div(10).toString()
+      if (tokenIn !== weth.toLowerCase()) {
+        swapQuoteResult = await swapQuote(tokenIn, weth, amount.mul(2).div(10).toString(), zap.address);
+        swapQuoteAsset[0] = swapQuoteResult.tx.data
+        amountsOfAssetsIn[0] = swapQuoteResult.toTokenAmount
+      } else {
+        swapQuoteAsset[0] = "0x00"
+        amountsOfAssetsIn[0] = amount.mul(2).div(10).toString()
+      }
+
+      amountsOfTokenIn[1] = amount.mul(8).div(10).toString()
+      if (tokenIn !== bal.toLowerCase()) {
+        swapQuoteResult = await swapQuote(tokenIn, bal, amountsOfTokenIn[1], zap.address);
+        swapQuoteAsset[1] = swapQuoteResult.tx.data
+        amountsOfAssetsIn[1] = swapQuoteResult.toTokenAmount
+      } else {
+        swapQuoteAsset[1] = "0x00"
+        amountsOfAssetsIn[1] = amountsOfTokenIn[1]
+      }
+
+      const quoteInShared = await zap.callStatic.quoteIntoBalancerTetuBal(amountsOfAssetsIn[0], amountsOfAssetsIn[1])
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
+
+      await zap.zapIntoBalancerTetuBal(
+        tokenIn,
+        swapQuoteAsset[0],
+        swapQuoteAsset[1],
+        amount
+      )
+
+      const vaultBalance = await vault.balanceOf(signer.address);
+      expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(weth, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(bal, zap.address)).to.eq(0)
+
+      const amountsOut = await zap.callStatic.quoteOutBalancerTetuBal(vaultBalance)
+      if (tokenIn !== weth.toLowerCase()) {
+        swapQuoteAsset[0] = (await swapQuote(weth, tokenIn, amountsOut[0].toString(), zap.address)).tx.data
+      } else {
+        swapQuoteAsset[0] = '0x00'
+      }
+
+      if (tokenIn !== bal.toLowerCase()) {
+        swapQuoteAsset[1] = (await swapQuote(bal, tokenIn, amountsOut[1].toString(), zap.address)).tx.data
+      } else {
+        swapQuoteAsset[1] = '0x00'
+      }
+
+      await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
+      await zap.zapOutBalancerTetuBal(tokenIn, swapQuoteAsset[0], swapQuoteAsset[1], vaultBalance)
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(weth, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(bal, zap.address)).to.eq(0)
+    }
+  })
 })
 
 async function zapIntoSingle(signer: SignerWithAddress, zap: ZapV2, vault: SmartVault, tokenIn: string, amount: BigNumber, swapQuoteAsset: ISwapQuote) {

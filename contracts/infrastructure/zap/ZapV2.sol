@@ -43,6 +43,12 @@ contract ZapV2 is Controllable, ReentrancyGuard {
     address public constant BB_AM_USD_POOL0_TOKEN1 = 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063; // DAI
     address public constant BB_AM_USD_POOL2_TOKEN1 = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174; // USDC
     address public constant BB_AM_USD_POOL3_TOKEN1 = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; // USDT
+    address public constant TETUBAL = 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33;
+    bytes32 public constant TETUBAL_WETHBAL_POOL_ID = 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba;
+    address public constant WETH20BAL80_BPT = 0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f;
+    bytes32 public constant WETH20BAL80_POOL_ID = 0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426;
+    address public constant WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
+    address public constant BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
 
     mapping(address => uint) calls;
 
@@ -393,6 +399,90 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         _sendBackChangeAll(assets);
     }
 
+    function zapIntoBalancerTetuBal(
+        address tokenIn,
+        bytes memory asset0SwapData,
+        bytes memory asset1SwapData,
+        uint tokenInAmount
+    ) external nonReentrant onlyOneCallPerBlock {
+        require(tokenInAmount > 1, "ZC: not enough amount");
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), tokenInAmount);
+
+        if (tokenIn != WETH) {
+            _callOneInchSwap(
+                tokenIn,
+                tokenInAmount * 2 / 10,
+                asset0SwapData
+            );
+        }
+
+        if (tokenIn != BAL) {
+            _callOneInchSwap(
+                tokenIn,
+                tokenInAmount * 8 / 10,
+                asset1SwapData
+            );
+        }
+
+        address[] memory assets = new address[](2);
+        assets[0] = WETH;
+        assets[1] = BAL;
+        uint[] memory amounts = new uint[](2);
+        amounts[0] = IERC20(WETH).balanceOf(address(this));
+        amounts[1] = IERC20(BAL).balanceOf(address(this));
+        _addLiquidityBalancer(WETH20BAL80_POOL_ID, assets, amounts);
+        uint bptBalance = IERC20(WETH20BAL80_BPT).balanceOf(address(this));
+        (, uint[] memory tetuBalWethBalPoolBalances,) = IBVault(BALANCER_VAULT).getPoolTokens(TETUBAL_WETHBAL_POOL_ID);
+        uint canBuyTetuBalBPTByGoodPrice = tetuBalWethBalPoolBalances[1] > tetuBalWethBalPoolBalances[0] ? (tetuBalWethBalPoolBalances[1] - tetuBalWethBalPoolBalances[0]) / 2 : 0;
+        uint needToMintTetuBal;
+        if (canBuyTetuBalBPTByGoodPrice < bptBalance) {
+            needToMintTetuBal = bptBalance - canBuyTetuBalBPTByGoodPrice;
+        }
+        if (needToMintTetuBal != 0) {
+            ISmartVault(TETUBAL).depositAndInvest(needToMintTetuBal);
+        }
+        _balancerSwap(TETUBAL_WETHBAL_POOL_ID, WETH20BAL80_BPT, TETUBAL, bptBalance - needToMintTetuBal);
+        uint tetuBalBalance = IERC20(TETUBAL).balanceOf(address(this));
+        require(tetuBalBalance != 0, "ZC: zero shareBalance");
+        IERC20(TETUBAL).safeTransfer(msg.sender, tetuBalBalance);
+    }
+
+    function zapOutBalancerTetuBal(
+        address tokenOut,
+        bytes memory asset0SwapData,
+        bytes memory asset1SwapData,
+        uint shareAmount
+    ) external nonReentrant onlyOneCallPerBlock {
+        require(shareAmount != 0, "ZC: zero amount");
+        IERC20(TETUBAL).safeTransferFrom(msg.sender, address(this), shareAmount);
+        _balancerSwap(TETUBAL_WETHBAL_POOL_ID, TETUBAL, WETH20BAL80_BPT, shareAmount);
+
+        uint[] memory amounts = new uint[](2);
+        address[] memory assets = new address[](2);
+        assets[0] = WETH;
+        assets[1] = BAL;
+        uint[] memory amountsOut = _removeLiquidityBalancer(WETH20BAL80_POOL_ID, assets, amounts, IERC20(WETH20BAL80_BPT).balanceOf(address(this)));
+        if (tokenOut != WETH) {
+            _callOneInchSwap(
+                WETH,
+                amountsOut[0],
+                asset0SwapData
+            );
+        }
+
+        if (tokenOut != BAL) {
+            _callOneInchSwap(
+                BAL,
+                amountsOut[1],
+                asset1SwapData
+            );
+        }
+
+        uint tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
+        require(tokenOutBalance != 0, "zero token out balance");
+        IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+    }
+
     // ******************** QUOTE HELPERS *********************
 
     function quoteIntoSingle(address vault, uint amount) external view returns(uint) {
@@ -501,6 +591,49 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         outAmounts[2] = _queryBalancerSingleSwap(BB_AM_USD_POOL3_ID, 2, 1, bptOutTmp);
 
         return outAmounts;
+    }
+
+    function quoteIntoBalancerTetuBal(uint wethAmount, uint balAmount) external returns(uint) {
+        uint[] memory amounts = new uint[](2);
+        amounts[0] = wethAmount;
+        amounts[1] = balAmount;
+
+        address[] memory assets = new address[](2);
+        assets[0] = WETH;
+        assets[1] = BAL;
+
+        uint bptOut = _quoteJoinBalancer(WETH20BAL80_POOL_ID, assets, amounts);
+        (, uint[] memory tetuBalWethBalPoolBalances,) = IBVault(BALANCER_VAULT).getPoolTokens(TETUBAL_WETHBAL_POOL_ID);
+        uint canBuyTetuBalBPTByGoodPrice = tetuBalWethBalPoolBalances[1] > tetuBalWethBalPoolBalances[0] ? (tetuBalWethBalPoolBalances[1] - tetuBalWethBalPoolBalances[0]) / 2 : 0;
+        uint needToMintTetuBal;
+        if (canBuyTetuBalBPTByGoodPrice < bptOut) {
+            needToMintTetuBal = bptOut - canBuyTetuBalBPTByGoodPrice;
+        }
+
+        uint swapOut = _queryBalancerSingleSwap(TETUBAL_WETHBAL_POOL_ID, 0, 1, bptOut - needToMintTetuBal);
+
+        return swapOut + needToMintTetuBal;
+    }
+
+    function quoteOutBalancerTetuBal(uint amount) external returns(uint[] memory) {
+        uint wethBalBpt = _queryBalancerSingleSwap(TETUBAL_WETHBAL_POOL_ID, 1, 0, amount);
+        address[] memory assets = new address[](2);
+        assets[0] = WETH;
+        assets[1] = BAL;
+        uint[] memory amounts = new uint[](2);
+        (, uint[] memory amountsOut) = IBalancerHelper(BALANCER_HELPER).queryExit(
+            WETH20BAL80_POOL_ID,
+            address(this),
+            payable(address(this)),
+            IVault.JoinPoolRequest({
+        assets : assets,
+        maxAmountsIn : amounts,
+        userData : abi.encode(IBVault.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, wethBalBpt),
+        fromInternalBalance : false
+        })
+        );
+
+        return amountsOut;
     }
 
     // ************************* INTERNAL *******************
@@ -652,7 +785,8 @@ contract ZapV2 is Controllable, ReentrancyGuard {
             IBVault.ExitPoolRequest({
                 assets : _poolTokens,
                 minAmountsOut : _amounts,
-                userData : abi.encode(1, amounts, bptAmount), // BPT_IN_FOR_EXACT_TOKENS_OUT
+                /// BPT_IN_FOR_EXACT_TOKENS_OUT for stable pools or EXACT_BPT_IN_FOR_TOKENS_OUT for weighted pools
+                userData : amounts[0] != 0 ? abi.encode(1, amounts, bptAmount) : abi.encode(1, bptAmount),
                 toInternalBalance : false
             })
         );
