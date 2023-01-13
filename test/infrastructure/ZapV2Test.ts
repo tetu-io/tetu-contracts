@@ -521,6 +521,62 @@ describe("ZapV2 test", function () {
       expect(await TokenUtils.balanceOf(bal, zap.address)).to.eq(0)
     }
   })
+
+  it("Zap in/out TetuQi-Qi", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      console.error('Test only for polygon forking')
+      return;
+    }
+
+    const testTargets = [
+      {
+        tokenIn: MaticAddresses.WMATIC_TOKEN,
+        amount: parseUnits('3.00001', 18),
+      },
+    ]
+
+    for (const a of testTargets) {
+      const tokenIn = a.tokenIn;
+      const amount = a.amount;
+
+      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+      const vault = SmartVault__factory.connect(await zap.TETUQI_QI_VAULT(), signer)
+      const underlying = await zap.TETUQI_QI_BPT()
+      const qi = await zap.QI();
+
+      let swapQuoteResult = await swapQuote(tokenIn, qi, amount.toString(), zap.address);
+
+      const quoteInShared = await zap.callStatic.quoteIntoBalancerTetuQiQi(swapQuoteResult.toTokenAmount)
+      await TokenUtils.getToken(tokenIn, signer.address, amount);
+      await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
+
+      await zap.zapIntoBalancerTetuQiQi(
+        tokenIn,
+        swapQuoteResult.tx.data,
+        amount
+      )
+
+      const vaultBalance = await vault.balanceOf(signer.address);
+      expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(qi, zap.address)).to.eq(0)
+
+      const qiAmountOut = await zap.callStatic.quoteOutBalancerTetuQiQi(vaultBalance)
+      swapQuoteResult = await swapQuote(qi, tokenIn, qiAmountOut.toString(), zap.address)
+      await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
+      await zap.zapOutBalancerTetuQiQi(tokenIn, swapQuoteResult.tx.data, vaultBalance)
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+
+      // contract balance must be empty
+      expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(qi, zap.address)).to.eq(0)
+    }
+  })
 })
 
 async function zapIntoSingle(signer: SignerWithAddress, zap: ZapV2, vault: SmartVault, tokenIn: string, amount: BigNumber, swapQuoteAsset: ISwapQuote) {
