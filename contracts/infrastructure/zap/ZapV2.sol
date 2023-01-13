@@ -119,6 +119,10 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         uint tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+
+        address[] memory dustAssets = new address[](1);
+        dustAssets[0] = asset;
+        _sendBackChangeAll(dustAssets);
     }
 
     function zapIntoUniswapV2(
@@ -573,7 +577,8 @@ contract ZapV2 is Controllable, ReentrancyGuard {
     }
 
     function quoteOutSingle(address vault, uint shareAmount) external view returns(uint) {
-        return shareAmount * ISmartVault(vault).underlyingBalanceWithInvestment() / IERC20(vault).totalSupply();
+        /// @dev -1 need for stable zapOuts on all supported SmartVaults
+        return shareAmount * ISmartVault(vault).underlyingBalanceWithInvestment() / IERC20(vault).totalSupply() - 1;
     }
 
     function quoteIntoUniswapV2(address vault, uint amount0, uint amount1) external view returns(uint) {

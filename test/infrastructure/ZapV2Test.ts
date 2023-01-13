@@ -7,13 +7,16 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../TokenUtils";
 import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {
+  Bookkeeper,
+  Bookkeeper__factory, ContractReader, ContractReader__factory,
   Controller, IBPT__factory, IBVault__factory, IUniswapV2Pair__factory,
-  SmartVault, SmartVault__factory,
+  SmartVault__factory,
   ZapV2
 } from "../../typechain";
 import {parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
 import {BigNumber} from "ethers";
+import fs from "fs";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -23,6 +26,12 @@ type ISwapQuote = {
   toTokenAmount: string,
 }
 
+type VaultsCache = {
+  address: string,
+  name: string,
+  platform: number,
+}[]
+
 describe("ZapV2 test", function () {
   let snapshot: string;
   let snapshotForEach: string;
@@ -30,6 +39,8 @@ describe("ZapV2 test", function () {
   let core: CoreAddresses;
   let zap: ZapV2;
   let controller: Controller;
+  let bookkeeper: Bookkeeper;
+  let reader: ContractReader;
 
   before(async function () {
     signer = await DeployerUtils.impersonate();
@@ -41,9 +52,13 @@ describe("ZapV2 test", function () {
     }
 
     core = await DeployerUtils.getCoreAddresses();
+    const tools = await DeployerUtils.getToolsAddresses();
     zap = await DeployerUtils.deployContract(signer, "ZapV2", core.controller) as ZapV2;
     controller = await DeployerUtils.connectContract(signer, 'Controller', core.controller) as Controller;
     await controller.changeWhiteListStatus([zap.address], true);
+
+    bookkeeper = Bookkeeper__factory.connect(core.bookkeeper, signer)
+    reader = ContractReader__factory.connect(tools.reader, signer)
   });
 
   after(async function () {
@@ -58,52 +73,119 @@ describe("ZapV2 test", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it("Zap in/out single token", async () => {
+  it("Zap in/out single token. All active vaults.", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       console.error('Test only for polygon forking')
       return;
     }
 
-    const testTargets = [
-      {
-        vault: MaticAddresses.xTETU,
-        tokenIn: MaticAddresses.WMATIC_TOKEN,
-        amount: parseUnits('1.387594689349642971', 18),
-      },
-      {
-        vault: '0xb4607D4B8EcFafd063b3A3563C02801c4C7366B2', // DAI [MESH / dFORCE / AAVE]
-        tokenIn: MaticAddresses.USDC_TOKEN,
-        amount: parseUnits('3.642971', 6),
-      },
+    const excludeVaults = [
+      '0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768', // tetuQi [QIDAO]
+      '0x8f1505C8F3B45Cb839D09c607939095a4195738e', // TETU_tetuQi
+
+      // tmp
+      '0x1AB27A11A5A932e415067f6f20a65245Bd47E4D1', // xBAL
     ]
 
+    let vaults = await getActiveVaultsByPlatform([
+      24, // STRATEGY_SPLITTER
+      21, // QIDAO
+      29, // TETU
+    ], signer, bookkeeper, reader)
+    vaults = vaults.filter(v => !excludeVaults.includes(v.address))
+    console.log('Vaults for single token zapping: ', vaults.length)
+
+    const testTargets = vaults.map(v => ({
+      vault: v.address,
+      vaultName: v.name,
+      platform: v.platform,
+      tokenIn: MaticAddresses.DAI_TOKEN,
+      amount: parseUnits('3.642971', 18),
+    }))
+
+    /*const testTargets = [
+      {
+        vault: '0x1AB27A11A5A932e415067f6f20a65245Bd47E4D1',
+        vaultName: 'Tetu Vault BAL',
+        platform: 24,
+        tokenIn: MaticAddresses.DAI_TOKEN,
+        amount: parseUnits('3.642971565645546111', 18),
+      },
+    ]*/
+
     for (const a of testTargets) {
+      console.log(`=== Test vault ${a.vaultName} [platform: ${a.platform}] ${a.vault} ===`)
       const tokenIn = a.tokenIn;
       const amount = a.amount;
       const vault = SmartVault__factory.connect(a.vault, signer)
       const underlying = await vault.underlying()
 
-      const swapQuoteAsset = await swapQuote(tokenIn, underlying, amount.toString(), zap.address)
+      let tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+
+      let swapQuoteAsset: ISwapQuote
+      if (tokenIn !== underlying.toLowerCase()) {
+        swapQuoteAsset = await swapQuote(tokenIn, underlying, amount.toString(), zap.address)
+      } else {
+        swapQuoteAsset = {
+          tx: {
+            data: '0x00',
+          },
+          toTokenAmount: amount.toString(),
+        }
+      }
 
       const quoteInShared = await zap.quoteIntoSingle(vault.address, BigNumber.from(swapQuoteAsset.toTokenAmount))
 
-      await zapIntoSingle(signer, zap, vault, tokenIn, amount, swapQuoteAsset)
+      if (tokenInBalancerBofore.lt(amount)) {
+        await TokenUtils.getToken(tokenIn, signer.address, amount);
+      } else {
+        tokenInBalancerBofore = tokenInBalancerBofore.sub(amount)
+      }
+
+      await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
+
+      await zap.zapIntoSingle(
+        vault.address,
+        tokenIn,
+        swapQuoteAsset.tx.data,
+        amount
+      );
 
       const vaultBalance = await vault.balanceOf(signer.address);
       expect(vaultBalance).to.be.gt(quoteInShared.sub(quoteInShared.div(100))) // 1% slippage
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(0)
+      // expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.eq(0)
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
       expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(vault.address, zap.address)).to.eq(0)
 
-      await zapOutSingle(signer, zap, vault, tokenIn, vaultBalance)
+      await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
+      const quoteOutAsset = await zap.quoteOutSingle(vault.address, vaultBalance)
+      if (tokenIn !== underlying.toLowerCase()) {
+        swapQuoteAsset = await swapQuote(await vault.underlying(), tokenIn, quoteOutAsset.toString(), zap.address)
+      } else {
+        swapQuoteAsset = {
+          tx: {
+            data: '0x00',
+          },
+          toTokenAmount: amount.toString(),
+        }
+      }
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(amount.mul(98).div(100))
+      await zap.zapOutSingle(
+        vault.address,
+        tokenIn,
+        swapQuoteAsset.tx.data,
+        vaultBalance
+      );
+
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(99).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
       expect(await TokenUtils.balanceOf(underlying, zap.address)).to.eq(0)
+      expect(await TokenUtils.balanceOf(vault.address, zap.address)).to.eq(0)
     }
   });
 
@@ -579,31 +661,6 @@ describe("ZapV2 test", function () {
   })
 })
 
-async function zapIntoSingle(signer: SignerWithAddress, zap: ZapV2, vault: SmartVault, tokenIn: string, amount: BigNumber, swapQuoteAsset: ISwapQuote) {
-  await TokenUtils.getToken(tokenIn, signer.address, amount);
-  await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
-
-  await zap.zapIntoSingle(
-    vault.address,
-    tokenIn,
-    swapQuoteAsset.tx.data,
-    amount
-  );
-}
-
-async function zapOutSingle(signer: SignerWithAddress, zap: ZapV2, vault: SmartVault, tokenOut: string, shareAmount: BigNumber) {
-  await TokenUtils.approve(vault.address, signer, zap.address, shareAmount.toString())
-  const quoteOutAsset = await zap.quoteOutSingle(vault.address, shareAmount)
-  const swapQuoteAsset = await swapQuote(await vault.underlying(), tokenOut, quoteOutAsset.toString(), zap.address)
-
-  await zap.zapOutSingle(
-    vault.address,
-    tokenOut,
-    swapQuoteAsset.tx.data,
-    shareAmount
-  );
-}
-
 async function swapQuote(tokenIn: string, tokenOut: string, amount: string, zapContractAddress: string): Promise<ISwapQuote> {
   const params = {
     fromTokenAddress: tokenIn,
@@ -636,4 +693,44 @@ async function buildTxForSwap(params: string): Promise<ISwapQuote> {
     // console.log('res', res)
     return res.json();
   })/*.then(res => res.tx)*/;
+}
+
+async function getActiveVaultsByPlatform(platforms: number[], signer: SignerWithAddress, bookkeeper: Bookkeeper, reader: ContractReader) {
+  const cacheFileName = 'vaults-cache.json';
+  let res: VaultsCache = [];
+
+  const fsContent = fs.existsSync(cacheFileName) ? fs.readFileSync(cacheFileName) : null
+  if (fsContent) {
+    res = JSON.parse(fsContent.toString())
+    console.log(`Found ${res.length} active vaults in cache.`)
+  } else {
+    console.log("Get all active vaults from blockchain..")
+    const allVaults = await bookkeeper.vaults();
+    for (const vault of allVaults) {
+      if (!(await reader.vaultActive(vault))) {
+        continue;
+      }
+
+      const vaultContract = SmartVault__factory.connect(vault, signer)
+      const platform = parseInt((await reader.strategyPlatform(await vaultContract.strategy())).toString(), 10)
+      const name = await reader.vaultName(vault)
+
+      console.log(`${name} ${platform} ${vault}`)
+
+      res.push({
+        address: vault,
+        name,
+        platform,
+      })
+    }
+
+    fs.writeFileSync(cacheFileName, JSON.stringify(res));
+    console.log(`Found ${res.length} active vaults. Added to cache.`)
+  }
+
+  if (platforms.length) {
+    res = res.filter(v => platforms.includes(v.platform))
+  }
+
+  return res
 }
