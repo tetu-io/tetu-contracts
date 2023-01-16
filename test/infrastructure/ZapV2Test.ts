@@ -13,7 +13,7 @@ import {
   SmartVault__factory,
   ZapV2
 } from "../../typechain";
-import {parseUnits} from "ethers/lib/utils";
+import {getAddress, parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
 import {BigNumber} from "ethers";
 import fs from "fs";
@@ -490,11 +490,11 @@ describe("ZapV2 test", function () {
 
       const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
-      const vault = SmartVault__factory.connect(await zap.BB_AM_USD_VAULT(), signer)
-      const underlying = await zap.BB_AM_USD_BPT()
-      const dai = await zap.BB_AM_USD_POOL0_TOKEN1();
-      const usdc = await zap.BB_AM_USD_POOL2_TOKEN1();
-      const usdt = await zap.BB_AM_USD_POOL3_TOKEN1();
+      const vault = SmartVault__factory.connect('0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513', signer)
+      const underlying = await vault.underlying()
+      const dai = getAddress(MaticAddresses.DAI_TOKEN);
+      const usdc = getAddress(MaticAddresses.USDC_TOKEN);
+      const usdt = getAddress(MaticAddresses.USDT_TOKEN);
       const poolTokens = await zap.getBalancerPoolTokens(underlying);
       const assets = [];
       const amountsOfTokenIn = [];
@@ -619,10 +619,10 @@ describe("ZapV2 test", function () {
 
       const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
-      const vault = SmartVault__factory.connect(await zap.TETUBAL(), signer)
-      const underlying = await zap.WETH20BAL80_BPT()
-      const weth = await zap.WETH();
-      const bal = await zap.BAL();
+      const vault = SmartVault__factory.connect('0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33', signer)
+      const underlying = await vault.underlying()
+      const weth = getAddress(MaticAddresses.WETH_TOKEN);
+      const bal = getAddress(MaticAddresses.BAL_TOKEN);
       const amountsOfTokenIn = [];
       const amountsOfAssetsIn = [];
       const swapQuoteAsset = [];
@@ -712,9 +712,9 @@ describe("ZapV2 test", function () {
 
       const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
-      const vault = SmartVault__factory.connect(await zap.TETUQI_QI_VAULT(), signer)
-      const underlying = await zap.TETUQI_QI_BPT()
-      const qi = await zap.QI();
+      const vault = SmartVault__factory.connect('0x190cA39f86ea92eaaF19cB2acCA17F8B2718ed58', signer)
+      const underlying = await vault.underlying()
+      const qi = getAddress(MaticAddresses.QI_TOKEN);
 
       let swapQuoteResult = await swapQuote(tokenIn, qi, amount.toString(), zap.address);
 
