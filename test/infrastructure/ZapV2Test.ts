@@ -9,7 +9,7 @@ import {CoreAddresses} from "../../scripts/models/CoreAddresses";
 import {
   Bookkeeper,
   Bookkeeper__factory, ContractReader, ContractReader__factory,
-  Controller, IBPT__factory, IBVault__factory, IUniswapV2Pair__factory,
+  Controller, IUniswapV2Pair__factory,
   SmartVault__factory,
   ZapV2
 } from "../../typechain";
@@ -120,7 +120,7 @@ describe("ZapV2 test", function () {
       const vault = SmartVault__factory.connect(a.vault, signer)
       const underlying = await vault.underlying()
 
-      let tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+      let tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
       let swapQuoteAsset: ISwapQuote
       if (tokenIn !== underlying.toLowerCase()) {
@@ -136,10 +136,10 @@ describe("ZapV2 test", function () {
 
       const quoteInShared = await zap.quoteIntoSingle(vault.address, BigNumber.from(swapQuoteAsset.toTokenAmount))
 
-      if (tokenInBalancerBofore.lt(amount)) {
+      if (tokenInBalanceBefore.lt(amount)) {
         await TokenUtils.getToken(tokenIn, signer.address, amount);
       } else {
-        tokenInBalancerBofore = tokenInBalancerBofore.sub(amount)
+        tokenInBalanceBefore = tokenInBalanceBefore.sub(amount)
       }
 
       await TokenUtils.approve(tokenIn, signer, zap.address, amount.toString())
@@ -180,7 +180,7 @@ describe("ZapV2 test", function () {
         vaultBalance
       );
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(99).div(100)))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(99).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
@@ -228,7 +228,7 @@ describe("ZapV2 test", function () {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
 
-      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+      const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
       const vault = SmartVault__factory.connect(a.vault, signer)
       const underlying = await vault.underlying()
@@ -312,7 +312,7 @@ describe("ZapV2 test", function () {
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutUniswapV2(vault.address, tokenIn, swapQuoteOutAsset0.tx.data, swapQuoteOutAsset1.tx.data,vaultBalance)
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
@@ -374,15 +374,12 @@ describe("ZapV2 test", function () {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
 
-      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+      const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
       const vault = SmartVault__factory.connect(a.vault, signer)
 
-      // todo Make zap contract view function for extracting this data for bpt vaults
       const underlying = await vault.underlying()
-      const bpt = IBPT__factory.connect(underlying, signer)
-      const bVault = IBVault__factory.connect(MaticAddresses.BALANCER_VAULT, signer)
-      const poolTokens = await bVault.getPoolTokens(await bpt.getPoolId())
+      const poolTokens = await zap.getBalancerPoolTokens(underlying);
       const assets = [];
       const amountsOfTokenIn = [];
       const amountsOfAssetsIn = [];
@@ -460,7 +457,7 @@ describe("ZapV2 test", function () {
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutBalancer(vault.address, tokenIn, assets, amountsOut.filter(b => b.gt(0)), swapQuoteAsset, vaultBalance)
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
 
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
       // tslint:disable-next-line:prefer-for-of
@@ -491,17 +488,14 @@ describe("ZapV2 test", function () {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
 
-      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+      const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
-      // todo Make zap contract view function for extracting this data for bpt vaults
       const vault = SmartVault__factory.connect(await zap.BB_AM_USD_VAULT(), signer)
       const underlying = await zap.BB_AM_USD_BPT()
       const dai = await zap.BB_AM_USD_POOL0_TOKEN1();
       const usdc = await zap.BB_AM_USD_POOL2_TOKEN1();
       const usdt = await zap.BB_AM_USD_POOL3_TOKEN1();
-      const bpt = IBPT__factory.connect(underlying, signer)
-      const bVault = IBVault__factory.connect(MaticAddresses.BALANCER_VAULT, signer)
-      const poolTokens = await bVault.getPoolTokens(await bpt.getPoolId())
+      const poolTokens = await zap.getBalancerPoolTokens(underlying);
       const assets = [];
       const amountsOfTokenIn = [];
       const amountsOfAssetsIn = [];
@@ -591,7 +585,7 @@ describe("ZapV2 test", function () {
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutBalancerAaveBoostedStablePool(tokenIn, swapQuoteAsset, vaultBalance)
 
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
@@ -623,7 +617,7 @@ describe("ZapV2 test", function () {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
 
-      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+      const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
       const vault = SmartVault__factory.connect(await zap.TETUBAL(), signer)
       const underlying = await zap.WETH20BAL80_BPT()
@@ -689,7 +683,7 @@ describe("ZapV2 test", function () {
 
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutBalancerTetuBal(tokenIn, swapQuoteAsset[0], swapQuoteAsset[1], vaultBalance)
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)
@@ -716,7 +710,7 @@ describe("ZapV2 test", function () {
       const tokenIn = a.tokenIn;
       const amount = a.amount;
 
-      const tokenInBalancerBofore = await TokenUtils.balanceOf(tokenIn, signer.address)
+      const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
       const vault = SmartVault__factory.connect(await zap.TETUQI_QI_VAULT(), signer)
       const underlying = await zap.TETUQI_QI_BPT()
@@ -746,7 +740,7 @@ describe("ZapV2 test", function () {
       swapQuoteResult = await swapQuote(qi, tokenIn, qiAmountOut.toString(), zap.address)
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutBalancerTetuQiQi(tokenIn, swapQuoteResult.tx.data, vaultBalance)
-      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalancerBofore.add(amount.mul(98).div(100)))
+      expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
 
       // contract balance must be empty
       expect(await TokenUtils.balanceOf(tokenIn, zap.address)).to.eq(0)

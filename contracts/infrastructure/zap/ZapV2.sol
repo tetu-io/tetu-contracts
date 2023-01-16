@@ -776,6 +776,17 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         return amountsOut[2];
     }
 
+    // ******************** DATA EXTRACTION HELPERS *********************
+
+    function getBalancerPoolTokens(address bpt) external view returns(
+        IERC20[] memory,
+        uint[] memory
+    ) {
+        bytes32 poolId = IBPT(bpt).getPoolId();
+        (IERC20[] memory tokens, uint[] memory balances,) = IBVault(BALANCER_VAULT).getPoolTokens(poolId);
+        return (tokens, balances);
+    }
+
     // ************************* INTERNAL *******************
 
     function _queryBalancerSingleSwap(bytes32 poolId, uint assetInIndex, uint assetOutIndex, uint amountIn) internal returns (uint) {
