@@ -22,7 +22,9 @@ import "../../third_party/balancer/IBalancerHelper.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 
-
+/// @title The second generation of dedicated solution for interacting with Tetu vaults.
+///        Able to zap in/out assets to vaults.
+/// @author a17
 contract ZapV2 is Controllable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -122,7 +124,7 @@ contract ZapV2 is Controllable, ReentrancyGuard {
 
         address[] memory dustAssets = new address[](1);
         dustAssets[0] = asset;
-        _sendBackChangeAll(dustAssets);
+        _sendBackChange(dustAssets);
     }
 
     function zapIntoUniswapV2(
@@ -161,7 +163,10 @@ contract ZapV2 is Controllable, ReentrancyGuard {
 
         _depositToVault(vault, address(lp), lpAmount);
 
-        _sendBackChange(asset0, asset1);
+        address[] memory dustAssets = new address[](2);
+        dustAssets[0] = asset0;
+        dustAssets[1] = asset1;
+        _sendBackChange(dustAssets);
     }
 
     function zapOutUniswapV2(
@@ -205,7 +210,10 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
 
-        _sendBackChange(asset0, asset1);
+        address[] memory dustAssets = new address[](2);
+        dustAssets[0] = asset0;
+        dustAssets[1] = asset1;
+        _sendBackChange(dustAssets);
     }
 
     function zapIntoBalancer(
@@ -232,13 +240,18 @@ contract ZapV2 is Controllable, ReentrancyGuard {
 
         uint[] memory amounts = new uint[](len);
         for (i = 0; i < len; i++) {
-            if (tokenInAmounts[i] != 0 && tokenIn != assets[i]) {
-                _callOneInchSwap(
-                    tokenIn,
-                    tokenInAmounts[i],
-                    assetsSwapData[i]
-                );
-                amounts[i] = IERC20(assets[i]).balanceOf(address(this));
+            if (tokenInAmounts[i] != 0) {
+                if (tokenIn != assets[i]) {
+                    _callOneInchSwap(
+                        tokenIn,
+                        tokenInAmounts[i],
+                        assetsSwapData[i]
+                    );
+                    amounts[i] = IERC20(assets[i]).balanceOf(address(this));
+                } else {
+                    amounts[i] = tokenInAmounts[i];
+                }
+
             }
         }
 
@@ -284,7 +297,7 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
 
-        _sendBackChangeAll(assets);
+        _sendBackChange(assets);
     }
 
     function zapIntoBalancerAaveBoostedStablePool(
@@ -405,7 +418,7 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         assets[1] = BB_AM_USD_POOL0_TOKEN1;
         assets[2] = BB_AM_USD_POOL2_TOKEN1;
         assets[3] = BB_AM_USD_POOL3_TOKEN1;
-        _sendBackChangeAll(assets);
+        _sendBackChange(assets);
     }
 
     function zapIntoBalancerTetuBal(
@@ -986,26 +999,13 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         amountB = amountA * reserveB / reserveA;
     }
 
-    function _sendBackChangeAll(address[] memory assets) internal {
+    function _sendBackChange(address[] memory assets) internal {
         uint len = assets.length;
         for (uint i; i < len; i++) {
             uint bal = IERC20(assets[i]).balanceOf(address(this));
             if (bal != 0) {
                 IERC20(assets[i]).safeTransfer(msg.sender, bal);
             }
-        }
-    }
-
-    function _sendBackChange(address asset0, address asset1) internal {
-        uint bal0 = IERC20(asset0).balanceOf(address(this));
-        uint bal1 = IERC20(asset1).balanceOf(address(this));
-
-        if (bal0 != 0) {
-            IERC20(asset0).safeTransfer(msg.sender, bal0);
-        }
-
-        if (bal1 != 0) {
-            IERC20(asset1).safeTransfer(msg.sender, bal1);
         }
     }
 
