@@ -15,9 +15,10 @@ import "../../openzeppelin/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
-import "../../third_party/balancer/IBVault.sol";
-import "../../third_party/balancer/IBPT.sol";
-import "./ZapV2Libraries.sol";
+import "./ZapV2UniswapLibrary.sol";
+import "./ZapV2CommonLibrary.sol";
+import "./ZapV2Balancer1Library.sol";
+import "./ZapV2Balancer2Library.sol";
 
 /// @title The second generation of dedicated solution for interacting with Tetu vaults.
 ///        Able to zap in/out assets to vaults.
@@ -26,9 +27,7 @@ contract ZapV2 is Controllable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     string public constant VERSION = "1.0.0";
-    address internal constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-
-    mapping(address => uint) calls;
+    mapping(address => uint) private calls;
 
     constructor(address controller_) {
         Controllable.initializeControllable(controller_);
@@ -250,9 +249,7 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         IERC20[] memory,
         uint[] memory
     ) {
-        bytes32 poolId = IBPT(bpt).getPoolId();
-        (IERC20[] memory tokens, uint[] memory balances,) = IBVault(BALANCER_VAULT).getPoolTokens(poolId);
-        return (tokens, balances);
+        return ZapV2Balancer2Library.getBalancerPoolTokens(bpt);
     }
 
     // ************************* GOV ACTIONS *******************
