@@ -195,9 +195,10 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         return amount * IERC20(vault).totalSupply() / ISmartVault(vault).underlyingBalanceWithInvestment();
     }
 
-    function quoteOutSingle(address vault, uint shareAmount) external view returns(uint) {
+    function quoteOutSingle(address vault, uint shareAmount, uint gap) external view returns(uint) {
         /// @dev -1 need for stable zapOuts on all supported SmartVaults
-        return shareAmount * ISmartVault(vault).underlyingBalanceWithInvestment() / IERC20(vault).totalSupply() - 1;
+        ///      gap need for unusual vaults
+        return shareAmount * ISmartVault(vault).underlyingBalanceWithInvestment() / IERC20(vault).totalSupply() * (1e8 - gap) / 1e8 - 1;
     }
 
     function quoteIntoUniswapV2(address vault, uint amount0, uint amount1) external view returns(uint) {

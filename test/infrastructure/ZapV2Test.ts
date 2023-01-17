@@ -82,10 +82,11 @@ describe("ZapV2 test", function () {
     const excludeVaults = [
       '0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768', // tetuQi [QIDAO]
       '0x8f1505C8F3B45Cb839D09c607939095a4195738e', // TETU_tetuQi
-
-      // skip, not working quoteOut for this vault
-      '0x1AB27A11A5A932e415067f6f20a65245Bd47E4D1', // xBAL
     ]
+
+    const gaps: {[addr:string]: number} = {
+      '0x1AB27A11A5A932e415067f6f20a65245Bd47E4D1': 100,
+    }
 
     let vaults = await getActiveVaultsByPlatform([
       24, // STRATEGY_SPLITTER
@@ -117,6 +118,7 @@ describe("ZapV2 test", function () {
       console.log(`=== Test vault ${a.vaultName} [platform: ${a.platform}] ${a.vault} ===`)
       const tokenIn = a.tokenIn;
       const amount = a.amount;
+      const gap = gaps[a.vault] || 0
       const vault = SmartVault__factory.connect(a.vault, signer)
       const underlying = await vault.underlying()
 
@@ -161,7 +163,7 @@ describe("ZapV2 test", function () {
       expect(await TokenUtils.balanceOf(vault.address, zap.address)).to.eq(0)
 
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
-      const quoteOutAsset = await zap.quoteOutSingle(vault.address, vaultBalance)
+      const quoteOutAsset = await zap.quoteOutSingle(vault.address, vaultBalance, gap)
       if (tokenIn !== underlying.toLowerCase()) {
         swapQuoteAsset = await swapQuote(await vault.underlying(), tokenIn, quoteOutAsset.toString(), zap.address)
       } else {
