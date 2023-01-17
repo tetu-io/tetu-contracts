@@ -23,3 +23,5 @@ core_addresses.txt
 tool_addresses.txt
 .env
 docs
+
+vaults-cache.json

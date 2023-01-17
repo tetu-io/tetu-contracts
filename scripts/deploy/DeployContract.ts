@@ -7,9 +7,10 @@ import {formatUnits} from "ethers/lib/utils";
 
 const log: Logger = new Logger(logSettings);
 
-const libraries = new Map<string, string>([
-  ['SmartVault', 'VaultLibrary'],
-  ['SmartVaultV110', 'VaultLibrary']
+const libraries = new Map<string, string[]>([
+  ['SmartVault', ['VaultLibrary',]],
+  ['SmartVaultV110', ['VaultLibrary',]],
+  ['ZapV2', ['ZapV2UniswapLibrary','ZapV2Balancer1Library','ZapV2Balancer2Library',]],
 ]);
 
 export async function deployContract<T extends ContractFactory>(
@@ -28,13 +29,15 @@ export async function deployContract<T extends ContractFactory>(
 
   const gasPrice = await web3.eth.getGasPrice();
   log.info("Gas price: " + formatUnits(gasPrice, 9));
-  const lib: string | undefined = libraries.get(name);
+  const libs: string[]|undefined = libraries.get(name);
   let _factory;
-  if (lib) {
-    log.info('DEPLOY LIBRARY', lib, 'for', name);
-    const libAddress = (await deployContract(hre, signer, lib)).address;
+  if (libs) {
     const librariesObj: Libraries = {};
-    librariesObj[lib] = libAddress;
+    for (const lib of libs) {
+      log.info('DEPLOY LIBRARY', lib, 'for', name);
+      librariesObj[lib] = (await deployContract(hre, signer, lib)).address;
+    }
+
     _factory = (await ethers.getContractFactory(
       name,
       {
