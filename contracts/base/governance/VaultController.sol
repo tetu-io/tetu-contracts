@@ -29,7 +29,7 @@ contract VaultController is Initializable, ControllableV2, VaultControllerStorag
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant VERSION = "1.3.0";
+  string public constant VERSION = "1.3.1";
 
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
@@ -159,13 +159,6 @@ contract VaultController is Initializable, ControllableV2, VaultControllerStorag
   function rebalance(address[] calldata _targets) external onlyGovernance {
     for (uint256 i = 0; i < _targets.length; i++) {
       ISmartVault(_targets[i]).rebalance();
-    }
-  }
-
-  /// @notice Only Governance can do it. Disable not inited locks
-  function disableLocks(address[] calldata _targets) external onlyGovernance {
-    for (uint256 i = 0; i < _targets.length; i++) {
-      ISmartVault(_targets[i]).disableLock();
     }
   }
 

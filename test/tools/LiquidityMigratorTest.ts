@@ -4,6 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {
+  AutoRewarder, AutoRewarder__factory,
   ContractUtils,
   IBVault__factory,
   IERC20__factory, ISmartVault, ISmartVault__factory,
@@ -36,7 +37,7 @@ describe.skip("LiquidityMigratorTest", function () {
   before(async function () {
     this.timeout(1200000);
     snapshot = await TimeUtils.snapshot();
-    signer = (await ethers.getSigners())[0];
+    signer = await DeployerUtils.impersonate();
 
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
 
@@ -140,7 +141,7 @@ describe.skip("LiquidityMigratorTest", function () {
   });
 
 
-  it("migrate with buyback", async () => {
+  it.skip("migrate with buyback", async () => {
     await poolPrice(signer, POOL_ID)
     const uni2Pool = await migrator.UNI2_POOL();
     const pool = await migrator.BALANCER_POOL_ADDRESS();
@@ -189,12 +190,42 @@ describe.skip("LiquidityMigratorTest", function () {
     await sellTetuInLoop(signer, POOL_ID);
   });
 
-  it("compare price impact", async () => {
+  it("MIGRATE", async () => {
+    await ISmartVault__factory.connect('0xeE3B4Ce32A6229ae15903CDa0A5Da92E739685f7', await DeployerUtils.impersonate()).withdrawAllToVault()
+
+    await poolPrice(signer, POOL_ID)
     const uni2Pool = await migrator.UNI2_POOL();
+    const pool = await migrator.BALANCER_POOL_ADDRESS();
+
     const univ2Bal = await IERC20__factory.connect(uni2Pool, signer).balanceOf(core.fundKeeper.address)
-    await IERC20__factory.connect(uni2Pool, await DeployerUtils.impersonate(core.fundKeeper.address)).transfer(migrator.address, univ2Bal);
-    await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, await DeployerUtils.impersonate(rewarder)).transfer(migrator.address, parseUnits('17000000'));
-    await migrator.migrate(100, false);
+    console.log('univ2Bal', univ2Bal.toString());
+
+    await core.announcer.announceTokenMove(13, core.fundKeeper.address, uni2Pool, univ2Bal);
+    await core.announcer.announceTokenMove(11, migrator.address, uni2Pool, univ2Bal);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await core.controller.fundKeeperTokenMove(core.fundKeeper.address, uni2Pool, univ2Bal);
+    await core.controller.controllerTokenMove(migrator.address, uni2Pool, univ2Bal);
+
+    await AutoRewarder__factory.connect(rewarder, signer).withdraw(MaticAddresses.TETU_TOKEN, parseUnits('17000000'));
+    await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).transfer(migrator.address, parseUnits('17000000'));
+
+    // await migrator.migrate(1, true);
+    // const univ2BalM = await IERC20__factory.connect(uni2Pool, signer).balanceOf(migrator.address)
+    // expect(+formatUnits(univ2BalM)).approximately(+formatUnits(univ2Bal) * 0.99, 0)
+    // const poolBalM = await IERC20__factory.connect(pool, signer).balanceOf(migrator.address)
+    // expect(+formatUnits(poolBalM)).approximately(135404, 10_000)
+
+    console.log('MIGRATE!');
+
+    await migrator.migrate(100, true);
+
+    const univ2BalM2 = await IERC20__factory.connect(uni2Pool, signer).balanceOf(migrator.address)
+    expect(univ2BalM2.isZero()).eq(true);
+    const poolBalM2 = await IERC20__factory.connect(pool, signer).balanceOf(migrator.address)
+    expect(+formatUnits(poolBalM2)).approximately(13655492, 1000_000)
+    await poolPrice(signer, POOL_ID)
   });
 });
 
@@ -263,7 +294,7 @@ async function buyTetuInLoop(signer: SignerWithAddress, pool: string) {
   await IERC20__factory.connect(MaticAddresses.USDC_TOKEN, signer).approve(MaticAddresses.BALANCER_VAULT, Misc.MAX_UINT)
 
   for (let i = 0; i < 100; i++) {
-    if(i < 1) {
+    if (i < 1) {
       await buyTetu(signer, pool, parseUnits('9000', 6));
     } else {
       await buyTetu(signer, pool, parseUnits('10000', 6));

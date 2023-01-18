@@ -23,6 +23,7 @@ import "../infrastructure/price/IPriceCalculator.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/Math.sol";
 import "../third_party/IERC20Extended.sol";
+import "../openzeppelin/IERC4626.sol";
 
 /// @title View data reader for using on website UI and other integrations
 /// @author belbix
@@ -394,6 +395,12 @@ contract ContractReader is Initializable, ControllableV2 {
   function vaultTvlUsdc(address _vault) public view returns (uint256){
     uint256 underlyingPrice = getPrice(vaultUnderlying(_vault));
     return vaultTvl(_vault).mul(underlyingPrice).div(PRECISION);
+  }
+
+  // normalized precision
+  function vaultERC2626TvlUsdc(address _vault) public view returns (uint256){
+    uint256 underlyingPrice = getPrice(IERC4626(_vault).asset());
+    return normalizePrecision(IERC4626(_vault).totalAssets(), IERC4626(_vault).decimals()) * underlyingPrice / PRECISION;
   }
 
   function vaultDecimals(address _vault) public view returns (uint256){
