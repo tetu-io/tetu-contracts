@@ -27,8 +27,23 @@ export async function deployContract<T extends ContractFactory>(
   log.info(`Deploying ${name}`);
   log.info("Account balance: " + utils.formatUnits(await signer.getBalance(), 18));
 
-  const gasPrice = await web3.eth.getGasPrice();
+  let gasPrice = await web3.eth.getGasPrice();
   log.info("Gas price: " + formatUnits(gasPrice, 9));
+
+  if (hre.network.name === 'eth') {
+    while (true) {
+      if (+formatUnits(gasPrice, 9) < 20) {
+        break;
+      } else {
+        console.log('Wait for good gas price');
+        await delay(60_000);
+      }
+      gasPrice = await web3.eth.getGasPrice();
+      log.info("Gas price: " + formatUnits(gasPrice, 9));
+    }
+  }
+
+
   const libs: string[]|undefined = libraries.get(name);
   let _factory;
   if (libs) {

@@ -69,7 +69,11 @@ describe("TetuRelayerTest", function () {
 
     const balDF = await token.balanceOf(owner2.address);
 
+    await expect(relayer.move(owner2.address, 100)).revertedWith('time-lock');
+    await relayer.announceMove(owner2.address);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 3)
     await relayer.move(owner2.address, 100);
+    console.log('1')
 
     const balDFAfter = await token.balanceOf(owner2.address);
 
@@ -79,12 +83,18 @@ describe("TetuRelayerTest", function () {
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7)
 
+    await expect(relayer.move(owner2.address, 100)).revertedWith('time-lock');
+    await relayer.announceMove(owner2.address);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2)
     await relayer.move(owner2.address, 100);
 
     await expect(relayer.move(owner2.address, 100)).revertedWith('delay');
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7)
 
+    await expect(relayer.move(owner2.address, 100)).revertedWith('time-lock');
+    await relayer.announceMove(owner2.address);
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2)
     await relayer.move(owner2.address, 100);
   });
 

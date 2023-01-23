@@ -26,12 +26,16 @@ contract TetuRewardRelayer {
 
   uint public constant MAX_TRANSFER = 10_000_000e18;
   uint public constant DELAY = 7 days;
+  uint public constant TIME_LOCK = 2 days;
 
   address public immutable tetu;
   address public immutable controller;
 
   IVesting public vesting;
   uint public lastTransfer;
+  mapping(address => uint) public announces;
+
+  event Announced(address destination, uint ts);
 
   constructor(address _tetu, address _controller) {
     tetu = _tetu;
@@ -40,7 +44,15 @@ contract TetuRewardRelayer {
 
   function initVesting(address _vesting) external {
     require(address(vesting) == address(0), 'inited');
-    vesting = _vesting;
+    vesting = IVesting(_vesting);
+  }
+
+  function announceMove(address destination) external {
+    require(IController(controller).governance() == msg.sender, "!gov");
+
+    announces[destination] = block.timestamp;
+
+    emit Announced(destination, block.timestamp);
   }
 
   function move(address destination, uint amount) external {
@@ -48,12 +60,14 @@ contract TetuRewardRelayer {
 
     require(amount <= MAX_TRANSFER, "max");
     require((block.timestamp - lastTransfer) > DELAY, "delay");
+    require(announces[destination] != 0 && block.timestamp > (announces[destination] + TIME_LOCK), "time-lock");
 
     uint balance = IERC20(tetu).balanceOf(address(this));
 
     require(balance >= amount, '!amount');
 
     lastTransfer = block.timestamp;
+    delete announces[destination];
 
     IERC20(tetu).safeTransfer(destination, amount);
   }
