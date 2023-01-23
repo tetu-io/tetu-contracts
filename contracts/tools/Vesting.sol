@@ -32,6 +32,7 @@ contract Vesting {
 
   function start(uint amount) external {
     require(startTs == 0, "Already started");
+    require(claimant == msg.sender, "Not claimant");
 
     require(IERC20(token).balanceOf(address(this)) == amount, "Incorrect amount");
 

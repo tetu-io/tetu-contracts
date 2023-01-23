@@ -48,7 +48,7 @@ describe("vesting tests", function () {
   });
 
   it("start and claim in a loop", async function () {
-    await vesting.start(10_000);
+    await vesting.connect(claimant).start(10_000);
 
     await TimeUtils.advanceBlocksOnTs(cliffPeriod);
 
@@ -67,7 +67,7 @@ describe("vesting tests", function () {
   });
 
   it("start and claim after the whole period", async function () {
-    await vesting.start(10_000);
+    await vesting.connect(claimant).start(10_000);
 
     await TimeUtils.advanceBlocksOnTs(cliffPeriod + vestingPeriod);
 
@@ -78,7 +78,7 @@ describe("vesting tests", function () {
   });
 
   it("already started revert", async function () {
-    await vesting.start(10_000);
+    await vesting.connect(claimant).start(10_000);
     await expect(vesting.start(10_000)).revertedWith("Already started")
   });
 
@@ -91,12 +91,12 @@ describe("vesting tests", function () {
   });
 
   it("claim too early revert", async function () {
-    await vesting.start(10_000);
+    await vesting.connect(claimant).start(10_000);
     await expect(vesting.connect(claimant).claim()).revertedWith("Too early")
   });
 
   it("claim zero revert", async function () {
-    await vesting.start(10_000);
+    await vesting.connect(claimant).start(10_000);
     await TimeUtils.advanceBlocksOnTs(cliffPeriod + vestingPeriod);
     await vesting.connect(claimant).claim();
     await expect(vesting.connect(claimant).claim()).revertedWith("Nothing to claim")
