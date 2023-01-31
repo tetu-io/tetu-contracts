@@ -18,8 +18,8 @@ chai.use(chaiAsPromised);
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
 
-const TOKEN_IN = MaticAddresses.USDC_TOKEN;
-const TOKEN_OUT = MaticAddresses.TETU_TOKEN;
+const TOKEN_IN = MaticAddresses.TETU_TOKEN;
+const TOKEN_OUT = MaticAddresses.USDC_TOKEN;
 
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
@@ -64,7 +64,7 @@ describe("TradeBot 1inch test", function () {
     if (argv.hardhatChainId !== 137) {
       return;
     }
-    const tokenInAmount = utils.parseUnits('100000', 6);
+    const tokenInAmount = utils.parseUnits('100000', 18);
     await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
     await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
     await bot.open(
@@ -72,8 +72,8 @@ describe("TradeBot 1inch test", function () {
       TOKEN_IN,
       tokenInAmount,
       TOKEN_OUT,
-      parseUnits('0.01'),
-      parseUnits('0.02'),
+      parseUnits((1 / 0.03).toFixed(18)),
+      parseUnits((1 / 0.01).toFixed(18)),
     );
 
     expect(await TokenUtils.balanceOf(TOKEN_IN, owner.address)).is.eq(0);
@@ -105,7 +105,9 @@ describe("TradeBot 1inch test", function () {
     if (argv.hardhatChainId !== 137) {
       return;
     }
-    const tokenInAmount = utils.parseUnits('100000', 6);
+    console.log(parseUnits((1 / 0.03).toFixed(18)).toString())
+    console.log(parseUnits((1 / 0.01).toFixed(18)).toString())
+    const tokenInAmount = utils.parseUnits('100000', 18);
     await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
     await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
     await bot.open(
@@ -113,8 +115,8 @@ describe("TradeBot 1inch test", function () {
       TOKEN_IN,
       tokenInAmount,
       TOKEN_OUT,
-      parseUnits('0.01'),
-      parseUnits('0.02'),
+      parseUnits((1 / 0.03).toFixed(18)),
+      parseUnits((1 / 0.01).toFixed(18)),
     );
 
     const params = {
@@ -146,7 +148,7 @@ describe("TradeBot 1inch test", function () {
     if (argv.hardhatChainId !== 137) {
       return;
     }
-    const tokenInAmount = utils.parseUnits('100000', 6);
+    const tokenInAmount = utils.parseUnits('100000', 18);
     await TokenUtils.getToken(TOKEN_IN, owner.address, tokenInAmount)
     await TokenUtils.approve(TOKEN_IN, owner, bot.address, tokenInAmount.toString())
     await bot.open(
@@ -154,8 +156,8 @@ describe("TradeBot 1inch test", function () {
       TOKEN_IN,
       tokenInAmount,
       TOKEN_OUT,
-      parseUnits('0.01'),
-      parseUnits('0.02'),
+      parseUnits((1 / 0.03).toFixed(18)),
+      parseUnits((1 / 0.01).toFixed(18)),
     );
 
     const params = {

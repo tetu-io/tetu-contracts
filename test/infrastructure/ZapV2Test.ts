@@ -336,6 +336,8 @@ describe("ZapV2 test", function () {
       '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33', // tetuBAL [BALANCER] - standalone zap methods
       '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513', // amUSD BPT [BALANCER] - standalone zap methods
       '0x6922201f0d25Aba8368e7806642625879B35aB84', // Tetu Vault POL 80TETU-20USDC [BALANCER] - skip
+      '0xA8Fab27B7d41fF354f0034addC2d6a53b5E31356', //  Tetu Vault B-stMATIC-Stable [platform: 36]
+      '0x1e8a077d43A963504260281E73EfCA6292d48A2f', // Tetu Vault  B-MaticX-Stable [platform: 36]
     ];
     let vaults = await getActiveVaultsByPlatform([
       36, // BALANCER
