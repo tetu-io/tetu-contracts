@@ -1227,6 +1227,10 @@ export class DeployerUtils {
       return ((await ethers.getSigners())[0]).address;
     } else if (net.chainId === 56) {
       return BscAddresses.GOVERNANCE;
+    }  else if (net.chainId === 5) {
+      return '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94';
+    }  else if (net.chainId === 11155111) {
+      return '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94';
     } else {
       throw Error('No config for ' + net.chainId);
     }

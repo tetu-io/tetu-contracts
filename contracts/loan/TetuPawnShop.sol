@@ -31,7 +31,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.3";
+  string public constant VERSION = "1.0.4";
   /// @dev Time lock for any governance actions
   uint256 constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
@@ -41,9 +41,9 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   /// @dev Standard auction duration that refresh when a new bid placed
   uint256 constant public AUCTION_DURATION = 1 days;
   /// @dev Timestamp date when contract created
-  uint256 immutable createdTs;
+  uint256 public immutable createdTs;
   /// @dev Block number when contract created
-  uint256 immutable createdBlock;
+  uint256 public immutable createdBlock;
 
   // ---- CHANGEABLE VARIABLES
 
@@ -148,6 +148,10 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(_collateralToken != address(0), "TPS: Zero cToken");
     require(_acquiredToken != address(0), "TPS: Zero aToken");
 
+    AssetType assetType = _getAssetType(_collateralToken);
+    require((assetType == AssetType.ERC20 && _collateralAmount != 0 && _collateralTokenId == 0)
+      || (assetType == AssetType.ERC721 && _collateralAmount == 0 && _collateralTokenId != 0), "TPS: Incorrect");
+
     Position memory pos;
     {
       PositionInfo memory info = PositionInfo(
@@ -159,7 +163,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
       PositionCollateral memory collateral = PositionCollateral(
         _collateralToken,
-        _getAssetType(_collateralToken),
+          assetType,
         _collateralAmount,
         _collateralTokenId
       );
