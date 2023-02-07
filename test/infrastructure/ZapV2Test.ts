@@ -11,7 +11,7 @@ import {
   Bookkeeper__factory, ContractReader, ContractReader__factory,
   Controller, IUniswapV2Pair__factory,
   SmartVault__factory,
-  ZapV2
+  ZapV2, ZapV2Helper
 } from "../../typechain";
 import {getAddress, parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
@@ -38,6 +38,7 @@ describe("ZapV2 test", function () {
   let signer: SignerWithAddress;
   let core: CoreAddresses;
   let zap: ZapV2;
+  let zapHelper: ZapV2Helper;
   let controller: Controller;
   let bookkeeper: Bookkeeper;
   let reader: ContractReader;
@@ -54,6 +55,7 @@ describe("ZapV2 test", function () {
     core = await DeployerUtils.getCoreAddresses();
     const tools = await DeployerUtils.getToolsAddresses();
     zap = await DeployerUtils.deployContract(signer, "ZapV2", core.controller) as ZapV2;
+    zapHelper = await DeployerUtils.deployContract(signer, "ZapV2Helper") as ZapV2Helper;
     controller = await DeployerUtils.connectContract(signer, 'Controller', core.controller) as Controller;
     await controller.changeWhiteListStatus([zap.address], true);
 
@@ -389,18 +391,23 @@ describe("ZapV2 test", function () {
 
       let totalAmountOfRealTokensInPool = BigNumber.from(0);
 
+      let poolHavePhantomBpt = false
       // tslint:disable-next-line:prefer-for-of
       for (let i = 0; i < poolTokens[0].length; i++) {
         assets[i] = poolTokens[0][i]
+        const decimals = await TokenUtils.decimals(assets[i])
         if (assets[i] !== underlying) {
-          totalAmountOfRealTokensInPool = totalAmountOfRealTokensInPool.add(poolTokens[1][i])
+          totalAmountOfRealTokensInPool = totalAmountOfRealTokensInPool.add(poolTokens[1][i].mul(parseUnits('1', decimals)))
+        } else {
+          poolHavePhantomBpt = true
         }
       }
 
       // tslint:disable-next-line:prefer-for-of
       for (let i = 0; i < poolTokens[0].length; i++) {
         if (assets[i] !== underlying) {
-          amountsOfTokenIn[i] = amount.mul(poolTokens[1][i]).div(totalAmountOfRealTokensInPool).toString()
+          const decimals = await TokenUtils.decimals(assets[i])
+          amountsOfTokenIn[i] = amount.mul(poolTokens[1][i]).mul(parseUnits('1', decimals)).div(totalAmountOfRealTokensInPool).toString()
           if (tokenIn !== assets[i].toLowerCase()) {
             const swapQuoteResult = await swapQuote(tokenIn, assets[i], amountsOfTokenIn[i], zap.address);
             swapQuoteAsset[i] = swapQuoteResult.tx.data
@@ -442,7 +449,7 @@ describe("ZapV2 test", function () {
         expect(await TokenUtils.balanceOf(assets[i], zap.address)).to.eq(0)
       }
 
-      const amountsOut = await zap.quoteOutBalancer(vault.address, assets, vaultBalance)
+      const amountsOut = await zapHelper.quoteOutBalancer(vault.address, assets, vaultBalance)
 
       for (let i = 0; i < assets.length; i++) {
         if (assets[i] !== underlying) {
@@ -457,7 +464,7 @@ describe("ZapV2 test", function () {
       }
 
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
-      await zap.zapOutBalancer(vault.address, tokenIn, assets, amountsOut.filter(b => b.gt(0)), swapQuoteAsset, vaultBalance)
+      await zap.zapOutBalancer(vault.address, tokenIn, assets, poolHavePhantomBpt ? amountsOut.filter(b => b.gt(0)) : amountsOut.map(() => BigNumber.from(0)), swapQuoteAsset, vaultBalance)
 
       expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
 
