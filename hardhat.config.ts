@@ -198,6 +198,16 @@ export default {
       chainId: 11155111,
       accounts: [argv.privateKey],
     },
+    tetu: {
+      url: 'http://34.160.226.202',
+      chainId: 778877,
+      accounts: [argv.privateKey],
+    },
+    custom: {
+      url: "http://localhost:8545",
+      chainId: 778877,
+      accounts: [argv.privateKey],
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
