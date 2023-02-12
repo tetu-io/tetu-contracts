@@ -489,7 +489,7 @@ describe("ZapV2 test", function () {
       }
 
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
-      await zap.zapOutBalancer(vault.address, tokenIn, assets, poolHavePhantomBpt && !weightedPool ? amountsOut.filter(b => b.gt(0)) : amountsOut.map(() => BigNumber.from(0)), swapQuoteAsset, vaultBalance)
+      await zap.zapOutBalancer(vault.address, tokenIn, assets, poolHavePhantomBpt && !weightedPool ? amountsOut.filter((b:BigNumber) => b.gt(0)) : amountsOut.map(() => BigNumber.from(0)), swapQuoteAsset, vaultBalance)
 
       const maxSlippagePercent = vaultsWithTaxTokens.includes(vault.address) ? 20 : 2
       expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(100 - maxSlippagePercent).div(100)))
