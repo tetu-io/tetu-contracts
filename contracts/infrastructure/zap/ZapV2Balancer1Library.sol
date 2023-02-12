@@ -71,7 +71,6 @@ library ZapV2Balancer1Library {
                 } else {
                     amounts[i] = tokenInAmounts[i];
                 }
-
             }
         }
 
@@ -82,6 +81,12 @@ library ZapV2Balancer1Library {
         require(bptBalance != 0, "ZC: zero liq");
 
         ZapV2CommonLibrary._depositToVault(vault, bpt, bptBalance);
+
+        address[] memory dustAssets = new address[](2);
+        dustAssets[0] = tokenIn;
+        dustAssets[1] = bpt;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
+        ZapV2CommonLibrary._sendBackChange(assets);
     }
 
     function zapOutBalancer(
@@ -117,6 +122,10 @@ library ZapV2Balancer1Library {
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
 
+        address[] memory dustAssets = new address[](2);
+        dustAssets[0] = bpt;
+        dustAssets[1] = vault;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
         ZapV2CommonLibrary._sendBackChange(assets);
     }
 
@@ -182,6 +191,17 @@ library ZapV2Balancer1Library {
         uint bptBalance = IERC20(BB_AM_USD_BPT).balanceOf(address(this));
         require(bptBalance != 0, "ZC: zero liq");
         ZapV2CommonLibrary._depositToVault(BB_AM_USD_VAULT, BB_AM_USD_BPT, bptBalance);
+
+        address[] memory dustAssets = new address[](8);
+        dustAssets[0] = BB_AM_USD_POOL0_BPT;
+        dustAssets[1] = BB_AM_USD_BPT;
+        dustAssets[2] = BB_AM_USD_POOL2_BPT;
+        dustAssets[3] = BB_AM_USD_POOL3_BPT;
+        dustAssets[4] = BB_AM_USD_POOL0_TOKEN1;
+        dustAssets[5] = BB_AM_USD_POOL2_TOKEN1;
+        dustAssets[6] = BB_AM_USD_POOL3_TOKEN1;
+        dustAssets[7] = tokenIn;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function zapOutBalancerAaveBoostedStablePool(
@@ -233,12 +253,16 @@ library ZapV2Balancer1Library {
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
 
-        address[] memory assets = new address[](4);
-        assets[0] = BB_AM_USD_BPT;
-        assets[1] = BB_AM_USD_POOL0_TOKEN1;
-        assets[2] = BB_AM_USD_POOL2_TOKEN1;
-        assets[3] = BB_AM_USD_POOL3_TOKEN1;
-        ZapV2CommonLibrary._sendBackChange(assets);
+        address[] memory dustAssets = new address[](8);
+        dustAssets[0] = BB_AM_USD_POOL0_BPT;
+        dustAssets[1] = BB_AM_USD_BPT;
+        dustAssets[2] = BB_AM_USD_POOL2_BPT;
+        dustAssets[3] = BB_AM_USD_POOL3_BPT;
+        dustAssets[4] = BB_AM_USD_POOL0_TOKEN1;
+        dustAssets[5] = BB_AM_USD_POOL2_TOKEN1;
+        dustAssets[6] = BB_AM_USD_POOL3_TOKEN1;
+        dustAssets[7] = BB_AM_USD_VAULT;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function quoteIntoBalancer(address vault, address[] memory assets, uint[] memory amounts) external returns(uint) {
@@ -248,7 +272,7 @@ library ZapV2Balancer1Library {
         return bptOut * IERC20(vault).totalSupply() / ISmartVault(vault).underlyingBalanceWithInvestment();
     }
 
-    /// @dev Quote out for ComposableStablePool with Phantom BPT.
+    /// @dev Quote out for ComposableStablePool with Phantom BPT and without it.
     ///      This unusual algorithm is used due to the impossibility of using EXACT_BPT_IN_FOR_ALL_TOKENS_OUT.
     ///      We think it's can be better than queryBatchSwap for such pools.
     function quoteOutBalancer(address vault, address[] memory assets, uint shareAmount) external view returns(uint[] memory) {
@@ -263,6 +287,10 @@ library ZapV2Balancer1Library {
             if (assets[i] == bpt) {
                 bptNotInPool = IERC20(bpt).totalSupply() - tokensBalances[i];
             }
+        }
+
+        if (bptNotInPool == 0) {
+            bptNotInPool = IERC20(bpt).totalSupply();
         }
 
         uint[] memory amounts = new uint[](len);

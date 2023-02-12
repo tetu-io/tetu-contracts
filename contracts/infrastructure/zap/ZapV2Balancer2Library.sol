@@ -81,6 +81,13 @@ library ZapV2Balancer2Library {
         uint tetuBalBalance = IERC20(TETUBAL).balanceOf(address(this));
         require(tetuBalBalance != 0, "ZC: zero shareBalance");
         IERC20(TETUBAL).safeTransfer(msg.sender, tetuBalBalance);
+
+        address[] memory dustAssets = new address[](4);
+        dustAssets[0] = tokenIn;
+        dustAssets[1] = WETH20BAL80_BPT;
+        dustAssets[2] = WETH;
+        dustAssets[3] = BAL;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function zapOutBalancerTetuBal(
@@ -117,6 +124,13 @@ library ZapV2Balancer2Library {
         uint tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+
+        address[] memory dustAssets = new address[](4);
+        dustAssets[0] = WETH20BAL80_BPT;
+        dustAssets[1] = WETH;
+        dustAssets[2] = BAL;
+        dustAssets[3] = TETUBAL;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function zapIntoBalancerTetuQiQi(
@@ -158,6 +172,13 @@ library ZapV2Balancer2Library {
         ZapV2BalancerCommonLibrary._addLiquidityBalancer(TETUQI_QI_POOL_ID, assets, amounts, TETUQI_QI_BPT);
 
         ZapV2CommonLibrary._depositToVault(TETUQI_QI_VAULT, TETUQI_QI_BPT, IERC20(TETUQI_QI_BPT).balanceOf(address(this)));
+
+        address[] memory dustAssets = new address[](4);
+        dustAssets[0] = TETUQI_QI_BPT;
+        dustAssets[1] = TETUQI;
+        dustAssets[2] = QI;
+        dustAssets[3] = tokenIn;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function zapOutBalancerTetuQiQi(
@@ -194,6 +215,13 @@ library ZapV2Balancer2Library {
         uint tokenOutBalance = IERC20(tokenOut).balanceOf(address(this));
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
+
+        address[] memory dustAssets = new address[](4);
+        dustAssets[0] = TETUQI_QI_BPT;
+        dustAssets[1] = TETUQI;
+        dustAssets[2] = QI;
+        dustAssets[3] = TETUQI_QI_VAULT;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function quoteIntoBalancerTetuBal(uint wethAmount, uint balAmount) external returns(uint) {

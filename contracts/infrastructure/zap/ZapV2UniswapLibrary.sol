@@ -56,9 +56,11 @@ library ZapV2UniswapLibrary {
 
         ZapV2CommonLibrary._depositToVault(vault, address(lp), lpAmount);
 
-        address[] memory dustAssets = new address[](2);
+        address[] memory dustAssets = new address[](4);
         dustAssets[0] = asset0;
         dustAssets[1] = asset1;
+        dustAssets[2] = address(lp);
+        dustAssets[3] = tokenIn;
         ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
@@ -103,9 +105,11 @@ library ZapV2UniswapLibrary {
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
 
-        address[] memory dustAssets = new address[](2);
+        address[] memory dustAssets = new address[](4);
         dustAssets[0] = asset0;
         dustAssets[1] = asset1;
+        dustAssets[2] = lp;
+        dustAssets[3] = vault;
         ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 

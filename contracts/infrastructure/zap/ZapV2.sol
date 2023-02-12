@@ -26,7 +26,7 @@ import "./ZapV2Balancer2Library.sol";
 contract ZapV2 is Controllable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    string public constant VERSION = "1.0.0";
+    string public constant VERSION = "1.1.1";
     mapping(address => uint) private calls;
 
     constructor(address controller_) {
@@ -64,6 +64,11 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         uint assetAmount = IERC20(asset).balanceOf(address(this));
 
         ZapV2CommonLibrary._depositToVault(vault, asset, assetAmount);
+
+        address[] memory dustAssets = new address[](2);
+        dustAssets[0] = asset;
+        dustAssets[1] = tokenIn;
+        ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
     function zapOutSingle(
@@ -92,8 +97,9 @@ contract ZapV2 is Controllable, ReentrancyGuard {
         require(tokenOutBalance != 0, "zero token out balance");
         IERC20(tokenOut).safeTransfer(msg.sender, tokenOutBalance);
 
-        address[] memory dustAssets = new address[](1);
+        address[] memory dustAssets = new address[](2);
         dustAssets[0] = asset;
+        dustAssets[1] = vault;
         ZapV2CommonLibrary._sendBackChange(dustAssets);
     }
 
