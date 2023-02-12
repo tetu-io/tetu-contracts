@@ -58,6 +58,7 @@ library ZapV2Balancer1Library {
         address bpt = ISmartVault(vault).underlying();
         bytes32 poolId = IBPT(bpt).getPoolId();
 
+        bool tokenInInAssets;
         uint[] memory amounts = new uint[](len);
         for (i = 0; i < len; i++) {
             if (tokenInAmounts[i] != 0) {
@@ -70,6 +71,7 @@ library ZapV2Balancer1Library {
                     amounts[i] = IERC20(assets[i]).balanceOf(address(this));
                 } else {
                     amounts[i] = tokenInAmounts[i];
+                    tokenInInAssets = true;
                 }
 
             }
@@ -82,6 +84,13 @@ library ZapV2Balancer1Library {
         require(bptBalance != 0, "ZC: zero liq");
 
         ZapV2CommonLibrary._depositToVault(vault, bpt, bptBalance);
+
+        ZapV2CommonLibrary._sendBackChange(assets);
+        if (!tokenInInAssets) {
+            address[] memory dustAssets = new address[](1);
+            dustAssets[0] = tokenIn;
+            ZapV2CommonLibrary._sendBackChange(dustAssets);
+        }
     }
 
     function zapOutBalancer(
@@ -182,6 +191,8 @@ library ZapV2Balancer1Library {
         uint bptBalance = IERC20(BB_AM_USD_BPT).balanceOf(address(this));
         require(bptBalance != 0, "ZC: zero liq");
         ZapV2CommonLibrary._depositToVault(BB_AM_USD_VAULT, BB_AM_USD_BPT, bptBalance);
+
+        ZapV2CommonLibrary._sendBackChange(rootAssets);
     }
 
     function zapOutBalancerAaveBoostedStablePool(
@@ -248,7 +259,7 @@ library ZapV2Balancer1Library {
         return bptOut * IERC20(vault).totalSupply() / ISmartVault(vault).underlyingBalanceWithInvestment();
     }
 
-    /// @dev Quote out for ComposableStablePool with Phantom BPT.
+    /// @dev Quote out for ComposableStablePool with Phantom BPT and without it.
     ///      This unusual algorithm is used due to the impossibility of using EXACT_BPT_IN_FOR_ALL_TOKENS_OUT.
     ///      We think it's can be better than queryBatchSwap for such pools.
     function quoteOutBalancer(address vault, address[] memory assets, uint shareAmount) external view returns(uint[] memory) {
@@ -263,6 +274,10 @@ library ZapV2Balancer1Library {
             if (assets[i] == bpt) {
                 bptNotInPool = IERC20(bpt).totalSupply() - tokensBalances[i];
             }
+        }
+
+        if (bptNotInPool == 0) {
+            bptNotInPool = IERC20(bpt).totalSupply();
         }
 
         uint[] memory amounts = new uint[](len);

@@ -11,7 +11,7 @@ import {
   Bookkeeper__factory, ContractReader, ContractReader__factory,
   Controller, IUniswapV2Pair__factory,
   SmartVault__factory,
-  ZapV2, ZapV2Helper
+  ZapV2,
 } from "../../typechain";
 import {getAddress, parseUnits} from "ethers/lib/utils";
 import fetch from "node-fetch";
@@ -38,7 +38,6 @@ describe("ZapV2 test", function () {
   let signer: SignerWithAddress;
   let core: CoreAddresses;
   let zap: ZapV2;
-  let zapHelper: ZapV2Helper;
   let controller: Controller;
   let bookkeeper: Bookkeeper;
   let reader: ContractReader;
@@ -55,7 +54,6 @@ describe("ZapV2 test", function () {
     core = await DeployerUtils.getCoreAddresses();
     const tools = await DeployerUtils.getToolsAddresses();
     zap = await DeployerUtils.deployContract(signer, "ZapV2", core.controller) as ZapV2;
-    zapHelper = await DeployerUtils.deployContract(signer, "ZapV2Helper") as ZapV2Helper;
     controller = await DeployerUtils.connectContract(signer, 'Controller', core.controller) as Controller;
     await controller.changeWhiteListStatus([zap.address], true);
 
@@ -476,7 +474,7 @@ describe("ZapV2 test", function () {
         expect(await TokenUtils.balanceOf(assets[i], zap.address)).to.eq(0)
       }
 
-      const amountsOut = await zapHelper.quoteOutBalancer(vault.address, assets, vaultBalance)
+      const amountsOut = await zap.quoteOutBalancer(vault.address, assets, vaultBalance)
 
       for (let i = 0; i < assets.length; i++) {
         if (assets[i] !== underlying) {

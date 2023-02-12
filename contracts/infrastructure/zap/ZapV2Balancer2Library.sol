@@ -43,12 +43,15 @@ library ZapV2Balancer2Library {
         require(tokenInAmount > 1, "ZC: not enough amount");
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), tokenInAmount);
 
+        bool tokenInInAssets = false;
         if (tokenIn != WETH) {
             ZapV2CommonLibrary._callOneInchSwap(
                 tokenIn,
                 tokenInAmount * 2 / 10,
                 asset0SwapData
             );
+        } else {
+            tokenInInAssets = true;
         }
 
         if (tokenIn != BAL) {
@@ -57,6 +60,8 @@ library ZapV2Balancer2Library {
                 tokenInAmount * 8 / 10,
                 asset1SwapData
             );
+        } else {
+            tokenInInAssets = true;
         }
 
         address[] memory assets = new address[](2);
@@ -81,6 +86,14 @@ library ZapV2Balancer2Library {
         uint tetuBalBalance = IERC20(TETUBAL).balanceOf(address(this));
         require(tetuBalBalance != 0, "ZC: zero shareBalance");
         IERC20(TETUBAL).safeTransfer(msg.sender, tetuBalBalance);
+
+        ZapV2CommonLibrary._sendBackChange(assets);
+
+        if (!tokenInInAssets) {
+            address[] memory dustAssets = new address[](1);
+            dustAssets[0] = tokenIn;
+            ZapV2CommonLibrary._sendBackChange(dustAssets);
+        }
     }
 
     function zapOutBalancerTetuBal(
@@ -158,6 +171,8 @@ library ZapV2Balancer2Library {
         ZapV2BalancerCommonLibrary._addLiquidityBalancer(TETUQI_QI_POOL_ID, assets, amounts, TETUQI_QI_BPT);
 
         ZapV2CommonLibrary._depositToVault(TETUQI_QI_VAULT, TETUQI_QI_BPT, IERC20(TETUQI_QI_BPT).balanceOf(address(this)));
+
+        ZapV2CommonLibrary._sendBackChange(assets);
     }
 
     function zapOutBalancerTetuQiQi(
