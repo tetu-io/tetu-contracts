@@ -31,6 +31,7 @@ import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../openzeppelin/Math.sol";
+import "../../base/interface/ITetuLiquidator.sol";
 
 pragma solidity 0.8.4;
 
@@ -40,9 +41,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.6.2";
-  string public constant IS3USD = "IRON Stableswap 3USD";
-  string public constant IRON_IS3USD = "IronSwap IRON-IS3USD LP";
+  string public constant VERSION = "1.7.0";
   address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address public constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -71,6 +70,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   mapping(address => bool) public allowedFactories;
 
+  address public tetuLiquidator;
+
   // ********** EVENTS ****************************
 
   event DefaultTokenChanged(address oldToken, address newToken);
@@ -80,6 +81,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   event SwapPlatformRemoved(address factoryAddress, string name);
   event ReplacementTokenUpdated(address token, address replacementToken);
   event MultipartTokenUpdated(address token, bool status);
+  event ChangeLiquidator(address liquidator);
 
   constructor() {
     assert(_DEFAULT_TOKEN_SLOT == bytes32(uint256(keccak256("eip1967.calculator.defaultToken")) - 1));
@@ -90,9 +92,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   /// @dev Allow operation only for Controller or Governance
-  modifier onlyControllerOrGovernance() {
+  function _onlyControllerOrGovernance() internal view {
     require(_isController(msg.sender) || _isGovernance(msg.sender), "Not controller or gov");
-    _;
   }
 
   function getPriceWithDefaultOutput(address token) external view override returns (uint256) {
@@ -107,6 +108,11 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
     if (token == outputToken) {
       return (10 ** PRECISION_DECIMALS);
+    }
+
+    uint liqPrice = tryToGetPriceFromLiquidator(token, outputToken);
+    if (liqPrice != 0) {
+      return liqPrice;
     }
 
     uint256 rate = 1;
@@ -144,8 +150,6 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
         uint256 tokenValue = priceToken * amounts[i] / 10 ** PRECISION_DECIMALS;
         price += tokenValue;
       }
-    } else if (isIronPair(token)) {
-      price = IIronSwap(IIronLpToken(token).swap()).getVirtualPrice();
     } else if (token == CRV_USD_BTC_ETH_FANTOM || token == CRV_USD_BTC_ETH_MATIC) {
       ICurveMinter minter = ICurveMinter(ICurveLpToken(token).minter());
       uint tvl = 0;
@@ -193,10 +197,6 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     } catch {}
 
     return allowedFactories[factory];
-  }
-
-  function isIronPair(address token) public view returns (bool) {
-    return isEqualString(IERC20Extended(token).name(), IS3USD) || isEqualString(IERC20Extended(token).name(), IRON_IS3USD);
   }
 
   function isAave(address token) public view returns (bool) {
@@ -466,6 +466,20 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return purePrice / divider / precision / (precision > 1e18 ? (precision / 1e18) : 1) * 1e18 / (10 ** tokenOutDecimals);
   }
 
+  function tryToGetPriceFromLiquidator(address tokenIn, address tokenOut) public view returns (uint) {
+    ITetuLiquidator liquidator = ITetuLiquidator(tetuLiquidator);
+    if (address(liquidator) == address(0)) {
+      return 0;
+    }
+
+    (ITetuLiquidator.PoolData[] memory route,) = liquidator.buildRoute(tokenIn, tokenOut);
+    if (route.length == 0) {
+      return 0;
+    }
+    uint price = liquidator.getPriceForRoute(route, 0);
+    return price * 1e18 / 10 ** IERC20Extended(tokenOut).decimals();
+  }
+
   //Checks if a given token is in the keyTokens list.
   function isKeyToken(address token) public view returns (bool) {
     for (uint256 i = 0; i < keyTokens.length; i++) {
@@ -614,7 +628,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************* GOVERNANCE ACTIONS ***************
 
-  function setDefaultToken(address _newDefaultToken) external onlyControllerOrGovernance {
+  function setDefaultToken(address _newDefaultToken) external {
+    _onlyControllerOrGovernance();
     require(_newDefaultToken != address(0), "PC: zero address");
     emit DefaultTokenChanged(defaultToken(), _newDefaultToken);
     bytes32 slot = _DEFAULT_TOKEN_SLOT;
@@ -623,19 +638,22 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
   }
 
-  function addKeyTokens(address[] memory newTokens) external onlyControllerOrGovernance {
+  function addKeyTokens(address[] memory newTokens) external {
+    _onlyControllerOrGovernance();
     for (uint256 i = 0; i < newTokens.length; i++) {
       addKeyToken(newTokens[i]);
     }
   }
 
-  function addKeyToken(address newToken) public onlyControllerOrGovernance {
+  function addKeyToken(address newToken) public {
+    _onlyControllerOrGovernance();
     require(!isKeyToken(newToken), "PC: already have");
     keyTokens.push(newToken);
     emit KeyTokenAdded(newToken);
   }
 
-  function removeKeyToken(address keyToken) external onlyControllerOrGovernance {
+  function removeKeyToken(address keyToken) external {
+    _onlyControllerOrGovernance();
     require(isKeyToken(keyToken), "PC: not key");
     uint256 i;
     for (i = 0; i < keyTokens.length; i++) {
@@ -647,7 +665,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     emit KeyTokenRemoved(keyToken);
   }
 
-  function addSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {
+  function addSwapPlatform(address _factoryAddress, string memory _name) external {
+    _onlyControllerOrGovernance();
     for (uint256 i = 0; i < swapFactories.length; i++) {
       require(swapFactories[i] != _factoryAddress, "PC: factory already exist");
       require(!isEqualString(swapLpNames[i], _name), "PC: name already exist");
@@ -658,13 +677,15 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     emit SwapPlatformAdded(_factoryAddress, _name);
   }
 
-  function changeFactoriesStatus(address[] memory factories, bool status) external onlyControllerOrGovernance {
+  function changeFactoriesStatus(address[] memory factories, bool status) external {
+    _onlyControllerOrGovernance();
     for (uint256 i; i < factories.length; i++) {
       allowedFactories[factories[i]] = status;
     }
   }
 
-  function removeSwapPlatform(address _factoryAddress, string memory _name) external onlyControllerOrGovernance {
+  function removeSwapPlatform(address _factoryAddress, string memory _name) external {
+    _onlyControllerOrGovernance();
     require(isSwapFactoryToken(_factoryAddress), "PC: swap not exist");
     require(isSwapName(_name), "PC: name not exist");
     uint256 i;
@@ -684,9 +705,15 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     emit SwapPlatformRemoved(_factoryAddress, _name);
   }
 
-  function setReplacementTokens(address _inputToken, address _replacementToken)
-  external onlyControllerOrGovernance {
+  function setReplacementTokens(address _inputToken, address _replacementToken) external {
+    _onlyControllerOrGovernance();
     replacementTokens[_inputToken] = _replacementToken;
     emit ReplacementTokenUpdated(_inputToken, _replacementToken);
+  }
+
+  function setTetuLiquidator(address liquidator) external {
+    _onlyControllerOrGovernance();
+    tetuLiquidator = liquidator;
+    emit ChangeLiquidator(liquidator);
   }
 }

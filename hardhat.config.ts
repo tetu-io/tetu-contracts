@@ -199,7 +199,7 @@ export default {
       accounts: [argv.privateKey],
     },
     tetu: {
-      url: 'http://34.160.226.202',
+      url: 'https://tetu-node.io',
       chainId: 778877,
       accounts: [argv.privateKey],
     },
