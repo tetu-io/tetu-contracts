@@ -27,6 +27,7 @@ describe("Price calculator eth tests", function () {
     signer = await DeployerUtils.impersonate();
     const coreAdrs = await DeployerUtils.getCoreAddresses();
     calculator = (await DeployerUtils.deployPriceCalculator(signer, coreAdrs.controller))[0];
+    await calculator.setTetuLiquidator('0x90351d15F036289BE9b1fd4Cb0e2EeC63a9fF9b0')
   });
 
   after(async function () {
@@ -47,6 +48,16 @@ describe("Price calculator eth tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0xfe700d523094cc6c673d78f1446ae0743c89586e', EthAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(100);
+  });
+
+  it("wUSDR-USDC bpt price", async () => {
+    if (!(await DeployerUtils.isNetwork(1))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x831261f44931b7da8ba0dcc547223c60bb75b47f', EthAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.1);
     expect(price).is.lessThan(100);
   });
