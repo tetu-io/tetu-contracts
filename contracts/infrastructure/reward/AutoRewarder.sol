@@ -29,7 +29,7 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   using SafeERC20 for IERC20;
 
   // *********** CONSTANTS ****************
-  string public constant VERSION = "1.2.1";
+  string public constant VERSION = "1.2.2";
   uint256 public constant PRECISION = 1e18;
   uint256 public constant NETWORK_RATIO_DENOMINATOR = 1e18;
 
@@ -115,10 +115,10 @@ contract AutoRewarder is ControllableV2, AutoRewarderStorage {
   }
 
   /// @dev Move tokens to controller where money will be protected with time lock
-  function moveTokensToController(address _token, uint256 amount) external onlyControllerOrGovernance {
+  function withdraw(address _token, uint256 amount) external onlyControllerOrGovernance {
     uint256 tokenBalance = IERC20(_token).balanceOf(address(this));
     require(tokenBalance >= amount, "AR: Not enough balance");
-    IERC20(_token).safeTransfer(_controller(), amount);
+    IERC20(_token).safeTransfer(msg.sender, amount);
     emit TokenMoved(_token, amount);
   }
 

@@ -32,6 +32,18 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: ''
     },
+    bscRpcUrl: {
+      type: "string",
+      default: 'https://bsc-dataseed.binance.org/'
+    },
+    goerliRpcUrl: {
+      type: "string",
+      default: ''
+    },
+    sepoliaRpcUrl: {
+      type: "string",
+      default: ''
+    },
     infuraKey: {
       type: "string",
     },
@@ -44,6 +56,9 @@ const argv = require('yargs/yargs')()
     networkScanKeyFtm: {
       type: "string",
     },
+    networkScanKeyBsc: {
+      type: "string",
+    },
     privateKey: {
       type: "string",
       default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
@@ -54,11 +69,15 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 28058008
+      default: 37071484
     },
     ftmForkBlock: {
       type: "number",
       default: 35202770
+    },
+    bscForkBlock: {
+      type: "number",
+      default: 0
     },
   }).argv;
 
@@ -76,6 +95,14 @@ export default {
       allowUnlimitedContractSize: true,
       chainId: argv.hardhatChainId,
       timeout: 99999999,
+      chains: {
+        137: {
+          hardforkHistory: {
+            berlin: 10000000,
+            london: 20000000,
+          },
+        },
+      },
       gas: argv.hardhatChainId === 1 ? 19_000_000 :
         argv.hardhatChainId === 137 ? 19_000_000 :
           argv.hardhatChainId === 250 ? 11_000_000 :
@@ -85,11 +112,13 @@ export default {
           argv.hardhatChainId === 1 ? argv.ethRpcUrl :
             argv.hardhatChainId === 137 ? argv.maticRpcUrl :
               argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
+              argv.hardhatChainId === 56 ? argv.bscRpcUrl :
                 undefined,
         blockNumber:
           argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
             argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
               argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
+              argv.hardhatChainId === 56 ? argv.bscForkBlock !== 0 ? argv.bscForkBlock : undefined :
                 undefined
       } : undefined,
       accounts: {
@@ -140,13 +169,53 @@ export default {
       gasPrice: 1_100_000_000,
       accounts: [argv.privateKey],
     },
+    bsc: {
+      url: argv.bscRpcUrl,
+      timeout: 99999,
+      chainId: 56,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      // gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
+    zktest: {
+      url: 'https://public.zkevm-test.net:2083',
+      timeout: 99999,
+      chainId: 1402,
+      // gas: 19_000_000,
+      // gasPrice: 100_000_000_000,
+      // gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
+    goerli: {
+      url: argv.goerliRpcUrl || '',
+      chainId: 5,
+      // gasPrice: 5_000_000_000,
+      accounts: [argv.privateKey],
+    },
+    sepolia: {
+      url: argv.sepoliaRpcUrl || '',
+      chainId: 11155111,
+      accounts: [argv.privateKey],
+    },
+    tetu: {
+      url: 'https://tetu-node.io',
+      chainId: 778877,
+      accounts: [argv.privateKey],
+    },
+    custom: {
+      url: "http://localhost:8545",
+      chainId: 778877,
+      accounts: [argv.privateKey],
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
     apiKey: {
       mainnet: argv.networkScanKey,
       polygon: argv.networkScanKeyMatic || argv.networkScanKey,
-      opera: argv.networkScanKeyFtm || argv.networkScanKey
+      opera: argv.networkScanKeyFtm || argv.networkScanKey,
+      bsc: argv.networkScanKeyBsc || argv.networkScanKey,
     },
   },
   solidity: {
@@ -191,9 +260,9 @@ export default {
     outDir: "typechain",
   },
   abiExporter: {
-    path: './artifacts/abi',
+    path: './abi',
     runOnCompile: false,
     spacing: 2,
-    pretty: true,
+    pretty: false,
   }
 };

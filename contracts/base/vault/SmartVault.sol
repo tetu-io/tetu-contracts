@@ -34,7 +34,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant override VERSION = "1.10.4";
+  string public constant override VERSION = "1.10.6";
   /// @dev Denominator for penalty numerator
   uint256 public constant override LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant override TO_INVEST_DENOMINATOR = 1000;
@@ -238,15 +238,11 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _setToInvest(_value);
   }
 
-  // we should be able to disable lock functionality for not initialized contract
-  function disableLock() external override {
-    _onlyVaultController(msg.sender);
-    require(_lockAllowed());
-    // should be not initialized
-    // initialized lock forbidden to change
-    require(lockPenalty() == 0);
-    require(lockPeriod() == 0);
-    _disableLock();
+  /// @dev Disable lock penalty
+  function lockStatusChange(bool status) external {
+    require(_isGovernance(msg.sender), FORBIDDEN_MSG);
+    require(_lockAllowed() != status);
+    _lockStatusChange(status);
   }
 
   /// @notice Change the active state marker
@@ -706,6 +702,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   ///         Accurate value returns only after updateRewards call
   function earnedWithBoost(address rt, address account) external view override returns (uint256) {
     return VaultLibrary.earnedWithBoost(
+      rt,
       _earned(rt, account),
       userBoostTs[account],
       _controller(),

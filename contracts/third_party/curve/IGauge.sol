@@ -65,5 +65,7 @@ interface IGauge {
 
   function reward_count() external view returns (uint);
 
+  function working_supply() external view returns (uint);
+
   function initialize(address lp) external;
 }

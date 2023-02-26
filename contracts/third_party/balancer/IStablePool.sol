@@ -14,42 +14,46 @@
 
 pragma solidity 0.8.4;
 
-interface IStablePool  {
+interface IStablePool {
+    event AmpUpdateStarted(
+        uint256 startValue,
+        uint256 endValue,
+        uint256 startTime,
+        uint256 endTime
+    );
+    event AmpUpdateStopped(uint256 currentValue);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+    event PausedStateChanged(bool paused);
+    event RecoveryModeStateChanged(bool enabled);
+    event SwapFeePercentageChanged(uint256 swapFeePercentage);
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
-    // This contract uses timestamps to slowly update its Amplification parameter over time. These changes must occur
-    // over a minimum time period much larger than the blocktime, making timestamp manipulation a non-issue.
-    // solhint-disable not-rely-on-time
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
 
-    // Amplification factor changes must happen over a minimum period of one day, and can at most divide or multiple the
-    // current value by 2 every day.
-    // WARNING: this only limits *a single* amplification change to have a maximum rate of change of twice the original
-    // value daily. It is possible to perform multiple amplification changes in sequence to increase this value more
-    // rapidly: for example, by doubling the value every day it can increase by a factor of 8 over three days (2^3).
-//    uint256 private constant _MIN_UPDATE_TIME = 1 days;
-//    uint256 private constant _MAX_AMP_UPDATE_DAILY_RATE = 2;
-//
-//    bytes32 private _packedAmplificationData;
-//
-//    event AmpUpdateStarted(uint256 startValue, uint256 endValue, uint256 startTime, uint256 endTime);
-//    event AmpUpdateStopped(uint256 currentValue);
+    function allowance(address owner, address spender)
+    external
+    view
+    returns (uint256);
 
-    // To track how many tokens are owed to the Vault as protocol fees, we measure and store the value of the invariant
-    // after every join and exit. All invariant growth that happens between join and exit events is due to swap fees.
-//    uint256 private _lastInvariant;
-    // Because the invariant depends on the amplification parameter, and this value may change over time, we should only
-    // compare invariants that were computed using the same value. We therefore store it whenever we store
-    // _lastInvariant.
-//    uint256 private _lastInvariantAmp;
+    function approve(address spender, uint256 amount) external returns (bool);
 
-//    enum JoinKind { INIT, EXACT_TOKENS_IN_FOR_BPT_OUT, TOKEN_IN_FOR_EXACT_BPT_OUT }
-//    enum ExitKind { EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, EXACT_BPT_IN_FOR_TOKENS_OUT, BPT_IN_FOR_EXACT_TOKENS_OUT }
+    function balanceOf(address account) external view returns (uint256);
 
+    function decimals() external view returns (uint8);
 
-    /**
-     * @dev This function returns the appreciation of one BPT relative to the
-     * underlying tokens. This starts at 1 when the pool is created and grows over time
-     */
-    function getRate() external view returns (uint256);
+    function decreaseAllowance(address spender, uint256 amount)
+    external
+    returns (bool);
+
+    function disableRecoveryMode() external;
+
+    function enableRecoveryMode() external;
+
+    function getActionId(bytes4 selector) external view returns (bytes32);
 
     function getAmplificationParameter()
     external
@@ -60,5 +64,148 @@ interface IStablePool  {
         uint256 precision
     );
 
+    function getAuthorizer() external view returns (address);
 
+    function getLastInvariant()
+    external
+    view
+    returns (uint256 lastInvariant, uint256 lastInvariantAmp);
+
+    function getOwner() external view returns (address);
+
+    function getPausedState()
+    external
+    view
+    returns (
+        bool paused,
+        uint256 pauseWindowEndTime,
+        uint256 bufferPeriodEndTime
+    );
+
+    function getPoolId() external view returns (bytes32);
+
+    function getRate() external view returns (uint256);
+
+    function getScalingFactors() external view returns (uint256[] memory);
+
+    function getSwapFeePercentage() external view returns (uint256);
+
+    function getVault() external view returns (address);
+
+    function inRecoveryMode() external view returns (bool);
+
+    function increaseAllowance(address spender, uint256 addedValue)
+    external
+    returns (bool);
+
+    function name() external view returns (string memory);
+
+    function nonces(address owner) external view returns (uint256);
+
+    function onExitPool(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256[] memory, uint256[] memory);
+
+    function onJoinPool(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256[] memory, uint256[] memory);
+
+    function onSwap(
+        IPoolSwapStructs.SwapRequest memory swapRequest,
+        uint256[] memory balances,
+        uint256 indexIn,
+        uint256 indexOut
+    ) external returns (uint256);
+
+    function onSwap(
+        IPoolSwapStructs.SwapRequest memory request,
+        uint256 balanceTokenIn,
+        uint256 balanceTokenOut
+    ) external returns (uint256);
+
+    function pause() external;
+
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+
+    function queryExit(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256 bptIn, uint256[] memory amountsOut);
+
+    function queryJoin(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256 bptOut, uint256[] memory amountsIn);
+
+    function setAssetManagerPoolConfig(address token, bytes memory poolConfig)
+    external;
+
+    function setSwapFeePercentage(uint256 swapFeePercentage) external;
+
+    function startAmplificationParameterUpdate(
+        uint256 rawEndValue,
+        uint256 endTime
+    ) external;
+
+    function stopAmplificationParameterUpdate() external;
+
+    function symbol() external view returns (string memory);
+
+    function totalSupply() external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount)
+    external
+    returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    function unpause() external;
+}
+
+interface IPoolSwapStructs {
+    struct SwapRequest {
+        uint8 kind;
+        address tokenIn;
+        address tokenOut;
+        uint256 amount;
+        bytes32 poolId;
+        uint256 lastChangeBlock;
+        address from;
+        address to;
+        bytes userData;
+    }
 }

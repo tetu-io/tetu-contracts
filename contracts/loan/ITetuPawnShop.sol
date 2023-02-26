@@ -17,6 +17,7 @@ pragma solidity 0.8.4;
 interface ITetuPawnShop {
 
   event PositionOpened(
+    address indexed sender,
     uint256 posId,
     address collateralToken,
     uint256 collateralAmount,
@@ -26,7 +27,7 @@ interface ITetuPawnShop {
     uint256 posDurationBlocks,
     uint256 posFee
   );
-  event PositionClosed(uint256 posId);
+  event PositionClosed(address indexed borrower, uint256 posId);
   event BidExecuted(
     uint256 posId,
     uint256 bidId,
@@ -35,10 +36,11 @@ interface ITetuPawnShop {
     address lender
   );
   event AuctionBidOpened(uint256 posId, uint256 bidId, uint256 amount, address lender);
-  event PositionClaimed(uint256 posId);
-  event PositionRedeemed(uint256 posId);
-  event AuctionBidAccepted(uint256 posId, uint256 bidId);
+  event PositionClaimed(address indexed sender, uint256 posId);
+  event PositionRedeemed(address indexed sender, uint256 posId);
+  event AuctionBidAccepted(address indexed borrower, uint256 posId, uint256 bidId);
   event AuctionBidClosed(uint256 posId, uint256 bidId);
+
   event GovernanceActionAnnounced(uint256 id, address addressValue, uint256 uintValue);
   event OwnerChanged(address oldOwner, address newOwner);
   event FeeRecipientChanged(address oldRecipient, address newRecipient);

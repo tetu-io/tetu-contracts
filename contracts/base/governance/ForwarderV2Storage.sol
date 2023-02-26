@@ -31,18 +31,25 @@ abstract contract ForwarderV2Storage is Initializable, IFeeRewardForwarder {
     uint denominator;
   }
 
+  // ************ VARIABLES **********************
   // don't change names or ordering!
   mapping(bytes32 => uint256) private uintStorage;
   mapping(bytes32 => address) private addressStorage;
 
-  /// @dev Liquidity Pools with the highest TVL for given token
-  mapping(address => LpData) public override largestLps;
-  /// @dev Liquidity Pools with the most popular tokens
-  mapping(address => mapping(address => LpData)) public override blueChipsLps;
-  /// @dev Factory address to fee value map
-  mapping(address => UniFee) public override uniPlatformFee;
-  /// @dev Hold blue chips tokens addresses
-  mapping(address => bool) public override blueChipsTokens;
+  /// @dev DEPRECATED Liquidity Pools with the highest TVL for given token
+  mapping(address => LpData) public largestLps;
+  /// @dev DEPRECATED Liquidity Pools with the most popular tokens
+  mapping(address => mapping(address => LpData)) public blueChipsLps;
+  /// @dev DEPRECATED Factory address to fee value map
+  mapping(address => UniFee) public uniPlatformFee;
+  /// @dev DEPRECATED Hold blue chips tokens addresses
+  mapping(address => bool) public blueChipsTokens;
+  /// @dev Token liquidation threshold in USD value
+  mapping(address => uint) public tokenThreshold;
+  /// @dev TetuLiquidator address
+  address public liquidator;
+
+  // ************ EVENTS **********************
 
   /// @notice Address changed the variable with `name`
   event UpdatedAddressSlot(string indexed name, address oldValue, address newValue);
@@ -59,6 +66,16 @@ abstract contract ForwarderV2Storage is Initializable, IFeeRewardForwarder {
   /// @notice Router address for adding liquidity
   function liquidityRouter() public view override returns (address) {
     return getAddress("liquidityRouter");
+  }
+
+  function _setVeDist(address _address) internal {
+    emit UpdatedAddressSlot("veDist", veDist(), _address);
+    setAddress("veDist", _address);
+  }
+
+  /// @notice veTETU distributor contract
+  function veDist() public view returns (address) {
+    return getAddress("veDist");
   }
 
   function _setLiquidityNumerator(uint256 _value) internal {
@@ -100,5 +117,5 @@ abstract contract ForwarderV2Storage is Initializable, IFeeRewardForwarder {
   }
 
   //slither-disable-next-line unused-state
-  uint256[50] private ______gap;
+  uint256[48] private ______gap;
 }
