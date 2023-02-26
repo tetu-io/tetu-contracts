@@ -19,5 +19,6 @@ export class MaticToolsAddresses {
   // retranslator 0xcBDeF56CE454A81c3c6C6b639D683285bd467D02
   // trade bot 0x833D22F5c1B01ad2AD34611bD391c246712b9707
   // trade bot dystopia 0x26E4a4FDE42779E1060Fc649460E537B4a8D477f
+  // trade bot 1inch 0x8818e4c67086DFeEA86dae8205a735fAeb676E45
 
 }

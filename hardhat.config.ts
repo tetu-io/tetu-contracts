@@ -36,6 +36,14 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: 'https://bsc-dataseed.binance.org/'
     },
+    goerliRpcUrl: {
+      type: "string",
+      default: ''
+    },
+    sepoliaRpcUrl: {
+      type: "string",
+      default: ''
+    },
     infuraKey: {
       type: "string",
     },
@@ -177,6 +185,27 @@ export default {
       // gas: 19_000_000,
       // gasPrice: 100_000_000_000,
       // gasMultiplier: 1.3,
+      accounts: [argv.privateKey],
+    },
+    goerli: {
+      url: argv.goerliRpcUrl || '',
+      chainId: 5,
+      // gasPrice: 5_000_000_000,
+      accounts: [argv.privateKey],
+    },
+    sepolia: {
+      url: argv.sepoliaRpcUrl || '',
+      chainId: 11155111,
+      accounts: [argv.privateKey],
+    },
+    tetu: {
+      url: 'https://tetu-node.io',
+      chainId: 778877,
+      accounts: [argv.privateKey],
+    },
+    custom: {
+      url: "http://localhost:8545",
+      chainId: 778877,
       accounts: [argv.privateKey],
     },
   },

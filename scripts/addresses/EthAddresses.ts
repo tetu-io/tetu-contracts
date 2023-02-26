@@ -13,7 +13,7 @@ export class EthAddresses {
   public static DAI_TOKEN = "0x6b175474e89094c44da98b954eedeac495271d0f".toLowerCase();
   public static USDT_TOKEN = "0xdac17f958d2ee523a2206206994597c13d831ec7".toLowerCase();
   public static WBTC_TOKEN = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599".toLowerCase();
-  public static TETU_TOKEN = "0xa0246c9032bc3a600820415ae600c6388619a14d".toLowerCase(); // todo temporally FARM
+  public static TETU_TOKEN = "0x4f851750a3e6f80f1E1f89C67B56960Bfc29A934".toLowerCase();
   public static veBAL_TOKEN = "0xC128a9954e6c874eA3d62ce62B468bA073093F25".toLowerCase();
 
 

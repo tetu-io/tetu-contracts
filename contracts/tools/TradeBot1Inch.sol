@@ -138,8 +138,8 @@ contract TradeBot1Inch is ReentrancyGuard {
     uint tokenOutAmountNormalized = tokenOutAmount * 1e18 / (10 ** IERC20Extended(pos.tokenOut).decimals());
     uint price = tokenInAmountNormalized * 1e18 / tokenOutAmountNormalized;
 
-    require(price < pos.maxPrice, "price too high");
-    require(price > pos.minPrice, "price too low");
+    require(price < pos.maxPrice, string(abi.encodePacked("price too high ", _toString(price))));
+    require(price > pos.minPrice, string(abi.encodePacked("price too low ", _toString(price))));
 
     trades[posOwner].push(Trade(
         pos,
@@ -176,6 +176,27 @@ contract TradeBot1Inch is ReentrancyGuard {
       IERC20(token).safeApprove(spender, 0);
       IERC20(token).safeApprove(spender, type(uint).max);
     }
+  }
+
+  /// @dev Inspired by OraclizeAPI's implementation - MIT license
+  ///      https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+  function _toString(uint value) internal pure returns (string memory) {
+    if (value == 0) {
+      return "0";
+    }
+    uint temp = value;
+    uint digits;
+    while (temp != 0) {
+      digits++;
+      temp /= 10;
+    }
+    bytes memory buffer = new bytes(digits);
+    while (value != 0) {
+      digits -= 1;
+      buffer[digits] = bytes1(uint8(48 + uint(value % 10)));
+      value /= 10;
+    }
+    return string(buffer);
   }
 
 }

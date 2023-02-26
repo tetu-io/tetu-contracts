@@ -78,6 +78,7 @@ export class MaticAddresses {
   public static tetuBAL_TOKEN = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
   public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
   public static LIDO_TOKEN = '0xC3C7d422809852031b44ab29EEC9F1EfF2A58756'.toLowerCase();
+  public static stMATIC = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
