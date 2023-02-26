@@ -51,7 +51,7 @@ async function main() {
     if (ts !== 0) {
       console.log('ts', ts, new Date(ts * 1000), Date.now() / 1000);
       console.info('timeLockInfo', timeLockInfo.opCode, timeLockInfo);
-      const txt = `${i},${new Date(ts * 1000)},${IDS.get(timeLockInfo.opCode) ?? timeLockInfo.opCode},${timeLockInfo.opHash}, ${timeLockInfo.target}, ${timeLockInfo.adrValues},${timeLockInfo.numValues}\n`;
+      const txt = `${i},${new Date(ts * 1000)},${IDS.get(timeLockInfo.opCode) ?? timeLockInfo.opCode}, ${timeLockInfo.opCode},${timeLockInfo.opHash}, ${timeLockInfo.target}, ${timeLockInfo.adrValues},${timeLockInfo.numValues}\n`;
       appendFileSync(`./tmp/announces.txt`, txt, 'utf8');
     }
   }

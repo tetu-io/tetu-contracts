@@ -13,7 +13,7 @@ export class EthAddresses {
   public static DAI_TOKEN = "0x6b175474e89094c44da98b954eedeac495271d0f".toLowerCase();
   public static USDT_TOKEN = "0xdac17f958d2ee523a2206206994597c13d831ec7".toLowerCase();
   public static WBTC_TOKEN = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599".toLowerCase();
-  public static TETU_TOKEN = "0xa0246c9032bc3a600820415ae600c6388619a14d".toLowerCase(); // todo temporally FARM
+  public static TETU_TOKEN = "0x4f851750a3e6f80f1E1f89C67B56960Bfc29A934".toLowerCase();
   public static veBAL_TOKEN = "0xC128a9954e6c874eA3d62ce62B468bA073093F25".toLowerCase();
 
 
@@ -26,6 +26,8 @@ export class EthAddresses {
   public static BALANCER_BAL_WETH = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56".toLowerCase();
   public static BALANCER_GAUGE_CONTROLLER = "0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD".toLowerCase();
   public static BALANCER_GAUGE_USDC_WETH = "0x9AB7B0C7b154f626451c9e8a68dC04f58fb6e5Ce".toLowerCase();
+
+  public static BALANCER_wstETH_WETH = "0x32296969Ef14EB0c6d29669C550D4a0449130230".toLowerCase();
 
   // uniswap
   public static UNISWAP_FACTORY = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f".toLowerCase();

@@ -22,6 +22,8 @@ export class PriceCalculatorUtils {
     const outputName = await TokenUtils.tokenName(outputToken);
     console.log('price', name, 'against', outputName, price);
     expect(price).is.not.eq(0, name + " doesn't calculated");
+    // expect(price).lessThan(1000_000, name + " looks wrong");
+    // expect(price).greaterThan(1 / 1000_000, name + " looks wrong");
     return price;
   }
 

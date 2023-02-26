@@ -12,6 +12,7 @@ import {BigNumber} from "ethers";
 import {TokenUtils} from "../../TokenUtils";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
+import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -80,41 +81,52 @@ describe("Bookkeeper tests", function () {
     expect((await bookkeeper.connect(signer1).lastHardWork(Misc.ZERO_ADDRESS))[1]).is.eq(0);
   });
 
-  // it("existed vault and strategy should not be added", async () => {
-  //   const vaults = await bookkeeper.vaults();
-  //   const strategies = await bookkeeper.strategies();
-  //   expect(vaults.length).is.greaterThanOrEqual(1);
-  //   expect(strategies.length).is.greaterThanOrEqual(1);
-  //
-  //   await bookkeeper.addVaultAndStrategy(core.psVault.address, await (core.psVault.strategy()));
-  //
-  //   expect((await bookkeeper.vaults()).length).is.eq(vaults.length, 'existed vault should not be added');
-  //   expect((await bookkeeper.strategies()).length).is.eq(strategies.length, 'existed strategy should not be added');
-  // });
+  it("remove vault and strategy manually", async () => {
+    for (let i = 0; i < 3; i++) {
+      const vault = await DeployerUtils.deployContract(signer, 'MockVault');
+      const strategy = await DeployerUtils.deployContract(signer, 'MockStrategy');
+      await core.controller.addVaultsAndStrategies([vault.address], [strategy.address]);
+      await core.controller.connect(await DeployerUtils.impersonate(vault.address)).addStrategy(strategy.address)
+    }
 
-  // it("add vault and strategy manually", async () => {
-  //   const vaults = await bookkeeper.vaults();
-  //   const strategies = await bookkeeper.strategies();
-  //   expect(vaults.length).is.greaterThanOrEqual(1);
-  //   expect(strategies.length).is.greaterThanOrEqual(1);
-  //
-  //   await bookkeeper.addVaultAndStrategy(Misc.ZERO_ADDRESS, Misc.ZERO_ADDRESS);
-  //   expect((await bookkeeper.vaults()).length).is.eq(vaults.length + 1, 'existed vault should not be added');
-  //   expect((await bookkeeper.strategies()).length).is.eq(strategies.length + 1, 'existed strategy should not be added');
-  // });
+    let vaults = await bookkeeper.vaults();
+    let strategies = await bookkeeper.strategies();
+    console.log('vaults.length', vaults.length)
+    console.log('strategies.length', strategies.length)
+    expect(vaults.length).is.greaterThan(1);
+    expect(strategies.length).is.greaterThan(1);
 
-  // it("remove vault and strategy manually", async () => {
-  //   const vaults = await bookkeeper.vaults();
-  //   const strategies = await bookkeeper.strategies();
-  //   expect(vaults.length).is.greaterThanOrEqual(1);
-  //   expect(strategies.length).is.greaterThanOrEqual(1);
-  //
-  //   await bookkeeper.removeFromVaults(0);
-  //   await bookkeeper.removeFromStrategies(0);
-  //
-  //   expect((await bookkeeper.vaults()).length).is.eq(vaults.length - 1, 'existed vault should not be added');
-  //   expect((await bookkeeper.strategies()).length).is.eq(strategies.length - 1, 'existed strategy should not be added');
-  // });
+    await bookkeeper.removeFromVaults(0);
+    await bookkeeper.removeFromStrategies(0);
+
+    let vaultsAfter = await bookkeeper.vaults();
+    let strategiesAfter = await bookkeeper.strategies();
+
+    expect((vaultsAfter).length).is.eq(vaults.length - 1, 'existed vault should not be added');
+    expect((strategiesAfter).length).is.eq(strategies.length - 1, 'existed strategy should not be added');
+
+    expect(vaultsAfter[0]).is.eq(vaults[vaults.length - 1]);
+    expect(strategiesAfter[0]).is.eq(strategies[strategies.length - 1]);
+
+    vaults = await bookkeeper.vaults();
+    strategies = await bookkeeper.strategies();
+    console.log('vaults.length', vaults.length)
+    console.log('strategies.length', strategies.length)
+
+    await expect(bookkeeper.removeFromVaultsBatch([0, 2])).rejectedWith("B: Wrong index");
+    await bookkeeper.removeFromVaultsBatch([2, 0]);
+    await expect(bookkeeper.removeFromStrategiesBatch([0, 2])).rejectedWith("B: Wrong index");
+    await bookkeeper.removeFromStrategiesBatch([2, 0]);
+
+    vaultsAfter = await bookkeeper.vaults();
+    strategiesAfter = await bookkeeper.strategies();
+
+    expect((vaultsAfter).length).is.eq(1, 'existed vault should not be added');
+    expect((strategiesAfter).length).is.eq(1, 'existed strategy should not be added');
+
+    expect(vaultsAfter[0]).is.eq(vaults[1]);
+    expect(strategiesAfter[0]).is.eq(strategies[1]);
+  });
 
   it("user count should work correctly", async () => {
     const vault = core.psVault;
@@ -125,6 +137,15 @@ describe("Bookkeeper tests", function () {
 
     let user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
     let vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
+
+    expect(user1Bal).eq(1000);
+    expect(vaultUsers).eq(1);
+
+    // ********** USER1 send to himself
+
+    await vault.transfer(signer.address, user1Bal)
+    user1Bal = await bookkeeper.vaultUsersBalances(vault.address, signer.address)
+    vaultUsers = await bookkeeper.vaultUsersQuantity(vault.address);
 
     expect(user1Bal).eq(1000);
     expect(vaultUsers).eq(1);

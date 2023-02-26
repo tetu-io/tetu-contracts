@@ -1,6 +1,6 @@
 {
   "name": "@tetu_io/tetu-contracts",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
   "directories": {
@@ -67,10 +67,9 @@
     "hardhat-docgen": "^1.1.2",
     "hardhat-etherscan-abi": "^0.1.1",
     "hardhat-gas-reporter": "^1.0.4",
-    "hardhat-tracer": "^1.0.0-alpha.6",
+    "hardhat-tracer": "^1.1.1",
     "hardhat-typechain": "^0.3.5",
     "mocha": "^8.4.0",
-    "solc-0.8.4": "npm:solc@^0.8.9",
     "solidity-coverage": "^0.7.21",
     "ts-generator": "^0.1.1",
     "ts-node": "^10.4.0",

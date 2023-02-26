@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../TimeUtils";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {
-  IStrategy,
+  MockToken__factory,
   SmartVault,
   TetuSwapFactory,
   TetuSwapPair,
@@ -18,8 +18,8 @@ import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {ethers, web3} from "hardhat";
 import {TestAsserts} from "../TestAsserts";
 import {VaultUtils} from "../VaultUtils";
-import {StrategyTestUtils} from "../StrategyTestUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -543,7 +543,49 @@ describe("Tetu Swap base tests", function () {
       signer.address,
       '0x'
     );
+  });
 
+  it.skip('update overflow', async () => {
+    await MockToken__factory.connect(usdc, signer).mint(signer.address, BigNumber.from(Misc.MAX_UINT).sub(parseUnits('10000000', 6)));
+    await MockToken__factory.connect(networkToken, signer).mint(signer.address, BigNumber.from(Misc.MAX_UINT).sub(parseUnits('10000000')));
+    await UniswapUtils.addLiquidity(
+      signer,
+      tokenA,
+      tokenB,
+      parseUnits('100000000000000000000', tokenADec).toString(),
+      parseUnits('100000000000000000000', tokenBDec).toString(),
+      factory.address,
+      router.address
+    );
+
+    const amount = '100000000000000';
+    const amountABase = parseUnits(amount, tokenADec);
+    const amountBBase = parseUnits(amount, tokenBDec);
+
+    for (let i = 0; i < 10000; i++) {
+      await lpCtr.sync();
+      let swapAmount = BigNumber.from(0);
+      let path = [];
+      if (i % 2 === 0) {
+        swapAmount = amountABase;
+        path = [tokenA, tokenB];
+      } else {
+        swapAmount = amountBBase;
+        path = [tokenB, tokenA];
+      }
+      await UniswapUtils.swapExactTokensForTokens(
+        signer,
+        path,
+        swapAmount.toString(),
+        factory.address,
+        router.address
+      );
+      const p0 = await lpCtr.price0CumulativeLast();
+      const p1 = await lpCtr.price1CumulativeLast();
+      console.log('p0', p0.toString(), BigNumber.from(Misc.MAX_UINT).div(p0).toString())
+      console.log('p1', p1.toString(), BigNumber.from(Misc.MAX_UINT).div(p1).toString())
+      console.log('>>> LOOP', i)
+    }
   });
 
   // it('swap btc-eth', async () => {

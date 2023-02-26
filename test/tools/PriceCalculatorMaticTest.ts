@@ -8,6 +8,7 @@ import {PriceCalculator} from "../../typechain";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {TokenUtils} from "../TokenUtils";
+import {Addresses} from "../../addresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -28,6 +29,7 @@ describe("Price calculator matic tests", function () {
     signer = await DeployerUtils.impersonate();
     core = await DeployerUtils.getCoreAddressesWrapper(signer);
     calculator = (await DeployerUtils.deployPriceCalculator(signer, core.controller.address))[0];
+    await calculator.setTetuLiquidator('0xC737eaB847Ae6A92028862fE38b828db41314772')
   });
 
   after(async function () {
@@ -42,6 +44,146 @@ describe("Price calculator matic tests", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
+  it("calculate tetu price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.01);
+    expect(price).is.lessThan(0.03);
+  });
+
+  it.skip("calculate all prices", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.WETH_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.ADDY_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.USDC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.WMATIC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.QUICK_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SUSHI_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.WBTC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.BIFI_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.dTOP_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.PAUTO_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.DHT_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.WFIL_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.GRT_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.FRAX_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.FXS_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.DAI_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.USDT_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.LINK_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.AAVE_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.WOOFY_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.ibBTC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SNX_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.ANY_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.QuickChart_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.QI_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.miMATIC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.WEXpoly_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.PEAR_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.ICE_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.COSMIC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.DINO_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.BTCCRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.USD_BTC_ETH_CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.IRIS_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.DFYN_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.pBREW_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.dxTETU, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.xTETU, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.dQUICK_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.IRON_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.amWBTC_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.polyDoge_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.BAL_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.miFARM_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.KLIMA_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.BCT_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.PSP_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.VSQ_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SFF_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.NACHO_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.NSHARE_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.NBOND_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.UNT_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.UMA_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SPHERE_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SPHEREV2_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SPHEREV3_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.CLAM2_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.PEN_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.MESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.SAND_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.tetuMESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.LIDO_TOKEN, MaticAddresses.USDC_TOKEN);
+    await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.stMATIC, MaticAddresses.USDC_TOKEN);
+  });
+
+  it("calculate MESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.MESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.01);
+    expect(price).is.lessThan(1);
+  });
+
+  it("calculate tetuMESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.tetuMESH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.01);
+    expect(price).is.lessThan(1);
+  });
+
+  it("calculate tetuMESH-MESH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.MESH_tetuMESH_POOL, MaticAddresses.USDC_TOKEN);
+    console.log('price', price);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it.skip("calculate tetuBal/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    // const priceLp = await PriceCalculatorUtils.getFormattedPrice(calculator,
+    //     '0x7EB878107Af0440F9E776f999CE053D277c8Aca8'.toLowerCase(),
+    //     MaticAddresses.USDC_TOKEN);
+
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+
+    // expect(price).is.approximately(priceLp, priceLp/100)
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
+
+  it.skip("calculate Unknown 80BAL20WETH/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(1);
+    expect(price).is.lessThan(100000);
+  });
 
   it("calculate eth/usdc price and check", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
@@ -347,6 +489,26 @@ describe("Price calculator matic tests", function () {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0xADC56043BFf96e2F3394bFd5719cd6De0a734257', MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(1);
+  });
+
+  it("bbamUSD_BPT price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x48e6B98ef6329f8f0A30eBB8c7C960330d648085', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.9);
+    expect(price).is.lessThan(1);
+  });
+
+  it("vault bbamUSD_BPT price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.9);
     expect(price).is.lessThan(1);
   });
 

@@ -7,9 +7,10 @@ import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {LiquidityBalancer} from "../../typechain";
 import {TokenUtils} from "../TokenUtils";
-import {utils} from "ethers";
+import {BigNumber, utils} from "ethers";
 import {UniswapUtils} from "../UniswapUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -206,6 +207,11 @@ describe.skip("liquidity balancer tsets", function () {
     await liquidityBalancer.setTargetPrice(token, utils.parseUnits("1"));
     await liquidityBalancer.setTargetLpTvl(lp, utils.parseUnits("1"));
     await liquidityBalancer.changeLiquidity(token, lp);
+  });
+
+  it("computeSellAmount test", async () => {
+    const amount = await liquidityBalancer.computeSellAmount(parseUnits('1'), parseUnits('2'), parseUnits('1'));
+    expect(amount).eq(BigNumber.from('414213562373095048'));
   });
 
   // todo fix

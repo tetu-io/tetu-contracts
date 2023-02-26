@@ -20,37 +20,27 @@ import "../interface/ISmartVault.sol";
 import "../interface/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
-import "../../third_party/uniswap/IUniswapV2Pair.sol";
-import "../../third_party/balancer/IBVault.sol";
+import "../../third_party/IVeDistributor.sol";
 import "../SlotsLib.sol";
+import "../interface/ITetuLiquidator.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
-///        and send them to Profit Sharing pool, FundKeeper and vaults
-///        After swap TETU tokens are deposited to the Profit Share pool and give xTETU tokens.
-///        These tokens sent to Vault as a reward for vesting (4 weeks).
-///        If external rewards have a destination Profit Share pool
-///        it is just sent to the contract as TETU tokens increasing share price.
+///        and send them to veTETU distributor, FundKeeper and vaults
 /// @author belbix
 /// @author bogdoslav
 contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
+  // ************ CONSTANTS **********************
+
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant override VERSION = "1.4.0";
+  string public constant override VERSION = "1.6.0";
   uint256 public constant override LIQUIDITY_DENOMINATOR = 100;
-  uint constant public override DEFAULT_UNI_FEE_DENOMINATOR = 1000;
-  uint constant public override DEFAULT_UNI_FEE_NUMERATOR = 997;
-  uint constant public override ROUTE_LENGTH_MAX = 5;
   uint constant public override SLIPPAGE_DENOMINATOR = 100;
   uint constant public override MINIMUM_AMOUNT = 100;
-
-  /// @dev Temporary solution to liquidate Balancer BAL tokens
-  bytes32 internal constant _BAL_TOKEN     = bytes32(uint(keccak256("eip1967.ForwarderV2.balToken")) - 1);
-  bytes32 internal constant _BAL_VAULT     = bytes32(uint(keccak256("eip1967.ForwarderV2.balVault")) - 1);
-  bytes32 internal constant _BAL_POOL      = bytes32(uint(keccak256("eip1967.ForwarderV2.balPool")) - 1);
-  bytes32 internal constant _BAL_TOKEN_OUT = bytes32(uint(keccak256("eip1967.ForwarderV2.balTokenOut")) - 1);
+  uint public constant PRICE_IMPACT_TOLERANCE = 5_000;
 
   // ************ EVENTS **********************
   /// @notice Fee distributed to Profit Sharing pool
@@ -72,13 +62,13 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   /// @notice Initialize contract after setup it as proxy implementation
   /// @dev Use it only once after first logic setup
   ///      Initialize Controllable with sender address
-  function initialize(address _controller) external override initializer {
+  function initialize(address _controller) external initializer {
     ControllableV2.initializeControllable(_controller);
   }
 
   /// @dev Allow operation only for Controller or Governance
-  modifier onlyControllerOrGovernance() {
-    require(_isController(msg.sender) || _isGovernance(msg.sender), "F2: Not controller or gov");
+  modifier onlyGov() {
+    require(_isGovernance(msg.sender), "F2: Not gov");
     _;
   }
 
@@ -89,12 +79,6 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   }
 
   // ***************** VIEW ************************
-
-  /// @notice Return Profit Sharing pool address
-  /// @return Profit Sharing pool address
-  function psVault() public view override returns (address) {
-    return IController(_controller()).psVault();
-  }
 
   /// @notice Return FundKeeper address
   /// @return FundKeeper address
@@ -119,97 +103,59 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     return _slippageNumerator();
   }
 
-  /// @notice Return Balancer Data
-  function getBalData() external view override
-  returns (address balToken, address vault, bytes32 pool, address tokenOut) {
-    balToken = _BAL_TOKEN.getAddress();
-    vault    = _BAL_VAULT.getAddress();
-    pool     = _BAL_POOL.getBytes32();
-    tokenOut = _BAL_TOKEN_OUT.getAddress();
-  }
-
-
   // ************ GOVERNANCE ACTIONS **************************
 
-  /// @notice Only Governance or Controller can call it.
-  ///         Add a pair with largest TVL for given token
-  function addLargestLps(address[] memory _tokens, address[] memory _lps) external override onlyControllerOrGovernance {
-    require(_tokens.length == _lps.length, "F2: Wrong arrays");
-    for (uint i = 0; i < _lps.length; i++) {
-      IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
-      address oppositeToken;
-      if (lp.token0() == _tokens[i]) {
-        oppositeToken = lp.token1();
-      } else if (lp.token1() == _tokens[i]) {
-        oppositeToken = lp.token0();
-      } else {
-        revert("F2: Wrong LP");
-      }
-      largestLps[_tokens[i]] = LpData(address(lp), _tokens[i], oppositeToken);
-    }
-  }
-
-  /// @notice Only Governance or Controller can call it.
-  ///         Add largest pairs with the most popular tokens on the current network
-  function addBlueChipsLps(address[] memory _lps) external override onlyControllerOrGovernance {
-    for (uint i = 0; i < _lps.length; i++) {
-      IUniswapV2Pair lp = IUniswapV2Pair(_lps[i]);
-      blueChipsLps[lp.token0()][lp.token1()] = LpData(address(lp), lp.token0(), lp.token1());
-      blueChipsLps[lp.token1()][lp.token0()] = LpData(address(lp), lp.token0(), lp.token1());
-      blueChipsTokens[lp.token0()] = true;
-      blueChipsTokens[lp.token1()] = true;
-    }
-  }
-
-  /// @notice Only Governance or Controller can call it.
+  /// @notice Only Governance can call it.
   ///         Sets numerator for a part of profit that goes instead of PS to TETU liquidity
-  function setLiquidityNumerator(uint256 _value) external override onlyControllerOrGovernance {
+  function setLiquidityNumerator(uint256 _value) external onlyGov {
     require(_value <= LIQUIDITY_DENOMINATOR, "F2: Too high value");
     _setLiquidityNumerator(_value);
   }
 
-  /// @notice Only Governance or Controller can call it.
+  /// @notice Only Governance can call it.
   ///         Sets numerator for slippage value. Must be in a range 0-100
-  function setSlippageNumerator(uint256 _value) external override onlyControllerOrGovernance {
+  function setSlippageNumerator(uint256 _value) external onlyGov {
     require(_value <= SLIPPAGE_DENOMINATOR, "F2: Too high value");
     _setSlippageNumerator(_value);
   }
 
-  /// @notice Only Governance or Controller can call it.
+  /// @notice Only Governance can call it.
   ///         Sets router for a pair with TETU liquidity
-  function setLiquidityRouter(address _value) external override onlyControllerOrGovernance {
+  function setLiquidityRouter(address _value) external onlyGov {
     _setLiquidityRouter(_value);
   }
 
-  /// @notice Only Governance or Controller can call it.
-  ///         Sets specific Swap fee for given factory
-  function setUniPlatformFee(address _factory, uint _feeNumerator, uint _feeDenominator) external override onlyControllerOrGovernance {
-    require(_factory != address(0), "F2: Zero factory");
-    require(_feeNumerator <= _feeDenominator, "F2: Wrong values");
-    require(_feeDenominator != 0, "F2: Wrong denominator");
-    uniPlatformFee[_factory] = UniFee(_feeNumerator, _feeDenominator);
+  /// @notice Only Governance can call it.
+  ///         Sets liquidation threshold in USD value for given token.
+  function setTokenThreshold(address tokenIn, uint value) external onlyGov {
+    require(tokenIn != address(0), "F2: Zero token");
+    tokenThreshold[tokenIn] = value;
   }
 
-  /// @notice Sets Balancer Data
-  /// @dev This function should be called right after proxy contract upgrade
-  /// @param balToken BAL token address
-  /// @param vault Balancer v2 Vault contract address
-  /// @param pool Pool ID
-  /// @param tokenOut Output token (ex. USDC)
-  function setBalData(address balToken, address vault, bytes32 pool, address tokenOut)
-  external override onlyControllerOrGovernance {
-    require( balToken != address(0) && vault != address(0) && pool != 0 && tokenOut != address(0));
-    _BAL_TOKEN.set(balToken);
-    _BAL_VAULT.set(vault);
-    _BAL_POOL.set(pool);
-    _BAL_TOKEN_OUT.set(tokenOut);
+  /// @notice Only Governance can call it.
+  ///         Sets TetuLiquidator address
+  function setLiquidator(address value) external onlyGov {
+    require(value != address(0), "F2: Zero adr");
+    liquidator = value;
+  }
+
+  /// @notice Only Governance can call it.
+  ///         Sets veDist for profit sharing
+  function setVeDist(address value) external onlyGov {
+    require(value != address(0), "F2: Zero adr");
+    _setVeDist(value);
   }
 
   // ***************** EXTERNAL *******************************
 
+  /// @notice Send internal balance (if accumulate some dust) to FundKeeper/xTETU
+  function sendExcessTokens() external {
+    _sendExcessTokens();
+  }
+
   /// @notice Only Reward Distributor or Governance or Controller can call it.
-  ///         Distribute rewards for given vault, move fees to PS and Fund
-  ///         Under normal circumstances, sender is the strategy
+  ///         Distribute rewards for given vault, move fees to veDist and FundKeeper
+  ///         Under normal circumstances, sender is a strategy
   /// @param _amount Amount of tokens for distribute
   /// @param _token Token for distribute
   /// @param _vault Target vault
@@ -218,7 +164,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     uint256 _amount,
     address _token,
     address _vault
-  ) public override onlyRewardDistribution returns (uint256){
+  ) external override onlyRewardDistribution returns (uint256){
     require(fundToken() != address(0), "F2: Fund token is zero");
     require(_amount != 0, "F2: Zero amount for distribute");
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -242,13 +188,13 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     require(fundTokenRequires + tetuTokenRequires == _amount, "F2: Wrong amount sum");
 
 
-    uint fundTokenAmount = _liquidate(_token, fundToken(), fundTokenRequires);
+    (uint fundTokenAmount,) = _liquidate(_token, fundToken(), fundTokenRequires);
     uint sentToFund = _sendToFund(fundTokenAmount, toFund, toLiqFundTokenPart);
 
-    uint tetuTokenAmount = _liquidate(_token, tetu(), tetuTokenRequires);
+    (uint tetuTokenAmount,) = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
-    if (toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount > sentToFund) {
+    if (tetuTokenAmount > 0 && fundTokenAmount > 0 && toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount >= sentToFund) {
       tetuDistributed += _sendToPsAndLiquidity(
         tetuTokenAmount,
         toLiqTetuTokenPart,
@@ -257,7 +203,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
         fundTokenAmount - sentToFund
       );
     }
-    if (toVault > MINIMUM_AMOUNT) {
+    if (tetuTokenAmount > 0 && fundTokenAmount > 0 && toVault > MINIMUM_AMOUNT) {
       tetuDistributed += _sendToVault(
         _vault,
         tetuTokenAmount,
@@ -266,8 +212,6 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
         toVault
       );
     }
-
-    _sendExcessTokens();
     return _plusFundAmountToDistributedAmount(tetuDistributed);
   }
 
@@ -282,7 +226,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
       return 0;
     }
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
-    uint256 resultAmount = _liquidate(tokenIn, tokenOut, amount);
+    (uint256 resultAmount,) = _liquidate(tokenIn, tokenOut, amount);
     require(resultAmount > 0, "F2: Liquidated with zero result");
     IERC20(tokenOut).safeTransfer(msg.sender, resultAmount);
     emit Liquidated(tokenIn, tokenOut, amount);
@@ -303,18 +247,21 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   //************************* INTERNAL **************************
 
   function _sendExcessTokens() internal {
-    uint excessFundToken = IERC20(fundToken()).balanceOf(address(this));
-    if (excessFundToken > MINIMUM_AMOUNT && fund() != address(0)) {
-      IERC20(fundToken()).safeTransfer(fund(), excessFundToken);
+    address _fundToken = fundToken();
+    address _fund = fund();
+    uint excessFundToken = IERC20(_fundToken).balanceOf(address(this));
+    if (excessFundToken > MINIMUM_AMOUNT && _fund != address(0)) {
+      IERC20(_fundToken).safeTransfer(_fund, excessFundToken);
       IBookkeeper(IController(_controller()).bookkeeper())
-      .registerFundKeeperEarned(fundToken(), excessFundToken);
-      emit FeeMovedToFund(fund(), fundToken(), excessFundToken);
+      .registerFundKeeperEarned(_fundToken, excessFundToken);
+      emit FeeMovedToFund(_fund, _fundToken, excessFundToken);
     }
-
-    uint excessTetuToken = IERC20(tetu()).balanceOf(address(this));
+    address _tetu = tetu();
+    uint excessTetuToken = IERC20(_tetu).balanceOf(address(this));
     if (excessTetuToken > MINIMUM_AMOUNT) {
-      IERC20(tetu()).safeTransfer(psVault(), excessTetuToken);
-      emit FeeMovedToPs(psVault(), tetu(), excessTetuToken);
+      address _veDist = veDist();
+      IERC20(_tetu).safeTransfer(_veDist, excessTetuToken);
+      emit FeeMovedToPs(_veDist, _tetu, excessTetuToken);
     }
   }
 
@@ -332,8 +279,11 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
 
     uint toPs = tetuTokenAmount * baseToPs / baseSum;
     if (toPs > MINIMUM_AMOUNT) {
-      IERC20(tetu()).safeTransfer(psVault(), toPs);
-      emit FeeMovedToPs(psVault(), tetu(), toPs);
+      address _tetu = tetu();
+      address _veDist = veDist();
+      IERC20(_tetu).safeTransfer(_veDist, toPs);
+      IVeDistributor(_veDist).checkpoint();
+      emit FeeMovedToPs(_veDist, _tetu, toPs);
     }
     return toPs + tetuLiqAmount;
   }
@@ -345,11 +295,18 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     uint baseToPs,
     uint baseToVault
   ) internal returns (uint256) {
-    address xTetu = psVault();
+    address _tetu = tetu();
     ISmartVault smartVault = ISmartVault(_vault);
     address[] memory rts = smartVault.rewardTokens();
-    require(rts.length > 0, "F2: No reward tokens");
-    address rt = rts[0];
+
+    address rt;
+    for (uint i; i < rts.length; ++i) {
+      if (rts[i] == _tetu) {
+        rt = _tetu;
+        break;
+      }
+    }
+    require(rt != address(0), "F2: No TETU rt");
 
     uint baseSum = baseToLiqTetuTokenPart + baseToPs + baseToVault;
     uint toVault = tetuTokenAmount * baseToVault / baseSum;
@@ -358,19 +315,9 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
       return 0;
     }
 
-    uint256 amountToSend;
-    if (rt == xTetu) {
-      uint rtBalanceBefore = IERC20(xTetu).balanceOf(address(this));
-      IERC20(tetu()).safeApprove(psVault(), toVault);
-      ISmartVault(psVault()).deposit(toVault);
-      amountToSend = IERC20(xTetu).balanceOf(address(this)) - rtBalanceBefore;
-    } else if (rt == tetu()) {
-      amountToSend = toVault;
-    } else {
-      revert("F2: First reward token not TETU nor xTETU");
-    }
+    uint256 amountToSend = toVault;
 
-    IERC20(rt).safeApprove(_vault, amountToSend);
+    _approveIfNeed(rt, _vault, amountToSend);
     smartVault.notifyTargetRewardAmount(rt, amountToSend);
     emit FeeMovedToVault(_vault, rt, amountToSend);
     return toVault;
@@ -383,13 +330,15 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     if (toFund == 0) {
       return 0;
     }
-    require(fund() != address(0), "F2: Fund is zero");
+    address _fund = fund();
+    require(_fund != address(0), "F2: Fund is zero");
 
-    IERC20(fundToken()).safeTransfer(fund(), toFund);
+    address _fundToken = fundToken();
+    IERC20(_fundToken).safeTransfer(_fund, toFund);
 
     IBookkeeper(IController(_controller()).bookkeeper())
-    .registerFundKeeperEarned(fundToken(), toFund);
-    emit FeeMovedToFund(fund(), fundToken(), toFund);
+    .registerFundKeeperEarned(_fundToken, toFund);
+    emit FeeMovedToFund(_fund, _fundToken, toFund);
     return toFund;
   }
 
@@ -398,11 +347,12 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     if (toLiqTetuTokenPart < MINIMUM_AMOUNT || toLiqFundTokenPart < MINIMUM_AMOUNT) {
       return 0;
     }
-
+    address _tetu = tetu();
+    address _fundToken = fundToken();
     uint256 lpAmount = _addLiquidity(
       liquidityRouter(),
-      fundToken(),
-      tetu(),
+      _fundToken,
+      _tetu,
       toLiqFundTokenPart,
       toLiqTetuTokenPart
     );
@@ -410,7 +360,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     require(lpAmount != 0, "F2: Liq: Zero LP amount");
 
     address liquidityPair = IUniswapV2Factory(IUniswapV2Router02(liquidityRouter()).factory())
-    .getPair(fundToken(), tetu());
+    .getPair(_fundToken, _tetu);
 
     IERC20(liquidityPair).safeTransfer(fund(), lpAmount);
     return toLiqTetuTokenPart * 2;
@@ -448,211 +398,41 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     return _amount * fundDenominator / (fundDenominator - fundNumerator);
   }
 
-  /// @dev Swap one token to another using all available amount
-  function _liquidate(address _tokenIn, address _tokenOut, uint256 _amount) internal returns (uint256) {
-    if (_tokenIn == _tokenOut) {
-      // this is already the right token
-      return _amount;
+  function _liquidate(
+    address tokenIn,
+    address tokenOut,
+    uint amount
+  ) internal returns (uint bought, uint tokenInUsdValue) {
+    if (tokenIn == tokenOut) {
+      return (amount, amount);
     }
 
-    // This is temporary solution to swap Balancer BAL token with low slippage
-    // Should be replaced to more universal solution later
-    address balToken = _BAL_TOKEN.getAddress();
-    if (_tokenIn == balToken && balToken != address(0)) {
-      bytes memory userData;
-      address balVault = _BAL_VAULT.getAddress();
-      address balTokenOut = _BAL_TOKEN_OUT.getAddress();
-      require(balVault != address(0) && balTokenOut != address (0), 'F2: bal data not set');
+    bought = 0;
 
-      IBVault.SingleSwap memory singleSwap = IBVault.SingleSwap({
-        poolId: _BAL_POOL.getBytes32(),
-        kind: IBVault.SwapKind.GIVEN_IN,
-        assetIn: IAsset(balToken),
-        assetOut: IAsset(balTokenOut),
-        amount: _amount,
-        userData: userData
-      });
+    ITetuLiquidator _liquidator = ITetuLiquidator(liquidator);
 
-      IBVault.FundManagement memory funds = IBVault.FundManagement({
-        sender: payable(address(this)),
-        fromInternalBalance: false,
-        recipient: payable(address(this)),
-        toInternalBalance: false
-      });
+    (ITetuLiquidator.PoolData[] memory route, string memory error)
+    = _liquidator.buildRoute(tokenIn, tokenOut);
 
-      IERC20(balToken).safeApprove(balVault, 0);
-      IERC20(balToken).safeApprove(balVault, _amount);
-      _amount = IBVault(balVault).swap(singleSwap, funds, 1, block.timestamp);
-      _tokenIn = balTokenOut;
-
-      if (_tokenIn == _tokenOut) {
-        return _amount;
-      }
-    }
-    // end of temporary solution
-
-    (LpData[] memory route, uint count) = _createLiquidationRoute(_tokenIn, _tokenOut);
-
-    uint outBalance = _amount;
-    for (uint i = 0; i < count; i++) {
-      LpData memory lpData = route[i];
-      uint outBalanceBefore = IERC20(lpData.oppositeToken).balanceOf(address(this));
-      _swap(lpData.token, lpData.oppositeToken, IUniswapV2Pair(lpData.lp), outBalance);
-      outBalance = IERC20(lpData.oppositeToken).balanceOf(address(this)) - outBalanceBefore;
-    }
-    return outBalance;
-  }
-
-  function _createLiquidationRoute(address _tokenIn, address _tokenOut) internal view returns (LpData[] memory, uint)  {
-    LpData[] memory route = new LpData[](ROUTE_LENGTH_MAX);
-    // in case that we try to liquidate blue chips use bc lps directly
-    LpData memory lpDataBC = blueChipsLps[_tokenIn][_tokenOut];
-    if (lpDataBC.lp != address(0)) {
-      lpDataBC.token = _tokenIn;
-      lpDataBC.oppositeToken = _tokenOut;
-      route[0] = lpDataBC;
-      return (route, 1);
+    if (route.length == 0) {
+      revert(error);
     }
 
-    // find the best LP for token IN
-    LpData memory lpDataIn = largestLps[_tokenIn];
-    require(lpDataIn.lp != address(0), "F2: not found LP for tokenIn");
-    route[0] = lpDataIn;
-    // if the best LP for token IN a pair with token OUT token we complete the route
-    if (lpDataIn.oppositeToken == _tokenOut) {
-      return (route, 1);
-    }
+    // calculate usd value for check threshold
+    tokenInUsdValue = _liquidator.getPriceForRoute(route, amount);
 
-    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
-    lpDataBC = blueChipsLps[lpDataIn.oppositeToken][_tokenOut];
-    if (lpDataBC.lp != address(0)) {
-      lpDataBC.token = lpDataIn.oppositeToken;
-      lpDataBC.oppositeToken = _tokenOut;
-      route[1] = lpDataBC;
-      return (route, 2);
-    }
+    // if the value higher than threshold distribute to destinations
+    if (tokenInUsdValue > tokenThreshold[tokenIn]) {
 
-    // find the largest LP for token out
-    LpData memory lpDataOut = largestLps[_tokenOut];
-    require(lpDataIn.lp != address(0), "F2: not found LP for tokenOut");
-    // if we can swap between largest LPs the route is ended
-    if (lpDataIn.oppositeToken == lpDataOut.oppositeToken) {
-      lpDataOut.oppositeToken = lpDataOut.token;
-      lpDataOut.token = lpDataIn.oppositeToken;
-      route[1] = lpDataOut;
-      return (route, 2);
-    }
+      uint tokenOutBalanceBefore = IERC20(tokenOut).balanceOf(address(this));
 
-    // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
-    lpDataBC = blueChipsLps[lpDataIn.oppositeToken][lpDataOut.oppositeToken];
-    if (lpDataBC.lp != address(0)) {
-      lpDataBC.token = lpDataIn.oppositeToken;
-      lpDataBC.oppositeToken = lpDataOut.oppositeToken;
-      route[1] = lpDataBC;
-      lpDataOut.oppositeToken = lpDataOut.token;
-      lpDataOut.token = lpDataBC.oppositeToken;
-      route[2] = lpDataOut;
-      return (route, 3);
-    }
+      _approveIfNeed(tokenIn, address(_liquidator), amount);
+      _liquidator.liquidateWithRoute(route, amount, PRICE_IMPACT_TOLERANCE);
 
-    LpData memory lpDataInMiddle;
-    // this case only for a token with specific opposite token in a pair
-    if (!blueChipsTokens[lpDataIn.oppositeToken]) {
-
-      // some tokens have primary liquidity with specific token
-      // need to find a liquidity for them
-      lpDataInMiddle = largestLps[lpDataIn.oppositeToken];
-      require(lpDataInMiddle.lp != address(0), "F2: not found LP for middle in");
-      route[1] = lpDataInMiddle;
-      if (lpDataInMiddle.oppositeToken == _tokenOut) {
-        return (route, 2);
-      }
-
-      // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
-      lpDataBC = blueChipsLps[lpDataInMiddle.oppositeToken][_tokenOut];
-      if (lpDataBC.lp != address(0)) {
-        lpDataBC.token = lpDataInMiddle.oppositeToken;
-        lpDataBC.oppositeToken = _tokenOut;
-        route[2] = lpDataBC;
-        return (route, 3);
-      }
-
-      // if we able to swap opposite token to a blue chip it is the cheaper way to liquidate
-      lpDataBC = blueChipsLps[lpDataInMiddle.oppositeToken][lpDataOut.oppositeToken];
-      if (lpDataBC.lp != address(0)) {
-        lpDataBC.token = lpDataInMiddle.oppositeToken;
-        lpDataBC.oppositeToken = lpDataOut.oppositeToken;
-        route[2] = lpDataBC;
-        (lpDataOut.oppositeToken, lpDataOut.token) = (lpDataOut.token, lpDataOut.oppositeToken);
-        route[3] = lpDataOut;
-        return (route, 4);
-      }
-
-    }
-
-
-    // if we don't have pair for token out try to find a middle lp
-    // it needs for cases where tokenOut has a pair with specific token
-    LpData memory lpDataOutMiddle = largestLps[lpDataOut.oppositeToken];
-    require(lpDataOutMiddle.lp != address(0), "F2: not found LP for middle out");
-    // even if we found lpDataInMiddle we have shorter way
-    if (lpDataOutMiddle.oppositeToken == lpDataIn.oppositeToken) {
-      (lpDataOutMiddle.oppositeToken, lpDataOutMiddle.token) = (lpDataOutMiddle.token, lpDataOutMiddle.oppositeToken);
-      route[1] = lpDataOutMiddle;
-      return (route, 2);
-    }
-
-    // tokenIn has not pair with bluechips
-    if (lpDataInMiddle.lp != address(0)) {
-      lpDataBC = blueChipsLps[lpDataInMiddle.oppositeToken][lpDataOutMiddle.oppositeToken];
-      if (lpDataBC.lp != address(0)) {
-        lpDataBC.token = lpDataInMiddle.oppositeToken;
-        lpDataBC.oppositeToken = lpDataOutMiddle.oppositeToken;
-        route[2] = lpDataBC;
-        (lpDataOutMiddle.oppositeToken, lpDataOutMiddle.token) = (lpDataOutMiddle.token, lpDataOutMiddle.oppositeToken);
-        route[3] = lpDataOutMiddle;
-        (lpDataOut.oppositeToken, lpDataOut.token) = (lpDataOut.token, lpDataOut.oppositeToken);
-        route[4] = lpDataOut;
-        return (route, 5);
-      }
+      bought = IERC20(tokenOut).balanceOf(address(this)) - tokenOutBalanceBefore;
     } else {
-      // tokenIn has pair with bluechips
-      lpDataBC = blueChipsLps[lpDataIn.oppositeToken][lpDataOutMiddle.oppositeToken];
-      if (lpDataBC.lp != address(0)) {
-        lpDataBC.token = lpDataIn.oppositeToken;
-        lpDataBC.oppositeToken = lpDataOutMiddle.oppositeToken;
-        route[1] = lpDataBC;
-        (lpDataOutMiddle.oppositeToken, lpDataOutMiddle.token) = (lpDataOutMiddle.token, lpDataOutMiddle.oppositeToken);
-        route[2] = lpDataOutMiddle;
-        (lpDataOut.oppositeToken, lpDataOut.token) = (lpDataOut.token, lpDataOut.oppositeToken);
-        route[3] = lpDataOut;
-        return (route, 4);
-      }
-    }
-
-    // we are not handling other cases
-    revert("F2: Liquidation path not found");
-  }
-
-
-  /// @dev Adopted version of swap function from UniswapRouter
-  ///      Assume that tokens exist on this contract
-  function _swap(address tokenIn, address tokenOut, IUniswapV2Pair lp, uint amount) internal {
-    require(amount != 0, "F2: Zero swap amount");
-    (uint reserveIn, uint reserveOut) = getReserves(lp, tokenIn, tokenOut);
-    address factory = lp.factory();
-    UniFee memory fee = uniPlatformFee[factory];
-    if (fee.numerator == 0) {
-      fee = UniFee(DEFAULT_UNI_FEE_NUMERATOR, DEFAULT_UNI_FEE_DENOMINATOR);
-    }
-    // hardcode for TetuSwap sync
-    if(factory == 0x684d8c187be836171a1Af8D533e4724893031828) {
-      lp.sync();
-    }
-    uint amountOut = getAmountOut(amount, reserveIn, reserveOut, fee);
-    IERC20(tokenIn).safeTransfer(address(lp), amount);
-    if (amountOut != 0) {
-      _swapCall(lp, tokenIn, tokenOut, amountOut);
+      // send to controller in case if too low amount
+      IERC20(tokenIn).safeTransfer(_controller(), amount);
     }
   }
 
@@ -662,11 +442,9 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     address _token1,
     uint256 _token0Amount,
     uint256 _token1Amount
-  ) internal returns (uint256){
-    IERC20(_token0).safeApprove(_router, 0);
-    IERC20(_token0).safeApprove(_router, _token0Amount);
-    IERC20(_token1).safeApprove(_router, 0);
-    IERC20(_token1).safeApprove(_router, _token1Amount);
+  ) internal returns (uint256) {
+    _approveIfNeed(_token0, _router, _token0Amount);
+    _approveIfNeed(_token1, _router, _token1Amount);
 
     (,, uint256 liquidity) = IUniswapV2Router02(_router).addLiquidity(
       _token0,
@@ -682,31 +460,10 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     return liquidity;
   }
 
-  /// @dev Given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-  function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, UniFee memory fee) internal pure returns (uint amountOut) {
-    uint amountInWithFee = amountIn * fee.numerator;
-    uint numerator = amountInWithFee * reserveOut;
-    uint denominator = (reserveIn * fee.denominator) + amountInWithFee;
-    amountOut = numerator / denominator;
-  }
-
-  /// @dev Call swap function on pair with necessary preparations
-  ///      Assume that amountOut already sent to the pair
-  function _swapCall(IUniswapV2Pair _lp, address tokenIn, address tokenOut, uint amountOut) internal {
-    (address token0,) = sortTokens(tokenIn, tokenOut);
-    (uint amount0Out, uint amount1Out) = tokenIn == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-    _lp.swap(amount0Out, amount1Out, address(this), new bytes(0));
-  }
-
-  /// @dev returns sorted token addresses, used to handle return values from pairs sorted in this order
-  function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-    (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-  }
-
-  /// @dev fetches and sorts the reserves for a pair
-  function getReserves(IUniswapV2Pair _lp, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
-    (address token0,) = sortTokens(tokenA, tokenB);
-    (uint reserve0, uint reserve1,) = _lp.getReserves();
-    (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+  function _approveIfNeed(address token, address dst, uint amount) internal {
+    if (IERC20(token).allowance(address(this), dst) < amount) {
+      IERC20(token).safeApprove(dst, 0);
+      IERC20(token).safeApprove(dst, type(uint).max);
+    }
   }
 }
