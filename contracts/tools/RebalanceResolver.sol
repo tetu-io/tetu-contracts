@@ -15,7 +15,6 @@ contract RebalanceResolver is ControllableV2 {
   // --- CONSTANTS ---
 
   string public constant VERSION = "1.0.1";
-  uint public constant DELAY_RATE_DENOMINATOR = 100_000;
 
   // --- VARIABLES ---
 
