@@ -35,7 +35,7 @@ export async function deployContract<T extends ContractFactory>(
 
   if (hre.network.name === 'eth') {
     while (true) {
-      if (+formatUnits(gasPrice, 9) < 20) {
+      if (+formatUnits(gasPrice, 9) < 30) {
         break;
       } else {
         console.log('Wait for good gas price');

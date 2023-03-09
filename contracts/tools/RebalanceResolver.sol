@@ -14,7 +14,7 @@ contract RebalanceResolver is ControllableV2 {
 
   // --- CONSTANTS ---
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   uint public constant DELAY_RATE_DENOMINATOR = 100_000;
 
   // --- VARIABLES ---
@@ -76,7 +76,7 @@ contract RebalanceResolver is ControllableV2 {
     strategy = ISmartVault(vault).strategy();
 
     eligible = ISmartVault(vault).active()
-    && IStrategy(strategy).platform() == IStrategy.Platform.AURA
+    && IStrategy(strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER
     && !IStrategy(strategy).pausedInvesting()
     && IStrategySplitter(strategy).needRebalance() > 0;
     if (eligible) {

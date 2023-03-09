@@ -100,8 +100,8 @@ describe("RebalanceResolverTest", function () {
       if (data.canExec) {
         const vault = RebalanceResolver__factory.createInterface().decodeFunctionData('call', data.execPayload).vault
 
-        const lastHw = (await resolver.lastCall(vault)).toNumber();
-        console.log(vault, lastHw);
+        const lastCall = (await resolver.lastCall()).toNumber();
+        console.log(vault, lastCall);
 
         const gas = (await resolver.estimateGas.call(vault)).toNumber();
         expect(gas).below(15_000_000);
