@@ -21,7 +21,10 @@ import "../openzeppelin/ReentrancyGuard.sol";
 import "../base/ArrayLib.sol";
 import "./ITetuPawnShop.sol";
 
-/// @title Contract for handling deals between two parties
+/// @title TetuPawnShop contract provides a useful and flexible solution for borrowing
+///        and lending assets with a unique feature of supporting both ERC721 and ERC20 tokens as collateral.
+///        The contract's modular design allows for easy customization of fees, waiting periods,
+///        and other parameters, providing a solid foundation for a decentralized borrowing and lending platform.
 /// @author belbix
 contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   using SafeERC20 for IERC20;
