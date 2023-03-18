@@ -512,4 +512,13 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(1);
   });
 
+  it("vault WBTC price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.WBTC_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price).is.approximately(21000, 5000);
+  });
+
 });

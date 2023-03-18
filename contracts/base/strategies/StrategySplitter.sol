@@ -283,7 +283,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   /// @dev Rebalance all strategies in one tx
   ///      Require a lot of gas and should be used carefully
   ///      In case of huge gas cost use rebalance for each strategy separately
-  function rebalanceAll() external hardWorkers {
+  function rebalanceAll() external hardWorkers override {
     require(_onPause() == 0, "SS: Paused");
     _setNeedRebalance(0);
     // collect balances sum

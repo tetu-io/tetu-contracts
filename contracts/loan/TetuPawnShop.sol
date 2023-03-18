@@ -21,7 +21,10 @@ import "../openzeppelin/ReentrancyGuard.sol";
 import "../base/ArrayLib.sol";
 import "./ITetuPawnShop.sol";
 
-/// @title Contract for handling deals between two parties
+/// @title TetuPawnShop contract provides a useful and flexible solution for borrowing
+///        and lending assets with a unique feature of supporting both ERC721 and ERC20 tokens as collateral.
+///        The contract's modular design allows for easy customization of fees, waiting periods,
+///        and other parameters, providing a solid foundation for a decentralized borrowing and lending platform.
 /// @author belbix
 contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   using SafeERC20 for IERC20;
@@ -314,17 +317,21 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(_bid.id != 0, "TPS: Auction bid not found");
     Position storage pos = positions[_bid.posId];
 
-    bool isAuctionEnded = lastAuctionBidTs[pos.id] + AUCTION_DURATION < block.timestamp;
+    uint _lastAuctionBidTs = lastAuctionBidTs[pos.id];
+    bool isAuctionEnded = _lastAuctionBidTs + AUCTION_DURATION < block.timestamp;
+    // in case if auction is not accepted during 2 weeks lender can close the bid
+    bool isAuctionOverdue = _lastAuctionBidTs + AUCTION_DURATION + 2 weeks < block.timestamp;
     bool isLastBid = false;
     if (positionToBidIds[pos.id].length != 0) {
       uint256 lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
       isLastBid = lastBidId == bidId;
     }
-    require((isLastBid && isAuctionEnded) || !isLastBid || !pos.open, "TPS: Auction is not ended");
+    require((isLastBid && isAuctionEnded) || !isLastBid || !pos.open || isAuctionOverdue, "TPS: Auction is not ended");
 
-    lenderOpenBids[_bid.lender][pos.id] = 0;
+    address lender = _bid.lender;
+    lenderOpenBids[lender][pos.id] = 0;
     _bid.open = false;
-    IERC20(pos.acquired.acquiredToken).safeTransfer(msg.sender, _bid.amount);
+    IERC20(pos.acquired.acquiredToken).safeTransfer(lender, _bid.amount);
     emit AuctionBidClosed(pos.id, bidId);
   }
 
