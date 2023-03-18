@@ -58,7 +58,7 @@ interface IStrategy {
     DYSTOPIA, //40
     CONE, //41
     AURA, //42
-    SLOT_43, //43
+    COMPOUND, //43
     SLOT_44, //44
     SLOT_45, //45
     SLOT_46, //46
