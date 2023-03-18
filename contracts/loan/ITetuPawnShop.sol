@@ -193,7 +193,7 @@ interface ITetuPawnShop {
   // ************* USER ACTIONS *************
 
   /// @dev Borrower action. Assume approve
-  ///      Open a position with multiple options - loan / instant deal / auction
+  ///      Allows the user to create a new borrowing position by depositing their collateral tokens.
   function openPosition(
     address _collateralToken,
     uint256 _collateralAmount,
