@@ -143,7 +143,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     address _acquiredToken,
     uint256 _acquiredAmount,
     uint256 _posDurationBlocks,
-    uint256 _posFee
+    uint256 _posFee // todo add min price for auction
   ) external nonReentrant override returns (uint256){
     require(_posFee <= DENOMINATOR * 10, "TPS: Pos fee absurdly high");
     require(_posDurationBlocks != 0 || _posFee == 0, "TPS: Fee for instant deal forbidden");

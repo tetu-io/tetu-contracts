@@ -8,7 +8,6 @@ import {PriceCalculator} from "../../typechain";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {TokenUtils} from "../TokenUtils";
-import {Addresses} from "../../addresses";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -159,7 +158,7 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(100000);
   });
 
-  it.skip("calculate tetuBal/usdc price and check", async () => {
+  it("calculate tetuBal/usdc price and check", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -170,9 +169,47 @@ describe("Price calculator matic tests", function () {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
 
-    // expect(price).is.approximately(priceLp, priceLp/100)
+    expect(price).is.greaterThan(10);
+    expect(price).is.lessThan(100);
+  });
+
+  it("calculate BAL/usdc price and check", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+
+    // //////////////////////////////////////////////////////////////////////////////////
+
+    // const LIQUIDATOR = '0xC737eaB847Ae6A92028862fE38b828db41314772';
+    // const BALANCER_WEIGHTED_SWAPPER = '0x0bcbE4653e96aE39bde24312882faA0EdDF03256';
+    // const POOL = '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f'
+    // const liquidator = ITetuLiquidator__factory.connect(LIQUIDATOR, await DeployerUtils.impersonate('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94'));
+    //
+    // await liquidator.addLargestPools([
+    //   {
+    //     pool: POOL,
+    //     swapper: BALANCER_WEIGHTED_SWAPPER,
+    //     tokenIn: MaticAddresses.BAL_TOKEN,
+    //     tokenOut: MaticAddresses.WETH_TOKEN,
+    //   }
+    // ], true)
+    //
+    // const liqPriceBalUsc = +formatUnits(await liquidator.getPrice(MaticAddresses.BAL_TOKEN, MaticAddresses.USDC_TOKEN, 0), 6)
+    // console.log('liqPrice BAL=>USDC', liqPriceBalUsc);
+    // const res1 = await liquidator.getPrice(MaticAddresses.BAL_TOKEN, MaticAddresses.WETH_TOKEN, 0);
+    // const liqPriceBalEth = +formatUnits(res1, 18)
+    // console.log('liqPrice BAL=>WETH', liqPriceBalEth);
+    // const liqPriceEthUSDC = +formatUnits(await liquidator.getPrice(MaticAddresses.WETH_TOKEN, MaticAddresses.USDC_TOKEN, res1), 6)
+    // console.log('liqPrice WETH=>USDC', liqPriceEthUSDC);
+
+    // //////////////////////////////////////////////////////////////////////////////////
+
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      MaticAddresses.BAL_TOKEN, MaticAddresses.USDC_TOKEN
+    );
+
     expect(price).is.greaterThan(1);
-    expect(price).is.lessThan(100000);
+    expect(price).is.lessThan(100);
   });
 
   it.skip("calculate Unknown 80BAL20WETH/usdc price and check", async () => {
