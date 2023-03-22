@@ -1,6 +1,6 @@
 {
   "name": "@tetu_io/tetu-contracts",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "TETU solidity monorepo",
   "main": "hardhat.config.js",
   "directories": {
@@ -15,7 +15,8 @@
     "slither": "npm run build && slither .",
     "lint": "tslint -p tsconfig.json",
     "lint-fix": "tslint --fix -p tsconfig.json",
-    "update-block": "ts-node scripts/utils/tools/UpdateBlock.ts"
+    "update-block": "ts-node scripts/utils/tools/UpdateBlock.ts",
+    "publish": "npm publish --access public"
   },
   "repository": {
     "type": "git",
