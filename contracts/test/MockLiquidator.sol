@@ -26,6 +26,14 @@ contract MockLiquidator is ITetuLiquidator {
     routeLength = value;
   }
 
+  function addBlueChipsPools(PoolData[] memory /*_pools*/, bool /*rewrite*/) external override {
+    // noop
+  }
+
+  function addLargestPools(PoolData[] memory /*_pools*/, bool /*rewrite*/) external override {
+    // noop
+  }
+
   function getPrice(address, address, uint) external view override returns (uint) {
     return price;
   }

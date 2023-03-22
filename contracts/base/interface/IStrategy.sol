@@ -59,7 +59,7 @@ interface IStrategy {
     CONE, //41
     AURA, //42
     COMPOUND, //43
-    SLOT_44, //44
+    ZEROVIX, //44
     SLOT_45, //45
     SLOT_46, //46
     SLOT_47, //47

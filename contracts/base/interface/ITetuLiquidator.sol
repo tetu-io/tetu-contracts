@@ -11,6 +11,9 @@ interface ITetuLiquidator {
     address tokenOut;
   }
 
+  function addBlueChipsPools(PoolData[] memory _pools, bool rewrite) external;
+  function addLargestPools(PoolData[] memory _pools, bool rewrite) external;
+
   function getPrice(address tokenIn, address tokenOut, uint amount) external view returns (uint);
 
   function getPriceForRoute(PoolData[] memory route, uint amount) external view returns (uint);
