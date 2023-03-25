@@ -36,7 +36,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant override VERSION = "1.6.0";
+  string public constant override VERSION = "1.6.1";
   uint256 public constant override LIQUIDITY_DENOMINATOR = 100;
   uint constant public override SLIPPAGE_DENOMINATOR = 100;
   uint constant public override MINIMUM_AMOUNT = 100;
@@ -188,10 +188,10 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     require(fundTokenRequires + tetuTokenRequires == _amount, "F2: Wrong amount sum");
 
 
-    (uint fundTokenAmount,) = _liquidate(_token, fundToken(), fundTokenRequires);
+    uint fundTokenAmount = _liquidate(_token, fundToken(), fundTokenRequires);
     uint sentToFund = _sendToFund(fundTokenAmount, toFund, toLiqFundTokenPart);
 
-    (uint tetuTokenAmount,) = _liquidate(_token, tetu(), tetuTokenRequires);
+    uint tetuTokenAmount = _liquidate(_token, tetu(), tetuTokenRequires);
 
     uint256 tetuDistributed = 0;
     if (tetuTokenAmount > 0 && fundTokenAmount > 0 && toPsAndLiq > MINIMUM_AMOUNT && fundTokenAmount >= sentToFund) {
@@ -226,7 +226,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
       return 0;
     }
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
-    (uint256 resultAmount,) = _liquidate(tokenIn, tokenOut, amount);
+    uint256 resultAmount = _liquidate(tokenIn, tokenOut, amount);
     require(resultAmount > 0, "F2: Liquidated with zero result");
     IERC20(tokenOut).safeTransfer(msg.sender, resultAmount);
     emit Liquidated(tokenIn, tokenOut, amount);
@@ -402,27 +402,24 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
     address tokenIn,
     address tokenOut,
     uint amount
-  ) internal returns (uint bought, uint tokenInUsdValue) {
+  ) internal returns (uint bought) {
     if (tokenIn == tokenOut) {
-      return (amount, amount);
+      return amount;
     }
 
     bought = 0;
 
-    ITetuLiquidator _liquidator = ITetuLiquidator(liquidator);
-
-    (ITetuLiquidator.PoolData[] memory route, string memory error)
-    = _liquidator.buildRoute(tokenIn, tokenOut);
-
-    if (route.length == 0) {
-      revert(error);
-    }
-
-    // calculate usd value for check threshold
-    tokenInUsdValue = _liquidator.getPriceForRoute(route, amount);
-
     // if the value higher than threshold distribute to destinations
-    if (tokenInUsdValue > tokenThreshold[tokenIn]) {
+    if (amount > tokenThreshold[tokenIn]) {
+
+      ITetuLiquidator _liquidator = ITetuLiquidator(liquidator);
+
+      (ITetuLiquidator.PoolData[] memory route, string memory error)
+      = _liquidator.buildRoute(tokenIn, tokenOut);
+
+      if (route.length == 0) {
+        revert(error);
+      }
 
       uint tokenOutBalanceBefore = IERC20(tokenOut).balanceOf(address(this));
 

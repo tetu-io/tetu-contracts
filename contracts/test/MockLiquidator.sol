@@ -50,6 +50,8 @@ contract MockLiquidator is ITetuLiquidator {
     address tokenIn,
     address tokenOut
   ) external view override returns (PoolData[] memory route, string memory errorMessage) {
+    console.log("buildRoute tokenIn", tokenIn);
+    console.log("buildRoute tokenOut", tokenOut);
     if (routeLength == 1) {
       route = new PoolData[](1);
       route[0].tokenIn = tokenIn;
@@ -82,9 +84,10 @@ contract MockLiquidator is ITetuLiquidator {
     uint amount,
     uint
   ) external override {
+    console.log("liquidateWithRoute route.length", route.length);
     console.log("liquidateWithRoute amount", amount);
-    console.log("liquidateWithRoute tokenIn", IERC20Metadata(route[0].tokenIn).symbol());
-    console.log("liquidateWithRoute tokenOut", IERC20Metadata(route[route.length - 1].tokenOut).symbol());
+    console.log("liquidateWithRoute tokenIn", IERC20Metadata(route[0].tokenIn).symbol(), route[0].tokenIn);
+    console.log("liquidateWithRoute tokenOut", IERC20Metadata(route[route.length - 1].tokenOut).symbol(), route[route.length - 1].tokenOut);
     uint dec0 = IERC20Metadata(route[0].tokenIn).decimals();
     uint dec1 = IERC20Metadata(route[route.length - 1].tokenOut).decimals();
     IERC20(route[0].tokenIn).transferFrom(msg.sender, address(this), amount);

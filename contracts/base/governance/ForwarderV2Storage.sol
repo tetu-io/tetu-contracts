@@ -44,7 +44,7 @@ abstract contract ForwarderV2Storage is Initializable, IFeeRewardForwarder {
   mapping(address => UniFee) public uniPlatformFee;
   /// @dev DEPRECATED Hold blue chips tokens addresses
   mapping(address => bool) public blueChipsTokens;
-  /// @dev Token liquidation threshold in USD value
+  /// @dev Token liquidation threshold amount in the token value
   mapping(address => uint) public tokenThreshold;
   /// @dev TetuLiquidator address
   address public liquidator;
