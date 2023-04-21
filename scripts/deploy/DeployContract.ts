@@ -79,10 +79,11 @@ export async function deployContract<T extends ContractFactory>(
   //   gas = 5_000_000;
   // }
   // const instance = await _factory.deploy(...args, {gasLimit: gas, gasPrice: Math.floor(+gasPrice * 1.1)});
-  const instance = await _factory.deploy(...args, {
-    gasLimit: hre.network.name === 'hardhat' ? 29_000_000 : undefined,
-    ...(await txParams(hre, signer.provider as providers.Provider))
-  });
+  let gasLimit = 30_000_000
+  if (hre.network.name === 'matic') {
+    gasLimit = 15_000_000
+  }
+  const instance = await _factory.deploy(...args, {gasLimit, gasPrice: Math.floor(+gasPrice * 1.1)});
   log.info('Deploy tx:', instance.deployTransaction.hash);
   await instance.deployed();
 
