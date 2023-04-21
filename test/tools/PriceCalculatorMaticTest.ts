@@ -558,4 +558,18 @@ describe("Price calculator matic tests", function () {
     expect(price).is.approximately(21000, 5000);
   });
 
+  it("tetubal,xtetubal vault prices", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const priceBALETH = await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.BALANCER_BAL_ETH_POOL, MaticAddresses.USDC_TOKEN);
+    const priceTetuBal = await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+    const pricextetuBAL = await PriceCalculatorUtils.getFormattedPrice(calculator, MaticAddresses.xtetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
+    console.log("priceBALETH", priceBALETH);
+    console.log("priceTetuBal", priceTetuBal);
+    console.log("pricextetuBAL", pricextetuBAL);
+    expect(pricextetuBAL).is.approximately(priceBALETH * 0.6, 1);
+    expect(priceTetuBal).is.approximately(priceBALETH * 0.6, 1);
+  });
+
 });
