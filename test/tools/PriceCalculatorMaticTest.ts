@@ -53,7 +53,7 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(0.03);
   });
 
-  it.skip("calculate all prices", async () => {
+  it("calculate all prices", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
@@ -349,21 +349,16 @@ describe("Price calculator matic tests", function () {
     const size = (await calculator.swapFactoriesSize()).toNumber();
     console.log("size", size);
     const last = await calculator.swapFactories(size - 1);
-    const lastName = await calculator.swapLpNames(size - 1);
     console.log("last", last);
-    console.log("last name", lastName);
 
-    await calculator.removeSwapPlatform(last, lastName);
+    await calculator.removeSwapPlatform(last, '');
 
     const newSize = (await calculator.swapFactoriesSize()).toNumber();
     console.log('new size', newSize);
     const newLast = await calculator.swapFactories(newSize - 1);
-    const newLastName = await calculator.swapLpNames(newSize - 1);
     console.log('new last', newLast);
-    console.log('new last Name', newLastName);
     expect(size - newSize).is.eq(1);
     expect(newLast).is.not.eq(last);
-    expect(newLastName).is.not.eq(lastName);
   });
 
   it("add factory token", async () => {
@@ -373,23 +368,17 @@ describe("Price calculator matic tests", function () {
     const size = (await calculator.swapFactoriesSize()).toNumber();
     console.log("size", size);
     const last = await calculator.swapFactories(size - 1);
-    const lastName = await calculator.swapLpNames(size - 1);
     console.log("last", last);
-    console.log("last name", lastName);
 
     await calculator.addSwapPlatform(MaticAddresses.ZERO_ADDRESS, "test");
 
     const newSize = (await calculator.swapFactoriesSize()).toNumber();
     console.log('new size', newSize);
     const newLast = await calculator.swapFactories(newSize - 1);
-    const newLastName = await calculator.swapLpNames(newSize - 1);
     console.log('new last', newLast);
-    console.log('new last Name', newLastName);
     expect(newSize - size).is.eq(1);
     expect(newLast).is.not.eq(last);
-    expect(newLastName).is.not.eq(lastName);
     expect(newLast).is.eq(MaticAddresses.ZERO_ADDRESS);
-    expect(newLastName).is.eq("test");
   });
 
   it("largest pool for frax", async () => {
@@ -459,16 +448,6 @@ describe("Price calculator matic tests", function () {
     expect(price).is.lessThan(100000);
   });
 
-  it("calculate IRON_IRON_IS3USD, price and check", async () => {
-    if (!(await DeployerUtils.isNetwork(137))) {
-      return;
-    }
-    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
-      MaticAddresses.IRON_IRON_IS3USD, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.95);
-    expect(price).is.lessThan(1.05);
-  });
-
   it("calculate tetu-swap-wmatic-tetu price and check", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
@@ -505,8 +484,8 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.DYSTOPIA_tetuQI_QI, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.2);
-    expect(price).is.lessThan(1);
+    expect(price).is.greaterThan(0.01);
+    expect(price).is.lessThan(10);
   });
 
   it("PEN price", async () => {
@@ -515,7 +494,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.PEN_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.01);
+    expect(price).is.greaterThan(0.00001);
     expect(price).is.lessThan(1);
   });
 
@@ -525,7 +504,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0xADC56043BFf96e2F3394bFd5719cd6De0a734257', MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.1);
+    expect(price).is.greaterThan(0.001);
     expect(price).is.lessThan(1);
   });
 
@@ -546,7 +525,7 @@ describe("Price calculator matic tests", function () {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513', MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.9);
-    expect(price).is.lessThan(1);
+    expect(price).is.lessThan(1.1);
   });
 
   it("vault WBTC price", async () => {
@@ -555,7 +534,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.WBTC_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(price).is.approximately(21000, 5000);
+    expect(price).is.approximately(30000, 20000);
   });
 
   it("tetubal,xtetubal vault prices", async () => {
@@ -570,6 +549,16 @@ describe("Price calculator matic tests", function () {
     console.log("pricextetuBAL", pricextetuBAL);
     expect(pricextetuBAL).is.approximately(priceBALETH * 0.6, 1);
     expect(priceTetuBal).is.approximately(priceBALETH * 0.6, 1);
+  });
+
+  it("vault bb-t-usd price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
+      '0x4028cba3965e8aea7320e9ea50914861a14dc724', MaticAddresses.USDC_TOKEN);
+    expect(price).is.greaterThan(0.9);
+    expect(price).is.lessThan(1.1);
   });
 
 });

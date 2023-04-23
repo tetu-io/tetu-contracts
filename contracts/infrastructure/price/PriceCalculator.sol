@@ -42,7 +42,12 @@ interface ISwapper {
     address tokenOut,
     uint amount
   ) external view returns (uint);
+}
 
+interface ITetuVaultV2 {
+  function sharePrice() external view returns (uint);
+
+  function asset() external view returns (address assetTokenAddress);
 }
 
 /// @title Calculate current price for token using data from swap platforms
@@ -51,7 +56,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.1";
+  string public constant VERSION = "1.7.2";
   address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -74,8 +79,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   // Addresses for factories and registries for different DEX platforms.
   // Functions will be added to allow to alter these when needed.
   address[] public swapFactories;
-  // Symbols for detecting platforms
-  string[] public swapLpNames;
+  /// @dev Deprecated
+  string[] private swapLpNames;
 
   //Key tokens are used to find liquidity for any given token on Swap platforms.
   address[] public keyTokens;
@@ -146,8 +151,15 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       if (IController(_controller()).vaults(token)) {
         rate = rate * ISmartVault(token).getPricePerFullShare();
         token = ISmartVault(token).underlying();
-        rateDenominator = rateDenominator * (10 ** IERC20Extended(token).decimals());
+        rateDenominator *= (10 ** IERC20Extended(token).decimals());
       }
+    }
+
+    uint tetuVaultV2SharePrice = isTetuVaultV2(ITetuVaultV2(token));
+    if (tetuVaultV2SharePrice != 0) {
+      rate = rate * tetuVaultV2SharePrice;
+      token = ITetuVaultV2(token).asset();
+      rateDenominator *= (10 ** IERC20Extended(token).decimals());
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
@@ -286,7 +298,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     require(deep < DEPTH, "PC: too deep");
 
     (address keyToken,, address lpAddress) = getLargestPool(token, usedLps);
-    require(lpAddress != address(0), toAsciiString(token));
+    require(lpAddress != address(0), string(abi.encodePacked("PC: No LP for 0x", toAsciiString(token))));
     usedLps[deep] = lpAddress;
     deep++;
 
@@ -519,21 +531,19 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return false;
   }
 
-  function isSwapName(string memory name) public view returns (bool) {
-    for (uint256 i = 0; i < swapLpNames.length; i++) {
-      if (isEqualString(name, swapLpNames[i])) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   function keyTokensSize() external view returns (uint256) {
     return keyTokens.length;
   }
 
   function swapFactoriesSize() external view returns (uint256) {
     return swapFactories.length;
+  }
+
+  function isTetuVaultV2(ITetuVaultV2 vault) public view returns (uint) {
+    try vault.sharePrice() returns (uint sharePrice){
+      return sharePrice;
+    } catch {}
+    return 0;
   }
 
   // ************* INTERNAL *****************
@@ -585,15 +595,6 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       swapFactories[i] = swapFactories[i + 1];
     }
     swapFactories.pop();
-  }
-
-  function removeFromSwapNames(uint index) internal {
-    require(index < swapLpNames.length, "PC: wrong index");
-
-    for (uint i = index; i < swapLpNames.length - 1; i++) {
-      swapLpNames[i] = swapLpNames[i + 1];
-    }
-    swapLpNames.pop();
   }
 
   function defaultToken() public view returns (address value) {
@@ -685,16 +686,14 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     emit KeyTokenRemoved(keyToken);
   }
 
-  function addSwapPlatform(address _factoryAddress, string memory _name) external {
+  function addSwapPlatform(address _factoryAddress, string memory /*_name*/) external {
     _onlyControllerOrGovernance();
     for (uint256 i = 0; i < swapFactories.length; i++) {
       require(swapFactories[i] != _factoryAddress, "PC: factory already exist");
-      require(!isEqualString(swapLpNames[i], _name), "PC: name already exist");
     }
     swapFactories.push(_factoryAddress);
-    swapLpNames.push(_name);
     allowedFactories[_factoryAddress] = true;
-    emit SwapPlatformAdded(_factoryAddress, _name);
+    emit SwapPlatformAdded(_factoryAddress, "");
   }
 
   function changeFactoriesStatus(address[] memory factories, bool status) external {
@@ -704,10 +703,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
   }
 
-  function removeSwapPlatform(address _factoryAddress, string memory _name) external {
+  function removeSwapPlatform(address _factoryAddress, string memory /*_name*/) external {
     _onlyControllerOrGovernance();
     require(isSwapFactoryToken(_factoryAddress), "PC: swap not exist");
-    require(isSwapName(_name), "PC: name not exist");
     uint256 i;
     for (i = 0; i < swapFactories.length; i++) {
       if (_factoryAddress == swapFactories[i]) {
@@ -715,14 +713,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       }
     }
     removeFromSwapFactories(i);
-
-    for (i = 0; i < swapLpNames.length; i++) {
-      if (isEqualString(_name, swapLpNames[i])) {
-        break;
-      }
-    }
-    removeFromSwapNames(i);
-    emit SwapPlatformRemoved(_factoryAddress, _name);
+    emit SwapPlatformRemoved(_factoryAddress, "");
   }
 
   function setReplacementTokens(address _inputToken, address _replacementToken) external {
