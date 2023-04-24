@@ -577,7 +577,7 @@ contract ContractReader is Initializable, ControllableV2 {
 
   // normalized precision
   function userUnderlyingBalanceUsdc(address _user, address _vault) public view returns (uint256) {
-    uint256 underlyingPrice = getPrice(vaultUnderlying(_vault));
+    uint256 underlyingPrice = getPrice(_vault);
     return userUnderlyingBalance(_user, _vault).mul(underlyingPrice).div(PRECISION);
   }
 
