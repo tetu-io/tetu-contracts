@@ -30,7 +30,7 @@ import "../openzeppelin/IERC4626.sol";
 contract ContractReader is Initializable, ControllableV2 {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
