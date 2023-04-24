@@ -30,7 +30,7 @@ import "../openzeppelin/IERC4626.sol";
 contract ContractReader is Initializable, ControllableV2 {
   using SafeMath for uint256;
 
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
   uint256 constant public PRECISION = 1e18;
   mapping(bytes32 => address) internal tools;
 
@@ -577,7 +577,7 @@ contract ContractReader is Initializable, ControllableV2 {
 
   // normalized precision
   function userUnderlyingBalanceUsdc(address _user, address _vault) public view returns (uint256) {
-    uint256 underlyingPrice = getPrice(vaultUnderlying(_vault));
+    uint256 underlyingPrice = getPrice(_vault);
     return userUnderlyingBalance(_user, _vault).mul(underlyingPrice).div(PRECISION);
   }
 
