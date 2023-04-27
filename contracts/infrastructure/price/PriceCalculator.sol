@@ -32,6 +32,7 @@ import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../openzeppelin/Math.sol";
 import "../../base/interface/ITetuLiquidator.sol";
+import "../../openzeppelin/IERC4626.sol";
 
 pragma solidity 0.8.4;
 
@@ -42,6 +43,10 @@ interface ISwapper {
     address tokenOut,
     uint amount
   ) external view returns (uint);
+}
+
+interface IAave3Token {
+  function ATOKEN() external view returns (address);
 }
 
 interface ITetuVaultV2 {
@@ -56,7 +61,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.2";
+  string public constant VERSION = "1.7.3";
   address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -199,13 +204,25 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       price = tvl * (10 ** PRECISION_DECIMALS)
       / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
 
-    } else if (isAave(token)) {
+    } else if (isWrappedAave2(token)) {
       address aToken = unwrapAaveIfNecessary(token);
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
       // add wrapped ratio if necessary
       if (token != aToken) {
         uint ratio = IWrappedAaveToken(token).staticToDynamicAmount(10 ** PRECISION_DECIMALS);
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      } else {
+        uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      }
+    }  else if (isWrappedAave3(token)) {
+      address aToken = unwrapAaveIfNecessary(token);
+      address[] memory usedLps = new address[](DEPTH);
+      price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
+      // add wrapped ratio if necessary
+      if (token != aToken) {
+        uint ratio = IERC4626(token).convertToAssets(10 ** PRECISION_DECIMALS);
         price = price * ratio / (10 ** PRECISION_DECIMALS);
       } else {
         uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
@@ -231,8 +248,15 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return allowedFactories[factory];
   }
 
-  function isAave(address token) public view returns (bool) {
+  function isWrappedAave2(address token) public view returns (bool) {
     try IAaveToken(token).UNDERLYING_ASSET_ADDRESS{gas: 60000}() returns (address) {
+      return true;
+    } catch {}
+    return false;
+  }
+
+  function isWrappedAave3(address token) public view returns (bool) {
+    try IAave3Token(token).ATOKEN() returns (address) {
       return true;
     } catch {}
     return false;
