@@ -181,7 +181,7 @@ describe("Controller tests", function () {
   });
 
   it("should not setup fund token without announce", async () => {
-    await expect(controller.setFundToken(Misc.ZERO_ADDRESS)).revertedWith('C: Not announced');
+    await expect(controller.setFundToken(Misc.ZERO_ADDRESS)).rejectedWith('C: Not announced');
   });
 
   it("should not setup fund without announce", async () => {

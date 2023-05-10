@@ -12,10 +12,10 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "../../openzeppelin/ERC20Capped.sol";
+import "../../openzeppelin/ERC20Burnable.sol";
+import "../../openzeppelin/Math.sol";
+import "../../openzeppelin/SafeMath.sol";
 
 /// @title TETU token contract. Has strict weekly emission algorithm
 /// @dev Use with TetuProxy

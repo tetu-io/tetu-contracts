@@ -1,6 +1,6 @@
-import {ethers, web3} from "hardhat";
+import {ethers} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Contract, ContractFactory, utils} from "ethers";
+import {Contract, ContractFactory} from "ethers";
 import {
   Announcer,
   AutoRewarder,
@@ -13,16 +13,13 @@ import {
   IStrategy,
   IStrategy__factory,
   ITetuProxy,
-  LiquidityBalancer,
   MintHelper,
   MockFaucet,
   MockToken,
   Multicall,
-  MultiSwap,
   NoopStrategy,
   NotifyHelper,
   PawnShopReader,
-  PayrollClerk,
   PriceCalculator,
   RewardCalculator,
   RewardToken,
@@ -30,9 +27,7 @@ import {
   StrategySplitter,
   TetuProxyControlled,
   TetuProxyGov,
-  TetuSwapFactory,
   VaultController,
-  ZapContract,
 } from "../../typechain";
 import {expect} from "chai";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
@@ -42,22 +37,21 @@ import {ToolsAddresses} from "../models/ToolsAddresses";
 import axios from "axios";
 import {RunHelper} from "../utils/tools/RunHelper";
 import {config as dotEnvConfig} from "dotenv";
-import {ToolsContractsWrapper} from "../../test/ToolsContractsWrapper";
 import {Misc} from "../utils/tools/Misc";
 import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {FtmAddresses} from "../addresses/FtmAddresses";
 import {readFileSync} from "fs";
-import {Libraries} from "hardhat-deploy/dist/types";
 import {EthAddresses} from "../addresses/EthAddresses";
-import {formatUnits, parseUnits} from "ethers/lib/utils";
+import {parseUnits} from "ethers/lib/utils";
 import {deployContract} from "./DeployContract";
 import {BscAddresses} from "../addresses/BscAddresses";
+import {ToolsContractsWrapper} from "../../test/ToolsContractsWrapper";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 
 dotEnvConfig();
@@ -147,15 +141,6 @@ export class DeployerUtils {
     return contract;
   }
 
-  public static async deploySwapFactory(signer: SignerWithAddress, controller: string)
-    : Promise<[TetuSwapFactory, TetuProxyControlled, TetuSwapFactory]> {
-    const logic = await DeployerUtils.deployContract(signer, "TetuSwapFactory") as TetuSwapFactory;
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address) as TetuProxyControlled;
-    const contract = logic.attach(proxy.address) as TetuSwapFactory;
-    await contract.initialize(controller);
-    return [contract, proxy, logic];
-  }
-
   public static async deployAnnouncer(signer: SignerWithAddress, controller: string, timeLock: number)
     : Promise<[Announcer, TetuProxyControlled, Announcer]> {
     const logic = await DeployerUtils.deployContract(signer, "Announcer") as Announcer;
@@ -213,10 +198,6 @@ export class DeployerUtils {
     const fundKeeper = logic.attach(proxy.address) as FundKeeper;
     await RunHelper.runAndWait(() => fundKeeper.initialize(controller));
     return [fundKeeper, proxy, logic];
-  }
-
-  public static async deployLiquidityBalancer(signer: SignerWithAddress, controller: string): Promise<LiquidityBalancer> {
-    return await DeployerUtils.deployContract(signer, "LiquidityBalancer", controller) as LiquidityBalancer;
   }
 
   public static async deployPriceCalculator(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
@@ -429,15 +410,6 @@ export class DeployerUtils {
     return logic.attach(proxy.address) as StrategySplitter;
   }
 
-  public static async deployPayrollClerk(signer: SignerWithAddress, controller: string, calculator: string)
-    : Promise<[PayrollClerk, TetuProxyGov, PayrollClerk]> {
-    const logic = await DeployerUtils.deployContract(signer, "PayrollClerk") as PayrollClerk;
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
-    const contract = logic.attach(proxy.address) as PayrollClerk;
-    await contract.initialize(controller, calculator);
-    return [contract, proxy, logic];
-  }
-
   public static async deployContractReader(signer: SignerWithAddress, controller: string, calculator: string)
     : Promise<[ContractReader, TetuProxyGov, ContractReader]> {
     const logic = await DeployerUtils.deployContract(signer, "ContractReader") as ContractReader;
@@ -469,98 +441,6 @@ export class DeployerUtils {
     const contract = logic.attach(proxy.address) as AutoRewarder;
     await contract.initialize(controller, rewardCalculator, networkRatio, rewardsPerDay, period);
     return [contract, proxy, logic];
-  }
-
-  public static async deployZapContract(
-    signer: SignerWithAddress,
-    controllerAddress: string,
-    multiSwap: string
-  ): Promise<ZapContract> {
-    return await DeployerUtils.deployContract(signer, "ZapContract", controllerAddress, multiSwap) as ZapContract;
-  }
-
-  public static async deployMultiSwap(
-    signer: SignerWithAddress,
-    controllerAddress: string,
-    calculatorAddress: string
-  ): Promise<MultiSwap> {
-    const net = await ethers.provider.getNetwork();
-    if (net.chainId === 137) {
-      return DeployerUtils.deployMultiSwapMatic(signer, controllerAddress, calculatorAddress);
-    } else if (net.chainId === 250) {
-      return DeployerUtils.deployMultiSwapFantom(signer, controllerAddress, calculatorAddress);
-    } else {
-      throw Error('No config for ' + net.chainId);
-    }
-  }
-
-  public static async deployMultiSwapMatic(
-    signer: SignerWithAddress,
-    controllerAddress: string,
-    calculatorAddress: string
-  ): Promise<MultiSwap> {
-    return await DeployerUtils.deployContract(signer, "MultiSwap",
-      controllerAddress,
-      calculatorAddress,
-      [
-        MaticAddresses.QUICK_FACTORY,
-        MaticAddresses.SUSHI_FACTORY,
-        MaticAddresses.WAULT_FACTORY,
-        MaticAddresses.TETU_SWAP_FACTORY,
-        MaticAddresses.CAFE_FACTORY,
-        MaticAddresses.DFYN_FACTORY,
-        MaticAddresses.DINO_FACTORY,
-      ],
-      [
-        MaticAddresses.QUICK_ROUTER,
-        MaticAddresses.SUSHI_ROUTER,
-        MaticAddresses.WAULT_ROUTER,
-        MaticAddresses.TETU_SWAP_ROUTER,
-        MaticAddresses.CAFE_ROUTER,
-        MaticAddresses.DFYN_ROUTER,
-        MaticAddresses.DINO_ROUTER,
-      ]
-    ) as MultiSwap;
-  }
-
-  public static async deployMultiSwapFantom(
-    signer: SignerWithAddress,
-    controllerAddress: string,
-    calculatorAddress: string
-  ): Promise<MultiSwap> {
-    return await DeployerUtils.deployContract(signer, "MultiSwap",
-      controllerAddress,
-      calculatorAddress,
-      [
-        FtmAddresses.SPOOKY_SWAP_FACTORY,
-        FtmAddresses.TETU_SWAP_FACTORY,
-        FtmAddresses.SPIRIT_SWAP_FACTORY,
-      ],
-      [
-        FtmAddresses.SPOOKY_SWAP_ROUTER,
-        FtmAddresses.TETU_SWAP_ROUTER,
-        FtmAddresses.SPIRIT_SWAP_ROUTER,
-      ]
-    ) as MultiSwap;
-  }
-
-  public static async deployMultiSwapTestnet(
-    signer: SignerWithAddress,
-    controllerAddress: string,
-    calculatorAddress: string,
-    factory: string,
-    router: string,
-  ): Promise<MultiSwap> {
-    return await DeployerUtils.deployContract(signer, "MultiSwap",
-      controllerAddress,
-      calculatorAddress,
-      [
-        factory
-      ],
-      [
-        router
-      ]
-    ) as MultiSwap;
   }
 
   public static async deployAllCoreContracts(
@@ -694,11 +574,7 @@ export class DeployerUtils {
       calculator[0],
       reader[0],
       await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
-      await DeployerUtils.connectInterface(signer, "LiquidityBalancer", tools.rebalancer) as LiquidityBalancer,
-      await DeployerUtils.connectInterface(signer, "PayrollClerk", tools.payrollClerk) as PayrollClerk,
       await DeployerUtils.connectInterface(signer, "MockFaucet", tools.mockFaucet) as MockFaucet,
-      await DeployerUtils.connectInterface(signer, "MultiSwap", tools.multiSwap) as MultiSwap,
-      await DeployerUtils.connectInterface(signer, "ZapContract", tools.zapContract) as ZapContract,
       await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
       await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
     );
@@ -1099,11 +975,7 @@ export class DeployerUtils {
       await DeployerUtils.connectInterface(signer, "PriceCalculator", tools.calculator) as PriceCalculator,
       await DeployerUtils.connectInterface(signer, "ContractReader", tools.reader) as ContractReader,
       await DeployerUtils.connectInterface(signer, "ContractUtils", tools.utils) as ContractUtils,
-      await DeployerUtils.connectInterface(signer, "LiquidityBalancer", tools.rebalancer) as LiquidityBalancer,
-      await DeployerUtils.connectInterface(signer, "PayrollClerk", tools.payrollClerk) as PayrollClerk,
       await DeployerUtils.connectInterface(signer, "MockFaucet", tools.mockFaucet) as MockFaucet,
-      await DeployerUtils.connectInterface(signer, "MultiSwap", tools.multiSwap) as MultiSwap,
-      await DeployerUtils.connectInterface(signer, "ZapContract", tools.zapContract) as ZapContract,
       await DeployerUtils.connectInterface(signer, "Multicall", tools.multicall) as Multicall,
       await DeployerUtils.connectInterface(signer, "PawnShopReader", tools.pawnshopReader) as PawnShopReader,
     );

@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../openzeppelin/SafeMath.sol";
 import "../base/governance/ControllableV2.sol";
 import "../base/interface/IBookkeeper.sol";
 import "../base/interface/ISmartVault.sol";

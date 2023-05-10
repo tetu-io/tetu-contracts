@@ -5,7 +5,7 @@ import {Logger} from "tslog";
 import logSettings from "../../../log_settings";
 import {Misc} from "./Misc";
 
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 
 export class RunHelper {

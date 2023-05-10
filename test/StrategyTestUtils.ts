@@ -14,7 +14,7 @@ import logSettings from "../log_settings";
 import {Logger} from "tslog";
 import {PriceCalculatorUtils} from "./PriceCalculatorUtils";
 
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 export class StrategyTestUtils {
 

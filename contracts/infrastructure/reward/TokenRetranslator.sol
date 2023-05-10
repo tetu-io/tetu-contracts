@@ -11,8 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
 
 /// @title Should receive tokens on one chain and transfer on another.
 /// @author belbix

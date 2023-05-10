@@ -8,7 +8,7 @@ import logSettings from "../log_settings";
 import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import axios from "axios";
 
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 export class PriceCalculatorUtils {
 

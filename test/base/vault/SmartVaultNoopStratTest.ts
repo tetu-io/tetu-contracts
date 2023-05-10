@@ -12,7 +12,7 @@ import chaiAsPromised from "chai-as-promised";
 import {CoreContractsWrapper} from "../../CoreContractsWrapper";
 import {MintHelperUtils} from "../../MintHelperUtils";
 import {Misc} from "../../../scripts/utils/tools/Misc";
-import {parseUnits} from "ethers/lib/utils";
+import {formatUnits, parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -424,7 +424,7 @@ describe("SmartVaultNoopStrat", () => {
 
       await vault.getAllRewardsAndRedirect(signer.address);
 
-      expect(await core.psVault.balanceOf(user.address)).above(parseUnits('99'));
+      expect(+formatUnits(await core.psVault.balanceOf(user.address))).above(99);
     });
 
     it("should not change strategy from eoa", async () => {
