@@ -14,11 +14,11 @@ pragma solidity 0.8.4;
 
 import "../openzeppelin/SafeMath.sol";
 import "../base/governance/ControllableV2.sol";
-import "../base/interface/IBookkeeper.sol";
-import "../base/interface/ISmartVault.sol";
-import "../base/interface/IVaultController.sol";
-import "../base/interface/IStrategy.sol";
-import "../base/interface/IStrategySplitter.sol";
+import "../base/interfaces/IBookkeeper.sol";
+import "../base/interfaces/ISmartVault.sol";
+import "../base/interfaces/IVaultController.sol";
+import "../base/interfaces/IStrategy.sol";
+import "../base/interfaces/IStrategySplitter.sol";
 import "../infrastructure/price/IPriceCalculator.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/Math.sol";

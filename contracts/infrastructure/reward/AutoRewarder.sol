@@ -12,11 +12,11 @@
 pragma solidity 0.8.4;
 
 import "../../base/governance/ControllableV2.sol";
-import "../../base/interface/ISmartVault.sol";
-import "../../base/interface/IStrategy.sol";
-import "../../base/interface/IController.sol";
+import "../../base/interfaces/ISmartVault.sol";
+import "../../base/interfaces/IStrategy.sol";
+import "../../base/interfaces/IController.sol";
 import "./IRewardCalculator.sol";
-import "../../base/interface/IRewardToken.sol";
+import "../../base/interfaces/IRewardToken.sol";
 import "./AutoRewarderStorage.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/IERC20.sol";

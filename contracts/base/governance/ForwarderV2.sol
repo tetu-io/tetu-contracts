@@ -16,13 +16,13 @@ import "./ControllableV2.sol";
 import "./ForwarderV2Storage.sol";
 import "../../openzeppelin/IERC20.sol";
 import "../../openzeppelin/SafeERC20.sol";
-import "../interface/ISmartVault.sol";
-import "../interface/IBookkeeper.sol";
+import "../interfaces/ISmartVault.sol";
+import "../interfaces/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 import "../../third_party/uniswap/IUniswapV2Factory.sol";
 import "../../third_party/IVeDistributor.sol";
 import "../SlotsLib.sol";
-import "../interface/ITetuLiquidator.sol";
+import "../interfaces/ITetuLiquidator.sol";
 
 /// @title Convert rewards from external projects to TETU and FundToken(USDC by default)
 ///        and send them to veTETU distributor, FundKeeper and vaults

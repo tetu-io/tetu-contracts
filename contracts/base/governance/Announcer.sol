@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 import "./ControllableV2.sol";
 import "./ControllerStorage.sol";
-import "../interface/IAnnouncer.sol";
+import "../interfaces/IAnnouncer.sol";
 
 /// @title Contract for holding scheduling for time-lock actions
 /// @dev Use with TetuProxy

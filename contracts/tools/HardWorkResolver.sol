@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.4;
 
-import "../base/interface/IController.sol";
-import "../base/interface/IBookkeeper.sol";
-import "../base/interface/ISmartVault.sol";
-import "../base/interface/IStrategy.sol";
-import "../base/interface/IStrategySplitter.sol";
+import "../base/interfaces/IController.sol";
+import "../base/interfaces/IBookkeeper.sol";
+import "../base/interfaces/ISmartVault.sol";
+import "../base/interfaces/IStrategy.sol";
+import "../base/interfaces/IStrategySplitter.sol";
 import "../openzeppelin/Initializable.sol";
 import "../base/governance/ControllableV2.sol";
 

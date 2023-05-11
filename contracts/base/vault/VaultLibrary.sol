@@ -15,11 +15,11 @@ pragma solidity 0.8.4;
 import "../../openzeppelin/IERC20.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/Math.sol";
-import "../interface/IStrategy.sol";
-import "../interface/IControllable.sol";
-import "../interface/IController.sol";
-import "../interface/IVaultController.sol";
-import "../interface/IBookkeeper.sol";
+import "../interfaces/IStrategy.sol";
+import "../interfaces/IControllable.sol";
+import "../interfaces/IController.sol";
+import "../interfaces/IVaultController.sol";
+import "../interfaces/IBookkeeper.sol";
 
 /// @title Library for SmartVault
 /// @author belbix

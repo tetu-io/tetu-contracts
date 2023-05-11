@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.4;
 
-import "../base/interface/ITetuLiquidator.sol";
+import "../base/interfaces/ITetuLiquidator.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/IERC20Metadata.sol";
 

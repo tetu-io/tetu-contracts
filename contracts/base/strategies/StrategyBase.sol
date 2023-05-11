@@ -13,13 +13,13 @@ pragma solidity 0.8.4;
 
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/Math.sol";
-import "../interface/IStrategy.sol";
+import "../interfaces/IStrategy.sol";
 import "../governance/Controllable.sol";
-import "../interface/IFeeRewardForwarder.sol";
-import "../interface/IBookkeeper.sol";
+import "../interfaces/IFeeRewardForwarder.sol";
+import "../interfaces/IBookkeeper.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
-import "../interface/ISmartVault.sol";
+import "../interfaces/ISmartVault.sol";
 
 /// @title Abstract contract for base strategy functionality
 /// @author belbix

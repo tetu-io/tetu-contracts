@@ -14,8 +14,8 @@ pragma solidity 0.8.4;
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/SafeMath.sol";
 import "../../base/governance/Controllable.sol";
-import "../../base/interface/ISmartVault.sol";
-import "../../base/interface/IController.sol";
+import "../../base/interfaces/ISmartVault.sol";
+import "../../base/interfaces/IController.sol";
 
 /// @title Disperse weekly rewards to vaults
 /// @author belbix

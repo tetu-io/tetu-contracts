@@ -13,7 +13,7 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/Initializable.sol";
-import "../interface/ISmartVault.sol";
+import "../interfaces/ISmartVault.sol";
 
 /// @title Eternal storage + getters and setters pattern
 /// @dev If you will change a key value it will require setup it again

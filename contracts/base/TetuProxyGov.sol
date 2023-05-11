@@ -12,10 +12,10 @@
 
 pragma solidity 0.8.4;
 
-import "../base/interface/IControllable.sol";
-import "../base/interface/IControllableExtended.sol";
+import "./interfaces/IControllable.sol";
+import "./interfaces/IControllableExtended.sol";
 import "./UpgradeableProxy.sol";
-import "./interface/ITetuProxy.sol";
+import "./interfaces/ITetuProxy.sol";
 
 /// @title EIP1967 Upgradable proxy implementation.
 /// @dev Only Governance Wallet has access.

@@ -15,8 +15,8 @@ pragma solidity 0.8.4;
 import "../third_party/curve/IVotingEscrow.sol";
 import "../third_party/curve/IGauge.sol";
 import "../openzeppelin/IERC20.sol";
-import "../base/interface/ISmartVault.sol";
-import "../base/interface/IStrategy.sol";
+import "../base/interfaces/ISmartVault.sol";
+import "../base/interfaces/IStrategy.sol";
 
 interface IBalancerStrategy {
   function gauge() external view returns (address);

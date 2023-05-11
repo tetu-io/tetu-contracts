@@ -13,9 +13,9 @@
 pragma solidity 0.8.4;
 
 import "./StrategyBase.sol";
-import "../interface/ISmartVault.sol";
+import "../interfaces/ISmartVault.sol";
 import "../../third_party/IERC20Extended.sol";
-import "../interface/strategies/IFoldStrategy.sol";
+import "./IFoldStrategy.sol";
 
 /// @title Abstract contract for folding strategy
 /// @author JasperS13

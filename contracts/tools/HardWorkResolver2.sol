@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.4;
 
-import "../base/interface/ISmartVault.sol";
-import "../base/interface/IStrategy.sol";
+import "../base/interfaces/ISmartVault.sol";
+import "../base/interfaces/IStrategy.sol";
 import "../openzeppelin/EnumerableSet.sol";
 import "../base/governance/ControllableV2.sol";
 
