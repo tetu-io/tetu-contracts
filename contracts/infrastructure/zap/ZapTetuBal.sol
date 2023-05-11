@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
-import "../../base/interface/ISmartVault.sol";
+import "../../base/interfaces/ISmartVault.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/balancer/IBalancerHelper.sol";
 

@@ -99,8 +99,6 @@ interface IController {
 
   function pureRewardConsumers(address) external view returns (bool);
 
-  function rebalance(address _strategy) external;
-
   function removeHardWorker(address _worker) external;
 
   function rewardDistribution(address) external view returns (bool);

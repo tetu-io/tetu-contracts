@@ -12,10 +12,10 @@
 
 pragma solidity 0.8.4;
 
-import "../interface/ISmartVault.sol";
+import "../interfaces/ISmartVault.sol";
 import "./ControllableV2.sol";
 import "./VaultControllerStorage.sol";
-import "../interface/IAnnouncer.sol";
+import "../interfaces/IAnnouncer.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/IERC20.sol";
 

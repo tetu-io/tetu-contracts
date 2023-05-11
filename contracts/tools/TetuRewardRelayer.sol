@@ -13,7 +13,7 @@
 pragma solidity 0.8.4;
 
 import "../openzeppelin/SafeERC20.sol";
-import "../base/interface/IController.sol";
+import "../base/interfaces/IController.sol";
 
 interface IVesting {
   function start(uint amount) external;

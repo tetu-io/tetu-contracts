@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "../interface/IController.sol";
+import "../interfaces/IController.sol";
 import "../../openzeppelin/Initializable.sol";
 
 /// @title Eternal storage + getters and setters pattern

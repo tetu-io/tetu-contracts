@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
-import "../base/interface/ISmartVault.sol";
+import "../base/interfaces/ISmartVault.sol";
 
 /// @title Helper Contract to deposit/withdraw to/from SmartVault.
 /// @author belbix, bogdoslav

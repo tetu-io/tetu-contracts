@@ -19,10 +19,10 @@ import "../../openzeppelin/ERC20Upgradeable.sol";
 import "./VaultStorage.sol";
 import "./VaultLibrary.sol";
 import "../governance/ControllableV2.sol";
-import "../interface/IStrategy.sol";
-import "../interface/IController.sol";
-import "../interface/IBookkeeper.sol";
-import "../interface/IVaultController.sol";
+import "../interfaces/IStrategy.sol";
+import "../interfaces/IController.sol";
+import "../interfaces/IBookkeeper.sol";
+import "../interfaces/IVaultController.sol";
 
 /// @title Smart Vault is a combination of implementations drawn from Synthetix pool
 ///        for their innovative reward vesting and Yearn vault for their share price model

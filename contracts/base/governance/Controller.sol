@@ -14,17 +14,16 @@ pragma solidity 0.8.4;
 
 import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/IERC20.sol";
-import "../interface/IStrategy.sol";
-import "../interface/IStrategySplitter.sol";
-import "../interface/ISmartVault.sol";
-import "../interface/IFeeRewardForwarder.sol";
-import "../interface/IBookkeeper.sol";
-import "../interface/IUpgradeSource.sol";
-import "../interface/IFundKeeper.sol";
-import "../interface/ITetuProxy.sol";
-import "../interface/IMintHelper.sol";
-import "../interface/IAnnouncer.sol";
-import "../interface/strategies/IBalancingStrategy.sol";
+import "../interfaces/IStrategy.sol";
+import "../interfaces/IStrategySplitter.sol";
+import "../interfaces/ISmartVault.sol";
+import "../interfaces/IFeeRewardForwarder.sol";
+import "../interfaces/IBookkeeper.sol";
+import "../interfaces/IUpgradeSource.sol";
+import "../interfaces/IFundKeeper.sol";
+import "../interfaces/ITetuProxy.sol";
+import "../interfaces/IMintHelper.sol";
+import "../interfaces/IAnnouncer.sol";
 import "./ControllerStorage.sol";
 import "./ControllableV2.sol";
 
@@ -39,7 +38,7 @@ contract Controller is Initializable, ControllableV2, ControllerStorage {
   // ************ VARIABLES **********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract is changed
-  string public constant override VERSION = "1.4.1";
+  string public constant override VERSION = "1.4.2";
 
   /// @dev Allowed contracts to deposit in the vaults
   mapping(address => bool) public override whiteList;
@@ -587,14 +586,6 @@ contract Controller is Initializable, ControllableV2, ControllerStorage {
       ISmartVault(_vault).getPricePerFullShare(),
       block.timestamp
     );
-  }
-
-  /// @notice Only HardWorker can do it. Call rebalanceAllPipes for given Strategy (AMB Platform)
-  /// @param _strategy Vault addresses
-  function rebalance(address _strategy) external override {
-    require(hardWorkers[msg.sender], "C: Not hardworker");
-    require(strategies[_strategy], "C: Not strategy");
-    IBalancingStrategy(_strategy).rebalanceAllPipes();
   }
 
   // ***************** EXTERNAL *******************************

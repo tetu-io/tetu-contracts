@@ -13,9 +13,9 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/Initializable.sol";
-import "../interface/IControllable.sol";
-import "../interface/IControllableExtended.sol";
-import "../interface/IController.sol";
+import "../interfaces/IControllable.sol";
+import "../interfaces/IControllableExtended.sol";
+import "../interfaces/IController.sol";
 
 /// @title Implement basic functionality for any contract that require strict control
 ///        V2 is optimised version for less gas consumption

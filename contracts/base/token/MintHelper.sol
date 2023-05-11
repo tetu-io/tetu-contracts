@@ -16,7 +16,7 @@ import "../../openzeppelin/IERC20.sol";
 import "../../openzeppelin/SafeMath.sol";
 import "../governance/Controllable.sol";
 import "./RewardToken.sol";
-import "../interface/IMintHelper.sol";
+import "../interfaces/IMintHelper.sol";
 
 /// @title Contract for interacting with RewardToken(TETU) contract. Owner of TETU.
 /// @dev Use with TetuProxy

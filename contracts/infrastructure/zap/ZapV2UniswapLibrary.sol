@@ -13,7 +13,7 @@ pragma solidity 0.8.4;
 
 import "../../openzeppelin/Math.sol";
 import "../../openzeppelin/SafeERC20.sol";
-import "../../base/interface/ISmartVault.sol";
+import "../../base/interfaces/ISmartVault.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "./ZapV2CommonLibrary.sol";
 

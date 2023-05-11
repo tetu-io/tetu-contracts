@@ -14,8 +14,8 @@ pragma solidity 0.8.4;
 
 
 import "./ControllableV2.sol";
-import "../interface/IFundKeeper.sol";
-import "../interface/ISmartVault.sol";
+import "../interfaces/IFundKeeper.sol";
+import "../interfaces/ISmartVault.sol";
 import "../../openzeppelin/IERC20.sol";
 import "../../openzeppelin/SafeERC20.sol";
 

@@ -16,10 +16,10 @@ import "../../openzeppelin/Math.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "./StrategyStorage.sol";
 import "../governance/ControllableV2.sol";
-import "../interface/IStrategy.sol";
-import "../interface/IFeeRewardForwarder.sol";
-import "../interface/IBookkeeper.sol";
-import "../interface/ISmartVault.sol";
+import "../interfaces/IStrategy.sol";
+import "../interfaces/IFeeRewardForwarder.sol";
+import "../interfaces/IBookkeeper.sol";
+import "../interfaces/ISmartVault.sol";
 import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniswapV2Router02.sol";
 

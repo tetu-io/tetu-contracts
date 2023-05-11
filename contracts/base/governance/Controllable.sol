@@ -13,8 +13,8 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/Initializable.sol";
-import "../interface/IController.sol";
-import "../interface/IControllable.sol";
+import "../interfaces/IController.sol";
+import "../interfaces/IControllable.sol";
 
 /// @title Implement basic functionality for any contract that require strict control
 /// @dev Can be used with upgradeable pattern.

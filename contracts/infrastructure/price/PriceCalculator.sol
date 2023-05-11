@@ -18,7 +18,7 @@ import "../../third_party/uniswap/IUniPoolV3.sol";
 import "../../third_party/uniswap/IUniFactoryV3.sol";
 import "../../third_party/firebird/IFireBirdPair.sol";
 import "../../third_party/firebird/IFireBirdFactory.sol";
-import "../../base/interface/ISmartVault.sol";
+import "../../base/interfaces/ISmartVault.sol";
 import "../../third_party/iron/IIronSwap.sol";
 import "../../third_party/iron/IIronLpToken.sol";
 import "../../third_party/curve/ICurveLpToken.sol";
@@ -31,7 +31,7 @@ import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../openzeppelin/Math.sol";
-import "../../base/interface/ITetuLiquidator.sol";
+import "../../base/interfaces/ITetuLiquidator.sol";
 import "../../openzeppelin/IERC4626.sol";
 
 pragma solidity 0.8.4;

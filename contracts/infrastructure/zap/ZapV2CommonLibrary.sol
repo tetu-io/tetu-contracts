@@ -12,7 +12,7 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/SafeERC20.sol";
-import "../../base/interface/ISmartVault.sol";
+import "../../base/interfaces/ISmartVault.sol";
 
 library ZapV2CommonLibrary {
     using SafeERC20 for IERC20;

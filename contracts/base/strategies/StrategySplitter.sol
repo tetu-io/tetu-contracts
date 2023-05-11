@@ -15,9 +15,9 @@ import "../../openzeppelin/SafeERC20.sol";
 import "../../openzeppelin/Math.sol";
 import "../../openzeppelin/ReentrancyGuard.sol";
 import "../governance/Controllable.sol";
-import "../interface/IStrategy.sol";
-import "../interface/ISmartVault.sol";
-import "../interface/IStrategySplitter.sol";
+import "../interfaces/IStrategy.sol";
+import "../interfaces/ISmartVault.sol";
+import "../interfaces/IStrategySplitter.sol";
 import "./StrategySplitterStorage.sol";
 import "../ArrayLib.sol";
 
