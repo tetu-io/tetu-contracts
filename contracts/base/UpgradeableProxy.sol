@@ -12,8 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/proxy/Proxy.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "../openzeppelin/Proxy.sol";
+import "../openzeppelin/Address.sol";
 
 
 /// @title OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4/contracts/proxy/UpgradeableProxy.sol

@@ -4,9 +4,7 @@ import {
   ContractReader,
   DepositHelper,
   Multicall,
-  MultiSwap,
-  NoopStrategy,
-  ZapContract
+  NoopStrategy
 } from "../../../typechain";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {VaultUtils} from "../../VaultUtils";
@@ -33,8 +31,6 @@ describe("Smart vault rewards test", () => {
   let signer: SignerWithAddress;
   let core: CoreContractsWrapper;
   let contractReader: ContractReader;
-  let zapContract: ZapContract;
-  let multiSwap: MultiSwap;
   let multicall: Multicall;
   let depositHelper: DepositHelper;
   let usdc: string;
@@ -65,10 +61,6 @@ describe("Smart vault rewards test", () => {
     contractReader = crLogic.attach(crProxy.address) as ContractReader;
 
     await contractReader.initialize(core.controller.address, calculator.address);
-
-    multiSwap = await DeployerUtils.deployMultiSwapTestnet(signer, core.controller.address, calculator.address, factory, router);
-    zapContract = (await DeployerUtils.deployZapContract(signer, core.controller.address, multiSwap.address));
-    await core.controller.changeWhiteListStatus([zapContract.address], true);
 
     await UniswapUtils.addLiquidity(
       signer,
@@ -190,7 +182,7 @@ describe("Smart vault rewards test", () => {
     const undSendPart = ((signerUndBal2 / cycles) * 0.99).toFixed(underlyingDec);
     console.log('cycles', cycles);
     let user1Deposited = false;
-    let user2Deposited = false;
+    const user2Deposited = false;
 
     let finish = (await vault.periodFinishForToken(rt)).toNumber();
 
@@ -218,34 +210,34 @@ describe("Smart vault rewards test", () => {
       }
 
       if (i % 5 === 0) {
-        if (user2Deposited) {
-          const user2Staked = await TokenUtils.balanceOf(vault.address, user2.address);
-          await ZapUtils.zapLpOut(
-            user2,
-            multiSwap,
-            zapContract,
-            contractReader,
-            vault.address,
-            networkToken,
-            user2Staked.toString(),
-            2
-          );
-
-          user2Deposited = false;
-        } else {
-          await ZapUtils.zapLpIn(
-            user2,
-            multiSwap,
-            zapContract,
-            contractReader,
-            vault.address,
-            networkToken,
-            1000,
-            2
-          );
-
-          user2Deposited = true;
-        }
+        // if (user2Deposited) {
+        //   const user2Staked = await TokenUtils.balanceOf(vault.address, user2.address);
+        //   await ZapUtils.zapLpOut(
+        //     user2,
+        //     multiSwap,
+        //     zapContract,
+        //     contractReader,
+        //     vault.address,
+        //     networkToken,
+        //     user2Staked.toString(),
+        //     2
+        //   );
+        //
+        //   user2Deposited = false;
+        // } else {
+        //   await ZapUtils.zapLpIn(
+        //     user2,
+        //     multiSwap,
+        //     zapContract,
+        //     contractReader,
+        //     vault.address,
+        //     networkToken,
+        //     1000,
+        //     2
+        //   );
+        //
+        //   user2Deposited = true;
+        // }
       }
 
       // ! TIME MACHINE BRRRRRRR

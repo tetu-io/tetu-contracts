@@ -14,17 +14,12 @@ import {
   ZapV2,
 } from "../../typechain";
 import {getAddress, parseUnits} from "ethers/lib/utils";
-import fetch from "node-fetch";
 import {BigNumber} from "ethers";
 import fs from "fs";
+import {ISwapQuote, OneInchUtils} from "../OneInchUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
-
-type ISwapQuote = {
-  tx: {data: string,},
-  toTokenAmount: string,
-}
 
 type VaultsCache = {
   address: string,
@@ -126,7 +121,7 @@ describe("ZapV2 test", function () {
 
       let swapQuoteAsset: ISwapQuote
       if (tokenIn !== underlying.toLowerCase()) {
-        swapQuoteAsset = await swapQuote(tokenIn, underlying, amount.toString(), zap.address)
+        swapQuoteAsset = await OneInchUtils.swapQuote(tokenIn, underlying, amount.toString(), zap.address)
       } else {
         swapQuoteAsset = {
           tx: {
@@ -165,7 +160,7 @@ describe("ZapV2 test", function () {
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       const quoteOutAsset = await zap.quoteOutSingle(vault.address, vaultBalance, gap)
       if (tokenIn !== underlying.toLowerCase()) {
-        swapQuoteAsset = await swapQuote(await vault.underlying(), tokenIn, quoteOutAsset.toString(), zap.address)
+        swapQuoteAsset = await OneInchUtils.swapQuote(await vault.underlying(), tokenIn, quoteOutAsset.toString(), zap.address)
       } else {
         swapQuoteAsset = {
           tx: {
@@ -242,7 +237,7 @@ describe("ZapV2 test", function () {
       let swapQuoteAsset0: ISwapQuote
       let swapQuoteAsset1: ISwapQuote
       if (tokenIn !== asset0.toLowerCase()) {
-        swapQuoteAsset0 = await swapQuote(tokenIn, asset0, amount.div(2).toString(), zap.address)
+        swapQuoteAsset0 = await OneInchUtils.swapQuote(tokenIn, asset0, amount.div(2).toString(), zap.address)
       } else {
         swapQuoteAsset0 = {
           tx: {
@@ -253,7 +248,7 @@ describe("ZapV2 test", function () {
       }
 
       if (tokenIn !== asset1.toLowerCase()) {
-        swapQuoteAsset1 = await swapQuote(tokenIn, asset1, amount.div(2).toString(), zap.address)
+        swapQuoteAsset1 = await OneInchUtils.swapQuote(tokenIn, asset1, amount.div(2).toString(), zap.address)
       } else {
         swapQuoteAsset1 = {
           tx: {
@@ -291,7 +286,7 @@ describe("ZapV2 test", function () {
       let swapQuoteOutAsset1: ISwapQuote;
       const amountsOut = await zap.quoteOutUniswapV2(vault.address, vaultBalance);
       if (tokenIn !== asset0.toLowerCase()) {
-        swapQuoteOutAsset0 = await swapQuote(asset0, tokenIn, amountsOut[0].toString(), zap.address)
+        swapQuoteOutAsset0 = await OneInchUtils.swapQuote(asset0, tokenIn, amountsOut[0].toString(), zap.address)
       } else {
         swapQuoteOutAsset0 = {
           tx: {
@@ -301,7 +296,7 @@ describe("ZapV2 test", function () {
         }
       }
       if (tokenIn !== asset1.toLowerCase()) {
-        swapQuoteOutAsset1 = await swapQuote(asset1, tokenIn, amountsOut[1].toString(), zap.address)
+        swapQuoteOutAsset1 = await OneInchUtils.swapQuote(asset1, tokenIn, amountsOut[1].toString(), zap.address)
       } else {
         swapQuoteOutAsset1 = {
           tx: {
@@ -423,7 +418,7 @@ describe("ZapV2 test", function () {
             const decimals = await TokenUtils.decimals(assets[i])
             amountsOfTokenIn[i] = amount.mul(poolTokens[1][i]).mul(parseUnits('1', decimals)).div(totalAmountOfRealTokensInPool).toString()
             if (tokenIn !== assets[i].toLowerCase()) {
-              const swapQuoteResult = await swapQuote(tokenIn, assets[i], amountsOfTokenIn[i], zap.address);
+              const swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, assets[i], amountsOfTokenIn[i], zap.address);
               swapQuoteAsset[i] = swapQuoteResult.tx.data
               amountsOfAssetsIn[i] = swapQuoteResult.toTokenAmount
             } else {
@@ -442,7 +437,7 @@ describe("ZapV2 test", function () {
         for (let i = 0; i < poolTokens[0].length; i++) {
           amountsOfTokenIn[i] = amount.mul(weights[i]).div(100).toString()
           if (tokenIn !== poolTokens[0][i].toLowerCase()) {
-            const swapQuoteResult = await swapQuote(tokenIn, poolTokens[0][i], amountsOfTokenIn[i], zap.address);
+            const swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, poolTokens[0][i], amountsOfTokenIn[i], zap.address);
             swapQuoteAsset[i] = swapQuoteResult.tx.data
             amountsOfAssetsIn[i] = swapQuoteResult.toTokenAmount
           } else {
@@ -481,7 +476,7 @@ describe("ZapV2 test", function () {
       for (let i = 0; i < assets.length; i++) {
         if (assets[i] !== underlying) {
           if (tokenIn !== assets[i].toLowerCase()) {
-            swapQuoteAsset[i] = (await swapQuote(assets[i], tokenIn, amountsOut[i].sub(1).toString(), zap.address)).tx.data
+            swapQuoteAsset[i] = (await OneInchUtils.swapQuote(assets[i], tokenIn, amountsOut[i].sub(1).toString(), zap.address)).tx.data
           } else {
             swapQuoteAsset[i] = '0x00'
           }
@@ -551,7 +546,7 @@ describe("ZapV2 test", function () {
       let swapQuoteResult;
       amountsOfTokenIn[0] = amount.mul(poolTokens[1][0]).div(totalAmountOfRealTokensInPool).toString()
       if (tokenIn !== dai.toLowerCase()) {
-        swapQuoteResult = await swapQuote(tokenIn, dai, amountsOfTokenIn[0], zap.address);
+        swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, dai, amountsOfTokenIn[0], zap.address);
         swapQuoteAsset[0] = swapQuoteResult.tx.data
         amountsOfAssetsIn[0] = swapQuoteResult.toTokenAmount
       } else {
@@ -561,7 +556,7 @@ describe("ZapV2 test", function () {
 
       amountsOfTokenIn[1] = amount.mul(poolTokens[1][2]).div(totalAmountOfRealTokensInPool).toString()
       if (tokenIn !== usdc.toLowerCase()) {
-        swapQuoteResult = await swapQuote(tokenIn, usdc, amountsOfTokenIn[1], zap.address);
+        swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, usdc, amountsOfTokenIn[1], zap.address);
         swapQuoteAsset[1] = swapQuoteResult.tx.data
         amountsOfAssetsIn[1] = swapQuoteResult.toTokenAmount
       } else {
@@ -571,7 +566,7 @@ describe("ZapV2 test", function () {
 
       amountsOfTokenIn[2] = amount.mul(poolTokens[1][3]).div(totalAmountOfRealTokensInPool).toString()
       if (tokenIn !== usdt.toLowerCase()) {
-        swapQuoteResult = await swapQuote(tokenIn, usdt, amountsOfTokenIn[2], zap.address);
+        swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, usdt, amountsOfTokenIn[2], zap.address);
         swapQuoteAsset[2] = swapQuoteResult.tx.data
         amountsOfAssetsIn[2] = swapQuoteResult.toTokenAmount
       } else {
@@ -602,19 +597,19 @@ describe("ZapV2 test", function () {
       const amountsOut = await zap.callStatic.quoteOutBalancerAaveBoostedStablePool(vaultBalance)
 
       if (tokenIn !== dai.toLowerCase()) {
-        swapQuoteAsset[0] = (await swapQuote(dai, tokenIn, amountsOut[0].toString(), zap.address)).tx.data
+        swapQuoteAsset[0] = (await OneInchUtils.swapQuote(dai, tokenIn, amountsOut[0].toString(), zap.address)).tx.data
       } else {
         swapQuoteAsset[0] = '0x00'
       }
 
       if (tokenIn !== usdc.toLowerCase()) {
-        swapQuoteAsset[1] = (await swapQuote(usdc, tokenIn, amountsOut[1].toString(), zap.address)).tx.data
+        swapQuoteAsset[1] = (await OneInchUtils.swapQuote(usdc, tokenIn, amountsOut[1].toString(), zap.address)).tx.data
       } else {
         swapQuoteAsset[1] = '0x00'
       }
 
       if (tokenIn !== usdt.toLowerCase()) {
-        swapQuoteAsset[2] = (await swapQuote(usdt, tokenIn, amountsOut[2].toString(), zap.address)).tx.data
+        swapQuoteAsset[2] = (await OneInchUtils.swapQuote(usdt, tokenIn, amountsOut[2].toString(), zap.address)).tx.data
       } else {
         swapQuoteAsset[2] = '0x00'
       }
@@ -656,7 +651,7 @@ describe("ZapV2 test", function () {
 
       const tokenInBalanceBefore = await TokenUtils.balanceOf(tokenIn, signer.address)
 
-      const vault = SmartVault__factory.connect('0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33', signer)
+      const vault = SmartVault__factory.connect(MaticAddresses.tetuBAL_TOKEN, signer)
       const underlying = await vault.underlying()
       const weth = getAddress(MaticAddresses.WETH_TOKEN);
       const bal = getAddress(MaticAddresses.BAL_TOKEN);
@@ -667,7 +662,7 @@ describe("ZapV2 test", function () {
       let swapQuoteResult;
       amountsOfTokenIn[0] = amount.mul(2).div(10).toString()
       if (tokenIn !== weth.toLowerCase()) {
-        swapQuoteResult = await swapQuote(tokenIn, weth, amount.mul(2).div(10).toString(), zap.address);
+        swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, weth, amount.mul(2).div(10).toString(), zap.address);
         swapQuoteAsset[0] = swapQuoteResult.tx.data
         amountsOfAssetsIn[0] = swapQuoteResult.toTokenAmount
       } else {
@@ -677,7 +672,7 @@ describe("ZapV2 test", function () {
 
       amountsOfTokenIn[1] = amount.mul(8).div(10).toString()
       if (tokenIn !== bal.toLowerCase()) {
-        swapQuoteResult = await swapQuote(tokenIn, bal, amountsOfTokenIn[1], zap.address);
+        swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, bal, amountsOfTokenIn[1], zap.address);
         swapQuoteAsset[1] = swapQuoteResult.tx.data
         amountsOfAssetsIn[1] = swapQuoteResult.toTokenAmount
       } else {
@@ -707,13 +702,13 @@ describe("ZapV2 test", function () {
 
       const amountsOut = await zap.callStatic.quoteOutBalancerTetuBal(vaultBalance)
       if (tokenIn !== weth.toLowerCase()) {
-        swapQuoteAsset[0] = (await swapQuote(weth, tokenIn, amountsOut[0].toString(), zap.address)).tx.data
+        swapQuoteAsset[0] = (await OneInchUtils.swapQuote(weth, tokenIn, amountsOut[0].toString(), zap.address)).tx.data
       } else {
         swapQuoteAsset[0] = '0x00'
       }
 
       if (tokenIn !== bal.toLowerCase()) {
-        swapQuoteAsset[1] = (await swapQuote(bal, tokenIn, amountsOut[1].toString(), zap.address)).tx.data
+        swapQuoteAsset[1] = (await OneInchUtils.swapQuote(bal, tokenIn, amountsOut[1].toString(), zap.address)).tx.data
       } else {
         swapQuoteAsset[1] = '0x00'
       }
@@ -753,7 +748,7 @@ describe("ZapV2 test", function () {
       const underlying = await vault.underlying()
       const qi = getAddress(MaticAddresses.QI_TOKEN);
 
-      let swapQuoteResult = await swapQuote(tokenIn, qi, amount.toString(), zap.address);
+      let swapQuoteResult = await OneInchUtils.swapQuote(tokenIn, qi, amount.toString(), zap.address);
 
       const quoteInShared = await zap.callStatic.quoteIntoBalancerTetuQiQi(swapQuoteResult.toTokenAmount)
       await TokenUtils.getToken(tokenIn, signer.address, amount);
@@ -774,7 +769,7 @@ describe("ZapV2 test", function () {
       expect(await TokenUtils.balanceOf(qi, zap.address)).to.eq(0)
 
       const qiAmountOut = await zap.callStatic.quoteOutBalancerTetuQiQi(vaultBalance)
-      swapQuoteResult = await swapQuote(qi, tokenIn, qiAmountOut.toString(), zap.address)
+      swapQuoteResult = await OneInchUtils.swapQuote(qi, tokenIn, qiAmountOut.toString(), zap.address)
       await TokenUtils.approve(vault.address, signer, zap.address, vaultBalance.toString())
       await zap.zapOutBalancerTetuQiQi(tokenIn, swapQuoteResult.tx.data, vaultBalance)
       expect(await TokenUtils.balanceOf(tokenIn, signer.address)).to.be.gt(tokenInBalanceBefore.add(amount.mul(98).div(100)))
@@ -786,40 +781,6 @@ describe("ZapV2 test", function () {
     }
   })
 })
-
-async function swapQuote(tokenIn: string, tokenOut: string, amount: string, zapContractAddress: string): Promise<ISwapQuote> {
-  const params = {
-    fromTokenAddress: tokenIn,
-    toTokenAddress: tokenOut,
-    amount,
-    fromAddress: zapContractAddress,
-    slippage: 1,
-    disableEstimate: true,
-    allowPartialFill: false,
-    protocols: 'POLYGON_UNISWAP_V3,POLYGON_BALANCER_V2,POLYGON_DYSTOPIA',
-  };
-
-  const swapQuoteAsset = await buildTxForSwap(JSON.stringify(params));
-  console.log(`1inch tx data for swap ${amount} of ${tokenIn} to ${tokenOut}: `, swapQuoteAsset.tx.data);
-
-  return swapQuoteAsset
-}
-
-function apiRequestUrl(methodName: string, queryParams: string) {
-  const chainId = 137;
-  const apiBaseUrl = 'https://api.1inch.io/v4.0/' + chainId;
-  const r = (new URLSearchParams(JSON.parse(queryParams))).toString();
-  return apiBaseUrl + methodName + '?' + r;
-}
-
-async function buildTxForSwap(params: string): Promise<ISwapQuote> {
-  const url = apiRequestUrl('/swap', params);
-  console.log('url', url)
-  return fetch(url).then(res => {
-    // console.log('res', res)
-    return res.json();
-  })/*.then(res => res.tx)*/;
-}
 
 async function getActiveVaultsByPlatform(platforms: number[], signer: SignerWithAddress, bookkeeper: Bookkeeper, reader: ContractReader) {
   const cacheFileName = 'vaults-cache.json';

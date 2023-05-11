@@ -126,7 +126,7 @@ contract ForwarderV2 is ControllableV2, ForwarderV2Storage {
   }
 
   /// @notice Only Governance can call it.
-  ///         Sets liquidation threshold in USD value for given token.
+  ///         Sets liquidation threshold in token value for given token.
   function setTokenThreshold(address tokenIn, uint value) external onlyGov {
     require(tokenIn != address(0), "F2: Zero token");
     tokenThreshold[tokenIn] = value;

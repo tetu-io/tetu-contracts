@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {DeployerUtils} from "../../deploy/DeployerUtils";
-import {Bookkeeper, ERC20PresetMinterPauser, NotifyHelper} from "../../../typechain";
+import {Bookkeeper, MockToken, NotifyHelper} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {RunHelper} from "../tools/RunHelper";
@@ -39,7 +39,7 @@ async function main() {
 
       const rtDecimals = await TokenUtils.decimals(rt);
 
-      const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", rt) as ERC20PresetMinterPauser;
+      const mockContract = await DeployerUtils.connectContract(signer, "ERC20PresetMinterPauser", rt) as MockToken;
       await mockContract.mint(signer.address, utils.parseUnits("100000", rtDecimals));
 
       const availableAmount = +(+utils.formatUnits(await TokenUtils.balanceOf(rt, signer.address), rtDecimals)).toFixed();

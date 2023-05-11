@@ -11,7 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "../../openzeppelin/Math.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
 import "../../base/interface/IStrategy.sol";

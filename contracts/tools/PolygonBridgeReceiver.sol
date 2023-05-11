@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 import "../base/governance/ControllableV2.sol";
 import "../openzeppelin/SafeERC20.sol";
-import "../swap/interfaces/IWETH.sol";
+import "../third_party/uniswap/IWETH.sol";
 import "../third_party/polygon/IRootChainManager.sol";
 
 /// @title Dedicated contract for receive tokens on mainnet side.
@@ -28,7 +28,7 @@ contract PolygonBridgeReceiver is ControllableV2 {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   address public constant POLYGON_BRIDGE = 0xA0c68C638235ee32657e8f720a23ceC1bFc77C77;
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 

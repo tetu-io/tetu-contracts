@@ -12,7 +12,7 @@
 pragma solidity 0.8.4;
 
 import "../../openzeppelin/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../../openzeppelin/ReentrancyGuard.sol";
 import "../../base/governance/Controllable.sol";
 import "../../base/interface/ISmartVault.sol";
 import "./ZapV2UniswapLibrary.sol";

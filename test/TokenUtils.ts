@@ -130,6 +130,7 @@ export class TokenUtils {
     [MaticAddresses.xTETU, '0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     ['0x178E029173417b1F9C8bC16DCeC6f697bC323746'.toLowerCase(), MaticAddresses.BALANCER_VAULT], // balancer vault
+    [MaticAddresses.stMATIC, '0xEA1132120ddcDDA2F119e99Fa7A27a0d036F7Ac9'.toLowerCase()], // aave
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

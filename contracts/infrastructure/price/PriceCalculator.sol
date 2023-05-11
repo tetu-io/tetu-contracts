@@ -32,8 +32,28 @@ import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../openzeppelin/Math.sol";
 import "../../base/interface/ITetuLiquidator.sol";
+import "../../openzeppelin/IERC4626.sol";
 
 pragma solidity 0.8.4;
+
+interface ISwapper {
+  function getPrice(
+    address pool,
+    address tokenIn,
+    address tokenOut,
+    uint amount
+  ) external view returns (uint);
+}
+
+interface IAave3Token {
+  function ATOKEN() external view returns (address);
+}
+
+interface ITetuVaultV2 {
+  function sharePrice() external view returns (uint);
+
+  function asset() external view returns (address assetTokenAddress);
+}
 
 /// @title Calculate current price for token using data from swap platforms
 /// @author belbix, bogdoslav
@@ -41,18 +61,22 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.0";
-  address public constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
-  address public constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
-  address public constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
-  address public constant UNIV3_FACTORY_ETHEREUM = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+  string public constant VERSION = "1.7.3";
+  address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
+  address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
+  address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
+  address internal constant UNIV3_FACTORY_ETHEREUM = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
   bytes32 internal constant _DEFAULT_TOKEN_SLOT = 0x3787EA0F228E63B6CF40FE5DE521CE164615FC0FBC5CF167A7EC3CDBC2D38D8F;
-  uint256 constant public PRECISION_DECIMALS = 18;
-  uint256 constant public DEPTH = 20;
-  address public constant CRV_USD_BTC_ETH_MATIC = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
-  address public constant CRV_USD_BTC_ETH_FANTOM = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
-  address public constant BEETHOVEN_VAULT_FANTOM = 0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce;
-  address public constant BALANCER_VAULT_ETHEREUM = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+  uint256 internal constant PRECISION_DECIMALS = 18;
+  uint256 internal constant DEPTH = 20;
+  address internal constant CRV_USD_BTC_ETH_MATIC = 0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3;
+  address internal constant CRV_USD_BTC_ETH_FANTOM = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
+  address internal constant BEETHOVEN_VAULT_FANTOM = 0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce;
+  address internal constant BALANCER_VAULT_ETHEREUM = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+  address internal constant TETU_BAL = 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33;
+  address internal constant ETH_BAL_BPT = 0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f;
+  address internal constant TETU_BAL_ETH_BAL_POOL = 0xB797AdfB7b268faeaA90CAdBfEd464C76ee599Cd;
+  ISwapper internal constant BALANCER_STABLE_SWAPPER = ISwapper(0xc43e971566B8CCAb815C3E20b9dc66571541CeB4);
 
   // ************ VARIABLES **********************
   // !!! DON'T CHANGE NAMES OR ORDERING !!!
@@ -60,8 +84,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   // Addresses for factories and registries for different DEX platforms.
   // Functions will be added to allow to alter these when needed.
   address[] public swapFactories;
-  // Symbols for detecting platforms
-  string[] public swapLpNames;
+  /// @dev Deprecated
+  string[] private swapLpNames;
 
   //Key tokens are used to find liquidity for any given token on Swap platforms.
   address[] public keyTokens;
@@ -120,14 +144,27 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     // check if it is a vault need to return the underlying price
     if (IController(_controller()).vaults(token)) {
       rate = ISmartVault(token).getPricePerFullShare();
-      token = ISmartVault(token).underlying();
-      rateDenominator = 10 ** IERC20Extended(token).decimals();
+      address underlying = ISmartVault(token).underlying();
+      // custom logic for tetuBAL
+      if (token == TETU_BAL || underlying == TETU_BAL) {
+        rate = rate * BALANCER_STABLE_SWAPPER.getPrice(TETU_BAL_ETH_BAL_POOL, TETU_BAL, ETH_BAL_BPT, 1e18);
+        rateDenominator *= 1e18;
+      }
+      token = underlying;
+      rateDenominator *= 10 ** IERC20Extended(token).decimals();
       // some vaults can have another vault as underlying
       if (IController(_controller()).vaults(token)) {
         rate = rate * ISmartVault(token).getPricePerFullShare();
         token = ISmartVault(token).underlying();
-        rateDenominator = rateDenominator * (10 ** IERC20Extended(token).decimals());
+        rateDenominator *= (10 ** IERC20Extended(token).decimals());
       }
+    }
+
+    uint tetuVaultV2SharePrice = isTetuVaultV2(ITetuVaultV2(token));
+    if (tetuVaultV2SharePrice != 0) {
+      rate = rate * tetuVaultV2SharePrice;
+      token = ITetuVaultV2(token).asset();
+      rateDenominator *= (10 ** IERC20Extended(token).decimals());
     }
 
     // if the token exists in the mapping, we'll swap it for the replacement
@@ -167,13 +204,25 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       price = tvl * (10 ** PRECISION_DECIMALS)
       / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
 
-    } else if (isAave(token)) {
+    } else if (isWrappedAave2(token)) {
       address aToken = unwrapAaveIfNecessary(token);
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
       // add wrapped ratio if necessary
       if (token != aToken) {
         uint ratio = IWrappedAaveToken(token).staticToDynamicAmount(10 ** PRECISION_DECIMALS);
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      } else {
+        uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
+        price = price * ratio / (10 ** PRECISION_DECIMALS);
+      }
+    }  else if (isWrappedAave3(token)) {
+      address aToken = unwrapAaveIfNecessary(token);
+      address[] memory usedLps = new address[](DEPTH);
+      price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
+      // add wrapped ratio if necessary
+      if (token != aToken) {
+        uint ratio = IERC4626(token).convertToAssets(10 ** PRECISION_DECIMALS);
         price = price * ratio / (10 ** PRECISION_DECIMALS);
       } else {
         uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
@@ -192,22 +241,29 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   function isSwapPlatform(address token) public view returns (bool) {
     address factory;
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try IUniswapV2Pair(token).factory{gas : 3000}() returns (address _factory) {
+    try IUniswapV2Pair(token).factory{gas: 3000}() returns (address _factory) {
       factory = _factory;
     } catch {}
 
     return allowedFactories[factory];
   }
 
-  function isAave(address token) public view returns (bool) {
-    try IAaveToken(token).UNDERLYING_ASSET_ADDRESS{gas : 60000}() returns (address) {
+  function isWrappedAave2(address token) public view returns (bool) {
+    try IAaveToken(token).UNDERLYING_ASSET_ADDRESS{gas: 60000}() returns (address) {
+      return true;
+    } catch {}
+    return false;
+  }
+
+  function isWrappedAave3(address token) public view returns (bool) {
+    try IAave3Token(token).ATOKEN() returns (address) {
       return true;
     } catch {}
     return false;
   }
 
   function unwrapAaveIfNecessary(address token) public view returns (address) {
-    try IWrappedAaveToken(token).ATOKEN{gas : 60000}() returns (address aToken) {
+    try IWrappedAaveToken(token).ATOKEN{gas: 60000}() returns (address aToken) {
       return aToken;
     } catch {}
     return token;
@@ -215,7 +271,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   function isBPT(address token) public view returns (bool) {
     IBPT bpt = IBPT(token);
-    try bpt.getVault{gas : 3000}() returns (address vault){
+    try bpt.getVault{gas: 3000}() returns (address vault){
       return (vault == BEETHOVEN_VAULT_FANTOM
       || vault == BALANCER_VAULT_ETHEREUM);
     } catch {}
@@ -225,7 +281,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   /* solhint-disable no-unused-vars */
   function checkFactory(IUniswapV2Pair pair, address compareFactory) public view returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try pair.factory{gas : 3000}() returns (address factory) {
+    try pair.factory{gas: 3000}() returns (address factory) {
       bool check = (factory == compareFactory) ? true : false;
       return check;
     } catch {}
@@ -266,7 +322,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     require(deep < DEPTH, "PC: too deep");
 
     (address keyToken,, address lpAddress) = getLargestPool(token, usedLps);
-    require(lpAddress != address(0), toAsciiString(token));
+    require(lpAddress != address(0), string(abi.encodePacked("PC: No LP for 0x", toAsciiString(token))));
     usedLps[deep] = lpAddress;
     deep++;
 
@@ -499,21 +555,19 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return false;
   }
 
-  function isSwapName(string memory name) public view returns (bool) {
-    for (uint256 i = 0; i < swapLpNames.length; i++) {
-      if (isEqualString(name, swapLpNames[i])) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   function keyTokensSize() external view returns (uint256) {
     return keyTokens.length;
   }
 
   function swapFactoriesSize() external view returns (uint256) {
     return swapFactories.length;
+  }
+
+  function isTetuVaultV2(ITetuVaultV2 vault) public view returns (uint) {
+    try vault.sharePrice() returns (uint sharePrice){
+      return sharePrice;
+    } catch {}
+    return 0;
   }
 
   // ************* INTERNAL *****************
@@ -565,15 +619,6 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       swapFactories[i] = swapFactories[i + 1];
     }
     swapFactories.pop();
-  }
-
-  function removeFromSwapNames(uint index) internal {
-    require(index < swapLpNames.length, "PC: wrong index");
-
-    for (uint i = index; i < swapLpNames.length - 1; i++) {
-      swapLpNames[i] = swapLpNames[i + 1];
-    }
-    swapLpNames.pop();
   }
 
   function defaultToken() public view returns (address value) {
@@ -665,16 +710,14 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     emit KeyTokenRemoved(keyToken);
   }
 
-  function addSwapPlatform(address _factoryAddress, string memory _name) external {
+  function addSwapPlatform(address _factoryAddress, string memory /*_name*/) external {
     _onlyControllerOrGovernance();
     for (uint256 i = 0; i < swapFactories.length; i++) {
       require(swapFactories[i] != _factoryAddress, "PC: factory already exist");
-      require(!isEqualString(swapLpNames[i], _name), "PC: name already exist");
     }
     swapFactories.push(_factoryAddress);
-    swapLpNames.push(_name);
     allowedFactories[_factoryAddress] = true;
-    emit SwapPlatformAdded(_factoryAddress, _name);
+    emit SwapPlatformAdded(_factoryAddress, "");
   }
 
   function changeFactoriesStatus(address[] memory factories, bool status) external {
@@ -684,10 +727,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     }
   }
 
-  function removeSwapPlatform(address _factoryAddress, string memory _name) external {
+  function removeSwapPlatform(address _factoryAddress, string memory /*_name*/) external {
     _onlyControllerOrGovernance();
     require(isSwapFactoryToken(_factoryAddress), "PC: swap not exist");
-    require(isSwapName(_name), "PC: name not exist");
     uint256 i;
     for (i = 0; i < swapFactories.length; i++) {
       if (_factoryAddress == swapFactories[i]) {
@@ -695,14 +737,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       }
     }
     removeFromSwapFactories(i);
-
-    for (i = 0; i < swapLpNames.length; i++) {
-      if (isEqualString(_name, swapLpNames[i])) {
-        break;
-      }
-    }
-    removeFromSwapNames(i);
-    emit SwapPlatformRemoved(_factoryAddress, _name);
+    emit SwapPlatformRemoved(_factoryAddress, "");
   }
 
   function setReplacementTokens(address _inputToken, address _replacementToken) external {
