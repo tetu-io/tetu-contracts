@@ -39,7 +39,8 @@ export class PawnShopUtils {
       usdc,
       acquiredAmount,
       posDurationBlocks,
-      posFee
+      posFee,
+      0
     );
     const id = (await shop.positionCounter()).toNumber() - 1;
     console.log('Position opened', id);
@@ -66,7 +67,8 @@ export class PawnShopUtils {
       usdc,
       acquiredAmount,
       posDurationBlocks,
-      posFee
+      posFee,
+      0
     );
     const id = (await shop.positionCounter()).toNumber() - 1;
     console.log('NFT Position opened', id);

@@ -28,25 +28,25 @@ import "./ITetuPawnShop.sol";
 /// @author belbix
 contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   using SafeERC20 for IERC20;
-  using ArrayLib for uint256[];
+  using ArrayLib for uint[];
 
   // ---- CONSTANTS
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.4";
+  string public constant VERSION = "1.0.5";
   /// @dev Time lock for any governance actions
-  uint256 constant public TIME_LOCK = 2 days;
+  uint constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
-  uint256 constant public DENOMINATOR = 10000;
+  uint constant public DENOMINATOR = 10000;
   /// @dev Governance can't set fee more than this value
-  uint256 constant public PLATFORM_FEE_MAX = 500; // 5%
+  uint constant public PLATFORM_FEE_MAX = 500; // 5%
   /// @dev Standard auction duration that refresh when a new bid placed
-  uint256 constant public AUCTION_DURATION = 1 days;
+  uint constant public AUCTION_DURATION = 1 days;
   /// @dev Timestamp date when contract created
-  uint256 public immutable createdTs;
+  uint public immutable createdTs;
   /// @dev Block number when contract created
-  uint256 public immutable createdBlock;
+  uint public immutable createdBlock;
 
   // ---- CHANGEABLE VARIABLES
 
@@ -56,9 +56,9 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   /// @dev Fee recipient. Assume it will be a place with ability to manage different tokens
   address public feeRecipient;
   /// @dev 1% by default, percent of acquired tokens that will be used for buybacks
-  uint256 public platformFee = 100;
+  uint public platformFee = 100;
   /// @dev Amount of tokens for open position. Protection against spam
-  uint256 public positionDepositAmount;
+  uint public positionDepositAmount;
   /// @dev Token for antispam protection. TETU assumed
   ///      Zero address means no protection
   address public positionDepositToken;
@@ -68,34 +68,34 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   // ---- POSITIONS
 
   /// @inheritdoc ITetuPawnShop
-  uint256 public override positionCounter = 1;
+  uint public override positionCounter = 1;
   /// @dev PosId => Position. Hold all positions. Any record should not be removed
-  mapping(uint256 => Position) public positions;
+  mapping(uint => Position) public positions;
   /// @inheritdoc ITetuPawnShop
-  uint256[] public override openPositions;
+  uint[] public override openPositions;
   /// @inheritdoc ITetuPawnShop
-  mapping(address => uint256[]) public override positionsByCollateral;
+  mapping(address => uint[]) public override positionsByCollateral;
   /// @inheritdoc ITetuPawnShop
-  mapping(address => uint256[]) public override positionsByAcquired;
+  mapping(address => uint[]) public override positionsByAcquired;
   /// @inheritdoc ITetuPawnShop
-  mapping(address => uint256[]) public override borrowerPositions;
+  mapping(address => uint[]) public override borrowerPositions;
   /// @inheritdoc ITetuPawnShop
-  mapping(address => uint256[]) public override lenderPositions;
+  mapping(address => uint[]) public override lenderPositions;
   /// @inheritdoc ITetuPawnShop
-  mapping(IndexType => mapping(uint256 => uint256)) public override posIndexes;
+  mapping(IndexType => mapping(uint => uint)) public override posIndexes;
 
   // ---- AUCTION
 
   /// @inheritdoc ITetuPawnShop
-  uint256 public override auctionBidCounter = 1;
+  uint public override auctionBidCounter = 1;
   /// @dev BidId => Bid. Hold all bids. Any record should not be removed
-  mapping(uint256 => AuctionBid) public auctionBids;
+  mapping(uint => AuctionBid) public auctionBids;
   /// @inheritdoc ITetuPawnShop
-  mapping(address => mapping(uint256 => uint256)) public override lenderOpenBids;
+  mapping(address => mapping(uint => uint)) public override lenderOpenBids;
   /// @inheritdoc ITetuPawnShop
-  mapping(uint256 => uint256[]) public override positionToBidIds;
+  mapping(uint => uint[]) public override positionToBidIds;
   /// @inheritdoc ITetuPawnShop
-  mapping(uint256 => uint256) public override lastAuctionBidTs;
+  mapping(uint => uint) public override lastAuctionBidTs;
 
   /// @dev Tetu Controller address requires for governance actions
   constructor(
@@ -120,7 +120,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @dev Check time lock for governance actions and revert if conditions wrong
-  modifier checkTimeLock(GovernanceAction action, address _address, uint256 _uint){
+  modifier checkTimeLock(GovernanceAction action, address _address, uint _uint){
     TimeLock memory timeLock = timeLocks[action];
     require(timeLock.time != 0 && timeLock.time < block.timestamp, "TPS: Time Lock");
     if (_address != address(0)) {
@@ -138,13 +138,14 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   /// @inheritdoc ITetuPawnShop
   function openPosition(
     address _collateralToken,
-    uint256 _collateralAmount,
-    uint256 _collateralTokenId,
+    uint _collateralAmount,
+    uint _collateralTokenId,
     address _acquiredToken,
-    uint256 _acquiredAmount,
-    uint256 _posDurationBlocks,
-    uint256 _posFee // todo add min price for auction
-  ) external nonReentrant override returns (uint256){
+    uint _acquiredAmount,
+    uint _posDurationBlocks,
+    uint _posFee,
+    uint minAuctionAmount
+  ) external nonReentrant override returns (uint){
     require(_posFee <= DENOMINATOR * 10, "TPS: Pos fee absurdly high");
     require(_posDurationBlocks != 0 || _posFee == 0, "TPS: Fee for instant deal forbidden");
     require(_collateralAmount != 0 || _collateralTokenId != 0, "TPS: Wrong amounts");
@@ -153,7 +154,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
     AssetType assetType = _getAssetType(_collateralToken);
     require((assetType == AssetType.ERC20 && _collateralAmount != 0 && _collateralTokenId == 0)
-      || (assetType == AssetType.ERC721 && _collateralAmount == 0 && _collateralTokenId != 0), "TPS: Incorrect");
+    || (assetType == AssetType.ERC721 && _collateralAmount == 0 && _collateralTokenId != 0), "TPS: Incorrect");
 
     Position memory pos;
     {
@@ -166,7 +167,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
       PositionCollateral memory collateral = PositionCollateral(
         _collateralToken,
-          assetType,
+        assetType,
         _collateralAmount,
         _collateralTokenId
       );
@@ -189,6 +190,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
         positionDepositToken,
         positionDepositAmount,
         true, // open
+        minAuctionAmount,
         info,
         collateral,
         acquired,
@@ -228,7 +230,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function closePosition(uint256 id) external nonReentrant override {
+  function closePosition(uint id) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
     require(pos.borrower == msg.sender, "TPS: Only borrower can close a position");
@@ -245,7 +247,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function bid(uint256 id, uint256 amount) external nonReentrant override {
+  function bid(uint id, uint amount) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
     require(pos.open, "TPS: Position closed");
@@ -259,11 +261,11 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function claim(uint256 id) external nonReentrant override {
+  function claim(uint id) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
     require(pos.execution.lender == msg.sender, "TPS: Only lender can claim");
-    uint256 posEnd = pos.execution.posStartBlock + pos.info.posDurationBlocks;
+    uint posEnd = pos.execution.posStartBlock + pos.info.posDurationBlocks;
     require(posEnd < block.number, "TPS: Too early to claim");
     require(pos.open, "TPS: Position closed");
 
@@ -274,7 +276,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function redeem(uint256 id) external nonReentrant override {
+  function redeem(uint id) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
     require(pos.borrower == msg.sender, "TPS: Only borrower can redeem");
@@ -282,7 +284,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(pos.open, "TPS: Position closed");
 
     _endPosition(pos);
-    uint256 toSend = _toRedeem(id);
+    uint toSend = _toRedeem(id);
     IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, pos.execution.lender, toSend);
     _transferCollateral(pos.collateral, address(this), msg.sender);
     _returnDeposit(id);
@@ -290,10 +292,10 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function acceptAuctionBid(uint256 posId) external nonReentrant override {
+  function acceptAuctionBid(uint posId) external nonReentrant override {
     require(lastAuctionBidTs[posId] + AUCTION_DURATION < block.timestamp, "TPS: Auction not ended");
     require(positionToBidIds[posId].length > 0, "TPS: No bids");
-    uint256 bidId = positionToBidIds[posId][positionToBidIds[posId].length - 1];
+    uint bidId = positionToBidIds[posId][positionToBidIds[posId].length - 1];
 
     AuctionBid storage _bid = auctionBids[bidId];
     require(_bid.id != 0, "TPS: Auction bid not found");
@@ -312,7 +314,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function closeAuctionBid(uint256 bidId) external nonReentrant override {
+  function closeAuctionBid(uint bidId) external nonReentrant override {
     AuctionBid storage _bid = auctionBids[bidId];
     require(_bid.id != 0, "TPS: Auction bid not found");
     Position storage pos = positions[_bid.posId];
@@ -323,7 +325,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     bool isAuctionOverdue = _lastAuctionBidTs + AUCTION_DURATION + 2 weeks < block.timestamp;
     bool isLastBid = false;
     if (positionToBidIds[pos.id].length != 0) {
-      uint256 lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
+      uint lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
       isLastBid = lastBidId == bidId;
     }
     require((isLastBid && isAuctionEnded) || !isLastBid || !pos.open || isAuctionOverdue, "TPS: Auction is not ended");
@@ -338,7 +340,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   // ************* INTERNAL FUNCTIONS *************
 
   /// @dev Transfer to this contract a deposit
-  function _takeDeposit(uint256 posId) internal {
+  function _takeDeposit(uint posId) internal {
     Position storage pos = positions[posId];
     if (pos.depositToken != address(0)) {
       IERC20(pos.depositToken).safeTransferFrom(pos.borrower, address(this), pos.depositAmount);
@@ -346,7 +348,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @dev Return to borrower a deposit
-  function _returnDeposit(uint256 posId) internal {
+  function _returnDeposit(uint posId) internal {
     Position storage pos = positions[posId];
     if (pos.depositToken != address(0)) {
       IERC20(pos.depositToken).safeTransfer(pos.borrower, pos.depositAmount);
@@ -359,12 +361,12 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   function _executeBid(
     Position storage pos,
     uint bidId,
-    uint256 amount,
+    uint amount,
     address acquiredMoneyHolder,
     address lender
   ) internal {
-    uint256 feeAmount = amount * platformFee / DENOMINATOR;
-    uint256 toSend = amount - feeAmount;
+    uint feeAmount = amount * platformFee / DENOMINATOR;
+    uint toSend = amount - feeAmount;
     if (acquiredMoneyHolder == address(this)) {
       IERC20(pos.acquired.acquiredToken).safeTransfer(pos.borrower, toSend);
     } else {
@@ -397,14 +399,15 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
   /// @dev Open an auction bid
   ///      Transfer acquired token to this contract
-  function _auctionBid(Position storage pos, uint256 amount, address lender) internal {
+  function _auctionBid(Position storage pos, uint amount, address lender) internal {
     require(lenderOpenBids[lender][pos.id] == 0, "TPS: Auction bid already exist");
+    require(amount >= pos.minAuctionAmount, "TPS: Too low bid");
 
     if (positionToBidIds[pos.id].length != 0) {
       // if we have bids need to check auction duration
       require(lastAuctionBidTs[pos.id] + AUCTION_DURATION > block.timestamp, "TPS: Auction ended");
 
-      uint256 lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
+      uint lastBidId = positionToBidIds[pos.id][positionToBidIds[pos.id].length - 1];
       AuctionBid storage lastBid = auctionBids[lastBidId];
       require(lastBid.amount * 110 / 100 < amount, "TPS: New bid lower than previous");
     }
@@ -458,7 +461,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
   /// @dev Transfer fee to platform. Assume that token inside this contract
   ///      Do buyback if possible, otherwise just send to controller for manual handling
-  function _transferFee(address token, uint256 amount) internal {
+  function _transferFee(address token, uint amount) internal {
     // little deals can have zero fees
     if (amount == 0) {
       return;
@@ -476,11 +479,11 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   // ************* VIEWS **************************
 
   /// @inheritdoc ITetuPawnShop
-  function toRedeem(uint256 id) external view override returns (uint256){
+  function toRedeem(uint id) external view override returns (uint){
     return _toRedeem(id);
   }
 
-  function _toRedeem(uint256 id) private view returns (uint256){
+  function _toRedeem(uint id) private view returns (uint){
     Position memory pos = positions[id];
     return pos.acquired.acquiredAmount +
     (pos.acquired.acquiredAmount * pos.info.posFee / DENOMINATOR);
@@ -509,7 +512,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   //noinspection NoReturn
   function _isERC721(address _token) private view returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try IERC721(_token).supportsInterface{gas : 30000}(type(IERC721).interfaceId) returns (bool result){
+    try IERC721(_token).supportsInterface{gas: 30000}(type(IERC721).interfaceId) returns (bool result){
       return result;
     } catch {
       return false;
@@ -524,7 +527,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   //noinspection NoReturn
   function _isERC20(address _token) private view returns (bool) {
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try IERC20(_token).totalSupply{gas : 30000}() returns (uint256){
+    try IERC20(_token).totalSupply{gas: 30000}() returns (uint){
       return true;
     } catch {
       return false;
@@ -532,38 +535,38 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function openPositionsSize() external view override returns (uint256) {
+  function openPositionsSize() external view override returns (uint) {
     return openPositions.length;
   }
 
   /// @inheritdoc ITetuPawnShop
-  function auctionBidSize(uint256 posId) external view override returns (uint256) {
+  function auctionBidSize(uint posId) external view override returns (uint) {
     return positionToBidIds[posId].length;
   }
 
-  function positionsByCollateralSize(address collateral) external view override returns (uint256) {
+  function positionsByCollateralSize(address collateral) external view override returns (uint) {
     return positionsByCollateral[collateral].length;
   }
 
-  function positionsByAcquiredSize(address acquiredToken) external view override returns (uint256) {
+  function positionsByAcquiredSize(address acquiredToken) external view override returns (uint) {
     return positionsByAcquired[acquiredToken].length;
   }
 
-  function borrowerPositionsSize(address borrower) external view override returns (uint256) {
+  function borrowerPositionsSize(address borrower) external view override returns (uint) {
     return borrowerPositions[borrower].length;
   }
 
-  function lenderPositionsSize(address lender) external view override returns (uint256) {
+  function lenderPositionsSize(address lender) external view override returns (uint) {
     return lenderPositions[lender].length;
   }
 
   /// @inheritdoc ITetuPawnShop
-  function getPosition(uint256 posId) external view override returns (Position memory) {
+  function getPosition(uint posId) external view override returns (Position memory) {
     return positions[posId];
   }
 
   /// @inheritdoc ITetuPawnShop
-  function getAuctionBid(uint256 bidId) external view override returns (AuctionBid memory) {
+  function getAuctionBid(uint bidId) external view override returns (AuctionBid memory) {
     return auctionBids[bidId];
   }
 
@@ -573,7 +576,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   function announceGovernanceAction(
     GovernanceAction id,
     address addressValue,
-    uint256 uintValue
+    uint uintValue
   ) external onlyOwner override {
     require(timeLocks[id].time == 0, "TPS: Already announced");
     timeLocks[id] = TimeLock(
@@ -581,7 +584,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
       addressValue,
       uintValue
     );
-    emit GovernanceActionAnnounced(uint256(id), addressValue, uintValue);
+    emit GovernanceActionAnnounced(uint(id), addressValue, uintValue);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -601,7 +604,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function setPlatformFee(uint256 _value) external onlyOwner override
+  function setPlatformFee(uint _value) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangePlatformFee, address(0), _value) {
     require(_value <= PLATFORM_FEE_MAX, "TPS: Too high fee");
     emit PlatformFeeChanged(platformFee, _value);
@@ -609,7 +612,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   /// @inheritdoc ITetuPawnShop
-  function setPositionDepositAmount(uint256 _value) external onlyOwner override
+  function setPositionDepositAmount(uint _value) external onlyOwner override
   checkTimeLock(GovernanceAction.ChangePositionDepositAmount, address(0), _value) {
     emit DepositAmountChanged(positionDepositAmount, _value);
     positionDepositAmount = _value;
