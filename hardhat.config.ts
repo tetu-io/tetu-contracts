@@ -79,6 +79,10 @@ const argv = require('yargs/yargs')()
       type: "number",
       default: 0
     },
+    loggingEnabled: {
+      type: "boolean",
+      default: false
+    },
   }).argv;
 
 task("deploy", "Deploy contract", async function (args, hre, runSuper) {
@@ -126,6 +130,7 @@ export default {
         path: "m/44'/60'/0'/0",
         accountsBalance: "100000000000000000000000000000"
       },
+      loggingEnabled: argv.loggingEnabled,
     },
     ftm: {
       url: argv.ftmRpcUrl || '',

@@ -33,7 +33,7 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
   string public constant override STRATEGY_NAME = "StrategySplitter";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
   uint internal constant _PRECISION = 1e18;
   uint public constant STRATEGY_RATIO_DENOMINATOR = 100;
   uint public constant WITHDRAW_REQUEST_TIMEOUT = 1 hours;
@@ -179,13 +179,14 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
     uint uBalance = IERC20(_underlying()).balanceOf(address(this));
     if (uBalance < amount) {
       for (uint i; i < strategies.length; i++) {
+        uint needToWithdraw = amount - uBalance;
         IStrategy strategy = IStrategy(strategies[i]);
         uint strategyBalance = strategy.investedUnderlyingBalance();
-        if (strategyBalance <= amount) {
+        if (strategyBalance <= needToWithdraw) {
           strategy.withdrawAllToVault();
         } else {
-          if (amount > _MIN_OP) {
-            strategy.withdrawToVault(amount);
+          if (needToWithdraw > _MIN_OP) {
+            strategy.withdrawToVault(needToWithdraw);
           }
         }
         uBalance = IERC20(_underlying()).balanceOf(address(this));
