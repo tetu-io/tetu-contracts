@@ -20,7 +20,6 @@ import "../interfaces/ISmartVault.sol";
 import "../interfaces/IStrategySplitter.sol";
 import "./StrategySplitterStorage.sol";
 import "../ArrayLib.sol";
-import "hardhat/console.sol";
 
 /// @title Proxy solution for connection a vault with multiple strategies
 /// @dev Should be used with TetuProxyControlled.sol
@@ -411,7 +410,6 @@ contract StrategySplitter is Controllable, IStrategy, StrategySplitterStorage, I
 
   function transferAllUnderlyingToVault() internal {
     uint balance = IERC20(_underlying()).balanceOf(address(this));
-    console.log("transferAllUnderlyingToVault", balance, _vault());
     if (balance > 0) {
       IERC20(_underlying()).safeTransfer(_vault(), balance);
     }

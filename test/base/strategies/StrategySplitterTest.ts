@@ -3,14 +3,11 @@ import {TimeUtils} from "../../TimeUtils";
 import {ethers} from "hardhat";
 import {MockHelpers} from "../helpers/MockHelpers";
 import {
-  IStrategy,
   MockController,
   MockStrategy,
   MockToken,
-  MockToken__factory,
   StrategySplitter
 } from "../../../typechain";
-import {Misc} from "../../../scripts/utils/tools/Misc";
 import {DeployerUtils} from "../../../scripts/deploy/DeployerUtils";
 import {formatUnits, parseUnits} from "ethers/lib/utils";
 import {expect} from "chai";
@@ -23,7 +20,7 @@ describe("StrategySplitterTest", () => {
 
 //region Global vars for all tests
   let snapshot: string;
-  let snapshotForEach: string;
+  let snapshotLocal: string;
   let deployer: SignerWithAddress;
 
   let controller: MockController;
@@ -99,9 +96,9 @@ describe("StrategySplitterTest", () => {
           const sp = p.strategies[i];
           await strategy.setInvestedUnderlyingBalance(parseUnits(sp.investedBalance, decimals));
           await underlying.mint(strategy.address, parseUnits(sp.investedBalance, decimals));
-          await strategy.setWithdrawToVault(vault);
+          await strategy.setWithdrawToVault(core.splitter.address);
           if (sp.withdrawAllToVaultAmount) {
-            await strategy.setWithdrawAllToVault(vault, parseUnits(sp.withdrawAllToVaultAmount, decimals));
+            await strategy.setWithdrawAllToVault(core.splitter.address, parseUnits(sp.withdrawAllToVaultAmount, decimals));
           }
         }
       }
@@ -120,6 +117,12 @@ describe("StrategySplitterTest", () => {
 
     describe("Good paths", () => {
       describe("total balance of all strategies < amount", () => {
+        before(async function () {
+          snapshotLocal = await TimeUtils.snapshot();
+        });
+        after(async function () {
+          await TimeUtils.rollback(snapshotLocal);
+        });
         async function withdrawToVaultFixture(): Promise<IWithdrawToVaultTestResults> {
           return withdrawToVaultBase({
             amount: "1000",
@@ -143,6 +146,12 @@ describe("StrategySplitterTest", () => {
         });
       });
       describe("Balance of first strategy < amount < total balance of all strategies", () => {
+        before(async function () {
+          snapshotLocal = await TimeUtils.snapshot();
+        });
+        after(async function () {
+          await TimeUtils.rollback(snapshotLocal);
+        });
         async function withdrawToVaultFixture(): Promise<IWithdrawToVaultTestResults> {
           return withdrawToVaultBase({
             amount: "1000",
@@ -167,10 +176,16 @@ describe("StrategySplitterTest", () => {
         });
         it("should return expected second strategy balance", async () => {
           const ret = await loadFixture(withdrawToVaultFixture);
-          expect(ret.strategyBalances[0]).eq(200);
+          expect(ret.strategyBalances[1]).eq(200);
         });
       });
       describe("amount < balance of first strategy", () => {
+        before(async function () {
+          snapshotLocal = await TimeUtils.snapshot();
+        });
+        after(async function () {
+          await TimeUtils.rollback(snapshotLocal);
+        });
         async function withdrawToVaultFixture(): Promise<IWithdrawToVaultTestResults> {
           return withdrawToVaultBase({
             amount: "200",
@@ -193,7 +208,52 @@ describe("StrategySplitterTest", () => {
           expect(ret.strategyBalances[0]).eq(150);
         });
       });
+      describe("amount == sum of balances of first and second strategies", () => {
+        before(async function () {
+          snapshotLocal = await TimeUtils.snapshot();
+        });
+        after(async function () {
+          await TimeUtils.rollback(snapshotLocal);
+        });
+        async function withdrawToVaultFixture(): Promise<IWithdrawToVaultTestResults> {
+          return withdrawToVaultBase({
+            amount: "70",
+            splitterBalance: "30",
+            strategies: [
+              {investedBalance: "10", withdrawAllToVaultAmount: "10"},
+              {investedBalance: "30", withdrawAllToVaultAmount: "30"},
+              {investedBalance: "40", withdrawAllToVaultAmount: "40"},
+            ]
+          });
+        }
+        it("should return expected vault balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.vaultBalance).eq(70);
+        });
+        it("should return zero splitter balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.splitterBalance).eq(0);
+        });
+        it("should return zero first strategy balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.strategyBalances[0]).eq(0);
+        });
+        it("should return zero second strategy balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.strategyBalances[1]).eq(0);
+        });
+        it("should return unchanged third strategy balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.strategyBalances[2]).eq(40);
+        });
+      });
       describe("amount < balance of the splitter", () => {
+        before(async function () {
+          snapshotLocal = await TimeUtils.snapshot();
+        });
+        after(async function () {
+          await TimeUtils.rollback(snapshotLocal);
+        });
         it("should return expected values", async () => {
           async function withdrawToVaultFixture(): Promise<IWithdrawToVaultTestResults> {
             return withdrawToVaultBase({
@@ -212,14 +272,41 @@ describe("StrategySplitterTest", () => {
           });
         });
       });
-    });
-    describe("Bad paths", () => {
-      it("revert if not hard workers", async () => {
-// todo
+      describe("needToWithdraw == _MIN_OP", () => {
+        before(async function () {
+          snapshotLocal = await TimeUtils.snapshot();
+        });
+        after(async function () {
+          await TimeUtils.rollback(snapshotLocal);
+        });
+        async function withdrawToVaultFixture(): Promise<IWithdrawToVaultTestResults> {
+          return withdrawToVaultBase({
+            amount: "200",
+            splitterBalance: "0",
+            strategies: [
+              // we assume here, that MIN_OP = 1 token
+              {investedBalance: "199.999999", withdrawAllToVaultAmount: "199.999999"}, // 200,000000 - 199,999999 = 1 == MIN_OP
+              {investedBalance: "1000", withdrawAllToVaultAmount: "1000"},
+            ]
+          });
+        }
+        it("should return expected vault balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.vaultBalance).eq(199.999999);
+        });
+        it("should return zero splitter balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.splitterBalance).eq(0);
+        });
+        it("should return zero first strategy balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.strategyBalances[0]).eq(0);
+        });
+        it("should return unchanged second strategy balance", async () => {
+          const ret = await loadFixture(withdrawToVaultFixture);
+          expect(ret.strategyBalances[1]).eq(1000);
+        });
       });
-    });
-    describe("Gas estimation @skip-on-coverage", () => {
-
     });
   });
 
