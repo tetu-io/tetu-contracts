@@ -81,6 +81,7 @@ interface ITetuPawnShop {
     address depositToken;
     uint256 depositAmount;
     bool open;
+    uint minAuctionAmount;
     PositionInfo info;
     PositionCollateral collateral;
     PositionAcquired acquired;
@@ -201,7 +202,8 @@ interface ITetuPawnShop {
     address _acquiredToken,
     uint256 _acquiredAmount,
     uint256 _posDurationBlocks,
-    uint256 _posFee
+    uint256 _posFee,
+    uint minAuctionPrice
   ) external returns (uint256);
 
   /// @dev Borrower action

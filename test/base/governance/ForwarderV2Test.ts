@@ -146,7 +146,7 @@ describe("ForwarderV2 tests", function () {
 
   it("should not distribute without liq path", async () => {
     await TokenUtils.approve(usdc, signer, forwarder.address, amount.toString());
-    expect(forwarder.distribute(amount, usdc, core.psVault.address)).rejectedWith('psToken not added to vault');
+    await expect(forwarder.distribute(amount, usdc, core.psVault.address)).rejectedWith('F2: No TETU rt');
   });
 
   it("should distribute", async () => {
