@@ -81,6 +81,9 @@ export class MaticAddresses {
   public static LIDO_TOKEN = '0xC3C7d422809852031b44ab29EEC9F1EfF2A58756'.toLowerCase();
   public static stMATIC = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
   public static xtetuBAL_TOKEN = '0x915e49f7cd8b2b5763759c23d9463a74d5b5c1d5'.toLowerCase();
+  public static USDR_AM3CRV_TOKEN = "0xa138341185a9D0429B0021A11FB717B225e13e1F".toLocaleLowerCase();
+  public static CRV_CRVUSDBTCETH_TOKEN = "0xA73EdCf18421B56D9AF1cE08A34E102E23b2C4B6".toLocaleLowerCase();
+  public static EURT_AM3CRV_TOKEN = "0x600743B1d8A96438bD46836fD34977a00293f6Aa".toLocaleLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -168,6 +171,9 @@ export class MaticAddresses {
   public static CURVE_aTricrypto3_POOL = "0x1d8b86e3d88cdb2d34688e87e72f388cb541b7c8".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
+
+  // convex
+  public static USDR_AMRCRV_TOKEN = "0xa138341185a9D0429B0021A11FB717B225e13e1F".toLocaleLowerCase();
 
   // MeshSwap
   public static MESH_FACTORY = "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d".toLowerCase();

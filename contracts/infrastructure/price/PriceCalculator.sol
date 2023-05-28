@@ -30,6 +30,8 @@ import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
+import "../../third_party/convex/IConvexFactory.sol";
+import "../../third_party/convex/IConvexPool.sol";
 import "../../openzeppelin/Math.sol";
 import "../../base/interfaces/ITetuLiquidator.sol";
 import "../../openzeppelin/IERC4626.sol";
@@ -77,6 +79,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   address internal constant ETH_BAL_BPT = 0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f;
   address internal constant TETU_BAL_ETH_BAL_POOL = 0xB797AdfB7b268faeaA90CAdBfEd464C76ee599Cd;
   ISwapper internal constant BALANCER_STABLE_SWAPPER = ISwapper(0xc43e971566B8CCAb815C3E20b9dc66571541CeB4);
+  address internal constant CONVEX_FACTORY = 0xabC000d88f23Bb45525E447528DBF656A9D55bf5;
 
   // ************ VARIABLES **********************
   // !!! DON'T CHANGE NAMES OR ORDERING !!!
@@ -187,23 +190,6 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
         uint256 tokenValue = priceToken * amounts[i] / 10 ** PRECISION_DECIMALS;
         price += tokenValue;
       }
-    } else if (token == CRV_USD_BTC_ETH_FANTOM || token == CRV_USD_BTC_ETH_MATIC) {
-      ICurveMinter minter = ICurveMinter(ICurveLpToken(token).minter());
-      uint tvl = 0;
-      for (uint256 i = 0; i < 3; i++) {
-        address coin = minter.coins(i);
-        uint balance = normalizePrecision(minter.balances(i), IERC20Extended(coin).decimals());
-        uint256 priceToken = getPrice(coin, outputToken);
-        if (priceToken == 0) {
-          return 0;
-        }
-
-        uint256 tokenValue = priceToken * balance / 10 ** PRECISION_DECIMALS;
-        tvl += tokenValue;
-      }
-      price = tvl * (10 ** PRECISION_DECIMALS)
-      / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
-
     } else if (isWrappedAave2(token)) {
       address aToken = unwrapAaveIfNecessary(token);
       address[] memory usedLps = new address[](DEPTH);
@@ -230,6 +216,10 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       }
     } else if (isBPT(token)) {
       price = calculateBPTPrice(token, outputToken);
+    } else if (withCurveMinter(token)) {
+      price = calculateWithCurveMinterPrice(token, outputToken);
+    } else if (isConvex(token)) {
+      price = calculateConvexPrice(token, outputToken);
     } else {
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(token, outputToken, usedLps, 0);
@@ -274,6 +264,31 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     try bpt.getVault{gas: 3000}() returns (address vault){
       return (vault == BEETHOVEN_VAULT_FANTOM
       || vault == BALANCER_VAULT_ETHEREUM);
+    } catch {}
+    return false;
+  }
+
+  function withCurveMinter(address token) public view returns (bool success) {
+    bytes4 selector = bytes4(keccak256("minter()"));
+    bytes memory data = abi.encodeWithSelector(selector);
+    assembly {
+      success := staticcall(
+      gas(),
+      token,
+      add(data, 32),
+      mload(data),
+      0,
+      0
+      )
+    }
+  }
+
+  function isConvex(address token) public view returns (bool) {
+    IConvexFactory factory = IConvexFactory(CONVEX_FACTORY);
+    try factory.get_gauge_from_lp_token{gas: 3000}(token) returns (address gauge){
+      try factory.is_valid_gauge{gas: 3000}(gauge) returns (bool isValid){
+        return isValid;
+      } catch {}
     } catch {}
     return false;
   }
@@ -669,6 +684,52 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
     }
     return totalPrice / totalBPTSupply;
+  }
+
+  function calculateConvexPrice(address token, address outputToken) internal view returns (uint256){
+    IConvexPool pool = IConvexPool(token);
+    uint tvl = 0;
+    for (uint256 i = 0; i < 2; i++) {
+      address coin = pool.coins(i);
+      uint balance = normalizePrecision(pool.balances(i), IERC20Extended(coin).decimals());
+      uint256 priceToken = getPrice(coin, outputToken);
+      if (priceToken == 0) {
+        return 0;
+      }
+
+      uint256 tokenValue = priceToken * balance / 10 ** PRECISION_DECIMALS;
+      tvl += tokenValue;
+    }
+    return tvl * (10 ** PRECISION_DECIMALS)
+    / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
+  }
+
+  function calculateWithCurveMinterPrice(address token, address outputToken) internal view returns (uint256 price){
+    ICurveMinter minter = ICurveMinter(ICurveLpToken(token).minter());
+    uint tvl = 0;
+    for (uint256 i = 0; i < 3; i++) {
+      address coin = getCoins(minter, i);
+      if (coin == address(0)) {
+        break;
+      }
+      uint balance = normalizePrecision(minter.balances(i), IERC20Extended(coin).decimals());
+      uint256 priceToken = getPrice(coin, outputToken);
+      if (priceToken == 0) {
+        return 0;
+      }
+
+      uint256 tokenValue = priceToken * balance / 10 ** PRECISION_DECIMALS;
+      tvl += tokenValue;
+    }
+    price = tvl * (10 ** PRECISION_DECIMALS)
+    / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
+  }
+
+  function getCoins(ICurveMinter minter, uint256 index) internal view returns (address) {
+    try minter.coins{gas: 6000}(index) returns (address coin) {
+      return coin;
+    } catch {}
+    return address(0);
   }
 
   // ************* GOVERNANCE ACTIONS ***************

@@ -418,6 +418,23 @@ describe("Price calculator matic tests", function () {
     expect(expectedTokenPrice === tokenPrice, "AM3CRV_TOKEN token price should be equal USDC_TOKEN token price")
   });
 
+  it("calculate Convex tokens price", async () => {
+    if (!(await DeployerUtils.isNetwork(137))) {
+      return;
+    }
+    const price0 = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.USDR_AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price0).is.greaterThan(0.1);
+
+    const price1 = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.CRV_CRVUSDBTCETH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price1).is.greaterThan(0.1);
+
+    const price2 = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.USD_BTC_ETH_CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price2).is.greaterThan(10);
+  });
+
   it("calculate IRON_USDC_USDT_DAI, price and check", async () => {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
