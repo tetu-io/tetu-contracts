@@ -172,9 +172,6 @@ export class MaticAddresses {
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
 
-  // convex
-  public static USDR_AMRCRV_TOKEN = "0xa138341185a9D0429B0021A11FB717B225e13e1F".toLocaleLowerCase();
-
   // MeshSwap
   public static MESH_FACTORY = "0x9f3044f7f9fc8bc9ed615d54845b4577b833282d".toLowerCase();
   public static MESH_ROUTER = '0x10f4a785f458bc144e3706575924889954946639'.toLowerCase();
