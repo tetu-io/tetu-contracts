@@ -31,7 +31,6 @@ import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../third_party/convex/IConvexFactory.sol";
-import "../../third_party/convex/IConvexPool.sol";
 import "../../openzeppelin/Math.sol";
 import "../../base/interfaces/ITetuLiquidator.sol";
 import "../../openzeppelin/IERC4626.sol";
