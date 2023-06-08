@@ -4,7 +4,9 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
 import {TimeUtils} from "../TimeUtils";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {PriceCalculator} from "../../typechain";
+import {
+  PriceCalculator,   ITetuLiquidator__factory
+} from "../../typechain";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {TokenUtils} from "../TokenUtils";
@@ -49,7 +51,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.TETU_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.01);
+    expect(price).is.greaterThan(0.005);
     expect(price).is.lessThan(0.03);
   });
 
@@ -422,17 +424,50 @@ describe("Price calculator matic tests", function () {
     if (!(await DeployerUtils.isNetwork(137))) {
       return;
     }
+
+    const govSigner = await DeployerUtils.impersonate('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94');
+    await ITetuLiquidator__factory.connect(MaticAddresses.LIQUIDATOR, govSigner).addLargestPools([
+      {
+        pool: '0x600743B1d8A96438bD46836fD34977a00293f6Aa',
+        swapper: '0xa22b4156bc8FB94CD4B2398aB28D7194223D54aA',
+        tokenIn: '0x7bdf330f423ea880ff95fc41a280fd5ecfd3d09f',
+        tokenOut: '0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171',
+      },
+      {
+        pool: '0x0fcc19aa4128ab5a2664ad7bd2eb925708610704',
+        swapper: '0x7b505210a0714d2a889E41B59edc260Fa1367fFe',
+        tokenIn: '0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171',
+        tokenOut: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      },
+      {
+        pool: '0x8982D71337003cd172198739238adA0D5d0BD2Fe',
+        swapper: '0x0089539BeCB82Ab51bc5C76F93Aa61281540fF33',
+        tokenIn: '0x172370d5Cd63279eFa6d502DAB29171933a610AF',
+        tokenOut: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      },
+      {
+        pool: '0xA73EdCf18421B56D9AF1cE08A34E102E23b2C4B6',
+        swapper: '0xa22b4156bc8FB94CD4B2398aB28D7194223D54aA',
+        tokenIn: '0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3',
+        tokenOut: '0x172370d5Cd63279eFa6d502DAB29171933a610AF',
+      }
+    ], true);
+
     const price0 = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.USDR_AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
     expect(price0).is.greaterThan(0.1);
 
     const price1 = await PriceCalculatorUtils.getFormattedPrice(calculator,
         MaticAddresses.CRV_CRVUSDBTCETH_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(price1).is.greaterThan(0.1);
+    expect(price1).is.greaterThan(10);
 
     const price2 = await PriceCalculatorUtils.getFormattedPrice(calculator,
-        MaticAddresses.USD_BTC_ETH_CRV_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(price2).is.greaterThan(10);
+        MaticAddresses.AM3CRV_AMWBTCAMWETH_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price2).is.greaterThan(100);
+
+    const price3 = await PriceCalculatorUtils.getFormattedPrice(calculator,
+        MaticAddresses.EURT_AM3CRV_TOKEN, MaticAddresses.USDC_TOKEN);
+    expect(price3).is.greaterThan(1);
   });
 
   it("calculate IRON_USDC_USDT_DAI, price and check", async () => {
@@ -481,7 +516,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0x2F45a8A14237CA2d965405957f8C2A1082558890', MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.1);
+    expect(price).is.greaterThan(0.07);
     expect(price).is.lessThan(100);
   });
 

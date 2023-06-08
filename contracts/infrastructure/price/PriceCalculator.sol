@@ -218,7 +218,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       price = calculateBPTPrice(token, outputToken);
     } else if (withCurveMinter(token)) {
       price = calculateWithCurveMinterPrice(token, outputToken);
-    } else if (isConvex(token)) {
+    } else if (isValidConvex(token)) {
       price = calculateConvexPrice(token, outputToken);
     } else {
       address[] memory usedLps = new address[](DEPTH);
@@ -268,22 +268,16 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return false;
   }
 
-  function withCurveMinter(address token) public view returns (bool success) {
-    bytes4 selector = bytes4(keccak256("minter()"));
-    bytes memory data = abi.encodeWithSelector(selector);
-    assembly {
-      success := staticcall(
-      gas(),
-      token,
-      add(data, 32),
-      mload(data),
-      0,
-      0
-      )
-    }
+  function withCurveMinter(address pool) public view returns (bool success) {
+    try ICurveLpToken(pool).minter{gas: 30000}() returns (address result){
+      if (result != address(0)) {
+        return true;
+      }
+    } catch {}
+    return false;
   }
 
-  function isConvex(address token) public view returns (bool) {
+  function isValidConvex(address token) public view returns (bool) {
     IConvexFactory factory = IConvexFactory(CONVEX_FACTORY);
     try factory.get_gauge_from_lp_token{gas: 3000}(token) returns (address gauge){
       try factory.is_valid_gauge{gas: 3000}(gauge) returns (bool isValid){
@@ -686,26 +680,17 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     return totalPrice / totalBPTSupply;
   }
 
-  function calculateConvexPrice(address token, address outputToken) internal view returns (uint256){
-    IConvexPool pool = IConvexPool(token);
-    uint tvl = 0;
-    for (uint256 i = 0; i < 2; i++) {
-      address coin = pool.coins(i);
-      uint balance = normalizePrecision(pool.balances(i), IERC20Extended(coin).decimals());
-      uint256 priceToken = getPrice(coin, outputToken);
-      if (priceToken == 0) {
-        return 0;
-      }
-
-      uint256 tokenValue = priceToken * balance / 10 ** PRECISION_DECIMALS;
-      tvl += tokenValue;
-    }
-    return tvl * (10 ** PRECISION_DECIMALS)
-    / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
+  function calculateConvexPrice(address token, address outputToken) internal view returns (uint256 price){
+    ICurveMinter minter = ICurveMinter(token);
+    price = calculateCurveMinterPrice(minter, token, outputToken);
   }
 
   function calculateWithCurveMinterPrice(address token, address outputToken) internal view returns (uint256 price){
     ICurveMinter minter = ICurveMinter(ICurveLpToken(token).minter());
+    price = calculateCurveMinterPrice(minter, token, outputToken);
+  }
+
+  function calculateCurveMinterPrice(ICurveMinter minter, address token, address outputToken) internal view returns (uint256 price){
     uint tvl = 0;
     for (uint256 i = 0; i < 3; i++) {
       address coin = getCoins(minter, i);
