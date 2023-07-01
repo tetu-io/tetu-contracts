@@ -10,8 +10,8 @@ async function main() {
   const gov = await DeployerUtils.getGovernance()
 
   const owner = gov;
-  const depositToken = MaticAddresses.TETU_TOKEN;
-  const positionDepositAmount = parseUnits('0.01')
+  const depositToken = '0x33D27E8005EC4eA0fDa37Aa07FE7Bf29480cc5E2';
+  const positionDepositAmount = parseUnits('1')
   const feeRecipient = gov;
 
   const args = [
@@ -21,7 +21,8 @@ async function main() {
     feeRecipient,
   ];
 
-  await DeployerUtils.deployContract(signer, "TetuPawnShop", ...args) as TetuPawnShop;
+  const ctr = await DeployerUtils.deployContract(signer, "TetuPawnShop", ...args) as TetuPawnShop;
+  console.log("TetuPawnShop deployed at", ctr.address);
 }
 
 main()
