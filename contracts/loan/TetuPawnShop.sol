@@ -21,6 +21,11 @@ import "../openzeppelin/ReentrancyGuard.sol";
 import "../base/ArrayLib.sol";
 import "./ITetuPawnShop.sol";
 
+interface IDelegation {
+  function clearDelegate(bytes32 _id) external;
+  function setDelegate(bytes32 _id, address _delegate) external;
+}
+
 /// @title TetuPawnShop contract provides a useful and flexible solution for borrowing
 ///        and lending assets with a unique feature of supporting both ERC721 and ERC20 tokens as collateral.
 ///        The contract's modular design allows for easy customization of fees, waiting periods,
@@ -34,7 +39,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.5";
+  string public constant VERSION = "1.0.6";
   /// @dev Time lock for any governance actions
   uint constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
@@ -623,5 +628,15 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   checkTimeLock(GovernanceAction.ChangePositionDepositToken, _value, 0) {
     emit DepositTokenChanged(positionDepositToken, _value);
     positionDepositToken = _value;
+  }
+
+  /// @dev Delegate snapshot votes to another address
+  function delegateVotes(address _delegateContract,bytes32 _id, address _delegate) external onlyOwner {
+    IDelegation(_delegateContract).setDelegate(_id, _delegate);
+  }
+
+  /// @dev Remove delegated votes.
+  function clearDelegatedVotes(address _delegateContract, bytes32 _id) external onlyOwner {
+    IDelegation(_delegateContract).clearDelegate(_id);
   }
 }

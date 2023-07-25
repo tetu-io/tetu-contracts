@@ -13,13 +13,13 @@ export class RunHelper {
   public static async runAndWait(callback: () => Promise<ContractTransaction>, stopOnError = true, wait = true) {
     const start = Date.now();
     const tr = await callback();
+    log.info('tx sent', tr.hash);
     if (!wait) {
       Misc.printDuration('runAndWait completed', start);
       return;
     }
-    const r0 = await tr.wait(1);
-
-    log.info('tx sent', tr.hash, 'gas used:', r0.gasUsed.toString());
+    // const r0 = await tr.wait(1);
+    // log.info('tx confirmed', tr.hash, 'gas used:', r0.gasUsed.toString());
 
     let receipt;
     while (true) {

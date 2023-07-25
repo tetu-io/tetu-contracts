@@ -213,6 +213,19 @@ export default {
       chainId: 778877,
       accounts: [argv.privateKey],
     },
+    baobab: {
+      url: "https://api.baobab.klaytn.net:8651",
+      chainId: 1001,
+      accounts: [argv.privateKey],
+    },
+    skale_test: {
+      // https://staging-fast-active-bellatrix.explorer.staging-v3.skalenodes.com/
+      // https://staging-v3.skalenodes.com/fs/staging-fast-active-bellatrix
+      // https://staging-v3.skalenodes.com/#/chains/staging-fast-active-bellatrix
+      url: "https://staging-v3.skalenodes.com/v1/staging-fast-active-bellatrix",
+      chainId: 1351057110,
+      accounts: [argv.privateKey],
+    }
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
@@ -221,7 +234,18 @@ export default {
       polygon: argv.networkScanKeyMatic || argv.networkScanKey,
       opera: argv.networkScanKeyFtm || argv.networkScanKey,
       bsc: argv.networkScanKeyBsc || argv.networkScanKey,
+      skale_test: 'any',
     },
+    customChains: [
+      {
+        network: "skale_test",
+        chainId: 1351057110,
+        urls: {
+          apiURL: "https://staging-fast-active-bellatrix.explorer.staging-v3.skalenodes.com/api",
+          browserURL: "https://staging-fast-active-bellatrix.explorer.staging-v3.skalenodes.com"
+        }
+      }
+    ]
   },
   solidity: {
     compilers: [
