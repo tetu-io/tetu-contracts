@@ -60,7 +60,7 @@ interface IStrategy {
     AURA, //42
     COMPOUND, //43
     ZEROVIX, //44
-    SLOT_45, //45
+    TANGIBLE, //45
     SLOT_46, //46
     SLOT_47, //47
     SLOT_48, //48
