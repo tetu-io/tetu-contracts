@@ -97,7 +97,7 @@ describe("contract reader tests", function () {
 
   it("vault rewards apr", async () => {
 
-    const rewardTokenPrice = await calculator.getPriceWithDefaultOutput(core.rewardToken.address);
+    const rewardTokenPrice = await calculator.getPriceWithDefaultOutput(core.rewardToken.address, {gasLimit: 15_000_000});
     console.log('rewardTokenPrice', utils.formatUnits(rewardTokenPrice, 18), core.rewardToken.address);
     expect(rewardTokenPrice.toString()).is.not.eq("0");
 
