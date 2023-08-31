@@ -61,7 +61,7 @@ interface IStrategy {
     COMPOUND, //43
     ZEROVIX, //44
     CONVEX, //45
-    SLOT_46, //46
+    TANGIBLE, //46
     SLOT_47, //47
     SLOT_48, //48
     SLOT_49, //49
