@@ -80,7 +80,7 @@ export async function deployContract<T extends ContractFactory>(
   // }
   // const instance = await _factory.deploy(...args, {gasLimit: gas, gasPrice: Math.floor(+gasPrice * 1.1)});
   let gasLimit = 30_000_000
-  if (hre.network.name === 'matic') {
+  if (hre.network.name === 'matic' || hre.network.name === 'mumbai') {
     gasLimit = 15_000_000
   } else if (hre.network.name === 'ftm') {
     gasLimit = 7_000_000
