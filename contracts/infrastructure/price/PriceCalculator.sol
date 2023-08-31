@@ -62,7 +62,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.4";
+  string public constant VERSION = "1.7.5";
   address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -203,7 +203,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
         uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
         price = price * ratio / (10 ** PRECISION_DECIMALS);
       }
-    }  else if (isWrappedAave3(token)) {
+    } else if (isWrappedAave3(token)) {
       address aToken = unwrapAaveIfNecessary(token);
       address[] memory usedLps = new address[](DEPTH);
       price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
@@ -266,7 +266,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     IBPT bpt = IBPT(token);
     try bpt.getVault{gas: 3000}() returns (address vault){
       return (vault == BEETHOVEN_VAULT_FANTOM
-      || vault == BALANCER_VAULT_ETHEREUM);
+        || vault == BALANCER_VAULT_ETHEREUM);
     } catch {}
     return false;
   }
@@ -281,9 +281,12 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function isValidConvex(address token) public view returns (bool) {
+    if (block.chainid != 137) {
+      return false;
+    }
     IConvexFactory factory = IConvexFactory(CONVEX_FACTORY);
-    try factory.get_gauge_from_lp_token{gas: 3000}(token) returns (address gauge){
-      try factory.is_valid_gauge{gas: 3000}(gauge) returns (bool isValid){
+    try factory.get_gauge_from_lp_token(token) returns (address gauge){
+      try factory.is_valid_gauge(gauge) returns (bool isValid){
         return isValid;
       } catch {}
     } catch {}
@@ -296,7 +299,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     try pair.factory{gas: 3000}() returns (address factory) {
       bool check = (factory == compareFactory) ? true : false;
       return check;
-    } catch {}
+    }  catch Error(string memory) {} catch (bytes memory) {}
     return false;
   }
 
@@ -710,7 +713,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       tvl += tokenValue;
     }
     price = tvl * (10 ** PRECISION_DECIMALS)
-    / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
+      / normalizePrecision(IERC20Extended(token).totalSupply(), IERC20Extended(token).decimals());
   }
 
   function getCoins(ICurveMinter minter, uint256 index) internal view returns (address) {
