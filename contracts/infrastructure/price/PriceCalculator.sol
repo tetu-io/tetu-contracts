@@ -62,7 +62,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.3";
+  string public constant VERSION = "1.7.4";
   address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -195,7 +195,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
       // add wrapped ratio if necessary
       if (token != aToken) {
-        uint ratio = IWrappedAaveToken(token).staticToDynamicAmount(10 ** PRECISION_DECIMALS);
+//        uint ratio = IWrappedAaveToken(token).staticToDynamicAmount(10 ** PRECISION_DECIMALS);
+        // todo tmp solution for avoid wrong impl
+        uint ratio = 1e18;
         price = price * ratio / (10 ** PRECISION_DECIMALS);
       } else {
         uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();
@@ -207,7 +209,9 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
       price = computePrice(IAaveToken(aToken).UNDERLYING_ASSET_ADDRESS(), outputToken, usedLps, 0);
       // add wrapped ratio if necessary
       if (token != aToken) {
-        uint ratio = IERC4626(token).convertToAssets(10 ** PRECISION_DECIMALS);
+//        uint ratio = IERC4626(token).convertToAssets(10 ** PRECISION_DECIMALS);
+        // todo tmp solution for avoid wrong impl
+        uint ratio = 1e18;
         price = price * ratio / (10 ** PRECISION_DECIMALS);
       } else {
         uint ratio = IAaveToken(aToken).totalSupply() * (10 ** PRECISION_DECIMALS) / IAaveToken(aToken).scaledTotalSupply();

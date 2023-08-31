@@ -156,9 +156,8 @@ export default {
       accounts: [argv.privateKey],
     },
     mumbai: {
-      url: "https://polygon-mumbai.infura.io/v3/" + argv.infuraKey,
+      url: "https://rpc-mumbai.maticvigil.com",
       chainId: 80001,
-      gasPrice: 1,
       accounts: [argv.privateKey],
     },
     ropsten: {
@@ -232,6 +231,7 @@ export default {
     apiKey: {
       mainnet: argv.networkScanKey,
       polygon: argv.networkScanKeyMatic || argv.networkScanKey,
+      polygonMumbai: argv.networkScanKeyMatic || argv.networkScanKey,
       opera: argv.networkScanKeyFtm || argv.networkScanKey,
       bsc: argv.networkScanKeyBsc || argv.networkScanKey,
       skale_test: 'any',

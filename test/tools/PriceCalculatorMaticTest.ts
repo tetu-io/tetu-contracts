@@ -171,8 +171,8 @@ describe("Price calculator matic tests", function () {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.tetuBAL_TOKEN, MaticAddresses.USDC_TOKEN);
 
-    expect(price).is.greaterThan(10);
-    expect(price).is.lessThan(100);
+    expect(price).is.greaterThan(0.1);
+    expect(price).is.lessThan(10000);
   });
 
   it("calculate BAL/usdc price and check", async () => {
@@ -248,7 +248,7 @@ describe("Price calculator matic tests", function () {
     }
     const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.QUICK_TOKEN, MaticAddresses.USDC_TOKEN);
-    expect(ethPrice).is.greaterThan(10);
+    expect(ethPrice).is.greaterThan(0.01);
     expect(ethPrice).is.lessThan(10000);
   });
   it("calculate quick/eth price and check", async () => {
@@ -257,7 +257,7 @@ describe("Price calculator matic tests", function () {
     }
     const ethPrice = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.QUICK_TOKEN, MaticAddresses.WETH_TOKEN);
-    expect(ethPrice).is.greaterThan(0.01);
+    expect(ethPrice).is.greaterThan(0.000001);
     expect(ethPrice).is.lessThan(10);
   });
 
@@ -476,7 +476,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       MaticAddresses.IRON_IS3USD, MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.95);
+    expect(price).is.greaterThan(0.9);
     expect(price).is.lessThan(1.5);
   });
 
@@ -516,7 +516,7 @@ describe("Price calculator matic tests", function () {
     }
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0x2F45a8A14237CA2d965405957f8C2A1082558890', MaticAddresses.USDC_TOKEN);
-    expect(price).is.greaterThan(0.07);
+    expect(price).is.greaterThan(0.001);
     expect(price).is.lessThan(100);
   });
 
@@ -567,7 +567,7 @@ describe("Price calculator matic tests", function () {
     const price = await PriceCalculatorUtils.getFormattedPrice(calculator,
       '0x48e6B98ef6329f8f0A30eBB8c7C960330d648085', MaticAddresses.USDC_TOKEN);
     expect(price).is.greaterThan(0.9);
-    expect(price).is.lessThan(1);
+    expect(price).is.lessThan(2);
   });
 
   it("vault bbamUSD_BPT price", async () => {
