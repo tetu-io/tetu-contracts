@@ -81,6 +81,10 @@ export class MaticAddresses {
   public static LIDO_TOKEN = '0xC3C7d422809852031b44ab29EEC9F1EfF2A58756'.toLowerCase();
   public static stMATIC = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
   public static xtetuBAL_TOKEN = '0x915e49f7cd8b2b5763759c23d9463a74d5b5c1d5'.toLowerCase();
+  public static USDR_AM3CRV_TOKEN = "0xa138341185a9D0429B0021A11FB717B225e13e1F".toLocaleLowerCase();
+  public static CRV_CRVUSDBTCETH_TOKEN = "0xA73EdCf18421B56D9AF1cE08A34E102E23b2C4B6".toLocaleLowerCase();
+  public static AM3CRV_AMWBTCAMWETH_TOKEN = "0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3".toLocaleLowerCase();
+  public static EURT_AM3CRV_TOKEN = "0x600743B1d8A96438bD46836fD34977a00293f6Aa".toLocaleLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

@@ -16,7 +16,8 @@
     "lint": "tslint -p tsconfig.json",
     "lint-fix": "tslint --fix -p tsconfig.json",
     "update-block": "ts-node scripts/utils/tools/UpdateBlock.ts",
-    "publish": "npm publish --access public"
+    "publish": "npm publish --access public",
+    "announces": "hardhat run scripts/utils/collect/CheckAnnounces.ts --network matic"
   },
   "repository": {
     "type": "git",

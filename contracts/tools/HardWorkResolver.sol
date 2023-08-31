@@ -99,6 +99,9 @@ contract HardWorkResolver is ControllableV2 {
       address[] memory subStrategies = IStrategySplitter(strategy).allStrategies();
       for (uint i; i < subStrategies.length; ++i) {
         address subStrategy = subStrategies[i];
+        if (IStrategy(subStrategy).pausedInvesting()) {
+          continue;
+        }
         uint time = bookkeeper.lastHardWork(subStrategy).time;
         if (lastHardWorkTimestamp < time) {
           lastHardWorkTimestamp = time;
@@ -130,11 +133,28 @@ contract HardWorkResolver is ControllableV2 {
         continue;
       }
 
-      try __controller.doHardWork(vault) {}  catch Error(string memory _err) {
-        revert(string(abi.encodePacked("Vault error: 0x", _toAsciiString(vault), " ", _err)));
-      } catch (bytes memory _err) {
-        revert(string(abi.encodePacked("Vault low-level error: 0x", _toAsciiString(vault), " ", string(_err))));
+      address strategy = ISmartVault(vault).strategy();
+      if (IStrategy(strategy).platform() == IStrategy.Platform.STRATEGY_SPLITTER) {
+        address[] memory subStrategies = IStrategySplitter(strategy).allStrategies();
+        for (uint j; j < subStrategies.length; ++j) {
+          address subStrategy = subStrategies[j];
+          if (IStrategy(subStrategy).pausedInvesting()) {
+            continue;
+          }
+          try IStrategy(subStrategy).doHardWork() {}  catch Error(string memory _err) {
+            revert(string(abi.encodePacked("Strategy error: 0x", _toAsciiString(subStrategy), " ", _err)));
+          } catch (bytes memory _err) {
+            revert(string(abi.encodePacked("Strategy low-level error: 0x", _toAsciiString(subStrategy), " ", string(_err))));
+          }
+        }
+      } else {
+        try __controller.doHardWork(vault) {}  catch Error(string memory _err) {
+          revert(string(abi.encodePacked("Vault error: 0x", _toAsciiString(vault), " ", _err)));
+        } catch (bytes memory _err) {
+          revert(string(abi.encodePacked("Vault low-level error: 0x", _toAsciiString(vault), " ", string(_err))));
+        }
       }
+
       _lastHW[vault] = block.timestamp;
       counter++;
       if (counter >= _maxHwPerCall) {

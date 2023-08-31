@@ -11,7 +11,7 @@ const log: Logger<undefined> = new Logger(logSettings);
 const libraries = new Map<string, string[]>([
   ['SmartVault', ['VaultLibrary',]],
   ['SmartVaultV110', ['VaultLibrary',]],
-  ['ZapV2', ['ZapV2UniswapLibrary','ZapV2Balancer1Library','ZapV2Balancer2Library',]],
+  ['ZapV2', ['ZapV2UniswapLibrary', 'ZapV2Balancer1Library', 'ZapV2Balancer2Library',]],
 ]);
 
 export async function deployContract<T extends ContractFactory>(
@@ -50,7 +50,7 @@ export async function deployContract<T extends ContractFactory>(
   }
 
 
-  const libs: string[]|undefined = libraries.get(name);
+  const libs: string[] | undefined = libraries.get(name);
   let _factory;
   if (libs) {
     const librariesObj: Libraries = {};
@@ -82,8 +82,13 @@ export async function deployContract<T extends ContractFactory>(
   let gasLimit = 30_000_000
   if (hre.network.name === 'matic') {
     gasLimit = 15_000_000
+  } else if (hre.network.name === 'ftm') {
+    gasLimit = 7_000_000
   }
-  const instance = await _factory.deploy(...args, {gasLimit, gasPrice: Math.floor(+gasPrice * 1.1)});
+  const instance = await _factory.deploy(...args, {
+    gasLimit,
+    gasPrice: Math.floor(+gasPrice * 1.1)
+  });
   log.info('Deploy tx:', instance.deployTransaction.hash);
   await instance.deployed();
 
@@ -145,7 +150,7 @@ async function verifyWithArgs(hre: any, address: string, args: any[]) {
 
 export async function txParams(hre: HardhatRuntimeEnvironment, provider: providers.Provider) {
 
-  const gasPrice = (await provider.getGasPrice()).toNumber();
+  let gasPrice = (await provider.getGasPrice()).toNumber();
   console.log('Gas price:', formatUnits(gasPrice, 9));
   const maxFee = '0x' + Math.floor(gasPrice * 1.5).toString(16);
   if (hre.network.name === 'hardhat') {
@@ -162,6 +167,14 @@ export async function txParams(hre: HardhatRuntimeEnvironment, provider: provide
     return {
       maxPriorityFeePerGas: parseUnits('1', 9).toHexString(),
       maxFeePerGas: maxFee,
+    };
+  } else if (hre.network.config.chainId === 250) {
+    gasPrice = Math.floor(Math.min(gasPrice * 1.5, 9_000));
+    // gasPrice = 200;
+    // console.log('Gas price:', gasPrice);
+    return {
+      // gasPrice: '0x' + gasPrice.toString(16),
+      // gasLimit: 7_000_000,
     };
   }
   return {
