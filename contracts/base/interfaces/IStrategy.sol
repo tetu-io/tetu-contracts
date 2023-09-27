@@ -63,8 +63,8 @@ interface IStrategy {
     CONVEX, //45
     TANGIBLE, //46
     VENUS, //47
-    SLOT_48, //48
-    SLOT_49, //49
+    RADIANT2, //48
+    WOMBEX, //49
     SLOT_50 //50
   }
 
