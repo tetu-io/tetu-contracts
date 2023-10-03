@@ -937,7 +937,7 @@ export class DeployerUtils {
 
     const ps = await DeployerUtils.connectInterface(signer, "SmartVault", core.psVault) as SmartVault;
     let str = MaticAddresses.ZERO_ADDRESS;
-    if (net.chainId !== 1) {
+    if (net.chainId !== 1 && net.chainId !== 56) {
       str = await ps.strategy();
     }
     return new CoreContractsWrapper(

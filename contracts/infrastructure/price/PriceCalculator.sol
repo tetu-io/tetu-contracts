@@ -62,7 +62,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.5";
+  string public constant VERSION = "1.7.6";
   address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -81,7 +81,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   address internal constant CONVEX_FACTORY = 0xabC000d88f23Bb45525E447528DBF656A9D55bf5;
 
   // ************ VARIABLES **********************
-  // !!! DON'T CHANGE NAMES OR ORDERING !!!
+  // !!! DON'T CHANGE ORDERING !!!
 
   // Addresses for factories and registries for different DEX platforms.
   // Functions will be added to allow to alter these when needed.
@@ -118,8 +118,8 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   /// @dev Allow operation only for Controller or Governance
-  function _onlyControllerOrGovernance() internal view {
-    require(_isController(msg.sender) || _isGovernance(msg.sender), "Not controller or gov");
+  function _onlyGov() internal view {
+    require(_isGovernance(msg.sender), "Not controller or gov");
   }
 
   function getPriceWithDefaultOutput(address token) external view override returns (uint256) {
@@ -726,7 +726,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   // ************* GOVERNANCE ACTIONS ***************
 
   function setDefaultToken(address _newDefaultToken) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     require(_newDefaultToken != address(0), "PC: zero address");
     emit DefaultTokenChanged(defaultToken(), _newDefaultToken);
     bytes32 slot = _DEFAULT_TOKEN_SLOT;
@@ -736,21 +736,21 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function addKeyTokens(address[] memory newTokens) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     for (uint256 i = 0; i < newTokens.length; i++) {
       addKeyToken(newTokens[i]);
     }
   }
 
   function addKeyToken(address newToken) public {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     require(!isKeyToken(newToken), "PC: already have");
     keyTokens.push(newToken);
     emit KeyTokenAdded(newToken);
   }
 
   function removeKeyToken(address keyToken) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     require(isKeyToken(keyToken), "PC: not key");
     uint256 i;
     for (i = 0; i < keyTokens.length; i++) {
@@ -763,7 +763,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function addSwapPlatform(address _factoryAddress, string memory /*_name*/) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     for (uint256 i = 0; i < swapFactories.length; i++) {
       require(swapFactories[i] != _factoryAddress, "PC: factory already exist");
     }
@@ -773,14 +773,14 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function changeFactoriesStatus(address[] memory factories, bool status) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     for (uint256 i; i < factories.length; i++) {
       allowedFactories[factories[i]] = status;
     }
   }
 
   function removeSwapPlatform(address _factoryAddress, string memory /*_name*/) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     require(isSwapFactoryToken(_factoryAddress), "PC: swap not exist");
     uint256 i;
     for (i = 0; i < swapFactories.length; i++) {
@@ -793,13 +793,13 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   function setReplacementTokens(address _inputToken, address _replacementToken) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     replacementTokens[_inputToken] = _replacementToken;
     emit ReplacementTokenUpdated(_inputToken, _replacementToken);
   }
 
   function setTetuLiquidator(address liquidator) external {
-    _onlyControllerOrGovernance();
+    _onlyGov();
     tetuLiquidator = liquidator;
     emit ChangeLiquidator(liquidator);
   }
