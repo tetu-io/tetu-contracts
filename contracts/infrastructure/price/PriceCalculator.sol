@@ -349,7 +349,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   // Gives the LP with largest liquidity for a given token
   // and a given tokenset (either keyTokens or pricingTokens)
   function getLargestPool(address token, address[] memory usedLps)
-  public override view returns (address, uint256, address) {
+  public view returns (address, uint256, address) {
     uint256 largestLpSize = 0;
     address largestKeyToken = address(0);
     uint256 largestPlatformIdx = 0;
@@ -465,7 +465,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
   }
 
   //Generic function giving the price of a given token vs another given token on Swap platform.
-  function getPriceFromLp(address lpAddress, address token) public override view returns (uint256) {
+  function getPriceFromLp(address lpAddress, address token) public view returns (uint256) {
     address _factory = IUniswapV2Pair(lpAddress).factory();
     if (_factory == DYSTOPIA_FACTORY || _factory == CONE_FACTORY) {
       (address token0, address token1) = IDystopiaPair(lpAddress).tokens();

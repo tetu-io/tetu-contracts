@@ -18,6 +18,8 @@ async function main() {
     data = await DeployerUtils.deployPriceCalculatorBsc(signer, core.controller, true);
   } else if (net.chainId === 1) {
     data = await DeployerUtils.deployPriceCalculatorEth(signer, core.controller, true);
+  } else if (net.chainId === 8453) {
+    data = await DeployerUtils.deployPriceCalculatorBase(signer, core.controller, true);
   } else {
     throw Error("Incorrect network selected");
   }
