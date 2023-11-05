@@ -1,20 +1,8 @@
-// SPDX-License-Identifier: ISC
-/**
-* By using this software, you understand, acknowledge and accept that Tetu
-* and/or the underlying software are provided “as is” and “as available”
-* basis and without warranties or representations of any kind either expressed
-* or implied. Any use of this open source software released under the ISC
-* Internet Systems Consortium license is done at your own risk to the fullest
-* extent permissible pursuant to applicable law any and all liability as well
-* as all warranties, including any fitness for a particular purpose with respect
-* to Tetu and/or the underlying software and the use thereof are disclaimed.
-*/
+// SPDX-License-Identifier: MIT
 
 import "./IPriceCalculator.sol";
 import "../../base/interfaces/ISmartVault.sol";
 import "../../base/interfaces/ITetuLiquidator.sol";
-import "../../third_party/uniswap/IUniswapV2Factory.sol";
-import "../../third_party/uniswap/IUniswapV2Pair.sol";
 import "../../third_party/uniswap/IUniPoolV3.sol";
 import "../../third_party/uniswap/IUniFactoryV3.sol";
 import "../../third_party/curve/ICurveLpToken.sol";
@@ -22,7 +10,6 @@ import "../../third_party/curve/ICurveMinter.sol";
 import "../../third_party/IERC20Extended.sol";
 import "../../third_party/balancer/IBPT.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../third_party/dystopia/IDystopiaFactory.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../openzeppelin/Math.sol";
 import "../../openzeppelin/EnumerableSet.sol";
@@ -30,6 +17,36 @@ import "../../openzeppelin/IERC4626.sol";
 import "../../openzeppelin/Initializable.sol";
 
 pragma solidity 0.8.4;
+
+interface IPoolFactory {
+  function getPool(address tokenA, address tokenB, bool stable) external view returns (address);
+}
+
+
+interface IPool {
+
+  function factory() external view returns (address);
+
+  function token0() external view returns (address);
+
+  function token1() external view returns (address);
+
+  function tokens() external view returns (address, address);
+
+  function reserve0() external view returns (uint);
+
+  function reserve1() external view returns (uint);
+
+  function stable() external view returns (bool);
+
+  function getReserves() external view returns (uint _reserve0, uint _reserve1, uint _blockTimestampLast);
+
+  function getAmountOut(uint amountIn, address tokenIn) external view returns (uint);
+
+  function decimals() external view returns (uint);
+
+  function totalSupply() external view returns (uint);
+}
 
 interface ITetuVaultV2 {
   function sharePrice() external view returns (uint);
@@ -76,7 +93,6 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
   event SolidlyFactoryChanged(address factoryAddress, bool add);
   event Uni3FactoryChanged(address factoryAddress, bool add);
   event ReplacementTokenUpdated(address token, address replacementToken);
-  event MultipartTokenUpdated(address token, bool status);
   event ChangeLiquidator(address liquidator);
 
   constructor() {}
@@ -210,7 +226,7 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
     }
 
     uint price;
-    if (isSwapPlatform(token)) {
+    if (isLpToken(token)) {
       price = _calculateUniLikeLpPrice(token, outputToken);
     } else if (isBPT(token)) {
       price = _calculateBPTPrice(token, outputToken);
@@ -224,26 +240,25 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
     return price * rate / rateDenominator;
   }
 
-  function isSwapPlatform(address token) public view returns (bool) {
+  function isLpToken(address token) public view returns (bool) {
     address factory;
     //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-    try IUniswapV2Pair(token).factory{gas: 3000}() returns (address _factory) {
+    try IPool(token).factory() returns (address _factory) {
       factory = _factory;
     } catch {}
-
-    return factory != address(0);
+    return solidlyFactories.contains(factory);
   }
 
   function isBPT(address token) public view returns (bool) {
     IBPT bpt = IBPT(token);
-    try bpt.getVault{gas: 3000}() returns (address vault){
+    try bpt.getVault() returns (address vault){
       return (vault == BALANCER_VAULT);
     } catch {}
     return false;
   }
 
   function isWithCurveMinter(address pool) public view returns (bool success) {
-    try ICurveLpToken(pool).minter{gas: 30000}() returns (address result){
+    try ICurveLpToken(pool).minter() returns (address result){
       if (result != address(0)) {
         return true;
       }
@@ -253,7 +268,7 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
 
   /// @dev Get underlying tokens and amounts for LP
   function getLpUnderlying(address lpAddress) public view returns (address[2] memory, uint[2] memory) {
-    IUniswapV2Pair lp = IUniswapV2Pair(lpAddress);
+    IPool lp = IPool(lpAddress);
     address[2] memory tokens;
     uint[2] memory amounts;
     tokens[0] = lp.token0();
@@ -274,8 +289,12 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
   }
 
   /// @dev General function to compute the price of a token vs the defined output token.
-  function computePrice(address token, address outputToken, address[] memory usedLps, uint deep)
-  public view returns (uint) {
+  function computePrice(
+    address token,
+    address outputToken,
+    address[] memory usedLps,
+    uint deep
+  ) public view returns (uint) {
     if (token == outputToken) {
       return 10 ** PRECISION_DECIMALS;
     } else if (token == address(0)) {
@@ -297,7 +316,7 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
       lpPrice = getUniV3Price(lpAddress, token);
     }
 
-    uint keyTokenPrice = computePrice(keyToken, outputToken, usedLps, deep);
+    uint keyTokenPrice = getPrice(keyToken, outputToken);
     return lpPrice * keyTokenPrice / 10 ** PRECISION_DECIMALS;
   }
 
@@ -366,8 +385,8 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
   }
 
   function findSolidlyLp(address _factory, address token, address tokenOpposite) public view returns (uint, address){
-    address sPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, true);
-    address vPair = IDystopiaFactory(_factory).getPair(token, tokenOpposite, false);
+    address sPair = IPoolFactory(_factory).getPool(token, tokenOpposite, true);
+    address vPair = IPoolFactory(_factory).getPool(token, tokenOpposite, false);
     uint sReserve = getLpSize(sPair, token);
     uint vReserve = getLpSize(vPair, token);
     if (sReserve > vReserve) {
@@ -406,19 +425,19 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
     if (pairAddress == address(0)) {
       return 0;
     }
-    IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
+    IPool pair = IPool(pairAddress);
     address token0 = pair.token0();
-    (uint112 poolSize0, uint112 poolSize1,) = pair.getReserves();
+    (uint poolSize0, uint poolSize1,) = pair.getReserves();
     uint poolSize = (token == token0) ? poolSize0 : poolSize1;
     return poolSize;
   }
 
   //Generic function giving the price of a given token vs another given token on Swap platform.
   function getPriceFromSolidly(address lpAddress, address token) public view returns (uint) {
-    (address token0, address token1) = IDystopiaPair(lpAddress).tokens();
+    (address token0, address token1) = IPool(lpAddress).tokens();
     uint tokenInDecimals = token == token0 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
     uint tokenOutDecimals = token == token1 ? IERC20Extended(token0).decimals() : IERC20Extended(token1).decimals();
-    uint out = IDystopiaPair(lpAddress).getAmountOut(10 ** tokenInDecimals, token);
+    uint out = IPool(lpAddress).getAmountOut(10 ** tokenInDecimals, token);
     return out * (10 ** PRECISION_DECIMALS) / (10 ** tokenOutDecimals);
 
   }
@@ -533,8 +552,7 @@ contract PriceCalculatorV2 is Initializable, IPriceCalculator {
     uint[2] memory amounts;
     (tokens, amounts) = getLpUnderlying(token);
     for (uint i = 0; i < 2; i++) {
-      address[] memory usedLps = new address[](DEPTH);
-      uint priceToken = computePrice(tokens[i], outputToken, usedLps, 0);
+      uint priceToken = getPrice(tokens[i], outputToken);
       if (priceToken == 0) {
         return 0;
       }

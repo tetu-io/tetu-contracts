@@ -41,7 +41,7 @@ describe("PriceCalculatorV2BaseTest", function () {
     await TimeUtils.rollback(snapshotForEach);
   });
 
-  it.skip("calculate all prices", async () => {
+  it("calculate all prices", async () => {
     if (!(await DeployerUtils.isNetwork(NETWORK))) {return;}
     await PriceCalculatorUtils.getFormattedPrice(calculator, BaseAddresses.WETH_TOKEN, BaseAddresses.USDbC_TOKEN);
     await PriceCalculatorUtils.getFormattedPrice(calculator, BaseAddresses.TETU_TOKEN, BaseAddresses.USDbC_TOKEN);
@@ -62,7 +62,7 @@ describe("PriceCalculatorV2BaseTest", function () {
   });
 
   it("TETU_tUSDbC_AERODROME_LP price", async () => {
-    await checkPrice(calculator, BaseAddresses.TETU_tUSDbC_AERODROME_LP, 0.001, 1);
+    await checkPrice(calculator, BaseAddresses.TETU_tUSDbC_AERODROME_LP, 1000, 1000000);
   });
 
 });
