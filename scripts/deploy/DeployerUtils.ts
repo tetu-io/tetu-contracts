@@ -21,6 +21,8 @@ import {
   NotifyHelper,
   PawnShopReader,
   PriceCalculator,
+  PriceCalculatorV2,
+  PriceCalculatorV2__factory,
   RewardCalculator,
   RewardToken,
   SmartVault,
@@ -48,6 +50,7 @@ import {parseUnits} from "ethers/lib/utils";
 import {deployContract} from "./DeployContract";
 import {BscAddresses} from "../addresses/BscAddresses";
 import {ToolsContractsWrapper} from "../../test/ToolsContractsWrapper";
+import {BaseAddresses} from "../addresses/BaseAddresses";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -269,6 +272,28 @@ export class DeployerUtils {
     return [calculator, proxy, logic];
   }
 
+  public static async deployPriceCalculatorV2Base(signer: SignerWithAddress): Promise<PriceCalculatorV2> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculatorV2");
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const calculator = PriceCalculatorV2__factory.connect(proxy.address, signer);
+    await calculator.initialize();
+
+    await RunHelper.runAndWait(() => calculator.changeKeyTokens([
+      BaseAddresses.USDC_TOKEN,
+      BaseAddresses.WETH_TOKEN,
+      BaseAddresses.DAI_TOKEN,
+      BaseAddresses.USDbC_TOKEN,
+    ], true));
+
+    await RunHelper.runAndWait(() => calculator.setDefaultToken(BaseAddresses.USDbC_TOKEN));
+
+    await RunHelper.runAndWait(() => calculator.changeSolidlyFactory(BaseAddresses.AERODROME_FACTORY, true));
+    await RunHelper.runAndWait(() => calculator.changeUni3Factory(BaseAddresses.UNI3_FACTORY, true));
+    await RunHelper.runAndWait(() => calculator.setTetuLiquidator(BaseAddresses.TETU_LIQUIDATOR));
+
+    return calculator;
+  }
+
   public static async deployPriceCalculatorFantom(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
@@ -338,6 +363,25 @@ export class DeployerUtils {
 
     await RunHelper.runAndWait(() => calculator.setDefaultToken(EthAddresses.USDC_TOKEN), true, wait);
     await RunHelper.runAndWait(() => calculator.addSwapPlatform(EthAddresses.UNISWAP_FACTORY, "Uniswap V2"), true, wait);
+
+    expect(await calculator.keyTokensSize()).is.not.eq(0);
+    return [calculator, proxy, logic];
+  }
+
+  public static async deployPriceCalculatorBase(signer: SignerWithAddress, controller: string, wait = false): Promise<[PriceCalculator, TetuProxyGov, PriceCalculator]> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculator") as PriceCalculator;
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    const calculator = logic.attach(proxy.address) as PriceCalculator;
+    await calculator.initialize(controller);
+
+    await RunHelper.runAndWait(() => calculator.addKeyTokens([
+      BaseAddresses.WETH_TOKEN,
+      BaseAddresses.USDC_TOKEN,
+      BaseAddresses.DAI_TOKEN,
+      BaseAddresses.USDbC_TOKEN,
+    ]), true, wait);
+
+    await RunHelper.runAndWait(() => calculator.setDefaultToken(BaseAddresses.USDC_TOKEN), true, wait);
 
     expect(await calculator.keyTokensSize()).is.not.eq(0);
     return [calculator, proxy, logic];
@@ -1106,6 +1150,8 @@ export class DeployerUtils {
       return '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94';
     } else if (net.chainId === 778877) {
       return '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94';
+    } else if (net.chainId === 8453) {
+      return BaseAddresses.GOV_ADDRESS;
     } else {
       throw Error('No config for ' + net.chainId);
     }

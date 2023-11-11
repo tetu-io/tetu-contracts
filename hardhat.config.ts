@@ -44,6 +44,10 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: ''
     },
+    baseRpcUrl: {
+      type: "string",
+      default: ''
+    },
     infuraKey: {
       type: "string",
     },
@@ -116,14 +120,15 @@ export default {
           argv.hardhatChainId === 1 ? argv.ethRpcUrl :
             argv.hardhatChainId === 137 ? argv.maticRpcUrl :
               argv.hardhatChainId === 250 ? argv.ftmRpcUrl :
-              argv.hardhatChainId === 56 ? argv.bscRpcUrl :
-                undefined,
+                argv.hardhatChainId === 56 ? argv.bscRpcUrl :
+                  argv.hardhatChainId === 8453 ? argv.baseRpcUrl :
+                    undefined,
         blockNumber:
           argv.hardhatChainId === 1 ? argv.ethForkBlock !== 0 ? argv.ethForkBlock : undefined :
             argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined :
               argv.hardhatChainId === 250 ? argv.ftmForkBlock !== 0 ? argv.ftmForkBlock : undefined :
-              argv.hardhatChainId === 56 ? argv.bscForkBlock !== 0 ? argv.bscForkBlock : undefined :
-                undefined
+                argv.hardhatChainId === 56 ? argv.bscForkBlock !== 0 ? argv.bscForkBlock : undefined :
+                  undefined
       } : undefined,
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
@@ -224,17 +229,31 @@ export default {
       url: "https://staging-v3.skalenodes.com/v1/staging-fast-active-bellatrix",
       chainId: 1351057110,
       accounts: [argv.privateKey],
-    }
+    },
+    imm_test: {
+      chainId: 13472,
+      url: "https://rpc.testnet.immutable.com",
+      accounts: [argv.privateKey],
+    },
+    base: {
+      url: argv.baseRpcUrl || '',
+      chainId: 8453,
+      // gas: 50_000_000_000,
+      accounts: [argv.privateKey],
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
     apiKey: {
       mainnet: argv.networkScanKey,
+      sepolia: argv.networkScanKey,
       polygon: argv.networkScanKeyMatic || argv.networkScanKey,
       polygonMumbai: argv.networkScanKeyMatic || argv.networkScanKey,
       opera: argv.networkScanKeyFtm || argv.networkScanKey,
       bsc: argv.networkScanKeyBsc || argv.networkScanKey,
       skale_test: 'any',
+      imm_test: 'any',
+      base: argv.networkScanKeyBase,
     },
     customChains: [
       {
@@ -243,6 +262,22 @@ export default {
         urls: {
           apiURL: "https://staging-fast-active-bellatrix.explorer.staging-v3.skalenodes.com/api",
           browserURL: "https://staging-fast-active-bellatrix.explorer.staging-v3.skalenodes.com"
+        }
+      },
+      {
+        network: "imm_test",
+        chainId: 13472,
+        urls: {
+          apiURL: "https://explorer.testnet.immutable.com/api",
+          browserURL: "https://explorer.testnet.immutable.com"
+        }
+      },
+      {
+        network: "base",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://api.basescan.org/api",
+          browserURL: "https://basescan.org"
         }
       }
     ]

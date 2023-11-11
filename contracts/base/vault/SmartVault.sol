@@ -34,7 +34,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
   // ************* CONSTANTS ********************
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant override VERSION = "1.10.6";
+  string public constant override VERSION = "1.10.8";
   /// @dev Denominator for penalty numerator
   uint256 public constant override LOCK_PENALTY_DENOMINATOR = 1000;
   uint256 public constant override TO_INVEST_DENOMINATOR = 1000;
@@ -113,6 +113,7 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     }
     // set 100% to invest
     _setToInvest(TO_INVEST_DENOMINATOR);
+    _setDoHardWorkOnInvest(true);
     // set deposit fee
     if (_depositFee > 0) {
       require(_depositFee <= DEPOSIT_FEE_DENOMINATOR / 100);
@@ -338,7 +339,13 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _isActive();
     _onlyAllowedUsers(msg.sender);
 
+    // need to invest before mint, if we will compound the profit the user should receive correct amount of shares
+    if (_alwaysInvest()) {
+      _invest();
+    }
+
     _deposit(amount, msg.sender, msg.sender);
+
     if (_alwaysInvest()) {
       _invest();
     }
@@ -350,7 +357,10 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _isActive();
     _onlyAllowedUsers(msg.sender);
 
+    _invest();
+
     _deposit(amount, msg.sender, msg.sender);
+
     _invest();
   }
 
@@ -360,7 +370,12 @@ contract SmartVault is Initializable, ERC20Upgradeable, VaultStorage, Controllab
     _isActive();
     _onlyAllowedUsers(msg.sender);
 
+    if (_alwaysInvest()) {
+      _invest();
+    }
+
     _deposit(amount, msg.sender, holder);
+
     if (_alwaysInvest()) {
       _invest();
     }

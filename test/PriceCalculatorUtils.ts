@@ -1,4 +1,4 @@
-import {PriceCalculator, PriceCalculator__factory} from "../typechain";
+import {IPriceCalculator, PriceCalculator, PriceCalculator__factory} from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
 import {expect} from "chai";
@@ -13,7 +13,7 @@ const log: Logger<undefined> = new Logger(logSettings);
 export class PriceCalculatorUtils {
 
   public static async getFormattedPrice(
-    calculator: PriceCalculator,
+    calculator: IPriceCalculator,
     token: string,
     outputToken: string
   ): Promise<number> {
