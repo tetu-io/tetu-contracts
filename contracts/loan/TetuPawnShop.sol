@@ -20,6 +20,7 @@ import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
 import "../base/ArrayLib.sol";
 import "./ITetuPawnShop.sol";
+import "./ERC2771Context.sol";
 
 interface IDelegation {
   function clearDelegate(bytes32 _id) external;
@@ -31,7 +32,7 @@ interface IDelegation {
 ///        The contract's modular design allows for easy customization of fees, waiting periods,
 ///        and other parameters, providing a solid foundation for a decentralized borrowing and lending platform.
 /// @author belbix
-contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
+contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Context {
   using SafeERC20 for IERC20;
   using ArrayLib for uint[];
 
@@ -39,7 +40,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.6";
+  string public constant VERSION = "1.0.7";
   /// @dev Time lock for any governance actions
   uint constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
@@ -120,7 +121,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   }
 
   modifier onlyOwner() {
-    require(msg.sender == owner, "TPS: Not owner");
+    require(_msgSender() == owner, "TPS: Not owner");
     _;
   }
 
@@ -191,7 +192,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
 
       pos = Position(
         positionCounter, // id
-        msg.sender, // borrower
+        _msgSender(), // borrower
         positionDepositToken,
         positionDepositAmount,
         true, // open
@@ -212,16 +213,16 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     positionsByAcquired[_acquiredToken].push(pos.id);
     posIndexes[IndexType.BY_ACQUIRED][pos.id] = positionsByAcquired[_acquiredToken].length - 1;
 
-    borrowerPositions[msg.sender].push(pos.id);
-    posIndexes[IndexType.BORROWER_POSITION][pos.id] = borrowerPositions[msg.sender].length - 1;
+    borrowerPositions[_msgSender()].push(pos.id);
+    posIndexes[IndexType.BORROWER_POSITION][pos.id] = borrowerPositions[_msgSender()].length - 1;
 
     positions[pos.id] = pos;
     positionCounter++;
 
     _takeDeposit(pos.id);
-    _transferCollateral(pos.collateral, msg.sender, address(this));
+    _transferCollateral(pos.collateral, _msgSender(), address(this));
     emit PositionOpened(
-      msg.sender,
+      _msgSender(),
       pos.id,
       _collateralToken,
       _collateralAmount,
@@ -238,7 +239,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   function closePosition(uint id) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
-    require(pos.borrower == msg.sender, "TPS: Only borrower can close a position");
+    require(pos.borrower == _msgSender(), "TPS: Only borrower can close a position");
     require(pos.execution.lender == address(0), "TPS: Can't close executed position");
     require(pos.open, "TPS: Position closed");
 
@@ -248,7 +249,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     _transferCollateral(pos.collateral, address(this), pos.borrower);
     _returnDeposit(id);
     pos.open = false;
-    emit PositionClosed(msg.sender, id);
+    emit PositionClosed(_msgSender(), id);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -259,9 +260,9 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(pos.execution.lender == address(0), "TPS: Can't bid executed position");
     if (pos.acquired.acquiredAmount != 0) {
       require(amount == pos.acquired.acquiredAmount, "TPS: Wrong bid amount");
-      _executeBid(pos, 0, amount, msg.sender, msg.sender);
+      _executeBid(pos, 0, amount, _msgSender(), _msgSender());
     } else {
-      _auctionBid(pos, amount, msg.sender);
+      _auctionBid(pos, amount, _msgSender());
     }
   }
 
@@ -269,31 +270,31 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
   function claim(uint id) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
-    require(pos.execution.lender == msg.sender, "TPS: Only lender can claim");
+    require(pos.execution.lender == _msgSender(), "TPS: Only lender can claim");
     uint posEnd = pos.execution.posStartBlock + pos.info.posDurationBlocks;
     require(posEnd < block.number, "TPS: Too early to claim");
     require(pos.open, "TPS: Position closed");
 
     _endPosition(pos);
-    _transferCollateral(pos.collateral, address(this), msg.sender);
+    _transferCollateral(pos.collateral, address(this), _msgSender());
     _returnDeposit(id);
-    emit PositionClaimed(msg.sender, id);
+    emit PositionClaimed(_msgSender(), id);
   }
 
   /// @inheritdoc ITetuPawnShop
   function redeem(uint id) external nonReentrant override {
     Position storage pos = positions[id];
     require(pos.id == id, "TPS: Wrong ID");
-    require(pos.borrower == msg.sender, "TPS: Only borrower can redeem");
+    require(pos.borrower == _msgSender(), "TPS: Only borrower can redeem");
     require(pos.execution.lender != address(0), "TPS: Not executed position");
     require(pos.open, "TPS: Position closed");
 
     _endPosition(pos);
     uint toSend = _toRedeem(id);
-    IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, pos.execution.lender, toSend);
-    _transferCollateral(pos.collateral, address(this), msg.sender);
+    IERC20(pos.acquired.acquiredToken).safeTransferFrom(_msgSender(), pos.execution.lender, toSend);
+    _transferCollateral(pos.collateral, address(this), _msgSender());
     _returnDeposit(id);
-    emit PositionRedeemed(msg.sender, id);
+    emit PositionRedeemed(_msgSender(), id);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -308,14 +309,14 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     require(_bid.posId == posId, "TPS: Wrong bid");
 
     Position storage pos = positions[posId];
-    require(pos.borrower == msg.sender, "TPS: Not borrower");
+    require(pos.borrower == _msgSender(), "TPS: Not borrower");
     require(pos.open, "TPS: Position closed");
 
     pos.acquired.acquiredAmount = _bid.amount;
     _executeBid(pos, bidId, _bid.amount, address(this), _bid.lender);
     lenderOpenBids[_bid.lender][pos.id] = 0;
     _bid.open = false;
-    emit AuctionBidAccepted(msg.sender, posId, _bid.id);
+    emit AuctionBidAccepted(_msgSender(), posId, _bid.id);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -429,7 +430,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop {
     // write index + 1 for keep zero as empty value
     lenderOpenBids[lender][pos.id] = positionToBidIds[pos.id].length;
 
-    IERC20(pos.acquired.acquiredToken).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(pos.acquired.acquiredToken).safeTransferFrom(_msgSender(), address(this), amount);
 
     lastAuctionBidTs[pos.id] = block.timestamp;
     auctionBids[_bid.id] = _bid;
