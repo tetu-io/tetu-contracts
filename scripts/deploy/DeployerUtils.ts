@@ -298,6 +298,8 @@ export class DeployerUtils {
   public static async deployPriceCalculatorV2ZkEvm(signer: SignerWithAddress): Promise<PriceCalculatorV2> {
     const logic = await DeployerUtils.deployContract(signer, "PriceCalculatorV2");
     const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    console.log("Deployed logic", logic.address);
+    console.log("Deployed proxy", proxy.address);
     const calculator = PriceCalculatorV2__factory.connect(proxy.address, signer);
     await RunHelper.runAndWait2ExplicitSigner(signer, calculator.populateTransaction.initialize());
 
