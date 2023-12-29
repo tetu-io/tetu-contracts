@@ -51,6 +51,7 @@ import {deployContract} from "./DeployContract";
 import {BscAddresses} from "../addresses/BscAddresses";
 import {ToolsContractsWrapper} from "../../test/ToolsContractsWrapper";
 import {BaseAddresses} from "../addresses/BaseAddresses";
+import {ZkevmAddresses} from "../addresses/ZkevmAddresses";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -290,6 +291,30 @@ export class DeployerUtils {
     await RunHelper.runAndWait(() => calculator.changeSolidlyFactory(BaseAddresses.AERODROME_FACTORY, true));
     await RunHelper.runAndWait(() => calculator.changeUni3Factory(BaseAddresses.UNI3_FACTORY, true));
     await RunHelper.runAndWait(() => calculator.setTetuLiquidator(BaseAddresses.TETU_LIQUIDATOR));
+
+    return calculator;
+  }
+
+  public static async deployPriceCalculatorV2ZkEvm(signer: SignerWithAddress): Promise<PriceCalculatorV2> {
+    const logic = await DeployerUtils.deployContract(signer, "PriceCalculatorV2");
+    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyGov", logic.address) as TetuProxyGov;
+    console.log("Deployed logic", logic.address);
+    console.log("Deployed proxy", proxy.address);
+    const calculator = PriceCalculatorV2__factory.connect(proxy.address, signer);
+    await RunHelper.runAndWait2ExplicitSigner(signer, calculator.populateTransaction.initialize());
+
+    await RunHelper.runAndWait2ExplicitSigner(signer, calculator.populateTransaction.changeKeyTokens([
+      ZkevmAddresses.USDC_TOKEN,
+      ZkevmAddresses.WETH_TOKEN,
+      // ZkevmAddresses.DAI_TOKEN,
+      ZkevmAddresses.USDT_TOKEN,
+    ], true));
+
+    await RunHelper.runAndWait2ExplicitSigner(signer, calculator.populateTransaction.setDefaultToken(ZkevmAddresses.USDC_TOKEN));
+
+    // await RunHelper.runAndWait(() => calculator.changeSolidlyFactory(ZkevmAddresses.AERODROME_FACTORY, true));
+    // await RunHelper.runAndWait(() => calculator.changeUni3Factory(ZkevmAddresses.UNI3_FACTORY, true));
+    await RunHelper.runAndWait2ExplicitSigner(signer, calculator.populateTransaction.setTetuLiquidator(ZkevmAddresses.TETU_LIQUIDATOR));
 
     return calculator;
   }
@@ -1152,6 +1177,8 @@ export class DeployerUtils {
       return '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94';
     } else if (net.chainId === 8453) {
       return BaseAddresses.GOV_ADDRESS;
+    } else if (net.chainId === 1101) {
+      return ZkevmAddresses.GOV_ADDRESS;
     } else {
       throw Error('No config for ' + net.chainId);
     }
