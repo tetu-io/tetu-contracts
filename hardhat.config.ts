@@ -48,6 +48,10 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: ''
     },
+    sepoliaOpRpcUrl: {
+      type: "string",
+      default: 'https://sepolia.optimism.io'
+    },
     infuraKey: {
       type: "string",
     },
@@ -61,6 +65,12 @@ const argv = require('yargs/yargs')()
       type: "string",
     },
     networkScanKeyBsc: {
+      type: "string",
+    },
+    networkScanKeyBase: {
+      type: "string",
+    },
+    networkScanKeyOpSepolia: {
       type: "string",
     },
     privateKey: {
@@ -241,6 +251,16 @@ export default {
       // gas: 50_000_000_000,
       accounts: [argv.privateKey],
     },
+    op_sepolia: {
+      chainId: 11155420,
+      url: argv.sepoliaOpRpcUrl || '',
+      accounts: [argv.privateKey],
+      verify: {
+        etherscan: {
+          apiKey: argv.networkScanKeyOpSepolia
+        }
+      }
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
@@ -254,6 +274,7 @@ export default {
       skale_test: 'any',
       imm_test: 'any',
       base: argv.networkScanKeyBase,
+      op_sepolia: argv.networkScanKeyOpSepolia,
     },
     customChains: [
       {
@@ -278,6 +299,14 @@ export default {
         urls: {
           apiURL: "https://api.basescan.org/api",
           browserURL: "https://basescan.org"
+        }
+      },
+      {
+        network: "op_sepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimism.etherscan.io/"
         }
       }
     ]

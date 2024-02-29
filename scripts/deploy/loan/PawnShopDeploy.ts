@@ -5,7 +5,7 @@ import {parseUnits} from "ethers/lib/utils";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 
 // const DEPOSIT_TOKEN = MaticAddresses.TETU_TOKEN;
-const DEPOSIT_TOKEN = '0xbE3c35a0abaA1707308480224D71D94F75b458D1';
+const DEPOSIT_TOKEN = '0xb8bA82F19A9Be6CbF6DAF9BF4FBCC5bDfCF8bEe6';
 const DEPOSIT_FEE = parseUnits('0.1')
 const GOV = '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94'
 // const GOV = '0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B'
