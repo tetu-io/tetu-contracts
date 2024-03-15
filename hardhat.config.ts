@@ -261,6 +261,11 @@ export default {
         }
       }
     },
+    sonict: {
+      chainId: 64165,
+      url: 'https://rpc.sonic.fantom.network/',
+      accounts: [argv.privateKey],
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
@@ -273,6 +278,7 @@ export default {
       bsc: argv.networkScanKeyBsc || argv.networkScanKey,
       skale_test: 'any',
       imm_test: 'any',
+      sonict: 'lore-public',
       base: argv.networkScanKeyBase,
       op_sepolia: argv.networkScanKeyOpSepolia,
     },
@@ -308,7 +314,15 @@ export default {
           apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
           browserURL: "https://sepolia-optimism.etherscan.io/"
         }
-      }
+      },
+      {
+        network: "sonict",
+        chainId: 64165,
+        urls: {
+          apiURL: " https://api.lorescan.com/64165",
+          browserURL: "https://sonicscan.io/"
+        }
+      },
     ]
   },
   solidity: {

@@ -12,10 +12,6 @@
 
 pragma solidity 0.8.4;
 
-import "../third_party/dystopia/IDystopiaRouter.sol";
-import "../third_party/dystopia/IDystopiaPair.sol";
-import "../third_party/dystopia/IDystopiaFactory.sol";
-import "../openzeppelin/SafeERC20.sol";
 import "../openzeppelin/IERC20.sol";
 import "../openzeppelin/ReentrancyGuard.sol";
 import "../openzeppelin/Math.sol";
@@ -24,7 +20,6 @@ import "../third_party/IERC20Extended.sol";
 /// @title Simple contract for safe swap from untrusted EOA
 /// @author belbix
 contract TradeBot1Inch is ReentrancyGuard {
-  using SafeERC20 for IERC20;
 
   struct Position {
     address owner;
@@ -46,16 +41,18 @@ contract TradeBot1Inch is ReentrancyGuard {
     uint price;
   }
 
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   mapping(address => Position) public positions;
   mapping(address => Trade[]) public trades;
 
   address public immutable oneInchRouter;
+  address public immutable operator;
 
-  constructor(address _oneInchRouter) {
-    require(_oneInchRouter != address(0), "WRONG_INPUT");
+  constructor(address _oneInchRouter, address _operator) {
+    require(_oneInchRouter != address(0) && _operator != address(0), "WRONG_INPUT");
     oneInchRouter = _oneInchRouter;
+    operator = _operator;
   }
 
   function open(
@@ -66,9 +63,10 @@ contract TradeBot1Inch is ReentrancyGuard {
     uint minPrice,
     uint maxPrice
   ) external nonReentrant {
+    require(executor == operator, "!executor");
     require(positions[msg.sender].owner == address(0), "Position already opened");
 
-    IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), tokenInAmount);
+    IERC20(tokenIn).transferFrom(msg.sender, address(this), tokenInAmount);
 
     positions[msg.sender] = Position(
       msg.sender,
@@ -90,14 +88,14 @@ contract TradeBot1Inch is ReentrancyGuard {
       // in case of little fluctuation by the reason of rounding
       uint amountIn = Math.min(pos.tokenInAmount, IERC20(pos.tokenIn).balanceOf(address(this)));
       require(amountIn != 0, "Zero amount in");
-      IERC20(pos.tokenIn).safeTransfer(msg.sender, amountIn);
+      IERC20(pos.tokenIn).transfer(msg.sender, amountIn);
     }
 
     if (pos.tokenOutAmount != 0) {
       // avoiding rounding errors
       uint amountOut = Math.min(pos.tokenOutAmount, IERC20(pos.tokenOut).balanceOf(address(this)));
       require(amountOut != 0, "Zero amount out");
-      IERC20(pos.tokenOut).safeTransfer(msg.sender, amountOut);
+      IERC20(pos.tokenOut).transfer(msg.sender, amountOut);
     }
 
     delete positions[msg.sender];
@@ -105,6 +103,7 @@ contract TradeBot1Inch is ReentrancyGuard {
 
   function execute(address posOwner, uint amount, bytes memory swapData) external nonReentrant {
     Position memory pos = positions[posOwner];
+    require(operator == msg.sender, "Only operator");
     require(pos.executor == msg.sender, "Only position executor");
     require(pos.tokenInAmount >= amount, "Amount too high");
 
@@ -142,30 +141,15 @@ contract TradeBot1Inch is ReentrancyGuard {
     require(price > pos.minPrice, string(abi.encodePacked("price too low ", _toString(price))));
 
     trades[posOwner].push(Trade(
-        pos,
-        block.timestamp,
-        block.number,
-        tokenInAmount,
-        tokenOutAmount,
-        price
-      ));
+      pos,
+      block.timestamp,
+      block.number,
+      tokenInAmount,
+      tokenOutAmount,
+      price
+    ));
   }
 
-  function swap(address _router, IDystopiaRouter.Route[] memory _route, uint256 _amount) internal {
-    require(_router != address(0), "Zero router");
-    uint256 bal = IERC20(_route[0].from).balanceOf(address(this));
-    require(bal >= _amount, "Not enough balance");
-    IERC20(_route[0].from).safeApprove(_router, 0);
-    IERC20(_route[0].from).safeApprove(_router, _amount);
-    //slither-disable-next-line unused-return
-    IDystopiaRouter(_router).swapExactTokensForTokens(
-      _amount,
-      0,
-      _route,
-      address(this),
-      block.timestamp
-    );
-  }
 
   function tradesLength(address owner) external view returns (uint) {
     return trades[owner].length;
@@ -173,8 +157,7 @@ contract TradeBot1Inch is ReentrancyGuard {
 
   function _approveIfNeeds(address token, uint amount, address spender) internal {
     if (IERC20(token).allowance(address(this), spender) < amount) {
-      IERC20(token).safeApprove(spender, 0);
-      IERC20(token).safeApprove(spender, type(uint).max);
+      IERC20(token).approve(spender, amount);
     }
   }
 
