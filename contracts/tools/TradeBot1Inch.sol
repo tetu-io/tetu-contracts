@@ -47,11 +47,13 @@ contract TradeBot1Inch is ReentrancyGuard {
   mapping(address => Trade[]) public trades;
 
   address public immutable oneInchRouter;
+  address public immutable owner;
   address public immutable operator;
 
-  constructor(address _oneInchRouter, address _operator) {
+  constructor(address _oneInchRouter, address _owner, address _operator) {
     require(_oneInchRouter != address(0) && _operator != address(0), "WRONG_INPUT");
     oneInchRouter = _oneInchRouter;
+    owner = _owner;
     operator = _operator;
   }
 
@@ -63,6 +65,7 @@ contract TradeBot1Inch is ReentrancyGuard {
     uint minPrice,
     uint maxPrice
   ) external nonReentrant {
+    require(owner == msg.sender, "!owner");
     require(executor == operator, "!executor");
     require(positions[msg.sender].owner == address(0), "Position already opened");
 
@@ -151,8 +154,8 @@ contract TradeBot1Inch is ReentrancyGuard {
   }
 
 
-  function tradesLength(address owner) external view returns (uint) {
-    return trades[owner].length;
+  function tradesLength(address _owner) external view returns (uint) {
+    return trades[_owner].length;
   }
 
   function _approveIfNeeds(address token, uint amount, address spender) internal {

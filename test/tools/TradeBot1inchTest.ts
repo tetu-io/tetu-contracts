@@ -44,7 +44,7 @@ describe("TradeBot 1inch test", function () {
     owner = (await ethers.getSigners())[0];
     executor = (await ethers.getSigners())[1];
 
-    bot = await DeployerUtils.deployContract(owner, 'TradeBot1Inch', '0x1111111254EEB25477B68fb85Ed929f73A960582', executor.address) as TradeBot1Inch;
+    bot = await DeployerUtils.deployContract(owner, 'TradeBot1Inch', '0x1111111254EEB25477B68fb85Ed929f73A960582', owner.address, executor.address) as TradeBot1Inch;
   });
 
   after(async function () {
