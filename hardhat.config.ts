@@ -48,6 +48,14 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: ''
     },
+    sepoliaOpRpcUrl: {
+      type: "string",
+      default: 'https://sepolia.optimism.io'
+    },
+    realRpcUrl: {
+      type: "string",
+      default: 'https://real.drpc.org'
+    },
     infuraKey: {
       type: "string",
     },
@@ -61,6 +69,12 @@ const argv = require('yargs/yargs')()
       type: "string",
     },
     networkScanKeyBsc: {
+      type: "string",
+    },
+    networkScanKeyBase: {
+      type: "string",
+    },
+    networkScanKeyOpSepolia: {
       type: "string",
     },
     privateKey: {
@@ -241,6 +255,31 @@ export default {
       // gas: 50_000_000_000,
       accounts: [argv.privateKey],
     },
+    op_sepolia: {
+      chainId: 11155420,
+      url: argv.sepoliaOpRpcUrl || '',
+      accounts: [argv.privateKey],
+      verify: {
+        etherscan: {
+          apiKey: argv.networkScanKeyOpSepolia
+        }
+      }
+    },
+    sonict: {
+      chainId: 64165,
+      url: 'https://rpc.sonic.fantom.network/',
+      accounts: [argv.privateKey],
+    },
+    real: {
+      chainId: 111188,
+      url: argv.realRpcUrl || 'https://real.drpc.org',
+      accounts: [argv.privateKey],
+      verify: {
+        etherscan: {
+          apiKey: 'any'
+        }
+      }
+    },
   },
   etherscan: {
     //  https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
@@ -253,7 +292,10 @@ export default {
       bsc: argv.networkScanKeyBsc || argv.networkScanKey,
       skale_test: 'any',
       imm_test: 'any',
+      real: 'any',
+      sonict: 'lore-public',
       base: argv.networkScanKeyBase,
+      op_sepolia: argv.networkScanKeyOpSepolia,
     },
     customChains: [
       {
@@ -279,7 +321,31 @@ export default {
           apiURL: "https://api.basescan.org/api",
           browserURL: "https://basescan.org"
         }
-      }
+      },
+      {
+        network: "op_sepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimism.etherscan.io/"
+        }
+      },
+      {
+        network: "sonict",
+        chainId: 64165,
+        urls: {
+          apiURL: " https://api.lorescan.com/64165",
+          browserURL: "https://sonicscan.io/"
+        }
+      },
+      {
+        network: "real",
+        chainId: 111188,
+        urls: {
+          apiURL: "https://explorer.re.al/api",
+          browserURL: "https://explorer.re.al/"
+        }
+      },
     ]
   },
   solidity: {

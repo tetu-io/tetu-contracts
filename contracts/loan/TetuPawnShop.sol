@@ -24,6 +24,7 @@ import "./ERC2771Context.sol";
 
 interface IDelegation {
   function clearDelegate(bytes32 _id) external;
+
   function setDelegate(bytes32 _id, address _delegate) external;
 }
 
@@ -40,13 +41,13 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Co
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.7";
+  string public constant VERSION = "1.0.8";
   /// @dev Time lock for any governance actions
   uint constant public TIME_LOCK = 2 days;
   /// @dev Denominator for any internal computation with low precision
   uint constant public DENOMINATOR = 10000;
   /// @dev Governance can't set fee more than this value
-  uint constant public PLATFORM_FEE_MAX = 500; // 5%
+  uint constant public PLATFORM_FEE_MAX = 1000; // 10%
   /// @dev Standard auction duration that refresh when a new bid placed
   uint constant public AUCTION_DURATION = 1 days;
   /// @dev Timestamp date when contract created
@@ -61,8 +62,8 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Co
   address public owner;
   /// @dev Fee recipient. Assume it will be a place with ability to manage different tokens
   address public feeRecipient;
-  /// @dev 1% by default, percent of acquired tokens that will be used for buybacks
-  uint public platformFee = 100;
+  /// @dev 10% by default
+  uint public platformFee = 1000;
   /// @dev Amount of tokens for open position. Protection against spam
   uint public positionDepositAmount;
   /// @dev Token for antispam protection. TETU assumed
@@ -322,7 +323,11 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Co
   /// @inheritdoc ITetuPawnShop
   function closeAuctionBid(uint bidId) external nonReentrant override {
     AuctionBid storage _bid = auctionBids[bidId];
+    address lender = _bid.lender;
+
     require(_bid.id != 0, "TPS: Auction bid not found");
+    require(_bid.open, "TPS: Bid closed");
+    require(lender == _msgSender(), "TPS: Not lender");
     Position storage pos = positions[_bid.posId];
 
     uint _lastAuctionBidTs = lastAuctionBidTs[pos.id];
@@ -336,7 +341,6 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Co
     }
     require((isLastBid && isAuctionEnded) || !isLastBid || !pos.open || isAuctionOverdue, "TPS: Auction is not ended");
 
-    address lender = _bid.lender;
     lenderOpenBids[lender][pos.id] = 0;
     _bid.open = false;
     IERC20(pos.acquired.acquiredToken).safeTransfer(lender, _bid.amount);
@@ -492,7 +496,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Co
   function _toRedeem(uint id) private view returns (uint){
     Position memory pos = positions[id];
     return pos.acquired.acquiredAmount +
-    (pos.acquired.acquiredAmount * pos.info.posFee / DENOMINATOR);
+      (pos.acquired.acquiredAmount * pos.info.posFee / DENOMINATOR);
   }
 
   /// @inheritdoc ITetuPawnShop
@@ -632,7 +636,7 @@ contract TetuPawnShop is ERC721Holder, ReentrancyGuard, ITetuPawnShop, ERC2771Co
   }
 
   /// @dev Delegate snapshot votes to another address
-  function delegateVotes(address _delegateContract,bytes32 _id, address _delegate) external onlyOwner {
+  function delegateVotes(address _delegateContract, bytes32 _id, address _delegate) external onlyOwner {
     IDelegation(_delegateContract).setDelegate(_id, _delegate);
   }
 

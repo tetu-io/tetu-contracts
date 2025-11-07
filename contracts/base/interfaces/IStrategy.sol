@@ -65,7 +65,8 @@ interface IStrategy {
     VENUS, //47
     RADIANT2, //48
     WOMBEX, //49
-    SLOT_50 //50
+    STABILITY, //50
+    SLOT_51 //51
   }
 
   // *************** GOVERNANCE ACTIONS **************

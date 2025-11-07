@@ -62,7 +62,7 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
 
   // ************ CONSTANTS **********************
 
-  string public constant VERSION = "1.7.6";
+  string public constant VERSION = "1.7.7";
   address internal constant FIREBIRD_FACTORY = 0x5De74546d3B86C8Df7FEEc30253865e1149818C8;
   address internal constant DYSTOPIA_FACTORY = 0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9;
   address internal constant CONE_FACTORY = 0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016;
@@ -654,36 +654,25 @@ contract PriceCalculator is Initializable, ControllableV2, IPriceCalculator {
     uint256 totalBPTSupply = bpt.totalSupply();
     (IERC20[] memory poolTokens, uint256[] memory balances,) = IBVault(balancerVault).getPoolTokens(poolId);
 
-    uint256 totalPrice = 0;
-    uint[] memory prices = new uint[](poolTokens.length);
+    uint256 totalValue = 0;
     for (uint i = 0; i < poolTokens.length; i++) {
-      uint256 tokenDecimals = IERC20Extended(address(poolTokens[i])).decimals();
       uint256 tokenPrice;
       if (token != address(poolTokens[i])) {
-        if (prices[i] == 0) {
-          tokenPrice = getPrice(address(poolTokens[i]), outputToken);
-          prices[i] = tokenPrice;
-        } else {
-          tokenPrice = prices[i];
+        tokenPrice = getPrice(address(poolTokens[i]), outputToken);
+        // with unknown token price we can not calculate BPT price
+        if (tokenPrice == 0) {
+          return 0;
         }
       } else {
-        // if token the same as BPT assume it has the same price as another one token in the pool
-        uint ii = i == 0 ? 1 : 0;
-        if (prices[ii] == 0) {
-          tokenPrice = getPrice(address(poolTokens[ii]), outputToken);
-          prices[ii] = tokenPrice;
-        } else {
-          tokenPrice = prices[ii];
-        }
+        // if the pool has the token itself need to exclude it from the total supply
+        totalBPTSupply -= balances[i];
       }
-      // unknown token price
-      if (tokenPrice == 0) {
-        return 0;
-      }
-      totalPrice = totalPrice + tokenPrice * balances[i] * 10 ** PRECISION_DECIMALS / 10 ** tokenDecimals;
 
+      uint256 tokenDecimals = IERC20Extended(address(poolTokens[i])).decimals();
+      totalValue += tokenPrice * balances[i] * 10 ** PRECISION_DECIMALS / 10 ** tokenDecimals;
     }
-    return totalPrice / totalBPTSupply;
+
+    return totalValue / totalBPTSupply;
   }
 
   function calculateConvexPrice(address token, address outputToken) internal view returns (uint256 price){

@@ -12,6 +12,7 @@ import {TokenUtils} from "../TokenUtils";
 import {PawnShopTestUtils} from "./PawnShopTestUtils";
 import {MintHelperUtils} from "../MintHelperUtils";
 import {parseUnits} from "ethers/lib/utils";
+import {PawnShopUtils} from "./PawnShopUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -276,6 +277,176 @@ describe("Tetu pawnshop base tests", function () {
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
 
     await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
+  });
+
+  it("should be able to close losing bets", async () => {
+
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
+      user1,
+      shop,
+      networkToken,
+      '10',
+      '0',
+      0,
+      0
+    );
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
+    await PawnShopTestUtils.bidAndCheck(id, '5560', user3, shop);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+
+    const bidId2 = (await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop)).toNumber();
+    const bidId3 = (await PawnShopTestUtils.getBidIdAndCheck(id, user3.address, shop)).toNumber();
+
+    const balanceBefore = await TokenUtils.balanceOf(networkToken, user3.address);
+    await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
+    const balanceAfter = await TokenUtils.balanceOf(networkToken, user3.address);
+
+    // user 3 won, he received the collateral
+    expect(balanceAfter).gt(balanceBefore);
+    // .. so, user 3 is not able to take his acquired tokens back
+    await expect(PawnShopUtils.closeAuctionBid(bidId3, user3, shop)).rejectedWith("TPS: Bid closed");
+
+    // user 2 lost, he can take his acquired tokens back (without platform fee)
+    await PawnShopUtils.closeAuctionBid(bidId2, user2, shop);
+  });
+
+  it("should revert if try to call closeAuctionBid second time", async () => {
+
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
+      user1,
+      shop,
+      networkToken,
+      '10',
+      '0',
+      1,
+      0
+    );
+
+    // user 2 makes a bid
+    const balanceBefore = await TokenUtils.balanceOf(usdc, user2.address);
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
+    const balanceAfterBid = await TokenUtils.balanceOf(usdc, user2.address);
+
+    // user 3 makes a second bid
+    await TokenUtils.approve(usdc, user3, shop.address, '555');
+    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TPS: New bid lower than previous');
+
+    await PawnShopTestUtils.bidAndCheck(id, '5560', user3, shop);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+    // auction is closed
+
+    const bidId2 = (await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop)).toNumber();
+
+    // user 2 closes the bid
+    await PawnShopUtils.closeAuctionBid(bidId2, user2, shop);
+    const balanceAfterClose = await TokenUtils.balanceOf(usdc, user2.address);
+
+    expect(balanceAfterBid).eq(balanceBefore.sub(555));
+    expect(balanceAfterClose).eq(balanceBefore);
+
+    // user 2 tries to close the same bid second time
+    await expect(PawnShopUtils.closeAuctionBid(bidId2, user2, shop)).rejectedWith("TPS: Bid closed");
+  });
+
+  it("should revert if not lender tries to call closeAuctionBid", async () => {
+
+    const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+      usdc,
+      user1,
+      shop,
+      networkToken,
+      '10',
+      '0',
+      1,
+      0
+    );
+
+    // user 2 makes a bid
+    await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
+
+    // user 3 makes a second bid, so bid of user 2 is closable now
+    await TokenUtils.approve(usdc, user3, shop.address, '555');
+    await expect(shop.connect(user3).bid(id, '555')).rejectedWith('TPS: New bid lower than previous');
+
+    await PawnShopTestUtils.bidAndCheck(id, '5560', user3, shop);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 16); // 2 days + 2 weeks has passed
+    // auction is closed
+
+    const bidId2 = (await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop)).toNumber();
+    const bidId3 = (await PawnShopTestUtils.getBidIdAndCheck(id, user3.address, shop)).toNumber();
+
+    // ensure that users are not able to close bids of the other users
+    await expect(PawnShopUtils.closeAuctionBid(bidId3, user2, shop)).rejectedWith("TPS: Not lender");
+    await expect(PawnShopUtils.closeAuctionBid(bidId2, user3, shop)).rejectedWith("TPS: Not lender");
+
+    await PawnShopUtils.closeAuctionBid(bidId2, user2, shop); // correct
+    await PawnShopUtils.closeAuctionBid(bidId3, user3, shop); // correct
+  });
+
+  describe("Attempts to use 'dead' auction", () => {
+
+    it("should be able to exit from auction that don't have any actions long time", async () => {
+      const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+        usdc,
+        user1,
+        shop,
+        networkToken,
+        '10',
+        '0',
+        1,
+        0
+      );
+
+      // auction is not used for long time
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 3); // 3 days
+
+      // user 2 accidentally makes a bid and wants to go away immediately .. it's not allowed
+      await PawnShopTestUtils.bidAndCheck(id, '555', user2, shop);
+      const bidId2 = (await PawnShopTestUtils.getBidIdAndCheck(id, user2.address, shop)).toNumber();
+      await expect(PawnShopUtils.closeAuctionBid(bidId2, user2, shop)).rejectedWith("TPS: Auction is not ended");
+
+      // user 2 waits 1 day for the end of the auction
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24); // 1 day
+
+      // now he is able to go away
+      await PawnShopUtils.closeAuctionBid(bidId2, user2, shop);
+    })
+
+    it("should not be able to make a new bid in the auction with accepted bid", async () => {
+      const id = await PawnShopTestUtils.openErc20ForUsdcAndCheck(
+        usdc,
+        user1,
+        shop,
+        networkToken,
+        '10',
+        '0',
+        1,
+        0
+      );
+
+      // user 3 makes a bid
+      await PawnShopTestUtils.bidAndCheck(id, '555', user3, shop);
+
+      // auction is ended
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24); // 1 days
+
+      // user 1 accepts the winner bid
+      await PawnShopTestUtils.acceptAuctionBidAndCheck(id, user1, shop);
+
+      // then no actions happens for long time
+      await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 3); // 3 days
+
+      // user 2 accidentally tries to make a bid ... it's not allowed
+      await expect(PawnShopTestUtils.bidAndCheck(id, '5556', user2, shop)).rejectedWith("TPS: Can't bid executed position");
+    })
   });
 
   // ! ** NFT **************

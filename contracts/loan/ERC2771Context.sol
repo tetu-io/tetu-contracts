@@ -9,16 +9,12 @@ pragma solidity ^0.8.1;
 // based on https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/metatx/ERC2771Context.sol
 abstract contract ERC2771Context {
 
-  // for whitelist new relayers need to add new constants and update proxies/redeploy contracts
-//  address private constant GELATO_RELAY = 0xaBcC9b596420A9E9172FD5938620E265a0f9Df92;
-//  address private constant GELATO_RELAY_ERC_2771 = 0xb539068872230f20456CF38EC52EF2f91AF4AE49;
-//  address private constant GELATO_RELAY_CONCURRENT_ERC_2771 = 0x8598806401A63Ddf52473F1B3C55bC9E33e2d73b;
-//  address private constant GELATO_RELAY_1_BALANCE = 0x75bA5Af8EFFDCFca32E1e288806d54277D1fde99;
+  // for whitelist new relayers need to add new constants and update proxies
   address private constant GELATO_RELAY_1_BALANCE_ERC_2771 = 0xd8253782c45a12053594b9deB72d8e8aB2Fca54c;
-//  address private constant GELATO_RELAY_1_BALANCE_CONCURRENT_ERC_2771 = 0xc65d82ECE367EF06bf2AB791B3f3CF037Dc0e816;
+  address private constant SACRA_RELAY = 0x52CEba41Da235Af367bFC0b0cCd3314cb901bB5F;
 
   function isTrustedForwarder(address forwarder) public view virtual returns (bool){
-    return forwarder == GELATO_RELAY_1_BALANCE_ERC_2771;
+    return forwarder == GELATO_RELAY_1_BALANCE_ERC_2771 || forwarder == SACRA_RELAY;
   }
 
   function _msgSender() internal view virtual returns (address sender) {
