@@ -31,7 +31,7 @@ export class VaultUtils {
 
   public async checkEmptyVault(
     strategy: string,
-    unerlying: string,
+    underlying: string,
     vaultRewardToken0: string,
     deployer: string,
     toInvestNumerator: number,
@@ -42,7 +42,7 @@ export class VaultUtils {
     // vault storage initial stats
     expect(await vault.decimals()).to.eq(6);
     expect(await vault.strategy()).to.eq(strategy);
-    expect((await vault.underlying()).toLowerCase()).to.eq(unerlying);
+    expect((await vault.underlying()).toLowerCase()).to.eq(underlying);
     expect(await vault.underlyingUnit()).to.eq(1000000);
     expect(await vault.duration()).to.eq(duration);
     expect(await vault.active()).to.eq(true);
