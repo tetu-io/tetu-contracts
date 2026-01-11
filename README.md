@@ -1,5 +1,6 @@
 # <img src="tetu_contracts.svg" alt="Tetu.io">
 
+![CI](https://github.com/AdekunleBamz/tetu-contracts/actions/workflows/test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/tetu-io/tetu-contracts/branch/master/graph/badge.svg?token=7Q5OZP6NNP)](https://codecov.io/gh/tetu-io/tetu-contracts)
 
 Tetu.io is a collaboration between developers and investors around the whole world to create the best
